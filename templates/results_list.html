@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Assessment Results</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Assessment</th>
+                            <th>Date Taken</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in responses %}
+                        <tr>
+                            <td>{{ response.assessment.title }}</td>
+                            <td>{{ response.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>Completed</td>
+                            <td>
+                                <a href="{{ url_for('view_results', assessment_id=response.assessment_id, response_id=response.id) }}" 
+                                   class="btn btn-primary btn-sm">View Results</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                {% if not responses %}
+                <div class="text-center">
+                    <p>No assessments completed yet.</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Take an Assessment</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

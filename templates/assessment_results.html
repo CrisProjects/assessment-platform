@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">{{ assessment.title }} Results</h2>
+            
+            <!-- Overall Score -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h3>Overall Score</h3>
+                    <div class="display-1 mb-3">{{ "%.1f"|format(score) }}%</div>
+                    <div class="alert {% if score >= 90 %}alert-success{% elif score >= 75 %}alert-info{% elif score >= 60 %}alert-warning{% else %}alert-danger{% endif %}">
+                        {{ conclusion }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Performance -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Category Performance</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Recommendations</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                    {% for rec in recommendations %}
+                        <li class="list-group-item">{{ rec }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Answer Analysis -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Detailed Analysis</h4>
+                </div>
+                <div class="card-body">
+                    {% for question in assessment.questions %}
+                    <div class="mb-4">
+                        <h5>Question {{ loop.index }}</h5>
+                        <p><strong>Q: </strong>{{ question.content }}</p>
+                        <p><strong>Your Answer: </strong>{{ response.responses[question.id|string] }}</p>
+                        <p>{{ answer_analysis }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Category Performance Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'radar',
+        data: {
+            labels: Object.keys({{ category_scores|tojson }}),
+            datasets: [{
+                label: 'Category Scores',
+                data: Object.values({{ category_scores|tojson }}),
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
