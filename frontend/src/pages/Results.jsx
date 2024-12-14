@@ -19,7 +19,7 @@ import {
 import { getResults } from '../services/api';
 
 export default function Results() {
-  const [results, setResults] = useState(null);
+  const [results, setResults] = useState({ completed: [], in_progress: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedParticipant, setSelectedParticipant] = useState('all');
@@ -28,16 +28,28 @@ export default function Results() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const data = await getResults(1, selectedParticipant);
-        setResults(data);
-        
-        // Extract unique participants
-        const participantSet = new Set();
-        [...data.completed, ...data.in_progress].forEach(result => {
-          participantSet.add(result.participant_name);
-        });
-        setParticipants(Array.from(participantSet));
+        setLoading(true);
+        const data = await getResults(null, selectedParticipant);
+        console.log('Fetched results:', data); // Debug log
+        if (data && (data.completed || data.in_progress)) {
+          setResults({
+            completed: data.completed || [],
+            in_progress: data.in_progress || []
+          });
+          
+          // Extract unique participants
+          const participantSet = new Set();
+          [...(data.completed || []), ...(data.in_progress || [])].forEach(result => {
+            if (result.participant_name) {
+              participantSet.add(result.participant_name);
+            }
+          });
+          setParticipants(Array.from(participantSet));
+        } else {
+          setError('Invalid results format received from server');
+        }
       } catch (err) {
+        console.error('Error fetching results:', err);
         setError(err.message || 'Failed to load results');
       } finally {
         setLoading(false);
@@ -77,21 +89,23 @@ export default function Results() {
           Assertiveness Assessment Results
         </Typography>
 
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Filter by Participant</InputLabel>
-          <Select
-            value={selectedParticipant}
-            onChange={(e) => setSelectedParticipant(e.target.value)}
-            label="Filter by Participant"
-          >
-            <MenuItem value="all">All Participants</MenuItem>
-            {participants.map((participant) => (
-              <MenuItem key={participant} value={participant}>
-                {participant}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        {participants.length > 0 && (
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Filter by Participant</InputLabel>
+            <Select
+              value={selectedParticipant}
+              onChange={(e) => setSelectedParticipant(e.target.value)}
+              label="Filter by Participant"
+            >
+              <MenuItem value="all">All Participants</MenuItem>
+              {participants.map((participant) => (
+                <MenuItem key={participant} value={participant}>
+                  {participant}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
       </Box>
 
       {results.completed.length > 0 && (
@@ -177,7 +191,7 @@ export default function Results() {
                       Started: {new Date(result.started_at).toLocaleString()}
                     </Typography>
                     <Typography>
-                      Progress: {Math.round((Object.keys(result.responses).length / 5) * 100)}%
+                      Progress: {Math.round((Object.keys(result.responses || {}).length / 5) * 100)}%
                     </Typography>
                   </CardContent>
                 </Card>
@@ -187,7 +201,8 @@ export default function Results() {
         </Box>
       )}
 
-      {results.completed.length === 0 && results.in_progress.length === 0 && (
+      {(!results.completed || results.completed.length === 0) && 
+       (!results.in_progress || results.in_progress.length === 0) && (
         <Alert severity="info">
           No results found
           {selectedParticipant !== 'all' && ` for ${selectedParticipant}`}.

@@ -29,10 +29,7 @@ export const getAssessments = async () => {
 
 export const saveProgress = async (assessmentId, userId, data) => {
   try {
-    const response = await api.post(`/api/assessment/${assessmentId}/save`, {
-      user_id: userId,
-      ...data,
-    });
+    const response = await api.post(`/api/assessment/${assessmentId}/save`, data);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -42,7 +39,7 @@ export const saveProgress = async (assessmentId, userId, data) => {
 export const getResults = async (userId, participant = 'all') => {
   try {
     const response = await api.get('/api/results', {
-      params: { user_id: userId, participant },
+      params: { participant }
     });
     return response.data;
   } catch (error) {

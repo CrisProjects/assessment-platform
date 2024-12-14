@@ -1,6 +1,7 @@
 from src import app
 from flask import request, jsonify
 from datetime import datetime
+import json
 
 # Mock user for testing
 MOCK_USER = {
@@ -9,8 +10,18 @@ MOCK_USER = {
     "password": "password123"
 }
 
-# Mock database for storing results
-RESULTS_DB = []
+# Mock database for storing results (now as a class to maintain state)
+class ResultsDatabase:
+    def __init__(self):
+        self.results = []
+    
+    def add_result(self, result):
+        self.results.append(result)
+    
+    def get_results(self):
+        return self.results
+
+RESULTS_DB = ResultsDatabase()
 
 ASSERTIVENESS_TEST = {
     'id': 1,
@@ -136,42 +147,57 @@ def get_assessments():
 
 @app.route('/api/assessment/<int:assessment_id>/save', methods=['POST'])
 def save_assessment(assessment_id):
-    data = request.get_json()
-    
-    if assessment_id != ASSERTIVENESS_TEST['id']:
-        return jsonify({'error': 'Assessment not found'}), 404
-    
-    result = {
-        'id': len(RESULTS_DB) + 1,
-        'assessment_id': assessment_id,
-        'assessment_title': ASSERTIVENESS_TEST['title'],
-        'participant_name': data['participant_name'],
-        'responses': data['responses'],
-        'completed': data['completed'],
-        'started_at': datetime.now().isoformat(),
-        'completed_at': datetime.now().isoformat() if data['completed'] else None
-    }
-    
-    if data['completed']:
-        result.update(calculate_assertiveness_score(data['responses']))
-    
-    RESULTS_DB.append(result)
-    
-    return jsonify({'status': 'success', 'result': result})
+    try:
+        data = request.get_json()
+        app.logger.info(f"Received data: {json.dumps(data)}")
+        
+        if assessment_id != ASSERTIVENESS_TEST['id']:
+            return jsonify({'error': 'Assessment not found'}), 404
+        
+        result = {
+            'id': len(RESULTS_DB.get_results()) + 1,
+            'assessment_id': assessment_id,
+            'assessment_title': ASSERTIVENESS_TEST['title'],
+            'participant_name': data['participant_name'],
+            'responses': data['responses'],
+            'completed': data['completed'],
+            'started_at': datetime.now().isoformat(),
+            'completed_at': datetime.now().isoformat() if data['completed'] else None
+        }
+        
+        if data['completed']:
+            result.update(calculate_assertiveness_score(data['responses']))
+        
+        RESULTS_DB.add_result(result)
+        app.logger.info(f"Saved result: {json.dumps(result)}")
+        
+        return jsonify({'status': 'success', 'result': result})
+    except Exception as e:
+        app.logger.error(f"Error saving assessment: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/results', methods=['GET'])
 def get_results():
-    participant = request.args.get('participant', 'all')
-    
-    if participant == 'all':
-        filtered_results = RESULTS_DB
-    else:
-        filtered_results = [r for r in RESULTS_DB if r['participant_name'] == participant]
-    
-    completed = [r for r in filtered_results if r['completed']]
-    in_progress = [r for r in filtered_results if not r['completed']]
-    
-    return jsonify({
-        'completed': completed,
-        'in_progress': in_progress
-    })
+    try:
+        participant = request.args.get('participant', 'all')
+        all_results = RESULTS_DB.get_results()
+        app.logger.info(f"All results: {json.dumps(all_results)}")
+        
+        if participant == 'all':
+            filtered_results = all_results
+        else:
+            filtered_results = [r for r in all_results if r['participant_name'] == participant]
+        
+        completed = [r for r in filtered_results if r['completed']]
+        in_progress = [r for r in filtered_results if not r['completed']]
+        
+        response = {
+            'completed': completed,
+            'in_progress': in_progress
+        }
+        app.logger.info(f"Sending response: {json.dumps(response)}")
+        
+        return jsonify(response)
+    except Exception as e:
+        app.logger.error(f"Error getting results: {str(e)}")
+        return jsonify({'error': str(e)}), 500
