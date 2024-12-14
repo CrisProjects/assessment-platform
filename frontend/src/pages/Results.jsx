@@ -13,6 +13,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Chip,
+  Divider,
 } from '@mui/material';
 import { getResults } from '../services/api';
 
@@ -45,6 +47,13 @@ export default function Results() {
     fetchResults();
   }, [selectedParticipant]);
 
+  const getScoreColor = (score) => {
+    if (score >= 80) return '#4caf50';
+    if (score >= 60) return '#2196f3';
+    if (score >= 40) return '#ff9800';
+    return '#f44336';
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -62,10 +71,10 @@ export default function Results() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Assessment Results
+          Assertiveness Assessment Results
         </Typography>
 
         <FormControl sx={{ minWidth: 200 }}>
@@ -85,8 +94,71 @@ export default function Results() {
         </FormControl>
       </Box>
 
-      {results.in_progress.length > 0 && (
+      {results.completed.length > 0 && (
         <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Completed Assessments ({results.completed.length})
+          </Typography>
+          <Grid container spacing={3}>
+            {results.completed.map((result) => (
+              <Grid item xs={12} key={result.id}>
+                <Paper elevation={3}>
+                  <Box p={3}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="h6" gutterBottom>
+                          {result.participant_name}
+                        </Typography>
+                        <Typography color="textSecondary" gutterBottom>
+                          Completed: {new Date(result.completed_at).toLocaleString()}
+                        </Typography>
+                        <Box sx={{ mt: 2 }}>
+                          <Chip
+                            label={`${result.score}%`}
+                            sx={{
+                              bgcolor: getScoreColor(result.score),
+                              color: 'white',
+                              fontSize: '1.1rem',
+                              fontWeight: 'bold',
+                              mr: 1
+                            }}
+                          />
+                          <Chip
+                            label={result.level}
+                            variant="outlined"
+                            sx={{ mr: 1 }}
+                          />
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={8}>
+                        <Typography variant="h6" gutterBottom>
+                          Feedback
+                        </Typography>
+                        <Typography>
+                          {result.feedback}
+                        </Typography>
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" color="textSecondary">
+                            Response Summary:
+                          </Typography>
+                          {Object.entries(result.responses).map(([questionId, answerIndex]) => (
+                            <Typography key={questionId} variant="body2" color="textSecondary">
+                              Question {questionId}: Option {parseInt(answerIndex) + 1}
+                            </Typography>
+                          ))}
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {results.in_progress.length > 0 && (
+        <Box>
           <Typography variant="h5" gutterBottom>
             In Progress ({results.in_progress.length})
           </Typography>
@@ -105,37 +177,7 @@ export default function Results() {
                       Started: {new Date(result.started_at).toLocaleString()}
                     </Typography>
                     <Typography>
-                      Progress: {Math.round((Object.keys(result.responses).length / 10) * 100)}%
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      )}
-
-      {results.completed.length > 0 && (
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            Completed ({results.completed.length})
-          </Typography>
-          <Grid container spacing={3}>
-            {results.completed.map((result) => (
-              <Grid item xs={12} md={6} key={result.id}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {result.assessment_title}
-                    </Typography>
-                    <Typography color="textSecondary">
-                      Participant: {result.participant_name}
-                    </Typography>
-                    <Typography color="textSecondary">
-                      Completed: {new Date(result.completed_at).toLocaleString()}
-                    </Typography>
-                    <Typography>
-                      Score: {result.score ? `${result.score.toFixed(1)}%` : 'N/A'}
+                      Progress: {Math.round((Object.keys(result.responses).length / 5) * 100)}%
                     </Typography>
                   </CardContent>
                 </Card>
