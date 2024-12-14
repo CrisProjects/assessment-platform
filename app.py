@@ -6,8 +6,6 @@ import os
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
-from dotenv import load_dotenv
-load_dotenv()
 
 ASSERTIVENESS_CATEGORIES = {
     "Conflict Resolution": [0, 3, 8],  # Question indices for this category
@@ -89,11 +87,8 @@ def get_conclusion(score):
                 maintaining respect for others. Consider focusing on clear, direct communication and boundary-setting."""
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///assessments.db')
-if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
-    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
