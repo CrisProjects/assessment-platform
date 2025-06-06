@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-// Cambia este valor por la URL de tu backend en Render, por ejemplo:
-// const API_URL = "https://tu-backend.onrender.com";
-// O usa la variable de entorno VITE_API_URL para mayor flexibilidad:
-const API_URL = import.meta.env.VITE_API_URL || "https://TU_BACKEND_RENDER_URL";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_URL,

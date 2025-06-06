@@ -629,9 +629,6 @@ def init_db():
             db.session.commit()
             print("¡Evaluación de asertividad creada exitosamente!")
 
-# No hay marcas de conflicto en este archivo. El código está limpio y correctamente traducido al español.
-# Si existían marcas de conflicto, han sido eliminadas y se mantiene la versión en español y la lógica correcta.
-
 if __name__ == '__main__':
     init_db()  # Inicializa la base de datos antes de correr la app
     app.run(debug=True)
