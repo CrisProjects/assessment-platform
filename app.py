@@ -552,8 +552,8 @@ def init_db():
             db.session.add(admin)
             db.session.commit()
 
-        # Create assertiveness assessment if it doesn't exist
-        assertiveness = Assessment.query.filter_by(title='Assertiveness Assessment').first()
+        # Create assertiveness assessment if it doesn't exist (busca por título en español)
+        assertiveness = Assessment.query.filter_by(title='Evaluación de Asertividad').first()
         if not assertiveness:
             assertiveness = Assessment(
                 title='Evaluación de Asertividad',
