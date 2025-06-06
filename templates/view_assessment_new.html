@@ -32,10 +32,7 @@
         <!-- Question Indicators -->
         <div class="question-indicators d-flex justify-content-between flex-wrap mb-3">
             {% for question in assessment.questions %}
-            <div class="question-dot" id="dot-{{ loop.index }}" 
-                 style="width: 20px; height: 20px; border-radius: 50%; 
-                        background-color: {% if loop.first %}#007bff{% else %}#dee2e6{% endif %}; 
-                        margin: 0 5px; cursor: pointer;"
+            <div class="question-dot{% if loop.first %} current{% endif %}" id="dot-{{ loop.index }}" 
                  title="Question {{ loop.index }}">
             </div>
             {% endfor %}
@@ -43,7 +40,7 @@
     </div>
 
     <form id="assessment-form" method="POST" action="{{ url_for('submit_assessment', assessment_id=assessment.id) }}">
-        <input type="text" id="participant_name" placeholder="Enter your name">
+        <input type="text" id="participant_name" name="participant_name" placeholder="Enter your name" class="form-control mb-3" required>
         {% for question in assessment.questions %}
         <div class="question-card card mb-3" id="question-{{ loop.index }}" {% if not loop.first %}style="display: none;"{% endif %}>
             <div class="card-body">
@@ -54,22 +51,20 @@
                 <div class="mb-3">
                     <textarea class="form-control answer-input" name="question_{{ question.id }}" rows="3" required></textarea>
                 </div>
-
                 {% elif question.question_type == 'multiple_choice' %}
                 <div class="mb-3">
                     {% for option in question.options|from_json %}
                     <div class="form-check mb-2">
                         <input class="form-check-input answer-input" type="radio" 
                                name="question_{{ question.id }}" 
-                               id="option_{{ question.id }}_{{ loop.index }}" 
-                               value="{{ option }}" required>
-                        <label class="form-check-label" for="option_{{ question.id }}_{{ loop.index }}">
+                               id="option_{{ question.id }}_{{ loop.index0 }}" 
+                               value="{{ option|e }}" required>
+                        <label class="form-check-label" for="option_{{ question.id }}_{{ loop.index0 }}">
                             {{ option }}
                         </label>
                     </div>
                     {% endfor %}
                 </div>
-
                 {% elif question.question_type == 'true_false' %}
                 <div class="mb-3">
                     <div class="form-check">
@@ -89,15 +84,15 @@
 
                 <div class="d-flex justify-content-between mt-4">
                     {% if not loop.first %}
-                    <button type="button" id="prev-btn" class="btn btn-secondary prev-question">Previous</button>
+                    <button type="button" class="btn btn-secondary prev-question">Previous</button>
                     {% else %}
                     <div></div>
                     {% endif %}
 
                     {% if not loop.last %}
-                    <button type="button" id="next-btn" class="btn btn-primary next-question">Next</button>
+                    <button type="button" class="btn btn-primary next-question">Next</button>
                     {% else %}
-                    <button type="submit" id="submit-btn" class="btn btn-success">Submit Assessment</button>
+                    <button type="submit" id="submit-btn" class="btn btn-success" style="display:none;">Submit Assessment</button>
                     {% endif %}
                 </div>
             </div>
@@ -108,26 +103,38 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const totalQuestions = {{ assessment.questions|length }};
+    const totalQuestions = {{ assessment.questions|length|int }};
     let currentQuestion = 1;
     const answeredQuestions = new Set();
-    
+
+    function getQuestionCard(num) {
+        return document.getElementById(`question-${num}`);
+    }
+
     // Load saved responses if they exist
-    {% if saved_responses %}
-    const savedResponses = {{ saved_responses|tojson }};
+    {% if saved_responses is defined and (saved_responses is not none) and (saved_responses|length > 0) %}
+    const savedResponses = {{ saved_responses|tojson | safe }};
     Object.entries(savedResponses).forEach(([questionId, answer]) => {
-        const input = document.querySelector(`input[name="question_${questionId}"][value="${answer}"], textarea[name="question_${questionId}"]`);
+        // Try radio first
+        let input = document.querySelector(`input[name="question_${questionId}"][value="${String(answer).replace(/"/g, '\\"')}"]`);
+        // If not found, try textarea
+        if (!input) {
+            input = document.querySelector(`textarea[name="question_${questionId}"]`);
+        }
         if (input) {
             if (input.type === 'radio') {
                 input.checked = true;
             } else {
                 input.value = answer;
             }
-            const questionNumber = parseInt(input.closest('.question-card').id.split('-')[1]);
-            answeredQuestions.add(questionNumber);
+            // Mark as answered
+            const card = input.closest('.question-card');
+            if (card) {
+                const questionNumber = parseInt(card.id.split('-')[1]);
+                answeredQuestions.add(questionNumber);
+            }
         }
     });
-    updateProgress();
     {% endif %}
 
     function updateProgress() {
@@ -141,22 +148,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update question dots
         document.querySelectorAll('.question-dot').forEach((dot, index) => {
             const questionNum = index + 1;
-            dot.className = 'question-dot ' + (
-                questionNum === currentQuestion ? 'current' :
-                answeredQuestions.has(questionNum) ? 'answered' : ''
-            );
+            dot.className = 'question-dot' +
+                (questionNum === currentQuestion ? ' current' : '') +
+                (answeredQuestions.has(questionNum) ? ' answered' : '');
         });
 
-        // Show/hide navigation buttons
-        document.getElementById('prev-btn').disabled = currentQuestion === 1;
-        document.getElementById('next-btn').disabled = currentQuestion === totalQuestions;
-        
         // Show/hide submit button
         const submitBtn = document.getElementById('submit-btn');
-        if (answeredQuestions.size === totalQuestions) {
-            submitBtn.style.display = 'block';
-        } else {
-            submitBtn.style.display = 'none';
+        if (submitBtn) {
+            submitBtn.style.display = answeredQuestions.size === totalQuestions ? 'block' : 'none';
         }
     }
 
@@ -164,39 +164,53 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.question-card').forEach(card => {
             card.style.display = 'none';
         });
-        document.getElementById(`question-${questionNumber}`).style.display = 'block';
+        const card = getQuestionCard(questionNumber);
+        if (card) card.style.display = 'block';
         currentQuestion = questionNumber;
         updateProgress();
     }
 
-    // Handle radio button changes (auto-advance)
-    document.querySelectorAll('input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const questionCard = this.closest('.question-card');
-            const questionNumber = parseInt(questionCard.id.split('-')[1]);
-            answeredQuestions.add(questionNumber);
-            updateProgress();
-            
-            // Auto-advance to next question after a short delay
-            if (questionNumber < totalQuestions) {
-                setTimeout(() => {
-                    showQuestion(questionNumber + 1);
-                }, 500); // 500ms delay for smooth transition
+    // Handle answer input changes (text and radio)
+    document.querySelectorAll('.answer-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const card = this.closest('.question-card');
+            if (card) {
+                const questionNumber = parseInt(card.id.split('-')[1]);
+                // For text, only mark as answered if not empty
+                if (this.type === 'textarea' || this.tagName.toLowerCase() === 'textarea') {
+                    if (this.value.trim()) {
+                        answeredQuestions.add(questionNumber);
+                    } else {
+                        answeredQuestions.delete(questionNumber);
+                    }
+                } else if (this.type === 'radio') {
+                    answeredQuestions.add(questionNumber);
+                    // Auto-advance for radio
+                    if (questionNumber < totalQuestions) {
+                        setTimeout(() => {
+                            showQuestion(questionNumber + 1);
+                        }, 300);
+                    }
+                }
+                updateProgress();
             }
         });
     });
 
     // Navigation button clicks
-    document.getElementById('prev-btn').addEventListener('click', () => {
-        if (currentQuestion > 1) {
-            showQuestion(currentQuestion - 1);
-        }
+    document.querySelectorAll('.prev-question').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (currentQuestion > 1) {
+                showQuestion(currentQuestion - 1);
+            }
+        });
     });
-
-    document.getElementById('next-btn').addEventListener('click', () => {
-        if (currentQuestion < totalQuestions) {
-            showQuestion(currentQuestion + 1);
-        }
+    document.querySelectorAll('.next-question').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (currentQuestion < totalQuestions) {
+                showQuestion(currentQuestion + 1);
+            }
+        });
     });
 
     // Question dot clicks
@@ -219,13 +233,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (input.type === 'radio' && input.checked) {
                 const questionId = input.name.split('_')[1];
                 responses[questionId] = input.value;
+            } else if ((input.type === 'textarea' || input.tagName.toLowerCase() === 'textarea') && input.value.trim()) {
+                const questionId = input.name.split('_')[1];
+                responses[questionId] = input.value.trim();
             }
         });
 
         // Check if all questions are answered when trying to submit
         if (completed) {
-            const totalAnswered = Object.keys(responses).length;
-            if (totalAnswered < {{ assessment.questions|length }}) {
+            if (Object.keys(responses).length < totalQuestions) {
                 alert('Please answer all questions before submitting.');
                 return;
             }
@@ -272,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
         saveProgress(true);
     });
 
-    // Initialize first question
+    // Initialize first question and progress
     showQuestion(1);
 });
 </script>

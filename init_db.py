@@ -16,7 +16,7 @@ def init_db():
             if not admin:
                 admin = User(
                     username='admin',
-                    password=generate_password_hash('admin123'),
+                    password_hash=generate_password_hash('admin123'),
                     is_admin=True
                 )
                 db.session.add(admin)
@@ -28,7 +28,7 @@ def init_db():
             if not test_user:
                 test_user = User(
                     username='user',
-                    password=generate_password_hash('user123'),
+                    password_hash=generate_password_hash('user123'),
                     is_admin=False
                 )
                 db.session.add(test_user)

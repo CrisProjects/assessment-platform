@@ -35,11 +35,11 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <h5 class="card-title">Question</h5>
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(this)">Remove</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(this)" aria-label="Remove question">Remove</button>
             </div>
             <div class="mb-3">
                 <label class="form-label">Question Text</label>
-                <textarea class="form-control" name="questions[][content]" required></textarea>
+                <textarea class="form-control" name="questions[${questionCounter}][content]" required></textarea>
             </div>
             <div class="mb-3">
                 <label class="form-label">Question Type</label>
@@ -53,10 +53,7 @@
                 <div class="mb-3">
                     <label class="form-label">Options</label>
                     <div class="options-list">
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control" name="questions[][options][]" placeholder="Option">
-                            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">Remove</button>
-                        </div>
+                        <!-- Options will be added here dynamically -->
                     </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addOption(this)">Add Option</button>
                 </div>
@@ -72,12 +69,24 @@
         const container = document.getElementById('questions-container');
         const template = document.getElementById('question-template');
         const clone = template.content.cloneNode(true);
-        
+
         // Update names to include unique index
         const inputs = clone.querySelectorAll('[name]');
         inputs.forEach(input => {
+            // Corrige para que solo reemplace el primer [] por el índice
             input.name = input.name.replace('[]', `[${questionCounter}]`);
         });
+
+        // Corrige el select para que tenga el índice correcto en el name
+        const select = clone.querySelector('.question-type');
+        select.name = `questions[${questionCounter}][type]`;
+        select.addEventListener('change', function() {
+            handleQuestionTypeChange(this);
+        });
+
+        // Corrige el textarea para que tenga el índice correcto en el name
+        const textarea = clone.querySelector('textarea');
+        textarea.name = `questions[${questionCounter}][content]`;
 
         container.appendChild(clone);
         questionCounter++;
@@ -90,39 +99,49 @@
     function handleQuestionTypeChange(select) {
         const questionBlock = select.closest('.question-block');
         const optionsContainer = questionBlock.querySelector('.options-container');
-        
+        const optionsList = optionsContainer.querySelector('.options-list');
         if (select.value === 'multiple_choice') {
             optionsContainer.style.display = 'block';
-            // Add initial options if none exist
-            const optionsList = optionsContainer.querySelector('.options-list');
-            if (optionsList.children.length === 0) {
+            // Si no hay opciones, agrega dos por defecto
+            if (optionsList.children.length < 2) {
+                optionsList.innerHTML = '';
                 addOption(optionsContainer.querySelector('button'));
                 addOption(optionsContainer.querySelector('button'));
             }
         } else {
             optionsContainer.style.display = 'none';
+            optionsList.innerHTML = '';
         }
     }
 
     function addOption(button) {
-        const optionsList = button.closest('.options-container').querySelector('.options-list');
+        const optionsContainer = button.closest('.options-container');
+        const optionsList = optionsContainer.querySelector('.options-list');
+        const questionBlock = button.closest('.question-block');
+        const textarea = questionBlock.querySelector('textarea');
+        let name = "questions[][options][]";
+        if (textarea && textarea.name) {
+            // Corrige para que el name de la opción tenga el índice correcto
+            name = textarea.name.replace('[content]', '[options][]');
+        }
         const newOption = document.createElement('div');
         newOption.className = 'input-group mb-2';
         newOption.innerHTML = `
-            <input type="text" class="form-control" name="${button.closest('.question-block').querySelector('textarea').name.replace('[content]', '[options][]')}" placeholder="Option">
-            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">Remove</button>
+            <input type="text" class="form-control" name="${name}" placeholder="Option" required>
+            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)" aria-label="Remove option">Remove</button>
         `;
         optionsList.appendChild(newOption);
     }
 
     function removeOption(button) {
         const optionsList = button.closest('.options-list');
-        if (optionsList.children.length > 1) {
+        // No permitir menos de dos opciones
+        if (optionsList.children.length > 2) {
             button.closest('.input-group').remove();
         }
     }
 
-    // Add initial question
+    // Add initial question on page load
     document.addEventListener('DOMContentLoaded', function() {
         addQuestion();
     });

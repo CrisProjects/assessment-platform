@@ -8,86 +8,88 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
 
 ASSERTIVENESS_CATEGORIES = {
-    "Conflict Resolution": [0, 3, 8],  # Question indices for this category
-    "Communication": [2, 4, 6],
-    "Professional Setting": [1, 7, 9],
-    "Personal Boundaries": [3, 5, 8]
+    "Resolución de Conflictos": [0, 3, 8],  # Índices de preguntas para esta categoría
+    "Comunicación": [2, 4, 6],
+    "Entorno Profesional": [1, 7, 9],
+    "Límites Personales": [3, 5, 8]
 }
 
 RESPONSE_SCORES = {
-    # Scoring for each option (0-3 scale, 3 being most assertive)
-    0: {"I remain silent to avoid conflict": 0, "I defend myself calmly with facts": 3, "I become angry and defensive": 1, "I try to change the subject": 0},
-    1: {"Yes, I would have an honest conversation about it": 3, "No, I would avoid mentioning it": 0, "I would stop lending but not discuss it": 1, "I would make excuses to not lend anymore": 1},
-    2: {"Always - I speak up regardless of others' opinions": 2, "Often - When I feel strongly about the topic": 3, "Sometimes - Only when I feel very confident": 1, "Rarely - I usually agree with the majority": 0},
-    3: {"Politely point out that there is a line": 3, "Say nothing but feel frustrated": 0, "Confront them aggressively": 1, "Let them cut and avoid confrontation": 0},
-    4: {"Say no clearly and directly": 3, "Make up excuses": 1, "Say yes even though I don't want to": 0, "Avoid the person or situation": 0},
-    5: {"Raise concerns politely with the server": 3, "Say nothing but leave a poor tip": 1, "Complain loudly and demand to see a manager": 1, "Never return to the restaurant": 0},
-    6: {"Accept them graciously": 3, "Deflect or minimize them": 1, "Feel very uncomfortable": 0, "Reject them outright": 0},
-    7: {"Express disagreement respectfully with alternatives": 3, "Stay silent and go along with it": 0, "Argue strongly against it": 1, "Agree in the meeting but complain to colleagues later": 0},
-    8: {"Discuss it directly with them": 3, "Drop subtle hints about it": 1, "Get visibly angry and confront them": 1, "Say nothing but feel resentful": 0},
-    9: {"Share it confidently when appropriate": 3, "Wait for others to notice": 1, "Don't mention it at all": 0, "Constantly talk about it": 1}
+    # Puntuación para cada opción (escala 0-3, 3 siendo la más asertiva)
+    0: {"Permanezco en silencio para evitar el conflicto": 0, "Me defiendo con calma y hechos": 3, "Me enojo y me pongo a la defensiva": 1, "Intento cambiar de tema": 0},
+    1: {"Sí, tendría una conversación honesta al respecto": 3, "No, evitaría mencionarlo": 0, "Dejaría de prestar pero no lo hablaría": 1, "Pondría excusas para no prestar más": 1},
+    2: {"Siempre - Hablo sin importar la opinión de los demás": 2, "A menudo - Cuando el tema me importa mucho": 3, "A veces - Solo cuando me siento muy seguro": 1, "Rara vez - Suelo estar de acuerdo con la mayoría": 0},
+    3: {"Señalo educadamente que hay una fila": 3, "No digo nada pero me frustro": 0, "Los confronto agresivamente": 1, "Dejo que se cuelen y evito el conflicto": 0},
+    4: {"Digo que no de forma clara y directa": 3, "Pongo excusas": 1, "Digo que sí aunque no quiera": 0, "Evito a la persona o la situación": 0},
+    5: {"Expreso mis inquietudes educadamente al camarero": 3, "No digo nada pero dejo poca propina": 1, "Me quejo en voz alta y exijo ver al gerente": 1, "Nunca vuelvo al restaurante": 0},
+    6: {"Acepto los cumplidos con gratitud": 3, "Los minimizo o desvío": 1, "Me siento muy incómodo": 0, "Los rechazo completamente": 0},
+    7: {"Expreso mi desacuerdo respetuosamente y propongo alternativas": 3, "Me quedo callado y acepto": 0, "Discuto fuertemente en contra": 1, "Estoy de acuerdo en la reunión pero me quejo después": 0},
+    8: {"Lo hablo directamente con la persona": 3, "Doy indirectas sutiles": 1, "Me enojo visiblemente y confronto": 1, "No digo nada pero me resiento": 0},
+    9: {"Lo comparto con confianza cuando es apropiado": 3, "Espero que otros lo noten": 1, "No lo menciono en absoluto": 0, "Hablo de ello constantemente": 1}
 }
 
 def get_score_category(score):
     if score >= 90:
-        return "Excellent - You demonstrate strong assertiveness skills"
+        return "Excelente - Demuestras habilidades de asertividad muy sólidas"
     elif score >= 75:
-        return "Good - You show healthy assertiveness in most situations"
+        return "Bueno - Muestras asertividad saludable en la mayoría de las situaciones"
     elif score >= 50:
-        return "Moderate - You have some assertive behaviors but there's room for improvement"
+        return "Moderado - Tienes conductas asertivas pero hay margen de mejora"
     else:
-        return "Needs Improvement - You might benefit from developing more assertive communication skills"
+        return "Necesita mejorar - Podrías beneficiarte de desarrollar más habilidades de comunicación asertiva"
 
 def get_recommendations(scores_by_category):
-    recommendations = []
+    recomendaciones = []
     
-    if scores_by_category.get("Conflict Resolution", 0) < 70:
-        recommendations.append("Practice addressing conflicts directly but calmly. Focus on facts rather than emotions.")
+    if scores_by_category.get("Resolución de Conflictos", 0) < 70:
+        recomendaciones.append("Practica abordar los conflictos de manera directa pero calmada. Concéntrate en los hechos más que en las emociones.")
     
-    if scores_by_category.get("Communication", 0) < 70:
-        recommendations.append("Work on expressing your thoughts and needs clearly while respecting others' perspectives.")
+    if scores_by_category.get("Comunicación", 0) < 70:
+        recomendaciones.append("Trabaja en expresar tus pensamientos y necesidades con claridad, respetando las perspectivas de los demás.")
     
-    if scores_by_category.get("Professional Setting", 0) < 70:
-        recommendations.append("Develop strategies for professional assertiveness, such as preparing talking points before meetings.")
+    if scores_by_category.get("Entorno Profesional", 0) < 70:
+        recomendaciones.append("Desarrolla estrategias de asertividad profesional, como preparar puntos clave antes de reuniones.")
     
-    if scores_by_category.get("Personal Boundaries", 0) < 70:
-        recommendations.append("Practice setting and maintaining clear personal boundaries in your relationships.")
+    if scores_by_category.get("Límites Personales", 0) < 70:
+        recomendaciones.append("Practica establecer y mantener límites personales claros en tus relaciones.")
     
-    if not recommendations:
-        recommendations.append("Continue maintaining your strong assertiveness skills while staying mindful of others' perspectives.")
+    if not recomendaciones:
+        recomendaciones.append("Continúa manteniendo tus sólidas habilidades de asertividad, sin perder de vista la empatía hacia los demás.")
     
-    return recommendations
+    return recomendaciones
 
 def get_answer_analysis(score):
     if score == 3:
-        return "Excellent assertive response"
+        return "Respuesta asertiva excelente"
     elif score == 2:
-        return "Good balance of assertiveness"
+        return "Buen equilibrio de asertividad"
     elif score == 1:
-        return "Could be more assertive"
+        return "Podrías ser más asertivo/a"
     else:
-        return "Consider a more assertive approach"
+        return "Considera un enfoque más asertivo"
 
 def get_conclusion(score):
     if score >= 90:
-        return """You demonstrate excellent assertiveness skills across various situations. You effectively balance 
-                standing up for yourself while respecting others. Your communication style is likely to foster healthy 
-                relationships and mutual respect."""
+        return ("Demuestras excelentes habilidades de asertividad en diversas situaciones. "
+                "Logras equilibrar el defender tus derechos con el respeto hacia los demás. "
+                "Tu estilo de comunicación probablemente fomente relaciones sanas y respeto mutuo.")
     elif score >= 75:
-        return """You show good assertiveness in most situations. You're generally able to express your needs and 
-                opinions effectively. There are some areas where you might enhance your assertiveness skills, but 
-                overall you maintain a healthy communication style."""
+        return ("Muestras buena asertividad en la mayoría de las situaciones. "
+                "Generalmente puedes expresar tus necesidades y opiniones de manera efectiva. "
+                "Hay áreas donde podrías potenciar tus habilidades, pero en general mantienes una comunicación saludable.")
     elif score >= 50:
-        return """You display moderate assertiveness with room for improvement. While you show assertive behavior in 
-                some situations, there are areas where you might benefit from being more direct and confident in 
-                expressing your needs and opinions."""
+        return ("Tienes un nivel moderado de asertividad con margen de mejora. "
+                "Si bien muestras conductas asertivas en algunas situaciones, podrías beneficiarte de ser más directo/a y seguro/a al expresar tus necesidades y opiniones.")
     else:
-        return """Your responses indicate that you often take a passive or aggressive approach rather than an 
-                assertive one. Developing assertiveness skills could help you better express your needs while 
-                maintaining respect for others. Consider focusing on clear, direct communication and boundary-setting."""
+        return ("Tus respuestas indican que a menudo adoptas un enfoque pasivo o agresivo en lugar de asertivo. "
+                "Desarrollar habilidades de asertividad podría ayudarte a expresar mejor tus necesidades manteniendo el respeto por los demás. "
+                "Enfócate en una comunicación clara, directa y en el establecimiento de límites.")
 
+# SUGERENCIA: Para proyectos grandes, separar modelos, rutas y configuración en módulos distintos.
+
+# Configuración secreta FIJA para evitar invalidar sesiones en cada reinicio
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')  # Cambia esto en producción
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -96,17 +98,17 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(120), nullable=False)  # Renombrado para claridad
     is_admin = db.Column(db.Boolean, default=False)
     assessments = db.relationship('Assessment', backref='creator', lazy=True)
     responses = db.relationship('Response', backref='user', lazy=True)
     assessment_responses = db.relationship('AssessmentResponse', backref='user', lazy=True)
 
     def set_password(self, password):
-        self.password = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password, password)
+        return check_password_hash(self.password_hash, password)
 
 class Assessment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -183,16 +185,17 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
+        # Validación básica
+        if not username or not password:
+            flash('Username and password are required')
+            return redirect(url_for('register'))
         if User.query.filter_by(username=username).first():
             flash('Username already exists')
             return redirect(url_for('register'))
-        
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        
         login_user(user)
         return redirect(url_for('dashboard'))
     return render_template('register.html')
@@ -236,41 +239,48 @@ def dashboard():
 @login_required
 def create_assessment():
     if request.method == 'POST':
+        print(request.form)
         title = request.form.get('title')
         description = request.form.get('description')
-        
-        assessment = Assessment(
-            title=title,
-            description=description,
-            creator_id=current_user.id
-        )
-        db.session.add(assessment)
-        db.session.flush()  # Get the assessment ID
-        
-        # Process questions
-        question_contents = request.form.getlist('questions[][content]')
-        question_types = request.form.getlist('questions[][type]')
-        
-        for i in range(len(question_contents)):
-            options = None
-            if question_types[i] == 'multiple_choice':
-                # Get all options for this question
-                options_key = f'questions[{i}][options][]'
-                options = request.form.getlist(options_key)
-                options = json.dumps(options)  # Convert to JSON string for storage
-            
-            question = Question(
-                content=question_contents[i],
-                question_type=question_types[i],
-                options=options,
-                assessment_id=assessment.id
+        if not title:
+            flash('Title is required')
+            return redirect(url_for('create_assessment'))
+        try:
+            assessment = Assessment(
+                title=title,
+                description=description,
+                creator_id=current_user.id
             )
-            db.session.add(question)
-        
-        db.session.commit()
-        flash('Assessment created successfully!')
-        return redirect(url_for('view_assessment', assessment_id=assessment.id))
-    
+            db.session.add(assessment)
+            db.session.flush()  # Get the assessment ID
+
+            # Process questions (nuevo método)
+            i = 0
+            while True:
+                content = request.form.get(f'questions[{i}][content]')
+                qtype = request.form.get(f'questions[{i}][type]')
+                if not content:
+                    break
+                options = None
+                if qtype == 'multiple_choice':
+                    options = request.form.getlist(f'questions[{i}][options][]')
+                    options = json.dumps(options)
+                question = Question(
+                    content=content,
+                    question_type=qtype,
+                    options=options,
+                    assessment_id=assessment.id
+                )
+                db.session.add(question)
+                i += 1
+
+            db.session.commit()
+            flash('Assessment created successfully!')
+            return redirect(url_for('view_assessment', assessment_id=assessment.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating assessment: {str(e)}')
+            return redirect(url_for('create_assessment'))
     return render_template('create_assessment.html')
 
 @app.route('/assessment/<int:assessment_id>')
@@ -285,9 +295,17 @@ def view_assessment(assessment_id):
         completed=False
     ).order_by(AssessmentResponse.started_at.desc()).first()
     
-    return render_template('view_assessment_new.html', 
-                         assessment=assessment,
-                         saved_responses=in_progress_response.responses if in_progress_response else None)
+    # Ensure questions are ordered by id (or another field if needed)
+    assessment.questions = sorted(assessment.questions, key=lambda q: q.id)
+    
+    # Pass saved_responses as a dict or None
+    saved_responses = in_progress_response.responses if in_progress_response else None
+
+    return render_template(
+        'view_assessment_new.html', 
+        assessment=assessment,
+        saved_responses=saved_responses
+    )
 
 @app.route('/assessment/<int:assessment_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -296,7 +314,46 @@ def edit_assessment(assessment_id):
     if assessment.creator_id != current_user.id and not current_user.is_admin:
         flash('You do not have permission to edit this assessment')
         return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        try:
+            assessment.title = request.form.get('title')
+            assessment.description = request.form.get('description')
+
+            # Elimina preguntas existentes
+            for q in assessment.questions:
+                db.session.delete(q)
+
+            db.session.flush()
+
+            i = 0
+            while True:
+                content = request.form.get(f'questions[{i}][content]')
+                qtype = request.form.get(f'questions[{i}][type]')
+                if not content:
+                    break
+                options = None
+                if qtype == 'multiple_choice':
+                    opts = request.form.getlist(f'questions[{i}][options][]')
+                    options = json.dumps(opts)
+                question = Question(
+                    content=content,
+                    question_type=qtype,
+                    options=options,
+                    assessment_id=assessment.id
+                )
+                db.session.add(question)
+                i += 1
+
+            db.session.commit()
+            flash('Assessment updated successfully!')
+            return redirect(url_for('view_assessment', assessment_id=assessment.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating assessment: {str(e)}')
+
     return render_template('edit_assessment.html', assessment=assessment)
+
 
 @app.route('/assessment/<int:assessment_id>/submit', methods=['POST'])
 @login_required
@@ -397,33 +454,38 @@ def view_results_list():
     selected_participant = request.args.get('participant', 'all')
     
     # Get all unique participants for the filter dropdown
-    participants = db.session.query(AssessmentResponse.participant_name)\
-        .filter_by(user_id=current_user.id)\
-        .distinct()\
-        .all()
+    if current_user.is_admin:
+        participants = db.session.query(AssessmentResponse.participant_name)\
+            .distinct()\
+            .all()
+        # Base query for completed responses (all users)
+        completed_query = AssessmentResponse.query.filter_by(completed=True)
+        in_progress_query = AssessmentResponse.query.filter_by(completed=False)
+    else:
+        participants = db.session.query(AssessmentResponse.participant_name)\
+            .filter_by(user_id=current_user.id)\
+            .distinct()\
+            .all()
+        # Base query for completed responses (current user only)
+        completed_query = AssessmentResponse.query.filter_by(
+            user_id=current_user.id,
+            completed=True
+        )
+        in_progress_query = AssessmentResponse.query.filter_by(
+            user_id=current_user.id,
+            completed=False
+        )
     participants = [p[0] for p in participants]  # Convert from tuples to list
-    
-    # Base query for completed responses
-    completed_query = AssessmentResponse.query.filter_by(
-        user_id=current_user.id,
-        completed=True
-    )
-    
-    # Base query for in-progress responses
-    in_progress_query = AssessmentResponse.query.filter_by(
-        user_id=current_user.id,
-        completed=False
-    )
-    
+
     # Apply participant filter if one is selected
     if selected_participant != 'all':
         completed_query = completed_query.filter_by(participant_name=selected_participant)
         in_progress_query = in_progress_query.filter_by(participant_name=selected_participant)
-    
+
     # Get filtered results
     completed_responses = completed_query.order_by(AssessmentResponse.completed_at.desc()).all()
     in_progress_responses = in_progress_query.order_by(AssessmentResponse.started_at.desc()).all()
-    
+
     return render_template('results_list_new.html', 
                          completed_responses=completed_responses,
                          in_progress_responses=in_progress_responses,
@@ -479,6 +541,7 @@ def logout():
 
 def init_db():
     with app.app_context():
+        # SUGERENCIA: Usa Flask-Migrate para migraciones en vez de create_all() en producción
         db.create_all()
         
         # Create admin user if it doesn't exist
@@ -493,64 +556,64 @@ def init_db():
         assertiveness = Assessment.query.filter_by(title='Assertiveness Assessment').first()
         if not assertiveness:
             assertiveness = Assessment(
-                title='Assertiveness Assessment',
-                description='Evaluate your assertiveness skills in various situations. This assessment will help you understand your communication style and provide recommendations for improvement.',
+                title='Evaluación de Asertividad',
+                description='Evalúa tus habilidades de asertividad en diversas situaciones. Esta evaluación te ayudará a comprender tu estilo de comunicación y te brindará recomendaciones para mejorar.',
                 creator_id=admin.id
             )
             db.session.add(assertiveness)
             db.session.flush()  # Get the assessment ID
 
-            # Add questions
+            # Add questions (translated to Spanish)
             questions = [
                 {
-                    'content': 'When someone criticizes your work unfairly, how do you typically respond?',
+                    'content': 'Cuando alguien critica tu trabajo de manera injusta, ¿cómo sueles responder?',
                     'type': 'multiple_choice',
-                    'options': ['I remain silent to avoid conflict', 'I defend myself calmly with facts', 'I become angry and defensive', 'I try to change the subject']
+                    'options': ['Permanezco en silencio para evitar el conflicto', 'Me defiendo con calma y hechos', 'Me enojo y me pongo a la defensiva', 'Intento cambiar de tema']
                 },
                 {
-                    'content': 'If a friend repeatedly borrows money without repaying, would you address this issue?',
+                    'content': 'Si un amigo te pide dinero repetidamente y no lo devuelve, ¿abordarías este tema?',
                     'type': 'multiple_choice',
-                    'options': ['Yes, I would have an honest conversation about it', 'No, I would avoid mentioning it', 'I would stop lending but not discuss it', 'I would make excuses to not lend anymore']
+                    'options': ['Sí, tendría una conversación honesta al respecto', 'No, evitaría mencionarlo', 'Dejaría de prestar pero no lo hablaría', 'Pondría excusas para no prestar más']
                 },
                 {
-                    'content': 'How often do you express your opinion in group discussions?',
+                    'content': '¿Con qué frecuencia expresas tu opinión en discusiones grupales?',
                     'type': 'multiple_choice',
-                    'options': ['Always - I speak up regardless of others\' opinions', 'Often - When I feel strongly about the topic', 'Sometimes - Only when I feel very confident', 'Rarely - I usually agree with the majority']
+                    'options': ['Siempre - Hablo sin importar la opinión de los demás', 'A menudo - Cuando el tema me importa mucho', 'A veces - Solo cuando me siento muy seguro', 'Rara vez - Suelo estar de acuerdo con la mayoría']
                 },
                 {
-                    'content': 'When someone cuts in line in front of you, what do you typically do?',
+                    'content': 'Cuando alguien se cuela delante de ti en una fila, ¿qué sueles hacer?',
                     'type': 'multiple_choice',
-                    'options': ['Politely point out that there is a line', 'Say nothing but feel frustrated', 'Confront them aggressively', 'Let them cut and avoid confrontation']
+                    'options': ['Señalo educadamente que hay una fila', 'No digo nada pero me frustro', 'Los confronto agresivamente', 'Dejo que se cuelen y evito el conflicto']
                 },
                 {
-                    'content': 'How do you handle requests that you don\'t want to fulfill?',
+                    'content': '¿Cómo manejas las solicitudes que no quieres cumplir?',
                     'type': 'multiple_choice',
-                    'options': ['Say no clearly and directly', 'Make up excuses', 'Say yes even though I don\'t want to', 'Avoid the person or situation']
+                    'options': ['Digo que no de forma clara y directa', 'Pongo excusas', 'Digo que sí aunque no quiera', 'Evito a la persona o la situación']
                 },
                 {
-                    'content': 'If your meal at a restaurant isn\'t prepared as requested, what would you do?',
+                    'content': 'Si tu comida en un restaurante no está preparada como la pediste, ¿qué harías?',
                     'type': 'multiple_choice',
-                    'options': ['Raise concerns politely with the server', 'Say nothing but leave a poor tip', 'Complain loudly and demand to see a manager', 'Never return to the restaurant']
+                    'options': ['Expreso mis inquietudes educadamente al camarero', 'No digo nada pero dejo poca propina', 'Me quejo en voz alta y exijo ver al gerente', 'Nunca vuelvo al restaurante']
                 },
                 {
-                    'content': 'How do you typically handle compliments?',
+                    'content': '¿Cómo sueles reaccionar ante los cumplidos?',
                     'type': 'multiple_choice',
-                    'options': ['Accept them graciously', 'Deflect or minimize them', 'Feel very uncomfortable', 'Reject them outright']
+                    'options': ['Acepto los cumplidos con gratitud', 'Los minimizo o desvío', 'Me siento muy incómodo', 'Los rechazo completamente']
                 },
                 {
-                    'content': 'During a team meeting, how do you respond when you disagree with a proposed idea?',
+                    'content': 'Durante una reunión de equipo, ¿cómo respondes cuando no estás de acuerdo con una idea propuesta?',
                     'type': 'multiple_choice',
-                    'options': ['Express disagreement respectfully with alternatives', 'Stay silent and go along with it', 'Argue strongly against it', 'Agree in the meeting but complain to colleagues later']
+                    'options': ['Expreso mi desacuerdo respetuosamente y propongo alternativas', 'Me quedo callado y acepto', 'Discuto fuertemente en contra', 'Estoy de acuerdo en la reunión pero me quejo después']
                 },
                 {
-                    'content': 'If a colleague\'s behavior is bothering you, what would you do?',
+                    'content': 'Si el comportamiento de un colega te molesta, ¿qué harías?',
                     'type': 'multiple_choice',
-                    'options': ['Discuss it directly with them', 'Drop subtle hints about it', 'Get visibly angry and confront them', 'Say nothing but feel resentful']
+                    'options': ['Lo hablo directamente con la persona', 'Doy indirectas sutiles', 'Me enojo visiblemente y confronto', 'No digo nada pero me resiento']
                 },
                 {
-                    'content': 'When you achieve something significant at work, how do you handle it?',
+                    'content': 'Cuando logras algo importante en el trabajo, ¿cómo lo manejas?',
                     'type': 'multiple_choice',
-                    'options': ['Share it confidently when appropriate', 'Wait for others to notice', 'Don\'t mention it at all', 'Constantly talk about it']
+                    'options': ['Lo comparto con confianza cuando es apropiado', 'Espero que otros lo noten', 'No lo menciono en absoluto', 'Hablo de ello constantemente']
                 }
             ]
 
@@ -564,8 +627,8 @@ def init_db():
                 db.session.add(question)
 
             db.session.commit()
-            print("Assertiveness assessment created successfully!")
+            print("¡Evaluación de asertividad creada exitosamente!")
 
 if __name__ == '__main__':
-    init_db()  # Initialize database before running the app
+    init_db()  # Inicializa la base de datos antes de correr la app
     app.run(debug=True)

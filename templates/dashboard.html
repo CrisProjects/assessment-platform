@@ -52,13 +52,13 @@
                     <div class="mb-3">
                         <h6>Average Score</h6>
                         <div class="progress" style="height: 25px;">
-                            {% set avg_score = assessment_stats[assessment.id].average_score|round|int %}
-                            <div class="progress-bar bg-info" role="progressbar" 
-                                 style="width: {{ avg_score }}%;" 
-                                 aria-valuenow="{{ avg_score }}" 
-                                 aria-valuemin="0" 
+                            {% set avg_score = (assessment_stats[assessment.id].average_score|default(0))|round|int %}
+                            <div class="progress-bar bg-info" role="progressbar"
+                                 style="width: {{ assessment_stats[assessment.id].average_score|default(0)|float }}%"
+                                 aria-valuenow="{{ avg_score }}"
+                                 aria-valuemin="0"
                                  aria-valuemax="100">
-                                {{ "%.1f"|format(assessment_stats[assessment.id].average_score) }}%
+                                {{ "%.1f"|format(assessment_stats[assessment.id].average_score|default(0)) }}%
                             </div>
                         </div>
                     </div>

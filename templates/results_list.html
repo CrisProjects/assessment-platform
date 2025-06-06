@@ -20,8 +20,24 @@
                         {% for response in responses %}
                         <tr>
                             <td>{{ response.assessment.title }}</td>
-                            <td>{{ response.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>Completed</td>
+                            <td>
+                                {% if response.submitted_at %}
+                                    {{ response.submitted_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% elif response.completed_at %}
+                                    {{ response.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% elif response.started_at %}
+                                    {{ response.started_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if response.completed or response.submitted_at or response.completed_at %}
+                                    Completed
+                                {% else %}
+                                    In Progress
+                                {% endif %}
+                            </td>
                             <td>
                                 <a href="{{ url_for('view_results', assessment_id=response.assessment_id, response_id=response.id) }}" 
                                    class="btn btn-primary btn-sm">View Results</a>

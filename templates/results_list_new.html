@@ -101,15 +101,22 @@
 </div>
 
 <script>
-document.getElementById('participant-filter').addEventListener('change', function() {
-    const participant = this.value;
-    const url = new URL(window.location);
-    if (participant === 'all') {
-        url.searchParams.delete('participant');
-    } else {
-        url.searchParams.set('participant', participant);
+document.addEventListener('DOMContentLoaded', function() {
+    const filter = document.getElementById('participant-filter');
+    if (filter) {
+        filter.addEventListener('change', function() {
+            const participant = this.value;
+            const url = new URL(window.location);
+            if (participant === 'all') {
+                url.searchParams.delete('participant');
+            } else {
+                url.searchParams.set('participant', participant);
+            }
+            // Remove empty query string if no params left
+            let finalUrl = url.pathname + url.search;
+            window.location.href = finalUrl;
+        });
     }
-    window.location.href = url.toString();
 });
 </script>
 {% endblock %}
