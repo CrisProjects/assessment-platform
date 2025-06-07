@@ -1,7 +1,2 @@
-from flask import Flask
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
-
-from src import routes
+# Este archivo ya no debe crear una app Flask. Toda la lógica está en backend/app.py
+# Si necesitas importar rutas auxiliares, hazlo desde app.py
