@@ -7,8 +7,14 @@ import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+# Configuración secreta FIJA para evitar invalidar sesiones en cada reinicio
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static")
+)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')  # Cambia esto en producción
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -152,7 +158,7 @@ def init_db():
             db.session.commit()
             print("¡Evaluación de asertividad creada exitosamente!")
 
-# Elimina la inicialización automática de la base de datos y el arranque del servidor en producción
-# if __name__ == '__main__':
-#     init_db()  # Inicializa la base de datos antes de correr la app
-#     app.run(debug=True)
+# El bloque siguiente solo debe usarse en desarrollo local, no en producción/Render
+if __name__ == '__main__':
+    init_db()  # Inicializa la base de datos antes de correr la app
+    app.run(debug=True)
