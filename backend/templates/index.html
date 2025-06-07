@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1>Welcome to Assessment Platform</h1>
+    <p class="lead">Create, manage, and take assessments with ease</p>
+    
+    {% if current_user.is_authenticated %}
+        <div class="mt-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    {% else %}
+        <div class="mt-4">
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Login to Start</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Create Assessments</h5>
+                <p class="card-text">Design custom assessments with multiple question types</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Take Assessments</h5>
+                <p class="card-text">Complete assessments and submit your responses</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">View Results</h5>
+                <p class="card-text">Track and analyze assessment results</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
