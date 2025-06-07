@@ -152,4 +152,7 @@ def init_db():
             db.session.commit()
             print("¡Evaluación de asertividad creada exitosamente!")
 
-init_db()  # Inicializa la base de datos siempre que se importe el módulo
+# Elimina la inicialización automática de la base de datos y el arranque del servidor en producción
+# if __name__ == '__main__':
+#     init_db()  # Inicializa la base de datos antes de correr la app
+#     app.run(debug=True)
