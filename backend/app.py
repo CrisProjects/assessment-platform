@@ -158,6 +158,10 @@ def init_db():
             db.session.commit()
             print("¡Evaluación de asertividad creada exitosamente!")
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 # El bloque siguiente solo debe usarse en desarrollo local, no en producción/Render
 if __name__ == '__main__':
     init_db()  # Inicializa la base de datos antes de correr la app
