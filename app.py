@@ -1,14 +1,15 @@
-from flask import Flask, render_template
+#!/usr/bin/env python3
+"""
+Punto de entrada principal para la aplicación de evaluación de asertividad
+Importa y ejecuta la aplicación completa desde app_complete.py
+"""
 
-app = Flask(__name__)
+# Importar la aplicación completa
+from app_complete import app
 
-# ¡ATENCIÓN!
-# Este archivo solo existe para evitar que Render use el app.py de la raíz.
-# El backend Flask real está en /backend/app.py
-# No ejecutar ni modificar este archivo para producción.
+# Configuración adicional si es necesaria
+if __name__ == '__main__':
+    # Solo para desarrollo local
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-raise RuntimeError("Este archivo app.py es solo un placeholder. Usa /backend/app.py para el backend Flask.")
+# Para producción, WSGI importará 'app' directamente
