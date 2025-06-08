@@ -16,8 +16,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, 
      origins=[
          'http://localhost:3000',
-         'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',  # URL más reciente
-         'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',  # URL anterior funcional
+         'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',  # URL más nueva (con API URL corregido)
+         'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',  # URL anterior
+         'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',  # URL funcional
          'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'   # URL backup
      ], 
      supports_credentials=True,
@@ -211,6 +212,7 @@ def handle_preflight():
         # Lista de origins permitidos
         allowed_origins = [
             'http://localhost:3000',
+            'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',  # URL más nueva (con API URL corregido)
             'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',
             'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',
             'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'
