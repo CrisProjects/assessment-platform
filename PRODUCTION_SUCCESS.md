@@ -8,9 +8,10 @@ The Spanish Assessment Platform is now **FULLY OPERATIONAL** in production!
 - **Main Application**: https://assessment-platform-1nuo.onrender.com ✅ **FUNCIONAL**
 - **Backend API**: https://assessment-platform-1nuo.onrender.com/api/ ✅ **FUNCIONAL**
 
-### 🚨 Estado de Vercel
-- **Vercel Frontend**: ⚠️ Problema de autenticación SSO  
-- **Solución**: Usar la aplicación completa en Render (recomendado)
+### 🚨 Estado de Vercel (ACTUALIZADO - 8 Junio 2025)
+- **Vercel Frontend**: ❌ **Problema persistente de SSO + Build** 
+- **Solución**: ✅ **Usar aplicación completa en Render (100% RECOMENDADO)**
+- **Detalles**: Vercel requiere configuración de equipo/organización para acceso público
 
 ### 🔐 Test Credentials
 - **Username**: `admin`

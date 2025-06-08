@@ -1,15 +1,17 @@
 # Plataforma de Evaluación de Asertividad
 
-## ✅ Estado del Despliegue
+## ✅ Estado del Despliegue (ACTUALIZADO)
 
-- **Frontend**: Vercel (HTML/CSS/JS puro)
-- **Backend**: Render (Flask API)
-- **Estado**: ✅ Totalmente funcional
+- **Frontend**: ❌ Vercel (Problemas de SSO + Build persistentes)
+- **Backend**: ✅ Render (Flask API - 100% funcional)
+- **SOLUCIÓN PRINCIPAL**: ✅ **Aplicación completa en Render**
+- **Estado**: ✅ **Totalmente funcional y recomendado**
 
 ## 🔗 URLs de Producción
 
-- **Aplicación**: ⚠️ Configurando acceso público en Vercel
-- **API Backend**: https://assessment-platform-1nuo.onrender.com/api/
+- **✅ APLICACIÓN PRINCIPAL**: https://assessment-platform-1nuo.onrender.com
+- **✅ API Backend**: https://assessment-platform-1nuo.onrender.com/api/
+- **❌ Vercel Frontend**: Bloqueado por problemas de configuración
 
 ## 🔐 Credenciales de Prueba
 
