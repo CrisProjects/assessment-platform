@@ -77,23 +77,39 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
+    print(f"[RENDER DEBUG] Login route called, method: {request.method}")
+    try:
+        if request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            print(f"[RENDER DEBUG] Login attempt for username: {username}")
+            
+            user = User.query.filter_by(username=username).first()
+            
+            if user and user.check_password(password):
+                login_user(user)
+                print(f"[RENDER DEBUG] Login successful for user: {username}")
+                return redirect(url_for('dashboard'))
+            else:
+                print(f"[RENDER DEBUG] Login failed for user: {username}")
+                flash('Usuario o contraseña incorrectos')
         
-        if user and user.check_password(password):
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Usuario o contraseña incorrectos')
-    
-    return render_template('login.html')
+        return render_template('login.html')
+    except Exception as e:
+        print(f"[RENDER ERROR] Error in login route: {e}")
+        return f"Error en login: {e}", 500
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    try:
+        print(f"[RENDER DEBUG] Dashboard accessed by user: {current_user.username}")
+        assessments = Assessment.query.all()
+        print(f"[RENDER DEBUG] Found {len(assessments)} assessments")
+        return render_template('dashboard.html', assessments=assessments)
+    except Exception as e:
+        print(f"[RENDER ERROR] Error in dashboard route: {e}")
+        return f"Error en dashboard: {e}", 500
 
 @app.route('/logout')
 @login_required

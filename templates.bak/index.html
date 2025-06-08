@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1>Bienvenido a la Plataforma de Evaluación</h1>
+    <p class="lead">Crea, gestiona y realiza evaluaciones fácilmente</p>
+    
+    {% if current_user.is_authenticated %}
+        <div class="mt-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Ir al Panel</a>
+        </div>
+    {% else %}
+        <div class="mt-4">
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar sesión</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Crear Evaluaciones</h5>
+                <p class="card-text">Diseña evaluaciones personalizadas con distintos tipos de preguntas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Realizar Evaluaciones</h5>
+                <p class="card-text">Completa evaluaciones y envía tus respuestas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Ver Resultados</h5>
+                <p class="card-text">Consulta y analiza los resultados de tus evaluaciones</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -17,7 +17,8 @@ app = Flask(
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')  # Cambia esto en producción
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 db = SQLAlchemy(app)
-login_manager = LoginManager(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 class User(UserMixin, db.Model):
@@ -34,6 +35,16 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+# --- user_loader para Flask-Login, debe estar aquí ---
+@login_manager.user_loader
+def load_user(user_id):
+    print(f"[Render Debug] user_loader called with user_id: {user_id}")
+    try:
+        return User.query.get(int(user_id))
+    except Exception as e:
+        print(f"[Render Debug] user_loader exception: {e}")
+        return None
 
 class Assessment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -161,6 +172,9 @@ def init_db():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# Configurar login_manager después de que todo esté definido
+print("[Debug] Configurando login_manager después de todas las definiciones...")
 
 # El bloque siguiente solo debe usarse en desarrollo local, no en producción/Render
 if __name__ == '__main__':
