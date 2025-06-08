@@ -117,7 +117,7 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-print("[RENDER DEBUG] Archivo app_simple.py cargado completamente")
+print("[RENDER DEBUG] Archivo app_simple.py cargado completamente - v2")
 
 # Inicializar la base de datos cuando se importa el módulo
 if __name__ != '__main__':
