@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_cors import CORS
 from datetime import datetime
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +11,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-fixed-2024')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configurar CORS para permitir solicitudes desde Vercel
+CORS(app, origins=[
+    'http://localhost:3000',
+    'https://assessment-platform-*.vercel.app',
+    'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app'
+], supports_credentials=True)
 
 # Inicialización de extensiones
 db = SQLAlchemy(app)
