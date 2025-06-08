@@ -46,11 +46,11 @@ export default function Results() {
           });
           setParticipants(Array.from(participantSet));
         } else {
-          setError('Invalid results format received from server');
+          setError('Formato de resultados inválido recibido del servidor');
         }
       } catch (err) {
         console.error('Error fetching results:', err);
-        setError(err.message || 'Failed to load results');
+        setError(err.message || 'Error al cargar los resultados');
       } finally {
         setLoading(false);
       }
@@ -86,18 +86,18 @@ export default function Results() {
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Assertiveness Assessment Results
+          Resultados de Evaluación de Asertividad
         </Typography>
 
         {participants.length > 0 && (
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Filter by Participant</InputLabel>
+            <InputLabel>Filtrar por Participante</InputLabel>
             <Select
               value={selectedParticipant}
               onChange={(e) => setSelectedParticipant(e.target.value)}
-              label="Filter by Participant"
+              label="Filtrar por Participante"
             >
-              <MenuItem value="all">All Participants</MenuItem>
+              <MenuItem value="all">Todos los Participantes</MenuItem>
               {participants.map((participant) => (
                 <MenuItem key={participant} value={participant}>
                   {participant}
@@ -111,7 +111,7 @@ export default function Results() {
       {results.completed.length > 0 && (
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Completed Assessments ({results.completed.length})
+            Evaluaciones Completadas ({results.completed.length})
           </Typography>
           <Grid container spacing={3}>
             {results.completed.map((result) => (
@@ -124,7 +124,7 @@ export default function Results() {
                           {result.participant_name}
                         </Typography>
                         <Typography color="textSecondary" gutterBottom>
-                          Completed: {new Date(result.completed_at).toLocaleString()}
+                          Completado: {new Date(result.completed_at).toLocaleString()}
                         </Typography>
                         <Box sx={{ mt: 2 }}>
                           <Chip
@@ -146,18 +146,18 @@ export default function Results() {
                       </Grid>
                       <Grid item xs={12} md={8}>
                         <Typography variant="h6" gutterBottom>
-                          Feedback
+                          Retroalimentación
                         </Typography>
                         <Typography>
                           {result.feedback}
                         </Typography>
                         <Box sx={{ mt: 2 }}>
                           <Typography variant="subtitle2" color="textSecondary">
-                            Response Summary:
+                            Resumen de Respuestas:
                           </Typography>
                           {Object.entries(result.responses).map(([questionId, answerIndex]) => (
                             <Typography key={questionId} variant="body2" color="textSecondary">
-                              Question {questionId}: Option {parseInt(answerIndex) + 1}
+                              Pregunta {questionId}: Opción {parseInt(answerIndex) + 1}
                             </Typography>
                           ))}
                         </Box>
@@ -174,7 +174,7 @@ export default function Results() {
       {results.in_progress.length > 0 && (
         <Box>
           <Typography variant="h5" gutterBottom>
-            In Progress ({results.in_progress.length})
+            En Progreso ({results.in_progress.length})
           </Typography>
           <Grid container spacing={3}>
             {results.in_progress.map((result) => (
@@ -185,13 +185,13 @@ export default function Results() {
                       {result.assessment_title}
                     </Typography>
                     <Typography color="textSecondary">
-                      Participant: {result.participant_name}
+                      Participante: {result.participant_name}
                     </Typography>
                     <Typography color="textSecondary">
-                      Started: {new Date(result.started_at).toLocaleString()}
+                      Iniciado: {new Date(result.started_at).toLocaleString()}
                     </Typography>
                     <Typography>
-                      Progress: {Math.round((Object.keys(result.responses || {}).length / 5) * 100)}%
+                      Progreso: {Math.round((Object.keys(result.responses || {}).length / 5) * 100)}%
                     </Typography>
                   </CardContent>
                 </Card>
@@ -204,8 +204,8 @@ export default function Results() {
       {(!results.completed || results.completed.length === 0) && 
        (!results.in_progress || results.in_progress.length === 0) && (
         <Alert severity="info">
-          No results found
-          {selectedParticipant !== 'all' && ` for ${selectedParticipant}`}.
+          No se encontraron resultados
+          {selectedParticipant !== 'all' && ` para ${selectedParticipant}`}.
         </Alert>
       )}
     </Container>

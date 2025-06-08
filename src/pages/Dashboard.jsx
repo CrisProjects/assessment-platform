@@ -45,7 +45,7 @@ export default function Dashboard() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Available Assessments
+        Evaluaciones Disponibles
       </Typography>
 
       {error && (
@@ -66,7 +66,7 @@ export default function Dashboard() {
                   {assessment.description}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Questions: {assessment.questions.length}
+                  Preguntas: {assessment.questions.length}
                 </Typography>
               </CardContent>
               <CardActions>
@@ -77,7 +77,7 @@ export default function Dashboard() {
                   color="primary"
                   fullWidth
                 >
-                  Take Assessment
+                  Realizar Evaluación
                 </Button>
               </CardActions>
             </Card>
@@ -86,7 +86,7 @@ export default function Dashboard() {
       </Grid>
 
       {assessments.length === 0 && !error && (
-        <Alert severity="info">No assessments available at the moment.</Alert>
+        <Alert severity="info">No hay evaluaciones disponibles en este momento.</Alert>
       )}
     </Container>
   );

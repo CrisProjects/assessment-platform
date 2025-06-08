@@ -6,7 +6,7 @@ import requests
 import sys
 
 def test_login_flow():
-    base_url = "https://assessment-platform-l9k5.onrender.com"
+    base_url = "https://assessment-platform-1nuo.onrender.com"
     
     # Create a session to maintain cookies
     session = requests.Session()

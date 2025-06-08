@@ -37,10 +37,10 @@ export default function Assessment() {
         if (found) {
           setAssessment(found);
         } else {
-          setError('Assessment not found');
+          setError('Evaluación no encontrada');
         }
       } catch (err) {
-        setError(err.message || 'Failed to load assessment');
+        setError(err.message || 'Error al cargar la evaluación');
       } finally {
         setLoading(false);
       }
@@ -70,12 +70,12 @@ export default function Assessment() {
 
   const handleSubmit = async () => {
     if (!participantName.trim()) {
-      setError('Please enter your name');
+      setError('Por favor ingresa tu nombre');
       return;
     }
 
     if (Object.keys(responses).length !== assessment.questions.length) {
-      setError('Please answer all questions');
+      setError('Por favor responde todas las preguntas');
       return;
     }
 
@@ -88,7 +88,7 @@ export default function Assessment() {
       });
       navigate('/results');
     } catch (err) {
-      setError(err.message || 'Failed to submit assessment');
+      setError(err.message || 'Error al enviar la evaluación');
     } finally {
       setSaving(false);
     }
@@ -113,7 +113,7 @@ export default function Assessment() {
   if (!assessment) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Alert severity="error">Assessment not found</Alert>
+        <Alert severity="error">Evaluación no encontrada</Alert>
       </Container>
     );
   }
@@ -129,13 +129,13 @@ export default function Assessment() {
         
         <TextField
           fullWidth
-          label="Your Name"
+          label="Tu Nombre"
           value={participantName}
           onChange={(e) => setParticipantName(e.target.value)}
           margin="normal"
           required
           error={!participantName && Object.keys(responses).length > 0}
-          helperText={!participantName && Object.keys(responses).length > 0 ? 'Name is required' : ''}
+          helperText={!participantName && Object.keys(responses).length > 0 ? 'El nombre es requerido' : ''}
         />
 
         <Box sx={{ my: 4 }}>
@@ -150,7 +150,7 @@ export default function Assessment() {
 
         <Box sx={{ my: 4 }}>
           <Typography variant="h6" gutterBottom>
-            Question {currentQuestion + 1} of {assessment.questions.length}
+            Pregunta {currentQuestion + 1} de {assessment.questions.length}
           </Typography>
           <Typography variant="body1" gutterBottom>
             {currentQ.content}
@@ -177,7 +177,7 @@ export default function Assessment() {
             disabled={currentQuestion === 0}
             variant="outlined"
           >
-            Previous
+            Anterior
           </Button>
           
           {currentQuestion < assessment.questions.length - 1 ? (
@@ -186,7 +186,7 @@ export default function Assessment() {
               variant="contained"
               disabled={!responses[currentQuestion]}
             >
-              Next
+              Siguiente
             </Button>
           ) : (
             <Button
@@ -199,7 +199,7 @@ export default function Assessment() {
                 Object.keys(responses).length !== assessment.questions.length
               }
             >
-              {saving ? <CircularProgress size={24} /> : 'Submit'}
+              {saving ? <CircularProgress size={24} /> : 'Enviar'}
             </Button>
           )}
         </Box>

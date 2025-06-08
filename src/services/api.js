@@ -1,21 +1,37 @@
 import axios from 'axios';
 
-// Cambia este valor por la URL de tu backend en Render, por ejemplo:
-// const API_URL = "https://tu-backend.onrender.com";
-// O usa la variable de entorno VITE_API_URL para mayor flexibilidad:
-const API_URL = import.meta.env.VITE_API_URL || "https://TU_BACKEND_RENDER_URL";
+// Backend desplegado en Render
+const API_URL = import.meta.env.VITE_API_URL || "https://assessment-platform-1nuo.onrender.com";
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Para mantener las cookies de sesión
 });
 
 export const login = async (username, password) => {
   try {
-    const response = await api.post('/api/login', { username, password });
-    return response.data;
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+    
+    const response = await api.post('/login', formData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    return { success: true, user: { username } };
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const logout = async () => {
+  try {
+    const response = await api.get('/logout');
+    return { success: true };
   } catch (error) {
     throw error.response?.data || error.message;
   }
@@ -24,7 +40,16 @@ export const login = async (username, password) => {
 export const getAssessments = async () => {
   try {
     const response = await api.get('/api/assessments');
-    return response.data.assessments;
+    return response.data.assessments || [];
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getDashboard = async () => {
+  try {
+    const response = await api.get('/dashboard');
+    return { success: true, data: response.data };
   } catch (error) {
     throw error.response?.data || error.message;
   }

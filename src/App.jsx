@@ -45,7 +45,7 @@ function App() {
                 color: 'inherit' 
               }}
             >
-              Assessment Platform
+              Plataforma de Evaluación de Asertividad
             </Typography>
             {user && (
               <>
@@ -55,7 +55,7 @@ function App() {
                   to="/dashboard"
                   sx={{ mx: 1 }}
                 >
-                  Dashboard
+                  Panel de Control
                 </Button>
                 <Button 
                   color="inherit" 
@@ -63,13 +63,13 @@ function App() {
                   to="/results"
                   sx={{ mx: 1 }}
                 >
-                  Results
+                  Resultados
                 </Button>
                 <Typography variant="body1" sx={{ mx: 2 }}>
-                  Welcome, {user.username}
+                  Bienvenido, {user.username}
                 </Typography>
                 <Button color="inherit" onClick={handleLogout}>
-                  Logout
+                  Cerrar Sesión
                 </Button>
               </>
             )}
