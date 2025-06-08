@@ -58,6 +58,7 @@ def init_db():
             admin_user = User(username='admin', is_admin=True)
             admin_user.set_password('admin123')
             db.session.add(admin_user)
+            db.session.commit()  # Commit para obtener el ID del usuario
             
             # Crear evaluación de asertividad en español
             assessment = Assessment(
