@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Página de Pruebas - Assessment Platform</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; border-left: 4px solid #28a745; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .info { background: #e3f2fd; border-left: 4px solid #2196f3; }
+        .error { background: #f8d7da; border-left: 4px solid #dc3545; }
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            overflow-x: auto;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success { background: #28a745; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-danger { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Diagnóstico de Credenciales</h1>
+        <p>Página de pruebas para identificar problemas de autenticación</p>
+    </div>
+
+    <div class="card">
+        <h2>📋 Estado Actual del Problema</h2>
+        
+        <div class="status error">
+            <strong>❌ Problema:</strong> Las credenciales admin/admin123 no funcionan en el frontend de Vercel
+        </div>
+        
+        <div class="status info">
+            <strong>📊 Lo que hemos verificado:</strong>
+            <ul>
+                <li>✅ Backend funciona correctamente (responde con login exitoso)</li>
+                <li>✅ Endpoint /api/login devuelve JSON correcto</li>
+                <li>✅ CORS está configurado para Vercel</li>
+                <li>✅ Variable de entorno VITE_API_URL corregida</li>
+                <li>✅ Frontend se conecta al backend correcto</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🌐 URLs Actuales</h2>
+        
+        <div class="status info">
+            <strong>Frontend (Vercel):</strong><br>
+            <a href="https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app" target="_blank" class="btn">
+                Ver Frontend Actual
+            </a>
+        </div>
+        
+        <div class="status info">
+            <strong>Página de Pruebas:</strong><br>
+            <a href="https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app/test" target="_blank" class="btn btn-warning">
+                🔧 Ejecutar Pruebas Sin Autenticación
+            </a>
+        </div>
+        
+        <div class="status info">
+            <strong>Backend (Render):</strong><br>
+            <code>https://assessment-platform-1nuo.onrender.com</code>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🧪 Pruebas Implementadas</h2>
+        
+        <div class="status warning">
+            <strong>Endpoints de Prueba Sin Autenticación:</strong>
+            <ul>
+                <li><code>/api/test/status</code> - Verificar que el backend responde</li>
+                <li><code>/api/test/login</code> - Login que siempre devuelve éxito</li>
+                <li><code>/api/test/dashboard</code> - Dashboard sin autenticación</li>
+            </ul>
+        </div>
+        
+        <div class="status success">
+            <strong>¿Qué determinarán estas pruebas?</strong>
+            <ul>
+                <li><strong>Si todas pasan:</strong> El problema está en la autenticación específicamente</li>
+                <li><strong>Si fallan:</strong> El problema está en la conectividad frontend-backend</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📝 Instrucciones</h2>
+        
+        <ol>
+            <li>
+                <strong>Ir a la página de pruebas:</strong><br>
+                <a href="https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app/test" target="_blank" class="btn btn-warning">
+                    🔧 Abrir Página de Pruebas
+                </a>
+            </li>
+            
+            <li>
+                <strong>Ejecutar "Ejecutar Todas las Pruebas"</strong> - Esto probará la conectividad sin autenticación
+            </li>
+            
+            <li>
+                <strong>Verificar resultados:</strong>
+                <ul>
+                    <li>Si todas las pruebas pasan ✅ → El problema está en la autenticación</li>
+                    <li>Si alguna prueba falla ❌ → El problema está en la conectividad</li>
+                </ul>
+            </li>
+            
+            <li>
+                <strong>Reportar resultados</strong> - Dime qué pruebas pasaron y cuáles fallaron
+            </li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2>🔍 Posibles Causas Identificadas</h2>
+        
+        <div class="status warning">
+            <strong>Hipótesis Principal:</strong> Problema en el manejo de cookies/sesiones entre dominios
+            <ul>
+                <li>Vercel (frontend) y Render (backend) están en dominios diferentes</li>
+                <li>Las cookies de sesión pueden no persistir correctamente</li>
+                <li>CORS puede estar bloqueando el intercambio de credenciales</li>
+            </ul>
+        </div>
+        
+        <div class="status info">
+            <strong>Otras posibilidades:</strong>
+            <ul>
+                <li>Problema con el manejo de respuestas JSON en el frontend</li>
+                <li>Error en el flujo de autenticación del React</li>
+                <li>Caché del navegador interfiriendo</li>
+                <li>Diferencias en el formato de las requests</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>⚡ Prueba Rápida Manual</h2>
+        
+        <div class="status info">
+            <strong>Puedes probar directamente el backend con curl:</strong>
+            
+            <div class="code">
+curl -X POST "https://assessment-platform-1nuo.onrender.com/api/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}'
+            </div>
+            
+            <p><strong>Resultado esperado:</strong></p>
+            <div class="code">
+{"message":"Login exitoso","success":true,"user":{"is_admin":true,"username":"admin"}}
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; margin-top: 40px; color: #666;">
+        <p>💡 Una vez que identifiquemos si el problema está en la autenticación o conectividad, podremos implementar la solución específica.</p>
+    </footer>
+</body>
+</html>

@@ -16,10 +16,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, 
      origins=[
          'http://localhost:3000',
-         'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',  # URL más nueva (con API URL corregido)
-         'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',  # URL anterior
-         'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',  # URL funcional
-         'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'   # URL backup
+         'https://assessment-platform-4h58ggw5n-cris-projects-92f3df55.vercel.app',  # URL limpia final
+         'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',  # URL anterior
+         'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',
+         'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app'
      ], 
      supports_credentials=True,
      allow_headers=['Content-Type', 'Authorization', 'Origin', 'Accept'],
@@ -212,10 +212,10 @@ def handle_preflight():
         # Lista de origins permitidos
         allowed_origins = [
             'http://localhost:3000',
-            'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',  # URL más nueva (con API URL corregido)
+            'https://assessment-platform-4h58ggw5n-cris-projects-92f3df55.vercel.app',  # URL limpia final
+            'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',  # URL anterior
             'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',
-            'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',
-            'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'
+            'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app'
         ]
         
         # Verificar si el origin está permitido
@@ -333,64 +333,6 @@ def api_results():
             'success': False,
             'error': str(e)
         }), 400
-
-# ENDPOINTS DE PRUEBA SIN AUTENTICACIÓN
-@app.route('/api/test/login', methods=['POST', 'OPTIONS'])
-def test_login_no_auth():
-    """Endpoint de prueba que simula login exitoso sin verificar credenciales"""
-    try:
-        data = request.get_json() if request.is_json else None
-        
-        if data:
-            username = data.get('username')
-            password = data.get('password')
-        else:
-            username = request.form.get('username')
-            password = request.form.get('password')
-        
-        # Simular login exitoso sin verificar credenciales
-        return jsonify({
-            'success': True,
-            'user': {
-                'username': username or 'test_user',
-                'is_admin': True
-            },
-            'message': 'Login de prueba exitoso (sin autenticación)',
-            'test_mode': True
-        })
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/test/dashboard', methods=['GET', 'OPTIONS'])
-def test_dashboard():
-    """Dashboard de prueba sin autenticación"""
-    return jsonify({
-        'success': True,
-        'message': 'Dashboard de prueba accesible',
-        'test_mode': True,
-        'assessments': [
-            {
-                'id': 1,
-                'title': 'Evaluación de Asertividad (Prueba)',
-                'description': 'Evaluación de prueba sin autenticación',
-                'questions': 20
-            }
-        ]
-    })
-
-@app.route('/api/test/status', methods=['GET', 'OPTIONS'])
-def test_status():
-    """Endpoint simple para verificar que el backend responde"""
-    return jsonify({
-        'status': 'ok',
-        'message': 'Backend funcionando correctamente',
-        'timestamp': datetime.utcnow().isoformat(),
-        'test_mode': True
-    })
 
 # Inicializar la base de datos
 if __name__ != '__main__':
