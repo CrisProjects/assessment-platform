@@ -11,14 +11,31 @@ def test_vercel_frontend():
     
     print("🧪 PRUEBA COMPLETA DE INTEGRACIÓN")
     print("=" * 50)
-    print("🌐 Frontend: https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app")
-    print("🔧 Backend:  https://assessment-platform-1nuo.onrender.com")
+    print("🌐 Frontend Vercel: https://assessment-platform-cris-projects-92f3df55.vercel.app")
+    print("🔧 Backend Render:  https://assessment-platform-1nuo.onrender.com")
+    print("✅ SOLUCIÓN PRINCIPAL: https://assessment-platform-1nuo.onrender.com")
     print()
     
-    # Test 1: Vercel Frontend
-    print("1️⃣ Probando frontend en Vercel...")
+    # Test Principal: Aplicación completa en Render
+    print("1️⃣ Probando aplicación principal en Render...")
     try:
-        response = requests.get("https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app", timeout=10)
+        response = requests.get("https://assessment-platform-1nuo.onrender.com", timeout=10)
+        if response.status_code == 200:
+            if "Evaluación de Asertividad" in response.text and "Iniciar Sesión" in response.text:
+                print("   ✅ Aplicación principal funciona correctamente")
+                print("   ✅ Frontend y backend integrados")
+            else:
+                print("   ❌ Aplicación no muestra el contenido esperado")
+        else:
+            print(f"   ❌ Aplicación error: {response.status_code}")
+    except Exception as e:
+        print(f"   ❌ Error probando aplicación: {e}")
+        return False
+    
+    # Test 2: Vercel Frontend (versión separada)
+    print("\n2️⃣ Probando frontend separado en Vercel...")
+    try:
+        response = requests.get("https://assessment-platform-cris-projects-92f3df55.vercel.app", timeout=10)
         if response.status_code == 200:
             if "Evaluación de Asertividad" in response.text:
                 print("   ✅ Frontend en Vercel carga correctamente")
@@ -60,7 +77,7 @@ def test_vercel_frontend():
         response = requests.options(
             "https://assessment-platform-1nuo.onrender.com/api/login",
             headers={
-                'Origin': 'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',
+                'Origin': 'https://assessment-platform-cris-projects-92f3df55.vercel.app',
                 'Access-Control-Request-Method': 'POST',
                 'Access-Control-Request-Headers': 'content-type'
             },
@@ -79,7 +96,7 @@ def test_vercel_frontend():
     print("\n" + "=" * 50)
     print("🎉 INTEGRACIÓN COMPLETA FUNCIONAL!")
     print("📱 Puedes usar la aplicación en:")
-    print("   https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app")
+    print("   https://assessment-platform-cris-projects-92f3df55.vercel.app")
     print("🔐 Credenciales: admin / admin123")
     print("=" * 50)
     
