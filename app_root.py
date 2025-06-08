@@ -192,6 +192,64 @@ def logout():
     return redirect(url_for('index'))
 
 # API Routes for React frontend
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    try:
+        data = request.get_json() if request.is_json else None
+        
+        # Support both JSON and form data
+        if data:
+            username = data.get('username')
+            password = data.get('password')
+        else:
+            username = request.form.get('username')
+            password = request.form.get('password')
+        
+        if not username or not password:
+            return jsonify({
+                'success': False, 
+                'error': 'Usuario y contraseña son requeridos'
+            }), 400
+        
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            return jsonify({
+                'success': True,
+                'user': {
+                    'username': user.username,
+                    'is_admin': user.is_admin
+                },
+                'message': 'Login exitoso'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario o contraseña incorrectos'
+            }), 401
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/logout', methods=['POST'])
+@login_required
+def api_logout():
+    try:
+        logout_user()
+        return jsonify({
+            'success': True,
+            'message': 'Logout exitoso'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/assessments')
 @login_required
 def api_assessments():
