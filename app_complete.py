@@ -116,6 +116,39 @@ def api_logout():
     logout_user()
     return jsonify({'success': True, 'message': 'Logout exitoso'})
 
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    """Endpoint para registro de nuevos usuarios"""
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'success': False, 'error': 'Usuario y contraseña son requeridos'}), 400
+    
+    # Verificar si el usuario ya existe
+    if User.query.filter_by(username=username).first():
+        return jsonify({'success': False, 'error': 'El usuario ya existe'}), 400
+    
+    # Crear nuevo usuario
+    user = User(username=username)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    
+    # Login automático después del registro
+    login_user(user)
+    
+    return jsonify({
+        'success': True,
+        'message': 'Usuario registrado exitosamente',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'is_admin': user.is_admin
+        }
+    })
+
 @app.route('/api/assessments', methods=['GET'])
 @login_required
 def api_get_assessments():
@@ -143,6 +176,28 @@ def api_get_assessments():
         })
     
     return jsonify({'assessments': assessments_data})
+
+@app.route('/api/questions', methods=['GET'])
+@login_required
+def api_get_questions():
+    """Endpoint para obtener todas las preguntas de la evaluación de asertividad"""
+    # Obtener la primera evaluación (evaluación de asertividad)
+    assessment = Assessment.query.first()
+    if not assessment:
+        return jsonify({'error': 'No se encontró la evaluación'}), 404
+    
+    questions = Question.query.filter_by(assessment_id=assessment.id).all()
+    questions_data = []
+    
+    for question in questions:
+        questions_data.append({
+            'id': question.id,
+            'content': question.content,
+            'question_type': question.question_type,
+            'options': question.options
+        })
+    
+    return jsonify({'questions': questions_data})
 
 @app.route('/api/save_assessment', methods=['POST'])
 @login_required
@@ -215,6 +270,30 @@ def api_save_assessment():
         'result_text': result_text,
         'total_questions': total_questions
     })
+
+@app.route('/api/submit', methods=['POST'])
+@login_required
+def api_submit_assessment():
+    """Alias para /api/save_assessment - endpoint para enviar respuestas de evaluación"""
+    return api_save_assessment()
+
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    """Endpoint de salud para verificar que el API está funcionando"""
+    try:
+        # Verificar conexión a base de datos
+        db.session.execute('SELECT 1')
+        return jsonify({
+            'status': 'healthy',
+            'message': 'API funcionando correctamente',
+            'database': 'connected'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'message': 'Error en la conexión a base de datos',
+            'error': str(e)
+        }), 500
 
 def init_database():
     """Inicializar la base de datos con datos de muestra"""
