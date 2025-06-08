@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
@@ -190,6 +190,56 @@ def dashboard():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+# API Routes for React frontend
+@app.route('/api/assessments')
+@login_required
+def api_assessments():
+    assessments = Assessment.query.all()
+    assessments_data = []
+    for assessment in assessments:
+        assessments_data.append({
+            'id': assessment.id,
+            'title': assessment.title,
+            'description': assessment.description,
+            'questions': 20,  # Default number of questions for assertiveness assessment
+            'created_at': assessment.created_at.isoformat() if assessment.created_at else None
+        })
+    return jsonify({'assessments': assessments_data})
+
+@app.route('/api/assessment/<int:assessment_id>/save', methods=['POST'])
+@login_required
+def api_save_assessment(assessment_id):
+    try:
+        data = request.get_json()
+        # For now, just return success - you can implement actual saving logic later
+        return jsonify({
+            'success': True,
+            'message': 'Progreso guardado exitosamente'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+@app.route('/api/results')
+@login_required
+def api_results():
+    try:
+        participant = request.args.get('participant', 'all')
+        # Return mock results for now - you can implement actual results logic later
+        results_data = {
+            'completed': [],
+            'in_progress': [],
+            'message': 'No hay resultados disponibles aún'
+        }
+        return jsonify(results_data)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
 
 # Inicializar la base de datos
 if __name__ != '__main__':
