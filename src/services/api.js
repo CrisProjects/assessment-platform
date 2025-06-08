@@ -21,9 +21,23 @@ export const login = async (username, password) => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
+      maxRedirects: 0, // No seguir redirects automáticamente
+      validateStatus: function (status) {
+        return status >= 200 && status < 400; // Aceptar redirects como éxito
+      }
     });
+    
+    // Si obtenemos un 302 redirect al dashboard, el login fue exitoso
+    if (response.status === 302 || response.status === 200) {
+      return { success: true, user: { username } };
+    }
+    
     return { success: true, user: { username } };
   } catch (error) {
+    // Si es un error 401 o 400, las credenciales son incorrectas
+    if (error.response?.status === 401 || error.response?.status === 400) {
+      throw new Error('Usuario o contraseña incorrectos');
+    }
     throw error.response?.data || error.message;
   }
 };
