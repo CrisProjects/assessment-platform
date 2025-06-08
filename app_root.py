@@ -16,7 +16,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, origins=[
     'http://localhost:3000',
     'https://assessment-platform-*.vercel.app',
-    'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app'
+    'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',
+    'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'
 ], supports_credentials=True)
 
 # Inicialización de extensiones
