@@ -23,15 +23,24 @@ export default function Login({ onLogin }) {
     setLoading(true);
     setError('');
     
+    console.log('🚀 Intentando login con:', { username, password: '***' });
+    
     try {
       const response = await login(username, password);
+      console.log('✅ Respuesta de login:', response);
+      
       if (response.success) {
+        console.log('✅ Login exitoso, navegando al dashboard...');
         onLogin(response.user);
         navigate('/dashboard');
+      } else {
+        console.log('❌ Login falló - response.success es false');
+        setError('Usuario o contraseña incorrectos');
       }
     } catch (err) {
+      console.error('❌ Error en login:', err);
+      console.error('Error details:', err.message, err.response);
       setError('Usuario o contraseña incorrectos');
-      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }

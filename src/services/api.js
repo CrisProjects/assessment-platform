@@ -12,10 +12,15 @@ const api = axios.create({
 });
 
 export const login = async (username, password) => {
+  console.log('🔐 API login called with:', { username, password: '***' });
+  
   try {
-    const formData = new FormData();
+    // Usar URLSearchParams en lugar de FormData para mejor compatibilidad
+    const formData = new URLSearchParams();
     formData.append('username', username);
     formData.append('password', password);
+    
+    console.log('📡 Sending POST request to:', `${API_URL}/login`);
     
     const response = await api.post('/login', formData, {
       headers: {
@@ -27,13 +32,24 @@ export const login = async (username, password) => {
       }
     });
     
+    console.log('📨 Response received:', {
+      status: response.status,
+      headers: response.headers,
+      data: response.data
+    });
+    
     // Si obtenemos un 302 redirect al dashboard, el login fue exitoso
     if (response.status === 302 || response.status === 200) {
+      console.log('✅ Login successful!');
       return { success: true, user: { username } };
     }
     
+    console.log('✅ Login successful (fallback)!');
     return { success: true, user: { username } };
   } catch (error) {
+    console.error('❌ Login API error:', error);
+    console.error('Error response:', error.response);
+    
     // Si es un error 401 o 400, las credenciales son incorrectas
     if (error.response?.status === 401 || error.response?.status === 400) {
       throw new Error('Usuario o contraseña incorrectos');
