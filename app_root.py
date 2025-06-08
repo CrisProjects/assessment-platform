@@ -300,6 +300,64 @@ def api_results():
             'error': str(e)
         }), 400
 
+# ENDPOINTS DE PRUEBA SIN AUTENTICACIÓN
+@app.route('/api/test/login', methods=['POST'])
+def test_login_no_auth():
+    """Endpoint de prueba que simula login exitoso sin verificar credenciales"""
+    try:
+        data = request.get_json() if request.is_json else None
+        
+        if data:
+            username = data.get('username')
+            password = data.get('password')
+        else:
+            username = request.form.get('username')
+            password = request.form.get('password')
+        
+        # Simular login exitoso sin verificar credenciales
+        return jsonify({
+            'success': True,
+            'user': {
+                'username': username or 'test_user',
+                'is_admin': True
+            },
+            'message': 'Login de prueba exitoso (sin autenticación)',
+            'test_mode': True
+        })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/test/dashboard')
+def test_dashboard():
+    """Dashboard de prueba sin autenticación"""
+    return jsonify({
+        'success': True,
+        'message': 'Dashboard de prueba accesible',
+        'test_mode': True,
+        'assessments': [
+            {
+                'id': 1,
+                'title': 'Evaluación de Asertividad (Prueba)',
+                'description': 'Evaluación de prueba sin autenticación',
+                'questions': 20
+            }
+        ]
+    })
+
+@app.route('/api/test/status')
+def test_status():
+    """Endpoint simple para verificar que el backend responde"""
+    return jsonify({
+        'status': 'ok',
+        'message': 'Backend funcionando correctamente',
+        'timestamp': datetime.utcnow().isoformat(),
+        'test_mode': True
+    })
+
 # Inicializar la base de datos
 if __name__ != '__main__':
     init_db()

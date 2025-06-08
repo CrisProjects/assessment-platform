@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Assessment from './pages/Assessment'
 import Results from './pages/Results'
+import TestPage from './pages/TestPage'
 
 const theme = createTheme({
   palette: {
@@ -47,6 +48,17 @@ function App() {
             >
               Plataforma de Evaluación de Asertividad
             </Typography>
+            
+            {/* Botón de pruebas siempre visible */}
+            <Button 
+              color="inherit" 
+              component={Link} 
+              to="/test"
+              sx={{ mx: 1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+            >
+              🔧 Pruebas
+            </Button>
+            
             {user && (
               <>
                 <Button 
@@ -98,6 +110,10 @@ function App() {
           <Route
             path="/results"
             element={user ? <Results /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/test"
+            element={<TestPage />}
           />
         </Routes>
       </Box>
