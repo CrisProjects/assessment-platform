@@ -3,12 +3,10 @@ services:
     name: assessment-platform-backend
     env: python
     region: oregon
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && gunicorn wsgi_simple:app --bind 0.0.0.0:$PORT"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn wsgi_root:app --bind 0.0.0.0:$PORT"
     envVars:
       - key: SECRET_KEY
         value: "production-secret-key-2024"
       - key: FLASK_ENV
         value: "production"
-      - key: PYTHONPATH
-        value: "/opt/render/project/src/backend"
