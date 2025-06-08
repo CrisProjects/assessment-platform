@@ -13,12 +13,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configurar CORS para permitir solicitudes desde Vercel
-CORS(app, origins=[
-    'http://localhost:3000',
-    'https://assessment-platform-*.vercel.app',
-    'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',
-    'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'
-], supports_credentials=True)
+CORS(app, 
+     origins=[
+         'http://localhost:3000',
+         'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',  # URL más reciente
+         'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',  # URL anterior funcional
+         'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'   # URL backup
+     ], 
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization', 'Origin', 'Accept'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Inicialización de extensiones
 db = SQLAlchemy(app)
@@ -193,7 +197,35 @@ def logout():
     return redirect(url_for('index'))
 
 # API Routes for React frontend
-@app.route('/api/login', methods=['POST'])
+
+# Manejador global para solicitudes OPTIONS (CORS preflight)
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        from flask import make_response
+        response = make_response()
+        
+        # Obtener el origin de la request
+        origin = request.headers.get('Origin')
+        
+        # Lista de origins permitidos
+        allowed_origins = [
+            'http://localhost:3000',
+            'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',
+            'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app',
+            'https://assessment-platform-747h43vee-cris-projects-92f3df55.vercel.app'
+        ]
+        
+        # Verificar si el origin está permitido
+        if origin in allowed_origins:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+        
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type, Authorization, Origin, Accept")
+        response.headers.add('Access-Control-Allow-Methods', "GET, POST, PUT, DELETE, OPTIONS")
+        response.headers.add('Access-Control-Allow-Credentials', "true")
+        return response
+
+@app.route('/api/login', methods=['POST', 'OPTIONS'])
 def api_login():
     try:
         data = request.get_json() if request.is_json else None
@@ -236,7 +268,7 @@ def api_login():
             'error': str(e)
         }), 500
 
-@app.route('/api/logout', methods=['POST'])
+@app.route('/api/logout', methods=['POST', 'OPTIONS'])
 @login_required
 def api_logout():
     try:
@@ -251,7 +283,7 @@ def api_logout():
             'error': str(e)
         }), 500
 
-@app.route('/api/assessments')
+@app.route('/api/assessments', methods=['GET', 'OPTIONS'])
 @login_required
 def api_assessments():
     assessments = Assessment.query.all()
@@ -266,7 +298,7 @@ def api_assessments():
         })
     return jsonify({'assessments': assessments_data})
 
-@app.route('/api/assessment/<int:assessment_id>/save', methods=['POST'])
+@app.route('/api/assessment/<int:assessment_id>/save', methods=['POST', 'OPTIONS'])
 @login_required
 def api_save_assessment(assessment_id):
     try:
@@ -282,7 +314,7 @@ def api_save_assessment(assessment_id):
             'error': str(e)
         }), 400
 
-@app.route('/api/results')
+@app.route('/api/results', methods=['GET', 'OPTIONS'])
 @login_required
 def api_results():
     try:
@@ -301,7 +333,7 @@ def api_results():
         }), 400
 
 # ENDPOINTS DE PRUEBA SIN AUTENTICACIÓN
-@app.route('/api/test/login', methods=['POST'])
+@app.route('/api/test/login', methods=['POST', 'OPTIONS'])
 def test_login_no_auth():
     """Endpoint de prueba que simula login exitoso sin verificar credenciales"""
     try:
@@ -331,7 +363,7 @@ def test_login_no_auth():
             'error': str(e)
         }), 500
 
-@app.route('/api/test/dashboard')
+@app.route('/api/test/dashboard', methods=['GET', 'OPTIONS'])
 def test_dashboard():
     """Dashboard de prueba sin autenticación"""
     return jsonify({
@@ -348,7 +380,7 @@ def test_dashboard():
         ]
     })
 
-@app.route('/api/test/status')
+@app.route('/api/test/status', methods=['GET', 'OPTIONS'])
 def test_status():
     """Endpoint simple para verificar que el backend responde"""
     return jsonify({
