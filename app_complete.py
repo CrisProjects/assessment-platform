@@ -369,9 +369,6 @@ def init_database():
             # Verificar si ya existe la evaluación de asertividad
             assessment = Assessment.query.first()
             if not assessment:
-            # Verificar si ya existe la evaluación de asertividad
-            assessment = Assessment.query.first()
-            if not assessment:
                 print("🔄 Inicializando evaluación de asertividad...")
                 
                 # Crear evaluación de asertividad
