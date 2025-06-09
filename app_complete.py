@@ -278,6 +278,16 @@ def api_submit_assessment():
     """Alias para /api/save_assessment - endpoint para enviar respuestas de evaluación"""
     return api_save_assessment()
 
+@app.route('/api/deployment-test', methods=['GET'])
+def api_deployment_test():
+    """Endpoint simple para verificar que el deployment está funcionando"""
+    return jsonify({
+        'status': 'success',
+        'message': 'New deployment is working!',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': 'force-redeploy-1749431299'
+    })
+
 @app.route('/api/health', methods=['GET'])
 def api_health():
     """Endpoint de salud para verificar que el API está funcionando"""
