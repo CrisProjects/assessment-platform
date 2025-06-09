@@ -2,6 +2,7 @@
 """
 Aplicación Flask completa con frontend y backend integrados
 Perfecta para desplegar en Render como un solo servicio
+FORCED REDEPLOY: $(date) - Ensuring all endpoints are deployed
 """
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
