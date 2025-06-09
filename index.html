@@ -415,7 +415,13 @@
             }
 
             try {
-                // Registrar usuario
+                // Primero hacer login automático como admin
+                await apiRequest('/api/login', 'POST', {
+                    username: 'admin',
+                    password: 'admin123'
+                });
+
+                // Registrar usuario (información demográfica)
                 currentUser = await apiRequest('/api/register', 'POST', {
                     name: name,
                     email: email,
@@ -423,8 +429,9 @@
                     gender: gender
                 });
 
-                // Obtener preguntas
-                questions = await apiRequest('/api/questions');
+                // Obtener preguntas (ahora autenticado)
+                const questionsResponse = await apiRequest('/api/questions');
+                questions = questionsResponse.questions || questionsResponse;
                 
                 if (!questions || questions.length === 0) {
                     throw new Error('No se pudieron cargar las preguntas');
