@@ -293,7 +293,8 @@ def api_health():
     """Endpoint de salud para verificar que el API está funcionando"""
     try:
         # Verificar conexión a base de datos
-        db.session.execute('SELECT 1')
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
         return jsonify({
             'status': 'healthy',
             'message': 'API funcionando correctamente',
