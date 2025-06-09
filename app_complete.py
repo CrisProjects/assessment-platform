@@ -91,25 +91,43 @@ def favicon():
 # API Routes
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    
-    user = User.query.filter_by(username=username).first()
-    
-    if user and user.check_password(password):
-        login_user(user)
-        return jsonify({
-            'success': True,
-            'message': 'Login exitoso',
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'is_admin': user.is_admin
-            }
-        })
-    else:
-        return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        print(f"[DEBUG] Login attempt for user: {username}")
+        
+        # Verificar que la base de datos esté disponible
+        try:
+            user = User.query.filter_by(username=username).first()
+            print(f"[DEBUG] User found: {user is not None}")
+        except Exception as db_error:
+            print(f"[DEBUG] Database error: {db_error}")
+            # Intentar inicializar la base de datos
+            init_result = init_database()
+            print(f"[DEBUG] Database init result: {init_result}")
+            user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            print(f"[DEBUG] Login successful for: {username}")
+            return jsonify({
+                'success': True,
+                'message': 'Login exitoso',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'is_admin': user.is_admin
+                }
+            })
+        else:
+            print(f"[DEBUG] Login failed for: {username}")
+            return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
+            
+    except Exception as e:
+        print(f"[ERROR] Login endpoint error: {e}")
+        return jsonify({'success': False, 'error': f'Error del servidor: {str(e)}'}), 500
 
 @app.route('/api/logout', methods=['POST'])
 @login_required
@@ -288,14 +306,23 @@ def api_deployment_test():
         'version': 'force-redeploy-1749431299'
     })
 
-@app.route('/api/init-db', methods=['POST'])
+@app.route('/api/init-db', methods=['POST', 'GET'])
 def api_init_database():
     """Endpoint para inicializar la base de datos con datos de muestra"""
     try:
-        init_database()
+        result = init_database()
+        
+        # Verificar que el usuario admin existe
+        with app.app_context():
+            admin_user = User.query.filter_by(username='admin').first()
+            user_count = User.query.count()
+            
         return jsonify({
             'status': 'success',
-            'message': 'Base de datos inicializada correctamente',
+            'message': 'Base de datos verificada/inicializada correctamente',
+            'admin_exists': admin_user is not None,
+            'user_count': user_count,
+            'initialization_result': result,
             'timestamp': datetime.utcnow().isoformat()
         })
     except Exception as e:
@@ -464,9 +491,34 @@ def init_database():
 # Inicializar la base de datos automáticamente cuando la aplicación arranque
 with app.app_context():
     try:
+        # Siempre crear las tablas
+        db.create_all()
+        
+        # Verificar/crear usuario admin
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            print("🔧 Creando usuario admin de emergencia...")
+            admin_user = User(username='admin', is_admin=True)
+            admin_user.set_password('admin123')
+            db.session.add(admin_user)
+            db.session.commit()
+            print("✅ Usuario admin creado exitosamente")
+        
+        # Ejecutar inicialización completa
         init_database()
     except Exception as e:
         print(f"⚠️ No se pudo inicializar la base de datos automáticamente: {e}")
+        # Crear usuario de emergencia sin depender de init_database
+        try:
+            db.create_all()
+            if not User.query.filter_by(username='admin').first():
+                admin_user = User(username='admin', is_admin=True)
+                admin_user.set_password('admin123')
+                db.session.add(admin_user)
+                db.session.commit()
+                print("✅ Usuario admin de emergencia creado")
+        except Exception as emergency_error:
+            print(f"❌ Error crítico creando usuario de emergencia: {emergency_error}")
 
 if __name__ == '__main__':
     init_database()
