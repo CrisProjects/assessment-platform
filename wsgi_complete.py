@@ -23,6 +23,9 @@ except ImportError as e:
     print(f"[RENDER ERROR] Available files: {os.listdir('.')}")
     raise
 
+# This is what Render will import
+application = app
+
 # Ensure app runs on the correct port
 port = int(os.environ.get('PORT', 8000))
 print(f"[RENDER DEBUG] Using port: {port}")
