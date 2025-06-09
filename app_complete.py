@@ -357,14 +357,22 @@ def init_database():
         with app.app_context():
             db.create_all()
             
-            # Verificar si ya existen datos
-            if User.query.first() is None:
-                print("🔄 Inicializando base de datos...")
-                
-                # Crear usuario admin
+            # Verificar si ya existen usuarios admin
+            admin_user = User.query.filter_by(username='admin').first()
+            if not admin_user:
+                print("🔄 Creando usuario admin...")
                 admin_user = User(username='admin', is_admin=True)
                 admin_user.set_password('admin123')
                 db.session.add(admin_user)
+                db.session.commit()
+            
+            # Verificar si ya existe la evaluación de asertividad
+            assessment = Assessment.query.first()
+            if not assessment:
+            # Verificar si ya existe la evaluación de asertividad
+            assessment = Assessment.query.first()
+            if not assessment:
+                print("🔄 Inicializando evaluación de asertividad...")
                 
                 # Crear evaluación de asertividad
                 assessment = Assessment(
@@ -479,10 +487,49 @@ def init_database():
                     db.session.add(question)
                 
                 db.session.commit()
-                print("✅ Base de datos inicializada con datos de muestra")
+                print("✅ Evaluación de asertividad inicializada")
                 return True
             else:
-                print("✅ Base de datos ya existe, no se requiere inicialización")
+                print("✅ Evaluación ya existe, verificando preguntas...")
+                # Verificar si hay preguntas
+                question_count = Question.query.filter_by(assessment_id=assessment.id).count()
+                print(f"   Preguntas encontradas: {question_count}")
+                if question_count == 0:
+                    print("⚠️ No hay preguntas, creando preguntas de ejemplo...")
+                    # Crear preguntas de ejemplo (solo unas pocas para verificar)
+                    sample_questions = [
+                        {
+                            "content": "Cuando alguien critica tu trabajo de manera injusta, ¿cómo sueles responder?",
+                            "options": [
+                                "Permanezco en silencio para evitar el conflicto",
+                                "Me defiendo con calma y hechos",
+                                "Me enojo y me pongo a la defensiva",
+                                "Intento cambiar de tema"
+                            ]
+                        },
+                        {
+                            "content": "Si un amigo te pide dinero repetidamente y no lo devuelve, ¿abordarías este tema?",
+                            "options": [
+                                "No, evitaría mencionarlo",
+                                "Sí, tendría una conversación honesta al respecto",
+                                "Dejaría de prestar pero no lo hablaría",
+                                "Pondría excusas para no prestar más"
+                            ]
+                        }
+                    ]
+                    
+                    for q_data in sample_questions:
+                        question = Question(
+                            assessment_id=assessment.id,
+                            content=q_data["content"],
+                            question_type='multiple_choice',
+                            options=q_data["options"],
+                            correct_answer=1
+                        )
+                        db.session.add(question)
+                    
+                    db.session.commit()
+                    print("✅ Preguntas de ejemplo creadas")
                 return True
     except Exception as e:
         print(f"❌ Error inicializando base de datos: {e}")
