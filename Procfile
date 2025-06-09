@@ -1,1 +1,1 @@
-web: gunicorn wsgi:application
+web: gunicorn wsgi_emergency:application
