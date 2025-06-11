@@ -564,10 +564,23 @@
             document.getElementById('loadingScreen').style.display = 'block';
 
             try {
-                // Enviar respuestas al servidor
+                // Convertir respuestas al formato esperado por el backend
+                const responses = [];
+                for (const [questionId, selectedOptionIndex] of Object.entries(answers)) {
+                    const question = questions.find(q => q.id == questionId);
+                    if (question && question.options && question.options[selectedOptionIndex]) {
+                        responses.push({
+                            question_id: parseInt(questionId),
+                            selected_option: selectedOptionIndex,
+                            option_text: question.options[selectedOptionIndex]
+                        });
+                    }
+                }
+
+                // Enviar respuestas al servidor con el formato correcto
                 const result = await apiRequest('/api/submit', 'POST', {
-                    user_id: currentUser.id,
-                    answers: answers
+                    assessment_id: 1,  // ID de la evaluación de asertividad
+                    responses: responses
                 });
 
                 // Mostrar resultados
@@ -588,19 +601,15 @@
             document.getElementById('loadingScreen').style.display = 'none';
             document.getElementById('resultsContainer').style.display = 'block';
 
-            document.getElementById('scoreDisplay').textContent = result.score;
-            document.getElementById('levelDisplay').textContent = result.level;
+            document.getElementById('scoreDisplay').textContent = result.score + '%';
+            document.getElementById('levelDisplay').textContent = result.score_level;
             
             const interpretation = document.getElementById('interpretationDisplay');
             interpretation.innerHTML = `
                 <h3>Interpretación de tu Resultado</h3>
-                <p><strong>Nivel:</strong> ${result.level}</p>
-                <p><strong>Puntuación:</strong> ${result.score} de ${questions.length}</p>
-                <p>${result.interpretation}</p>
-                <h4>Recomendaciones:</h4>
-                <ul>
-                    ${result.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-                </ul>
+                <p><strong>Nivel:</strong> ${result.score_level}</p>
+                <p><strong>Puntuación:</strong> ${result.score}% de ${result.total_questions} preguntas</p>
+                <p>${result.result_text}</p>
             `;
 
             showMessage('¡Evaluación completada exitosamente!', 'success');
