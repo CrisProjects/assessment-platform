@@ -19,8 +19,20 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-fixed-20
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Configurar CORS
-CORS(app, supports_credentials=True)
+# Configurar CORS - Incluir Vercel y Render
+CORS(app, 
+     origins=[
+         'http://localhost:3000',
+         'https://assessment-platform-1nuo.onrender.com',  # Render backend (para auto-requests)
+         'https://assessment-platform-final-e7ygyztfi-cris-projects-92f3df55.vercel.app',  # Nueva URL de Vercel
+         'https://assessment-platform-4h58ggw5n-cris-projects-92f3df55.vercel.app',  # URLs anteriores de Vercel
+         'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',
+         'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',
+         'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app'
+     ], 
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization', 'Origin', 'Accept'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Inicialización de extensiones
 db = SQLAlchemy(app)
