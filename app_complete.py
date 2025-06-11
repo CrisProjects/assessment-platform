@@ -137,8 +137,41 @@ def api_logout():
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
-    """Endpoint para registro de nuevos usuarios"""
+    """Endpoint para registro de usuarios o datos demográficos"""
     data = request.get_json()
+    
+    # Si el usuario está autenticado, esto es para datos demográficos
+    if current_user.is_authenticated:
+        # Guardar datos demográficos del usuario actual
+        name = data.get('name')
+        email = data.get('email')
+        age = data.get('age')
+        gender = data.get('gender')
+        
+        if not all([name, email, age, gender]):
+            return jsonify({'success': False, 'error': 'Todos los campos demográficos son requeridos'}), 400
+        
+        # Almacenar temporalmente en la sesión para la evaluación
+        from flask import session
+        session['participant_data'] = {
+            'name': name,
+            'email': email,
+            'age': age,
+            'gender': gender
+        }
+        
+        return jsonify({
+            'success': True,
+            'message': 'Datos demográficos registrados exitosamente',
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'is_admin': current_user.is_admin,
+                'participant_data': session['participant_data']
+            }
+        })
+    
+    # Si no está autenticado, es un registro de usuario normal
     username = data.get('username')
     password = data.get('password')
     
