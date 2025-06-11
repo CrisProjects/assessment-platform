@@ -421,13 +421,23 @@
                     password: 'admin123'
                 });
 
-                // Registrar usuario (información demográfica)
-                currentUser = await apiRequest('/api/register', 'POST', {
-                    name: name,
-                    email: email,
-                    age: parseInt(age),
-                    gender: gender
-                });
+                // Registrar usuario (información demográfica) - intentar ambos endpoints
+                try {
+                    currentUser = await apiRequest('/api/register', 'POST', {
+                        name: name,
+                        email: email,
+                        age: parseInt(age),
+                        gender: gender
+                    });
+                } catch (registerError) {
+                    console.log('Endpoint /api/register falló, probando /api/demographics...');
+                    currentUser = await apiRequest('/api/demographics', 'POST', {
+                        name: name,
+                        email: email,
+                        age: parseInt(age),
+                        gender: gender
+                    });
+                }
 
                 // Obtener preguntas (ahora autenticado)
                 const questionsResponse = await apiRequest('/api/questions');
