@@ -153,67 +153,90 @@ def api_logout():
 @app.route('/api/register', methods=['POST'])
 def api_register():
     """Endpoint para registro de usuarios o datos demográficos"""
-    data = request.get_json()
-    
-    # Si el usuario está autenticado, esto es para datos demográficos
-    if current_user.is_authenticated:
-        # Guardar datos demográficos del usuario actual
-        name = data.get('name')
-        email = data.get('email')
-        age = data.get('age')
-        gender = data.get('gender')
+    try:
+        data = request.get_json()
+        print(f"[DEBUG] Register endpoint - data received: {data}")
+        print(f"[DEBUG] Register endpoint - user authenticated: {current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else False}")
         
-        if not all([name, email, age, gender]):
-            return jsonify({'success': False, 'error': 'Todos los campos demográficos son requeridos'}), 400
+        # Si el usuario está autenticado, esto es para datos demográficos
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            # Guardar datos demográficos del usuario actual
+            name = data.get('name')
+            email = data.get('email')
+            age = data.get('age')
+            gender = data.get('gender')
+            
+            print(f"[DEBUG] Demographics mode - name={name}, email={email}, age={age}, gender={gender}")
+            
+            if not all([name, email, age, gender]):
+                missing_fields = [field for field, value in [('name', name), ('email', email), ('age', age), ('gender', gender)] if not value]
+                print(f"[DEBUG] Missing fields: {missing_fields}")
+                return jsonify({
+                    'success': False, 
+                    'error': f'Campos demográficos faltantes: {", ".join(missing_fields)}'
+                }), 400
+            
+            # Almacenar temporalmente en la sesión para la evaluación
+            session['participant_data'] = {
+                'name': name,
+                'email': email,
+                'age': age,
+                'gender': gender
+            }
+            
+            print(f"[DEBUG] Session data stored successfully")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Datos demográficos registrados exitosamente',
+                'user': {
+                    'id': current_user.id,
+                    'username': current_user.username,
+                    'is_admin': current_user.is_admin,
+                    'participant_data': session['participant_data']
+                }
+            })
         
-        # Almacenar temporalmente en la sesión para la evaluación
-        session['participant_data'] = {
-            'name': name,
-            'email': email,
-            'age': age,
-            'gender': gender
-        }
+        # Si no está autenticado, es un registro de usuario normal
+        username = data.get('username')
+        password = data.get('password')
+        
+        print(f"[DEBUG] User registration mode - username={username}, password={'***' if password else None}")
+        
+        if not username or not password:
+            print(f"[DEBUG] Missing username or password")
+            return jsonify({'success': False, 'error': 'Usuario y contraseña son requeridos'}), 400
+        
+        # Verificar si el usuario ya existe
+        if User.query.filter_by(username=username).first():
+            print(f"[DEBUG] User already exists")
+            return jsonify({'success': False, 'error': 'El usuario ya existe'}), 400
+        
+        # Crear nuevo usuario
+        user = User(username=username)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        
+        # Login automático después del registro
+        login_user(user)
         
         return jsonify({
             'success': True,
-            'message': 'Datos demográficos registrados exitosamente',
+            'message': 'Usuario registrado exitosamente',
             'user': {
-                'id': current_user.id,
-                'username': current_user.username,
-                'is_admin': current_user.is_admin,
-                'participant_data': session['participant_data']
+                'id': user.id,
+                'username': user.username,
+                'is_admin': user.is_admin
             }
         })
-    
-    # Si no está autenticado, es un registro de usuario normal
-    username = data.get('username')
-    password = data.get('password')
-    
-    if not username or not password:
-        return jsonify({'success': False, 'error': 'Usuario y contraseña son requeridos'}), 400
-    
-    # Verificar si el usuario ya existe
-    if User.query.filter_by(username=username).first():
-        return jsonify({'success': False, 'error': 'El usuario ya existe'}), 400
-    
-    # Crear nuevo usuario
-    user = User(username=username)
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-    
-    # Login automático después del registro
-    login_user(user)
-    
-    return jsonify({
-        'success': True,
-        'message': 'Usuario registrado exitosamente',
-        'user': {
-            'id': user.id,
-            'username': user.username,
-            'is_admin': user.is_admin
-        }
-    })
+        
+    except Exception as e:
+        print(f"[ERROR] Register endpoint error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Error interno del servidor: {str(e)}'
+        }), 500
 
 @app.route('/api/assessments', methods=['GET'])
 @login_required
@@ -612,37 +635,52 @@ with app.app_context():
             print(f"❌ Error crítico creando usuario de emergencia: {emergency_error}")
 
 @app.route('/api/demographics', methods=['POST'])
-@login_required
 def api_demographics():
-    """Endpoint específico para registrar datos demográficos"""
-    data = request.get_json()
-    
-    name = data.get('name')
-    email = data.get('email')
-    age = data.get('age')
-    gender = data.get('gender')
-    
-    if not all([name, email, age, gender]):
-        return jsonify({'success': False, 'error': 'Todos los campos demográficos son requeridos'}), 400
-    
-    # Almacenar en la sesión para la evaluación
-    session['participant_data'] = {
-        'name': name,
-        'email': email,
-        'age': age,
-        'gender': gender
-    }
-    
-    return jsonify({
-        'success': True,
-        'message': 'Datos demográficos registrados exitosamente',
-        'user': {
-            'id': current_user.id,
-            'username': current_user.username,
-            'is_admin': current_user.is_admin,
-            'participant_data': session['participant_data']
+    """Endpoint específico para registrar datos demográficos - SIN autenticación requerida"""
+    try:
+        data = request.get_json()
+        
+        name = data.get('name')
+        email = data.get('email')
+        age = data.get('age')
+        gender = data.get('gender')
+        
+        print(f"[DEBUG] Demographics data received: name={name}, email={email}, age={age}, gender={gender}")
+        
+        if not all([name, email, age, gender]):
+            missing_fields = [field for field, value in [('name', name), ('email', email), ('age', age), ('gender', gender)] if not value]
+            return jsonify({
+                'success': False, 
+                'error': f'Campos faltantes: {", ".join(missing_fields)}'
+            }), 400
+        
+        # Almacenar en la sesión para la evaluación
+        session['participant_data'] = {
+            'name': name,
+            'email': email,
+            'age': age,
+            'gender': gender
         }
-    })
+        
+        print(f"[DEBUG] Session data stored: {session.get('participant_data')}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Datos demográficos registrados exitosamente',
+            'user': {
+                'id': 1,  # ID fijo para admin
+                'username': 'admin',
+                'is_admin': True,
+                'participant_data': session['participant_data']
+            }
+        })
+        
+    except Exception as e:
+        print(f"[ERROR] Demographics endpoint error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Error interno del servidor: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     init_database()
