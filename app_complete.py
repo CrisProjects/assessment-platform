@@ -267,26 +267,40 @@ def api_get_assessments():
     return jsonify({'assessments': assessments_data})
 
 @app.route('/api/questions', methods=['GET'])
-@login_required
 def api_get_questions():
-    """Endpoint para obtener todas las preguntas de la evaluación de asertividad"""
-    # Obtener la primera evaluación (evaluación de asertividad)
-    assessment = Assessment.query.first()
-    if not assessment:
-        return jsonify({'error': 'No se encontró la evaluación'}), 404
-    
-    questions = Question.query.filter_by(assessment_id=assessment.id).all()
-    questions_data = []
-    
-    for question in questions:
-        questions_data.append({
-            'id': question.id,
-            'content': question.content,
-            'question_type': question.question_type,
-            'options': question.options
-        })
-    
-    return jsonify({'questions': questions_data})
+    """Endpoint para obtener todas las preguntas de la evaluación de asertividad - SIN autenticación requerida"""
+    try:
+        print(f"[DEBUG] Questions endpoint called")
+        
+        # Obtener la primera evaluación (evaluación de asertividad)
+        assessment = Assessment.query.first()
+        if not assessment:
+            print(f"[DEBUG] No assessment found")
+            return jsonify({'error': 'No se encontró la evaluación'}), 404
+        
+        print(f"[DEBUG] Assessment found: {assessment.title}")
+        
+        questions = Question.query.filter_by(assessment_id=assessment.id).all()
+        print(f"[DEBUG] Questions found: {len(questions)}")
+        
+        questions_data = []
+        
+        for question in questions:
+            questions_data.append({
+                'id': question.id,
+                'content': question.content,
+                'question_type': question.question_type,
+                'options': question.options
+            })
+        
+        print(f"[DEBUG] Returning {len(questions_data)} questions")
+        return jsonify({'questions': questions_data})
+        
+    except Exception as e:
+        print(f"[ERROR] Questions endpoint error: {e}")
+        return jsonify({
+            'error': f'Error interno del servidor: {str(e)}'
+        }), 500
 
 @app.route('/api/save_assessment', methods=['POST'])
 @login_required
