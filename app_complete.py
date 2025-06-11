@@ -24,9 +24,11 @@ CORS(app,
      origins=[
          'http://localhost:3000',
          'https://assessment-platform-1nuo.onrender.com',  # Render backend (para auto-requests)
-         'https://assessment-platform-final-nkfv3eieh-cris-projects-92f3df55.vercel.app',  # Nueva URL de Vercel (ACTUAL)
-         'https://assessment-platform-final-e7ygyztfi-cris-projects-92f3df55.vercel.app',  # URL de Vercel anterior
-         'https://assessment-platform-4h58ggw5n-cris-projects-92f3df55.vercel.app',  # URLs anteriores de Vercel
+         'https://assessment-platform-final.vercel.app',  # URL PRINCIPAL de Vercel ✅
+         'https://assessment-platform-final-o6uoi0a9a-cris-projects-92f3df55.vercel.app',  # URLs de preview
+         'https://assessment-platform-final-nkfv3eieh-cris-projects-92f3df55.vercel.app',
+         'https://assessment-platform-final-e7ygyztfi-cris-projects-92f3df55.vercel.app',
+         'https://assessment-platform-4h58ggw5n-cris-projects-92f3df55.vercel.app',  # URLs anteriores
          'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',
          'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',
          'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app'
