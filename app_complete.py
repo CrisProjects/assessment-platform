@@ -4,7 +4,7 @@ Aplicación Flask completa con frontend y backend integrados
 Perfecta para desplegar en Render como un solo servicio
 FIXED: Botón 'Iniciar Evaluación' - Endpoint /api/register actualizado
 """
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
@@ -152,7 +152,6 @@ def api_register():
             return jsonify({'success': False, 'error': 'Todos los campos demográficos son requeridos'}), 400
         
         # Almacenar temporalmente en la sesión para la evaluación
-        from flask import session
         session['participant_data'] = {
             'name': name,
             'email': email,
@@ -596,6 +595,39 @@ with app.app_context():
                 print("✅ Usuario admin de emergencia creado")
         except Exception as emergency_error:
             print(f"❌ Error crítico creando usuario de emergencia: {emergency_error}")
+
+@app.route('/api/demographics', methods=['POST'])
+@login_required
+def api_demographics():
+    """Endpoint específico para registrar datos demográficos"""
+    data = request.get_json()
+    
+    name = data.get('name')
+    email = data.get('email')
+    age = data.get('age')
+    gender = data.get('gender')
+    
+    if not all([name, email, age, gender]):
+        return jsonify({'success': False, 'error': 'Todos los campos demográficos son requeridos'}), 400
+    
+    # Almacenar en la sesión para la evaluación
+    session['participant_data'] = {
+        'name': name,
+        'email': email,
+        'age': age,
+        'gender': gender
+    }
+    
+    return jsonify({
+        'success': True,
+        'message': 'Datos demográficos registrados exitosamente',
+        'user': {
+            'id': current_user.id,
+            'username': current_user.username,
+            'is_admin': current_user.is_admin,
+            'participant_data': session['participant_data']
+        }
+    })
 
 if __name__ == '__main__':
     init_database()
