@@ -696,6 +696,54 @@ def api_demographics():
             'error': f'Error interno del servidor: {str(e)}'
         }), 500
 
+@app.route('/api/debug-questions', methods=['GET'])
+def debug_questions():
+    """Endpoint de debugging para diagnosticar el problema con questions"""
+    try:
+        result = {}
+        
+        # Test 1: Count assessments
+        assessment_count = Assessment.query.count()
+        result['assessment_count'] = assessment_count
+        
+        # Test 2: Get first assessment
+        assessment = Assessment.query.first()
+        if assessment:
+            result['assessment'] = {
+                'id': assessment.id,
+                'title': assessment.title,
+                'description': assessment.description
+            }
+            
+            # Test 3: Count questions for this assessment
+            question_count = Question.query.filter_by(assessment_id=assessment.id).count()
+            result['question_count'] = question_count
+            
+            # Test 4: Get first question
+            first_question = Question.query.filter_by(assessment_id=assessment.id).first()
+            if first_question:
+                result['first_question'] = {
+                    'id': first_question.id,
+                    'content': first_question.content[:100] if first_question.content else None,
+                    'question_type': first_question.question_type,
+                    'options_type': type(first_question.options).__name__,
+                    'options_length': len(first_question.options) if first_question.options else 0
+                }
+        else:
+            result['assessment'] = None
+            
+        return jsonify({
+            'status': 'success',
+            'debug_info': result
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'error_type': type(e).__name__
+        }), 500
+
 if __name__ == '__main__':
     init_database()
     port = int(os.environ.get('PORT', 5000))
