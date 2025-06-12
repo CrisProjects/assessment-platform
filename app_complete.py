@@ -745,6 +745,17 @@ def debug_questions():
             'error_type': type(e).__name__
         }), 500
 
+@app.route('/api/cors-test', methods=['GET', 'OPTIONS'])
+def cors_test():
+    """Endpoint para verificar configuración CORS"""
+    return jsonify({
+        'status': 'CORS working',
+        'timestamp': datetime.utcnow().isoformat(),
+        'origin': request.headers.get('Origin'),
+        'user_agent': request.headers.get('User-Agent'),
+        'vercel_deploy_url_configured': 'https://assessment-platform-deploy.vercel.app' in app.config.get('allowed_origins', [])
+    })
+
 if __name__ == '__main__':
     init_database()
     port = int(os.environ.get('PORT', 5000))
