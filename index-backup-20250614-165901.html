@@ -781,215 +781,59 @@
                 // Crear gráfico de radar
                 createRadarChart(dimensionalScores);
                 
-                console.log(`🎉 Evaluación completada: ${percentage}% - ${level}`);
-                console.log('📊 Puntuaciones por dimensiones:', dimensionalScores);
+                // Preparar datos para el gráfico de radar
+                const radarLabels = [
+                    "Comunicación Directa",
+                    "Defensa de Derechos",
+                    "Expresión de Opiniones",
+                    "Manejo de Conflictos",
+                    "Autoconfianza"
+                ];
                 
-            } catch (error) {
-                console.error('Error completing assessment:', error);
-                document.getElementById('loadingScreen').style.display = 'none';
-                showMessage('Error al procesar la evaluación. Por favor, inténtalo de nuevo.');
-            }
-        }
-
-        // Función para calcular puntuaciones por dimensiones (para 10 preguntas)
-        function calculateDimensionalScores() {
-            // Mapeo de preguntas a dimensiones (basado en las 10 preguntas del sistema)
-            const questionToDimension = {
-                0: 'conflictos',       // Pregunta 1: críticas injustas - manejo de conflictos
-                1: 'derechos',         // Pregunta 2: dinero prestado - defensa de derechos
-                2: 'opiniones',        // Pregunta 3: expresar opiniones en grupos
-                3: 'derechos',         // Pregunta 4: alguien se cuela - defensa de derechos
-                4: 'comunicacion',     // Pregunta 5: solicitudes no deseadas - comunicación directa
-                5: 'comunicacion',     // Pregunta 6: comida mal preparada - comunicación directa
-                6: 'autoconfianza',    // Pregunta 7: reaccionar a cumplidos - autoconfianza
-                7: 'conflictos',       // Pregunta 8: desacuerdo en reuniones - manejo de conflictos
-                8: 'conflictos',       // Pregunta 9: comportamiento molesto de colega
-                9: 'autoconfianza'     // Pregunta 10: logros importantes - autoconfianza
-            };
-
-            const dimensionScores = {
-                comunicacion: [],
-                derechos: [],
-                opiniones: [],
-                conflictos: [],
-                autoconfianza: []
-            };
-
-            // Agrupar respuestas por dimensión
-            Object.entries(answers).forEach(([questionIndex, answer]) => {
-                const dimension = questionToDimension[parseInt(questionIndex)];
-                if (dimension) {
-                    // Convertir respuesta a puntuación (0=asertiva=4pts, 1=pasiva=1pt, 2=agresiva=2pts, 3=mixta=3pts)
-                    let points = 4;
-                    if (answer === 1) points = 1;      // Pasiva
-                    else if (answer === 2) points = 2; // Agresiva  
-                    else if (answer === 3) points = 3; // Mixta
-                    // answer === 0 mantiene points = 4 (Asertiva)
-                    
-                    dimensionScores[dimension].push(points);
-                }
-            });
-
-            // Para dimensiones sin preguntas específicas, usar el promedio general
-            const totalAnswers = Object.values(answers);
-            let generalAverage = 0;
-            if (totalAnswers.length > 0) {
-                const generalSum = totalAnswers.reduce((sum, answer) => {
-                    if (answer === 1) return sum + 1;      // Pasiva
-                    else if (answer === 2) return sum + 2; // Agresiva  
-                    else if (answer === 3) return sum + 3; // Mixta
-                    else return sum + 4;                   // Asertiva
-                }, 0);
-                generalAverage = generalSum / totalAnswers.length;
-            }
-
-            // Calcular promedios y convertir a porcentajes
-            const finalScores = {};
-            Object.entries(dimensionScores).forEach(([dimension, scores]) => {
-                if (scores.length > 0) {
-                    const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-                    finalScores[dimension] = Math.round((average / 4) * 100); // Convertir a porcentaje
-                } else {
-                    // Si no hay preguntas específicas para esta dimensión, usar promedio general
-                    finalScores[dimension] = Math.round((generalAverage / 4) * 100);
-                }
-            });
-
-            return finalScores;
-        }
-
-        // Variable global para almacenar la instancia del gráfico
-        window.radarChartInstance = null;
-
-        // Función para crear el gráfico de radar
-        function createRadarChart(dimensionalScores) {
-            try {
-                // Destruir gráfico anterior si existe
+                const radarData = {
+                    labels: radarLabels,
+                    datasets: [{
+                        label: 'Tu Puntaje',
+                        data: [],
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: '#667eea',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                };
+                
+                // Asignar puntajes simulados (TEMPORAL - SINCRONIZADO CON RENDER)
+                const dimensionScores = [80, 70, 90, 60, 75]; // Ejemplo de puntajes
+                radarData.datasets[0].data = dimensionScores;
+                
+                // Configurar y mostrar gráfico de radar
+                const ctx = document.getElementById('radarChart').getContext('2d');
                 if (window.radarChartInstance) {
                     window.radarChartInstance.destroy();
                 }
-
-                const ctx = document.getElementById('radarChart').getContext('2d');
-                
-                const data = {
-                    labels: [
-                        'Comunicación\nDirecta',
-                        'Defensa de\nDerechos', 
-                        'Expresión de\nOpiniones',
-                        'Manejo de\nConflictos',
-                        'Autoconfianza'
-                    ],
-                    datasets: [{
-                        label: 'Nivel de Asertividad',
-                        data: [
-                            dimensionalScores.comunicacion,
-                            dimensionalScores.derechos,
-                            dimensionalScores.opiniones,
-                            dimensionalScores.conflictos,
-                            dimensionalScores.autoconfianza
-                        ],
-                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }]
-                };
-
-                const config = {
+                window.radarChartInstance = new Chart(ctx, {
                     type: 'radar',
-                    data: data,
+                    data: radarData,
                     options: {
                         responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
+                        maintainAspectRatio: false,
                         scales: {
                             r: {
                                 angleLines: {
-                                    color: 'rgba(0, 0, 0, 0.1)'
+                                    display: true,
+                                    color: '#e2e8f0'
                                 },
                                 grid: {
-                                    color: 'rgba(0, 0, 0, 0.1)'
-                                },
-                                pointLabels: {
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    },
-                                    color: '#4a5568'
+                                    color: '#f7fafc'
                                 },
                                 ticks: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    stepSize: 20,
-                                    color: '#718096',
-                                    backdropColor: 'transparent'
+                                    display: true,
+                                    color: '#4a5568',
+                                    beginAtZero: true
                                 }
                             }
-                        }
-                    }
-                };
-
-                window.radarChartInstance = new Chart(ctx, config);
-                console.log('✅ Gráfico de radar creado exitosamente');
-
-            } catch (error) {
-                console.error('❌ Error creando gráfico de radar:', error);
-            }
-        }
-
-        // Reiniciar evaluación
-        function restartAssessment() {
-            // Limpiar datos
-            currentUser = null;
-            questions = [];
-            currentQuestionIndex = 0;
-            answers = {};
-            
-            // Destruir gráfico de radar si existe
-            if (window.radarChartInstance) {
-                window.radarChartInstance.destroy();
-                window.radarChartInstance = null;
-            }
-            
-            // Limpiar formulario
-            document.getElementById('name').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('age').value = '';
-            document.getElementById('gender').value = '';
-            
-            // Volver al formulario inicial
-            document.getElementById('resultsContainer').style.display = 'none';
-            document.getElementById('loginForm').classList.add('active');
-            
-            // Limpiar mensajes
-            document.getElementById('messageContainer').innerHTML = '';
-        }
-
-        // Verificar conexión con el API al cargar la página
-        window.addEventListener('load', async function() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/health`, { timeout: 5000 });
-                if (response.ok) {
-                    console.log('✅ Conexión con API establecida');
-                    showMessage('Conectado al servidor. Funcionalidad completa disponible.', 'success');
-                } else {
-                    throw new Error('API no disponible');
-                }
-            } catch (error) {
-                console.log('⚠️ API no disponible - Modo offline activo');
-                showMessage('Modo offline activo. La evaluación funcionará normalmente.', 'info');
-            }
-        });
-        
-        // Última sincronización: 2025-06-14 - Radar Chart integrado con 10 preguntas
-        console.log('✅ Plataforma sincronizada con gráfico de radar - Versión: 2025-06-14');
-    </script>
-</body>
-</html>
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                           
