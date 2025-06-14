@@ -129,14 +129,33 @@ def role_required(required_role):
         @login_required
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                return jsonify({'error': 'Autenticación requerida'}), 401
+                # Para vistas HTML, redirigir al login
+                if request.accept_mimetypes.accept_html:
+                    flash('Por favor inicia sesión para continuar')
+                    return redirect(url_for('login'))
+                else:
+                    return jsonify({'error': 'Autenticación requerida'}), 401
             
             if required_role == 'platform_admin' and not current_user.is_platform_admin:
-                return jsonify({'error': 'Acceso denegado: Se requieren permisos de administrador de plataforma'}), 403
+                if request.accept_mimetypes.accept_html:
+                    flash('Acceso denegado: Se requieren permisos de administrador de plataforma')
+                    dashboard_url = get_dashboard_url(current_user.role)
+                    return redirect(dashboard_url)
+                else:
+                    return jsonify({'error': 'Acceso denegado: Se requieren permisos de administrador de plataforma'}), 403
             elif required_role == 'coach' and not (current_user.is_coach or current_user.is_platform_admin):
-                return jsonify({'error': 'Acceso denegado: Se requieren permisos de coach'}), 403
+                if request.accept_mimetypes.accept_html:
+                    flash('Acceso denegado: Se requieren permisos de coach')
+                    dashboard_url = get_dashboard_url(current_user.role)
+                    return redirect(dashboard_url)
+                else:
+                    return jsonify({'error': 'Acceso denegado: Se requieren permisos de coach'}), 403
             elif required_role == 'coachee' and not current_user.is_active:
-                return jsonify({'error': 'Cuenta desactivada'}), 403
+                if request.accept_mimetypes.accept_html:
+                    flash('Cuenta desactivada')
+                    return redirect(url_for('login'))
+                else:
+                    return jsonify({'error': 'Cuenta desactivada'}), 403
                 
             return f(*args, **kwargs)
         return decorated_function
@@ -731,6 +750,19 @@ def create_default_users():
             platform_admin.set_password('admin123')  # Cambiar en producción
             db.session.add(platform_admin)
             print("✅ Administrador de plataforma creado")
+        
+        # Crear usuario admin como alias para compatibilidad
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            admin_user = User(
+                username='admin',
+                email='admin@assessment-platform.com',
+                full_name='Administrador',
+                role='platform_admin'
+            )
+            admin_user.set_password('admin123')
+            db.session.add(admin_user)
+            print("✅ Usuario admin (alias) creado")
         
         # Coach de ejemplo
         coach = User.query.filter_by(username='coach_demo').first()
