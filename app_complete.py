@@ -1178,6 +1178,69 @@ def index():
     else:
         return redirect('/login')
 
+@app.route('/api/debug-users', methods=['GET', 'POST'])
+def debug_users():
+    """Endpoint de debugging para diagnosticar problemas con usuarios"""
+    try:
+        with app.app_context():
+            # Información general
+            user_count = User.query.count()
+            all_users = User.query.all()
+            
+            users_info = []
+            for user in all_users:
+                users_info.append({
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'role': user.role,
+                    'is_platform_admin': user.is_platform_admin,
+                    'is_active': user.is_active
+                })
+            
+            # Si es POST, intentar crear usuarios manualmente
+            if request.method == 'POST':
+                print("🔧 Forzando creación manual de usuarios...")
+                result = create_default_users()
+                
+                # Actualizar información después de la creación
+                user_count = User.query.count()
+                all_users = User.query.all()
+                users_info = []
+                for user in all_users:
+                    users_info.append({
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email,
+                        'role': user.role,
+                        'is_platform_admin': user.is_platform_admin,
+                        'is_active': user.is_active
+                    })
+                    
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Creación manual de usuarios ejecutada',
+                    'user_count': user_count,
+                    'users': users_info,
+                    'creation_result': result,
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Estado actual de usuarios',
+                'user_count': user_count,
+                'users': users_info,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error en debug de usuarios: {str(e)}',
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
 if __name__ == '__main__':
     print("🚀 Iniciando servidor Flask en puerto 5001...")
     app.run(debug=True, host='0.0.0.0', port=5001)
