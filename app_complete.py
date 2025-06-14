@@ -527,6 +527,16 @@ def api_health():
             'error': str(e)
         }), 500
 
+@app.route('/health')
+@app.route('/status')
+def simple_health():
+    """Endpoint de salud simple para Render"""
+    return jsonify({
+        'status': 'ok',
+        'message': 'Assessment Platform is running',
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
 def init_database():
     """Inicializar la base de datos con datos de muestra"""
     try:
@@ -758,47 +768,48 @@ def create_default_users():
         return False
 
 # Inicializar la base de datos automáticamente cuando la aplicación arranque
-with app.app_context():
-    try:
-        # Siempre crear las tablas
-        db.create_all()
-        
-        # Verificar/crear usuario admin
-        admin_user = User.query.filter_by(username='admin').first()
-        if not admin_user:
-            print("🔧 Creando usuario admin de emergencia...")
-            admin_user = User(
-                username='admin',
-                email='admin@platform.com',
-                full_name='Platform Administrator',
-                role='platform_admin'
-            )
-            admin_user.set_password('admin123')
-            db.session.add(admin_user)
-            db.session.commit()
-            print("✅ Usuario admin creado exitosamente")
-        
-        # Ejecutar inicialización completa
-        init_database()
-        create_default_users()
-    except Exception as e:
-        print(f"⚠️ No se pudo inicializar la base de datos automáticamente: {e}")
-        # Crear usuario de emergencia sin depender de init_database
-        try:
-            db.create_all()
-            if not User.query.filter_by(username='admin').first():
-                admin_user = User(
-                    username='admin',
-                    email='admin@platform.com', 
-                    full_name='Platform Administrator',
-                    role='platform_admin'
-                )
-                admin_user.set_password('admin123')
-                db.session.add(admin_user)
-                db.session.commit()
-                print("✅ Usuario admin de emergencia creado")
-        except Exception as emergency_error:
-            print(f"❌ Error crítico creando usuario de emergencia: {emergency_error}")
+# COMENTADO para evitar problemas en producción - se inicializa en wsgi_production.py
+# with app.app_context():
+#     try:
+#         # Siempre crear las tablas
+#         db.create_all()
+#         
+#         # Verificar/crear usuario admin
+#         admin_user = User.query.filter_by(username='admin').first()
+#         if not admin_user:
+#             print("🔧 Creando usuario admin de emergencia...")
+#             admin_user = User(
+#                 username='admin',
+#                 email='admin@platform.com',
+#                 full_name='Platform Administrator',
+#                 role='platform_admin'
+#             )
+#             admin_user.set_password('admin123')
+#             db.session.add(admin_user)
+#             db.session.commit()
+#             print("✅ Usuario admin creado exitosamente")
+#         
+#         # Ejecutar inicialización completa
+#         init_database()
+#         create_default_users()
+#     except Exception as e:
+#         print(f"⚠️ No se pudo inicializar la base de datos automáticamente: {e}")
+#         # Crear usuario de emergencia sin depender de init_database
+#         try:
+#             db.create_all()
+#             if not User.query.filter_by(username='admin').first():
+#                 admin_user = User(
+#                     username='admin',
+#                     email='admin@platform.com', 
+#                     full_name='Platform Administrator',
+#                     role='platform_admin'
+#                 )
+#                 admin_user.set_password('admin123')
+#                 db.session.add(admin_user)
+#                 db.session.commit()
+#                 print("✅ Usuario admin de emergencia creado")
+#         except Exception as emergency_error:
+#             print(f"❌ Error crítico creando usuario de emergencia: {emergency_error}")
 
 @app.route('/api/demographics', methods=['POST'])
 def api_demographics():
