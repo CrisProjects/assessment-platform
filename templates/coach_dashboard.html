@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coach - Plataforma de Asertividad</title>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            color: #2d3748;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .main-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .panel-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .panel-content {
+            padding: 1.5rem;
+        }
+
+        .coachee-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .coachee-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .coachee-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+
+        .coachee-card.selected {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+
+        .coachee-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+        }
+
+        .coachee-meta {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+        }
+
+        .coachee-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .coachee-stats span {
+            background: #edf2f7;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .chart-container {
+            height: 400px;
+            margin-top: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .error {
+            background-color: #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            background-color: #c6f6d5;
+            color: #2f855a;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .assessment-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .assessment-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 0;
+        }
+
+        .assessment-item:last-child {
+            border-bottom: none;
+        }
+
+        .assessment-date {
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
+        .assessment-score {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🏢 Dashboard Coach</h1>
+            <div class="user-info">
+                <span id="coachName">Cargando...</span>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="totalCoachees">-</h3>
+                <p>Total Coachees</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalAssessments">-</h3>
+                <p>Evaluaciones Completadas</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="avgScore">-</h3>
+                <p>Puntuación Promedio</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="activeThisMonth">-</h3>
+                <p>Activos Este Mes</p>
+            </div>
+        </div>
+
+        <!-- Mensajes -->
+        <div id="messageContainer"></div>
+
+        <!-- Dashboard Principal -->
+        <div class="dashboard-grid">
+            <!-- Lista de Coachees -->
+            <div class="main-panel">
+                <div class="panel-header">
+                    <h2>📋 Mis Coachees</h2>
+                    <p>Selecciona un coachee para ver sus resultados detallados</p>
+                </div>
+                <div class="panel-content">
+                    <div id="coacheesList" class="coachee-list">
+                        <div class="loading">Cargando coachees...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Detalles -->
+            <div class="main-panel">
+                <div class="panel-header">
+                    <h2>📊 Detalles del Coachee</h2>
+                    <p id="selectedCoacheeName">Selecciona un coachee para ver detalles</p>
+                </div>
+                <div class="panel-content">
+                    <div id="coacheeDetails">
+                        <p class="loading">Selecciona un coachee de la lista para ver sus detalles y resultados.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Análisis -->
+        <div class="main-panel" id="chartPanel" style="display: none;">
+            <div class="panel-header">
+                <h2>📈 Análisis Dimensional</h2>
+                <p>Gráfico de radar con las dimensiones de asertividad</p>
+            </div>
+            <div class="panel-content">
+                <div class="chart-container">
+                    <canvas id="coacheeRadarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        const API_BASE_URL = window.location.origin;
+        let currentCoacheeId = null;
+        let radarChartInstance = null;
+
+        // Función para mostrar mensajes
+        function showMessage(message, type = 'error') {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Error en logout:', error);
+                window.location.href = '/login';
+            }
+        }
+
+        // Cargar perfil del coach
+        async function loadCoachProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('coachName').textContent = data.full_name;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando perfil:', error);
+                showMessage('Error cargando perfil del coach', 'error');
+            }
+        }
+
+        // Cargar coachees
+        async function loadCoachees() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coach/my-coachees`);
+                const coachees = await response.json();
+                
+                if (response.ok) {
+                    displayCoachees(coachees);
+                    updateStats(coachees);
+                } else {
+                    throw new Error(coachees.error);
+                }
+            } catch (error) {
+                console.error('Error cargando coachees:', error);
+                document.getElementById('coacheesList').innerHTML = 
+                    '<div class="error">Error cargando coachees: ' + error.message + '</div>';
+            }
+        }
+
+        // Mostrar coachees
+        function displayCoachees(coachees) {
+            const container = document.getElementById('coacheesList');
+            
+            if (coachees.length === 0) {
+                container.innerHTML = '<div class="loading">No hay coachees asignados.</div>';
+                return;
+            }
+
+            container.innerHTML = coachees.map(coachee => `
+                <div class="coachee-card" onclick="selectCoachee(${coachee.id}, '${coachee.full_name}')">
+                    <div class="coachee-name">${coachee.full_name}</div>
+                    <div class="coachee-meta">${coachee.email}</div>
+                    <div class="coachee-stats">
+                        <span>📊 ${coachee.total_assessments} evaluaciones</span>
+                        ${coachee.latest_assessment ? 
+                            `<span>🎯 ${coachee.latest_assessment.total_score}% última</span>` : 
+                            '<span>⏳ Sin evaluaciones</span>'
+                        }
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Actualizar estadísticas
+        function updateStats(coachees) {
+            const totalCoachees = coachees.length;
+            const totalAssessments = coachees.reduce((sum, c) => sum + c.total_assessments, 0);
+            const scoresSum = coachees
+                .filter(c => c.latest_assessment)
+                .reduce((sum, c) => sum + c.latest_assessment.total_score, 0);
+            const avgScore = coachees.filter(c => c.latest_assessment).length > 0 ? 
+                Math.round(scoresSum / coachees.filter(c => c.latest_assessment).length) : 0;
+            
+            // Activos este mes (simulado - coachees con evaluaciones)
+            const activeThisMonth = coachees.filter(c => c.latest_assessment).length;
+
+            document.getElementById('totalCoachees').textContent = totalCoachees;
+            document.getElementById('totalAssessments').textContent = totalAssessments;
+            document.getElementById('avgScore').textContent = avgScore + '%';
+            document.getElementById('activeThisMonth').textContent = activeThisMonth;
+        }
+
+        // Seleccionar coachee
+        async function selectCoachee(coacheeId, coacheeName) {
+            // Actualizar UI
+            document.querySelectorAll('.coachee-card').forEach(card => card.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            
+            currentCoacheeId = coacheeId;
+            document.getElementById('selectedCoacheeName').textContent = coacheeName;
+            
+            // Cargar detalles
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coach/coachee-assessments/${coacheeId}`);
+                const assessments = await response.json();
+                
+                if (response.ok) {
+                    displayCoacheeDetails(assessments);
+                    if (assessments.length > 0) {
+                        createRadarChart(assessments[0].dimensional_scores);
+                    }
+                } else {
+                    throw new Error(assessments.error);
+                }
+            } catch (error) {
+                console.error('Error cargando detalles:', error);
+                document.getElementById('coacheeDetails').innerHTML = 
+                    '<div class="error">Error cargando detalles: ' + error.message + '</div>';
+            }
+        }
+
+        // Mostrar detalles del coachee
+        function displayCoacheeDetails(assessments) {
+            const container = document.getElementById('coacheeDetails');
+            
+            if (assessments.length === 0) {
+                container.innerHTML = '<div class="loading">Este coachee no ha completado evaluaciones aún.</div>';
+                document.getElementById('chartPanel').style.display = 'none';
+                return;
+            }
+
+            const latest = assessments[0];
+            container.innerHTML = `
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>📈 Última Evaluación</h3>
+                    <p><strong>Puntuación:</strong> ${latest.total_score}%</p>
+                    <p><strong>Nivel:</strong> ${latest.assertiveness_level}</p>
+                    <p><strong>Fecha:</strong> ${new Date(latest.completed_at).toLocaleDateString()}</p>
+                </div>
+                
+                <div>
+                    <h3>📋 Historial de Evaluaciones</h3>
+                    <div class="assessment-history">
+                        ${assessments.map(assessment => `
+                            <div class="assessment-item">
+                                <div class="assessment-date">${new Date(assessment.completed_at).toLocaleDateString()}</div>
+                                <div class="assessment-score">${assessment.total_score}% - ${assessment.assertiveness_level}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('chartPanel').style.display = 'block';
+        }
+
+        // Crear gráfico de radar
+        function createRadarChart(dimensionalScores) {
+            // Destruir gráfico anterior si existe
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+            }
+
+            const ctx = document.getElementById('coacheeRadarChart').getContext('2d');
+            
+            const data = {
+                labels: [
+                    'Comunicación\nDirecta',
+                    'Defensa de\nDerechos', 
+                    'Expresión de\nOpiniones',
+                    'Manejo de\nConflictos',
+                    'Autoconfianza'
+                ],
+                datasets: [{
+                    label: 'Nivel de Asertividad',
+                    data: [
+                        dimensionalScores.communication || 0,
+                        dimensionalScores.rights_defense || 0,
+                        dimensionalScores.opinion_expression || 0,
+                        dimensionalScores.conflict_management || 0,
+                        dimensionalScores.self_confidence || 0
+                    ],
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6
+                }]
+            };
+
+            const config = {
+                type: 'radar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                color: '#4a5568'
+                            },
+                            ticks: {
+                                beginAtZero: true,
+                                max: 100,
+                                stepSize: 20,
+                                color: '#718096',
+                                backdropColor: 'transparent'
+                            }
+                        }
+                    }
+                }
+            };
+
+            radarChartInstance = new Chart(ctx, config);
+        }
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCoachProfile();
+            loadCoachees();
+        });
+    </script>
+</body>
+</html>
