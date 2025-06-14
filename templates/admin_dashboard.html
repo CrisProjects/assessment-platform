@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrador - Plataforma de Asertividad</title>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            color: #2d3748;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #e53e3e;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e53e3e;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .user-table th {
+            background-color: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .role-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+
+        .role-coach {
+            background-color: #bee3f8;
+            color: #2b6cb0;
+        }
+
+        .role-coachee {
+            background-color: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .error {
+            background-color: #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+
+        .actions {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🛠️ Panel de Administración</h1>
+            <div class="user-info">
+                <span>Administrador de Plataforma</span>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Estadísticas Generales -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="totalUsers">-</h3>
+                <p>Total de Usuarios</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalCoaches">-</h3>
+                <p>Coaches Registrados</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalCoachees">-</h3>
+                <p>Coachees Activos</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalAssessments">-</h3>
+                <p>Evaluaciones Completadas</p>
+            </div>
+        </div>
+
+        <!-- Dashboard Principal -->
+        <div class="dashboard-grid">
+            <!-- Lista de Usuarios -->
+            <div class="card">
+                <h2>👥 Usuarios del Sistema</h2>
+                <div id="usersTable">
+                    <div class="loading">Cargando usuarios...</div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Actividad -->
+            <div class="card">
+                <h2>📊 Distribución de Usuarios</h2>
+                <div class="chart-container">
+                    <canvas id="userDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad Reciente -->
+        <div class="card">
+            <h2>🕐 Actividad Reciente del Sistema</h2>
+            <div id="recentActivity">
+                <div class="loading">Cargando actividad...</div>
+            </div>
+        </div>
+
+        <!-- Acciones de Administración -->
+        <div class="actions">
+            <button class="action-btn" onclick="initializeDatabase()">
+                🔄 Reinicializar Base de Datos
+            </button>
+            <button class="action-btn secondary" onclick="exportData()">
+                📥 Exportar Datos
+            </button>
+            <button class="action-btn secondary" onclick="viewSystemLogs()">
+                📋 Ver Logs del Sistema
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.origin;
+        let userDistributionChart = null;
+
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPlatformStats();
+            loadUsers();
+        });
+
+        // Cargar estadísticas de la plataforma
+        async function loadPlatformStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/platform-stats`);
+                const stats = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('totalUsers').textContent = stats.total_users;
+                    document.getElementById('totalCoaches').textContent = stats.total_coaches;
+                    document.getElementById('totalCoachees').textContent = stats.total_coachees;
+                    document.getElementById('totalAssessments').textContent = stats.total_assessments;
+                    
+                    // Crear gráfico de distribución
+                    createUserDistributionChart(stats);
+                } else {
+                    throw new Error(stats.error);
+                }
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                document.getElementById('totalUsers').textContent = 'Error';
+            }
+        }
+
+        // Crear gráfico de distribución de usuarios
+        function createUserDistributionChart(stats) {
+            const ctx = document.getElementById('userDistributionChart').getContext('2d');
+            
+            if (userDistributionChart) {
+                userDistributionChart.destroy();
+            }
+            
+            userDistributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Administradores', 'Coaches', 'Coachees'],
+                    datasets: [{
+                        data: [1, stats.total_coaches, stats.total_coachees],
+                        backgroundColor: [
+                            '#e53e3e',
+                            '#4299e1',
+                            '#48bb78'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Cargar lista de usuarios
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/users`);
+                
+                if (response.ok) {
+                    const users = await response.json();
+                    displayUsers(users);
+                } else {
+                    // Si no existe el endpoint, mostrar mensaje
+                    document.getElementById('usersTable').innerHTML = 
+                        '<div class="loading">Funcionalidad de gestión de usuarios próximamente</div>';
+                }
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+                document.getElementById('usersTable').innerHTML = 
+                    '<div class="loading">Usuarios disponibles a través de la base de datos</div>';
+            }
+        }
+
+        // Mostrar usuarios en tabla
+        function displayUsers(users) {
+            if (!users || users.length === 0) {
+                document.getElementById('usersTable').innerHTML = 
+                    '<div class="loading">No hay usuarios registrados</div>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td>${user.username}</td>
+                                <td>${user.full_name}</td>
+                                <td>
+                                    <span class="role-badge role-${user.role}">
+                                        ${getRoleDisplayName(user.role)}
+                                    </span>
+                                </td>
+                                <td>${user.is_active ? '✅ Activo' : '❌ Inactivo'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('usersTable').innerHTML = tableHTML;
+        }
+
+        // Obtener nombre de rol para mostrar
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'platform_admin': 'Admin',
+                'coach': 'Coach',
+                'coachee': 'Coachee'
+            };
+            return roleNames[role] || role;
+        }
+
+        // Acciones de administración
+        async function initializeDatabase() {
+            if (confirm('¿Estás seguro de que quieres reinicializar la base de datos? Esto puede afectar los datos existentes.')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/init-db`, {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Base de datos reinicializada correctamente');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('Error reinicializando base de datos: ' + error.message);
+                }
+            }
+        }
+
+        function exportData() {
+            alert('Funcionalidad de exportación próximamente');
+        }
+
+        function viewSystemLogs() {
+            alert('Logs del sistema disponibles en el panel de Render');
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/logout`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Error cerrando sesión');
+                }
+            } catch (error) {
+                console.error('Error en logout:', error);
+                window.location.href = '/login';
+            }
+        }
+    </script>
+</body>
+</html>

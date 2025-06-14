@@ -926,7 +926,7 @@ def cors_test():
 @role_required('platform_admin')
 def platform_admin_dashboard():
     """Dashboard para administrador de plataforma"""
-    return "<h1>Dashboard Admin - En construcción</h1>"
+    return render_template('admin_dashboard.html')
 
 @app.route('/coach-dashboard')
 @coach_access_required
@@ -962,6 +962,31 @@ def get_platform_stats():
             ).count()
         }
         return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/users', methods=['GET'])
+@role_required('platform_admin')
+def get_all_users():
+    """Obtener lista de todos los usuarios para el dashboard de admin"""
+    try:
+        users = User.query.all()
+        users_data = []
+        
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_login': user.last_login.isoformat() if user.last_login else None,
+                'coach_id': user.coach_id
+            })
+        
+        return jsonify(users_data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
