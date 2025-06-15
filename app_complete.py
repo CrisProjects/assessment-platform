@@ -966,36 +966,32 @@ def platform_admin_dashboard():
 @coach_access_required
 def coach_dashboard():
     """Dashboard para coaches"""
-    # Obtener estadísticas básicas del coach
-    coach_id = current_user.id
-    
-    # Contar coachees asignados
-    total_coachees = User.query.filter_by(coach_id=coach_id, role='coachee').count()
-    
-    # Contar evaluaciones completadas por los coachees
-    coachees = User.query.filter_by(coach_id=coach_id, role='coachee').all()
-    coachee_ids = [c.id for c in coachees]
-    
-    total_assessments = 0
-    if coachee_ids:
-        total_assessments = AssessmentResult.query.filter(AssessmentResult.user_id.in_(coachee_ids)).count()
-    
-    # Obtener coachees recientes con evaluaciones
-    recent_assessments = []
-    if coachee_ids:
-        recent_assessments = db.session.query(AssessmentResult, User).join(
-            User, AssessmentResult.user_id == User.id
-        ).filter(
-            AssessmentResult.user_id.in_(coachee_ids)
-        ).order_by(AssessmentResult.created_at.desc()).limit(5).all()
-    
-    stats = {
-        'total_coachees': total_coachees,
-        'total_assessments': total_assessments,
-        'recent_assessments': recent_assessments
-    }
-    
-    return render_template('coach_dashboard.html', stats=stats)
+    try:
+        # Obtener estadísticas básicas del coach
+        coach_id = current_user.id
+        
+        # Contar coachees asignados
+        total_coachees = User.query.filter_by(coach_id=coach_id, role='coachee').count()
+        
+        # Contar evaluaciones completadas por los coachees
+        coachees = User.query.filter_by(coach_id=coach_id, role='coachee').all()
+        coachee_ids = [c.id for c in coachees]
+        
+        total_assessments = 0
+        if coachee_ids:
+            total_assessments = AssessmentResult.query.filter(AssessmentResult.user_id.in_(coachee_ids)).count()
+        
+        # Crear estadísticas simples para el template
+        stats = {
+            'total_coachees': total_coachees,
+            'total_assessments': total_assessments
+        }
+        
+        return render_template('coach_dashboard.html', stats=stats)
+    except Exception as e:
+        print(f"Error en coach_dashboard: {e}")
+        # Retornar template básico en caso de error
+        return render_template('coach_dashboard.html', stats={'total_coachees': 0, 'total_assessments': 0})
 
 @app.route('/coachee-dashboard')
 @login_required
