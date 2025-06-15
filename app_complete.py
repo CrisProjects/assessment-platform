@@ -1081,10 +1081,9 @@ def get_my_coachees():
             if latest_assessment:
                 coachee_data['latest_assessment'] = {
                     'id': latest_assessment.id,
-                    'created_at': latest_assessment.created_at.isoformat(),
+                    'created_at': latest_assessment.completed_at.isoformat() if latest_assessment.completed_at else None,
                     'completed_at': latest_assessment.completed_at.isoformat() if latest_assessment.completed_at else None,
-                    'scores': latest_assessment.scores,
-                    'overall_score': latest_assessment.overall_score
+                    'score': latest_assessment.score
                 }
             
             coachees_data.append(coachee_data)
@@ -1112,11 +1111,10 @@ def get_coachee_progress(coachee_id):
         for assessment in assessments:
             progress_data.append({
                 'id': assessment.id,
-                'created_at': assessment.created_at.isoformat(),
+                'created_at': assessment.completed_at.isoformat() if assessment.completed_at else None,
                 'completed_at': assessment.completed_at.isoformat() if assessment.completed_at else None,
-                'scores': assessment.scores,
-                'overall_score': assessment.overall_score,
-                'recommendations': assessment.recommendations
+                'score': assessment.score,
+                'result_text': assessment.result_text
             })
         
         return jsonify({
@@ -1166,11 +1164,11 @@ def get_coach_dashboard_stats():
             # Promedio de puntuación
             results = AssessmentResult.query.filter(
                 AssessmentResult.user_id.in_(coachee_ids),
-                AssessmentResult.overall_score.isnot(None)
+                AssessmentResult.score.isnot(None)
             ).all()
             
             if results:
-                avg_score = sum(r.overall_score for r in results) / len(results)
+                avg_score = sum(r.score for r in results) / len(results)
             
             # Actividad reciente (último mes)
             one_month_ago = datetime.utcnow().replace(day=1)
@@ -1184,20 +1182,20 @@ def get_coach_dashboard_stats():
         if coachee_ids:
             latest_assessments = db.session.query(
                 AssessmentResult.user_id,
-                func.max(AssessmentResult.created_at).label('latest_date')
+                func.max(AssessmentResult.completed_at).label('latest_date')
             ).filter(
                 AssessmentResult.user_id.in_(coachee_ids),
-                AssessmentResult.overall_score.isnot(None)
+                AssessmentResult.score.isnot(None)
             ).group_by(AssessmentResult.user_id).subquery()
             
             latest_results = db.session.query(AssessmentResult).join(
                 latest_assessments,
                 (AssessmentResult.user_id == latest_assessments.c.user_id) &
-                (AssessmentResult.created_at == latest_assessments.c.latest_date)
+                (AssessmentResult.completed_at == latest_assessments.c.latest_date)
             ).all()
             
             for result in latest_results:
-                level = get_assertiveness_level(result.overall_score)
+                level = get_assertiveness_level(result.score)
                 if level in score_distribution:
                     score_distribution[level] += 1
         
