@@ -629,8 +629,33 @@
                     };
                 }
 
-                // Usar preguntas integradas
-                questions = TEMP_QUESTIONS;
+                // Intentar cargar preguntas desde la API
+                try {
+                    if (onlineMode) {
+                        const questionsResponse = await fetch(`${API_BASE_URL}/api/questions`, {
+                            method: 'GET',
+                            credentials: 'include'
+                        });
+                        
+                        if (questionsResponse.ok) {
+                            const questionsData = await questionsResponse.json();
+                            if (questionsData.questions && questionsData.questions.length > 0) {
+                                questions = questionsData.questions;
+                                console.log(`✅ ${questions.length} preguntas cargadas desde la API`);
+                            } else {
+                                throw new Error('No se encontraron preguntas en la API');
+                            }
+                        } else {
+                            throw new Error('Error al cargar preguntas desde la API');
+                        }
+                    } else {
+                        throw new Error('Modo offline');
+                    }
+                } catch (error) {
+                    console.log('⚠️ Usando preguntas de respaldo:', error.message);
+                    questions = TEMP_QUESTIONS;
+                }
+                
                 console.log(`✅ ${questions.length} preguntas cargadas`);
 
                 // Cambiar a vista de evaluación
