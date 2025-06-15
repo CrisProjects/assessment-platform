@@ -523,10 +523,9 @@ def api_init_database():
             # If it's a Flask Response, extract the data
             result = True  # Default to True for initialization success
         
-        # Verificar que el usuario admin existe
-        with app.app_context():
-            admin_user = User.query.filter_by(username='admin').first()
-            user_count = User.query.count()
+        # Verificar que el usuario admin existe (no nested app context needed)
+        admin_user = User.query.filter_by(username='admin').first()
+        user_count = User.query.count()
             
         return jsonify({
             'status': 'success',
