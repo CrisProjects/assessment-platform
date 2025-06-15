@@ -1351,11 +1351,34 @@ def login_page():
 
 @app.route('/')
 def index():
-    """Página principal - redirige según el estado de autenticación"""
-    if current_user.is_authenticated:
-        return redirect(get_dashboard_url(current_user.role))
-    else:
-        return redirect('/login')
+    """Página principal - sirve el frontend estático directamente"""
+    try:
+        # Servir el index.html directamente desde el directorio raíz
+        return send_from_directory('.', 'index.html')
+    except Exception as e:
+        # Fallback: crear página básica si index.html no existe
+        return """
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Plataforma de Evaluación de Asertividad</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                .container { max-width: 600px; margin: 0 auto; }
+                .btn { background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Plataforma de Evaluación de Asertividad</h1>
+                <p>Bienvenido a la plataforma de evaluación.</p>
+                <a href="/login" class="btn">Ir al Login</a>
+            </div>
+        </body>
+        </html>
+        """, 200
 
 @app.route('/api/debug-users', methods=['GET', 'POST'])
 def debug_users():
@@ -1472,18 +1495,15 @@ def init_database():
         
         # Crear todas las tablas
         db.create_all()
+        print("✅ Todas las tablas creadas")
         
         # Verificar si ya existen usuarios
         existing_users = User.query.count()
-        if existing_users > 0:
-            return jsonify({
-                'success': True,
-                'message': f'Base de datos ya inicializada con {existing_users} usuarios',
-                'users_created': 0
-            })
+        users_created = 0
         
-        # Crear usuarios de prueba
-        users_to_create = [
+        if existing_users == 0:
+            # Crear usuarios de prueba
+            users_to_create = [
             {
                 'username': 'admin',
                 'email': 'admin@demo.com',
@@ -1524,12 +1544,66 @@ def init_database():
             db.session.add(user)
             created_users[user_data['username']] = user
         
-        # Flush para obtener IDs
-        db.session.flush()
+            # Flush para obtener IDs
+            db.session.flush()
+            
+            # Asignar coach al coachee
+            if 'coachee_demo' in created_users and 'coach_demo' in created_users:
+                created_users['coachee_demo'].coach_id = created_users['coach_demo'].id
+                
+            users_created = len(created_users)
+        else:
+            users_created = 0
         
-        # Asignar coach al coachee
-        if 'coachee_demo' in created_users and 'coach_demo' in created_users:
-            created_users['coachee_demo'].coach_id = created_users['coach_demo'].id
+        # Verificar y crear evaluación con preguntas
+        questions_created = 0
+        existing_assessment = Assessment.query.filter_by(title='Evaluación de Asertividad').first()
+        
+        if not existing_assessment:
+            # Crear la evaluación principal
+            assessment = Assessment(
+                title='Evaluación de Asertividad',
+                description='Evaluación para medir el nivel de asertividad en diferentes dimensiones',
+                created_at=datetime.utcnow()
+            )
+            
+            db.session.add(assessment)
+            db.session.flush()  # Para obtener el ID
+            
+            # 10 preguntas básicas de asertividad
+            questions_data = [
+                'Cuando alguien me critica de manera injusta, expreso mi desacuerdo de forma clara y respetuosa.',
+                'Me siento cómodo/a expresando mis opiniones en grupo, incluso si difieren de la mayoría.',
+                'Puedo decir "no" cuando alguien me pide algo que no quiero o no puedo hacer.',
+                'Cuando necesito ayuda, la pido sin sentirme incómodo/a.',
+                'Defiendo mis derechos cuando siento que están siendo violados.',
+                'Establezco límites claros en mis relaciones personales.',
+                'Abordo los conflictos de frente en lugar de evitarlos.',
+                'Mantengo la calma durante las discusiones difíciles.',
+                'Confío en mis habilidades y capacidades.',
+                'Me siento seguro/a de mis decisiones.'
+            ]
+            
+            # Opciones de respuesta (escala Likert)
+            response_options = [
+                "Totalmente en desacuerdo",
+                "En desacuerdo", 
+                "Neutral",
+                "De acuerdo",
+                "Totalmente de acuerdo"
+            ]
+            
+            # Crear las preguntas
+            for content in questions_data:
+                question = Question(
+                    assessment_id=assessment.id,
+                    content=content,
+                    question_type='likert',
+                    options=response_options
+                )
+                db.session.add(question)
+                
+            questions_created = len(questions_data)
         
         # Commit final
         db.session.commit()
@@ -1537,7 +1611,8 @@ def init_database():
         return jsonify({
             'success': True,
             'message': 'Base de datos inicializada correctamente',
-            'users_created': len(created_users),
+            'users_created': users_created,
+            'questions_created': questions_created,
             'credentials': [
                 {
                     'role': user_data['role'],
@@ -1545,7 +1620,7 @@ def init_database():
                     'password': user_data['password']
                 }
                 for user_data in users_to_create
-            ]
+            ] if existing_users == 0 else []
         })
         
     except Exception as e:
