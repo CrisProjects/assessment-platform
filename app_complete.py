@@ -775,6 +775,7 @@ def create_default_users():
             )
             coach.set_password('coach123')  # Cambiar en producción
             db.session.add(coach)
+            db.session.commit()  # Commit para obtener el ID
             print("✅ Coach demo creado")
         
         # Coachee de ejemplo
