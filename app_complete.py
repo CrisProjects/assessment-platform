@@ -1242,6 +1242,48 @@ def debug_users():
             'timestamp': datetime.utcnow().isoformat()
         }), 500
 
+@app.route('/api/admin/promote-user', methods=['POST'])
+def promote_user_to_admin():
+    """Endpoint temporal para promover un usuario a admin - SOLO PARA DEPLOYMENT INICIAL"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        
+        if not username:
+            return jsonify({'error': 'Username requerido'}), 400
+        
+        # Solo permitir promover usuarios específicos
+        allowed_usernames = ['admin', 'platform_admin']
+        if username not in allowed_usernames:
+            return jsonify({'error': 'Usuario no autorizado para promoción'}), 403
+        
+        with app.app_context():
+            user = User.query.filter_by(username=username).first()
+            if not user:
+                return jsonify({'error': 'Usuario no encontrado'}), 404
+            
+            # Promover a platform_admin
+            user.role = 'platform_admin'
+            db.session.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Usuario {username} promovido a platform_admin',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'role': user.role,
+                    'is_platform_admin': user.is_platform_admin
+                }
+            })
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': f'Error promoviendo usuario: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     print("🚀 Iniciando servidor Flask en puerto 5001...")
     app.run(debug=True, host='0.0.0.0', port=5001)
