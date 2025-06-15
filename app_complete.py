@@ -1679,6 +1679,41 @@ def init_questions():
             'error': f'Error creando preguntas: {str(e)}'
         }), 500
 
+@app.route('/api/test-simple', methods=['POST', 'GET'])
+def test_simple_endpoint():
+    """Simple test endpoint to verify JSON serialization works"""
+    try:
+        # Just return a simple response without calling any other functions
+        return jsonify({
+            'status': 'success',
+            'message': 'Simple endpoint working',
+            'test_value': True,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error in simple endpoint: {str(e)}'
+        }), 500
+
+@app.route('/api/test-minimal-db', methods=['POST', 'GET'])
+def test_minimal_db():
+    """Test minimal database operations"""
+    try:
+        # Test just creating tables without any other operations
+        db.create_all()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Tables created successfully',
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error creating tables: {str(e)}'
+        }), 500
+
 @app.route('/api/coach/assessment-details/<int:assessment_result_id>', methods=['GET'])
 @coach_access_required
 def get_assessment_details(assessment_result_id):
@@ -1958,4 +1993,28 @@ def calculate_progress_trend(scores):
     if len(scores) < 2:
         return 'insufficient_data'
     
-   
+    # Calcular la pendiente de la regresión lineal simple
+    x_values = list(range(len(scores)))
+    y_values = scores
+    
+    n = len(x_values)
+    sum_x = sum(x_values)
+    sum_y = sum(y_values)
+    sum_xy = sum(x * y for x, y in zip(x_values, y_values))
+    sum_xx = sum(x * x for x in x_values)
+    
+    # Pendiente (m) y ordenada al origen (b) de la recta de regresión
+    m = (n * sum_xy - sum_x * sum_y) / (n * sum_xx - sum_x ** 2)
+    b = (sum_y - m * sum_x) / n
+    
+    # Predecir valores y calcular la tendencia
+    trend = ['neutral' for _ in scores]  # Valor por defecto
+    for i in range(len(scores)):
+        predicted_value = m * i + b
+        if predicted_value < scores[i]:
+            trend[i] = 'up'
+        elif predicted_value > scores[i]:
+            trend[i] = 'down'
+    
+    return trend
+
