@@ -13,6 +13,7 @@ import os
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from sqlalchemy import func
 
 # Configuración de Flask
 app = Flask(__name__)
@@ -354,7 +355,7 @@ def api_get_questions():
         print(f"[ERROR] Questions endpoint error: {e}")
         return jsonify({
             'error': f'Error interno del servidor: {str(e)}'
-        }), 500
+        }, 500)
 
 @app.route('/api/save_assessment', methods=['POST'])
 @login_required
@@ -412,7 +413,7 @@ def api_save_assessment():
             'assertiveness_level': assertiveness_level,
             'dimensional_scores': dimensional_scores,
             'message': 'Evaluación guardada exitosamente'
-        }), 200
+        }, 200)
         
     except Exception as e:
         db.session.rollback()
@@ -965,7 +966,36 @@ def platform_admin_dashboard():
 @coach_access_required
 def coach_dashboard():
     """Dashboard para coaches"""
-    return render_template('coach_dashboard.html')
+    # Obtener estadísticas básicas del coach
+    coach_id = current_user.id
+    
+    # Contar coachees asignados
+    total_coachees = User.query.filter_by(coach_id=coach_id, role='coachee').count()
+    
+    # Contar evaluaciones completadas por los coachees
+    coachees = User.query.filter_by(coach_id=coach_id, role='coachee').all()
+    coachee_ids = [c.id for c in coachees]
+    
+    total_assessments = 0
+    if coachee_ids:
+        total_assessments = AssessmentResult.query.filter(AssessmentResult.user_id.in_(coachee_ids)).count()
+    
+    # Obtener coachees recientes con evaluaciones
+    recent_assessments = []
+    if coachee_ids:
+        recent_assessments = db.session.query(AssessmentResult, User).join(
+            User, AssessmentResult.user_id == User.id
+        ).filter(
+            AssessmentResult.user_id.in_(coachee_ids)
+        ).order_by(AssessmentResult.created_at.desc()).limit(5).all()
+    
+    stats = {
+        'total_coachees': total_coachees,
+        'total_assessments': total_assessments,
+        'recent_assessments': recent_assessments
+    }
+    
+    return render_template('coach_dashboard.html', stats=stats)
 
 @app.route('/coachee-dashboard')
 @login_required
@@ -1026,141 +1056,248 @@ def get_all_users():
 @app.route('/api/coach/my-coachees', methods=['GET'])
 @coach_access_required
 def get_my_coachees():
-    """Obtener todos los coachees asignados al coach actual"""
+    """Obtener lista de coachees asignados al coach actual"""
     try:
-        coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
+        coach_id = current_user.id
+        coachees = User.query.filter_by(coach_id=coach_id, role='coachee').all()
         
         coachees_data = []
         for coachee in coachees:
-            # Contar evaluaciones completadas
-            total_assessments = AssessmentResult.query.filter_by(user_id=coachee.id).count()
+            # Obtener última evaluación del coachee
+            latest_assessment = AssessmentResult.query.filter_by(
+                user_id=coachee.id
+            ).order_by(AssessmentResult.created_at.desc()).first()
             
-            # Obtener última evaluación
-            latest_assessment = AssessmentResult.query.filter_by(user_id=coachee.id)\
-                .order_by(AssessmentResult.completed_at.desc()).first()
+            # Contar total de evaluaciones
+            total_assessments = AssessmentResult.query.filter_by(user_id=coachee.id).count()
             
             coachee_data = {
                 'id': coachee.id,
-                'full_name': coachee.full_name,
-                'email': coachee.email,
                 'username': coachee.username,
-                'is_active': coachee.is_active,
+                'email': coachee.email,
+                'full_name': coachee.full_name,
                 'created_at': coachee.created_at.isoformat() if coachee.created_at else None,
                 'last_login': coachee.last_login.isoformat() if coachee.last_login else None,
                 'total_assessments': total_assessments,
-                'latest_assessment': {
-                    'id': latest_assessment.id,
-                    'score': latest_assessment.score,
-                    'completed_at': latest_assessment.completed_at.isoformat(),
-                    'result_text': latest_assessment.result_text
-                } if latest_assessment else None
+                'latest_assessment': None
             }
+            
+            if latest_assessment:
+                coachee_data['latest_assessment'] = {
+                    'id': latest_assessment.id,
+                    'created_at': latest_assessment.created_at.isoformat(),
+                    'completed_at': latest_assessment.completed_at.isoformat() if latest_assessment.completed_at else None,
+                    'scores': latest_assessment.scores,
+                    'overall_score': latest_assessment.overall_score
+                }
+            
             coachees_data.append(coachee_data)
         
         return jsonify(coachees_data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/coach/coachee/<int:coachee_id>/assessments', methods=['GET'])
+@app.route('/api/coach/coachee-progress/<int:coachee_id>', methods=['GET'])
 @coach_access_required
-def get_coachee_assessments(coachee_id):
-    """Obtener todas las evaluaciones de un coachee específico"""
+def get_coachee_progress(coachee_id):
+    """Obtener progreso histórico de un coachee específico"""
     try:
         # Verificar que el coachee pertenece al coach actual
         coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id).first()
         if not coachee:
-            return jsonify({'error': 'Coachee no encontrado o no autorizado'}), 404
+            return jsonify({'error': 'Coachee no encontrado o no asignado'}), 404
         
-        assessments = AssessmentResult.query.filter_by(user_id=coachee_id)\
-            .order_by(AssessmentResult.completed_at.desc()).all()
+        # Obtener todas las evaluaciones del coachee
+        assessments = AssessmentResult.query.filter_by(
+            user_id=coachee_id
+        ).order_by(AssessmentResult.created_at.asc()).all()
         
-        assessments_data = []
+        progress_data = []
         for assessment in assessments:
-            assessments_data.append({
+            progress_data.append({
                 'id': assessment.id,
-                'assessment_id': assessment.assessment_id,
-                'score': assessment.score,
-                'total_questions': assessment.total_questions,
-                'completed_at': assessment.completed_at.isoformat(),
-                'result_text': assessment.result_text
+                'created_at': assessment.created_at.isoformat(),
+                'completed_at': assessment.completed_at.isoformat() if assessment.completed_at else None,
+                'scores': assessment.scores,
+                'overall_score': assessment.overall_score,
+                'recommendations': assessment.recommendations
             })
         
-        return jsonify(assessments_data), 200
+        return jsonify({
+            'coachee': {
+                'id': coachee.id,
+                'username': coachee.username,
+                'full_name': coachee.full_name,
+                'email': coachee.email
+            },
+            'assessments': progress_data
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/coach/coachee/<int:coachee_id>/latest-radar', methods=['GET'])
-@coach_access_required  
-def get_coachee_latest_radar(coachee_id):
-    """Obtener datos del radar chart de la última evaluación del coachee"""
+@app.route('/api/coach/dashboard-stats', methods=['GET'])
+@coach_access_required
+def get_coach_dashboard_stats():
+    """Obtener estadísticas del dashboard para el coach actual"""
     try:
-        # Verificar que el coachee pertenece al coach actual
-        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id).first()
-        if not coachee:
-            return jsonify({'error': 'Coachee no encontrado o no autorizado'}), 404
+        coach_id = current_user.id
         
-        # Obtener la última evaluación con detalles
-        latest_assessment = AssessmentResult.query.filter_by(user_id=coachee_id)\
-            .order_by(AssessmentResult.completed_at.desc()).first()
+        # Contar coachees
+        total_coachees = User.query.filter_by(coach_id=coach_id, role='coachee').count()
         
-        if not latest_assessment:
-            return jsonify({'error': 'No hay evaluaciones para este coachee'}), 404
+        # Obtener IDs de coachees
+        coachees = User.query.filter_by(coach_id=coach_id, role='coachee').all()
+        coachee_ids = [c.id for c in coachees]
         
-        # Obtener las respuestas de la evaluación para calcular las dimensiones
-        responses = Response.query.filter_by(
-            user_id=coachee_id, 
-            assessment_result_id=latest_assessment.id
-        ).all()
+        # Estadísticas de evaluaciones
+        total_assessments = 0
+        completed_assessments = 0
+        avg_score = 0
+        recent_activity = 0
         
-        if not responses:
-            return jsonify({'error': 'No se encontraron respuestas para la evaluación'}), 404
+        if coachee_ids:
+            # Total de evaluaciones
+            total_assessments = AssessmentResult.query.filter(
+                AssessmentResult.user_id.in_(coachee_ids)
+            ).count()
+            
+            # Evaluaciones completadas
+            completed_assessments = AssessmentResult.query.filter(
+                AssessmentResult.user_id.in_(coachee_ids),
+                AssessmentResult.completed_at.isnot(None)
+            ).count()
+            
+            # Promedio de puntuación
+            results = AssessmentResult.query.filter(
+                AssessmentResult.user_id.in_(coachee_ids),
+                AssessmentResult.overall_score.isnot(None)
+            ).all()
+            
+            if results:
+                avg_score = sum(r.overall_score for r in results) / len(results)
+            
+            # Actividad reciente (último mes)
+            one_month_ago = datetime.utcnow().replace(day=1)
+            recent_activity = AssessmentResult.query.filter(
+                AssessmentResult.user_id.in_(coachee_ids),
+                AssessmentResult.created_at >= one_month_ago
+            ).count()
         
-        # Calcular puntuaciones por dimensión (usando la misma lógica del radar original)
-        # Asumiendo las mismas 5 dimensiones que en el sistema original
-        dimensions = {
-            'Autoafirmación': [],
-            'Expresión de sentimientos negativos': [],
-            'Expresión de sentimientos positivos': [],
-            'Defensa de derechos': [],
-            'Rechazo de peticiones': []
+        # Distribución de niveles de asertividad
+        score_distribution = {'Poco Asertivo': 0, 'Moderadamente Asertivo': 0, 'Asertivo': 0, 'Muy Asertivo': 0}
+        if coachee_ids:
+            latest_assessments = db.session.query(
+                AssessmentResult.user_id,
+                func.max(AssessmentResult.created_at).label('latest_date')
+            ).filter(
+                AssessmentResult.user_id.in_(coachee_ids),
+                AssessmentResult.overall_score.isnot(None)
+            ).group_by(AssessmentResult.user_id).subquery()
+            
+            latest_results = db.session.query(AssessmentResult).join(
+                latest_assessments,
+                (AssessmentResult.user_id == latest_assessments.c.user_id) &
+                (AssessmentResult.created_at == latest_assessments.c.latest_date)
+            ).all()
+            
+            for result in latest_results:
+                level = get_assertiveness_level(result.overall_score)
+                if level in score_distribution:
+                    score_distribution[level] += 1
+        
+        stats = {
+            'total_coachees': total_coachees,
+            'total_assessments': total_assessments,
+            'completed_assessments': completed_assessments,
+            'avg_score': round(avg_score, 1),
+            'recent_activity': recent_activity,
+            'score_distribution': score_distribution
         }
         
-        # Distribución de preguntas por dimensión (2 preguntas por dimensión)
-        dimension_questions = {
-            'Autoafirmación': [1, 2],
-            'Expresión de sentimientos negativos': [3, 4], 
-            'Expresión de sentimientos positivos': [5, 6],
-            'Defensa de derechos': [7, 8],
-            'Rechazo de peticiones': [9, 10]
-        }
-        
-        # Agrupar respuestas por dimensión
-        for response in responses:
-            question_num = response.question_id
-            for dimension, questions in dimension_questions.items():
-                if question_num in questions:
-                    dimensions[dimension].append(response.selected_option)
-                    break
-        
-        # Calcular promedios por dimensión
-        radar_data = {}
-        for dimension, scores in dimensions.items():
-            if scores:
-                radar_data[dimension] = round(sum(scores) / len(scores), 2)
-            else:
-                radar_data[dimension] = 0
-        
-        return jsonify({
-            'coachee_name': coachee.full_name,
-            'assessment_date': latest_assessment.completed_at.isoformat(),
-            'overall_score': latest_assessment.score,
-            'radar_data': radar_data,
-            'dimensions': list(radar_data.keys()),
-            'values': list(radar_data.values())
-        }), 200
-        
+        return jsonify(stats), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coach/assign-coachee', methods=['POST'])
+@coach_access_required
+def assign_coachee():
+    """Asignar un coachee al coach actual"""
+    try:
+        data = request.get_json()
+        coachee_username = data.get('coachee_username')
+        
+        if not coachee_username:
+            return jsonify({'error': 'Username del coachee requerido'}), 400
+        
+        # Buscar el coachee
+        coachee = User.query.filter_by(username=coachee_username, role='coachee').first()
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado'}), 404
+        
+        # Verificar que no tenga coach asignado
+        if coachee.coach_id and coachee.coach_id != current_user.id:
+            return jsonify({'error': 'El coachee ya tiene un coach asignado'}), 400
+        
+        # Asignar coach
+        coachee.coach_id = current_user.id
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Coachee asignado exitosamente',
+            'coachee': {
+                'id': coachee.id,
+                'username': coachee.username,
+                'full_name': coachee.full_name,
+                'email': coachee.email
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/change-user-role', methods=['POST'])
+@role_required('platform_admin')
+def change_user_role():
+    """Cambiar el rol de un usuario - SOLO PARA ADMINISTRADORES"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        new_role = data.get('role')
+        
+        if not username or not new_role:
+            return jsonify({'error': 'Username y role requeridos'}), 400
+        
+        # Validar roles permitidos
+        allowed_roles = ['coachee', 'coach', 'platform_admin']
+        if new_role not in allowed_roles:
+            return jsonify({'error': 'Rol no válido'}), 400
+        
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Cambiar rol
+        old_role = user.role
+        user.role = new_role
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Rol de {username} cambiado de {old_role} a {new_role}',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'is_platform_admin': user.is_platform_admin
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': f'Error cambiando rol: {str(e)}'
+        }), 500
 
 # ========================
 # RUTAS DE PÁGINAS HTML
