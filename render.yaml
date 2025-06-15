@@ -1,15 +1,6 @@
 services:
   - type: web
-    name: assessment-platform-backend
+    name: assessment-platform
     env: python
-    region: oregon
-    plan: free
-    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --worker-class sync wsgi_minimal:application"
-    envVars:
-      - key: SECRET_KEY
-        value: "production-secret-key-2024"
-      - key: FLASK_ENV
-        value: "production"
-      - key: DATABASE_URL
-        value: "sqlite:///assessments.db"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python wsgi_minimal.py
