@@ -575,12 +575,23 @@ def simple_health():
 def init_database():
     """Inicializar la base de datos con datos de muestra"""
     try:
+        print("DEBUG: Starting init_database()")
+        
         with app.app_context():
+            print("DEBUG: Creating tables")
             db.create_all()
             
+            print("DEBUG: About to call create_default_users()")
             # Crear usuarios por defecto del sistema
-            create_default_users()
+            user_result = create_default_users()
+            print(f"DEBUG: create_default_users() returned: {user_result}, type: {type(user_result)}")
             
+            # Check if user_result is a Response object and handle it
+            if hasattr(user_result, 'get_json'):
+                print("DEBUG: user_result is a Flask Response object!")
+                user_result = True  # Convert to simple boolean
+            
+            print("DEBUG: About to check for assessment")
             # Verificar si ya existe la evaluación de asertividad
             assessment = Assessment.query.first()
             if not assessment:
