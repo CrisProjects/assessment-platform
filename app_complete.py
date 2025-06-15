@@ -240,6 +240,12 @@ def api_login():
     except Exception as e:
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
 
+@app.route('/logout')
+def logout_page():
+    """Logout y redirección al login"""
+    logout_user()
+    return redirect('/login')
+
 @app.route('/api/logout', methods=['POST'])
 @login_required
 def api_logout():
