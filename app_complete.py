@@ -521,26 +521,29 @@ def api_init_database():
         # Force result to be a simple boolean - this should definitely be JSON serializable
         result = bool(result) if result is not None else True
         
-        # Verificar que el usuario admin existe (no nested app context needed)
-        admin_user = User.query.filter_by(username='admin').first()
-        user_count = User.query.count()
+        # Verificar que el usuario admin existe with proper error handling
+        try:
+            admin_user = User.query.filter_by(username='admin').first()
+            admin_exists = admin_user is not None
+            user_count = User.query.count()
+        except Exception as db_error:
+            print(f"DEBUG: Database query error: {db_error}")
+            admin_exists = False
+            user_count = 0
         
         # Create response data with only basic types
         response_data = {
             'status': 'success',
             'message': 'Base de datos verificada/inicializada correctamente',
-            'admin_exists': bool(admin_user is not None),
+            'admin_exists': bool(admin_exists),
             'user_count': int(user_count),
             'initialization_result': bool(result),
-            'timestamp': str(datetime.utcnow().isoformat())
+            'timestamp': datetime.utcnow().isoformat()
         }
-        
-        # Debug: Check that all values are JSON serializable
-        import json
-        json.dumps(response_data)  # This will raise an error if not serializable
         
         return jsonify(response_data)
     except Exception as e:
+        print(f"DEBUG: Full error in api_init_database: {e}")
         return jsonify({
             'status': 'error',
             'message': f'Error inicializando base de datos: {str(e)}',
@@ -1107,125 +1110,9 @@ def assign_coachee():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/coach/assessment-details/<int:assessment_result_id>', methods=['GET'])
-@coach_access_required
-def get_assessment_details(assessment_result_id):
-    """Obtener detalles completos de una evaluación específica incluyendo respuestas y análisis dimensional"""
-    try:
-        # Obtener el resultado de la evaluación
-        assessment_result = AssessmentResult.query.get(assessment_result_id)
-        if not assessment_result:
-            return jsonify({'error': 'Evaluación no encontrada'}), 404
-        
-        # Verificar que el coachee pertenece al coach actual
-        coachee = User.query.get(assessment_result.user_id)
-        if not coachee or coachee.coach_id != current_user.id:
-            return jsonify({'error': 'No tienes permiso para ver esta evaluación'}), 403
-        
-        # Obtener las respuestas individuales
-        responses = Response.query.filter_by(assessment_result_id=assessment_result_id).all()
-        
-        # Obtener las preguntas para contexto
-        questions = {}
-        for response in responses:
-            question = Question.query.get(response.question_id)
-            if question:
-                questions[response.question_id] = {
-                    'content': question.content,
-                    'options': question.options,
-                    'question_type': question.question_type
-                }
-        
-        # Calcular puntuaciones dimensionales desde las respuestas
-        dimensional_scores = calculate_dimensional_scores_from_responses(responses)
-        
-        # Preparar respuesta detallada
-        response_data = {
-            'assessment_result': {
-                'id': assessment_result.id,
-                'score': assessment_result.score,
-                'total_questions': assessment_result.total_questions,
-                'completed_at': assessment_result.completed_at.isoformat() if assessment_result.completed_at else None,
-                'result_text': assessment_result.result_text,
-                'assertiveness_level': get_assertiveness_level(assessment_result.score) if assessment_result.score else 'No calculado'
-            },
-            'coachee': {
-                'id': coachee.id,
-                'username': coachee.username,
-                'full_name': coachee.full_name,
-                'email': coachee.email
-            },
-            'dimensional_scores': dimensional_scores,
-            'responses': [
-                {
-                    'question_id': response.question_id,
-                    'question_content': questions.get(response.question_id, {}).get('content', 'Pregunta no encontrada'),
-                    'selected_option': response.selected_option,
-                    'selected_text': questions.get(response.question_id, {}).get('options', [])[response.selected_option - 1] if response.selected_option and response.selected_option <= len(questions.get(response.question_id, {}).get('options', [])) else 'Opción no válida',
-                    'question_type': questions.get(response.question_id, {}).get('question_type', 'unknown')
-                }
-                for response in responses
-            ],
-            'analysis': {
-                'strengths': get_assessment_strengths(dimensional_scores),
-                'areas_for_improvement': get_assessment_improvements(dimensional_scores),
-                'recommendations': get_coach_recommendations(dimensional_scores, assessment_result.score)
-            }
-        }
-        
-        return jsonify(response_data), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo detalles de evaluación: {str(e)}'}), 500
 
-@app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
-@coach_access_required
-def get_coachee_evaluations(coachee_id):
-    """Obtener todas las evaluaciones de un coachee específico con resumen"""
-    try:
-        # Verificar que el coachee pertenece al coach actual
-        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id).first()
-        if not coachee:
-            return jsonify({'error': 'Coachee no encontrado o no asignado'}), 404
-        
-        # Obtener todas las evaluaciones del coachee
-        assessments = AssessmentResult.query.filter_by(
-            user_id=coachee_id
-        ).order_by(AssessmentResult.completed_at.desc()).all()
-        
-        evaluations_data = []
-        for assessment in assessments:
-            # Obtener respuestas para esta evaluación
-            responses = Response.query.filter_by(assessment_result_id=assessment.id).all()
-            dimensional_scores = calculate_dimensional_scores_from_responses(responses)
-            
-            evaluation_summary = {
-                'id': assessment.id,
-                'completed_at': assessment.completed_at.isoformat() if assessment.completed_at else None,
-                'score': assessment.score,
-                'total_questions': assessment.total_questions,
-                'assertiveness_level': get_assertiveness_level(assessment.score) if assessment.score else 'No calculado',
-                'dimensional_scores': dimensional_scores,
-                'result_summary': assessment.result_text
-            }
-            
-            evaluations_data.append(evaluation_summary)
-        
-        return jsonify({
-            'coachee': {
-                'id': coachee.id,
-                'username': coachee.username,
-                'full_name': coachee.full_name,
-                'email': coachee.email
-            },
-            'evaluations': evaluations_data,
-            'total_evaluations': len(evaluations_data),
-            'latest_score': evaluations_data[0]['score'] if evaluations_data else None,
-            'progress_trend': calculate_progress_trend([e['score'] for e in evaluations_data if e['score']])
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
+
+
 
 @app.route('/api/admin/change-user-role', methods=['POST'])
 @role_required('platform_admin')
@@ -1963,7 +1850,7 @@ def get_coachee_evaluations(coachee_id):
         for assessment in assessments:
             # Obtener respuestas para esta evaluación
             responses = Response.query.filter_by(assessment_result_id=assessment.id).all()
-            dimensional_scores = calculate_dimensional_scores_from_responses(responses);
+            dimensional_scores = calculate_dimensional_scores_from_responses(responses)
             
             evaluation_summary = {
                 'id': assessment.id,
