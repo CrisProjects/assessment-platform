@@ -1295,6 +1295,55 @@ def change_user_role():
             'message': f'Error cambiando rol: {str(e)}'
         }), 500
 
+@app.route('/api/temp/change-role', methods=['POST'])
+def temp_change_role():
+    """Endpoint temporal para cambiar roles - SOLO PARA SETUP INICIAL"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        new_role = data.get('role')
+        
+        if not username or not new_role:
+            return jsonify({'error': 'Username y role requeridos'}), 400
+        
+        # Validar roles permitidos
+        allowed_roles = ['coachee', 'coach', 'platform_admin']
+        if new_role not in allowed_roles:
+            return jsonify({'error': 'Rol no válido'}), 400
+        
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Cambiar rol
+        old_role = user.role
+        user.role = new_role
+        
+        # Si estamos convirtiendo a coachee, asignar coach si se especifica
+        coach_id = data.get('coach_id')
+        if new_role == 'coachee' and coach_id:
+            user.coach_id = coach_id
+        
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Rol de {username} cambiado de {old_role} a {new_role}',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'coach_id': user.coach_id
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': f'Error cambiando rol: {str(e)}'
+        }), 500
+
 # ========================
 # RUTAS DE PÁGINAS HTML
 # ========================
@@ -1416,29 +1465,6 @@ def promote_user_to_admin():
             'status': 'error',
             'message': f'Error promoviendo usuario: {str(e)}'
         }), 500
-
-@app.route('/api/temp/set-coach-role', methods=['POST'])
-def temp_set_coach_role():
-    """Endpoint temporal para convertir coach_demo en coach - SOLO PARA SETUP INICIAL"""
-    try:
-        user = User.query.filter_by(username='coach_demo').first()
-        if user:
-            user.role = 'coach'
-            db.session.commit()
-            return jsonify({
-                'status': 'success',
-                'message': 'coach_demo convertido a coach',
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'role': user.role
-                }
-            })
-        else:
-            return jsonify({'error': 'Usuario coach_demo no encontrado'}), 404
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 Iniciando servidor Flask en puerto 5001...")
