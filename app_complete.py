@@ -263,12 +263,18 @@ def api_register():
         if User.query.filter((User.username == data['username']) | (User.email == data['email'])).first():
             return jsonify({'error': 'Usuario o email ya registrado'}), 400
         
-        # Crear nuevo usuario (coachee por defecto)
+        # Crear nuevo usuario con rol especificado o coachee por defecto
+        role = data.get('role', 'coachee')
+        # Validar que el rol sea válido
+        valid_roles = ['coachee', 'coach', 'platform_admin']
+        if role not in valid_roles:
+            role = 'coachee'
+            
         new_user = User(
             username=data['username'],
             email=data['email'],
             full_name=data['full_name'],
-            role='coachee'
+            role=role
         )
         new_user.set_password(data['password'])
         
