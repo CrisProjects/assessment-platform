@@ -1462,6 +1462,99 @@ def promote_user_to_admin():
             'message': f'Error promoviendo usuario: {str(e)}'
         }), 500
 
+@app.route('/api/init-database', methods=['POST'])
+def init_database():
+    """Endpoint para inicializar la base de datos en producción"""
+    try:
+        # Verificar que no sea un ataque - solo permitir en producción o si viene de localhost
+        if request.remote_addr not in ['127.0.0.1', '::1'] and 'render.com' not in request.host:
+            return jsonify({'error': 'No autorizado'}), 403
+        
+        # Crear todas las tablas
+        db.create_all()
+        
+        # Verificar si ya existen usuarios
+        existing_users = User.query.count()
+        if existing_users > 0:
+            return jsonify({
+                'success': True,
+                'message': f'Base de datos ya inicializada con {existing_users} usuarios',
+                'users_created': 0
+            })
+        
+        # Crear usuarios de prueba
+        users_to_create = [
+            {
+                'username': 'admin',
+                'email': 'admin@demo.com',
+                'password': 'admin123',
+                'full_name': 'Administrador del Sistema',
+                'role': 'platform_admin'
+            },
+            {
+                'username': 'coach_demo',
+                'email': 'coach@demo.com',
+                'password': 'coach123',
+                'full_name': 'Coach de Demostración',
+                'role': 'coach'
+            },
+            {
+                'username': 'coachee_demo',
+                'email': 'coachee@demo.com',
+                'password': 'coachee123',
+                'full_name': 'Coachee de Demostración',
+                'role': 'coachee',
+                'coach_id': None  # Se asignará después
+            }
+        ]
+        
+        created_users = {}
+        
+        for user_data in users_to_create:
+            user = User(
+                username=user_data['username'],
+                email=user_data['email'],
+                password_hash=generate_password_hash(user_data['password']),
+                full_name=user_data['full_name'],
+                role=user_data['role'],
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            
+            db.session.add(user)
+            created_users[user_data['username']] = user
+        
+        # Flush para obtener IDs
+        db.session.flush()
+        
+        # Asignar coach al coachee
+        if 'coachee_demo' in created_users and 'coach_demo' in created_users:
+            created_users['coachee_demo'].coach_id = created_users['coach_demo'].id
+        
+        # Commit final
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Base de datos inicializada correctamente',
+            'users_created': len(created_users),
+            'credentials': [
+                {
+                    'role': user_data['role'],
+                    'username': user_data['username'],
+                    'password': user_data['password']
+                }
+                for user_data in users_to_create
+            ]
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': f'Error inicializando base de datos: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     print("🚀 Iniciando servidor Flask en puerto 5001...")
     app.run(debug=True, host='0.0.0.0', port=5001)
