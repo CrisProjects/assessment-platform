@@ -515,6 +515,14 @@ def api_init_database():
     try:
         result = init_database()
         
+        # Debug: Check what type result is
+        print(f"DEBUG: init_database() returned: {result}, type: {type(result)}")
+        
+        # Ensure result is JSON serializable
+        if hasattr(result, 'get_json'):
+            # If it's a Flask Response, extract the data
+            result = True  # Default to True for initialization success
+        
         # Verificar que el usuario admin existe
         with app.app_context():
             admin_user = User.query.filter_by(username='admin').first()
