@@ -518,23 +518,28 @@ def api_init_database():
         # Debug: Check what type result is
         print(f"DEBUG: init_database() returned: {result}, type: {type(result)}")
         
-        # Ensure result is JSON serializable
-        if hasattr(result, 'get_json'):
-            # If it's a Flask Response, extract the data
-            result = True  # Default to True for initialization success
+        # Force result to be a simple boolean - this should definitely be JSON serializable
+        result = bool(result) if result is not None else True
         
         # Verificar que el usuario admin existe (no nested app context needed)
         admin_user = User.query.filter_by(username='admin').first()
         user_count = User.query.count()
-            
-        return jsonify({
+        
+        # Create response data with only basic types
+        response_data = {
             'status': 'success',
             'message': 'Base de datos verificada/inicializada correctamente',
-            'admin_exists': admin_user is not None,
-            'user_count': user_count,
-            'initialization_result': result,
-            'timestamp': datetime.utcnow().isoformat()
-        })
+            'admin_exists': bool(admin_user is not None),
+            'user_count': int(user_count),
+            'initialization_result': bool(result),
+            'timestamp': str(datetime.utcnow().isoformat())
+        }
+        
+        # Debug: Check that all values are JSON serializable
+        import json
+        json.dumps(response_data)  # This will raise an error if not serializable
+        
+        return jsonify(response_data)
     except Exception as e:
         return jsonify({
             'status': 'error',
