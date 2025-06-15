@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coach - Plataforma de Asertividad</title>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            color: #2d3748;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .panel-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .panel-content {
+            padding: 1.5rem;
+        }
+
+        .coachees-section {
+            grid-column: 1 / -1;
+        }
+
+        .coachee-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .coachee-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .coachee-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .coachee-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .coachee-email {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .coachee-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .coachee-stat {
+            text-align: center;
+        }
+
+        .coachee-stat-number {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+
+        .coachee-stat-label {
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
+        .last-assessment {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+
+        .assessment-score {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .assessment-date {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+
+        .score-excellent { color: #38a169; }
+        .score-good { color: #3182ce; }
+        .score-average { color: #d69e2e; }
+        .score-poor { color: #e53e3e; }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #718096;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #4a5568;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .refresh-btn {
+            background: #48bb78;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .refresh-btn:hover {
+            background: #38a169;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .coachee-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🎯 Dashboard Coach</h1>
+            <div class="user-info">
+                <span>Coach: <strong id="coachName">Cargando...</strong></span>
+                <a href="/logout" class="logout-btn">Cerrar Sesión</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Estadísticas Generales -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCoachees">-</div>
+                <div class="stat-label">Coachees Asignados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalAssessments">-</div>
+                <div class="stat-label">Evaluaciones Totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgScore">-</div>
+                <div class="stat-label">Puntuación Promedio</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="recentActivity">-</div>
+                <div class="stat-label">Actividad Este Mes</div>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="main-content">
+            <!-- Distribución de Niveles -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>📊 Distribución de Niveles</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progreso General -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>📈 Tendencia de Progreso</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="chart-container">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Coachees -->
+        <div class="panel coachees-section">
+            <div class="panel-header">
+                <h2>👥 Mis Coachees</h2>
+                <div class="action-buttons">
+                    <button class="refresh-btn" onclick="loadCoachees()">🔄 Actualizar</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div id="coacheesContainer" class="loading">
+                    Cargando coachees...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let coacheesData = [];
+        let statsData = {};
+        let distributionChart = null;
+        let progressChart = null;
+
+        // Cargar datos iniciales
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardStats();
+            loadCoachees();
+            setCoachName();
+        });
+
+        function setCoachName() {
+            // Obtener el nombre del coach del contexto o desde una API
+            document.getElementById('coachName').textContent = 'Coach Usuario';
+        }
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/coach/dashboard-stats');
+                if (!response.ok) throw new Error('Error cargando estadísticas');
+                
+                const stats = await response.json();
+                statsData = stats;
+                
+                // Actualizar estadísticas
+                document.getElementById('totalCoachees').textContent = stats.total_coachees || 0;
+                document.getElementById('totalAssessments').textContent = stats.total_assessments || 0;
+                document.getElementById('avgScore').textContent = stats.avg_score ? stats.avg_score + '%' : '-';
+                document.getElementById('recentActivity').textContent = stats.recent_activity || 0;
+                
+                // Crear gráficos
+                createDistributionChart(stats.score_distribution);
+                
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                showError('Error cargando estadísticas del dashboard');
+            }
+        }
+
+        async function loadCoachees() {
+            try {
+                const container = document.getElementById('coacheesContainer');
+                container.innerHTML = '<div class="loading">Cargando coachees...</div>';
+                
+                const response = await fetch('/api/coach/my-coachees');
+                if (!response.ok) throw new Error('Error cargando coachees');
+                
+                const coachees = await response.json();
+                coacheesData = coachees;
+                
+                if (coachees.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No tienes coachees asignados</h3>
+                            <p>Los coachees aparecerán aquí una vez que sean asignados a tu supervisión.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Crear grid de coachees
+                const coacheeGrid = document.createElement('div');
+                coacheeGrid.className = 'coachee-grid';
+                
+                coachees.forEach(coachee => {
+                    const card = createCoacheeCard(coachee);
+                    coacheeGrid.appendChild(card);
+                });
+                
+                container.innerHTML = '';
+                container.appendChild(coacheeGrid);
+                
+            } catch (error) {
+                console.error('Error cargando coachees:', error);
+                showError('Error cargando lista de coachees');
+            }
+        }
+
+        function createCoacheeCard(coachee) {
+            const card = document.createElement('div');
+            card.className = 'coachee-card';
+            card.onclick = () => viewCoacheeDetails(coachee.id);
+            
+            let lastAssessmentHtml = '';
+            if (coachee.latest_assessment) {
+                const score = coachee.latest_assessment.overall_score;
+                const scoreClass = getScoreClass(score);
+                const level = getAssertivityLevel(score);
+                const date = new Date(coachee.latest_assessment.created_at).toLocaleDateString();
+                
+                lastAssessmentHtml = `
+                    <div class="last-assessment">
+                        <div class="assessment-score ${scoreClass}">
+                            Última evaluación: ${score}% (${level})
+                        </div>
+                        <div class="assessment-date">${date}</div>
+                    </div>
+                `;
+            } else {
+                lastAssessmentHtml = `
+                    <div class="last-assessment">
+                        <div class="assessment-score">Sin evaluaciones completadas</div>
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = `
+                <div class="coachee-name">${coachee.full_name}</div>
+                <div class="coachee-email">${coachee.email}</div>
+                
+                <div class="coachee-stats">
+                    <div class="coachee-stat">
+                        <div class="coachee-stat-number">${coachee.total_assessments}</div>
+                        <div class="coachee-stat-label">Evaluaciones</div>
+                    </div>
+                    <div class="coachee-stat">
+                        <div class="coachee-stat-number">${coachee.latest_assessment ? 
+                            getAssertivityLevel(coachee.latest_assessment.overall_score) : 'N/A'}</div>
+                        <div class="coachee-stat-label">Nivel Actual</div>
+                    </div>
+                </div>
+                
+                ${lastAssessmentHtml}
+                
+                <div class="action-buttons">
+                    <button class="btn" onclick="event.stopPropagation(); viewCoacheeDetails(${coachee.id})">
+                        Ver Progreso
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function createDistributionChart(distribution) {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+            
+            distributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(distribution),
+                    datasets: [{
+                        data: Object.values(distribution),
+                        backgroundColor: [
+                            '#e53e3e',  // Poco Asertivo
+                            '#d69e2e',  // Moderadamente Asertivo
+                            '#3182ce',  // Asertivo
+                            '#38a169'   // Muy Asertivo
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        async function viewCoacheeDetails(coacheeId) {
+            try {
+                // Por ahora, mostrar un alert simple
+                // En una implementación completa, abriría un modal o nueva página
+                const coachee = coacheesData.find(c => c.id === coacheeId);
+                if (coachee) {
+                    const response = await fetch(`/api/coach/coachee-progress/${coacheeId}`);
+                    if (response.ok) {
+                        const progressData = await response.json();
+                        showCoacheeDetailsModal(progressData);
+                    } else {
+                        alert('Error cargando detalles del coachee');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error cargando detalles del coachee');
+            }
+        }
+
+        function showCoacheeDetailsModal(data) {
+            // Crear modal simple con los detalles
+            const modalHtml = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="this.remove()">
+                    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 600px; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                        <h2>${data.coachee.full_name}</h2>
+                        <p><strong>Email:</strong> ${data.coachee.email}</p>
+                        <p><strong>Total de evaluaciones:</strong> ${data.assessments.length}</p>
+                        
+                        <h3 style="margin-top: 1.5rem;">Historial de Evaluaciones:</h3>
+                        ${data.assessments.map(assessment => `
+                            <div style="border: 1px solid #e2e8f0; padding: 1rem; margin: 0.5rem 0; border-radius: 6px;">
+                                <strong>Fecha:</strong> ${new Date(assessment.created_at).toLocaleDateString()}<br>
+                                <strong>Puntuación:</strong> ${assessment.overall_score}% (${getAssertivityLevel(assessment.overall_score)})
+                            </div>
+                        `).join('')}
+                        
+                        <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" style="background: #667eea; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; cursor: pointer;">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function getScoreClass(score) {
+            if (score >= 80) return 'score-excellent';
+            if (score >= 60) return 'score-good';
+            if (score >= 40) return 'score-average';
+            return 'score-poor';
+        }
+
+        function getAssertivityLevel(score) {
+            if (score >= 80) return 'Muy Asertivo';
+            if (score >= 60) return 'Asertivo';
+            if (score >= 40) return 'Moderadamente Asertivo';
+            return 'Poco Asertivo';
+        }
+
+        function showError(message) {
+            // Mostrar error simple
+            alert(message);
+        }
+    </script>
+</body>
+</html>

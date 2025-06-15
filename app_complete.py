@@ -1555,6 +1555,80 @@ def init_database():
             'error': f'Error inicializando base de datos: {str(e)}'
         }), 500
 
+@app.route('/api/init-questions', methods=['POST'])
+def init_questions():
+    """Endpoint para inicializar las preguntas de evaluación en producción"""
+    try:
+        # Verificar si ya existe la evaluación
+        existing_assessment = Assessment.query.filter_by(title='Evaluación de Asertividad').first()
+        if existing_assessment:
+            question_count = Question.query.filter_by(assessment_id=existing_assessment.id).count()
+            return jsonify({
+                'success': True,
+                'message': f'Evaluación ya existe con {question_count} preguntas',
+                'questions_created': 0
+            })
+        
+        # Crear la evaluación principal
+        assessment = Assessment(
+            title='Evaluación de Asertividad',
+            description='Evaluación para medir el nivel de asertividad en diferentes dimensiones',
+            created_at=datetime.utcnow()
+        )
+        
+        db.session.add(assessment)
+        db.session.flush()  # Para obtener el ID
+        
+        # 10 preguntas básicas de asertividad
+        questions_data = [
+            'Cuando alguien me critica de manera injusta, expreso mi desacuerdo de forma clara y respetuosa.',
+            'Me siento cómodo/a expresando mis opiniones en grupo, incluso si difieren de la mayoría.',
+            'Puedo decir "no" cuando alguien me pide algo que no quiero o no puedo hacer.',
+            'Cuando necesito ayuda, la pido sin sentirme incómodo/a.',
+            'Defiendo mis derechos cuando siento que están siendo violados.',
+            'Establezco límites claros en mis relaciones personales.',
+            'Abordo los conflictos de frente en lugar de evitarlos.',
+            'Mantengo la calma durante las discusiones difíciles.',
+            'Confío en mis habilidades y capacidades.',
+            'Me siento seguro/a de mis decisiones.'
+        ]
+        
+        # Opciones de respuesta (escala Likert)
+        response_options = [
+            "Totalmente en desacuerdo",
+            "En desacuerdo", 
+            "Neutral",
+            "De acuerdo",
+            "Totalmente de acuerdo"
+        ]
+        
+        # Crear las preguntas
+        for content in questions_data:
+            question = Question(
+                assessment_id=assessment.id,
+                content=content,
+                question_type='likert',
+                options=response_options
+            )
+            db.session.add(question)
+        
+        # Commit todos los cambios
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Preguntas de evaluación creadas correctamente',
+            'questions_created': len(questions_data),
+            'assessment_title': assessment.title
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': f'Error creando preguntas: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     print("🚀 Iniciando servidor Flask en puerto 5001...")
     app.run(debug=True, host='0.0.0.0', port=5001)
