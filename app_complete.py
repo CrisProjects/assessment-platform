@@ -1081,7 +1081,6 @@ def get_my_coachees():
             if latest_assessment:
                 coachee_data['latest_assessment'] = {
                     'id': latest_assessment.id,
-                    'created_at': latest_assessment.completed_at.isoformat() if latest_assessment.completed_at else None,
                     'completed_at': latest_assessment.completed_at.isoformat() if latest_assessment.completed_at else None,
                     'score': latest_assessment.score
                 }
@@ -1111,7 +1110,6 @@ def get_coachee_progress(coachee_id):
         for assessment in assessments:
             progress_data.append({
                 'id': assessment.id,
-                'created_at': assessment.completed_at.isoformat() if assessment.completed_at else None,
                 'completed_at': assessment.completed_at.isoformat() if assessment.completed_at else None,
                 'score': assessment.score,
                 'result_text': assessment.result_text
