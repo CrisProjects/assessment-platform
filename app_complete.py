@@ -1911,3 +1911,15 @@ def test_alive():
     """Minimal endpoint to test if the app is alive and routing works"""
     return "ALIVE", 200
 
+
+if __name__ == '__main__':
+    # Inicializar la base de datos al arrancar en desarrollo
+    with app.app_context():
+        db.create_all()
+        print("✅ Base de datos inicializada")
+    
+    # Ejecutar la aplicación
+    print("🚀 Iniciando aplicación Flask en modo desarrollo...")
+    print("📍 URL del Coach Dashboard: http://localhost:5000/coach-dashboard")
+    print("📍 URL principal: http://localhost:5000/")
+    app.run(host='0.0.0.0', port=5000, debug=True)
