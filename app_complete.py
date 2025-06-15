@@ -304,7 +304,7 @@ def get_dashboard_url(role):
     elif role == 'coach':
         return '/coach-dashboard'
     else:
-        return '/coachee-dashboard'
+        return '/'  # Coachees van a la página de evaluación
 
 @app.route('/api/assessments', methods=['GET'])
 @login_required
