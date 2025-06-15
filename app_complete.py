@@ -1062,7 +1062,7 @@ def get_my_coachees():
             # Obtener última evaluación del coachee
             latest_assessment = AssessmentResult.query.filter_by(
                 user_id=coachee.id
-            ).order_by(AssessmentResult.created_at.desc()).first()
+            ).order_by(AssessmentResult.completed_at.desc()).first()
             
             # Contar total de evaluaciones
             total_assessments = AssessmentResult.query.filter_by(user_id=coachee.id).count()
@@ -1105,7 +1105,7 @@ def get_coachee_progress(coachee_id):
         # Obtener todas las evaluaciones del coachee
         assessments = AssessmentResult.query.filter_by(
             user_id=coachee_id
-        ).order_by(AssessmentResult.created_at.asc()).all()
+        ).order_by(AssessmentResult.completed_at.asc()).all()
         
         progress_data = []
         for assessment in assessments:
@@ -1174,7 +1174,7 @@ def get_coach_dashboard_stats():
             one_month_ago = datetime.utcnow().replace(day=1)
             recent_activity = AssessmentResult.query.filter(
                 AssessmentResult.user_id.in_(coachee_ids),
-                AssessmentResult.created_at >= one_month_ago
+                AssessmentResult.completed_at >= one_month_ago
             ).count()
         
         # Distribución de niveles de asertividad
