@@ -1110,10 +1110,6 @@ def assign_coachee():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-
-
-
-
 @app.route('/api/admin/change-user-role', methods=['POST'])
 @role_required('platform_admin')
 def change_user_role():
@@ -1850,7 +1846,7 @@ def get_coachee_evaluations(coachee_id):
         for assessment in assessments:
             # Obtener respuestas para esta evaluación
             responses = Response.query.filter_by(assessment_result_id=assessment.id).all()
-            dimensional_scores = calculate_dimensional_scores_from_responses(responses)
+            dimensional_scores = calculate_dimensional_scores_from_responses(responses);
             
             evaluation_summary = {
                 'id': assessment.id,
@@ -1860,9 +1856,9 @@ def get_coachee_evaluations(coachee_id):
                 'assertiveness_level': get_assertiveness_level(assessment.score) if assessment.score else 'No calculado',
                 'dimensional_scores': dimensional_scores,
                 'result_summary': assessment.result_text
-            }
+            };
             
-            evaluations_data.append(evaluation_summary)
+            evaluations_data.append(evaluation_summary);
         
         return jsonify({
             'coachee': {
@@ -1875,7 +1871,7 @@ def get_coachee_evaluations(coachee_id):
             'total_evaluations': len(evaluations_data),
             'latest_score': evaluations_data[0]['score'] if evaluations_data else None,
             'progress_trend': calculate_progress_trend([e['score'] for e in evaluations_data if e['score']])
-        }), 200
+        }), 200;
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
@@ -1909,4 +1905,9 @@ def calculate_progress_trend(scores):
             trend[i] = 'down'
     
     return trend
+
+@app.route('/test-alive', methods=['GET'])
+def test_alive():
+    """Minimal endpoint to test if the app is alive and routing works"""
+    return "ALIVE", 200
 
