@@ -1417,6 +1417,29 @@ def promote_user_to_admin():
             'message': f'Error promoviendo usuario: {str(e)}'
         }), 500
 
+@app.route('/api/temp/set-coach-role', methods=['POST'])
+def temp_set_coach_role():
+    """Endpoint temporal para convertir coach_demo en coach - SOLO PARA SETUP INICIAL"""
+    try:
+        user = User.query.filter_by(username='coach_demo').first()
+        if user:
+            user.role = 'coach'
+            db.session.commit()
+            return jsonify({
+                'status': 'success',
+                'message': 'coach_demo convertido a coach',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'role': user.role
+                }
+            })
+        else:
+            return jsonify({'error': 'Usuario coach_demo no encontrado'}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("🚀 Iniciando servidor Flask en puerto 5001...")
     app.run(debug=True, host='0.0.0.0', port=5001)
