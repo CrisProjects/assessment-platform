@@ -1222,7 +1222,11 @@ def temp_change_role():
 @app.route('/login')
 def login_page():
     """Página de login"""
-    return render_template('login.html')
+    try:
+        return render_template('login.html')
+    except Exception as e:
+        print(f"Error en login page: {e}")
+        return f"Error cargando página de login: {str(e)}", 500
 
 @app.route('/')
 def index():
