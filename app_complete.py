@@ -2222,6 +2222,26 @@ def dashboard():
         flash('Rol de usuario no reconocido', 'error')
         return redirect('/')
 
+# RUTA DE DEBUG TEMPORAL
+@app.route('/dashboard-debug')
+def dashboard_debug():
+    """Dashboard de debug temporal sin autenticación"""
+    try:
+        return jsonify({
+            'status': 'OK',
+            'message': 'Dashboard debug funcionando',
+            'routes_available': [
+                '/platform-admin-dashboard',
+                '/coach-dashboard', 
+                '/coachee-dashboard'
+            ]
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'ERROR',
+            'message': str(e)
+        }), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
