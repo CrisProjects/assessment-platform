@@ -16,13 +16,32 @@ import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func
-from coach_analysis import (
-    calculate_dimensional_scores_from_responses,
-    get_assessment_strengths,
-    get_assessment_improvements,
-    get_coach_recommendations,
-    calculate_progress_trend
-)
+
+# Import opcional del análisis de coach para evitar errores en producción
+try:
+    from coach_analysis import (
+        calculate_dimensional_scores_from_responses,
+        get_assessment_strengths,
+        get_assessment_improvements,
+        get_coach_recommendations,
+        calculate_progress_trend
+    )
+    COACH_ANALYSIS_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Coach analysis no disponible: {e}")
+    COACH_ANALYSIS_AVAILABLE = False
+    
+    # Funciones dummy para evitar errores
+    def calculate_dimensional_scores_from_responses(*args, **kwargs):
+        return {}
+    def get_assessment_strengths(*args, **kwargs):
+        return []
+    def get_assessment_improvements(*args, **kwargs):
+        return []
+    def get_coach_recommendations(*args, **kwargs):
+        return []
+    def calculate_progress_trend(*args, **kwargs):
+        return {}
 
 # Configuración de Flask
 app = Flask(__name__)
