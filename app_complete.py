@@ -2194,14 +2194,14 @@ def direct_evaluation_access(token):
 def dashboard():
     """Dashboard genérico que redirije según el rol del usuario"""
     if current_user.is_platform_admin:
-        return redirect(url_for('platform_admin_dashboard'))
+        return redirect('/platform-admin-dashboard')
     elif current_user.is_coach:
-        return redirect(url_for('coach_dashboard'))
+        return redirect('/coach-dashboard')
     elif current_user.is_coachee:
-        return redirect(url_for('coachee_dashboard'))
+        return redirect('/coachee-dashboard')
     else:
         flash('Rol de usuario no reconocido', 'error')
-        return redirect(url_for('index'))
+        return redirect('/')
 
 if __name__ == '__main__':
     with app.app_context():
