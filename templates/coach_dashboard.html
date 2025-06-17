@@ -354,6 +354,7 @@
             <div class="panel-header">
                 <h2>👥 Mis Coachees</h2>
                 <div class="action-buttons">
+                    <button class="refresh-btn" onclick="openInvitationModal()">✉️ Invitar Coachee</button>
                     <button class="refresh-btn" onclick="loadCoachees()">🔄 Actualizar</button>
                 </div>
             </div>
@@ -601,6 +602,133 @@
         function showError(message) {
             // Mostrar error simple
             alert(message);
+        }
+
+        // SISTEMA DE INVITACIONES
+        function openInvitationModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 2rem; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+                    <h2 style="margin-bottom: 1.5rem; color: #2d3748;">✉️ Invitar Nuevo Coachee</h2>
+                    
+                    <div id="invitationMessage" style="display: none; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;"></div>
+                    
+                    <form id="invitationForm">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: #4a5568; font-weight: 500;">Nombre Completo *</label>
+                            <input type="text" id="invitationFullName" placeholder="Ej: María González" required
+                                style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                        </div>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: #4a5568; font-weight: 500;">Email *</label>
+                            <input type="email" id="invitationEmail" placeholder="Ej: maria@ejemplo.com" required
+                                style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem;">
+                            <button type="button" onclick="this.closest('[style*=\"position: fixed\"]').remove()"
+                                style="flex: 1; background: #e2e8f0; color: #4a5568; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="sendInvitationBtn"
+                                style="flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                                Enviar Invitación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Manejar envío del formulario
+            document.getElementById('invitationForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await sendInvitation();
+            });
+        }
+
+        async function sendInvitation() {
+            const fullName = document.getElementById('invitationFullName').value;
+            const email = document.getElementById('invitationEmail').value;
+            const btn = document.getElementById('sendInvitationBtn');
+            const messageDiv = document.getElementById('invitationMessage');
+            
+            if (!fullName || !email) {
+                showInvitationMessage('Por favor completa todos los campos', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+            
+            try {
+                const response = await fetch('/api/coach/create-invitation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email: email
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showInvitationMessage('¡Invitación creada exitosamente!', 'success');
+                    showInvitationLink(data.invitation.invitation_url);
+                    loadCoachees(); // Recargar lista
+                } else {
+                    showInvitationMessage(data.error || 'Error al crear invitación', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showInvitationMessage('Error de conexión', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enviar Invitación';
+            }
+        }
+
+        function showInvitationMessage(message, type) {
+            const messageDiv = document.getElementById('invitationMessage');
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = type === 'success' ? '#f0fff4' : '#fed7d7';
+            messageDiv.style.color = type === 'success' ? '#22543d' : '#822727';
+            messageDiv.style.border = type === 'success' ? '1px solid #c6f6d5' : '1px solid #feb2b2';
+        }
+
+        function showInvitationLink(url) {
+            const messageDiv = document.getElementById('invitationMessage');
+            messageDiv.innerHTML = `
+                <div style="margin-bottom: 1rem;">¡Invitación creada exitosamente!</div>
+                <div style="margin-bottom: 1rem;">
+                    <strong>Enlace de invitación:</strong><br>
+                    <input type="text" value="${url}" readonly onclick="this.select()" 
+                        style="width: 100%; padding: 8px; border: 1px solid #c6f6d5; border-radius: 4px; margin-top: 0.5rem; background: #f9fffa;">
+                </div>
+                <div style="font-size: 0.9rem;">
+                    📋 Haz clic en el enlace para copiarlo y enviárselo al coachee por email o WhatsApp.
+                </div>
+            `;
         }
     </script>
 </body>

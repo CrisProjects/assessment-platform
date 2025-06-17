@@ -8,9 +8,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import json
+import secrets
+import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func
@@ -125,6 +127,29 @@ class Response(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
     selected_option = db.Column(db.Integer)
     assessment_result_id = db.Column(db.Integer, db.ForeignKey('assessment_result.id'), nullable=True)
+
+class Invitation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    full_name = db.Column(db.String(200), nullable=False)
+    token = db.Column(db.String(128), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used_at = db.Column(db.DateTime, nullable=True)
+    is_used = db.Column(db.Boolean, default=False)
+    
+    # Relaciones
+    coach = db.relationship('User', backref='sent_invitations')
+    
+    def is_valid(self):
+        """Verificar si la invitación es válida"""
+        return not self.is_used and datetime.utcnow() < self.expires_at
+    
+    def mark_as_used(self):
+        """Marcar invitación como usada"""
+        self.is_used = True
+        self.used_at = datetime.utcnow()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -931,9 +956,6 @@ def get_my_coachees():
     try:
         coach_id = current_user.id
         coachees = User.query.filter_by(coach_id=coach_id, role='coachee').all()
-        print(f"DEBUG: Coach ID: {coach_id}, Coachees found: {len(coachees)}")
-        for c in coachees:
-            print(f"  - {c.username} (ID: {c.id})")
         
         coachees_data = []
         for coachee in coachees:
@@ -1931,14 +1953,194 @@ def test_alive():
     return "ALIVE", 200
 
 
-if __name__ == '__main__':
-    # Inicializar la base de datos al arrancar en desarrollo
-    with app.app_context():
-        db.create_all()
-        print("✅ Base de datos inicializada")
-    
-    # Ejecutar la aplicación
-    print("🚀 Iniciando aplicación Flask en modo desarrollo...")
-    print("📍 URL del Coach Dashboard: http://localhost:5000/coach-dashboard")
-    print("📍 URL principal: http://localhost:5000/")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+# SISTEMA DE INVITACIONES
+# =======================
+
+@app.route('/api/coach/create-invitation', methods=['POST'])
+@coach_access_required
+def create_invitation():
+    """Crear invitación para un nuevo coachee"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        full_name = data.get('full_name')
+        
+        if not email or not full_name:
+            return jsonify({'error': 'Email y nombre completo son requeridos'}), 400
+        
+        # Verificar que el email no esté ya registrado
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({'error': 'Ya existe un usuario con este email'}), 400
+        
+        # Verificar que no haya invitación pendiente para este email
+        existing_invitation = Invitation.query.filter_by(
+            email=email, 
+            coach_id=current_user.id,
+            is_used=False
+        ).first()
+        
+        if existing_invitation and existing_invitation.is_valid():
+            return jsonify({'error': 'Ya existe una invitación pendiente para este email'}), 400
+        
+        # Generar token único
+        token = secrets.token_urlsafe(32)
+        
+        # Crear invitación (válida por 7 días)
+        invitation = Invitation(
+            coach_id=current_user.id,
+            email=email,
+            full_name=full_name,
+            token=token,
+            expires_at=datetime.utcnow() + timedelta(days=7)
+        )
+        
+        db.session.add(invitation)
+        db.session.commit()
+        
+        # Generar URL de invitación
+        invitation_url = f"{request.host_url}register/{token}"
+        
+        return jsonify({
+            'message': 'Invitación creada exitosamente',
+            'invitation': {
+                'id': invitation.id,
+                'email': email,
+                'full_name': full_name,
+                'token': token,
+                'invitation_url': invitation_url,
+                'expires_at': invitation.expires_at.isoformat()
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coach/invitations', methods=['GET'])
+@coach_access_required
+def get_my_invitations():
+    """Obtener invitaciones enviadas por el coach actual"""
+    try:
+        invitations = Invitation.query.filter_by(coach_id=current_user.id).order_by(
+            Invitation.created_at.desc()
+        ).all()
+        
+        invitations_data = []
+        for inv in invitations:
+            invitations_data.append({
+                'id': inv.id,
+                'email': inv.email,
+                'full_name': inv.full_name,
+                'created_at': inv.created_at.isoformat(),
+                'expires_at': inv.expires_at.isoformat(),
+                'is_used': inv.is_used,
+                'used_at': inv.used_at.isoformat() if inv.used_at else None,
+                'is_valid': inv.is_valid(),
+                'invitation_url': f"{request.host_url}register/{inv.token}"
+            })
+        
+        return jsonify(invitations_data), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/register/<token>')
+def register_with_invitation(token):
+    """Página de registro con token de invitación"""
+    try:
+        # Buscar invitación por token
+        invitation = Invitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            return render_template('error.html', 
+                message="Invitación no encontrada",
+                detail="El enlace de invitación no es válido o ha expirado."
+            ), 404
+        
+        if not invitation.is_valid():
+            return render_template('error.html',
+                message="Invitación expirada", 
+                detail="Esta invitación ha expirado o ya ha sido utilizada."
+            ), 410
+        
+        # Renderizar página de registro con datos pre-llenados
+        return render_template('register_invitation.html', 
+            invitation=invitation,
+            coach_name=invitation.coach.full_name
+        )
+        
+    except Exception as e:
+        return render_template('error.html',
+            message="Error del servidor",
+            detail=str(e)
+        ), 500
+
+@app.route('/api/register/invitation', methods=['POST'])
+def register_with_invitation_api():
+    """Registrar usuario usando token de invitación"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        password = data.get('password')
+        
+        if not token or not password:
+            return jsonify({'error': 'Token y contraseña son requeridos'}), 400
+        
+        # Buscar invitación
+        invitation = Invitation.query.filter_by(token=token).first()
+        
+        if not invitation or not invitation.is_valid():
+            return jsonify({'error': 'Invitación inválida o expirada'}), 400
+        
+        # Verificar que el email no esté registrado
+        existing_user = User.query.filter_by(email=invitation.email).first()
+        if existing_user:
+            return jsonify({'error': 'El email ya está registrado'}), 400
+        
+        # Crear usuario
+        # Generar username único basado en el email
+        base_username = invitation.email.split('@')[0]
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}_{counter}"
+            counter += 1
+        
+        user = User(
+            username=username,
+            email=invitation.email,
+            password_hash=generate_password_hash(password),
+            full_name=invitation.full_name,
+            role='coachee',
+            coach_id=invitation.coach_id,
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        
+        db.session.add(user)
+        
+        # Marcar invitación como usada
+        invitation.mark_as_used()
+        
+        db.session.commit()
+        
+        # Login automático
+        login_user(user, remember=True)
+        
+        return jsonify({
+            'message': 'Registro exitoso',
+            'success': True,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'full_name': user.full_name,
+                'email': user.email,
+                'coach_name': invitation.coach.full_name
+            },
+            'redirect_url': '/'  # Redirigir a evaluación
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
