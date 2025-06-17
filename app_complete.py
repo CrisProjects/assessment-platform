@@ -638,17 +638,38 @@ def simple_health():
 def init_database():
     """Inicializar la base de datos con datos de muestra"""
     try:
-        print("DEBUG: Starting MINIMAL init_database()")
+        print("DEBUG: Starting ROBUST init_database()")
         
         with app.app_context():
-            print("DEBUG: Creating tables only")
+            print("DEBUG: Creating tables with explicit import")
+            
+            # Importar explícitamente todos los modelos para asegurar que se registren
+            from app_complete import User, Assessment, Question, AssessmentResult, Response, Invitation
+            
+            # Crear todas las tablas
             db.create_all()
             
-        print("DEBUG: Returning True from minimal init_database()")
+            # Verificar que la tabla user existe
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            print(f"DEBUG: Tables created: {tables}")
+            
+            if 'user' in tables:
+                print("✅ Tabla 'user' creada exitosamente")
+            else:
+                print("❌ Tabla 'user' NO fue creada")
+                # Forzar creación específica
+                User.__table__.create(db.engine, checkfirst=True)
+                print("🔧 Tabla 'user' creada forzadamente")
+            
+        print("DEBUG: Returning True from robust init_database()")
         return True
         
     except Exception as e:
         print(f"❌ Error inicializando base de datos: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 # ========================
