@@ -717,18 +717,44 @@
         }
 
         function showInvitationLink(url) {
+            // Generar link directo a evaluación
+            const evaluationUrl = url.replace('/register/', '/evaluate/');
+            
             const messageDiv = document.getElementById('invitationMessage');
             messageDiv.innerHTML = `
                 <div style="margin-bottom: 1rem;">¡Invitación creada exitosamente!</div>
                 <div style="margin-bottom: 1rem;">
-                    <strong>Enlace de invitación:</strong><br>
-                    <input type="text" value="${url}" readonly onclick="this.select()" 
+                    <strong>Enlace directo para evaluación:</strong><br>
+                    <input type="text" value="${evaluationUrl}" readonly onclick="this.select()" 
                         style="width: 100%; padding: 8px; border: 1px solid #c6f6d5; border-radius: 4px; margin-top: 0.5rem; background: #f9fffa;">
                 </div>
-                <div style="font-size: 0.9rem;">
-                    📋 Haz clic en el enlace para copiarlo y enviárselo al coachee por email o WhatsApp.
+                <div style="margin-bottom: 1rem;">
+                    <button onclick="copyToClipboard('${evaluationUrl}')" 
+                        style="background: #48bb78; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        📋 Copiar Enlace
+                    </button>
+                    <button onclick="sendWhatsApp('${evaluationUrl}')" 
+                        style="background: #25d366; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: 8px;">
+                        📱 Enviar por WhatsApp
+                    </button>
+                </div>
+                <div style="font-size: 0.9rem; color: #666;">
+                    � <strong>Instrucciones:</strong> El coachee solo necesita hacer clic en este enlace para comenzar su evaluación directamente.
                 </div>
             `;
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('¡Enlace copiado al portapapeles!');
+            }, function(err) {
+                console.error('Error al copiar: ', err);
+            });
+        }
+        
+        function sendWhatsApp(url) {
+            const message = encodeURIComponent(`Hola! Te invito a completar tu evaluación de asertividad. Solo haz clic en este enlace: ${url}`);
+            window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
 </body>

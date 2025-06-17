@@ -2,20 +2,60 @@
 
 {% block content %}
 <div class="text-center py-5">
-    <h1>Bienvenido a la Plataforma de Evaluación</h1>
-    <p class="lead">Crea, gestiona y realiza evaluaciones fácilmente</p>
-    
-    {% if current_user.is_authenticated %}
+    {% if current_user.is_authenticated and current_user.is_coachee %}
+        <h1>¡Hola {{ current_user.full_name }}!</h1>
+        <p class="lead">Bienvenido a tu evaluación de asertividad</p>
+        {% if current_user.coach %}
+            <p class="text-muted">Tu coach {{ current_user.coach.full_name }} te ha invitado a completar esta evaluación</p>
+        {% endif %}
+        
+        <div class="mt-4">
+            <a href="{{ url_for('assessment') }}" class="btn btn-primary btn-lg">
+                🎯 Comenzar Evaluación
+            </a>
+        </div>
+        
+        <div class="mt-3">
+            <small class="text-muted">La evaluación toma aproximadamente 10-15 minutos</small>
+        </div>
+        
+    {% elif current_user.is_authenticated %}
+        <h1>Bienvenido a la Plataforma de Evaluación</h1>
+        <p class="lead">Gestiona y supervisa evaluaciones de asertividad</p>
+        
         <div class="mt-4">
             <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Ir al Panel</a>
         </div>
     {% else %}
+        <h1>Bienvenido a la Plataforma de Evaluación</h1>
+        <p class="lead">Evaluaciones de asertividad profesionales</p>
+        
         <div class="mt-4">
             <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar sesión</a>
         </div>
     {% endif %}
 </div>
 
+{% if current_user.is_authenticated and current_user.is_coachee %}
+<div class="row mt-5">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">📋 Sobre tu Evaluación</h5>
+                <p class="card-text">
+                    Esta evaluación te ayudará a conocer tu nivel de asertividad en diferentes situaciones. 
+                    Los resultados serán compartidos con tu coach para brindarte un mejor acompañamiento.
+                </p>
+                <div class="mt-3">
+                    <span class="badge badge-info">📊 Análisis detallado</span>
+                    <span class="badge badge-success">🎯 Recomendaciones personalizadas</span>
+                    <span class="badge badge-warning">📈 Seguimiento de progreso</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
 <div class="row mt-5">
     <div class="col-md-4">
         <div class="card">
@@ -42,4 +82,5 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}

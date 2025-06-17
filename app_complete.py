@@ -2138,9 +2138,54 @@ def register_with_invitation_api():
                 'email': user.email,
                 'coach_name': invitation.coach.full_name
             },
-            'redirect_url': '/'  # Redirigir a evaluación
+            'redirect_url': '/',  # Redirigir directo a evaluación
+            'auto_start_evaluation': True  # Flag para iniciar evaluación automáticamente
         }), 201
         
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+# SISTEMA DE ACCESO DIRECTO A EVALUACIÓN
+# ======================================
+
+@app.route('/evaluate/<token>')
+def direct_evaluation_access(token):
+    """Acceso directo a evaluación con token de invitación"""
+    try:
+        # Buscar invitación por token
+        invitation = Invitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            return render_template('error.html', 
+                message="Invitación no encontrada",
+                detail="El enlace de invitación no es válido."
+            ), 404
+        
+        if not invitation.is_valid():
+            return render_template('error.html',
+                message="Invitación expirada", 
+                detail="Esta invitación ha expirado o ya ha sido utilizada."
+            ), 410
+        
+        # Verificar si ya existe un usuario registrado con este email
+        existing_user = User.query.filter_by(email=invitation.email).first()
+        
+        if existing_user:
+            # Si el usuario ya existe, hacer login automático y redirigir a evaluación
+            login_user(existing_user, remember=True)
+            return redirect(url_for('index'))
+        else:
+            # Si no existe usuario, redirigir a registro con token
+            return redirect(url_for('register_with_invitation', token=token))
+        
+    except Exception as e:
+        return render_template('error.html',
+            message="Error del servidor",
+            detail=str(e)
+        ), 500
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
