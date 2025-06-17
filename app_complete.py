@@ -720,6 +720,35 @@ def create_default_users():
         print(f"❌ Error creando usuarios por defecto: {e}")
         return False
 
+@app.route('/api/create-users', methods=['POST', 'GET'])
+def api_create_default_users():
+    """Endpoint para crear usuarios por defecto"""
+    try:
+        result = create_default_users()
+        
+        user_count = User.query.count()
+        admin_user = User.query.filter_by(username='admin').first()
+        coach_user = User.query.filter_by(username='coach_demo').first()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Usuarios por defecto creados',
+            'result': bool(result),
+            'user_count': user_count,
+            'admin_exists': admin_user is not None,
+            'coach_exists': coach_user is not None,
+            'users_created': {
+                'admin': admin_user.email if admin_user else None,
+                'coach': coach_user.email if coach_user else None
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error creando usuarios: {str(e)}'
+        }), 500
+
 # Inicializar la base de datos automáticamente cuando la aplicación arranque
 # COMENTADO para evitar problemas en producción - se inicializa en wsgi_production.py
 # with app.app_context():
@@ -810,7 +839,7 @@ def api_demographics():
         return jsonify({
             'success': False,
             'error': f'Error interno del servidor: {str(e)}'
-        }), 500
+        }, 500)
 
 @app.route('/api/debug-questions', methods=['GET'])
 def debug_questions():
