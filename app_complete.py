@@ -931,6 +931,9 @@ def get_my_coachees():
     try:
         coach_id = current_user.id
         coachees = User.query.filter_by(coach_id=coach_id, role='coachee').all()
+        print(f"DEBUG: Coach ID: {coach_id}, Coachees found: {len(coachees)}")
+        for c in coachees:
+            print(f"  - {c.username} (ID: {c.id})")
         
         coachees_data = []
         for coachee in coachees:
