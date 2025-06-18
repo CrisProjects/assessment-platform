@@ -26,6 +26,11 @@ except ImportError as e:
 # This is what Render will import
 application = app
 
+# Force application context to ensure routes are registered
+with app.app_context():
+    print(f"[RENDER DEBUG] Application context established")
+    print(f"[RENDER DEBUG] Registered routes: {[rule.rule for rule in app.url_map.iter_rules()]}")
+
 # Ensure app runs on the correct port
 port = int(os.environ.get('PORT', 8000))
 print(f"[RENDER DEBUG] Using port: {port}")
