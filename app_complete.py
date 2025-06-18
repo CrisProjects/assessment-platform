@@ -406,7 +406,7 @@ def api_register():
             'success': True,
             'message': 'Usuario registrado exitosamente',
             'user_id': new_user.id
-        }, 201
+        }), 201
         
     except Exception as e:
         db.session.rollback()
@@ -1400,48 +1400,6 @@ def temp_change_role():
         return jsonify({
             'status': 'error',
             'message': f'Error cambiando rol: {str(e)}'
-        }), 500
-            # Si es POST, intentar crear usuarios manualmente
-            if request.method == 'POST':
-                print("🔧 Forzando creación manual de usuarios...")
-                result = create_default_users()
-                
-                # Actualizar información después de la creación
-                user_count = User.query.count()
-                all_users = User.query.all()
-                users_info = []
-                for user in all_users:
-                    users_info.append({
-                        'id': user.id,
-                        'username': user.username,
-                        'email': user.email,
-                        'role': user.role,
-                        'is_platform_admin': user.is_platform_admin,
-                        'is_active': user.is_active
-                    })
-                    
-                return jsonify({
-                    'status': 'success',
-                    'message': 'Creación manual de usuarios ejecutada',
-                    'user_count': user_count,
-                    'users': users_info,
-                    'creation_result': result,
-                    'timestamp': datetime.utcnow().isoformat()
-                })
-            
-            return jsonify({
-                'status': 'success',
-                'message': 'Estado actual de usuarios',
-                'user_count': user_count,
-                'users': users_info,
-                'timestamp': datetime.utcnow().isoformat()
-            })
-            
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Error en debug de usuarios: {str(e)}',
-            'timestamp': datetime.utcnow().isoformat()
         }), 500
 
 @app.route('/api/admin/promote-user', methods=['POST'])
