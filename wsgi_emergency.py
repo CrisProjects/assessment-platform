@@ -17,7 +17,7 @@ sys.path.insert(0, current_dir)
 
 # Import the complete application with error handling
 try:
-    from app_complete import app
+    from app_emergency import app
     print("✅ Successfully imported app_complete")
     
     # Verify routes are loaded
