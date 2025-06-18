@@ -174,6 +174,71 @@ class Invitation(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# ====================================================
+# INICIALIZACIÓN AUTOMÁTICA DE BASE DE DATOS EN PRODUCCIÓN
+# ====================================================
+def auto_initialize_database():
+    """Inicialización automática para producción (Render, etc.)"""
+    try:
+        print("🚀 AUTO-INICIALIZACIÓN: Verificando base de datos...")
+        
+        # Crear todas las tablas
+        db.create_all()
+        print("✅ AUTO-INIT: db.create_all() ejecutado")
+        
+        # Verificar tabla crítica 'user'
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        if 'user' not in tables:
+            print("🔧 AUTO-INIT: Tabla 'user' no existe, creando...")
+            User.__table__.create(db.engine, checkfirst=True)
+            
+            # Re-verificar
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            
+        if 'user' in tables:
+            print("✅ AUTO-INIT: Tabla 'user' confirmada")
+            
+            # Crear usuario admin si no existe
+            try:
+                admin_user = User.query.filter_by(username='admin').first()
+                if not admin_user:
+                    print("👤 AUTO-INIT: Creando usuario admin...")
+                    admin_user = User(
+                        username='admin',
+                        email='admin@platform.com',
+                        full_name='Platform Administrator',
+                        role='platform_admin'
+                    )
+                    admin_user.set_password('admin123')
+                    db.session.add(admin_user)
+                    db.session.commit()
+                    print("✅ AUTO-INIT: Usuario admin creado")
+                else:
+                    print("ℹ️ AUTO-INIT: Usuario admin ya existe")
+            except Exception as user_err:
+                print(f"⚠️ AUTO-INIT: Error creando usuario admin: {user_err}")
+        else:
+            print("❌ AUTO-INIT: Tabla 'user' NO pudo ser creada")
+            
+        print(f"📋 AUTO-INIT: Tablas disponibles: {tables}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ AUTO-INIT: Error en inicialización automática: {e}")
+        return False
+
+# Ejecutar inicialización automática cuando el módulo se importe
+# (Esto es especialmente importante para Render y otros servicios de hosting)
+try:
+    with app.app_context():
+        auto_initialize_database()
+except Exception as auto_init_error:
+    print(f"⚠️ Error en auto-inicialización: {auto_init_error}")
+
 # Decoradores para control de acceso por roles
 def role_required(required_role):
     def decorator(f):
@@ -341,7 +406,7 @@ def api_register():
             'success': True,
             'message': 'Usuario registrado exitosamente',
             'user_id': new_user.id
-        }), 201
+        }, 201
         
     except Exception as e:
         db.session.rollback()
@@ -640,28 +705,56 @@ def init_database():
     try:
         print("DEBUG: Starting ROBUST init_database()")
         
-        with app.app_context():
-            print("DEBUG: Creating tables with explicit import")
-            
-            # Importar explícitamente todos los modelos para asegurar que se registren
-            from app_complete import User, Assessment, Question, AssessmentResult, Response, Invitation
-            
-            # Crear todas las tablas
-            db.create_all()
-            
-            # Verificar que la tabla user existe
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            tables = inspector.get_table_names()
-            print(f"DEBUG: Tables created: {tables}")
-            
-            if 'user' in tables:
-                print("✅ Tabla 'user' creada exitosamente")
-            else:
-                print("❌ Tabla 'user' NO fue creada")
-                # Forzar creación específica
+        # Forzar creación de todas las tablas
+        print("DEBUG: Creating ALL tables forcefully")
+        db.create_all()
+        
+        # Verificar que todas las tablas críticas existen
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        print(f"DEBUG: Tables found after create_all(): {tables}")
+        
+        required_tables = ['user', 'assessment', 'question', 'assessment_result', 'response', 'invitation']
+        missing_tables = []
+        
+        for table in required_tables:
+            if table not in tables:
+                missing_tables.append(table)
+                print(f"❌ Tabla '{table}' faltante")
+        
+        if missing_tables:
+            print(f"🔧 Creando tablas faltantes: {missing_tables}")
+            # Forzar creación individual de cada tabla
+            if 'user' not in tables:
                 User.__table__.create(db.engine, checkfirst=True)
-                print("🔧 Tabla 'user' creada forzadamente")
+                print("✅ Tabla 'user' creada individualmente")
+            if 'assessment' not in tables:
+                Assessment.__table__.create(db.engine, checkfirst=True)
+                print("✅ Tabla 'assessment' creada individualmente")
+            if 'question' not in tables:
+                Question.__table__.create(db.engine, checkfirst=True)
+                print("✅ Tabla 'question' creada individualmente")
+            if 'assessment_result' not in tables:
+                AssessmentResult.__table__.create(db.engine, checkfirst=True)
+                print("✅ Tabla 'assessment_result' creada individualmente")
+            if 'response' not in tables:
+                Response.__table__.create(db.engine, checkfirst=True)
+                print("✅ Tabla 'response' creada individualmente")
+            if 'invitation' not in tables:
+                Invitation.__table__.create(db.engine, checkfirst=True)
+                print("✅ Tabla 'invitation' creada individualmente")
+        
+        # Verificar nuevamente
+        inspector = inspect(db.engine)
+        final_tables = inspector.get_table_names()
+        print(f"DEBUG: Final tables after forced creation: {final_tables}")
+        
+        if 'user' in final_tables:
+            print("✅ Tabla 'user' confirmada como existente")
+        else:
+            print("❌ CRÍTICO: Tabla 'user' TODAVÍA no existe después de creación forzada")
+            return False
             
         print("DEBUG: Returning True from robust init_database()")
         return True
@@ -1308,71 +1401,6 @@ def temp_change_role():
             'status': 'error',
             'message': f'Error cambiando rol: {str(e)}'
         }), 500
-
-# ========================
-# RUTAS DE PÁGINAS HTML
-# ========================
-
-@app.route('/login')
-def login_page():
-    """Página de login"""
-    try:
-        return render_template('login.html')
-    except Exception as e:
-        print(f"Error en login page: {e}")
-        return f"Error cargando página de login: {str(e)}", 500
-
-@app.route('/')
-def index():
-    """Página principal - sirve el frontend estático directamente"""
-    try:
-        # Servir el index.html directamente desde el directorio raíz
-        return send_from_directory('.', 'index.html')
-    except Exception as e:
-        # Fallback: crear página básica si index.html no existe
-        return """
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Plataforma de Evaluación de Asertividad</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .container { max-width: 600px; margin: 0 auto; }
-                .btn { background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Plataforma de Evaluación de Asertividad</h1>
-                <p>Bienvenido a la plataforma de evaluación.</p>
-                <a href="/login" class="btn">Ir al Login</a>
-            </div>
-        </body>
-        </html>
-        """, 200
-
-@app.route('/api/debug-users', methods=['GET', 'POST'])
-def debug_users():
-    """Endpoint de debugging para diagnosticar problemas con usuarios"""
-    try:
-        with app.app_context():
-            # Información general
-            user_count = User.query.count()
-            all_users = User.query.all()
-            
-            users_info = []
-            for user in all_users:
-                users_info.append({
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'role': user.role,
-                    'is_platform_admin': user.is_platform_admin,
-                    'is_active': user.is_active
-                })
-            
             # Si es POST, intentar crear usuarios manualmente
             if request.method == 'POST':
                 print("🔧 Forzando creación manual de usuarios...")
@@ -2292,7 +2320,119 @@ def dashboard_debug():
             'message': str(e)
         }), 500
 
+@app.route('/api/force-init-db', methods=['POST', 'GET'])
+def api_force_init_database():
+    """Endpoint para FORZAR la inicialización de la base de datos - Solo para emergencias"""
+    try:
+        print("🚨 FORCE INIT DATABASE CALLED")
+        
+        # Forzar creación de todas las tablas sin contexto adicional
+        db.create_all()
+        print("✅ db.create_all() ejecutado")
+        
+        # Crear cada tabla individualmente si no existe
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        print(f"📋 Tablas existentes antes de creación forzada: {existing_tables}")
+        
+        # Crear tablas individualmente
+        User.__table__.create(db.engine, checkfirst=True)
+        Assessment.__table__.create(db.engine, checkfirst=True)
+        Question.__table__.create(db.engine, checkfirst=True)
+        AssessmentResult.__table__.create(db.engine, checkfirst=True)
+        Response.__table__.create(db.engine, checkfirst=True)
+        Invitation.__table__.create(db.engine, checkfirst=True)
+        print("✅ Todas las tablas creadas individualmente")
+        
+        # Verificar resultado final
+        inspector = inspect(db.engine)
+        final_tables = inspector.get_table_names()
+        print(f"📋 Tablas finales después de creación forzada: {final_tables}")
+        
+        # Verificar tabla user específicamente
+        user_table_exists = 'user' in final_tables
+        
+        # Intentar crear usuario admin de emergencia
+        admin_created = False
+        if user_table_exists:
+            try:
+                admin_user = User.query.filter_by(username='admin').first()
+                if not admin_user:
+                    admin_user = User(
+                        username='admin',
+                        email='admin@platform.com',
+                        full_name='Platform Administrator',
+                        role='platform_admin'
+                    )
+                    admin_user.set_password('admin123')
+                    db.session.add(admin_user)
+                    db.session.commit()
+                    admin_created = True
+                    print("✅ Usuario admin creado durante inicialización forzada")
+                else:
+                    print("ℹ️ Usuario admin ya existe")
+            except Exception as user_error:
+                print(f"⚠️ Error creando usuario admin: {user_error}")
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Inicialización forzada de base de datos completada',
+            'tables_created': final_tables,
+            'user_table_exists': user_table_exists,
+            'admin_user_created': admin_created,
+            'total_tables': len(final_tables),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en inicialización forzada: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': f'Error en inicialización forzada: {str(e)}',
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
+        print("🚀 Inicializando aplicación...")
+        
+        # Inicialización robusta de la base de datos
+        try:
+            # Forzar creación de todas las tablas
+            db.create_all()
+            print("✅ db.create_all() ejecutado")
+            
+            # Verificar tablas críticas
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            print(f"📋 Tablas disponibles: {tables}")
+            
+            if 'user' not in tables:
+                print("🔧 Creando tabla 'user' forzadamente...")
+                User.__table__.create(db.engine, checkfirst=True)
+            
+            # Crear usuario admin por defecto
+            admin_user = User.query.filter_by(username='admin').first()
+            if not admin_user:
+                print("👤 Creando usuario admin por defecto...")
+                admin_user = User(
+                    username='admin',
+                    email='admin@platform.com',
+                    full_name='Platform Administrator',
+                    role='platform_admin'
+                )
+                admin_user.set_password('admin123')
+                db.session.add(admin_user)
+                db.session.commit()
+                print("✅ Usuario admin creado")
+            else:
+                print("ℹ️ Usuario admin ya existe")
+                
+        except Exception as e:
+            print(f"⚠️ Error en inicialización: {e}")
+            
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
