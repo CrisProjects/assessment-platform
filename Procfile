@@ -1,1 +1,1 @@
-web: gunicorn wsgi_ultra_simple:application --bind 0.0.0.0:$PORT
+web: gunicorn wsgi_minimal_debug:application --bind 0.0.0.0:$PORT
