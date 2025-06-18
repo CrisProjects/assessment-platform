@@ -1,1 +1,1 @@
-web: gunicorn wsgi_complete:application
+web: gunicorn wsgi_diagnostic:application
