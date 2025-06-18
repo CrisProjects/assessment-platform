@@ -1,1 +1,1 @@
-web: gunicorn wsgi_minimal_test:application
+web: gunicorn wsgi_complete:application
