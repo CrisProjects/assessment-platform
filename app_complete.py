@@ -301,6 +301,22 @@ def can_access_coachee_data(target_user_id):
     return False
 
 # Rutas del Frontend
+@app.route('/')
+def index():
+    """Ruta principal - Confirma que la aplicación está funcionando"""
+    return jsonify({
+        'status': 'success',
+        'message': 'Assessment Platform API is running',
+        'version': '1.0.0',
+        'endpoints': {
+            'init_db': '/api/init-db',
+            'force_init_db': '/api/force-init-db', 
+            'login': '/api/login',
+            'register': '/api/register',
+            'health': '/api/health'
+        }
+    })
+
 @app.route('/favicon.ico')
 def favicon():
     return '', 204
@@ -2392,5 +2408,7 @@ if __name__ == '__main__':
                 
         except Exception as e:
             print(f"⚠️ Error en inicialización: {e}")
-            
+
+# Solo ejecutar si se llama directamente (no cuando es importado por Gunicorn)
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
