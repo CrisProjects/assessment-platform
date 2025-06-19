@@ -422,7 +422,7 @@ def api_register():
             'success': True,
             'message': 'Usuario registrado exitosamente',
             'user_id': new_user.id
-        }), 201
+        }, 201)
         
     except Exception as e:
         db.session.rollback()
@@ -2211,7 +2211,7 @@ def register_with_invitation_api():
             },
             'redirect_url': '/',  # Redirigir directo a evaluación
             'auto_start_evaluation': True  # Flag para iniciar evaluación automáticamente
-        }), 201
+        }, 201)
         
     except Exception as e:
         db.session.rollback()
@@ -2243,9 +2243,17 @@ def direct_evaluation_access(token):
         existing_user = User.query.filter_by(email=invitation.email).first()
         
         if existing_user:
-            # Si el usuario ya existe, hacer login automático y redirigir a evaluación
+            # Si el usuario ya existe, hacer login automático y redirigir a dashboard
             login_user(existing_user, remember=True)
-            return redirect(url_for('index'))
+            # Redirigir al dashboard apropiado según el rol
+            if existing_user.role == 'coachee':
+                return redirect('/coachee-dashboard')
+            elif existing_user.role == 'coach':
+                return redirect('/coach-dashboard') 
+            elif existing_user.role == 'platform_admin':
+                return redirect('/platform-admin-dashboard')
+            else:
+                return redirect('/dashboard')
         else:
             # Si no existe usuario, redirigir a registro con token
             return redirect(url_for('register_with_invitation', token=token))
@@ -2373,7 +2381,10 @@ def api_force_init_database():
 def create_test_invitation():
     """Crear invitación de prueba para testing"""
     try:
-        # Buscar o crear coach admin
+        import secrets
+        token = secrets.token_urlsafe(32)
+        
+        # Asegurarse de que existe un usuario admin
         admin_user = User.query.filter_by(email='admin@platform.com').first()
         if not admin_user:
             return jsonify({
@@ -2381,121 +2392,67 @@ def create_test_invitation():
                 'message': 'Usuario admin no encontrado. Ejecuta /api/init-db primero.'
             }), 404
         
-        # Crear invitación de prueba
         test_invitation = Invitation(
             email='test@example.com',
+            token=token,
             coach_id=admin_user.id,
-            token='test-token-123',
-            expires_at=datetime.utcnow() + timedelta(days=7)
+            created_by=admin_user.id
         )
-        
-        # Verificar si ya existe
-        existing = Invitation.query.filter_by(token='test-token-123').first()
-        if existing:
-            return jsonify({
-                'status': 'success',
-                'message': 'Invitación de prueba ya existe',
-                'evaluation_link': f'/evaluate/test-token-123',
-                'full_url': f'https://assessment-platform-latest.onrender.com/evaluate/test-token-123'
-            })
         
         db.session.add(test_invitation)
         db.session.commit()
         
-        return jsonify({
-            'status': 'success',
-            'message': 'Invitación de prueba creada',
-            'evaluation_link': f'/evaluate/test-token-123',
-            'full_url': f'https://assessment-platform-latest.onrender.com/evaluate/test-token-123',
-            'email': 'test@example.com'
-        })
+        evaluation_link = f"https://assessment-platform-latest.onrender.com/evaluate/{token}"
+        
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Invitación de Prueba Creada</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }}
+                .card {{ border: 1px solid #ddd; padding: 20px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }}
+                .btn {{ background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 3px; display: inline-block; margin: 10px 0; }}
+                .link {{ background: #f8f9fa; padding: 15px; border-radius: 5px; word-break: break-all; font-family: monospace; }}
+            </style>
+        </head>
+        <body>
+            <h1>✅ Invitación de Prueba Creada</h1>
+            
+            <div class="card">
+                <h3>📧 Detalles de la Invitación</h3>
+                <p><strong>Email:</strong> test@example.com</p>
+                <p><strong>Token:</strong> {token}</p>
+                <p><strong>Estado:</strong> Activa</p>
+            </div>
+            
+            <div class="card">
+                <h3>🔗 Link de Evaluación</h3>
+                <div class="link">{evaluation_link}</div>
+                <br>
+                <a href="{evaluation_link}" class="btn" target="_blank">🎯 Probar Evaluación</a>
+            </div>
+            
+            <div class="card">
+                <h3>🧪 Instrucciones de Prueba</h3>
+                <ol>
+                    <li>Haz clic en "Probar Evaluación"</li>
+                    <li>Si te pide registro, usa: test@example.com</li>
+                    <li>Completa el formulario de evaluación</li>
+                    <li>Verifica que la evaluación se guarde correctamente</li>
+                </ol>
+            </div>
+            
+            <p><a href="/access">← Volver al Panel de Acceso</a></p>
+        </body>
+        </html>
+        """
         
     except Exception as e:
         return jsonify({
             'status': 'error',
             'message': str(e)
         }), 500
-
-@app.route('/debug-invitation/<token>')
-def debug_invitation(token):
-    """Debug de invitación específica"""
-    try:
-        invitation = Invitation.query.filter_by(token=token).first()
-        
-        if not invitation:
-            return jsonify({
-                'status': 'error',
-                'message': 'Invitación no encontrada',
-                'token': token,
-                'total_invitations': Invitation.query.count()
-            })
-        
-        # Verificar usuario existente
-        existing_user = User.query.filter_by(email=invitation.email).first()
-        
-        return jsonify({
-            'status': 'success',
-            'invitation': {
-                'email': invitation.email,
-                'token': invitation.token,
-                'created_at': invitation.created_at.isoformat() if invitation.created_at else None,
-                'expires_at': invitation.expires_at.isoformat() if invitation.expires_at else None,
-                'is_valid': invitation.is_valid(),
-                'coach_id': invitation.coach_id
-            },
-            'existing_user': {
-                'exists': existing_user is not None,
-                'email': existing_user.email if existing_user else None,
-                'role': existing_user.role if existing_user else None
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e),
-            'token': token
-        }), 500
-
-if __name__ == '__main__':
-    with app.app_context():
-        print("🚀 Inicializando aplicación...")
-        
-        # Inicialización robusta de la base de datos
-        try:
-            # Forzar creación de todas las tablas
-            db.create_all()
-            print("✅ db.create_all() ejecutado")
-            
-            # Verificar tablas críticas
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            tables = inspector.get_table_names()
-            print(f"📋 Tablas disponibles: {tables}")
-            
-            if 'user' not in tables:
-                print("🔧 Creando tabla 'user' forzadamente...")
-                User.__table__.create(db.engine, checkfirst=True)
-            
-            # Crear usuario admin por defecto
-            admin_user = User.query.filter_by(username='admin').first()
-            if not admin_user:
-                print("👤 Creando usuario admin por defecto...")
-                admin_user = User(
-                    username='admin',
-                    email='admin@platform.com',
-                    full_name='Platform Administrator',
-                    role='platform_admin'
-                )
-                admin_user.set_password('admin123')
-                db.session.add(admin_user)
-                db.session.commit()
-                print("✅ Usuario admin creado")
-            else:
-                print("ℹ️ Usuario admin ya existe")
-                
-        except Exception as e:
-            print(f"⚠️ Error en inicialización: {e}")
 
 # Solo ejecutar si se llama directamente (no cuando es importado por Gunicorn)
 if __name__ == '__main__':
@@ -2562,6 +2519,12 @@ def access_page():
                 <li><a href="/api/health">Health Check</a></li>
                 <li><a href="/">Lista de Endpoints</a></li>
             </ul>
+        </div>
+        
+        <div class="card">
+            <h3>🧪 Herramientas de Testing</h3>
+            <p>Crear invitaciones de prueba para probar evaluaciones</p>
+            <a href="/create-test-invitation" class="btn" style="background: #28a745;">Crear Invitación de Prueba</a>
         </div>
         
         <div class="card">
