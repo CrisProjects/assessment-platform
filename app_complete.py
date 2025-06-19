@@ -2394,9 +2394,10 @@ def create_test_invitation():
         
         test_invitation = Invitation(
             email='test@example.com',
+            full_name='Usuario de Prueba',
             token=token,
             coach_id=admin_user.id,
-            created_by=admin_user.id
+            expires_at=datetime.utcnow() + timedelta(days=7)  # Expira en 7 días
         )
         
         db.session.add(test_invitation)
