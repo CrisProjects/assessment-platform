@@ -2181,13 +2181,15 @@ def register_with_invitation_api():
         user = User(
             username=username,
             email=invitation.email,
-            password_hash=generate_password_hash(password),
             full_name=invitation.full_name,
             role='coachee',
             coach_id=invitation.coach_id,
             is_active=True,
             created_at=datetime.utcnow()
         )
+        
+        # Establecer contraseña usando el método correcto
+        user.set_password(password)
         
         db.session.add(user)
         
