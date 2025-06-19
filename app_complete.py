@@ -2369,6 +2369,94 @@ def api_force_init_database():
             'timestamp': datetime.utcnow().isoformat()
         }), 500
 
+@app.route('/create-test-invitation')
+def create_test_invitation():
+    """Crear invitación de prueba para testing"""
+    try:
+        # Buscar o crear coach admin
+        admin_user = User.query.filter_by(email='admin@platform.com').first()
+        if not admin_user:
+            return jsonify({
+                'status': 'error',
+                'message': 'Usuario admin no encontrado. Ejecuta /api/init-db primero.'
+            }), 404
+        
+        # Crear invitación de prueba
+        test_invitation = Invitation(
+            email='test@example.com',
+            coach_id=admin_user.id,
+            token='test-token-123',
+            expires_at=datetime.utcnow() + timedelta(days=7)
+        )
+        
+        # Verificar si ya existe
+        existing = Invitation.query.filter_by(token='test-token-123').first()
+        if existing:
+            return jsonify({
+                'status': 'success',
+                'message': 'Invitación de prueba ya existe',
+                'evaluation_link': f'/evaluate/test-token-123',
+                'full_url': f'https://assessment-platform-latest.onrender.com/evaluate/test-token-123'
+            })
+        
+        db.session.add(test_invitation)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Invitación de prueba creada',
+            'evaluation_link': f'/evaluate/test-token-123',
+            'full_url': f'https://assessment-platform-latest.onrender.com/evaluate/test-token-123',
+            'email': 'test@example.com'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/debug-invitation/<token>')
+def debug_invitation(token):
+    """Debug de invitación específica"""
+    try:
+        invitation = Invitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            return jsonify({
+                'status': 'error',
+                'message': 'Invitación no encontrada',
+                'token': token,
+                'total_invitations': Invitation.query.count()
+            })
+        
+        # Verificar usuario existente
+        existing_user = User.query.filter_by(email=invitation.email).first()
+        
+        return jsonify({
+            'status': 'success',
+            'invitation': {
+                'email': invitation.email,
+                'token': invitation.token,
+                'created_at': invitation.created_at.isoformat() if invitation.created_at else None,
+                'expires_at': invitation.expires_at.isoformat() if invitation.expires_at else None,
+                'is_valid': invitation.is_valid(),
+                'coach_id': invitation.coach_id
+            },
+            'existing_user': {
+                'exists': existing_user is not None,
+                'email': existing_user.email if existing_user else None,
+                'role': existing_user.role if existing_user else None
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'token': token
+        }), 500
+
 if __name__ == '__main__':
     with app.app_context():
         print("🚀 Inicializando aplicación...")
