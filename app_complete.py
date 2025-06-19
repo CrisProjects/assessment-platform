@@ -435,7 +435,7 @@ def get_dashboard_url(role):
     elif role == 'coach':
         return '/coach-dashboard'
     else:
-        return '/'  # Coachees van a la página de evaluación
+        return '/coachee-dashboard'  # Coachees van a su dashboard de evaluación
 
 @app.route('/api/assessments', methods=['GET'])
 @login_required
@@ -2211,7 +2211,7 @@ def register_with_invitation_api():
                 'email': user.email,
                 'coach_name': invitation.coach.full_name
             },
-            'redirect_url': '/',  # Redirigir directo a evaluación
+            'redirect_url': get_dashboard_url(user.role),  # Redirigir al dashboard correcto
             'auto_start_evaluation': True  # Flag para iniciar evaluación automáticamente
         }, 201)
         
@@ -2395,7 +2395,7 @@ def create_test_invitation():
             }), 404
         
         test_invitation = Invitation(
-            email='test@example.com',
+            email='test2@example.com',
             full_name='Usuario de Prueba',
             token=token,
             coach_id=admin_user.id,
