@@ -2412,3 +2412,78 @@ if __name__ == '__main__':
 # Solo ejecutar si se llama directamente (no cuando es importado por Gunicorn)
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    
+# RUTA DE ACCESO DIRECTO PARA TESTING
+# ===================================
+
+@app.route('/login-admin-direct')
+def login_admin_direct():
+    """Acceso directo como admin para testing"""
+    try:
+        # Buscar usuario admin
+        admin_user = User.query.filter_by(email='admin@platform.com').first()
+        if admin_user:
+            login_user(admin_user)
+            return jsonify({
+                'status': 'success',
+                'message': 'Logged in as admin',
+                'user': admin_user.email,
+                'role': admin_user.role,
+                'redirect_to': '/platform-admin-dashboard'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Admin user not found'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/access')
+def access_page():
+    """Página de acceso directo"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Assessment Platform - Acceso</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+            .card { border: 1px solid #ddd; padding: 20px; margin: 10px 0; border-radius: 5px; }
+            .btn { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 3px; }
+            .btn:hover { background: #0056b3; }
+        </style>
+    </head>
+    <body>
+        <h1>🎯 Assessment Platform</h1>
+        <p>Plataforma de Evaluación de Asertividad</p>
+        
+        <div class="card">
+            <h3>📊 Panel de Administración</h3>
+            <p>Acceso completo a la plataforma</p>
+            <a href="/login-admin-direct" class="btn">Acceder como Admin</a>
+        </div>
+        
+        <div class="card">
+            <h3>🎯 API Endpoints</h3>
+            <ul>
+                <li><a href="/api/init-db">Inicializar BD</a></li>
+                <li><a href="/api/health">Health Check</a></li>
+                <li><a href="/">Lista de Endpoints</a></li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h3>📈 Dashboards</h3>
+            <ul>
+                <li><a href="/platform-admin-dashboard">Admin Dashboard</a> (requiere login)</li>
+                <li><a href="/coach-dashboard">Coach Dashboard</a> (requiere login)</li>
+                <li><a href="/dashboard-debug">Debug Info</a></li>
+            </ul>
+        </div>
+    </body>
+    </html>
+    """
