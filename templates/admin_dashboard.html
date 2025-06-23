@@ -197,6 +197,20 @@
         .action-btn.secondary {
             background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
         }
+
+        .stat-badge {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .role-inactive {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
     </style>
 </head>
 <body>
@@ -205,7 +219,7 @@
             <h1>🛠️ Panel de Administración</h1>
             <div class="user-info">
                 <span>Administrador de Plataforma</span>
-                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+                <a href="/logout" class="logout-btn">Cerrar Sesión</a>
             </div>
         </div>
     </div>
@@ -250,6 +264,50 @@
             </div>
         </div>
 
+        <!-- Gestión de Coaches -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <h2>🎯 Gestión de Coaches</h2>
+            
+            <!-- Formulario para crear nuevo coach -->
+            <div style="background: #f7fafc; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem; color: #2d3748;">➕ Crear Nuevo Coach</h3>
+                <form id="createCoachForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Nombre de Usuario:</label>
+                        <input type="text" id="coachUsername" required style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Email:</label>
+                        <input type="email" id="coachEmail" required style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Nombre Completo:</label>
+                        <input type="text" id="coachFullName" required style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Contraseña Inicial:</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="password" id="coachPassword" required minlength="6" style="flex: 1; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+                            <button type="button" onclick="generateRandomPassword()" style="padding: 0.5rem; background: #4299e1; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Generar contraseña aleatoria">🎲</button>
+                        </div>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <button type="submit" class="action-btn" style="margin: 0;">
+                            ➕ Crear Coach
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista de coaches existentes -->
+            <div>
+                <h3 style="margin-bottom: 1rem; color: #2d3748;">📋 Coaches Registrados</h3>
+                <div id="coachesTable">
+                    <div class="loading">Cargando coaches...</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Actividad Reciente -->
         <div class="card">
             <h2>🕐 Actividad Reciente del Sistema</h2>
@@ -280,6 +338,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadPlatformStats();
             loadUsers();
+            loadCoaches();
+            
+            // Event listener para el formulario de crear coach
+            document.getElementById('createCoachForm').addEventListener('submit', handleCreateCoach);
         });
 
         // Cargar estadísticas de la plataforma
@@ -437,23 +499,133 @@
             alert('Logs del sistema disponibles en el panel de Render');
         }
 
-        // Logout
-        async function logout() {
+        // ========================
+        // GESTIÓN DE COACHES
+        // ========================
+
+        // Cargar lista de coaches
+        async function loadCoaches() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/logout`, {
-                    method: 'POST'
-                });
+                const response = await fetch(`${API_BASE_URL}/api/admin/coaches`);
                 
                 if (response.ok) {
-                    window.location.href = '/login';
+                    const data = await response.json();
+                    displayCoaches(data.coaches);
                 } else {
-                    alert('Error cerrando sesión');
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error cargando coaches');
                 }
             } catch (error) {
-                console.error('Error en logout:', error);
-                window.location.href = '/login';
+                console.error('Error cargando coaches:', error);
+                document.getElementById('coachesTable').innerHTML = 
+                    `<div class="error">Error cargando coaches: ${error.message}</div>`;
             }
         }
+
+        // Mostrar coaches en tabla
+        function displayCoaches(coaches) {
+            if (!coaches || coaches.length === 0) {
+                document.getElementById('coachesTable').innerHTML = 
+                    '<div class="loading">No hay coaches registrados</div>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Coachees</th>
+                            <th>Evaluaciones</th>
+                            <th>Último Login</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${coaches.map(coach => `
+                            <tr>
+                                <td><strong>${coach.username}</strong></td>
+                                <td>${coach.full_name}</td>
+                                <td>${coach.email}</td>
+                                <td><span class="stat-badge">${coach.coachees_count}</span></td>
+                                <td><span class="stat-badge">${coach.assessments_count}</span></td>
+                                <td>${coach.last_login ? new Date(coach.last_login).toLocaleDateString() : 'Nunca'}</td>
+                                <td>
+                                    <span class="role-badge ${coach.is_active ? 'role-coach' : 'role-inactive'}">
+                                        ${coach.is_active ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('coachesTable').innerHTML = tableHTML;
+        }
+
+        // Manejar creación de nuevo coach
+        async function handleCreateCoach(e) {
+            e.preventDefault();
+            
+            const formData = {
+                username: document.getElementById('coachUsername').value,
+                email: document.getElementById('coachEmail').value,
+                full_name: document.getElementById('coachFullName').value,
+                password: document.getElementById('coachPassword').value
+            };
+
+            // Validaciones básicas
+            if (formData.password.length < 6) {
+                alert('La contraseña debe tener al menos 6 caracteres');
+                return;
+            }
+
+            if (!formData.email.includes('@')) {
+                alert('Por favor ingresa un email válido');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/create-coach`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ Coach ${formData.full_name} creado exitosamente!\n\nCredenciales:\nUsuario: ${formData.username}\nContraseña: ${formData.password}\n\nEl coach puede cambiar su contraseña desde /coach-login`);
+                    
+                    // Limpiar formulario
+                    document.getElementById('createCoachForm').reset();
+                    
+                    // Recargar estadísticas y lista de coaches
+                    loadPlatformStats();
+                    loadCoaches();
+                } else {
+                    alert('❌ Error creando coach: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
+        }
+
+        // Generar contraseña aleatoria
+        function generateRandomPassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+            let password = '';
+            for (let i = 0; i < 8; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('coachPassword').value = password;
+        }
+
     </script>
 </body>
 </html>

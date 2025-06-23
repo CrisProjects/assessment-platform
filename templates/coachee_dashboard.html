@@ -302,8 +302,14 @@
     <div class="container">
         <!-- Sección de Bienvenida -->
         <div class="welcome-section">
+            {% if participant_data %}
+            <h2>¡Hola {{ participant_data.name }}! 👋</h2>
+            <p><strong>Tu coach {{ participant_data.coach_name }}</strong> te ha invitado a completar una evaluación de asertividad.</p>
+            <p>Esta evaluación te ayudará a conocer tu nivel de asertividad y recibir recomendaciones personalizadas para tu desarrollo.</p>
+            {% else %}
             <h2>Bienvenido a tu Evaluación de Asertividad</h2>
             <p>Completa la evaluación para conocer tu nivel de asertividad y recibir recomendaciones personalizadas.</p>
+            {% endif %}
         </div>
 
         <!-- Mensajes -->
@@ -311,23 +317,8 @@
 
         <!-- Formulario de Información Personal -->
         <div class="login-form active" id="loginForm">
-            <div class="form-group">
-                <label for="age">Edad:</label>
-                <input type="number" id="age" min="18" max="100" placeholder="Ingresa tu edad">
-            </div>
-
-            <div class="form-group">
-                <label for="gender">Género:</label>
-                <select id="gender">
-                    <option value="">Selecciona tu género</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
-                    <option value="otro">Otro</option>
-                    <option value="prefiero_no_decir">Prefiero no decir</option>
-                </select>
-            </div>
-
-            <button class="btn" onclick="startAssessment()">Comenzar Evaluación</button>
+            <!-- Botón directo para comenzar evaluación sin registro demográfico -->
+            <button class="btn" id="startAssessmentBtn">🚀 Comenzar Evaluación</button>
         </div>
 
         <!-- Contenedor de Evaluación -->
@@ -394,6 +385,10 @@
         let currentQuestionIndex = 0;
         let answers = {};
         let radarChartInstance = null;
+        
+        // Datos de invitación (si existen)
+        const participantData = {{ participant_data | tojson | safe }} || null;
+        const invitationToken = {{ invitation_token | tojson | safe }} || null;
 
         // Función para mostrar mensajes
         function showMessage(message, type = 'error') {
@@ -433,63 +428,80 @@
             }
         }
 
-        // Resto del código JavaScript del assessment (las mismas funciones que ya tenías)
-        // ... (incluir todas las funciones de evaluación existentes)
-
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            loadUserProfile();
-            loadQuestions();
-        });
-
-        // [Incluir aquí todas las funciones existentes del assessment desde index.html]
-        // Por ahora voy a incluir una versión simplificada para probar
-
-        async function startAssessment() {
-            const age = document.getElementById('age').value;
-            const gender = document.getElementById('gender').value;
+        function restartAssessment() {
+            currentQuestionIndex = 0;
+            answers = {};
             
-            if (!age || !gender) {
-                showMessage('Por favor completa todos los campos', 'error');
-                return;
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+                radarChartInstance = null;
             }
             
-            // Guardar datos demográficos
-            currentUser.age = age;
-            currentUser.gender = gender;
+            document.getElementById('age').value = '';
+            document.getElementById('gender').value = '';
+            
+            document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('loginForm').classList.add('active');
+            
+            showMessage('Evaluación reiniciada. Puedes completarla nuevamente.', 'info');
+        }
+
+        // Función simplificada para comenzar evaluación directamente
+        async function startAssessment() {
+            // Crear usuario con datos mínimos necesarios
+            currentUser = {
+                age: 25,  // Valor por defecto
+                gender: 'no_especificado'  // Valor por defecto
+            };
             
             // Mostrar evaluación
             document.getElementById('loginForm').classList.remove('active');
             document.getElementById('assessmentContainer').classList.add('active');
             
             showMessage('¡Evaluación iniciada! Responde todas las preguntas honestamente.', 'success');
+            
+            // Cargar preguntas desde API
+            await loadQuestionsFromAPI();
         }
 
-        function loadQuestions() {
-            // Preguntas simplificadas para prueba
-            questions = [
-                {
-                    content: "Cuando alguien critica tu trabajo de manera injusta, ¿cómo sueles responder?",
-                    options: [
-                        "Me defiendo con calma y hechos",
-                        "Permanezco en silencio para evitar el conflicto", 
-                        "Me enojo y me pongo a la defensiva",
-                        "Intento cambiar de tema"
-                    ]
-                },
-                {
-                    content: "Si un amigo te pide dinero repetidamente y no lo devuelve, ¿abordarías este tema?",
-                    options: [
-                        "Sí, tendría una conversación honesta al respecto",
-                        "No, evitaría mencionarlo",
-                        "Dejaría de prestar pero no lo hablaría", 
-                        "Pondría excusas para no prestar más"
-                    ]
+        // Función para cargar preguntas desde la API
+        async function loadQuestionsFromAPI() {
+            try {
+                console.log('🚀 Cargando preguntas desde API:', `${API_BASE_URL}/api/questions`);
+                const response = await fetch(`${API_BASE_URL}/api/questions`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login?role=coachee';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                // Agregar más preguntas aquí...
-            ];
-            
-            showQuestion();
+                
+                const data = await response.json();
+                console.log('📊 Respuesta de la API:', data);
+                
+                // La API devuelve un objeto con success, questions, etc.
+                if (data.success && data.questions && data.questions.length > 0) {
+                    questions = data.questions;
+                    console.log(`✅ Cargadas ${questions.length} preguntas desde la API`);
+                    showQuestion();
+                } else {
+                    console.error('⚠️ API no devolvió preguntas válidas');
+                    console.error('Datos recibidos:', data);
+                    showMessage('Error: No se encontraron preguntas válidas. Contacta al administrador.', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error cargando preguntas:', error);
+                showMessage('Error: No se pudieron cargar las preguntas. Contacta al administrador.', 'error');
+                return;
+            }
         }
 
         function showQuestion() {
@@ -511,7 +523,7 @@
                         ${question.options.map((option, index) => `
                             <li>
                                 <label>
-                                    <input type="radio" name="question${currentQuestionIndex}" value="${index}">
+                                    <input type="radio" name="question${currentQuestionIndex}" value="${index + 1}">
                                     ${option}
                                 </label>
                             </li>
@@ -539,6 +551,23 @@
 
         async function completeAssessment() {
             try {
+                showDebug('Iniciando completeAssessment...');
+                
+                // Validar que currentUser existe y tiene las propiedades necesarias
+                if (!currentUser) {
+                    throw new Error('Usuario no definido');
+                }
+                
+                if (!currentUser.age || !currentUser.gender) {
+                    throw new Error('Datos de usuario incompletos (edad o género faltante)');
+                }
+                
+                if (Object.keys(answers).length === 0) {
+                    throw new Error('No hay respuestas guardadas');
+                }
+                
+                showDebug(`Datos para envío: Usuario = ${JSON.stringify(currentUser)}, Respuestas = ${JSON.stringify(answers)}`);
+                
                 const response = await fetch(`${API_BASE_URL}/api/save_assessment`, {
                     method: 'POST',
                     headers: {
@@ -553,6 +582,8 @@
                 
                 const data = await response.json();
                 
+                showDebug(`Respuesta del servidor: ${JSON.stringify(data)}`);
+                
                 if (response.ok && data.success) {
                     showResults(data);
                 } else {
@@ -560,22 +591,126 @@
                 }
                 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error completo:', error);
                 showMessage('Error completando evaluación: ' + error.message, 'error');
             }
         }
 
+        // Función para mostrar debug info
+        function showDebug(message) {
+            console.log(`[DEBUG] ${message}`);
+        }
+
         function showResults(data) {
+            showDebug('Mostrando resultados completos...');
+            
             document.getElementById('assessmentContainer').classList.remove('active');
             document.getElementById('resultsContainer').style.display = 'block';
             
+            // Mostrar puntuación principal
             document.getElementById('scoreDisplay').textContent = data.total_score + '%';
             document.getElementById('levelDisplay').textContent = data.assertiveness_level;
+            
+            // Crear interpretación detallada
+            const interpretation = getDetailedInterpretation(data);
+            document.getElementById('interpretationDisplay').innerHTML = interpretation;
             
             // Crear gráfico de radar si hay datos dimensionales
             if (data.dimensional_scores) {
                 createRadarChart(data.dimensional_scores);
+                showDimensionalSummary(data.dimensional_scores);
             }
+            
+            showDebug('Resultados mostrados completamente');
+        }
+
+        function getDetailedInterpretation(data) {
+            const score = data.total_score;
+            const level = data.assertiveness_level;
+            
+            let interpretation = `
+                <div class="detailed-interpretation">
+                    <h3>🎯 Tu Nivel de Asertividad: ${level}</h3>
+                    <p class="score-explanation">Has obtenido <strong>${score}%</strong> en la evaluación general.</p>
+            `;
+            
+            // Interpretación según el nivel
+            if (score >= 80) {
+                interpretation += `
+                    <div class="level-description high-level">
+                        <h4>✨ ¡Excelente nivel de asertividad!</h4>
+                        <p>Demuestras una comunicación muy efectiva, sabes defender tus derechos con respeto y manejas los conflictos de manera constructiva. Mantienes un equilibrio entre expresar tus necesidades y respetar las de otros.</p>
+                    </div>
+                `;
+            } else if (score >= 60) {
+                interpretation += `
+                    <div class="level-description good-level">
+                        <h4>👍 Buen nivel de asertividad</h4>
+                        <p>Tienes una base sólida en comunicación asertiva. En la mayoría de las situaciones sabes expresarte con claridad y respeto. Hay oportunidades de mejora en algunas áreas específicas.</p>
+                    </div>
+                `;
+            } else if (score >= 40) {
+                interpretation += `
+                    <div class="level-description moderate-level">
+                        <h4>⚖️ Nivel moderado de asertividad</h4>
+                        <p>Tu comunicación asertiva está en desarrollo. A veces logras expresarte de manera efectiva, pero en otras ocasiones podrías beneficiarte de ser más directo o más empático según la situación.</p>
+                    </div>
+                `;
+            } else {
+                interpretation += `
+                    <div class="level-description low-level">
+                        <h4>🌱 Oportunidad de crecimiento</h4>
+                        <p>Tienes un gran potencial para desarrollar tu asertividad. Trabajar en estas habilidades te ayudará a comunicarte con mayor confianza y efectividad en todas las áreas de tu vida.</p>
+                    </div>
+                `;
+            }
+            
+            interpretation += `
+                    <div class="next-steps">
+                        <h4>📈 Próximos pasos recomendados:</h4>
+                        <ul>
+                            <li>Revisa tu gráfico dimensional para identificar fortalezas y áreas de mejora</li>
+                            <li>Practica la comunicación asertiva en situaciones cotidianas</li>
+                            <li>Considera trabajar con un coach para desarrollo personalizado</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            return interpretation;
+        }
+
+        function showDimensionalSummary(dimensionalScores) {
+            const summaryContainer = document.getElementById('dimensionalSummary');
+            if (!summaryContainer) return;
+            
+            let summaryHTML = '<h4>📊 Análisis por Dimensiones:</h4><div class="dimensional-bars">';
+            
+            const dimensions = {
+                'comunicacion': 'Comunicación Directa',
+                'derechos': 'Defensa de Derechos',
+                'opiniones': 'Expresión de Opiniones',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            
+            Object.entries(dimensions).forEach(([key, label]) => {
+                const score = dimensionalScores[key] || 0;
+                const level = score >= 75 ? 'high' : score >= 50 ? 'medium' : 'low';
+                
+                summaryHTML += `
+                    <div class="dimension-bar">
+                        <div class="dimension-label">${label}</div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill ${level}" style="width: ${score}%"></div>
+                            <span class="score-label">${score.toFixed(1)}%</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            summaryHTML += '</div>';
+            summaryContainer.innerHTML = summaryHTML;
         }
 
         function createRadarChart(dimensionalScores) {
@@ -659,23 +794,40 @@
             }
         }
 
-        function restartAssessment() {
-            currentQuestionIndex = 0;
-            answers = {};
+        // Event listeners para los botones - Ejecutar inmediatamente y también en DOMContentLoaded
+        function setupEventListeners() {
+            console.log('Configurando event listeners...');
             
-            if (radarChartInstance) {
-                radarChartInstance.destroy();
-                radarChartInstance = null;
+            // Botón para comenzar evaluación directamente (sin registro)
+            const startBtn = document.getElementById('startAssessmentBtn');
+            if (startBtn) {
+                console.log('✅ Botón startAssessmentBtn encontrado, agregando event listener');
+                
+                // Remover listener anterior si existe
+                startBtn.removeEventListener('click', startAssessment);
+                // Agregar nuevo listener para función simplificada
+                startBtn.addEventListener('click', startAssessment);
+                
+                // También agregar onclick como respaldo
+                startBtn.onclick = startAssessment;
+                
+                console.log('✅ Event listeners agregados al botón (función simplificada)');
+            } else {
+                console.log('❌ Botón startAssessmentBtn NO encontrado');
             }
-            
-            document.getElementById('age').value = '';
-            document.getElementById('gender').value = '';
-            
-            document.getElementById('resultsContainer').style.display = 'none';
-            document.getElementById('loginForm').classList.add('active');
-            
-            showMessage('Evaluación reiniciada. Puedes completarla nuevamente.', 'info');
+
+            // Remover referencias a botón estándar ya que solo usamos uno
         }
+
+        // Ejecutar inmediatamente si DOM ya está listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupEventListeners);
+        } else {
+            setupEventListeners();
+        }
+        
+        // También ejecutar después de un pequeño delay como respaldo
+        setTimeout(setupEventListeners, 500);
     </script>
 </body>
 </html>

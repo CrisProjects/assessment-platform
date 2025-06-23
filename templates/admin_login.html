@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Assessment Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 420px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .login-header i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .login-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .login-form {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 0.875rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .back-link a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #4f46e5;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .change-password-section {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .change-password-toggle {
+            background: none;
+            border: none;
+            color: #4f46e5;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-bottom: 1rem;
+        }
+
+        .change-password-form {
+            display: none;
+        }
+
+        .change-password-form.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fas fa-shield-alt"></i>
+            <h1>Administrador</h1>
+            <p>Assessment Platform</p>
+        </div>
+
+        <div class="login-form">
+            <!-- Alertas -->
+            <div id="alert-container"></div>
+
+            <!-- Formulario de Login -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" name="username" value="admin" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt loading"></i>
+                    Ingresar
+                </button>
+            </form>
+
+            <!-- Sección para cambiar contraseña -->
+            <div class="change-password-section">
+                <button type="button" class="change-password-toggle" onclick="toggleChangePassword()">
+                    <i class="fas fa-key"></i> Cambiar contraseña
+                </button>
+
+                <div id="changePasswordForm" class="change-password-form">
+                    <form id="passwordChangeForm">
+                        <div class="form-group">
+                            <label for="currentPassword">Contraseña actual</label>
+                            <input type="password" id="currentPassword" name="currentPassword" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPassword">Nueva contraseña</label>
+                            <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirmar nueva contraseña</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                        </div>
+
+                        <button type="submit" class="btn-login">
+                            <i class="fas fa-save loading"></i>
+                            Actualizar contraseña
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="back-link">
+                <a href="/"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Manejar el formulario de login
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('.btn-login');
+            const loading = submitBtn.querySelector('.loading');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Mostrar loading
+            loading.classList.add('show');
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('¡Login exitoso! Redirigiendo...', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/platform-admin-dashboard';
+                    }, 1000);
+                } else {
+                    showAlert(data.error || 'Error en el login', 'error');
+                }
+            } catch (error) {
+                showAlert('Error de conexión', 'error');
+            } finally {
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Manejar el formulario de cambio de contraseña
+        document.getElementById('passwordChangeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                showAlert('Las contraseñas no coinciden', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showAlert('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            const submitBtn = this.querySelector('.btn-login');
+            const loading = submitBtn.querySelector('.loading');
+            
+            loading.classList.add('show');
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/admin/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Contraseña actualizada exitosamente', 'success');
+                    document.getElementById('passwordChangeForm').reset();
+                    setTimeout(() => {
+                        toggleChangePassword();
+                    }, 2000);
+                } else {
+                    showAlert(data.error || 'Error al cambiar la contraseña', 'error');
+                }
+            } catch (error) {
+                showAlert('Error de conexión', 'error');
+            } finally {
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        });
+
+        function toggleChangePassword() {
+            const form = document.getElementById('changePasswordForm');
+            form.classList.toggle('show');
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `
+                <div class="alert alert-${type}">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i>
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
