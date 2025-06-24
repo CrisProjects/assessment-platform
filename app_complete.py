@@ -1392,6 +1392,10 @@ def evaluate_with_invitation(token):
         flash(f'Error procesando invitación: {str(e)}', 'error')
         return redirect('/')
 
+# Configuración adicional para producción en Render
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Necesario para cookies cross-site en producción
+app.config['SESSION_COOKIE_SECURE'] = True     # Necesario para HTTPS en Render
+
 if __name__ == '__main__':
     with app.app_context():
         auto_initialize_database()
