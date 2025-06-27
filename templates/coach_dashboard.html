@@ -1495,7 +1495,7 @@
             showError(message, 'warning');
         }
 
-        // SISTEMA DE INVITACIONES
+        // SISTEMA DE INVITACIONES - DISEÑO PROFESIONAL Y ELEGANTE
         function openInvitationModal() {
             const modal = document.createElement('div');
             modal.id = 'invitationModal';
@@ -1505,11 +1505,12 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: rgba(0,0,0,0.5);
+                background: rgba(0,0,0,0.6);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 z-index: 1000;
+                animation: fadeIn 0.3s ease;
             `;
             
             // Cerrar modal al hacer clic en el fondo
@@ -1520,32 +1521,86 @@
             });
             
             modal.innerHTML = `
-                <div style="background: white; padding: 2rem; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-                    <h2 style="margin-bottom: 1.5rem; color: #2d3748;">✉️ Invitar Nuevo Coachee</h2>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
                     
-                    <div id="invitationMessage" style="display: none; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;"></div>
+                    @keyframes slideUp {
+                        from { transform: translateY(30px); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                    
+                    .invitation-container {
+                        animation: slideUp 0.4s ease;
+                    }
+                    
+                    .invitation-input:focus {
+                        border-color: #667eea !important;
+                        outline: none !important;
+                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+                    }
+                    
+                    .invitation-btn:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    }
+                    
+                    .invitation-btn:active {
+                        transform: translateY(0);
+                    }
+                </style>
+                
+                <div class="invitation-container" style="background: white; padding: 2.5rem; border-radius: 20px; width: 90%; max-width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); position: relative;">
+                    <!-- Header profesional -->
+                    <div style="text-align: center; margin-bottom: 2rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.5rem;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);">
+                            <span style="font-size: 24px;">✉️</span>
+                        </div>
+                        <h2 style="margin: 0; color: #1a202c; font-size: 1.5rem; font-weight: 600;">Crear Nueva Invitación</h2>
+                        <p style="margin: 0.5rem 0 0 0; color: #64748b; font-size: 0.95rem;">Invita a un coachee a completar su evaluación de asertividad</p>
+                    </div>
+                    
+                    <div id="invitationMessage" style="display: none; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border-left: 4px solid;"></div>
                     
                     <form id="invitationForm">
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; color: #4a5568; font-weight: 500;">Nombre Completo *</label>
-                            <input type="text" id="invitationFullName" placeholder="Ej: María González" required
-                                style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
-                        </div>
-                        
                         <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; color: #4a5568; font-weight: 500;">Email *</label>
-                            <input type="email" id="invitationEmail" placeholder="Ej: maria@ejemplo.com" required
-                                style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                            <label style="display: block; margin-bottom: 0.7rem; color: #374151; font-weight: 500; font-size: 0.95rem;">
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    👤 Nombre completo del participante
+                                    <span style="color: #dc2626; font-size: 0.8rem;">*</span>
+                                </span>
+                            </label>
+                            <input type="text" id="invitationFullName" placeholder="Ej: María González Pérez" required
+                                class="invitation-input"
+                                style="width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; transition: all 0.3s ease; background: #fafbfc;">
                         </div>
                         
-                        <div style="display: flex; gap: 1rem;">
+                        <div style="margin-bottom: 2rem;">
+                            <label style="display: block; margin-bottom: 0.7rem; color: #374151; font-weight: 500; font-size: 0.95rem;">
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    📧 Correo electrónico
+                                    <span style="color: #dc2626; font-size: 0.8rem;">*</span>
+                                </span>
+                            </label>
+                            <input type="email" id="invitationEmail" placeholder="maria.gonzalez@empresa.com" required
+                                class="invitation-input"
+                                style="width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; transition: all 0.3s ease; background: #fafbfc;">
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                             <button type="button" onclick="closeInvitationModal()"
-                                style="flex: 1; background: #e2e8f0; color: #4a5568; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                                class="invitation-btn"
+                                style="flex: 1; background: #f8fafc; color: #64748b; border: 2px solid #e2e8f0; padding: 14px 24px; border-radius: 12px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">
                                 Cancelar
                             </button>
                             <button type="submit" id="sendInvitationBtn"
-                                style="flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; cursor: pointer;">
-                                Enviar Invitación
+                                class="invitation-btn"
+                                style="flex: 2; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                                <span style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <span>🚀</span> Crear Invitación
+                                </span>
                             </button>
                         </div>
                     </form>
@@ -1553,6 +1608,11 @@
             `;
             
             document.body.appendChild(modal);
+            
+            // Focus en el primer input
+            setTimeout(() => {
+                document.getElementById('invitationFullName').focus();
+            }, 100);
             
             // Manejar envío del formulario
             document.getElementById('invitationForm').addEventListener('submit', async (e) => {
