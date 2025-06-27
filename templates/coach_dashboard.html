@@ -6,6 +6,8 @@
     <title>Dashboard Coach - Plataforma de Asertividad</title>
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -13,10 +15,17 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8fafc;
             color: #2d3748;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .header {
@@ -24,6 +33,15 @@
             color: white;
             padding: 1.5rem 2rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .header.scrolled {
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.2);
         }
 
         .header-content {
@@ -32,17 +50,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .header h1 {
             font-size: 1.8rem;
             font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .user-info {
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .logout-btn {
@@ -53,6 +76,8 @@
             border-radius: 6px;
             text-decoration: none;
             transition: all 0.3s ease;
+            white-space: nowrap;
+            touch-action: manipulation;
         }
 
         .logout-btn:hover {
@@ -67,7 +92,7 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -78,6 +103,17 @@
             padding: 1.5rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             border: 1px solid #e2e8f0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: default;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
 
         .stat-number {
@@ -85,12 +121,15 @@
             font-weight: 700;
             color: #667eea;
             line-height: 1;
+            word-break: break-word;
         }
 
         .stat-label {
             color: #718096;
             font-size: 0.9rem;
             margin-top: 0.5rem;
+            font-weight: 500;
+            text-align: center;
         }
 
         .main-content {
@@ -325,17 +364,411 @@
             background: #38a169;
         }
 
-        @media (max-width: 768px) {
+        /* Responsive Design Improvements */
+        
+        /* Tablet Portrait (768px - 1024px) */
+        @media (max-width: 1024px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .container {
+                padding: 1.5rem;
+            }
+            
             .dashboard-grid {
                 grid-template-columns: 1fr 1fr;
+                gap: 1rem;
             }
             
             .main-content {
                 grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Mobile Landscape (481px - 768px) */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+            
+            .header-content {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .logout-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.8rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .stat-label {
+                font-size: 0.8rem;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .panel-header {
+                padding: 1rem;
+            }
+            
+            .panel-header h2 {
+                font-size: 1.1rem;
+            }
+            
+            .panel-content {
+                padding: 1rem;
             }
             
             .coachee-grid {
                 grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+            
+            .coachee-card {
+                padding: 1.5rem 1rem;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        /* Mobile Portrait (320px - 480px) */
+        @media (max-width: 480px) {
+            .header {
+                padding: 0.8rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 0.8rem;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 0.5rem;
+                font-size: 0.85rem;
+                width: 100%;
+            }
+            
+            .logout-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+                width: auto;
+                min-width: 120px;
+            }
+            
+            .container {
+                padding: 0.8rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .stat-card {
+                padding: 1.2rem 1rem;
+                text-align: center;
+            }
+            
+            .stat-number {
+                font-size: 2.2rem;
+                margin-bottom: 0.3rem;
+            }
+            
+            .stat-label {
+                font-size: 0.85rem;
+                font-weight: 500;
+            }
+            
+            .main-content {
+                gap: 1rem;
+            }
+            
+            .panel {
+                border-radius: 8px;
+            }
+            
+            .panel-header {
+                padding: 1rem 0.8rem;
+            }
+            
+            .panel-header h2 {
+                font-size: 1rem;
+            }
+            
+            .panel-content {
+                padding: 0.8rem;
+            }
+            
+            .coachee-card {
+                padding: 1.2rem 0.8rem;
+                border-radius: 12px;
+            }
+            
+            .coachee-name {
+                font-size: 1rem;
+            }
+            
+            .coachee-email {
+                font-size: 0.8rem;
+            }
+            
+            .chart-container {
+                height: 200px;
+                margin-top: 0.8rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+                margin-top: 0.8rem;
+            }
+            
+            .refresh-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* Extra Small Mobile (max-width: 360px) */
+        @media (max-width: 360px) {
+            .header {
+                padding: 0.6rem;
+            }
+            
+            .header h1 {
+                font-size: 1.1rem;
+            }
+            
+            .container {
+                padding: 0.6rem;
+            }
+            
+            .stat-card {
+                padding: 1rem 0.8rem;
+            }
+            
+            .stat-number {
+                font-size: 1.8rem;
+            }
+            
+            .panel-header, .panel-content {
+                padding: 0.8rem 0.6rem;
+            }
+            
+            .coachee-card {
+                padding: 1rem 0.6rem;
+            }
+            
+            .chart-container {
+                height: 180px;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .logout-btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            .refresh-btn {
+                min-height: 44px;
+                padding: 0.6rem 1.2rem;
+            }
+            
+            .coachee-card {
+                min-height: 44px;
+                cursor: pointer;
+            }
+            
+            .stat-card {
+                transition: transform 0.2s ease;
+            }
+            
+            .stat-card:active {
+                transform: scale(0.98);
+            }
+        }
+
+        /* Mobile Menu Hamburger */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding: 2rem 1.5rem;
+        }
+
+        .mobile-nav.active {
+            right: 0;
+        }
+
+        .mobile-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .mobile-nav-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .mobile-nav-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .mobile-nav-close:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .mobile-nav-content {
+            color: white;
+        }
+
+        .mobile-nav-user {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .mobile-nav-user strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .mobile-nav-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mobile-nav-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .mobile-nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+        }
+
+        /* Show mobile menu toggle only on mobile */
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .user-info {
+                display: none;
             }
         }
     </style>
@@ -348,12 +781,49 @@
                 <span>Coach: <strong id="coachName">Cargando...</strong></span>
                 <a href="/logout" class="logout-btn">Cerrar Sesión</a>
             </div>
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </div>
 
+    <!-- Mobile Navigation -->
+    <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+    <nav class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-header">
+            <span class="mobile-nav-title">🎯 Dashboard Coach</span>
+            <button class="mobile-nav-close" onclick="closeMobileMenu()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mobile-nav-content">
+            <div class="mobile-nav-user">
+                <strong id="mobileCoachName">Cargando...</strong>
+                <small>Sesión activa</small>
+            </div>
+            <div class="mobile-nav-actions">
+                <a href="#stats" class="mobile-nav-btn" onclick="scrollToSection('stats')">
+                    📊 Estadísticas
+                </a>
+                <a href="#charts" class="mobile-nav-btn" onclick="scrollToSection('charts')">
+                    📈 Gráficos
+                </a>
+                <a href="#coachees" class="mobile-nav-btn" onclick="scrollToSection('coachees')">
+                    👥 Mis Coachees
+                </a>
+                <a href="#invitations" class="mobile-nav-btn" onclick="scrollToSection('invitations')">
+                    ✉️ Invitaciones
+                </a>
+                <a href="/logout" class="mobile-nav-btn">
+                    🚪 Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
         <!-- Estadísticas Generales -->
-        <div class="dashboard-grid">
+        <div id="stats" class="dashboard-grid">
             <div class="stat-card">
                 <div class="stat-number" id="totalCoachees">-</div>
                 <div class="stat-label">Coachees Asignados</div>
@@ -373,7 +843,7 @@
         </div>
 
         <!-- Contenido Principal -->
-        <div class="main-content">
+        <div id="charts" class="main-content">
             <!-- Distribución de Niveles -->
             <div class="panel">
                 <div class="panel-header">
@@ -400,11 +870,11 @@
         </div>
 
         <!-- Lista de Coachees -->
-        <div class="panel coachees-section">
+        <div id="coachees" class="panel coachees-section">
             <div class="panel-header">
                 <h2>👥 Mis Coachees</h2>
                 <div class="action-buttons">
-                    <button class="refresh-btn" onclick="openInvitationModal()">✉️ Invitar Coachee</button>
+                    <button id="invitations" class="refresh-btn" onclick="openInvitationModal()">✉️ Invitar Coachee</button>
                     <button class="refresh-btn" onclick="loadCoachees()">🔄 Actualizar</button>
                 </div>
             </div>
@@ -1202,6 +1672,85 @@
             const message = encodeURIComponent(`Hola! Te invito a completar tu evaluación de asertividad. Solo haz clic en este enlace: ${url}`);
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
+
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileNav = document.getElementById('mobileNav');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            mobileNav.classList.toggle('active');
+            overlay.classList.toggle('active');
+            
+            // Prevent body scroll when menu is open
+            if (mobileNav.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+
+        function closeMobileMenu() {
+            const mobileNav = document.getElementById('mobileNav');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            mobileNav.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                closeMobileMenu();
+            }
+        }
+
+        // Update mobile coach name when main name loads
+        function updateMobileCoachName() {
+            const mainCoachName = document.getElementById('coachName').textContent;
+            const mobileCoachName = document.getElementById('mobileCoachName');
+            if (mobileCoachName && mainCoachName !== 'Cargando...') {
+                mobileCoachName.textContent = mainCoachName;
+            }
+        }
+
+        // Close mobile menu on window resize to desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                closeMobileMenu();
+            }
+        });
+
+        // Close mobile menu on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
+            }
+        });
+
+        // Update mobile coach name when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up observer for coach name changes
+            const coachNameElement = document.getElementById('coachName');
+            if (coachNameElement) {
+                const observer = new MutationObserver(updateMobileCoachName);
+                observer.observe(coachNameElement, { childList: true, subtree: true });
+            }
+
+            // Header scroll effect
+            const header = document.querySelector('.header');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+        });
     </script>
 </body>
 </html>

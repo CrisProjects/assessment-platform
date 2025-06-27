@@ -387,8 +387,8 @@
         let radarChartInstance = null;
         
         // Datos de invitación (si existen)
-        const participantData = {{ participant_data | tojson | safe }} || null;
-        const invitationToken = {{ invitation_token | tojson | safe }} || null;
+        const participantData = {{ participant_data | tojson | default('null') | safe }};
+        const invitationToken = {{ invitation_token | tojson | default('null') | safe }};
 
         // Función para mostrar mensajes
         function showMessage(message, type = 'error') {

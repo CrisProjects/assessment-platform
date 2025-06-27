@@ -245,7 +245,7 @@ def coachee_api_required(f):
 # INICIALIZACIÓN AUTOMÁTICA DE BASE DE DATOS EN PRODUCCIÓN
 # ====================================================
 def auto_initialize_database():
-    """Inicialización automática para producción (Render, etc.)"""
+    """Inicialización automática completa para producción (Render, etc.)"""
     try:
         print("🚀 AUTO-INICIALIZACIÓN: Verificando base de datos...")
         
@@ -276,7 +276,7 @@ def auto_initialize_database():
                     print("👤 AUTO-INIT: Creando usuario admin...")
                     admin_user = User(
                         username='admin',
-                        email='admin@platform.com',
+                        email='admin@assessment.com',
                         full_name='Platform Administrator',
                         role='platform_admin'
                     )
@@ -290,8 +290,100 @@ def auto_initialize_database():
                 print(f"⚠️ AUTO-INIT: Error creando usuario admin: {user_err}")
         else:
             print("❌ AUTO-INIT: Tabla 'user' NO pudo ser creada")
+        
+        # ===== INICIALIZACIÓN DEL ASSESSMENT DE ASERTIVIDAD =====
+        try:
+            # Verificar si existe el assessment principal
+            assessment = Assessment.query.filter_by(id=1).first()
+            if not assessment:
+                print("📝 AUTO-INIT: Creando assessment de asertividad...")
+                assessment = Assessment(
+                    id=1,
+                    title='Evaluación de Asertividad',
+                    description='Evaluación completa de habilidades asertivas en diferentes situaciones'
+                )
+                db.session.add(assessment)
+                db.session.commit()
+                print("✅ AUTO-INIT: Assessment de asertividad creado")
+            else:
+                print("ℹ️ AUTO-INIT: Assessment de asertividad ya existe")
+            
+            # Verificar y crear las 10 preguntas de asertividad
+            existing_questions = Question.query.filter_by(assessment_id=1).count()
+            if existing_questions == 0:
+                print("❓ AUTO-INIT: Creando 10 preguntas de asertividad...")
+                
+                assertiveness_questions = [
+                    "Cuando alguien me crítica injustamente, expreso mi desacuerdo de manera calmada y directa.",
+                    "Puedo decir 'no' a las peticiones de otros sin sentirme culpable.",
+                    "Expreso mis opiniones abiertamente, incluso cuando difieren de las de otros.",
+                    "Cuando estoy en desacuerdo con algo, lo digo de manera respetuosa.",
+                    "Me resulta fácil pedir ayuda cuando la necesito.",
+                    "Puedo dar retroalimentación constructiva sin herir los sentimientos de otros.",
+                    "Defiendo mis derechos sin agredir a los demás.",
+                    "Expreso mis emociones de manera apropiada y en el momento adecuado.",
+                    "Puedo manejar conflictos de manera constructiva.",
+                    "Me siento cómodo/a expresando mis necesidades y deseos."
+                ]
+                
+                for i, question_text in enumerate(assertiveness_questions, 1):
+                    question = Question(
+                        assessment_id=1,
+                        text=question_text,
+                        question_type='likert',
+                        order=i
+                    )
+                    db.session.add(question)
+                
+                db.session.commit()
+                print(f"✅ AUTO-INIT: {len(assertiveness_questions)} preguntas de asertividad creadas")
+            else:
+                print(f"ℹ️ AUTO-INIT: Ya existen {existing_questions} preguntas de asertividad")
+                
+        except Exception as assessment_err:
+            print(f"⚠️ AUTO-INIT: Error inicializando assessment: {assessment_err}")
+            
+        # ===== CREAR USUARIOS DE PRUEBA ADICIONALES =====
+        try:
+            # Crear coach de prueba si no existe
+            coach_user = User.query.filter_by(email='coach@assessment.com').first()
+            if not coach_user:
+                print("👨‍💼 AUTO-INIT: Creando usuario coach de prueba...")
+                coach_user = User(
+                    username='coach',
+                    email='coach@assessment.com',
+                    full_name='Coach de Prueba',
+                    role='coach'
+                )
+                coach_user.set_password('coach123')
+                db.session.add(coach_user)
+                print("✅ AUTO-INIT: Usuario coach creado")
+            else:
+                print("ℹ️ AUTO-INIT: Usuario coach ya existe")
+                
+            # Crear coachee de prueba si no existe
+            coachee_user = User.query.filter_by(email='coachee@assessment.com').first()
+            if not coachee_user:
+                print("👤 AUTO-INIT: Creando usuario coachee de prueba...")
+                coachee_user = User(
+                    username='coachee',
+                    email='coachee@assessment.com',
+                    full_name='Coachee de Prueba',
+                    role='coachee'
+                )
+                coachee_user.set_password('coachee123')
+                db.session.add(coachee_user)
+                print("✅ AUTO-INIT: Usuario coachee creado")
+            else:
+                print("ℹ️ AUTO-INIT: Usuario coachee ya existe")
+                
+            db.session.commit()
+            
+        except Exception as users_err:
+            print(f"⚠️ AUTO-INIT: Error creando usuarios de prueba: {users_err}")
             
         print(f"📋 AUTO-INIT: Tablas disponibles: {tables}")
+        print("🎉 AUTO-INIT: Inicialización completa finalizada")
         return True
         
     except Exception as e:
