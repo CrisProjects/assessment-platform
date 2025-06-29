@@ -1,86 +1,219 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="text-center py-5">
-    {% if current_user.is_authenticated and current_user.is_coachee %}
-        <h1>¡Hola {{ current_user.full_name }}!</h1>
-        <p class="lead">Bienvenido a tu evaluación de asertividad</p>
-        {% if current_user.coach %}
-            <p class="text-muted">Tu coach {{ current_user.coach.full_name }} te ha invitado a completar esta evaluación</p>
-        {% endif %}
-        
-        <div class="mt-4">
-            <a href="{{ url_for('assessment') }}" class="btn btn-primary btn-lg">
-                🎯 Comenzar Evaluación
-            </a>
+<!-- Hero Section - Responsive -->
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+            <div class="text-center py-4 py-md-5 px-3">
+                {% if current_user.is_authenticated and current_user.is_coachee %}
+                    <div class="mb-4">
+                        <h1 class="display-5 display-md-4 fw-bold text-primary mb-3">
+                            ¡Hola {{ current_user.full_name }}! 👋
+                        </h1>
+                        <p class="lead fs-5 fs-md-4 text-dark mb-3">
+                            Bienvenido a tu evaluación de asertividad
+                        </p>
+                        {% if current_user.coach %}
+                            <p class="text-muted fs-6 fs-md-5 mb-4">
+                                Tu coach <strong>{{ current_user.coach.full_name }}</strong> te ha invitado a completar esta evaluación
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-center mb-4">
+                        <a href="{{ url_for('assessment') }}" 
+                           class="btn btn-primary btn-lg px-4 py-3 fw-bold shadow-sm">
+                            <i class="fas fa-play-circle me-2"></i>
+                            Comenzar Evaluación
+                        </a>
+                    </div>
+                    
+                    <div class="alert alert-info border-0 bg-light rounded-4 mx-auto" style="max-width: 400px;">
+                        <i class="fas fa-clock text-primary me-2"></i>
+                        <small class="fw-medium">Duración aproximada: 10-15 minutos</small>
+                    </div>
+                    
+                {% elif current_user.is_authenticated %}
+                    <div class="mb-4">
+                        <h1 class="display-5 display-md-4 fw-bold text-primary mb-3">
+                            Bienvenido a la Plataforma 🎯
+                        </h1>
+                        <p class="lead fs-5 fs-md-4 text-dark mb-4">
+                            Gestiona y supervisa evaluaciones de asertividad
+                        </p>
+                    </div>
+                    
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                        <a href="{{ url_for('dashboard') }}" 
+                           class="btn btn-primary btn-lg px-4 py-3 fw-bold shadow-sm">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Ir al Panel
+                        </a>
+                    </div>
+                    
+                {% else %}
+                    <div class="mb-4">
+                        <h1 class="display-5 display-md-4 fw-bold text-primary mb-3">
+                            Plataforma de Evaluación 📊
+                        </h1>
+                        <p class="lead fs-5 fs-md-4 text-dark mb-4">
+                            Evaluaciones de asertividad profesionales
+                        </p>
+                    </div>
+                    
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                        <a href="{{ url_for('login') }}" 
+                           class="btn btn-primary btn-lg px-4 py-3 fw-bold shadow-sm">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Iniciar Sesión
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-        
-        <div class="mt-3">
-            <small class="text-muted">La evaluación toma aproximadamente 10-15 minutos</small>
-        </div>
-        
-    {% elif current_user.is_authenticated %}
-        <h1>Bienvenido a la Plataforma de Evaluación</h1>
-        <p class="lead">Gestiona y supervisa evaluaciones de asertividad</p>
-        
-        <div class="mt-4">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Ir al Panel</a>
-        </div>
-    {% else %}
-        <h1>Bienvenido a la Plataforma de Evaluación</h1>
-        <p class="lead">Evaluaciones de asertividad profesionales</p>
-        
-        <div class="mt-4">
-            <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar sesión</a>
-        </div>
-    {% endif %}
+    </div>
 </div>
 
-{% if current_user.is_authenticated and current_user.is_coachee %}
-<div class="row mt-5">
-    <div class="col-md-8 mx-auto">
-        <div class="card">
-            <div class="card-body text-center">
-                <h5 class="card-title">📋 Sobre tu Evaluación</h5>
-                <p class="card-text">
-                    Esta evaluación te ayudará a conocer tu nivel de asertividad en diferentes situaciones. 
-                    Los resultados serán compartidos con tu coach para brindarte un mejor acompañamiento.
-                </p>
-                <div class="mt-3">
-                    <span class="badge badge-info">📊 Análisis detallado</span>
-                    <span class="badge badge-success">🎯 Recomendaciones personalizadas</span>
-                    <span class="badge badge-warning">📈 Seguimiento de progreso</span>
+<!-- Information Section - Responsive -->
+<div class="container-fluid bg-light py-4 py-md-5">
+    <div class="container">
+        {% if current_user.is_authenticated and current_user.is_coachee %}
+            <!-- Coachee Information Card -->
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 p-md-5 text-center">
+                            <div class="mb-4">
+                                <i class="fas fa-clipboard-list text-primary fs-1 mb-3"></i>
+                                <h4 class="card-title fw-bold text-dark">Sobre tu Evaluación</h4>
+                            </div>
+                            
+                            <p class="card-text text-muted fs-6 fs-md-5 leading-relaxed mb-4">
+                                Esta evaluación te ayudará a conocer tu nivel de asertividad en diferentes situaciones. 
+                                Los resultados serán compartidos con tu coach para brindarte un mejor acompañamiento.
+                            </p>
+                            
+                            <!-- Benefits Badges - Responsive -->
+                            <div class="d-flex flex-column flex-sm-row gap-2 gap-sm-3 justify-content-center">
+                                <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                                    <i class="fas fa-chart-bar me-1"></i>
+                                    <span class="fs-6">Análisis detallado</span>
+                                </div>
+                                <div class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                    <i class="fas fa-bullseye me-1"></i>
+                                    <span class="fs-6">Recomendaciones</span>
+                                </div>
+                                <div class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">
+                                    <i class="fas fa-chart-line me-1"></i>
+                                    <span class="fs-6">Seguimiento</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+            
+        {% else %}
+            <!-- Platform Features - Responsive Grid -->
+            <div class="row g-4 justify-content-center">
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 transition-all">
+                        <div class="card-body p-4 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-plus-circle text-primary fs-1"></i>
+                            </div>
+                            <h5 class="card-title fw-bold text-dark mb-3">Crear Evaluaciones</h5>
+                            <p class="card-text text-muted fs-6">
+                                Diseña evaluaciones personalizadas con distintos tipos de preguntas y análisis avanzados
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 transition-all">
+                        <div class="card-body p-4 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-clipboard-check text-success fs-1"></i>
+                            </div>
+                            <h5 class="card-title fw-bold text-dark mb-3">Realizar Evaluaciones</h5>
+                            <p class="card-text text-muted fs-6">
+                                Completa evaluaciones de manera intuitiva y envía tus respuestas de forma segura
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 transition-all">
+                        <div class="card-body p-4 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-chart-pie text-warning fs-1"></i>
+                            </div>
+                            <h5 class="card-title fw-bold text-dark mb-3">Ver Resultados</h5>
+                            <p class="card-text text-muted fs-6">
+                                Consulta y analiza los resultados con gráficos detallados y reportes profesionales
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
-{% else %}
-<div class="row mt-5">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Crear Evaluaciones</h5>
-                <p class="card-text">Diseña evaluaciones personalizadas con distintos tipos de preguntas</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Realizar Evaluaciones</h5>
-                <p class="card-text">Completa evaluaciones y envía tus respuestas</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Ver Resultados</h5>
-                <p class="card-text">Consulta y analiza los resultados de tus evaluaciones</p>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
+
+<!-- Custom Responsive Styles -->
+<style>
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .leading-relaxed {
+        line-height: 1.6;
+    }
+    
+    /* Touch-friendly buttons on mobile */
+    @media (max-width: 768px) {
+        .btn-lg {
+            min-height: 56px;
+            font-size: 1.1rem;
+        }
+        
+        .badge {
+            font-size: 0.875rem !important;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-body {
+            padding: 1.5rem !important;
+        }
+    }
+    
+    /* Tablet optimizations */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .display-5 {
+            font-size: 2.5rem;
+        }
+        
+        .lead {
+            font-size: 1.3rem;
+        }
+    }
+    
+    /* Desktop optimizations */
+    @media (min-width: 1200px) {
+        .container {
+            max-width: 1140px;
+        }
+    }
+</style>
 {% endblock %}

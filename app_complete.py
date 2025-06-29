@@ -483,8 +483,14 @@ def favicon():
 # RUTAS DE AUTENTICACIÓN
 # ========================
 
-# API Routes
+# Login Routes
 @app.route('/login')
+def login():
+    """Servir la página de login"""
+    return render_template('login.html')
+
+# API Routes
+@app.route('/dashboard_selection')
 def dashboard_selection():
     """Servir la página de selección de dashboards"""
     return render_template('dashboard_selection.html')

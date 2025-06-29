@@ -4,332 +4,495 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Administrador - Plataforma de Asertividad</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --admin-primary: #dc3545;
+            --admin-secondary: #6c757d;
+            --admin-success: #198754;
+            --admin-info: #0dcaf0;
+            --admin-warning: #ffc107;
+            --admin-danger: #dc3545;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8fafc;
-            color: #2d3748;
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
         }
 
-        .header {
-            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        /* Header responsivo */
+        .admin-header {
+            background: linear-gradient(135deg, var(--admin-primary) 0%, #b02a37 100%);
             color: white;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logout-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
+        /* Stats cards responsivas */
         .stat-card {
             background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-left: 4px solid #e53e3e;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--admin-primary);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .stat-card h3 {
-            font-size: 2rem;
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
             font-weight: 700;
-            color: #e53e3e;
-            margin-bottom: 0.5rem;
+            color: var(--admin-primary);
+            line-height: 1;
         }
 
-        .stat-card p {
-            color: #718096;
-            font-size: 0.9rem;
+        @media (max-width: 768px) {
+            .stat-number {
+                font-size: 2rem;
+            }
         }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .card {
+        /* Cards principales */
+        .admin-card {
             background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
         }
 
-        .card h2 {
-            color: #2d3748;
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
+        /* Tablas responsivas */
+        .table-responsive {
+            border-radius: 0.5rem;
+            overflow: hidden;
         }
 
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
+        .admin-table {
+            margin-bottom: 0;
         }
 
-        .user-table th,
-        .user-table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .user-table th {
-            background-color: #f7fafc;
+        .admin-table th {
+            background-color: #f8f9fa;
             font-weight: 600;
-            color: #4a5568;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 0.875rem;
         }
 
+        .admin-table td {
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        /* Role badges responsivos */
         .role-badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
             font-size: 0.75rem;
             font-weight: 600;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
         }
 
         .role-admin {
-            background-color: #fed7d7;
-            color: #c53030;
+            background-color: #f8d7da;
+            color: #721c24;
         }
 
         .role-coach {
-            background-color: #bee3f8;
-            color: #2b6cb0;
+            background-color: #cff4fc;
+            color: #055160;
         }
 
         .role-coachee {
-            background-color: #c6f6d5;
-            color: #2f855a;
+            background-color: #d1e7dd;
+            color: #0f5132;
         }
 
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #718096;
+        .role-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
         }
 
-        .error {
-            background-color: #fed7d7;
-            color: #c53030;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
+        /* Charts responsivos */
         .chart-container {
             position: relative;
             height: 300px;
             margin: 1rem 0;
         }
 
-        .actions {
-            margin-top: 2rem;
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
         }
 
-        .action-btn {
-            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
-            color: white;
+        /* Form styles responsivos */
+        .form-floating > label {
+            padding: 1rem 0.75rem;
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, var(--admin-primary) 0%, #b02a37 100%);
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
+            color: white;
             font-weight: 600;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
         }
 
-        .action-btn:hover {
-            transform: translateY(-2px);
+        .btn-admin:hover {
+            background: linear-gradient(135deg, #b02a37 0%, var(--admin-primary) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            color: white;
         }
 
-        .action-btn.secondary {
-            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-        }
-
-        .stat-badge {
-            background: #e2e8f0;
-            color: #4a5568;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
+        .btn-admin-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+            color: white;
             font-weight: 600;
+            transition: all 0.3s ease;
         }
-        
-        .role-inactive {
-            background-color: #fed7d7;
-            color: #c53030;
+
+        .btn-admin-secondary:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #6c757d 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+            color: white;
+        }
+
+        /* Loading states */
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--admin-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .admin-card {
+                margin-bottom: 1rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .d-flex.gap-2 {
+                flex-direction: column;
+            }
+        }
+
+        /* Accessibility improvements */
+        .btn:focus,
+        .form-control:focus,
+        .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+            border-color: var(--admin-primary);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <h1>🛠️ Panel de Administración</h1>
-            <div class="user-info">
-                <span>Administrador de Plataforma</span>
-                <a href="/logout" class="logout-btn">Cerrar Sesión</a>
+    <!-- Header responsivo -->
+    <header class="admin-header">
+        <div class="container-fluid">
+            <div class="row align-items-center py-3">
+                <div class="col-12 col-md-8">
+                    <h1 class="h3 h2-md mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Panel de Administración
+                    </h1>
+                </div>
+                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                    <div class="d-flex align-items-center justify-content-md-end gap-3">
+                        <span class="d-none d-sm-inline text-white-50">
+                            <i class="fas fa-user-shield me-1"></i>
+                            Administrador
+                        </span>
+                        <a href="/logout" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            <span class="d-none d-sm-inline">Cerrar Sesión</span>
+                            <span class="d-sm-none">Salir</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div class="container">
-        <!-- Estadísticas Generales -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3 id="totalUsers">-</h3>
-                <p>Total de Usuarios</p>
+    <!-- Main content -->
+    <main class="container-fluid py-4">
+        
+        <!-- Estadísticas Generales - Grid responsivo -->
+        <div class="row g-3 g-md-4 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="stat-card p-3 p-md-4 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="stat-number" id="totalUsers">-</div>
+                            <div class="text-muted small fw-medium">Total Usuarios</div>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-users fa-2x text-primary opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3 id="totalCoaches">-</h3>
-                <p>Coaches Registrados</p>
+            
+            <div class="col-6 col-lg-3">
+                <div class="stat-card p-3 p-md-4 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="stat-number" id="totalCoaches">-</div>
+                            <div class="text-muted small fw-medium">Coaches</div>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-user-tie fa-2x text-info opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3 id="totalCoachees">-</h3>
-                <p>Coachees Activos</p>
+            
+            <div class="col-6 col-lg-3">
+                <div class="stat-card p-3 p-md-4 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="stat-number" id="totalCoachees">-</div>
+                            <div class="text-muted small fw-medium">Coachees</div>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-user-friends fa-2x text-success opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3 id="totalAssessments">-</h3>
-                <p>Evaluaciones Completadas</p>
+            
+            <div class="col-6 col-lg-3">
+                <div class="stat-card p-3 p-md-4 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="stat-number" id="totalAssessments">-</div>
+                            <div class="text-muted small fw-medium">Evaluaciones</div>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-chart-bar fa-2x text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Dashboard Principal -->
-        <div class="dashboard-grid">
+        <!-- Dashboard Principal - Grid responsivo -->
+        <div class="row g-3 g-md-4 mb-4">
             <!-- Lista de Usuarios -->
-            <div class="card">
-                <h2>👥 Usuarios del Sistema</h2>
-                <div id="usersTable">
-                    <div class="loading">Cargando usuarios...</div>
+            <div class="col-12 col-xl-8">
+                <div class="admin-card p-3 p-md-4 h-100">
+                    <div class="d-flex align-items-center mb-3">
+                        <h2 class="h4 mb-0 flex-grow-1">
+                            <i class="fas fa-users text-primary me-2"></i>
+                            Usuarios del Sistema
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadUsers()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <div id="usersTable">
+                            <div class="text-center py-4 text-muted">
+                                <div class="loading-spinner me-2"></div>
+                                Cargando usuarios...
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Gráfico de Actividad -->
-            <div class="card">
-                <h2>📊 Distribución de Usuarios</h2>
-                <div class="chart-container">
-                    <canvas id="userDistributionChart"></canvas>
+            <div class="col-12 col-xl-4">
+                <div class="admin-card p-3 p-md-4 h-100">
+                    <h2 class="h4 mb-3">
+                        <i class="fas fa-chart-pie text-primary me-2"></i>
+                        Distribución
+                    </h2>
+                    <div class="chart-container">
+                        <canvas id="userDistributionChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Gestión de Coaches -->
-        <div class="card" style="margin-bottom: 2rem;">
-            <h2>🎯 Gestión de Coaches</h2>
+        <!-- Gestión de Coaches - Completamente responsiva -->
+        <div class="admin-card p-3 p-md-4 mb-4">
+            <h2 class="h4 mb-4">
+                <i class="fas fa-user-tie text-primary me-2"></i>
+                Gestión de Coaches
+            </h2>
             
-            <!-- Formulario para crear nuevo coach -->
-            <div style="background: #f7fafc; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                <h3 style="margin-bottom: 1rem; color: #2d3748;">➕ Crear Nuevo Coach</h3>
-                <form id="createCoachForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div>
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Nombre de Usuario:</label>
-                        <input type="text" id="coachUsername" required style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Email:</label>
-                        <input type="email" id="coachEmail" required style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Nombre Completo:</label>
-                        <input type="text" id="coachFullName" required style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4a5568;">Contraseña Inicial:</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="password" id="coachPassword" required minlength="6" style="flex: 1; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
-                            <button type="button" onclick="generateRandomPassword()" style="padding: 0.5rem; background: #4299e1; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Generar contraseña aleatoria">🎲</button>
+            <!-- Formulario para crear nuevo coach - Mobile optimized -->
+            <div class="bg-light rounded-3 p-3 p-md-4 mb-4">
+                <h3 class="h5 mb-3 text-primary">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Crear Nuevo Coach
+                </h3>
+                
+                <form id="createCoachForm">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" id="coachUsername" class="form-control" placeholder="Username" required>
+                                <label for="coachUsername">
+                                    <i class="fas fa-user me-1 text-muted"></i>
+                                    Nombre de Usuario
+                                </label>
+                            </div>
                         </div>
-                    </div>
-                    <div style="grid-column: span 2;">
-                        <button type="submit" class="action-btn" style="margin: 0;">
-                            ➕ Crear Coach
-                        </button>
+                        
+                        <div class="col-12 col-md-6">
+                            <div class="form-floating">
+                                <input type="email" id="coachEmail" class="form-control" placeholder="Email" required>
+                                <label for="coachEmail">
+                                    <i class="fas fa-envelope me-1 text-muted"></i>
+                                    Email
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" id="coachFullName" class="form-control" placeholder="Nombre Completo" required>
+                                <label for="coachFullName">
+                                    <i class="fas fa-id-card me-1 text-muted"></i>
+                                    Nombre Completo
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 col-md-6">
+                            <div class="input-group">
+                                <div class="form-floating flex-grow-1">
+                                    <input type="password" id="coachPassword" class="form-control" placeholder="Contraseña" required minlength="6">
+                                    <label for="coachPassword">
+                                        <i class="fas fa-lock me-1 text-muted"></i>
+                                        Contraseña
+                                    </label>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary" onclick="generateRandomPassword()" title="Generar contraseña aleatoria">
+                                    <i class="fas fa-dice"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-admin btn-lg">
+                                    <i class="fas fa-plus-circle me-2"></i>
+                                    Crear Coach
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
 
-            <!-- Lista de coaches existentes -->
+            <!-- Lista de coaches existentes - Responsive table -->
             <div>
-                <h3 style="margin-bottom: 1rem; color: #2d3748;">📋 Coaches Registrados</h3>
-                <div id="coachesTable">
-                    <div class="loading">Cargando coaches...</div>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h3 class="h5 mb-0 text-primary">
+                        <i class="fas fa-list me-2"></i>
+                        Coaches Registrados
+                    </h3>
+                    <button class="btn btn-outline-primary btn-sm" onclick="loadCoaches()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <div id="coachesTable">
+                        <div class="text-center py-4 text-muted">
+                            <div class="loading-spinner me-2"></div>
+                            Cargando coaches...
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Actividad Reciente -->
-        <div class="card">
-            <h2>🕐 Actividad Reciente del Sistema</h2>
+        <div class="admin-card p-3 p-md-4 mb-4">
+            <h2 class="h4 mb-3">
+                <i class="fas fa-clock text-primary me-2"></i>
+                Actividad Reciente del Sistema
+            </h2>
             <div id="recentActivity">
-                <div class="loading">Cargando actividad...</div>
+                <div class="text-center py-4 text-muted">
+                    <div class="loading-spinner me-2"></div>
+                    Cargando actividad...
+                </div>
             </div>
         </div>
 
-        <!-- Acciones de Administración -->
-        <div class="actions">
-            <button class="action-btn" onclick="initializeDatabase()">
-                🔄 Reinicializar Base de Datos
-            </button>
-            <button class="action-btn secondary" onclick="exportData()">
-                📥 Exportar Datos
-            </button>
-            <button class="action-btn secondary" onclick="viewSystemLogs()">
-                📋 Ver Logs del Sistema
-            </button>
+        <!-- Acciones de Administración - Mobile responsive -->
+        <div class="admin-card p-3 p-md-4">
+            <h2 class="h4 mb-3">
+                <i class="fas fa-cogs text-primary me-2"></i>
+                Acciones de Administración
+            </h2>
+            
+            <div class="row g-2 g-md-3">
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <button class="btn btn-admin w-100" onclick="initializeDatabase()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        <span class="d-none d-sm-inline">Reinicializar</span>
+                        <span class="d-sm-none">Reinicializar DB</span>
+                        Base de Datos
+                    </button>
+                </div>
+                
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <button class="btn btn-admin-secondary w-100" onclick="exportData()">
+                        <i class="fas fa-download me-2"></i>
+                        Exportar Datos
+                    </button>
+                </div>
+                
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <button class="btn btn-admin-secondary w-100" onclick="viewSystemLogs()">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Ver Logs
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
+    </main>
 
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
         const API_BASE_URL = window.location.origin;
         let userDistributionChart = null;
@@ -351,10 +514,11 @@
                 const stats = await response.json();
                 
                 if (response.ok) {
-                    document.getElementById('totalUsers').textContent = stats.total_users;
-                    document.getElementById('totalCoaches').textContent = stats.total_coaches;
-                    document.getElementById('totalCoachees').textContent = stats.total_coachees;
-                    document.getElementById('totalAssessments').textContent = stats.total_assessments;
+                    // Animar contadores
+                    animateCounter('totalUsers', stats.total_users);
+                    animateCounter('totalCoaches', stats.total_coaches);
+                    animateCounter('totalCoachees', stats.total_coachees);
+                    animateCounter('totalAssessments', stats.total_assessments);
                     
                     // Crear gráfico de distribución
                     createUserDistributionChart(stats);
@@ -363,11 +527,32 @@
                 }
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
-                document.getElementById('totalUsers').textContent = 'Error';
+                ['totalUsers', 'totalCoaches', 'totalCoachees', 'totalAssessments'].forEach(id => {
+                    document.getElementById(id).textContent = 'Error';
+                });
             }
         }
 
-        // Crear gráfico de distribución de usuarios
+        // Animar contadores con efecto de incremento
+        function animateCounter(elementId, finalValue) {
+            const element = document.getElementById(elementId);
+            const duration = 1000;
+            const start = 0;
+            const increment = finalValue / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= finalValue) {
+                    element.textContent = finalValue;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        }
+
+        // Crear gráfico de distribución de usuarios - Responsive
         function createUserDistributionChart(stats) {
             const ctx = document.getElementById('userDistributionChart').getContext('2d');
             
@@ -382,9 +567,9 @@
                     datasets: [{
                         data: [1, stats.total_coaches, stats.total_coachees],
                         backgroundColor: [
-                            '#e53e3e',
-                            '#4299e1',
-                            '#48bb78'
+                            '#dc3545',
+                            '#0dcaf0',
+                            '#198754'
                         ],
                         borderWidth: 2,
                         borderColor: '#ffffff'
@@ -395,9 +580,23 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            position: window.innerWidth < 768 ? 'bottom' : 'right',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: window.innerWidth < 768 ? 10 : 12
+                                }
+                            }
                         }
                     }
+                }
+            });
+            
+            // Actualizar el gráfico cuando cambie el tamaño de pantalla
+            window.addEventListener('resize', () => {
+                if (userDistributionChart) {
+                    userDistributionChart.options.plugins.legend.position = window.innerWidth < 768 ? 'bottom' : 'right';
+                    userDistributionChart.update();
                 }
             });
         }
@@ -413,44 +612,52 @@
                 } else {
                     // Si no existe el endpoint, mostrar mensaje
                     document.getElementById('usersTable').innerHTML = 
-                        '<div class="loading">Funcionalidad de gestión de usuarios próximamente</div>';
+                        '<div class="alert alert-info">Funcionalidad de gestión de usuarios próximamente</div>';
                 }
             } catch (error) {
                 console.error('Error cargando usuarios:', error);
                 document.getElementById('usersTable').innerHTML = 
-                    '<div class="loading">Usuarios disponibles a través de la base de datos</div>';
+                    '<div class="alert alert-warning">Usuarios disponibles a través de la base de datos</div>';
             }
         }
 
-        // Mostrar usuarios en tabla
+        // Mostrar usuarios en tabla responsiva
         function displayUsers(users) {
             if (!users || users.length === 0) {
                 document.getElementById('usersTable').innerHTML = 
-                    '<div class="loading">No hay usuarios registrados</div>';
+                    '<div class="alert alert-info">No hay usuarios registrados</div>';
                 return;
             }
 
             const tableHTML = `
-                <table class="user-table">
+                <table class="table admin-table table-hover">
                     <thead>
                         <tr>
                             <th>Usuario</th>
-                            <th>Nombre</th>
+                            <th class="d-none d-md-table-cell">Nombre</th>
                             <th>Rol</th>
-                            <th>Estado</th>
+                            <th class="d-none d-sm-table-cell">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${users.map(user => `
                             <tr>
-                                <td>${user.username}</td>
-                                <td>${user.full_name}</td>
+                                <td>
+                                    <div class="fw-semibold">${user.username}</div>
+                                    <div class="d-md-none small text-muted">${user.full_name}</div>
+                                </td>
+                                <td class="d-none d-md-table-cell">${user.full_name}</td>
                                 <td>
                                     <span class="role-badge role-${user.role}">
                                         ${getRoleDisplayName(user.role)}
                                     </span>
                                 </td>
-                                <td>${user.is_active ? '✅ Activo' : '❌ Inactivo'}</td>
+                                <td class="d-none d-sm-table-cell">
+                                    ${user.is_active ? 
+                                        '<span class="badge bg-success">Activo</span>' : 
+                                        '<span class="badge bg-danger">Inactivo</span>'
+                                    }
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -468,6 +675,163 @@
                 'coachee': 'Coachee'
             };
             return roleNames[role] || role;
+        }
+
+        // Cargar lista de coaches
+        async function loadCoaches() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/coaches`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayCoaches(data.coaches);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error cargando coaches');
+                }
+            } catch (error) {
+                console.error('Error cargando coaches:', error);
+                document.getElementById('coachesTable').innerHTML = 
+                    `<div class="alert alert-danger">Error cargando coaches: ${error.message}</div>`;
+            }
+        }
+
+        // Mostrar coaches en tabla responsiva
+        function displayCoaches(coaches) {
+            if (!coaches || coaches.length === 0) {
+                document.getElementById('coachesTable').innerHTML = 
+                    '<div class="alert alert-info">No hay coaches registrados</div>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="table admin-table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Coach</th>
+                            <th class="d-none d-lg-table-cell">Email</th>
+                            <th class="d-none d-md-table-cell">Coachees</th>
+                            <th class="d-none d-md-table-cell">Evaluaciones</th>
+                            <th class="d-none d-xl-table-cell">Último Login</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${coaches.map(coach => `
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">${coach.username}</div>
+                                    <div class="small text-muted">${coach.full_name}</div>
+                                    <div class="d-lg-none small text-muted">${coach.email}</div>
+                                </td>
+                                <td class="d-none d-lg-table-cell">${coach.email}</td>
+                                <td class="d-none d-md-table-cell">
+                                    <span class="badge bg-primary">${coach.coachees_count}</span>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <span class="badge bg-info">${coach.assessments_count}</span>
+                                </td>
+                                <td class="d-none d-xl-table-cell">
+                                    ${coach.last_login ? new Date(coach.last_login).toLocaleDateString() : 'Nunca'}
+                                </td>
+                                <td>
+                                    <span class="role-badge ${coach.is_active ? 'role-coach' : 'role-inactive'}">
+                                        ${coach.is_active ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('coachesTable').innerHTML = tableHTML;
+        }
+
+        // Manejar creación de nuevo coach
+        async function handleCreateCoach(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Mostrar loading
+            submitBtn.innerHTML = '<div class="loading-spinner me-2"></div>Creando...';
+            submitBtn.disabled = true;
+            
+            const formData = {
+                username: document.getElementById('coachUsername').value,
+                email: document.getElementById('coachEmail').value,
+                full_name: document.getElementById('coachFullName').value,
+                password: document.getElementById('coachPassword').value
+            };
+
+            // Validaciones básicas
+            if (formData.password.length < 6) {
+                showAlert('La contraseña debe tener al menos 6 caracteres', 'warning');
+                resetSubmitButton(submitBtn, originalText);
+                return;
+            }
+
+            if (!formData.email.includes('@')) {
+                showAlert('Por favor ingresa un email válido', 'warning');
+                resetSubmitButton(submitBtn, originalText);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/create-coach`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(
+                        `✅ Coach ${formData.full_name} creado exitosamente!\n\nCredenciales:\nUsuario: ${formData.username}\nContraseña: ${formData.password}\n\nEl coach puede cambiar su contraseña desde /coach-login`,
+                        'success'
+                    );
+                    
+                    // Limpiar formulario
+                    document.getElementById('createCoachForm').reset();
+                    
+                    // Recargar estadísticas y lista de coaches
+                    loadPlatformStats();
+                    loadCoaches();
+                } else {
+                    showAlert('❌ Error creando coach: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showAlert('❌ Error de conexión: ' + error.message, 'danger');
+            } finally {
+                resetSubmitButton(submitBtn, originalText);
+            }
+        }
+
+        // Resetear botón de submit
+        function resetSubmitButton(btn, originalText) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+        // Mostrar alerta con Bootstrap
+        function showAlert(message, type) {
+            // Usar alert nativo por simplicidad, pero podría implementarse con Bootstrap Toast
+            alert(message);
+        }
+
+        // Generar contraseña aleatoria
+        function generateRandomPassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+            let password = '';
+            for (let i = 0; i < 8; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('coachPassword').value = password;
         }
 
         // Acciones de administración
@@ -498,134 +862,6 @@
         function viewSystemLogs() {
             alert('Logs del sistema disponibles en el panel de Render');
         }
-
-        // ========================
-        // GESTIÓN DE COACHES
-        // ========================
-
-        // Cargar lista de coaches
-        async function loadCoaches() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/coaches`);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    displayCoaches(data.coaches);
-                } else {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Error cargando coaches');
-                }
-            } catch (error) {
-                console.error('Error cargando coaches:', error);
-                document.getElementById('coachesTable').innerHTML = 
-                    `<div class="error">Error cargando coaches: ${error.message}</div>`;
-            }
-        }
-
-        // Mostrar coaches en tabla
-        function displayCoaches(coaches) {
-            if (!coaches || coaches.length === 0) {
-                document.getElementById('coachesTable').innerHTML = 
-                    '<div class="loading">No hay coaches registrados</div>';
-                return;
-            }
-
-            const tableHTML = `
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Nombre</th>
-                            <th>Email</th>
-                            <th>Coachees</th>
-                            <th>Evaluaciones</th>
-                            <th>Último Login</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${coaches.map(coach => `
-                            <tr>
-                                <td><strong>${coach.username}</strong></td>
-                                <td>${coach.full_name}</td>
-                                <td>${coach.email}</td>
-                                <td><span class="stat-badge">${coach.coachees_count}</span></td>
-                                <td><span class="stat-badge">${coach.assessments_count}</span></td>
-                                <td>${coach.last_login ? new Date(coach.last_login).toLocaleDateString() : 'Nunca'}</td>
-                                <td>
-                                    <span class="role-badge ${coach.is_active ? 'role-coach' : 'role-inactive'}">
-                                        ${coach.is_active ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-
-            document.getElementById('coachesTable').innerHTML = tableHTML;
-        }
-
-        // Manejar creación de nuevo coach
-        async function handleCreateCoach(e) {
-            e.preventDefault();
-            
-            const formData = {
-                username: document.getElementById('coachUsername').value,
-                email: document.getElementById('coachEmail').value,
-                full_name: document.getElementById('coachFullName').value,
-                password: document.getElementById('coachPassword').value
-            };
-
-            // Validaciones básicas
-            if (formData.password.length < 6) {
-                alert('La contraseña debe tener al menos 6 caracteres');
-                return;
-            }
-
-            if (!formData.email.includes('@')) {
-                alert('Por favor ingresa un email válido');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/admin/create-coach`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert(`✅ Coach ${formData.full_name} creado exitosamente!\n\nCredenciales:\nUsuario: ${formData.username}\nContraseña: ${formData.password}\n\nEl coach puede cambiar su contraseña desde /coach-login`);
-                    
-                    // Limpiar formulario
-                    document.getElementById('createCoachForm').reset();
-                    
-                    // Recargar estadísticas y lista de coaches
-                    loadPlatformStats();
-                    loadCoaches();
-                } else {
-                    alert('❌ Error creando coach: ' + data.error);
-                }
-            } catch (error) {
-                alert('❌ Error de conexión: ' + error.message);
-            }
-        }
-
-        // Generar contraseña aleatoria
-        function generateRandomPassword() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-            let password = '';
-            for (let i = 0; i < 8; i++) {
-                password += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            document.getElementById('coachPassword').value = password;
-        }
-
     </script>
 </body>
 </html>
