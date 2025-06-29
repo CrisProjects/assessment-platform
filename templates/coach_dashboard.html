@@ -333,7 +333,57 @@
         ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, #5a67d8 0%, #667eea 100%);
         }
-    </style>
+
+        /* CSS para modal de invitación */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .invitation-container {
+            animation: slideUp 0.4s ease;
+            margin: auto;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        
+        .invitation-input:focus {
+            border-color: #667eea !important;
+            outline: none !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        }
+        
+        .invitation-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .invitation-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Mejoras específicas para scroll en móviles */
+        @media (max-width: 640px) {
+            #invitationModal {
+                align-items: flex-start !important;
+                padding: 10px !important;
+            }
+            .invitation-container {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                max-height: calc(100vh - 20px) !important;
+                border-radius: 16px !important;
+            }
+        }
+
+        /* Stat cards */
+        .stat-card {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
@@ -1007,6 +1057,7 @@
                 display: none;
             }
         }
+    </style>
 </head>
 <body>
     <!-- Header con Bootstrap 5 -->
@@ -1508,9 +1559,6 @@
                 modal._element.remove();
             });
         }
-            loadCoachees();
-            setCoachName();
-        });
 
         function setCoachName() {
             // Obtener el nombre del coach desde la API de estadísticas
@@ -2134,55 +2182,6 @@
             });
             
             modal.innerHTML = `
-                <style>
-                    @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
-                    }
-                    
-                    @keyframes slideUp {
-                        from { transform: translateY(30px); opacity: 0; }
-                        to { transform: translateY(0); opacity: 1; }
-                    }
-                    
-                    .invitation-container {
-                        animation: slideUp 0.4s ease;
-                        margin: auto;
-                        max-height: calc(100vh - 40px);
-                        overflow-y: auto;
-                    }
-                    
-                    .invitation-input:focus {
-                        border-color: #667eea !important;
-                        outline: none !important;
-                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-                    }
-                    
-                    .invitation-btn:hover {
-                        transform: translateY(-1px);
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    }
-                    
-                    .invitation-btn:active {
-                        transform: translateY(0);
-                    }
-                    
-                    /* Mejoras específicas para scroll en móviles */
-                    @media (max-width: 640px) {
-                        #invitationModal {
-                            align-items: flex-start !important;
-                            padding: 10px !important;
-                        }
-                        .invitation-container {
-                            width: 100% !important;
-                            max-width: none !important;
-                            margin: 0 !important;
-                            max-height: calc(100vh - 20px) !important;
-                            border-radius: 16px !important;
-                        }
-                    }
-                </style>
-                
                 <div class="invitation-container" style="background: white; padding: 2.5rem; border-radius: 20px; width: 90%; max-width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); position: relative;">
                     <!-- Header profesional -->
                     <div style="text-align: center; margin-bottom: 2rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.5rem;">

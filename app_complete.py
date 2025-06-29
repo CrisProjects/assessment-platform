@@ -1207,7 +1207,7 @@ def api_save_assessment(current_coachee):
             'assertiveness_level': assertiveness_level,
             'dimensional_scores': dimensional_scores,
             'message': 'Evaluación guardada exitosamente'
-        }), 200
+        }, 200)
         
     except Exception as e:
         db.session.rollback()
