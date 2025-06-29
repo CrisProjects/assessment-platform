@@ -1070,13 +1070,43 @@ def api_coach_dashboard_stats():
                 else:
                     score_distribution['Muy Asertivo'] += 1
         
+        # Datos de progreso por coachee (últimos 6 meses)
+        six_months_ago = datetime.utcnow() - timedelta(days=180)
+        progress_data = []
+        
+        # Obtener todos los coachees del coach
+        coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
+        
+        for coachee in coachees:
+            # Obtener evaluaciones del coachee en los últimos 6 meses
+            coachee_assessments = AssessmentResult.query.filter(
+                AssessmentResult.user_id == coachee.id,
+                AssessmentResult.completed_at >= six_months_ago
+            ).order_by(AssessmentResult.completed_at).all()
+            
+            if coachee_assessments:
+                coachee_progress = {
+                    'coachee_name': coachee.full_name,
+                    'coachee_id': coachee.id,
+                    'assessments': []
+                }
+                
+                for assessment in coachee_assessments:
+                    coachee_progress['assessments'].append({
+                        'date': assessment.completed_at.isoformat(),
+                        'score': assessment.score
+                    })
+                
+                progress_data.append(coachee_progress)
+        
         return jsonify({
             'coach_name': current_user.full_name,
             'total_coachees': total_coachees,
             'total_assessments': total_assessments,
             'avg_score': avg_score,
             'recent_activity': recent_activity,
-            'score_distribution': score_distribution
+            'score_distribution': score_distribution,
+            'progress_data': progress_data
         }), 200
         
     except Exception as e:
