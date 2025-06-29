@@ -1694,37 +1694,85 @@
             
             const messageDiv = document.getElementById('invitationMessage');
             messageDiv.innerHTML = `
-                <div style="margin-bottom: 1rem;">¡Invitación creada exitosamente!</div>
-                <div style="margin-bottom: 1rem;">
-                    <strong>Enlace directo para evaluación:</strong><br>
-                    <input type="text" value="${evaluationUrl}" readonly onclick="this.select()" 
-                        style="width: 100%; padding: 8px; border: 1px solid #c6f6d5; border-radius: 4px; margin-top: 0.5rem; background: #f9fffa;">
+                <!-- Header de éxito con ícono elegante -->
+                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 16px; color: white; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);">
+                    <div style="background: rgba(255,255,255,0.2); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem; backdrop-filter: blur(10px);">
+                        <span style="font-size: 20px;">✅</span>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.2rem;">Invitación Creada</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">El enlace está listo para compartir</div>
+                    </div>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <button onclick="copyToClipboard('${evaluationUrl}')" 
-                        style="background: #48bb78; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-                        📋 Copiar Enlace
-                    </button>
+                
+                <!-- Campo del enlace con diseño elegante -->
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        🔗 Enlace de Evaluación
+                    </label>
+                    <div style="position: relative; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 4px; transition: all 0.3s ease;">
+                        <input type="text" value="${evaluationUrl}" readonly onclick="this.select()" 
+                            style="width: calc(100% - 60px); padding: 12px 16px; border: none; background: transparent; font-size: 0.95rem; color: #1a202c; outline: none; font-family: 'Monaco', 'Menlo', monospace;">
+                        <button onclick="copyToClipboard('${evaluationUrl}')" 
+                            style="position: absolute; right: 4px; top: 4px; background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;"
+                            onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#667eea'"
+                            title="Copiar enlace">
+                            <span style="font-size: 16px;">📋</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción profesionales -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
                     <button onclick="sendWhatsApp('${evaluationUrl}')" 
-                        style="background: #25d366; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: 8px;">
-                        📱 Enviar por WhatsApp
+                        style="background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; border: none; padding: 14px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(37, 211, 102, 0.4)'" 
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(37, 211, 102, 0.3)'">
+                        <span style="font-size: 18px;">📱</span>
+                        <span>Enviar WhatsApp</span>
                     </button>
                     <button onclick="closeInvitationModal()" 
-                        style="background: #4299e1; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: 8px;">
-                        ✅ Cerrar
+                        style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #4a5568; border: 2px solid #e2e8f0; padding: 14px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                        onmouseover="this.style.background='linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%)'; this.style.transform='translateY(-2px)'" 
+                        onmouseout="this.style.background='linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'; this.style.transform='translateY(0)'">
+                        <span style="font-size: 16px;">✨</span>
+                        <span>Finalizar</span>
                     </button>
                 </div>
-                <div style="font-size: 0.9rem; color: #666;">
-                    � <strong>Instrucciones:</strong> El coachee solo necesita hacer clic en este enlace para comenzar su evaluación directamente.
+                
+                <!-- Instrucciones elegantes -->
+                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 12px; padding: 1.2rem; text-align: center;">
+                    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem;">
+                        <div style="background: #3b82f6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.8rem;">
+                            <span style="font-size: 14px; color: white;">💡</span>
+                        </div>
+                        <span style="font-weight: 600; color: #1e40af; font-size: 0.95rem;">Instrucciones para el participante</span>
+                    </div>
+                    <p style="margin: 0; color: #1e40af; font-size: 0.9rem; line-height: 1.5;">
+                        Comparte este enlace con el coachee. Al hacer clic, podrá completar su evaluación de asertividad de forma inmediata, sin necesidad de registro previo.
+                    </p>
                 </div>
             `;
         }
         
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function() {
-                alert('¡Enlace copiado al portapapeles!');
+                // Feedback visual elegante en lugar de alert
+                const button = event.target.closest('button');
+                const originalHTML = button.innerHTML;
+                
+                button.style.background = '#059669';
+                button.innerHTML = '<span style="font-size: 16px;">✅</span>';
+                
+                setTimeout(() => {
+                    button.style.background = '#667eea';
+                    button.innerHTML = originalHTML;
+                }, 1500);
+                
+                showSuccess('¡Enlace copiado al portapapeles!');
             }, function(err) {
                 console.error('Error al copiar: ', err);
+                showError('No se pudo copiar el enlace');
             });
         }
         
