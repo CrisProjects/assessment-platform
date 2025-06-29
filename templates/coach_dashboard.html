@@ -1713,10 +1713,11 @@
             // El URL ya viene como /evaluate/ directamente desde el backend
             const evaluationUrl = url;
             
-            const messageDiv = document.getElementById('invitationMessage');
-            messageDiv.innerHTML = `
-                <style>
-                    /* Responsive styles for invitation success */
+            // Agregar estilos al head para evitar que se muestren como texto
+            if (!document.getElementById('invitation-success-styles')) {
+                const style = document.createElement('style');
+                style.id = 'invitation-success-styles';
+                style.textContent = `
                     @media (max-width: 640px) {
                         .invitation-success-header {
                             flex-direction: column !important;
@@ -1768,55 +1769,15 @@
                         .invitation-instructions p {
                             font-size: 0.8rem !important;
                         }
-                        
-                        /* Mejoras específicas para scroll del contenido */
-                        #invitationMessage {
-                            max-height: calc(100vh - 200px) !important;
-                            overflow-y: auto !important;
-                            padding: 1rem !important;
-                            margin: 0 !important;
-                        }
                     }
-                    
-                    /* Estilo de scrollbar personalizado */
-                    #invitationMessage::-webkit-scrollbar {
-                        width: 4px;
-                    }
-                    #invitationMessage::-webkit-scrollbar-track {
-                        background: #f1f1f1;
-                        border-radius: 2px;
-                    }
-                    #invitationMessage::-webkit-scrollbar-thumb {
-                        background: #c1c1c1;
-                        border-radius: 2px;
-                    }
-                    #invitationMessage::-webkit-scrollbar-thumb:hover {
-                        background: #a8a8a8;
-                    }
-                </style>
-                            gap: 0.8rem !important;
-                        }
-                        .invitation-action-btn {
-                            padding: 12px 16px !important;
-                            font-size: 0.85rem !important;
-                        }
-                        .invitation-instructions {
-                            padding: 1rem !important;
-                        }
-                        .invitation-instructions-header {
-                            flex-direction: column !important;
-                            margin-bottom: 0.5rem !important;
-                        }
-                        .invitation-instructions-header > div:first-child {
-                            margin-right: 0 !important;
-                            margin-bottom: 0.5rem !important;
-                        }
-                        .invitation-instructions p {
-                            font-size: 0.8rem !important;
-                        }
-                    }
-                </style>
-                
+                `;
+                document.head.appendChild(style);
+            }
+            
+            const messageDiv = document.getElementById('invitationMessage');
+            messageDiv.style.maxHeight = 'none';
+            messageDiv.style.overflow = 'visible';
+            messageDiv.innerHTML = `
                 <!-- Header de éxito con ícono elegante -->
                 <div class="invitation-success-header" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; padding: 1.2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; color: white; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);">
                     <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.8rem; backdrop-filter: blur(10px);">
@@ -1885,6 +1846,7 @@
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function() {
                 // Feedback visual elegante en lugar de alert
+               
                 const button = event.target.closest('button');
                 const originalHTML = button.innerHTML;
                 
