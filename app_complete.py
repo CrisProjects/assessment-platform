@@ -593,7 +593,7 @@ def api_register():
             'success': True,
             'message': 'Usuario registrado exitosamente',
             'user_id': new_user.id
-        }, 201)
+        }), 201
         
     except Exception as e:
         db.session.rollback()
@@ -1227,7 +1227,7 @@ def api_save_assessment(current_coachee):
             'assertiveness_level': assertiveness_level,
             'dimensional_scores': dimensional_scores,
             'message': 'Evaluación guardada exitosamente'
-        }, 200)
+        }), 200
         
     except Exception as e:
         db.session.rollback()
