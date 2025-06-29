@@ -1694,61 +1694,121 @@
             
             const messageDiv = document.getElementById('invitationMessage');
             messageDiv.innerHTML = `
+                <style>
+                    /* Responsive styles for invitation success */
+                    @media (max-width: 640px) {
+                        .invitation-success-header {
+                            flex-direction: column !important;
+                            text-align: center !important;
+                            padding: 1rem !important;
+                        }
+                        .invitation-success-header > div:first-child {
+                            margin-right: 0 !important;
+                            margin-bottom: 0.8rem !important;
+                        }
+                        .invitation-success-header h3 {
+                            font-size: 1rem !important;
+                        }
+                        .invitation-success-header p {
+                            font-size: 0.8rem !important;
+                        }
+                        .invitation-url-container {
+                            padding: 2px !important;
+                        }
+                        .invitation-url-input {
+                            width: calc(100% - 50px) !important;
+                            padding: 10px 12px !important;
+                            font-size: 0.8rem !important;
+                        }
+                        .invitation-copy-btn {
+                            width: 40px !important;
+                            height: 40px !important;
+                            padding: 8px !important;
+                        }
+                        .invitation-actions {
+                            grid-template-columns: 1fr !important;
+                            gap: 0.8rem !important;
+                        }
+                        .invitation-action-btn {
+                            padding: 12px 16px !important;
+                            font-size: 0.85rem !important;
+                        }
+                        .invitation-instructions {
+                            padding: 1rem !important;
+                        }
+                        .invitation-instructions-header {
+                            flex-direction: column !important;
+                            margin-bottom: 0.5rem !important;
+                        }
+                        .invitation-instructions-header > div:first-child {
+                            margin-right: 0 !important;
+                            margin-bottom: 0.5rem !important;
+                        }
+                        .invitation-instructions p {
+                            font-size: 0.8rem !important;
+                        }
+                    }
+                </style>
+                
                 <!-- Header de éxito con ícono elegante -->
-                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 16px; color: white; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);">
-                    <div style="background: rgba(255,255,255,0.2); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem; backdrop-filter: blur(10px);">
-                        <span style="font-size: 20px;">✅</span>
+                <div class="invitation-success-header" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; padding: 1.2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; color: white; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);">
+                    <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.8rem; backdrop-filter: blur(10px);">
+                        <span style="font-size: 18px;">✅</span>
                     </div>
                     <div>
-                        <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.2rem;">Invitación Creada</div>
-                        <div style="font-size: 0.9rem; opacity: 0.9;">El enlace está listo para compartir</div>
+                        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.2rem;">Invitación Creada</h3>
+                        <p style="margin: 0; font-size: 0.85rem; opacity: 0.9;">El enlace está listo para compartir</p>
                     </div>
                 </div>
                 
-                <!-- Campo del enlace con diseño elegante -->
-                <div style="margin-bottom: 2rem;">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                <!-- Campo del enlace con diseño elegante y responsive -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.3px;">
                         🔗 Enlace de Evaluación
                     </label>
-                    <div style="position: relative; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 4px; transition: all 0.3s ease;">
+                    <div class="invitation-url-container" style="position: relative; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 3px; transition: all 0.3s ease; overflow: hidden;">
                         <input type="text" value="${evaluationUrl}" readonly onclick="this.select()" 
-                            style="width: calc(100% - 60px); padding: 12px 16px; border: none; background: transparent; font-size: 0.95rem; color: #1a202c; outline: none; font-family: 'Monaco', 'Menlo', monospace;">
+                            class="invitation-url-input"
+                            style="width: calc(100% - 55px); padding: 10px 14px; border: none; background: transparent; font-size: 0.85rem; color: #1a202c; outline: none; font-family: 'Monaco', 'Menlo', monospace; word-break: break-all;">
                         <button onclick="copyToClipboard('${evaluationUrl}')" 
-                            style="position: absolute; right: 4px; top: 4px; background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;"
+                            class="invitation-copy-btn"
+                            style="position: absolute; right: 3px; top: 3px; background: #667eea; color: white; border: none; padding: 10px; border-radius: 7px; cursor: pointer; transition: all 0.3s ease; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
                             onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#667eea'"
                             title="Copiar enlace">
-                            <span style="font-size: 16px;">📋</span>
+                            <span style="font-size: 14px;">📋</span>
                         </button>
                     </div>
                 </div>
                 
-                <!-- Botones de acción profesionales -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                <!-- Botones de acción profesionales y responsivos -->
+                <div class="invitation-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.5rem;">
                     <button onclick="sendWhatsApp('${evaluationUrl}')" 
-                        style="background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; border: none; padding: 14px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
-                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(37, 211, 102, 0.4)'" 
-                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(37, 211, 102, 0.3)'">
-                        <span style="font-size: 18px;">📱</span>
-                        <span>Enviar WhatsApp</span>
+                        class="invitation-action-btn"
+                        style="background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; border: none; padding: 12px 18px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 3px 12px rgba(37, 211, 102, 0.25); display: flex; align-items: center; justify-content: center; gap: 0.4rem; white-space: nowrap;"
+                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 16px rgba(37, 211, 102, 0.35)'" 
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 12px rgba(37, 211, 102, 0.25)'">
+                        <span style="font-size: 16px;">📱</span>
+                        <span>WhatsApp</span>
                     </button>
                     <button onclick="closeInvitationModal()" 
-                        style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #4a5568; border: 2px solid #e2e8f0; padding: 14px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
-                        onmouseover="this.style.background='linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%)'; this.style.transform='translateY(-2px)'" 
+                        class="invitation-action-btn"
+                        style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #4a5568; border: 2px solid #e2e8f0; padding: 12px 18px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; white-space: nowrap;"
+                        onmouseover="this.style.background='linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%)'; this.style.transform='translateY(-1px)'" 
                         onmouseout="this.style.background='linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'; this.style.transform='translateY(0)'">
-                        <span style="font-size: 16px;">✨</span>
+                        <span style="font-size: 14px;">✨</span>
                         <span>Finalizar</span>
                     </button>
                 </div>
                 
-                <!-- Instrucciones elegantes -->
-                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 12px; padding: 1.2rem; text-align: center;">
-                    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem;">
-                        <div style="background: #3b82f6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.8rem;">
-                            <span style="font-size: 14px; color: white;">💡</span>
+                <!-- Instrucciones elegantes y responsivas -->
+                <div class="invitation-instructions" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 10px; padding: 1rem; text-align: center;">
+                    <div class="invitation-instructions-header" style="display: flex; align-items: center; justify-content: center; margin-bottom: 0.6rem;">
+                        <div style="background: #3b82f6; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.6rem; flex-shrink: 0;">
+                            <span style="font-size: 12px; color: white;">💡</span>
                         </div>
-                        <span style="font-weight: 600; color: #1e40af; font-size: 0.95rem;">Instrucciones para el participante</span>
+                        <span style="font-weight: 600; color: #1e40af; font-size: 0.9rem;">Instrucciones para el participante</span>
                     </div>
-                    <p style="margin: 0; color: #1e40af; font-size: 0.9rem; line-height: 1.5;">
+                    <p style="margin: 0; color: #1e40af; font-size: 0.85rem; line-height: 1.4;">
                         Comparte este enlace con el coachee. Al hacer clic, podrá completar su evaluación de asertividad de forma inmediata, sin necesidad de registro previo.
                     </p>
                 </div>
