@@ -16,6 +16,7 @@ import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func
+import sqlite3
 
 # Import opcional del análisis de coach para evitar errores en producción
 try:
@@ -1086,7 +1087,6 @@ def api_questions():
     """API endpoint para obtener las preguntas del assessment"""
     try:
         # Usar query SQL directa para evitar problemas de metadatos SQLAlchemy
-        import sqlite3
         conn = sqlite3.connect('assessments.db')
         cursor = conn.cursor()
         
@@ -1157,9 +1157,22 @@ def api_save_assessment(current_coachee):
         # Validar datos
         if not answers:
             return jsonify({'error': 'No se recibieron respuestas'}), 400
+            
+        # Validar que todas las respuestas estén en el rango correcto
+        valid_answers = {}
+        for q_idx, answer in answers.items():
+            try:
+                answer_value = int(answer)
+                if 1 <= answer_value <= 5:
+                    valid_answers[q_idx] = answer_value
+            except (ValueError, TypeError):
+                continue
+        
+        if len(valid_answers) == 0:
+            return jsonify({'error': 'No se recibieron respuestas válidas'}), 400
         
         # Calcular dimensiones usando la misma lógica del frontend
-        dimensional_scores = calculate_dimensional_scores_backend(answers)
+        dimensional_scores = calculate_dimensional_scores_backend(valid_answers)
         
         # Calcular puntuación total
         total_score = sum(dimensional_scores.values()) / len(dimensional_scores)
@@ -1177,7 +1190,7 @@ def api_save_assessment(current_coachee):
             user_id=current_coachee.id,
             assessment_id=1,  # Asumiendo que tenemos una evaluación con ID 1
             score=total_score,
-            total_questions=len(answers),
+            total_questions=len(valid_answers),
             result_text=f"Nivel: {assertiveness_level}, Puntuaciones: {dimensional_scores}",
             coach_id=coach_id,
             participant_name=participant_name,
@@ -1189,14 +1202,21 @@ def api_save_assessment(current_coachee):
         db.session.flush()  # Flush to get the ID without committing
         
         # Guardar respuestas individuales para análisis detallado
-        for question_index, answer in answers.items():
-            response = Response(
-                user_id=current_coachee.id,
-                question_id=int(question_index) + 1,  # Asumiendo IDs secuenciales
-                selected_option=answer,
-                assessment_result_id=assessment_result.id
-            )
-            db.session.add(response)
+        # Obtener los IDs reales de las preguntas desde la base de datos
+        questions = Question.query.filter_by(assessment_id=1).order_by(Question.order).all()
+        
+        for question_index, answer in valid_answers.items():
+            idx = int(question_index)
+            if idx < len(questions):  # Verificar que el índice sea válido
+                question_id = questions[idx].id
+                # La validación ya se hizo arriba, answer ya es un entero válido
+                response = Response(
+                    user_id=current_coachee.id,
+                    question_id=question_id,
+                    selected_option=answer,
+                    assessment_result_id=assessment_result.id
+                )
+                db.session.add(response)
         
         db.session.commit()
         
@@ -1239,10 +1259,20 @@ def calculate_dimensional_scores_backend(answers):
     
     # Agrupar respuestas por dimensión
     for question_index, answer in answers.items():
-        idx = int(question_index)
-        if idx in question_to_dimension:
-            dimension = question_to_dimension[idx]
-            dimension_scores[dimension].append(int(answer))
+        try:
+            idx = int(question_index)
+            answer_value = int(answer)
+            
+            # Validar que la respuesta esté en el rango correcto (1-5)
+            if not (1 <= answer_value <= 5):
+                continue  # Saltar respuestas inválidas
+                
+            if idx in question_to_dimension:
+                dimension = question_to_dimension[idx]
+                dimension_scores[dimension].append(answer_value)
+        except (ValueError, TypeError):
+            # Saltar respuestas que no se puedan convertir a entero
+            continue
     
     # Calcular promedio por dimensión y convertir a porcentaje
     final_scores = {}
