@@ -144,53 +144,196 @@
             font-size: 1.25rem;
         }
 
-        /* Coachee Cards */
+        /* Coachee Cards - Professional Design */
         .coachee-card {
             background: var(--surface);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            transition: all 0.3s ease;
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.08);
+            backdrop-filter: blur(10px);
         }
 
         .coachee-card::before {
             content: '';
             position: absolute;
             top: 0;
+            left: 0;
             right: 0;
+            height: 6px;
+            background: var(--primary-gradient);
+            opacity: 0.8;
+        }
+
+        .coachee-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
             width: 100px;
             height: 100px;
-            background: var(--primary-gradient);
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
             border-radius: 50%;
-            transform: translate(50%, -50%);
-            opacity: 0.1;
+            transition: all 0.4s ease;
         }
 
         .coachee-card:hover {
-            transform: translateY(-6px) scale(1.02);
-            box-shadow: 0 16px 48px rgba(102, 126, 234, 0.2);
-            border-color: #667eea;
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .coachee-card:hover::after {
+            transform: scale(1.5);
+            opacity: 0.15;
         }
 
         .coachee-name {
             font-weight: 700;
             color: var(--text-primary);
-            font-size: 1.25rem;
+            font-size: 1.35rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+            line-height: 1.3;
         }
 
         .coachee-email {
             color: #667eea;
             font-weight: 500;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 2;
+            opacity: 0.9;
         }
 
-        .score-badge {
-            border-radius: 12px;
-            padding: 0.5rem 1rem;
-            font-weight: 700;
-            font-size: 0.875rem;
+        /* Enhanced Stats Section */
+        .coachee-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .coachee-stat {
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .coachee-stat:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .coachee-stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+            line-height: 1;
+        }
+
+        .coachee-stat-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        /* Enhanced Assessment Section */
+        .last-assessment {
+            background: linear-gradient(135deg, #f8fafc 0%, rgba(102, 126, 234, 0.03) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+        }
+
+        .last-assessment::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .assessment-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .assessment-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .assessment-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+        }
+
+        .assessment-score {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .assessment-date {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Score Badges Enhanced */
+        .score-badge {
+            border-radius: 12px;
+            padding: 0.4rem 0.8rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .score-excellent {
@@ -198,9 +341,19 @@
             color: white;
         }
 
+        .score-excellent::before {
+            content: "★";
+            font-size: 0.9rem;
+        }
+
         .score-good {
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
+        }
+
+        .score-good::before {
+            content: "▲";
+            font-size: 0.7rem;
         }
 
         .score-average {
@@ -208,9 +361,77 @@
             color: white;
         }
 
+        .score-average::before {
+            content: "●";
+            font-size: 0.8rem;
+        }
+
         .score-poor {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
+        }
+
+        .score-poor::before {
+            content: "▼";
+            font-size: 0.7rem;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            border-radius: 8px;
+            padding: 0.25rem 0.5rem;
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+
+        /* Empty State Enhancement */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #f8fafc 0%, rgba(102, 126, 234, 0.03) 100%);
+            border-radius: 24px;
+            border: 2px dashed rgba(102, 126, 234, 0.2);
+        }
+
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: #667eea;
+            font-size: 2rem;
+        }
+
+        .empty-state h4 {
+            color: var(--text-primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
         }
 
         /* Botones modernos */
@@ -262,7 +483,32 @@
             }
             
             .coachee-card {
-                margin-bottom: 1rem;
+                margin-bottom: 1.5rem;
+                border-radius: 20px;
+            }
+
+            .coachee-name {
+                font-size: 1.2rem;
+            }
+
+            .coachee-stats {
+                gap: 1rem;
+            }
+
+            .coachee-stat {
+                padding: 0.75rem;
+            }
+
+            .coachee-stat-number {
+                font-size: 1.5rem;
+            }
+
+            .last-assessment {
+                padding: 1rem;
+            }
+
+            .assessment-score {
+                font-size: 1rem;
             }
         }
 
@@ -277,6 +523,75 @@
             
             .chart-container {
                 height: 200px;
+            }
+
+            .coachee-card {
+                border-radius: 16px;
+                margin-bottom: 1rem;
+            }
+
+            .coachee-name {
+                font-size: 1.1rem;
+                line-height: 1.2;
+            }
+
+            .coachee-email {
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+            }
+
+            .coachee-stats {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .coachee-stat {
+                padding: 0.75rem 0.5rem;
+                border-radius: 12px;
+            }
+
+            .coachee-stat-number {
+                font-size: 1.3rem;
+            }
+
+            .coachee-stat-label {
+                font-size: 0.8rem;
+            }
+
+            .last-assessment {
+                padding: 0.75rem;
+                border-radius: 12px;
+            }
+
+            .assessment-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .assessment-score {
+                font-size: 0.95rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+
+            .score-badge {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+
+            .empty-state {
+                padding: 2rem 1rem;
+                border-radius: 16px;
+            }
+
+            .empty-state-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
             }
         }
 
@@ -457,108 +772,6 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1rem;
-        }
-
-        .coachee-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 2rem 1.5rem 1.5rem 1.5rem;
-            background: linear-gradient(135deg, #f8fafc 60%, #f0f4ff 100%);
-            box-shadow: 0 6px 24px rgba(102, 126, 234, 0.08), 0 1.5px 4px rgba(0,0,0,0.03);
-            transition: box-shadow 0.3s, border-color 0.3s, transform 0.2s;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .coachee-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.18), 0 2px 8px rgba(0,0,0,0.06);
-            transform: translateY(-4px) scale(1.025);
-        }
-
-        .coachee-name {
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: #2d3748;
-            margin-bottom: 0.25rem;
-            letter-spacing: 0.01em;
-        }
-
-        .coachee-email {
-            color: #667eea;
-            font-size: 0.98rem;
-            margin-bottom: 1.1rem;
-            font-weight: 500;
-        }
-
-        .coachee-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1.2rem;
-            gap: 1.5rem;
-        }
-
-        .coachee-stat {
-            text-align: center;
-            flex: 1;
-        }
-
-        .coachee-stat-number {
-            font-weight: 700;
-            font-size: 1.3rem;
-            color: #667eea;
-            margin-bottom: 0.15rem;
-        }
-
-        .coachee-stat-label {
-            font-size: 0.85rem;
-            color: #718096;
-            letter-spacing: 0.01em;
-        }
-
-        .last-assessment {
-            background: linear-gradient(90deg, #e9f5ff 0%, #f7fafc 100%);
-            padding: 1.1rem 1rem 1rem 1rem;
-            border-radius: 10px;
-            margin-top: 1.1rem;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.06);
-            border: 1px solid #e2e8f0;
-        }
-
-        .assessment-score {
-            font-weight: 600;
-            color: #2d3748;
-            font-size: 1.08rem;
-            margin-bottom: 0.3rem;
-        }
-
-        .assessment-date {
-            font-size: 0.85rem;
-            color: #718096;
-            margin-top: 0.15rem;
-        }
-
-        .score-excellent { color: #38a169; font-weight: 700; }
-        .score-good { color: #3182ce; font-weight: 700; }
-        .score-average { color: #d69e2e; font-weight: 700; }
-        .score-poor { color: #e53e3e; font-weight: 700; }
-
-        /* Sello visual para última evaluación */
-        .coachee-card::after {
-            content: 'Evaluación';
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: linear-gradient(135deg, #667eea 60%, #764ba2 100%);
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.3rem 1.1rem 0.3rem 1.1rem;
-            border-radius: 0 0 0 16px;
-            letter-spacing: 0.08em;
-            opacity: 0.13;
-            pointer-events: none;
         }
 
         .btn {
@@ -1309,12 +1522,15 @@
             if (!coachees || coachees.length === 0) {
                 container.innerHTML = `
                     <div class="col-12">
-                        <div class="text-center py-5">
-                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                            <h4 class="text-muted">No hay coachees asignados</h4>
-                            <p class="text-muted">Invita a tu primer coachee para comenzar</p>
-                            <button class="btn btn-success-gradient" onclick="openInvitationModal()">
-                                <i class="fas fa-envelope me-1"></i>Invitar Coachee
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h4>No hay coachees asignados</h4>
+                            <p>Los participantes aparecerán aquí una vez que acepten tu invitación y completen su registro.</p>
+                            <button class="btn btn-gradient" onclick="openInvitationModal()">
+                                <i class="fas fa-envelope me-2"></i>
+                                Invitar Nuevo Participante
                             </button>
                         </div>
                     </div>
@@ -1325,45 +1541,68 @@
             const coacheesHTML = coachees.map(coachee => `
                 <div class="col-lg-6 col-xl-4 mb-4">
                     <div class="card coachee-card h-100" onclick="showCoacheeDetails('${coachee.id}')">
-                        <div class="card-body">
+                        <div class="card-body p-4">
+                            <!-- Header Section -->
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div>
+                                <div class="flex-grow-1">
                                     <h5 class="coachee-name mb-1">${coachee.full_name}</h5>
-                                    <p class="coachee-email small mb-0">${coachee.email}</p>
+                                    <p class="coachee-email mb-0">${coachee.email}</p>
                                 </div>
                                 <div class="text-end">
-                                    <span class="badge ${getStatusBadgeClass(coachee.status)}">
+                                    <span class="status-badge ${getStatusBadgeClass(coachee.status)}">
                                         ${getStatusText(coachee.status)}
                                     </span>
                                 </div>
                             </div>
                             
-                            <div class="row text-center mb-3">
-                                <div class="col-6">
-                                    <div class="stat-number" style="font-size: 1.5rem;">${coachee.total_assessments || 0}</div>
-                                    <div class="stat-label" style="font-size: 0.75rem;">Evaluaciones</div>
+                            <!-- Stats Section -->
+                            <div class="coachee-stats">
+                                <div class="coachee-stat">
+                                    <div class="coachee-stat-number">${coachee.total_assessments || 0}</div>
+                                    <div class="coachee-stat-label">Evaluaciones</div>
                                 </div>
-                                <div class="col-6">
-                                    <div class="stat-number" style="font-size: 1.5rem;">
-                                        ${coachee.average_score ? Math.round(coachee.average_score) + '%' : '-'}
+                                <div class="coachee-stat">
+                                    <div class="coachee-stat-number">
+                                        ${coachee.average_score ? Math.round(coachee.average_score) + '%' : 'N/A'}
                                     </div>
-                                    <div class="stat-label" style="font-size: 0.75rem;">Promedio</div>
+                                    <div class="coachee-stat-label">Promedio</div>
                                 </div>
                             </div>
                             
+                            <!-- Last Assessment Section -->
                             ${coachee.last_assessment ? `
-                                <div class="border-top pt-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">Última evaluación:</small>
-                                        <span class="badge score-badge ${getScoreClass(coachee.last_assessment.score)}">
+                                <div class="last-assessment">
+                                    <div class="assessment-header">
+                                        <span class="assessment-title">Última Evaluación</span>
+                                        <div class="assessment-icon">
+                                            <i class="fas fa-chart-line"></i>
+                                        </div>
+                                    </div>
+                                    <div class="assessment-score">
+                                        <span class="score-badge ${getScoreClass(coachee.last_assessment.score)}">
                                             ${Math.round(coachee.last_assessment.score)}% - ${getAssertivityLevel(coachee.last_assessment.score)}
                                         </span>
                                     </div>
-                                    <small class="text-muted">${formatDate(coachee.last_assessment.created_at)}</small>
+                                    <div class="assessment-date">
+                                        <i class="fas fa-clock"></i>
+                                        ${formatDate(coachee.last_assessment.created_at)}
+                                    </div>
                                 </div>
                             ` : `
-                                <div class="border-top pt-3 text-center">
-                                    <small class="text-muted">Sin evaluaciones aún</small>
+                                <div class="last-assessment">
+                                    <div class="assessment-header">
+                                        <span class="assessment-title">Estado</span>
+                                        <div class="assessment-icon">
+                                            <i class="fas fa-hourglass-half"></i>
+                                        </div>
+                                    </div>
+                                    <div class="assessment-score">
+                                        <span class="text-muted">Sin evaluaciones completadas</span>
+                                    </div>
+                                    <div class="assessment-date">
+                                        <i class="fas fa-info-circle"></i>
+                                        Invita al participante a realizar su primera evaluación
+                                    </div>
                                 </div>
                             `}
                         </div>
@@ -1713,37 +1952,67 @@
                 
                 lastAssessmentHtml = `
                     <div class="last-assessment">
-                        <div class="assessment-score ${scoreClass}">
-                            Última evaluación: ${score}% (${level})
+                        <div class="assessment-header">
+                            <span class="assessment-title">Última Evaluación</span>
+                            <div class="assessment-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
                         </div>
-                        <div class="assessment-date">${date}</div>
+                        <div class="assessment-score">
+                            <span class="score-badge ${scoreClass}">
+                                ${score}% - ${level}
+                            </span>
+                        </div>
+                        <div class="assessment-date">
+                            <i class="fas fa-clock"></i>
+                            ${date}
+                        </div>
                     </div>
                 `;
             } else {
                 lastAssessmentHtml = `
                     <div class="last-assessment">
-                        <div class="assessment-score">Sin evaluaciones completadas</div>
+                        <div class="assessment-header">
+                            <span class="assessment-title">Estado</span>
+                            <div class="assessment-icon">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
+                        </div>
+                        <div class="assessment-score">
+                            <span class="text-muted">Sin evaluaciones completadas</span>
+                        </div>
+                        <div class="assessment-date">
+                            <i class="fas fa-info-circle"></i>
+                            Pendiente de primera evaluación
+                        </div>
                     </div>
                 `;
             }
             
             card.innerHTML = `
-                <div class="coachee-name">${coachee.full_name}</div>
-                <div class="coachee-email">${coachee.email}</div>
-                
-                <div class="coachee-stats">
-                    <div class="coachee-stat">
-                        <div class="coachee-stat-number">${coachee.total_assessments}</div>
-                        <div class="coachee-stat-label">Evaluaciones</div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="coachee-name mb-1">${coachee.full_name}</h5>
+                            <p class="coachee-email mb-0">${coachee.email}</p>
+                        </div>
                     </div>
-                    <div class="coachee-stat">
-                        <div class="coachee-stat-number">${coachee.latest_assessment ? 
-                            getAssertivityLevel(coachee.latest_assessment.overall_score) : 'N/A'}</div>
-                        <div class="coachee-stat-label">Nivel Actual</div>
+                    
+                    <div class="coachee-stats">
+                        <div class="coachee-stat">
+                            <div class="coachee-stat-number">${coachee.total_assessments || 0}</div>
+                            <div class="coachee-stat-label">Evaluaciones</div>
+                        </div>
+                        <div class="coachee-stat">
+                            <div class="coachee-stat-number">
+                                ${coachee.latest_assessment ? getAssertivityLevel(coachee.latest_assessment.overall_score) : 'N/A'}
+                            </div>
+                            <div class="coachee-stat-label">Nivel Actual</div>
+                        </div>
                     </div>
+                    
+                    ${lastAssessmentHtml}
                 </div>
-                
-                ${lastAssessmentHtml}
             `;
             
             return card;
