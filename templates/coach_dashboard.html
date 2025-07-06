@@ -1394,6 +1394,8 @@
                 }
                 
                 const data = await response.json();
+                console.log('🔍 API Response from /api/coach/dashboard-stats:', data);
+                
                 updateStatsDisplay(data);
                 updateCharts(data);
                 
@@ -1550,6 +1552,10 @@
 
         // Actualizar gráficos
         function updateCharts(data) {
+            console.log('🎯 updateCharts called with data:', data);
+            console.log('📈 Score distribution:', data.score_distribution);
+            console.log('📊 Progress data:', data.progress_data);
+            
             updateDistributionChart(data.score_distribution || {});
             updateProgressChart(data.progress_data || []);
         }
@@ -1599,18 +1605,25 @@
         function updateProgressChart(progressData) {
             const ctx = document.getElementById('progressChart').getContext('2d');
             
+            // DEBUG: Log de los datos recibidos
+            console.log('🔍 updateProgressChart called with:', progressData);
+            console.log('📊 Progress data length:', progressData ? progressData.length : 'undefined');
+            
             if (progressChart) {
                 progressChart.destroy();
             }
             
             if (!progressData || progressData.length === 0) {
                 // Mostrar mensaje cuando no hay datos
+                console.log('❌ No progress data available');
                 ctx.fillStyle = '#6b7280';
                 ctx.font = '14px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText('No hay datos de progreso disponibles', ctx.canvas.width / 2, ctx.canvas.height / 2);
                 return;
             }
+            
+            console.log('✅ Progress data found, creating chart with', progressData.length, 'coachees');
             
             // Generar colores diferentes para cada coachee
             const colors = [

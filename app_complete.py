@@ -347,21 +347,23 @@ def auto_initialize_database():
             
         # ===== CREAR USUARIOS DE PRUEBA ADICIONALES =====
         try:
-            # Crear coach de prueba si no existe
-            coach_user = User.query.filter_by(email='coach@assessment.com').first()
-            if not coach_user:
-                print("👨‍💼 AUTO-INIT: Creando usuario coach de prueba...")
-                coach_user = User(
-                    username='coach',
-                    email='coach@assessment.com',
-                    full_name='Coach de Prueba',
-                    role='coach'
-                )
-                coach_user.set_password('coach123')
-                db.session.add(coach_user)
-                print("✅ AUTO-INIT: Usuario coach creado")
+            # *** COACH MANAGEMENT DISABLED ***
+            # Los coaches ya existen en la base de datos con datos reales
+            # Credenciales: coach@assessment.com / coach123
+            print("🛡️ AUTO-INIT: Gestión de coaches deshabilitada para preservar datos reales")
+            
+            # Solo verificar que existe al menos un coach
+            coach_count = User.query.filter_by(role='coach').count()
+            if coach_count > 0:
+                print(f"✅ AUTO-INIT: {coach_count} coaches encontrados en la base de datos")
+                # Asegurar que el coach principal tenga la contraseña correcta
+                main_coach = User.query.filter_by(email='coach@assessment.com').first()
+                if main_coach:
+                    main_coach.set_password('coach123')
+                    db.session.commit()
+                    print(f"🔧 AUTO-INIT: Contraseña del coach '{main_coach.full_name}' lista para acceso")
             else:
-                print("ℹ️ AUTO-INIT: Usuario coach ya existe")
+                print("⚠️ AUTO-INIT: No se encontraron coaches en la base de datos")
                 
             # Crear coachee de prueba si no existe
             coachee_user = User.query.filter_by(email='coachee@assessment.com').first()
@@ -1032,11 +1034,16 @@ def api_coach_dashboard_stats():
         if current_user.role != 'coach':
             return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver estadísticas'}), 403
         
+        # DEBUG: Log del usuario actual
+        print(f"🔍 DEBUG - Current user: ID={current_user.id}, Name={current_user.full_name}, Email={current_user.email}")
+        
         # Contar coachees
         total_coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').count()
+        print(f"🔍 DEBUG - Total coachees found: {total_coachees}")
         
         # Contar evaluaciones totales supervisadas
         total_assessments = AssessmentResult.query.filter_by(coach_id=current_user.id).count()
+        print(f"🔍 DEBUG - Total assessments found: {total_assessments}")
         
         # Calcular puntuación promedio
         avg_score_result = db.session.query(func.avg(AssessmentResult.score)).filter_by(
@@ -1764,6 +1771,36 @@ def api_user_my_profile():
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
+
+@app.route('/coach/auto-login')
+def coach_auto_login():
+    """Auto-login para coach en desarrollo (Solo para testing)"""
+    # Solo permitir en desarrollo
+    if os.environ.get('RENDER') or os.environ.get('VERCEL') or os.environ.get('PRODUCTION'):
+        flash('Auto-login solo disponible en desarrollo', 'warning')
+        return redirect(url_for('coach_login_page'))
+    
+    try:
+        # Buscar el coach principal
+        coach_user = User.query.filter_by(email='coach@assessment.com', role='coach').first()
+        if not coach_user:
+            # Si no existe, buscar cualquier coach disponible
+            coach_user = User.query.filter_by(role='coach').first()
+        
+        if coach_user:
+            login_user(coach_user, remember=True)
+            session.permanent = True
+            coach_user.last_login = datetime.utcnow()
+            db.session.commit()
+            flash(f'Auto-login exitoso como coach: {coach_user.full_name}', 'success')
+            return redirect(url_for('coach_dashboard'))
+        else:
+            flash('No se encontraron usuarios coach para auto-login', 'error')
+            return redirect(url_for('coach_login_page'))
+            
+    except Exception as e:
+        flash(f'Error en auto-login: {str(e)}', 'error')
+        return redirect(url_for('coach_login_page'))
 
 if __name__ == '__main__':
     with app.app_context():
