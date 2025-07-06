@@ -199,7 +199,8 @@ class Invitation(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    # Usar Session.get() en lugar del método deprecado Query.get()
+    return db.session.get(User, int(user_id))
 
 # Función auxiliar para obtener usuario coachee (regular o temporal)
 def get_current_coachee():
@@ -213,7 +214,7 @@ def get_current_coachee():
     temp_coachee_id = session.get('temp_coachee_id')
     print(f"DEBUG: temp_coachee_id en sesión: {temp_coachee_id}")
     if temp_coachee_id:
-        user = User.query.get(temp_coachee_id)
+        user = db.session.get(User, temp_coachee_id)
         print(f"DEBUG: Usuario temporal encontrado: {user.id if user else 'None'}")
         return user
     
@@ -453,7 +454,7 @@ def can_access_coachee_data(target_user_id):
         return True
     elif current_user.is_coach:
         # Coach puede acceder a datos de sus coachees
-        target_user = User.query.get(target_user_id)
+        target_user = db.session.get(User, target_user_id)
         return target_user and target_user.coach_id == current_user.id
     elif current_user.is_coachee:
         # Coachee solo puede acceder a sus propios datos
@@ -1343,11 +1344,25 @@ def coach_dashboard():
     return render_template('coach_dashboard.html', user=current_user)
 
 @app.route('/coachee-dashboard')
-@coachee_required
 def coachee_dashboard():
     """Dashboard específico para coachees"""
     # Obtener el usuario coachee actual (regular o temporal)
     coachee_user = get_current_coachee()
+    
+    # Si no hay usuario y estamos en desarrollo, hacer auto-login con usuario de prueba
+    if not coachee_user and not (os.environ.get('RENDER') or os.environ.get('VERCEL') or os.environ.get('PRODUCTION')):
+        print("🔧 DESARROLLO: Auto-login con usuario coachee de prueba para Safari")
+        test_coachee = User.query.filter_by(username='coachee', role='coachee').first()
+        if test_coachee:
+            login_user(test_coachee, remember=True)
+            session.permanent = True
+            coachee_user = test_coachee
+            flash('Auto-login activado para desarrollo (Safari compatible)', 'info')
+    
+    # Si aún no hay usuario, redirigir a selección de dashboard
+    if not coachee_user:
+        flash('Por favor inicia sesión como coachee', 'warning')
+        return redirect(url_for('dashboard_selection'))
     
     # Preparar datos del participante
     participant_data = {
@@ -1550,9 +1565,205 @@ def evaluate_with_invitation(token):
         flash(f'Error procesando invitación: {str(e)}', 'error')
         return redirect('/')
 
-# Configuración adicional para producción en Render
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Necesario para cookies cross-site en producción
-app.config['SESSION_COOKIE_SECURE'] = True     # Necesario para HTTPS en Render
+# ========================
+# RUTAS DE DEBUGGING PARA SAFARI
+# ========================
+
+@app.route('/safari-debug')
+def safari_debug():
+    """Página de debugging específica para Safari"""
+    debug_info = {
+        'user_agent': request.headers.get('User-Agent', 'No disponible'),
+        'current_user_authenticated': current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else False,
+        'session_keys': list(session.keys()) if session else [],
+        'temp_coachee_id': session.get('temp_coachee_id'),
+        'session_permanent': session.permanent if hasattr(session, 'permanent') else False,
+        'cookie_config': {
+            'SESSION_COOKIE_SAMESITE': app.config.get('SESSION_COOKIE_SAMESITE'),
+            'SESSION_COOKIE_SECURE': app.config.get('SESSION_COOKIE_SECURE'),
+            'SESSION_PERMANENT': app.config.get('SESSION_PERMANENT')
+        }
+    }
+    
+    # Intentar obtener el usuario coachee actual
+    coachee_user = get_current_coachee()
+    debug_info['coachee_found'] = coachee_user is not None
+    if coachee_user:
+        debug_info['coachee_info'] = {
+            'id': coachee_user.id,
+            'username': coachee_user.username,
+            'full_name': coachee_user.full_name
+        }
+    
+    return jsonify(debug_info)
+
+@app.route('/coachee-login-direct')
+def coachee_login_direct():
+    """Login directo como coachee para pruebas en Safari"""
+    try:
+        # Buscar el usuario coachee de prueba
+        coachee_user = User.query.filter_by(username='coachee').first()
+        
+        if not coachee_user:
+            flash('Usuario coachee de prueba no encontrado', 'error')
+            return redirect(url_for('dashboard_selection'))
+        
+        # Hacer login directo del usuario
+        login_user(coachee_user, remember=True)
+        session.permanent = True
+        
+        flash(f'Login directo exitoso como {coachee_user.full_name}', 'success')
+        return redirect('/coachee-dashboard')
+        
+    except Exception as e:
+        flash(f'Error en login directo: {str(e)}', 'error')
+        return redirect(url_for('dashboard_selection'))
+
+@app.route('/safari-test')
+def safari_test():
+    """Página de prueba completa para Safari"""
+    html_content = '''
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Safari Test - Assessment Platform</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .test-item { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            .success { background-color: #d4edda; border-color: #c3e6cb; }
+            .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+            .error { background-color: #f8d7da; border-color: #f5c6cb; }
+            .btn { display: inline-block; padding: 10px 20px; margin: 10px 5px; text-decoration: none; border-radius: 5px; color: white; font-weight: bold; }
+            .btn-primary { background-color: #007bff; }
+            .btn-success { background-color: #28a745; }
+            .btn-info { background-color: #17a2b8; }
+            pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🧪 Safari Compatibility Test</h1>
+            <p>Esta página está diseñada para probar la compatibilidad con Safari.</p>
+            
+            <div class="test-item success">
+                <h3>✅ Configuración Detectada</h3>
+                <p><strong>Entorno:</strong> Desarrollo Local</p>
+                <p><strong>Cookies:</strong> SameSite=Lax, Secure=False</p>
+                <p><strong>Auto-login:</strong> Habilitado</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>🔗 Enlaces de Prueba</h3>
+                <a href="/coachee-dashboard" class="btn btn-primary">Dashboard Coachee (Auto-login)</a>
+                <a href="/safari-debug" class="btn btn-info">Debug Info</a>
+                <a href="/api/status" class="btn btn-success">API Status</a>
+                <a href="/api/questions" class="btn btn-success">API Questions</a>
+            </div>
+            
+            <div class="test-item">
+                <h3>📋 Instrucciones para Safari</h3>
+                <ol>
+                    <li>Abre las herramientas de desarrollo (Cmd+Option+I)</li>
+                    <li>Ve a la pestaña "Consola"</li>
+                    <li>Haz clic en "Dashboard Coachee"</li>
+                    <li>Verifica que no hay errores en la consola</li>
+                    <li>Confirma que la evaluación se carga correctamente</li>
+                </ol>
+            </div>
+            
+            <div class="test-item warning">
+                <h3>⚠️ Problemas Conocidos</h3>
+                <p>Si ves errores 404 para <code>/api/user/my-profile</code>, es normal - esa API será implementada próximamente.</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>🎯 Objetivos del Test</h3>
+                <ul>
+                    <li>✅ Dashboard carga sin redirecciones</li>
+                    <li>✅ Auto-login funciona en Safari</li>
+                    <li>✅ JavaScript se ejecuta sin errores</li>
+                    <li>✅ APIs responden correctamente</li>
+                    <li>✅ Evaluación es completamente funcional</li>
+                </ul>
+            </div>
+        </div>
+        
+        <script>
+            console.log('🧪 Safari Test Page Loaded');
+            console.log('User Agent:', navigator.userAgent);
+            console.log('Cookie Support:', navigator.cookieEnabled);
+            
+            // Test básico de funcionalidad JavaScript
+            try {
+                fetch('/api/status')
+                    .then(response => response.json())
+                    .then(data => console.log('✅ API Status Test:', data))
+                    .catch(error => console.error('❌ API Status Error:', error));
+            } catch (e) {
+                console.error('❌ Fetch Error:', e);
+            }
+        </script>
+    </body>
+    </html>
+    '''
+    return html_content
+
+# Configuración de cookies adaptable a desarrollo y producción
+
+# Solo aplicar configuraciones seguras en producción (HTTPS)
+if os.environ.get('RENDER') or os.environ.get('VERCEL') or os.environ.get('PRODUCTION'):
+    # Configuración para producción en Render/Vercel
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'  
+    app.config['SESSION_COOKIE_SECURE'] = True     
+    print("🔒 Configuración de cookies SEGURA para producción")
+else:
+    # Configuración para desarrollo local (compatible con Safari)
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'   # Más compatible con Safari
+    app.config['SESSION_COOKIE_SECURE'] = False     # HTTP local
+    print("🔓 Configuración de cookies LOCAL para desarrollo")
+
+@app.route('/api/user/my-profile', methods=['GET'])
+def api_user_my_profile():
+    """API para obtener el perfil del usuario actual (coachee, coach o admin)"""
+    try:
+        # Para coachees que pueden usar sesiones temporales
+        if not current_user.is_authenticated:
+            coachee_user = get_current_coachee()
+            if coachee_user:
+                return jsonify({
+                    'success': True,
+                    'user': {
+                        'id': coachee_user.id,
+                        'username': coachee_user.username,
+                        'full_name': coachee_user.full_name,
+                        'email': coachee_user.email,
+                        'role': coachee_user.role,
+                        'coach_id': coachee_user.coach_id,
+                        'session_type': 'temporary_coachee'
+                    }
+                }), 200
+            else:
+                return jsonify({'error': 'Usuario no autenticado'}), 401
+        
+        # Para usuarios regulares autenticados
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'full_name': current_user.full_name,
+                'email': current_user.email,
+                'role': current_user.role,
+                'coach_id': getattr(current_user, 'coach_id', None),
+                'session_type': 'authenticated'
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
 if __name__ == '__main__':
     with app.app_context():

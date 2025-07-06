@@ -588,6 +588,8 @@
             </div>
         </div>
 
+        <!-- Assessment Card Container -->
+        <div class="assessment-card">
             <!-- Welcome Section -->
             <div class="welcome-header" id="welcomeSection">
                 <div class="welcome-icon">
@@ -743,20 +745,9 @@
         let answers = {};
         let radarChartInstance = null;
         
-        // Participant data from backend (safe JSON parsing)
+        // Participant data - will be loaded dynamically if needed
         let participantData = null;
         let invitationToken = null;
-        
-        try {
-            {% if participant_data %}
-            participantData = {{ participant_data | tojson | safe }};
-            {% endif %}
-            {% if invitation_token %}
-            invitationToken = {{ invitation_token | tojson | safe }};
-            {% endif %}
-        } catch (e) {
-            console.warn('Error parsing participant data:', e);
-        }
 
         // Initialize particles animation
         function createParticles() {
