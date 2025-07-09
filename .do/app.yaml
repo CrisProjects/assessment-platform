@@ -1,0 +1,16 @@
+name: assessment-platform
+services:
+- name: web
+  source_dir: /
+  github:
+    repo: CrisProjects/assessment-platform
+    branch: main
+  run_command: gunicorn wsgi_production:app --bind 0.0.0.0:$PORT
+  environment_slug: python
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  envs:
+  - key: FLASK_ENV
+    value: production
+  - key: PYTHONPATH
+    value: /workspace
