@@ -2,7 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "gunicorn wsgi_production:app --bind 0.0.0.0:$PORT"
+startCommand = "gunicorn wsgi_railway:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1"
 healthcheckPath = "/api/status"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
@@ -10,3 +10,4 @@ restartPolicyType = "ON_FAILURE"
 [env]
 PYTHONPATH = "/app"
 FLASK_ENV = "production"
+RAILWAY = "1"
