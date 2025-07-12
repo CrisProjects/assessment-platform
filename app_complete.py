@@ -541,15 +541,23 @@ def api_login():
 
 @app.route('/logout')
 def logout_page():
-    """Logout y redirección al login"""
+    """Logout y redirección a la página principal"""
     logout_user()
-    return redirect('/login')
+    # Limpiar sesiones temporales si existen
+    session.pop('temp_coachee_id', None)
+    session.pop('temp_coachee_token', None)
+    session.clear()
+    return redirect('/')
 
 @app.route('/api/logout', methods=['POST'])
 @login_required
 def api_logout():
     """Logout API"""
     logout_user()
+    # Limpiar sesiones temporales si existen
+    session.pop('temp_coachee_id', None)
+    session.pop('temp_coachee_token', None)
+    session.clear()
     return jsonify({'success': True, 'message': 'Sesión cerrada exitosamente'}), 200
 
 @app.route('/api/register', methods=['POST'])
