@@ -426,6 +426,47 @@
             opacity: 0.5;
         }
 
+        /* Assessment specific styles */
+        .question-card {
+            background: var(--surface-elevated);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .question-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .question-text {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .option-item {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--border-color) !important;
+        }
+
+        .option-item:hover {
+            border-color: #667eea !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .option-item.bg-primary {
+            border-color: #667eea !important;
+            background: var(--primary-gradient) !important;
+        }
+
+        .option-item .form-check-input {
+            margin-top: 0.125rem;
+        }
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .main-container {
@@ -568,6 +609,12 @@
                         Evaluaciones
                     </button>
                 </li>
+                <li class="nav-item" role="presentation" id="assessment-tab-item" style="display: none;">
+                    <button class="nav-link" id="assessment-tab" data-bs-toggle="tab" data-bs-target="#assessment" type="button" role="tab">
+                        <i class="fas fa-play-circle me-2"></i>
+                        Evaluación Activa
+                    </button>
+                </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
                         <i class="fas fa-tasks me-2"></i>
@@ -622,6 +669,46 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assessment Tab (Hidden by default) -->
+                <div class="tab-pane fade" id="assessment" role="tabpanel">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>
+                                <i class="fas fa-clipboard-check me-2"></i>
+                                Evaluación de Asertividad
+                            </h3>
+                            <div class="progress mt-3">
+                                <div class="progress-bar" role="progressbar" id="assessmentProgress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="card-body" id="assessmentContainer">
+                            <div id="questionContainer">
+                                <!-- Questions will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assessment Results Container -->
+                    <div class="dashboard-card" id="assessmentResults" style="display: none;">
+                        <div class="card-header text-center" style="background: var(--primary-gradient); color: white;">
+                            <h3>¡Evaluación Completada!</h3>
+                            <div class="h1 mb-0" id="assessmentScore">0%</div>
+                            <div class="h5" id="assessmentLevel">Nivel de Asertividad</div>
+                        </div>
+                        <div class="card-body">
+                            <div id="assessmentInterpretation">
+                                <!-- Results interpretation will be loaded here -->
+                            </div>
+                            <div class="text-center mt-4">
+                                <button class="btn btn-primary-custom" onclick="finishAssessment()">
+                                    <i class="fas fa-check me-2"></i>
+                                    Finalizar y Volver
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -782,6 +869,12 @@
         let evaluationsData = null;
         let tasksData = null;
         let progressChart = null;
+
+        // Assessment state
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let answers = {};
+        let isAssessmentActive = false;
 
         // Initialize particles animation
         function createParticles() {
@@ -1326,9 +1419,259 @@
         }
 
         // Start evaluation
-        function startEvaluation(evaluationType) {
-            // Redirect to the assessment page
-            window.location.href = '/coachee-dashboard';
+        async function startEvaluation(evaluationType) {
+            try {
+                showToast('Iniciando evaluación...', 'info');
+                
+                // Reset assessment state
+                questions = [];
+                currentQuestionIndex = 0;
+                answers = {};
+                isAssessmentActive = true;
+                
+                // Show assessment tab
+                document.getElementById('assessment-tab-item').style.display = 'block';
+                
+                // Switch to assessment tab
+                const assessmentTab = new bootstrap.Tab(document.getElementById('assessment-tab'));
+                assessmentTab.show();
+                
+                // Load questions
+                await loadAssessmentQuestions();
+                
+                showToast('¡Evaluación iniciada! Responde todas las preguntas honestamente.', 'success');
+                
+            } catch (error) {
+                console.error('Error starting assessment:', error);
+                showToast('Error iniciando evaluación: ' + error.message, 'error');
+            }
+        }
+
+        // Load assessment questions
+        async function loadAssessmentQuestions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/questions`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login?role=coachee';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.questions && data.questions.length > 0) {
+                    questions = data.questions;
+                    showAssessmentQuestion();
+                } else {
+                    throw new Error('No se encontraron preguntas válidas');
+                }
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                showToast('Error cargando preguntas: ' + error.message, 'error');
+            }
+        }
+
+        // Show current assessment question
+        function showAssessmentQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                completeAssessment();
+                return;
+            }
+            
+            const question = questions[currentQuestionIndex];
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            
+            // Update progress bar
+            document.getElementById('assessmentProgress').style.width = progress + '%';
+            
+            // Create question HTML
+            document.getElementById('questionContainer').innerHTML = `
+                <div class="question-card">
+                    <div class="question-title mb-3">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Pregunta ${currentQuestionIndex + 1} de ${questions.length}
+                    </div>
+                    <div class="question-text mb-4">${question.content}</div>
+                    <div class="options-container mb-4">
+                        ${question.options.map((option, index) => `
+                            <div class="form-check mb-3 p-3 border rounded option-item" onclick="selectAssessmentOption(${index + 1})">
+                                <input class="form-check-input" type="radio" name="question${currentQuestionIndex}" value="${index + 1}" id="option${index}">
+                                <label class="form-check-label w-100" for="option${index}">
+                                    ${option}
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-primary-custom btn-lg" onclick="nextAssessmentQuestion()">
+                            <i class="fas fa-${currentQuestionIndex === questions.length - 1 ? 'flag-checkered' : 'arrow-right'} me-2"></i>
+                            ${currentQuestionIndex === questions.length - 1 ? 'Finalizar Evaluación' : 'Siguiente Pregunta'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Select assessment option
+        function selectAssessmentOption(value) {
+            // Remove previous selections
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.classList.remove('bg-primary', 'text-white');
+                item.classList.add('bg-light');
+            });
+            
+            // Mark selected option
+            const selectedOption = document.querySelector(`input[value="${value}"]`);
+            if (selectedOption) {
+                selectedOption.checked = true;
+                const optionItem = selectedOption.closest('.option-item');
+                optionItem.classList.remove('bg-light');
+                optionItem.classList.add('bg-primary', 'text-white');
+            }
+        }
+
+        // Move to next assessment question
+        function nextAssessmentQuestion() {
+            const selected = document.querySelector(`input[name="question${currentQuestionIndex}"]:checked`);
+            
+            if (!selected) {
+                showToast('Por favor selecciona una respuesta', 'warning');
+                return;
+            }
+            
+            answers[currentQuestionIndex] = parseInt(selected.value);
+            currentQuestionIndex++;
+            showAssessmentQuestion();
+        }
+
+        // Complete assessment
+        async function completeAssessment() {
+            try {
+                showToast('Procesando evaluación...', 'info');
+                
+                // Validate user data
+                if (!currentUser) {
+                    throw new Error('Usuario no definido');
+                }
+                
+                // Create user data for assessment
+                const userData = {
+                    age: 25, // Default age
+                    gender: 'no_especificado'
+                };
+                
+                if (Object.keys(answers).length === 0) {
+                    throw new Error('No hay respuestas guardadas');
+                }
+                
+                // Send assessment data
+                const response = await fetch(`${API_BASE_URL}/api/save_assessment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        age: userData.age,
+                        gender: userData.gender,
+                        answers: answers
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAssessmentResults(data);
+                } else {
+                    throw new Error(data.error || 'Error guardando evaluación');
+                }
+                
+            } catch (error) {
+                console.error('Assessment completion error:', error);
+                showToast('Error completando evaluación: ' + error.message, 'error');
+            }
+        }
+
+        // Show assessment results
+        function showAssessmentResults(data) {
+            // Hide question container
+            document.getElementById('assessmentContainer').style.display = 'none';
+            
+            // Show results container
+            const resultsContainer = document.getElementById('assessmentResults');
+            resultsContainer.style.display = 'block';
+            
+            // Display results
+            document.getElementById('assessmentScore').textContent = data.total_score + '%';
+            document.getElementById('assessmentLevel').textContent = data.assertiveness_level;
+            
+            // Create interpretation
+            let interpretation = `
+                <div class="text-center mb-4">
+                    <h4>Tu Nivel de Asertividad: ${data.assertiveness_level}</h4>
+                    <p class="lead">Has obtenido <strong>${data.total_score}%</strong> en la evaluación.</p>
+                </div>
+            `;
+            
+            if (data.total_score >= 75) {
+                interpretation += `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-star me-2"></i>¡Excelente nivel de asertividad!</h5>
+                        <p>Demuestras una comunicación muy efectiva y sabes manejar las situaciones con confianza.</p>
+                    </div>
+                `;
+            } else if (data.total_score >= 50) {
+                interpretation += `
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-thumbs-up me-2"></i>Buen nivel de asertividad</h5>
+                        <p>Tienes una base sólida en comunicación asertiva con oportunidades de mejora.</p>
+                    </div>
+                `;
+            } else {
+                interpretation += `
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-seedling me-2"></i>Oportunidad de crecimiento</h5>
+                        <p>Tienes un gran potencial para desarrollar tu asertividad trabajando en estas habilidades.</p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('assessmentInterpretation').innerHTML = interpretation;
+            
+            showToast('¡Evaluación completada exitosamente!', 'success');
+        }
+
+        // Finish assessment and return to dashboard
+        function finishAssessment() {
+            // Reset assessment state
+            isAssessmentActive = false;
+            
+            // Hide assessment tab
+            document.getElementById('assessment-tab-item').style.display = 'none';
+            
+            // Hide results container
+            document.getElementById('assessmentResults').style.display = 'none';
+            
+            // Show assessment container
+            document.getElementById('assessmentContainer').style.display = 'block';
+            
+            // Switch back to evaluations tab
+            const evaluationsTab = new bootstrap.Tab(document.getElementById('evaluations-tab'));
+            evaluationsTab.show();
+            
+            // Refresh data
+            refreshDashboard();
+            
+            showToast('Evaluación finalizada. Los datos se han actualizado.', 'success');
         }
 
         // View evaluation details
