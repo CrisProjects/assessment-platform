@@ -1234,6 +1234,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#stats"><i class="fas fa-chart-bar me-2"></i>Estadísticas</a></li>
                             <li><a class="dropdown-item" href="#charts"><i class="fas fa-chart-pie me-2"></i>Gráficos</a></li>
+                            <li><a class="dropdown-item" href="#tasks"><i class="fas fa-tasks me-2"></i>Gestión de Tareas</a></li>
                             <li><a class="dropdown-item" href="#coachees"><i class="fas fa-users me-2"></i>Mis Coachees</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
@@ -1309,6 +1310,203 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Gestión de Tareas y Resúmenes -->
+        <div id="tasks" class="row mb-4">
+            <!-- Pestañas para Task Management -->
+            <div class="col-12">
+                <div class="card modern-panel">
+                    <div class="card-header panel-header">
+                        <h3 class="panel-title">
+                            <i class="fas fa-tasks me-2 text-primary"></i>Gestión de Tareas y Seguimiento
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Nav Pills para las diferentes vistas -->
+                        <ul class="nav nav-pills nav-fill mb-4" id="taskTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="task-summary-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#task-summary" type="button" role="tab" 
+                                        aria-controls="task-summary" aria-selected="true">
+                                    <i class="fas fa-chart-line me-2"></i>Resúmenes de Coachees
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="task-manage-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#task-manage" type="button" role="tab" 
+                                        aria-controls="task-manage" aria-selected="false">
+                                    <i class="fas fa-plus-circle me-2"></i>Crear Tareas
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="task-track-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#task-track" type="button" role="tab" 
+                                        aria-controls="task-track" aria-selected="false">
+                                    <i class="fas fa-list-check me-2"></i>Seguimiento
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="taskTabContent">
+                            <!-- Resúmenes de Evaluaciones de Coachees -->
+                            <div class="tab-pane fade show active" id="task-summary" role="tabpanel" 
+                                 aria-labelledby="task-summary-tab">
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-user-graduate me-2 text-info"></i>
+                                                Resúmenes de Evaluaciones por Coachee
+                                            </h5>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="loadEvaluationSummaries()">
+                                                <i class="fas fa-refresh me-1"></i>Actualizar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div id="evaluationSummariesContainer" class="row">
+                                            <div class="col-12 text-center py-4">
+                                                <div class="loading-spinner me-2"></div>
+                                                <span class="text-muted">Cargando resúmenes de evaluaciones...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Crear Nuevas Tareas -->
+                            <div class="tab-pane fade" id="task-manage" role="tabpanel" 
+                                 aria-labelledby="task-manage-tab">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-success text-white">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-plus-circle me-2"></i>Crear Nueva Tarea
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <form id="createTaskForm">
+                                                    <div class="mb-3">
+                                                        <label for="taskCoacheeSelect" class="form-label">Coachee</label>
+                                                        <select class="form-select" id="taskCoacheeSelect" required>
+                                                            <option value="">Seleccionar coachee...</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="taskTitle" class="form-label">Título de la tarea</label>
+                                                        <input type="text" class="form-control" id="taskTitle" 
+                                                               placeholder="Ej: Practicar comunicación asertiva" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="taskDescription" class="form-label">Descripción</label>
+                                                        <textarea class="form-control" id="taskDescription" rows="3" 
+                                                                  placeholder="Describe detalladamente la tarea..." required></textarea>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="taskCategory" class="form-label">Categoría</label>
+                                                            <select class="form-select" id="taskCategory" required>
+                                                                <option value="">Seleccionar categoría...</option>
+                                                                <option value="comunicacion">Comunicación</option>
+                                                                <option value="derechos">Derechos</option>
+                                                                <option value="opiniones">Opiniones</option>
+                                                                <option value="conflictos">Conflictos</option>
+                                                                <option value="autoconfianza">Autoconfianza</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="taskPriority" class="form-label">Prioridad</label>
+                                                            <select class="form-select" id="taskPriority">
+                                                                <option value="medium">Media</option>
+                                                                <option value="low">Baja</option>
+                                                                <option value="high">Alta</option>
+                                                                <option value="urgent">Urgente</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="taskDueDate" class="form-label">Fecha de vencimiento (opcional)</label>
+                                                        <input type="date" class="form-control" id="taskDueDate">
+                                                    </div>
+                                                    <button type="submit" class="btn btn-success w-100">
+                                                        <i class="fas fa-plus me-2"></i>Crear Tarea
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-info text-white">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-lightbulb me-2"></i>Sugerencias de Tareas
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="task-suggestions">
+                                                    <div class="suggestion-item mb-3 p-3 border rounded">
+                                                        <h6 class="text-primary">Comunicación</h6>
+                                                        <ul class="list-unstyled mb-0 small">
+                                                            <li>• Practicar expresión de necesidades</li>
+                                                            <li>• Ejercicios de escucha activa</li>
+                                                            <li>• Comunicación no verbal</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="suggestion-item mb-3 p-3 border rounded">
+                                                        <h6 class="text-success">Autoconfianza</h6>
+                                                        <ul class="list-unstyled mb-0 small">
+                                                            <li>• Ejercicios de autovaloración</li>
+                                                            <li>• Definir límites personales</li>
+                                                            <li>• Registro de logros diarios</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="suggestion-item mb-3 p-3 border rounded">
+                                                        <h6 class="text-warning">Resolución de Conflictos</h6>
+                                                        <ul class="list-unstyled mb-0 small">
+                                                            <li>• Técnicas de mediación</li>
+                                                            <li>• Análisis de situaciones</li>
+                                                            <li>• Práctica de diálogo constructivo</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Seguimiento de Tareas -->
+                            <div class="tab-pane fade" id="task-track" role="tabpanel" 
+                                 aria-labelledby="task-track-tab">
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-list-check me-2 text-warning"></i>
+                                                Tareas Asignadas
+                                            </h5>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="loadTasks()">
+                                                <i class="fas fa-refresh me-1"></i>Actualizar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div id="tasksContainer" class="row">
+                                            <div class="col-12 text-center py-4">
+                                                <div class="loading-spinner me-2"></div>
+                                                <span class="text-muted">Cargando tareas...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Mis Coachees -->
@@ -2865,6 +3063,471 @@
             // Implementación simple de toast
             console.log(`[${type.toUpperCase()}] ${message}`);
         }
+
+        // ====== TASK MANAGEMENT FUNCTIONS ======
+
+        // Cargar resúmenes de evaluaciones de coachees
+        async function loadEvaluationSummaries() {
+            try {
+                // Primero cargar la lista de coachees para obtener resúmenes
+                const coacheesResponse = await fetch('/api/coach/my-coachees', {
+                    credentials: 'include'
+                });
+                
+                if (!coacheesResponse.ok) {
+                    throw new Error(`Error al cargar coachees: ${coacheesResponse.status}`);
+                }
+                
+                const coacheesData = await coacheesResponse.json();
+                
+                if (!coacheesData.success || !coacheesData.coachees || coacheesData.coachees.length === 0) {
+                    document.getElementById('evaluationSummariesContainer').innerHTML = `
+                        <div class="col-12 text-center py-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                No tienes coachees asignados para mostrar resúmenes.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const summariesHTML = [];
+                
+                // Cargar resumen para cada coachee
+                for (const coachee of coacheesData.coachees) {
+                    try {
+                        const summaryResponse = await fetch(`/api/coach/evaluation-summary/${coachee.id}`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (summaryResponse.ok) {
+                            const summaryData = await summaryResponse.json();
+                            summariesHTML.push(createEvaluationSummaryCard(summaryData));
+                        } else {
+                            summariesHTML.push(createEvaluationSummaryErrorCard(coachee));
+                        }
+                    } catch (error) {
+                        console.error(`Error cargando resumen para ${coachee.full_name}:`, error);
+                        summariesHTML.push(createEvaluationSummaryErrorCard(coachee));
+                    }
+                }
+                
+                document.getElementById('evaluationSummariesContainer').innerHTML = summariesHTML.join('');
+                
+            } catch (error) {
+                console.error('Error cargando resúmenes de evaluaciones:', error);
+                document.getElementById('evaluationSummariesContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error cargando resúmenes: ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function createEvaluationSummaryCard(data) {
+            const { coachee, summary } = data;
+            
+            const progressClass = 
+                summary.progress_trend === 'mejorando' ? 'text-success' :
+                summary.progress_trend === 'empeorando' ? 'text-danger' : 'text-warning';
+            
+            const progressIcon = 
+                summary.progress_trend === 'mejorando' ? 'fa-arrow-up' :
+                summary.progress_trend === 'empeorando' ? 'fa-arrow-down' : 'fa-minus';
+            
+            return `
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user me-2"></i>${coachee.full_name}
+                            </h6>
+                            <small class="text-muted">${coachee.email}</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h5 mb-0 text-primary">${summary.total_assessments}</div>
+                                        <small class="text-muted">Evaluaciones</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h5 mb-0 ${progressClass}">
+                                            <i class="fas ${progressIcon} me-1"></i>
+                                            ${summary.progress_trend.charAt(0).toUpperCase() + summary.progress_trend.slice(1)}
+                                        </div>
+                                        <small class="text-muted">Tendencia</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${summary.total_assessments > 0 ? `
+                                <div class="mb-3">
+                                    <h6 class="text-success mb-2">
+                                        <i class="fas fa-star me-1"></i>Fortalezas:
+                                    </h6>
+                                    <div class="strengths-list">
+                                        ${summary.strengths.length > 0 ? 
+                                            summary.strengths.map(s => `<span class="badge bg-success me-1 mb-1">${getCategoryName(s)}</span>`).join('') :
+                                            '<span class="text-muted small">Sin fortalezas identificadas</span>'
+                                        }
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <h6 class="text-warning mb-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Áreas de mejora:
+                                    </h6>
+                                    <div class="improvement-list">
+                                        ${summary.improvement_areas.length > 0 ? 
+                                            summary.improvement_areas.map(area => `<span class="badge bg-warning text-dark me-1 mb-1">${getCategoryName(area)}</span>`).join('') :
+                                            '<span class="text-muted small">Sin áreas de mejora identificadas</span>'
+                                        }
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="d-grid">
+                                <button class="btn btn-outline-primary btn-sm" onclick="createTaskForCoachee(${coachee.id}, '${coachee.full_name}')">
+                                    <i class="fas fa-plus me-1"></i>Crear Tarea
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createEvaluationSummaryErrorCard(coachee) {
+            return `
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user me-2"></i>${coachee.full_name}
+                            </h6>
+                            <small class="text-muted">${coachee.email}</small>
+                        </div>
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+                            <p class="text-muted">Error cargando resumen</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="createTaskForCoachee(${coachee.id}, '${coachee.full_name}')">
+                                <i class="fas fa-plus me-1"></i>Crear Tarea
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getCategoryName(category) {
+            const names = {
+                'comunicacion': 'Comunicación',
+                'derechos': 'Derechos',
+                'opiniones': 'Opiniones',
+                'conflictos': 'Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            return names[category] || category;
+        }
+
+        // Crear tarea para un coachee específico
+        function createTaskForCoachee(coacheeId, coacheeName) {
+            // Cambiar a la pestaña de crear tareas
+            const createTab = document.getElementById('task-manage-tab');
+            createTab.click();
+            
+            // Preseleccionar el coachee
+            setTimeout(() => {
+                const coacheeSelect = document.getElementById('taskCoacheeSelect');
+                coacheeSelect.value = coacheeId;
+            }, 100);
+        }
+
+        // Cargar lista de coachees en el selector
+        async function loadCoacheesForTasks() {
+            try {
+                const response = await fetch('/api/coach/my-coachees', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error al cargar coachees: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const select = document.getElementById('taskCoacheeSelect');
+                
+                if (data.success && data.coachees) {
+                    select.innerHTML = '<option value="">Seleccionar coachee...</option>';
+                    data.coachees.forEach(coachee => {
+                        select.innerHTML += `<option value="${coachee.id}">${coachee.full_name}</option>`;
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No hay coachees disponibles</option>';
+                }
+            } catch (error) {
+                console.error('Error cargando coachees para tareas:', error);
+                document.getElementById('taskCoacheeSelect').innerHTML = '<option value="">Error cargando coachees</option>';
+            }
+        }
+
+        // Crear nueva tarea
+        async function createTask(event) {
+            event.preventDefault();
+            
+            const formData = {
+                coachee_id: document.getElementById('taskCoacheeSelect').value,
+                title: document.getElementById('taskTitle').value.trim(),
+                description: document.getElementById('taskDescription').value.trim(),
+                category: document.getElementById('taskCategory').value,
+                priority: document.getElementById('taskPriority').value,
+                due_date: document.getElementById('taskDueDate').value || null
+            };
+            
+            // Validaciones
+            if (!formData.coachee_id) {
+                showToast('Por favor selecciona un coachee', 'error');
+                return;
+            }
+            
+            if (!formData.title || !formData.description || !formData.category) {
+                showToast('Por favor completa todos los campos requeridos', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coach/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showToast('Tarea creada exitosamente', 'success');
+                    
+                    // Limpiar formulario
+                    document.getElementById('createTaskForm').reset();
+                    
+                    // Actualizar lista de tareas
+                    loadTasks();
+                    
+                    // Cambiar a pestaña de seguimiento
+                    document.getElementById('task-track-tab').click();
+                } else {
+                    showToast(result.error || 'Error creando tarea', 'error');
+                }
+            } catch (error) {
+                console.error('Error creando tarea:', error);
+                showToast('Error de conexión al crear tarea', 'error');
+            }
+        }
+
+        // Cargar tareas asignadas
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/coach/tasks', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error al cargar tareas: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.tasks) {
+                    if (data.tasks.length === 0) {
+                        document.getElementById('tasksContainer').innerHTML = `
+                            <div class="col-12 text-center py-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    No has creado tareas aún.
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        const tasksHTML = data.tasks.map(task => createTaskCard(task)).join('');
+                        document.getElementById('tasksContainer').innerHTML = tasksHTML;
+                    }
+                } else {
+                    throw new Error('Respuesta inválida del servidor');
+                }
+            } catch (error) {
+                console.error('Error cargando tareas:', error);
+                document.getElementById('tasksContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error cargando tareas: ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function createTaskCard(task) {
+            const statusClass = {
+                'pending': 'warning',
+                'in_progress': 'info',
+                'completed': 'success',
+                'cancelled': 'danger'
+            };
+            
+            const statusText = {
+                'pending': 'Pendiente',
+                'in_progress': 'En Progreso',
+                'completed': 'Completada',
+                'cancelled': 'Cancelada'
+            };
+            
+            const priorityClass = {
+                'low': 'secondary',
+                'medium': 'primary',
+                'high': 'warning',
+                'urgent': 'danger'
+            };
+            
+            const priorityText = {
+                'low': 'Baja',
+                'medium': 'Media',
+                'high': 'Alta',
+                'urgent': 'Urgente'
+            };
+            
+            return `
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${task.title}</h6>
+                                <small class="text-muted">${task.coachee.full_name}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-${statusClass[task.current_status] || 'secondary'} mb-1">
+                                    ${statusText[task.current_status] || 'Desconocido'}
+                                </span>
+                                <br>
+                                <span class="badge bg-${priorityClass[task.priority] || 'secondary'}">
+                                    ${priorityText[task.priority] || 'Media'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text small mb-3">${task.description}</p>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Progreso</span>
+                                    <span>${task.current_progress}%</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-${statusClass[task.current_status] || 'secondary'}" 
+                                         style="width: ${task.current_progress}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="row small text-muted mb-3">
+                                <div class="col-6">
+                                    <i class="fas fa-tag me-1"></i>${getCategoryName(task.category)}
+                                </div>
+                                <div class="col-6 text-end">
+                                    ${task.due_date ? `<i class="fas fa-calendar me-1"></i>${task.due_date}` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button class="btn btn-outline-primary btn-sm" onclick="updateTaskProgress(${task.id})">
+                                    <i class="fas fa-edit me-1"></i>Actualizar Progreso
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Actualizar progreso de tarea
+        function updateTaskProgress(taskId) {
+            // Modal simple para actualizar progreso
+            const newStatus = prompt('Estado (pending/in_progress/completed/cancelled):');
+            if (!newStatus) return;
+            
+            const newProgress = prompt('Progreso (0-100):');
+            if (newProgress === null) return;
+            
+            const notes = prompt('Notas (opcional):') || '';
+            
+            updateTaskProgressAPI(taskId, newStatus, parseInt(newProgress), notes);
+        }
+
+        async function updateTaskProgressAPI(taskId, status, progress, notes) {
+            try {
+                const response = await fetch(`/api/coach/tasks/${taskId}/progress`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        status: status,
+                        progress_percentage: progress,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showToast('Progreso actualizado exitosamente', 'success');
+                    loadTasks(); // Recargar tareas
+                } else {
+                    showToast(result.error || 'Error actualizando progreso', 'error');
+                }
+            } catch (error) {
+                console.error('Error actualizando progreso:', error);
+                showToast('Error de conexión al actualizar progreso', 'error');
+            }
+        }
+
+        // Inicializar funciones del task management cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar datos iniciales para task management
+            loadEvaluationSummaries();
+            loadCoacheesForTasks();
+            loadTasks();
+            
+            // Configurar formulario de crear tarea
+            const createTaskForm = document.getElementById('createTaskForm');
+            if (createTaskForm) {
+                createTaskForm.addEventListener('submit', createTask);
+            }
+            
+            // Actualizar automáticamente cada 60 segundos
+            setInterval(() => {
+                // Solo actualizar si está en la pestaña correspondiente
+                const activeTab = document.querySelector('#taskTabs .nav-link.active');
+                if (activeTab) {
+                    const tabId = activeTab.getAttribute('data-bs-target');
+                    if (tabId === '#task-summary') {
+                        loadEvaluationSummaries();
+                    } else if (tabId === '#task-track') {
+                        loadTasks();
+                    }
+                }
+            }, 60000);
+        });
     </script>
 </body>
 </html>

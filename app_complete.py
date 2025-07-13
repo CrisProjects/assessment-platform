@@ -210,6 +210,36 @@ class Invitation(db.Model):
         self.is_used = True
         self.used_at = datetime.utcnow()
 
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(100), nullable=False)  # 'comunicacion', 'derechos', 'opiniones', 'conflictos', 'autoconfianza'
+    priority = db.Column(db.String(20), default='medium')  # 'low', 'medium', 'high', 'urgent'
+    due_date = db.Column(db.Date, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relaciones
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='assigned_tasks')
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_tasks')
+    progress_entries = db.relationship('TaskProgress', backref='task', lazy=True, cascade='all, delete-orphan')
+
+class TaskProgress(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'in_progress', 'completed', 'cancelled'
+    progress_percentage = db.Column(db.Integer, default=0)  # 0-100
+    notes = db.Column(db.Text, nullable=True)
+    updated_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Coach o Coachee que actualizó
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    updated_by_user = db.relationship('User', backref='task_updates')
+
 @login_manager.user_loader
 def load_user(user_id):
     # Usar Session.get() en lugar del método deprecado Query.get()
@@ -264,6 +294,17 @@ def admin_required(f):
             return jsonify({'error': 'Autenticación requerida'}), 401
         if current_user.role != 'platform_admin':
             return jsonify({'error': 'Acceso denegado. Solo administradores pueden acceder a esta función.'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Decorador para rutas que requieren acceso de coach
+def coach_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Autenticación requerida'}), 401
+        if current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden acceder a esta función.'}), 403
         return f(*args, **kwargs)
     return decorated_function
 
@@ -1689,6 +1730,411 @@ def coachee_login_direct():
         return redirect(url_for('dashboard_selection'))
 
 
+
+# === API ROUTES FOR TASK MANAGEMENT ===
+
+@app.route('/api/coach/evaluation-summary/<int:coachee_id>', methods=['GET'])
+@coach_required
+def api_coach_evaluation_summary(coachee_id):
+    """API para obtener resumen de evaluaciones de un coachee específico"""
+    try:
+        # Verificar que el coachee pertenece a este coach
+        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+        
+        # Obtener todas las evaluaciones del coachee
+        assessments = Assessment.query.filter_by(user_id=coachee_id).order_by(Assessment.created_at.desc()).all()
+        
+        if not assessments:
+            return jsonify({
+                'success': True,
+                'coachee': {
+                    'id': coachee.id,
+                    'full_name': coachee.full_name,
+                    'email': coachee.email
+                },
+                'summary': {
+                    'total_assessments': 0,
+                    'latest_assessment': None,
+                    'average_scores': {},
+                    'progress_trend': 'sin_datos',
+                    'strengths': [],
+                    'improvement_areas': [],
+                    'recommendations': []
+                }
+            }), 200
+        
+        # Calcular estadísticas
+        latest_assessment = assessments[0]
+        total_assessments = len(assessments)
+        
+        # Calcular promedios por dimensión
+        dimension_totals = {
+            'comunicacion': 0, 'derechos': 0, 'opiniones': 0, 
+            'conflictos': 0, 'autoconfianza': 0
+        }
+        dimension_counts = {dim: 0 for dim in dimension_totals.keys()}
+        
+        for assessment in assessments:
+            responses = json.loads(assessment.responses)
+            for response in responses:
+                dimension = response.get('dimension')
+                if dimension in dimension_totals:
+                    dimension_totals[dimension] += response.get('score', 0)
+                    dimension_counts[dimension] += 1
+        
+        # Calcular promedios
+        average_scores = {}
+        for dimension in dimension_totals:
+            if dimension_counts[dimension] > 0:
+                average_scores[dimension] = round(dimension_totals[dimension] / dimension_counts[dimension], 2)
+            else:
+                average_scores[dimension] = 0
+        
+        # Determinar tendencia de progreso
+        progress_trend = 'estable'
+        if len(assessments) >= 2:
+            recent_avg = sum(average_scores.values()) / len(average_scores) if average_scores else 0
+            
+            # Calcular promedio de evaluación anterior
+            older_assessment = assessments[1]
+            older_responses = json.loads(older_assessment.responses)
+            older_totals = {dim: 0 for dim in dimension_totals.keys()}
+            older_counts = {dim: 0 for dim in dimension_totals.keys()}
+            
+            for response in older_responses:
+                dimension = response.get('dimension')
+                if dimension in older_totals:
+                    older_totals[dimension] += response.get('score', 0)
+                    older_counts[dimension] += 1
+            
+            older_avg = 0
+            if any(older_counts.values()):
+                older_scores = []
+                for dim in older_totals:
+                    if older_counts[dim] > 0:
+                        older_scores.append(older_totals[dim] / older_counts[dim])
+                older_avg = sum(older_scores) / len(older_scores) if older_scores else 0
+            
+            if recent_avg > older_avg + 0.5:
+                progress_trend = 'mejorando'
+            elif recent_avg < older_avg - 0.5:
+                progress_trend = 'empeorando'
+        
+        # Identificar fortalezas y áreas de mejora
+        sorted_scores = sorted(average_scores.items(), key=lambda x: x[1], reverse=True)
+        strengths = [dim for dim, score in sorted_scores[:2] if score >= 3.5]
+        improvement_areas = [dim for dim, score in sorted_scores[-2:] if score < 3.0]
+        
+        # Generar recomendaciones básicas
+        recommendations = []
+        if 'comunicacion' in improvement_areas:
+            recommendations.append("Practicar técnicas de comunicación asertiva y escucha activa")
+        if 'derechos' in improvement_areas:
+            recommendations.append("Reforzar conocimiento sobre derechos personales y límites")
+        if 'opiniones' in improvement_areas:
+            recommendations.append("Ejercitar la expresión de opiniones de forma clara y respetuosa")
+        if 'conflictos' in improvement_areas:
+            recommendations.append("Desarrollar estrategias de resolución de conflictos")
+        if 'autoconfianza' in improvement_areas:
+            recommendations.append("Trabajar en el fortalecimiento de la autoestima y confianza personal")
+        
+        return jsonify({
+            'success': True,
+            'coachee': {
+                'id': coachee.id,
+                'full_name': coachee.full_name,
+                'email': coachee.email
+            },
+            'summary': {
+                'total_assessments': total_assessments,
+                'latest_assessment': {
+                    'id': latest_assessment.id,
+                    'date': latest_assessment.created_at.strftime('%Y-%m-%d %H:%M'),
+                    'score': latest_assessment.total_score
+                },
+                'average_scores': average_scores,
+                'progress_trend': progress_trend,
+                'strengths': strengths,
+                'improvement_areas': improvement_areas,
+                'recommendations': recommendations
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo resumen de evaluaciones: {str(e)}'}), 500
+
+@app.route('/api/coach/tasks', methods=['GET'])
+@coach_required
+def api_coach_get_tasks():
+    """API para obtener todas las tareas del coach"""
+    try:
+        # Obtener tareas asignadas por este coach
+        tasks = Task.query.filter_by(coach_id=current_user.id, is_active=True).order_by(Task.created_at.desc()).all()
+        
+        tasks_data = []
+        for task in tasks:
+            # Obtener último progreso
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
+            
+            tasks_data.append({
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'category': task.category,
+                'priority': task.priority,
+                'due_date': task.due_date.strftime('%Y-%m-%d') if task.due_date else None,
+                'created_at': task.created_at.strftime('%Y-%m-%d %H:%M'),
+                'coachee': {
+                    'id': task.coachee.id,
+                    'full_name': task.coachee.full_name,
+                    'email': task.coachee.email
+                },
+                'current_status': latest_progress.status if latest_progress else 'pending',
+                'current_progress': latest_progress.progress_percentage if latest_progress else 0,
+                'last_update': latest_progress.created_at.strftime('%Y-%m-%d %H:%M') if latest_progress else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'tasks': tasks_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
+
+@app.route('/api/coach/tasks', methods=['POST'])
+@coach_required
+def api_coach_create_task():
+    """API para crear una nueva tarea para un coachee"""
+    try:
+        data = request.get_json()
+        
+        # Validar campos requeridos
+        required_fields = ['coachee_id', 'title', 'description', 'category']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Campo requerido: {field}'}), 400
+        
+        # Verificar que el coachee pertenece a este coach
+        coachee = User.query.filter_by(id=data['coachee_id'], coach_id=current_user.id, role='coachee').first()
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+        
+        # Validar categoría
+        valid_categories = ['comunicacion', 'derechos', 'opiniones', 'conflictos', 'autoconfianza']
+        if data['category'] not in valid_categories:
+            return jsonify({'error': 'Categoría inválida'}), 400
+        
+        # Validar prioridad
+        valid_priorities = ['low', 'medium', 'high', 'urgent']
+        priority = data.get('priority', 'medium')
+        if priority not in valid_priorities:
+            priority = 'medium'
+        
+        # Procesar fecha de vencimiento
+        due_date = None
+        if data.get('due_date'):
+            try:
+                due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}), 400
+        
+        # Crear la tarea
+        new_task = Task(
+            coach_id=current_user.id,
+            coachee_id=data['coachee_id'],
+            title=data['title'].strip(),
+            description=data['description'].strip(),
+            category=data['category'],
+            priority=priority,
+            due_date=due_date
+        )
+        
+        db.session.add(new_task)
+        db.session.commit()
+        
+        # Crear entrada inicial de progreso
+        initial_progress = TaskProgress(
+            task_id=new_task.id,
+            status='pending',
+            progress_percentage=0,
+            notes='Tarea creada por el coach',
+            updated_by=current_user.id
+        )
+        
+        db.session.add(initial_progress)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tarea creada exitosamente',
+            'task': {
+                'id': new_task.id,
+                'title': new_task.title,
+                'description': new_task.description,
+                'category': new_task.category,
+                'priority': new_task.priority,
+                'due_date': new_task.due_date.strftime('%Y-%m-%d') if new_task.due_date else None,
+                'coachee': {
+                    'id': coachee.id,
+                    'full_name': coachee.full_name,
+                    'email': coachee.email
+                }
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
+
+@app.route('/api/coach/tasks/<int:task_id>/progress', methods=['PUT'])
+@coach_required
+def api_coach_update_task_progress(task_id):
+    """API para actualizar el progreso de una tarea"""
+    try:
+        # Verificar que la tarea pertenece a este coach
+        task = Task.query.filter_by(id=task_id, coach_id=current_user.id, is_active=True).first()
+        if not task:
+            return jsonify({'error': 'Tarea no encontrada o no pertenece a este coach'}), 404
+        
+        data = request.get_json()
+        
+        # Validar status
+        valid_statuses = ['pending', 'in_progress', 'completed', 'cancelled']
+        status = data.get('status', 'pending')
+        if status not in valid_statuses:
+            return jsonify({'error': 'Status inválido'}), 400
+        
+        # Validar progreso
+        progress = data.get('progress_percentage', 0)
+        if not isinstance(progress, int) or progress < 0 or progress > 100:
+            return jsonify({'error': 'Progreso debe ser un entero entre 0 y 100'}), 400
+        
+        # Crear nueva entrada de progreso
+        new_progress = TaskProgress(
+            task_id=task_id,
+            status=status,
+            progress_percentage=progress,
+            notes=data.get('notes', '').strip(),
+            updated_by=current_user.id
+        )
+        
+        db.session.add(new_progress)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progreso de tarea actualizado exitosamente',
+            'progress': {
+                'id': new_progress.id,
+                'status': new_progress.status,
+                'progress_percentage': new_progress.progress_percentage,
+                'notes': new_progress.notes,
+                'updated_at': new_progress.created_at.strftime('%Y-%m-%d %H:%M')
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
+
+@app.route('/api/coachee/tasks', methods=['GET'])
+@coachee_required
+def api_coachee_get_tasks():
+    """API para que los coachees vean sus tareas asignadas"""
+    try:
+        coachee_user = get_current_coachee()
+        
+        # Obtener tareas asignadas a este coachee
+        tasks = Task.query.filter_by(coachee_id=coachee_user.id, is_active=True).order_by(Task.created_at.desc()).all()
+        
+        tasks_data = []
+        for task in tasks:
+            # Obtener último progreso
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
+            
+            tasks_data.append({
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'category': task.category,
+                'priority': task.priority,
+                'due_date': task.due_date.strftime('%Y-%m-%d') if task.due_date else None,
+                'created_at': task.created_at.strftime('%Y-%m-%d %H:%M'),
+                'coach': {
+                    'id': task.coach.id,
+                    'full_name': task.coach.full_name,
+                    'email': task.coach.email
+                },
+                'current_status': latest_progress.status if latest_progress else 'pending',
+                'current_progress': latest_progress.progress_percentage if latest_progress else 0,
+                'last_update': latest_progress.created_at.strftime('%Y-%m-%d %H:%M') if latest_progress else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'tasks': tasks_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
+
+@app.route('/api/coachee/tasks/<int:task_id>/progress', methods=['PUT'])
+@coachee_required
+def api_coachee_update_task_progress(task_id):
+    """API para que los coachees actualicen el progreso de sus tareas"""
+    try:
+        coachee_user = get_current_coachee()
+        
+        # Verificar que la tarea pertenece a este coachee
+        task = Task.query.filter_by(id=task_id, coachee_id=coachee_user.id, is_active=True).first()
+        if not task:
+            return jsonify({'error': 'Tarea no encontrada o no pertenece a este coachee'}), 404
+        
+        data = request.get_json()
+        
+        # Validar status (coachees no pueden cancelar tareas)
+        valid_statuses = ['pending', 'in_progress', 'completed']
+        status = data.get('status', 'pending')
+        if status not in valid_statuses:
+            return jsonify({'error': 'Status inválido'}), 400
+        
+        # Validar progreso
+        progress = data.get('progress_percentage', 0)
+        if not isinstance(progress, int) or progress < 0 or progress > 100:
+            return jsonify({'error': 'Progreso debe ser un entero entre 0 y 100'}), 400
+        
+        # Crear nueva entrada de progreso
+        new_progress = TaskProgress(
+            task_id=task_id,
+            status=status,
+            progress_percentage=progress,
+            notes=data.get('notes', '').strip(),
+            updated_by=coachee_user.id
+        )
+        
+        db.session.add(new_progress)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progreso de tarea actualizado exitosamente',
+            'progress': {
+                'id': new_progress.id,
+                'status': new_progress.status,
+                'progress_percentage': new_progress.progress_percentage,
+                'notes': new_progress.notes,
+                'updated_at': new_progress.created_at.strftime('%Y-%m-%d %H:%M')
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
+
+# === END TASK MANAGEMENT API ROUTES ===
 
 # Configuración de cookies adaptable a desarrollo y producción
 
