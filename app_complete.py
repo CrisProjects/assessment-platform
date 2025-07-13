@@ -571,6 +571,7 @@ def login():
 
 # API Routes
 @app.route('/dashboard_selection')
+@app.route('/dashboard-selection')  # Ruta alternativa con guión
 def dashboard_selection():
     """Servir la página de selección de dashboards"""
     return render_template('dashboard_selection.html')
