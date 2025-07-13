@@ -1391,7 +1391,8 @@
                                                 <form id="createTaskForm">
                                                     <div class="mb-3">
                                                         <label for="taskCoacheeSelect" class="form-label">Coachee</label>
-                                                        <select class="form-select" id="taskCoacheeSelect" required>
+                                                        <select class="form-select" id="taskCoacheeSelect" required 
+                                                                onclick="ensureCoacheesLoaded()">
                                                             <option value="">Seleccionar coachee...</option>
                                                         </select>
                                                     </div>
@@ -3273,18 +3274,15 @@
             }, 100);
         }
 
+        // Variable global para almacenar datos de coachees
+        let coacheesForTasks = [];
+        
         // Cargar lista de coachees en el selector
         async function loadCoacheesForTasks() {
-            const select = document.getElementById('taskCoacheeSelect');
-            if (!select) {
-                console.error('Select taskCoacheeSelect no encontrado');
-                return;
-            }
+            console.log('🔄 loadCoacheesForTasks: Iniciando...');
             
             try {
-                // Mostrar loading
-                select.innerHTML = '<option value="">Cargando coachees...</option>';
-                
+                console.log('📡 Cargando coachees desde API...');
                 const response = await fetch('/api/coach/my-coachees', {
                     credentials: 'include',
                     headers: {
@@ -3297,19 +3295,55 @@
                 }
                 
                 const data = await response.json();
+                console.log('📊 Datos recibidos:', data);
                 
-                // La API devuelve directamente el array de coachees
-                if (Array.isArray(data) && data.length > 0) {
-                    select.innerHTML = '<option value="">Seleccionar coachee...</option>';
-                    data.forEach(coachee => {
-                        select.innerHTML += `<option value="${coachee.id}">${coachee.full_name}</option>`;
-                    });
-                } else {
-                    select.innerHTML = '<option value="">No hay coachees disponibles</option>';
-                }
+                // Guardar datos globalmente
+                coacheesForTasks = Array.isArray(data) ? data : [];
+                
+                // Intentar poblar el selector si existe
+                populateCoacheeSelector();
+                
             } catch (error) {
-                console.error('Error cargando coachees para tareas:', error);
-                select.innerHTML = '<option value="">Error cargando coachees</option>';
+                console.error('❌ Error cargando coachees para tareas:', error);
+                coacheesForTasks = [];
+                populateCoacheeSelector();
+            }
+        }
+        
+        // Función separada para poblar el selector (se puede llamar cuando la pestaña se activa)
+        function populateCoacheeSelector() {
+            const select = document.getElementById('taskCoacheeSelect');
+            if (!select) {
+                console.log('⚠️ Select taskCoacheeSelect no encontrado (podría estar en pestaña inactiva)');
+                return false;
+            }
+            
+            console.log('🎯 Poblando selector con', coacheesForTasks.length, 'coachees');
+            
+            if (coacheesForTasks.length > 0) {
+                select.innerHTML = '<option value="">Seleccionar coachee...</option>';
+                coacheesForTasks.forEach(coachee => {
+                    select.innerHTML += `<option value="${coachee.id}">${coachee.full_name}</option>`;
+                });
+                console.log('✅ Selector poblado exitosamente');
+            } else {
+                select.innerHTML = '<option value="">No hay coachees disponibles</option>';
+                console.log('❌ No hay coachees disponibles');
+            }
+            return true;
+        }
+        
+        // Función para asegurar que los coachees estén cargados cuando el usuario interactúa con el selector
+        function ensureCoacheesLoaded() {
+            console.log('🔄 ensureCoacheesLoaded: Verificando datos...');
+            
+            // Si no hay datos, cargar desde la API
+            if (coacheesForTasks.length === 0) {
+                console.log('📡 No hay datos, cargando desde API...');
+                loadCoacheesForTasks();
+            } else {
+                console.log('✅ Datos disponibles, poblando selector...');
+                populateCoacheeSelector();
             }
         }
 
@@ -3554,10 +3588,11 @@
                     console.log('🔄 Cargando resúmenes de evaluaciones...');
                     loadEvaluationSummaries();
                 }
-                if (taskSelect) {
-                    console.log('🔄 Cargando coachees para tareas...');
-                    loadCoacheesForTasks();
-                }
+                
+                // Siempre cargar datos de coachees para tareas, independientemente de si el selector existe
+                console.log('🔄 Cargando coachees para tareas...');
+                loadCoacheesForTasks();
+                
                 console.log('🔄 Cargando tareas...');
                 loadTasks();
             }, 500);
@@ -3566,6 +3601,15 @@
             const createTaskForm = document.getElementById('createTaskForm');
             if (createTaskForm) {
                 createTaskForm.addEventListener('submit', createTask);
+            }
+            
+            // Configurar event listener para cuando se activa la pestaña "Crear Tareas"
+            const createTaskTab = document.getElementById('task-manage-tab');
+            if (createTaskTab) {
+                createTaskTab.addEventListener('shown.bs.tab', function() {
+                    console.log('🎯 Pestaña "Crear Tareas" activada, poblando selector...');
+                    populateCoacheeSelector();
+                });
             }
             
             // Actualizar automáticamente cada 60 segundos
@@ -3598,8 +3642,13 @@
                     console.log('   Coachees encontrados:', coachees.length);
                     console.log('   Datos:', coachees);
                     
+                    console.log('2. Probando función de coachees para tareas...');
+                    coacheesForTasks = coachees;
+                    const selectExists = populateCoacheeSelector();
+                    console.log('   Selector poblado:', selectExists ? '✅' : '❌');
+                    
                     if (coachees.length > 0) {
-                        console.log('2. Probando API de resumen de evaluación...');
+                        console.log('3. Probando API de resumen de evaluación...');
                         const summaryResponse = await fetch(`/api/coach/evaluation-summary/${coachees[0].id}`, {
                             credentials: 'include'
                         });
@@ -3615,6 +3664,21 @@
                 }
             } catch (error) {
                 console.error('❌ Error en prueba:', error);
+            }
+        };
+        
+        // Función específica para probar el selector de tareas
+        window.testTaskSelector = function() {
+            console.log('🧪 PRUEBA DEL SELECTOR DE TAREAS');
+            console.log('   Datos globales disponibles:', coacheesForTasks.length);
+            console.log('   Elemento selector existe:', !!document.getElementById('taskCoacheeSelect'));
+            
+            if (coacheesForTasks.length > 0) {
+                const result = populateCoacheeSelector();
+                console.log('   Población exitosa:', result ? '✅' : '❌');
+            } else {
+                console.log('   Intentando cargar datos...');
+                loadCoacheesForTasks();
             }
         };
     </script>
