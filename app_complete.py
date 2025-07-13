@@ -53,6 +53,14 @@ from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # 30 días de duración
 app.config['SESSION_PERMANENT'] = True
 
+# Configuraciones mejoradas de cookies para múltiples sesiones
+app.config['SESSION_COOKIE_SECURE'] = False  # True en producción HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Mayor seguridad
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Permite múltiples pestañas
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+app.config['REMEMBER_COOKIE_SECURE'] = False  # True en producción HTTPS
+app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+
 # Configurar CORS - Incluir Vercel y Render
 CORS(app, 
      origins=[
@@ -88,8 +96,15 @@ def unauthorized():
     # Si es una petición a una API (comienza con /api/), devolver JSON
     if request.path.startswith('/api/'):
         return jsonify({'error': 'Sesión expirada. Por favor, inicia sesión nuevamente.'}), 401
-    # Para otras rutas, hacer redirect normal
-    return redirect(url_for('dashboard_selection'))
+    
+    # Redirigir al login específico según la ruta solicitada
+    if request.path.startswith('/platform-admin') or request.path.startswith('/admin'):
+        return redirect(url_for('admin_login_page'))
+    elif request.path.startswith('/coach'):
+        return redirect(url_for('coach_login_page'))
+    else:
+        # Para otras rutas, hacer redirect a selección de dashboard
+        return redirect(url_for('dashboard_selection'))
 
 # Modelos de base de datos
 class User(UserMixin, db.Model):
@@ -405,11 +420,22 @@ def auto_initialize_database():
 
 # Ejecutar inicialización automática cuando el módulo se importe
 # (Esto es especialmente importante para Render y otros servicios de hosting)
-try:
-    with app.app_context():
-        auto_initialize_database()
-except Exception as auto_init_error:
-    print(f"⚠️ Error en auto-inicialización: {auto_init_error}")
+# Evitamos doble inicialización usando una bandera global
+_db_initialized = False
+
+def ensure_database_initialized():
+    """Asegurar que la base de datos esté inicializada una sola vez"""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            with app.app_context():
+                auto_initialize_database()
+                _db_initialized = True
+        except Exception as auto_init_error:
+            print(f"⚠️ Error en auto-inicialización: {auto_init_error}")
+
+# Inicializar inmediatamente al importar el módulo
+ensure_database_initialized()
 
 # Decoradores para control de acceso por roles
 def role_required(required_role):
@@ -1410,7 +1436,7 @@ def coach_dashboard():
     """Dashboard específico para coaches"""
     if current_user.role != 'coach':
         flash('Acceso denegado. Solo coaches pueden acceder a esta página.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('coach_login_page'))
     
     return render_template('coach_dashboard.html', user=current_user)
 
@@ -1465,7 +1491,7 @@ def platform_admin_dashboard():
     """Dashboard específico para administradores de plataforma"""
     if current_user.role != 'platform_admin':
         flash('Acceso denegado. Solo administradores pueden acceder a esta página.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('admin_login_page'))
     
     return render_template('admin_dashboard.html', user=current_user)
 
@@ -1476,7 +1502,7 @@ def admin_dashboard():
     """Redirección desde admin-dashboard a platform-admin-dashboard"""
     if current_user.role != 'platform_admin':
         flash('Acceso denegado. Solo administradores pueden acceder a esta página.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('admin_login_page'))
     
     return redirect(url_for('platform_admin_dashboard'))
 
@@ -1749,8 +1775,8 @@ def coach_auto_login():
         return redirect(url_for('coach_login_page'))
 
 if __name__ == '__main__':
-    with app.app_context():
-        auto_initialize_database()
+    # La base de datos ya fue inicializada al importar el módulo
+    # No necesitamos inicializarla de nuevo
     
     # Ejecutar la aplicación
     port = int(os.environ.get('PORT', 5001))
