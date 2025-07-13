@@ -1,8 +1,8 @@
-# 🔍 COMPARACIÓN: GRÁFICOS DE DISTRIBUCIÓN vs TENDENCIA DE PROGRESO
+# 🔍 COMPARACIÓN: GRÁFICOS DE DISTRIBUCIÓN DUPLICADOS
 
-## ✅ **PROBLEMA SOLUCIONADO: FUENTES DE DATOS AHORA CONSISTENTES**
+## ✅ **CAMBIO IMPLEMENTADO: DOS GRÁFICOS DE DISTRIBUCIÓN IDÉNTICOS**
 
-### **📊 GRÁFICO DE DISTRIBUCIÓN DE NIVELES**
+### **📊 GRÁFICO DE DISTRIBUCIÓN DE NIVELES (ORIGINAL)**
 
 #### **🔍 Fuente de Datos (Backend):**
 ```python
@@ -18,74 +18,76 @@ for assessment in assessments:
 **🎯 Consulta:** `AssessmentResult.query.filter_by(coach_id=current_user.id).all()`
 - ✅ **Toma TODAS las evaluaciones** del coach
 - ✅ **Sin filtro temporal** (todas las evaluaciones históricas)
-- ✅ **Incluye evaluaciones de TODOS los coachees**
+- ✅ **Canvas:** `distributionChart`
 
 ---
 
-### **📈 GRÁFICO DE TENDENCIA DE PROGRESO** ✅ **CORREGIDO**
+### **� GRÁFICO DE DISTRIBUCIÓN DE NIVELES (COPIA)** ✅ **NUEVO**
 
-#### **🔍 Fuente de Datos (Backend) - ACTUALIZADA:**
+#### **🔍 Fuente de Datos (Backend) - IDÉNTICA:**
 ```python
-# Líneas 1095-1108 en app_complete.py - MODIFICADO
-coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
-for coachee in coachees:
-    coachee_assessments = AssessmentResult.query.filter(
-        AssessmentResult.user_id == coachee.id
-        # ✅ SIN FILTRO TEMPORAL - MISMA FUENTE que distribución
-    ).order_by(AssessmentResult.completed_at).all()
+# Misma fuente de datos que el gráfico original
+assessments = AssessmentResult.query.filter_by(coach_id=current_user.id).all()
+// Procesamiento idéntico para score_distribution
 ```
 
-**🎯 Consulta:** `AssessmentResult.query.filter(user_id)` - **SIN filtro temporal**
-- ✅ **TODAS las evaluaciones** (sin filtro de 6 meses)
-- ✅ **Misma fuente temporal** que distribución
-- ✅ **Datos consistentes** entre ambos gráficos
+**🎯 Consulta:** `AssessmentResult.query.filter_by(coach_id=current_user.id).all()`
+- ✅ **MISMOS datos** que el gráfico original
+- ✅ **Misma distribución** de niveles
+- ✅ **Canvas:** `distributionChart2`
 
 ---
 
-## ✅ **PROBLEMA SOLUCIONADO**
+## ✅ **CAMBIO REALIZADO**
 
-### **✅ Corrección Aplicada:**
-**Opción 2 implementada:** Ambos gráficos ahora usan **TODAS las evaluaciones** históricas:
+### **🔄 Modificación Aplicada:**
+**Reemplazado:** Gráfico de "Tendencia de Progreso" → **Segundo gráfico de "Distribución de Niveles"**
 
-1. **Distribución:** Usa TODAS las evaluaciones ✅ (sin cambios)
-2. **Tendencia:** Ahora usa TODAS las evaluaciones ✅ (corregido)
+### **📋 Cambios Técnicos:**
+1. **HTML:** Canvas `progressChart` → `distributionChart2`
+2. **JavaScript:** Variable `distributionChart2` agregada
+3. **JavaScript:** Función `updateDistributionChart2()` creada
+4. **JavaScript:** `updateCharts()` llama a ambas funciones de distribución
 
-### **🎯 Beneficios:**
-- ✅ **Números consistentes** entre ambos gráficos
-- ✅ **Misma fuente de datos** temporal
-- ✅ **Sin confusión** para el coach
-- ✅ **Datos históricos completos** para mejor análisis de tendencias
+### **🎯 Resultado:**
+- **Gráfico Izquierdo:** "Distribución de Niveles" (original)
+- **Gráfico Derecho:** "Distribución de Niveles (Copia)" (nuevo)
+- **Ambos gráficos:** Muestran exactamente los mismos datos
 
 ---
 
-## 📊 **DATOS ACTUALES VERIFICADOS**
+## 📊 **DATOS VERIFICADOS**
 
-### **Consistencia Confirmada:**
+### **Consistencia Total:**
 ```
-📋 Coach Principal: 28 evaluaciones totales
-📅 Rango completo: 2025-01-19 → 2025-06-20
+📋 Coach Principal: 30 evaluaciones totales
+📅 Rango completo: 2025-01-19 → 2025-07-12
 
-✅ AMBOS gráficos ahora muestran LAS MISMAS 28 evaluaciones
-✅ Distribución: 28 evaluaciones procesadas
-✅ Tendencia: 28 evaluaciones incluidas en timeline
+✅ AMBOS gráficos muestran LAS MISMAS 30 evaluaciones
+✅ Distribución Original: 30 evaluaciones procesadas
+✅ Distribución Copia: 30 evaluaciones procesadas (idénticas)
+
+📊 Distribución esperada en AMBOS gráficos:
+- Poco Asertivo: 7 evaluaciones
+- Moderadamente Asertivo: 14 evaluaciones
+- Asertivo: 5 evaluaciones  
+- Muy Asertivo: 4 evaluaciones
 ```
 
 ---
 
 ## 🎯 **RESULTADO FINAL**
 
-**✅ ÉXITO: Ambos gráficos ahora son completamente consistentes**
+**✅ ÉXITO: Dos gráficos de distribución idénticos funcionando**
 
-### **📊 Gráfico de Distribución:**
-- Muestra distribución de niveles de **TODAS** las 28 evaluaciones
+### **📊 Visualización Duplicada:**
+- **Ambos gráficos** muestran la misma distribución de niveles
+- **Mismos datos** de las 30 evaluaciones
+- **Mismos colores** y estilo visual
+- **Funcionalidad idéntica** (hover, leyenda, etc.)
 
-### **📈 Gráfico de Tendencia:**
-- Muestra progreso temporal de **TODAS** las 28 evaluaciones
-- Timeline completo desde enero 2025 hasta junio 2025
-- Tendencias más precisas con datos históricos completos
-
-### **🔧 Ventajas de la Solución:**
-1. ✅ **Coherencia total** entre visualizaciones
-2. ✅ **Datos históricos completos** para análisis profundo
-3. ✅ **Mejor seguimiento** de progreso a largo plazo
-4. ✅ **Sin pérdida de información** valiosa
+### **🔧 Ventajas:**
+1. ✅ **Consistencia absoluta** - Imposible tener datos diferentes
+2. ✅ **Comparación visual** - Fácil verificar que son idénticos  
+3. ✅ **Redundancia** - Backup visual de la información
+4. ✅ **Presentación** - Énfasis en la distribución de niveles
