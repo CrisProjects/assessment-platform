@@ -1111,6 +1111,82 @@ def api_coach_create_invitation():
         db.session.rollback()
         return jsonify({'error': f'Error creando invitación: {str(e)}'}), 500
 
+@app.route('/api/coach/create-coachee-with-credentials', methods=['POST'])
+@login_required
+def api_coach_create_coachee_with_credentials():
+    """Crear un coachee directamente con credenciales de acceso"""
+    try:
+        if current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado: Solo coaches pueden crear coachees'}), 403
+        
+        data = request.get_json()
+        full_name = data.get('full_name')
+        email = data.get('email')
+        username = data.get('username')
+        password = data.get('password')
+        
+        # Validaciones
+        if not all([full_name, email, username, password]):
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+        
+        if len(username) < 3:
+            return jsonify({'error': 'El usuario debe tener al menos 3 caracteres'}), 400
+            
+        if len(password) < 6:
+            return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+        
+        # Validar formato de email
+        if '@' not in email:
+            return jsonify({'error': 'Formato de email inválido'}), 400
+        
+        # Validar formato de usuario
+        import re
+        if not re.match(r'^[a-zA-Z0-9._]+$', username):
+            return jsonify({'error': 'El usuario solo puede contener letras, números, puntos y guiones bajos'}), 400
+        
+        # Verificar si el username ya existe
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            return jsonify({'error': 'El nombre de usuario ya está en uso'}), 400
+        
+        # Verificar si el email ya existe
+        existing_email = User.query.filter_by(email=email).first()
+        if existing_email:
+            return jsonify({'error': 'El email ya está registrado'}), 400
+        
+        # Crear nuevo coachee
+        new_coachee = User(
+            username=username,
+            email=email,
+            full_name=full_name,
+            role='coachee',
+            coach_id=current_user.id,
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        
+        # Establecer contraseña
+        new_coachee.set_password(password)
+        
+        db.session.add(new_coachee)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Coachee {full_name} creado exitosamente',
+            'coachee': {
+                'id': new_coachee.id,
+                'username': new_coachee.username,
+                'email': new_coachee.email,
+                'full_name': new_coachee.full_name,
+                'created_at': new_coachee.created_at.isoformat()
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error creando coachee: {str(e)}'}), 500
+
 @app.route('/api/coach/my-coachees', methods=['GET'])
 @login_required
 def api_coach_get_coachees():
@@ -1466,6 +1542,88 @@ def get_assertiveness_level(score):
         return "Moderadamente Asertivo"
     else:
         return "Poco Asertivo"
+
+# ========================
+# RUTAS PARA COACHEES
+# ========================
+
+@app.route('/coachee-login')
+def coachee_login_page():
+    """Página de login específica para coachees"""
+    return render_template('coachee_login.html')
+
+@app.route('/coachee-login', methods=['POST'])
+def coachee_login_form():
+    """Manejo de login de coachee via formulario"""
+    try:
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if not username or not password:
+            flash('Usuario y contraseña requeridos', 'error')
+            return redirect('/coachee-login')
+        
+        # Buscar usuario coachee
+        coachee_user = User.query.filter(
+            (User.username == username) | (User.email == username),
+            User.role == 'coachee'
+        ).first()
+        
+        if coachee_user and coachee_user.check_password(password) and coachee_user.is_active:
+            login_user(coachee_user, remember=True)
+            session.permanent = True
+            coachee_user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            flash(f'Bienvenido, {coachee_user.full_name}', 'success')
+            return redirect('/coachee-dashboard')
+        else:
+            flash('Credenciales de coachee inválidas o cuenta desactivada', 'error')
+            return redirect('/coachee-login')
+            
+    except Exception as e:
+        flash(f'Error en login: {str(e)}', 'error')
+        return redirect('/coachee-login')
+
+@app.route('/api/coachee/login', methods=['POST'])
+def api_coachee_login():
+    """Login API específico para coachees"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
+        
+        # Buscar usuario coachee
+        coachee_user = User.query.filter(
+            (User.username == username) | (User.email == username),
+            User.role == 'coachee'
+        ).first()
+        
+        if coachee_user and coachee_user.check_password(password) and coachee_user.is_active:
+            login_user(coachee_user, remember=True)
+            session.permanent = True
+            coachee_user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': coachee_user.id,
+                    'username': coachee_user.username,
+                    'full_name': coachee_user.full_name,
+                    'email': coachee_user.email,
+                    'role': coachee_user.role
+                },
+                'redirect_url': '/coachee-dashboard'
+            }), 200
+        else:
+            return jsonify({'error': 'Credenciales de coachee inválidas o cuenta desactivada'}), 401
+            
+    except Exception as e:
+        return jsonify({'error': f'Error en login: {str(e)}'}), 500
 
 # ========================
 # RUTAS DE DASHBOARD

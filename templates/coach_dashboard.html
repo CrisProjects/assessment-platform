@@ -2667,7 +2667,7 @@
                                 style="width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; transition: all 0.3s ease; background: #fafbfc;">
                         </div>
                         
-                        <div style="margin-bottom: 2rem;">
+                        <div style="margin-bottom: 1.5rem;">
                             <label style="display: block; margin-bottom: 0.7rem; color: #374151; font-weight: 500; font-size: 0.95rem;">
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                                     📧 Correo electrónico
@@ -2677,6 +2677,44 @@
                             <input type="email" id="invitationEmail" placeholder="maria.gonzalez@empresa.com" required
                                 class="invitation-input"
                                 style="width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; transition: all 0.3s ease; background: #fafbfc;">
+                        </div>
+                        
+                        <!-- Nuevos campos para credenciales de acceso -->
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #e5e7eb;">
+                            <h4 style="margin: 0 0 1rem 0; color: #374151; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                🔐 Credenciales de Acceso
+                            </h4>
+                            <p style="margin: 0 0 1rem 0; color: #64748b; font-size: 0.9rem;">
+                                Estas credenciales permitirán al coachee acceder directamente a su dashboard
+                            </p>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500; font-size: 0.9rem;">
+                                    Usuario
+                                    <span style="color: #dc2626; font-size: 0.8rem;">*</span>
+                                </label>
+                                <input type="text" id="invitationUsername" placeholder="maria.gonzalez" required
+                                    class="invitation-input"
+                                    style="width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s ease; background: white;">
+                                <small style="color: #64748b; font-size: 0.8rem;">Solo letras, números, puntos y guiones bajos</small>
+                            </div>
+                            
+                            <div style="margin-bottom: 0;">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500; font-size: 0.9rem;">
+                                    Contraseña
+                                    <span style="color: #dc2626; font-size: 0.8rem;">*</span>
+                                </label>
+                                <div style="position: relative;">
+                                    <input type="password" id="invitationPassword" placeholder="Mínimo 6 caracteres" required
+                                        class="invitation-input"
+                                        style="width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s ease; background: white; padding-right: 45px;">
+                                    <button type="button" onclick="togglePasswordVisibility()" 
+                                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; font-size: 0.9rem;">
+                                        👁️
+                                    </button>
+                                </div>
+                                <small style="color: #64748b; font-size: 0.8rem;">Mínimo 6 caracteres</small>
+                            </div>
                         </div>
                         
                         <div style="display: flex; gap: 1rem; margin-top: 2rem;">
@@ -2689,7 +2727,7 @@
                                 class="invitation-btn"
                                 style="flex: 2; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
                                 <span style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                                    <span>🚀</span> Crear Invitación
+                                    <span>🚀</span> Crear Coachee
                                 </span>
                             </button>
                         </div>
@@ -2703,6 +2741,20 @@
             setTimeout(() => {
                 document.getElementById('invitationFullName').focus();
             }, 100);
+            
+            // Función para toggle de contraseña
+            window.togglePasswordVisibility = function() {
+                const passwordInput = document.getElementById('invitationPassword');
+                const button = passwordInput.nextElementSibling;
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    button.textContent = '🙈';
+                } else {
+                    passwordInput.type = 'password';
+                    button.textContent = '👁️';
+                }
+            };
             
             // Manejar envío del formulario
             document.getElementById('invitationForm').addEventListener('submit', async (e) => {
@@ -2721,19 +2773,39 @@
         async function sendInvitation() {
             const fullName = document.getElementById('invitationFullName').value;
             const email = document.getElementById('invitationEmail').value;
+            const username = document.getElementById('invitationUsername').value;
+            const password = document.getElementById('invitationPassword').value;
             const btn = document.getElementById('sendInvitationBtn');
             const messageDiv = document.getElementById('invitationMessage');
             
-            if (!fullName || !email) {
+            // Validaciones
+            if (!fullName || !email || !username || !password) {
                 showInvitationMessage('Por favor completa todos los campos', 'error');
                 return;
             }
             
+            if (username.length < 3) {
+                showInvitationMessage('El usuario debe tener al menos 3 caracteres', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showInvitationMessage('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            // Validar formato de usuario (solo letras, números, puntos y guiones bajos)
+            const usernameRegex = /^[a-zA-Z0-9._]+$/;
+            if (!usernameRegex.test(username)) {
+                showInvitationMessage('El usuario solo puede contener letras, números, puntos y guiones bajos', 'error');
+                return;
+            }
+            
             btn.disabled = true;
-            btn.textContent = 'Enviando...';
+            btn.innerHTML = '<span style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><div style="width: 16px; height: 16px; border: 2px solid white; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div> Creando...</span>';
             
             try {
-                const response = await fetch('/api/coach/create-invitation', {
+                const response = await fetch('/api/coach/create-coachee-with-credentials', {
                     method: 'POST',
                     credentials: 'include',
                     headers: {
@@ -2741,31 +2813,39 @@
                     },
                     body: JSON.stringify({
                         full_name: fullName,
-                        email: email
+                        email: email,
+                        username: username,
+                        password: password
                     })
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showInvitationMessage('¡Invitación creada exitosamente!', 'success');
-                    showInvitationLink(data.invitation.invitation_url);
-                    showSuccess(`Invitación enviada a ${fullName} (${email})`);
+                    showInvitationMessage('¡Coachee creado exitosamente!', 'success');
+                    
+                    // Mostrar credenciales
+                    setTimeout(() => {
+                        showCredentialsModal(data.coachee, username, password);
+                        closeInvitationModal();
+                    }, 1500);
+                    
+                    showSuccess(`Coachee ${fullName} creado con credenciales de acceso`);
                     loadCoachees(); // Recargar lista
                 } else {
-                    const errorMsg = data.error || 'No se pudo crear la invitación';
+                    const errorMsg = data.error || 'No se pudo crear el coachee';
                     showInvitationMessage(errorMsg, 'error');
-                    showError(`Error al invitar a ${fullName}: ${errorMsg}`);
+                    showError(`Error al crear coachee ${fullName}: ${errorMsg}`);
                 }
                 
             } catch (error) {
                 console.error('Error:', error);
-                const errorMsg = 'Error de conexión al crear la invitación';
+                const errorMsg = 'Error de conexión al crear el coachee';
                 showInvitationMessage(errorMsg, 'error');
                 showError(errorMsg);
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Enviar Invitación';
+                btn.innerHTML = '<span style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>🚀</span> Crear Coachee</span>';
             }
         }
 
@@ -2776,6 +2856,102 @@
             messageDiv.style.background = type === 'success' ? '#f0fff4' : '#fed7d7';
             messageDiv.style.color = type === 'success' ? '#22543d' : '#822727';
             messageDiv.style.border = type === 'success' ? '1px solid #c6f6d5' : '1px solid #feb2b2';
+        }
+
+        function showCredentialsModal(coachee, username, password) {
+            const modal = document.createElement('div');
+            modal.id = 'credentialsModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1001;
+                animation: fadeIn 0.3s ease;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 2.5rem; border-radius: 20px; width: 90%; max-width: 500px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);">
+                        <span style="font-size: 32px;">✅</span>
+                    </div>
+                    
+                    <h2 style="margin: 0 0 1rem 0; color: #1a202c; font-size: 1.6rem; font-weight: 600;">¡Coachee Creado Exitosamente!</h2>
+                    <p style="margin: 0 0 2rem 0; color: #64748b; font-size: 1rem;">
+                        ${coachee.full_name} puede ahora acceder a su dashboard con estas credenciales:
+                    </p>
+                    
+                    <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #e5e7eb; text-align: left;">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 600; font-size: 0.9rem;">👤 Usuario:</label>
+                            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #d1d5db; font-family: monospace; font-size: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #1f2937;">${username}</span>
+                                <button onclick="copyToClipboard('${username}')" style="background: none; border: none; color: #6b7280; cursor: pointer; font-size: 0.9rem;">📋</button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 600; font-size: 0.9rem;">🔐 Contraseña:</label>
+                            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #d1d5db; font-family: monospace; font-size: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #1f2937;">${password}</span>
+                                <button onclick="copyToClipboard('${password}')" style="background: none; border: none; color: #6b7280; cursor: pointer; font-size: 0.9rem;">📋</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #fef3c7; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; border-left: 4px solid #f59e0b;">
+                        <p style="margin: 0; color: #92400e; font-size: 0.9rem; font-weight: 500;">
+                            <span style="margin-right: 0.5rem;">⚠️</span>
+                            Comparte estas credenciales de forma segura con el coachee
+                        </p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="copyAllCredentials('${username}', '${password}')"
+                            style="flex: 1; background: #f3f4f6; color: #374151; border: 2px solid #d1d5db; padding: 12px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">
+                            📋 Copiar Todo
+                        </button>
+                        <button onclick="closeCredentialsModal()"
+                            style="flex: 1; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
+                            ✓ Entendido
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function closeCredentialsModal() {
+            const modal = document.getElementById('credentialsModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess('Copiado al portapapeles');
+            }).catch(() => {
+                // Fallback para navegadores más antiguos
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showSuccess('Copiado al portapapeles');
+            });
+        }
+
+        function copyAllCredentials(username, password) {
+            const credentials = `Usuario: ${username}\nContraseña: ${password}`;
+            copyToClipboard(credentials);
         }
 
         function showInvitationLink(url) {
