@@ -1651,9 +1651,8 @@
             try {
                 showToast('Procesando evaluación...', 'info');
                 
-                // Validate user data
-                if (!currentUser) {
-                    throw new Error('Usuario no definido');
+                if (Object.keys(answers).length === 0) {
+                    throw new Error('No hay respuestas guardadas');
                 }
                 
                 // Create user data for assessment
@@ -1661,10 +1660,6 @@
                     age: 25, // Default age
                     gender: 'no_especificado'
                 };
-                
-                if (Object.keys(answers).length === 0) {
-                    throw new Error('No hay respuestas guardadas');
-                }
                 
                 // Send assessment data
                 const response = await fetch(`${API_BASE_URL}/api/save_assessment`, {

@@ -1383,7 +1383,7 @@ def api_questions():
             'assessment_title': 'Evaluación de Asertividad',
             'total_questions': len(formatted_questions),
             'questions': formatted_questions
-        }), 200
+        }, 200)
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo preguntas: {str(e)}'}), 500
@@ -1625,6 +1625,27 @@ def api_coachee_login():
             
     except Exception as e:
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
+
+@app.route('/api/user/my-profile', methods=['GET'])
+@coachee_api_required
+def api_user_my_profile(current_coachee):
+    """API para obtener el perfil del usuario coachee actual"""
+    try:
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': current_coachee.id,
+                'username': current_coachee.username,
+                'email': current_coachee.email,
+                'full_name': current_coachee.full_name,
+                'role': current_coachee.role,
+                'created_at': current_coachee.created_at.strftime('%Y-%m-%d %H:%M') if current_coachee.created_at else None,
+                'coach_id': current_coachee.coach_id
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
 # ========================
 # RUTAS DE DASHBOARD
