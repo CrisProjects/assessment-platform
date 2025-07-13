@@ -1086,18 +1086,16 @@ def api_coach_dashboard_stats():
                 else:
                     score_distribution['Muy Asertivo'] += 1
         
-        # Datos de progreso por coachee (últimos 6 meses)
-        six_months_ago = datetime.utcnow() - timedelta(days=180)
+        # Datos de progreso por coachee (TODAS las evaluaciones - MISMA FUENTE que distribución)
         progress_data = []
         
         # Obtener todos los coachees del coach
         coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
         
         for coachee in coachees:
-            # Obtener evaluaciones del coachee en los últimos 6 meses
+            # Obtener TODAS las evaluaciones del coachee (sin filtro temporal - MISMA FUENTE que distribución)
             coachee_assessments = AssessmentResult.query.filter(
-                AssessmentResult.user_id == coachee.id,
-                AssessmentResult.completed_at >= six_months_ago
+                AssessmentResult.user_id == coachee.id
             ).order_by(AssessmentResult.completed_at).all()
             
             if coachee_assessments:
