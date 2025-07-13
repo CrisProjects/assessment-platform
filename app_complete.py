@@ -18,31 +18,29 @@ from functools import wraps
 from sqlalchemy import func
 import sqlite3
 
-# Import opcional del análisis de coach para evitar errores en producción
-try:
-    from coach_analysis import (
-        calculate_dimensional_scores_from_responses,
-        get_assessment_strengths,
-        get_assessment_improvements,
-        get_coach_recommendations,
-        calculate_progress_trend
-    )
-    COACH_ANALYSIS_AVAILABLE = True
-except ImportError as e:
-    print(f"⚠️ Coach analysis no disponible: {e}")
-    COACH_ANALYSIS_AVAILABLE = False
-    
-    # Funciones dummy para evitar errores
-    def calculate_dimensional_scores_from_responses(*args, **kwargs):
-        return {}
-    def get_assessment_strengths(*args, **kwargs):
-        return []
-    def get_assessment_improvements(*args, **kwargs):
-        return []
-    def get_coach_recommendations(*args, **kwargs):
-        return []
-    def calculate_progress_trend(*args, **kwargs):
-        return {}
+# Funciones de análisis de coach (módulo no disponible)
+# Definimos funciones dummy para evitar errores
+COACH_ANALYSIS_AVAILABLE = False
+
+def calculate_dimensional_scores_from_responses(*args, **kwargs):
+    """Función dummy para análisis dimensional"""
+    return {}
+
+def get_assessment_strengths(*args, **kwargs):
+    """Función dummy para fortalezas de evaluación"""
+    return []
+
+def get_assessment_improvements(*args, **kwargs):
+    """Función dummy para mejoras de evaluación"""
+    return []
+
+def get_coach_recommendations(*args, **kwargs):
+    """Función dummy para recomendaciones del coach"""
+    return []
+
+def calculate_progress_trend(*args, **kwargs):
+    """Función dummy para tendencia de progreso"""
+    return {}
 
 # Configuración de Flask
 app = Flask(__name__)
