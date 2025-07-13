@@ -681,7 +681,7 @@ def api_register():
             'success': True,
             'message': 'Usuario registrado exitosamente',
             'user_id': new_user.id
-        }), 201
+        }, 201)
         
     except Exception as e:
         db.session.rollback()
@@ -2306,8 +2306,6 @@ def api_coachee_update_task_progress(task_id):
         db.session.rollback()
         return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
 
-# === END TASK MANAGEMENT API ROUTES ===
-
 @app.route('/api/coachee/evaluations', methods=['GET'])
 @coachee_required
 def api_coachee_get_evaluations():
@@ -2425,94 +2423,261 @@ def api_coachee_dashboard_summary():
     except Exception as e:
         return jsonify({'error': f'Error obteniendo resumen: {str(e)}'}), 500
 
-# Configuración de cookies adaptable a desarrollo y producción
-
-# Solo aplicar configuraciones seguras en producción (HTTPS)
-if os.environ.get('RENDER') or os.environ.get('VERCEL') or os.environ.get('PRODUCTION'):
-    # Configuración para producción en Render/Vercel
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'  
-    app.config['SESSION_COOKIE_SECURE'] = True     
-    print("🔒 Configuración de cookies SEGURA para producción")
-else:
-    # Configuración para desarrollo local (compatible con Safari)
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'   # Más compatible con Safari
-    app.config['SESSION_COOKIE_SECURE'] = False     # HTTP local
-    print("🔓 Configuración de cookies LOCAL para desarrollo")
-
-@app.route('/api/user/my-profile', methods=['GET'])
-def api_user_my_profile():
-    """API para obtener el perfil del usuario actual (coachee, coach o admin)"""
+@app.route('/api/coachee/evaluation-details/<int:evaluation_id>', methods=['GET'])
+@coachee_required
+def api_coachee_evaluation_details(evaluation_id):
+    """API para obtener detalles completos de una evaluación específica"""
     try:
-        # Para coachees que pueden usar sesiones temporales
-        if not current_user.is_authenticated:
-            coachee_user = get_current_coachee()
-            if coachee_user:
-                return jsonify({
-                    'success': True,
-                    'user': {
-                        'id': coachee_user.id,
-                        'username': coachee_user.username,
-                        'full_name': coachee_user.full_name,
-                        'email': coachee_user.email,
-                        'role': coachee_user.role,
-                        'coach_id': coachee_user.coach_id,
-                        'session_type': 'temporary_coachee'
-                    }
-                }), 200
-            else:
-                return jsonify({'error': 'Usuario no autenticado'}), 401
+        coachee_user = get_current_coachee()
         
-        # Para usuarios regulares autenticados
+        # Buscar la evaluación específica del coachee
+        assessment = AssessmentResult.query.filter_by(
+            id=evaluation_id, 
+            user_id=coachee_user.id
+        ).first()
+        
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Obtener todas las respuestas de esta evaluación
+        responses = Response.query.filter_by(
+            user_id=coachee_user.id,
+            assessment_result_id=assessment.id
+        ).all()
+        
+        # Obtener las preguntas para referencia
+        questions = Question.query.filter_by(assessment_id=assessment.assessment_id).order_by(Question.order).all()
+        
+        # Procesar respuestas para análisis detallado
+        response_details = []
+        question_responses = {}
+        
+        for response in responses:
+            question = next((q for q in questions if q.id == response.question_id), None)
+            if question:
+                response_details.append({
+                    'question_id': question.id,
+                    'question_text': question.text,
+                    'response_value': response.selected_option,
+                    'order': question.order
+                })
+                question_responses[question.order - 1] = response.selected_option
+        
+        # Recalcular puntuaciones dimensionales para análisis detallado
+        dimensional_scores = calculate_dimensional_scores_backend(question_responses)
+        
+        # Generar interpretación y recomendaciones detalladas
+        total_score = sum(dimensional_scores.values()) / len(dimensional_scores) if dimensional_scores else 0
+        assertiveness_level = get_assertiveness_level(total_score)
+        
+        # Generar análisis por dimensión
+        dimension_analysis = {}
+        for dimension, score in dimensional_scores.items():
+            dimension_analysis[dimension] = {
+                'score': round(score, 1),
+                'percentage': round((score / 5) * 100, 1),
+                'level': get_dimension_level(score),
+                'interpretation': get_dimension_interpretation(dimension, score),
+                'recommendations': get_dimension_recommendations(dimension, score)
+            }
+        
+        # Obtener fortalezas y áreas de mejora
+        strengths = get_assessment_strengths_detailed(dimensional_scores)
+        improvements = get_assessment_improvements_detailed(dimensional_scores)
+        
+        # Generar recomendaciones generales
+        general_recommendations = get_general_recommendations(assertiveness_level, dimensional_scores)
+        
+        evaluation_details = {
+            'id': assessment.id,
+            'title': 'Evaluación de Asertividad',
+            'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
+            'total_score': round(total_score, 1),
+            'total_percentage': round((total_score / 5) * 100, 1),
+            'assertiveness_level': assertiveness_level,
+            'dimensional_scores': dimensional_scores,
+            'dimension_analysis': dimension_analysis,
+            'response_details': sorted(response_details, key=lambda x: x['order']),
+            'analysis': {
+                'strengths': strengths,
+                'improvements': improvements,
+                'general_recommendations': general_recommendations
+            },
+            'radar_data': {
+                'labels': [format_dimension_name(dim) for dim in dimensional_scores.keys()],
+                'scores': list(dimensional_scores.values()),
+                'percentages': [round((score / 5) * 100, 1) for score in dimensional_scores.values()]
+            }
+        }
+        
         return jsonify({
             'success': True,
-            'user': {
-                'id': current_user.id,
-                'username': current_user.username,
-                'full_name': current_user.full_name,
-                'email': current_user.email,
-                'role': current_user.role,
-                'coach_id': getattr(current_user, 'coach_id', None),
-                'session_type': 'authenticated'
-            }
+            'evaluation': evaluation_details
         }), 200
         
     except Exception as e:
-        return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
+        return jsonify({'error': f'Error obteniendo detalles de evaluación: {str(e)}'}), 500
 
-@app.route('/coach/auto-login')
-def coach_auto_login():
-    """Auto-login para coach en desarrollo (Solo para testing)"""
-    # Solo permitir en desarrollo
-    if os.environ.get('RENDER') or os.environ.get('VERCEL') or os.environ.get('PRODUCTION'):
-        flash('Auto-login solo disponible en desarrollo', 'warning')
-        return redirect(url_for('coach_login_page'))
-    
-    try:
-        # Buscar el coach principal
-        coach_user = User.query.filter_by(email='coach@assessment.com', role='coach').first()
-        if not coach_user:
-            # Si no existe, buscar cualquier coach disponible
-            coach_user = User.query.filter_by(role='coach').first()
-        
-        if coach_user:
-            login_user(coach_user, remember=True)
-            session.permanent = True
-            coach_user.last_login = datetime.utcnow()
-            db.session.commit()
-            flash(f'Auto-login exitoso como coach: {coach_user.full_name}', 'success')
-            return redirect(url_for('coach_dashboard'))
-        else:
-            flash('No se encontraron usuarios coach para auto-login', 'error')
-            return redirect(url_for('coach_login_page'))
-            
-    except Exception as e:
-        flash(f'Error en auto-login: {str(e)}', 'error')
-        return redirect(url_for('coach_login_page'))
+def get_dimension_level(score):
+    """Determinar el nivel de una dimensión específica"""
+    if score >= 4.5:
+        return 'Excelente'
+    elif score >= 4.0:
+        return 'Muy Bueno'
+    elif score >= 3.5:
+        return 'Bueno'
+    elif score >= 3.0:
+        return 'Regular'
+    elif score >= 2.5:
+        return 'Mejorable'
+    else:
+        return 'Necesita Atención'
 
-if __name__ == '__main__':
-    # La base de datos ya fue inicializada al importar el módulo
-    # No necesitamos inicializarla de nuevo
+def get_dimension_interpretation(dimension, score):
+    """Generar interpretación específica por dimensión"""
+    interpretations = {
+        'comunicacion': {
+            'high': 'Tienes excelentes habilidades de comunicación asertiva. Sabes expresar tus ideas de manera clara y directa.',
+            'medium': 'Tu comunicación es generalmente efectiva, pero puedes mejorar en la claridad y directness.',
+            'low': 'Te beneficiarías de desarrollar habilidades de comunicación más directa y clara.'
+        },
+        'derechos': {
+            'high': 'Tienes una excelente comprensión y defensa de tus derechos personales.',
+            'medium': 'Generalmente reconoces tus derechos, pero a veces puedes dudar en defenderlos.',
+            'low': 'Es importante que trabajes en reconocer y defender tus derechos personales.'
+        },
+        'conflictos': {
+            'high': 'Manejas los conflictos de manera asertiva y constructiva.',
+            'medium': 'Tu manejo de conflictos es adecuado, pero puedes mejorar en algunas situaciones.',
+            'low': 'Te beneficiarías de desarrollar mejores estrategias para manejar conflictos.'
+        },
+        'autoconfianza': {
+            'high': 'Tienes una excelente autoconfianza y seguridad en ti mismo.',
+            'medium': 'Tu autoconfianza es buena, pero puede fluctuar en ciertas situaciones.',
+            'low': 'Trabajar en tu autoconfianza te ayudará a ser más asertivo.'
+        },
+        'opiniones': {
+            'high': 'Expresas tus opiniones de manera clara y respetuosa.',
+            'medium': 'Generalmente compartes tus opiniones, pero a veces puedes ser indeciso.',
+            'low': 'Te beneficiarías de practicar expresar tus opiniones de manera más directa.'
+        }
+    }
     
-    # Ejecutar la aplicación
-    port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    level = 'high' if score >= 4.0 else 'medium' if score >= 3.0 else 'low'
+    return interpretations.get(dimension, {}).get(level, 'Puntuación en desarrollo.')
+
+def get_dimension_recommendations(dimension, score):
+    """Generar recomendaciones específicas por dimensión"""
+    recommendations = {
+        'comunicacion': {
+            'high': ['Mantén tu estilo de comunicación directa', 'Ayuda a otros a desarrollar estas habilidades'],
+            'medium': ['Practica expresar tus ideas de manera más directa', 'Utiliza el contacto visual al comunicarte'],
+            'low': ['Practica técnicas de comunicación asertiva', 'Toma un curso de habilidades comunicativas']
+        },
+        'derechos': {
+            'high': ['Mantén tu capacidad de defender tus derechos', 'Ayuda a otros a reconocer los suyos'],
+            'medium': ['Identifica situaciones donde no defiendes tus derechos', 'Practica decir "no" cuando es necesario'],
+            'low': ['Aprende sobre tus derechos fundamentales', 'Practica defenderte en situaciones de bajo riesgo']
+        },
+        'conflictos': {
+            'high': ['Mantén tu enfoque constructivo', 'Considera mediar en conflictos de otros'],
+            'medium': ['Practica técnicas de resolución de conflictos', 'Mantén la calma en situaciones tensas'],
+            'low': ['Aprende estrategias básicas de manejo de conflictos', 'Practica la comunicación no violenta']
+        },
+        'autoconfianza': {
+            'high': ['Mantén tu autoestima positiva', 'Comparte tu seguridad con otros'],
+            'medium': ['Identifica qué situaciones afectan tu confianza', 'Practica autoaceptación'],
+            'low': ['Trabaja en reconocer tus fortalezas', 'Considera terapia de autoestima si es necesario']
+        },
+        'opiniones': {
+            'high': ['Mantén tu capacidad de expresarte', 'Ayuda a otros a encontrar su voz'],
+            'medium': ['Practica expresar opiniones en grupos pequeños', 'Prepara tus ideas antes de reuniones importantes'],
+            'low': ['Comienza expresando opiniones en entornos seguros', 'Practica con amigos o familiares cercanos']
+        }
+    }
+    
+    level = 'high' if score >= 4.0 else 'medium' if score >= 3.0 else 'low'
+    return recommendations.get(dimension, {}).get(level, ['Continúa desarrollando esta área.'])
+
+def get_assessment_strengths_detailed(dimensional_scores):
+    """Identificar fortalezas principales basadas en puntuaciones dimensionales"""
+    strengths = []
+    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    for dimension, score in sorted_dimensions[:2]:  # Top 2 fortalezas
+        if score >= 3.5:
+            dimension_name = format_dimension_name(dimension)
+            strengths.append({
+                'dimension': dimension_name,
+                'score': round(score, 1),
+                'description': get_dimension_interpretation(dimension, score)
+            })
+    
+    return strengths
+
+def get_assessment_improvements_detailed(dimensional_scores):
+    """Identificar áreas de mejora basadas en puntuaciones dimensionales"""
+    improvements = []
+    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1])
+    
+    for dimension, score in sorted_dimensions[:2]:  # Bottom 2 áreas de mejora
+        if score < 4.0:
+            dimension_name = format_dimension_name(dimension)
+            improvements.append({
+                'dimension': dimension_name,
+                'score': round(score, 1),
+                'description': get_dimension_interpretation(dimension, score),
+                'recommendations': get_dimension_recommendations(dimension, score)
+            })
+    
+    return improvements
+
+def get_general_recommendations(assertiveness_level, dimensional_scores):
+    """Generar recomendaciones generales basadas en el nivel de asertividad"""
+    avg_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+    
+    recommendations = []
+    
+    if avg_score >= 4.5:
+        recommendations = [
+            "¡Excelente! Tu nivel de asertividad es muy alto. Mantén estas habilidades.",
+            "Considera ser mentor de otros que estén desarrollando su asertividad.",
+            "Continúa practicando para mantener tu nivel en diferentes contextos."
+        ]
+    elif avg_score >= 4.0:
+        recommendations = [
+            "Tu asertividad está en un nivel muy bueno. Sigue practicando.",
+            "Identifica situaciones específicas donde puedes ser aún más asertivo.",
+            "Mantén la constancia en tu desarrollo personal."
+        ]
+    elif avg_score >= 3.5:
+        recommendations = [
+            "Tu asertividad está en desarrollo. Hay áreas donde puedes mejorar.",
+            "Practica técnicas de comunicación asertiva regularmente.",
+            "Considera tomar un curso o workshop sobre asertividad."
+        ]
+    elif avg_score >= 3.0:
+        recommendations = [
+            "Tienes una base sólida, pero hay espacio significativo para mejorar.",
+            "Enfócate en las dimensiones con puntuaciones más bajas.",
+            "Practica en situaciones de bajo riesgo antes de situaciones importantes."
+        ]
+    else:
+        recommendations = [
+            "Es importante que te enfoques en desarrollar tu asertividad.",
+            "Considera buscar apoyo profesional para desarrollar estas habilidades.",
+            "Comienza con ejercicios básicos de autoafirmación."
+        ]
+    
+    return recommendations
+
+def format_dimension_name(dimension):
+    """Formatear nombres de dimensiones para mostrar"""
+    dimension_names = {
+        'comunicacion': 'Comunicación',
+        'derechos': 'Defensa de Derechos',
+        'conflictos': 'Manejo de Conflictos',
+        'autoconfianza': 'Autoconfianza',
+        'opiniones': 'Expresión de Opiniones'
+    }
+    return dimension_names.get(dimension, dimension.title())
