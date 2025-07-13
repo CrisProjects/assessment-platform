@@ -549,7 +549,7 @@
                                 <i class="fas fa-home me-2"></i>
                                 <span id="welcomeMessage">Bienvenido</span>
                             </h3>
-                            <p class="mb-0 text-muted" id="coachInfo">Cargando información...</p>
+                            <p class="mb-0 text-muted" id="userInfo">Cargando información...</p>
                         </div>
                         <div class="col-md-4 text-end">
                             <button class="btn btn-primary-custom" onclick="refreshDashboard()">
@@ -950,7 +950,7 @@
                 if (response.ok) {
                     dashboardData = data.summary;
                     updateSummaryCards();
-                    updateCoachInfo();
+                    updateUserInfo();
                 } else {
                     throw new Error(data.error);
                 }
@@ -978,15 +978,20 @@
                 dashboardData.tasks_summary.overdue || '0';
         }
 
-        // Update coach info
-        function updateCoachInfo() {
+        // Update user info
+        function updateUserInfo() {
             if (!dashboardData) return;
             
-            const coachInfoElement = document.getElementById('coachInfo');
-            if (dashboardData.coach) {
-                coachInfoElement.textContent = `Tu coach: ${dashboardData.coach.name}`;
+            const userInfoElement = document.getElementById('userInfo');
+            const coacheeData = dashboardData.coachee;
+            
+            if (coacheeData && coacheeData.joined_at) {
+                const joinedDate = new Date(coacheeData.joined_at).toLocaleDateString('es-ES');
+                userInfoElement.textContent = `Miembro desde: ${joinedDate}`;
+            } else if (coacheeData && coacheeData.email) {
+                userInfoElement.textContent = coacheeData.email;
             } else {
-                coachInfoElement.textContent = 'Sin coach asignado';
+                userInfoElement.textContent = 'Información no disponible';
             }
         }
 
