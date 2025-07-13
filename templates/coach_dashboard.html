@@ -1392,7 +1392,8 @@
                                                     <div class="mb-3">
                                                         <label for="taskCoacheeSelect" class="form-label">Coachee</label>
                                                         <select class="form-select" id="taskCoacheeSelect" required 
-                                                                onclick="ensureCoacheesLoaded()">
+                                                                onclick="ensureCoacheesLoaded()" 
+                                                                onfocus="ensureCoacheesLoaded()">
                                                             <option value="">Seleccionar coachee...</option>
                                                         </select>
                                                     </div>
@@ -3277,9 +3278,30 @@
         // Variable global para almacenar datos de coachees
         let coacheesForTasks = [];
         
+        // Función de debug para verificar estado
+        window.debugCoacheesState = function() {
+            console.log('🔍 DEBUG STATE:');
+            console.log('  - coacheesForTasks exists:', typeof coacheesForTasks !== 'undefined');
+            console.log('  - coacheesForTasks length:', coacheesForTasks.length);
+            console.log('  - coacheesForTasks content:', coacheesForTasks);
+            console.log('  - taskCoacheeSelect exists:', !!document.getElementById('taskCoacheeSelect'));
+            
+            const select = document.getElementById('taskCoacheeSelect');
+            if (select) {
+                console.log('  - selector innerHTML:', select.innerHTML);
+                console.log('  - selector options count:', select.options.length);
+            }
+            return {
+                dataLength: coacheesForTasks.length,
+                selectorExists: !!select,
+                selectorOptions: select ? select.options.length : 0
+            };
+        };
+        
         // Cargar lista de coachees en el selector
         async function loadCoacheesForTasks() {
             console.log('🔄 loadCoacheesForTasks: Iniciando...');
+            console.log('🔍 Estado inicial de coacheesForTasks:', coacheesForTasks.length);
             
             try {
                 console.log('📡 Cargando coachees desde API...');
@@ -3290,18 +3312,28 @@
                     }
                 });
                 
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response ok:', response.ok);
+                
                 if (!response.ok) {
-                    throw new Error(`Error al cargar coachees: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('❌ Response error:', errorText);
+                    throw new Error(`Error al cargar coachees: ${response.status} - ${errorText}`);
                 }
                 
                 const data = await response.json();
-                console.log('📊 Datos recibidos:', data);
+                console.log('📊 Datos recibidos tipo:', typeof data);
+                console.log('📊 Datos recibidos es array:', Array.isArray(data));
+                console.log('📊 Datos recibidos length:', Array.isArray(data) ? data.length : 'N/A');
+                console.log('📊 Datos recibidos completos:', data);
                 
                 // Guardar datos globalmente
                 coacheesForTasks = Array.isArray(data) ? data : [];
+                console.log('💾 Datos guardados en coacheesForTasks:', coacheesForTasks.length);
                 
                 // Intentar poblar el selector si existe
-                populateCoacheeSelector();
+                const result = populateCoacheeSelector();
+                console.log('🎯 Resultado de población:', result);
                 
             } catch (error) {
                 console.error('❌ Error cargando coachees para tareas:', error);
@@ -3312,7 +3344,12 @@
         
         // Función separada para poblar el selector (se puede llamar cuando la pestaña se activa)
         function populateCoacheeSelector() {
+            console.log('🎯 populateCoacheeSelector: Iniciando...');
+            console.log('🔍 coacheesForTasks en función:', coacheesForTasks.length, coacheesForTasks);
+            
             const select = document.getElementById('taskCoacheeSelect');
+            console.log('🔍 Elemento select encontrado:', !!select);
+            
             if (!select) {
                 console.log('⚠️ Select taskCoacheeSelect no encontrado (podría estar en pestaña inactiva)');
                 return false;
@@ -3321,14 +3358,17 @@
             console.log('🎯 Poblando selector con', coacheesForTasks.length, 'coachees');
             
             if (coacheesForTasks.length > 0) {
+                console.log('✅ Poblando con datos:', coacheesForTasks.map(c => c.full_name));
                 select.innerHTML = '<option value="">Seleccionar coachee...</option>';
-                coacheesForTasks.forEach(coachee => {
+                coacheesForTasks.forEach((coachee, index) => {
+                    console.log(`  Agregando opción ${index + 1}: ${coachee.full_name} (ID: ${coachee.id})`);
                     select.innerHTML += `<option value="${coachee.id}">${coachee.full_name}</option>`;
                 });
-                console.log('✅ Selector poblado exitosamente');
+                console.log('✅ Selector poblado exitosamente con', select.options.length - 1, 'opciones');
+                console.log('🔍 HTML final del selector:', select.innerHTML);
             } else {
+                console.log('❌ No hay coachees disponibles, mostrando mensaje de error');
                 select.innerHTML = '<option value="">No hay coachees disponibles</option>';
-                console.log('❌ No hay coachees disponibles');
             }
             return true;
         }
@@ -3336,6 +3376,10 @@
         // Función para asegurar que los coachees estén cargados cuando el usuario interactúa con el selector
         function ensureCoacheesLoaded() {
             console.log('🔄 ensureCoacheesLoaded: Verificando datos...');
+            console.log('🔍 Estado actual:', {
+                dataLength: coacheesForTasks.length,
+                selectorExists: !!document.getElementById('taskCoacheeSelect')
+            });
             
             // Si no hay datos, cargar desde la API
             if (coacheesForTasks.length === 0) {
@@ -3343,7 +3387,10 @@
                 loadCoacheesForTasks();
             } else {
                 console.log('✅ Datos disponibles, poblando selector...');
-                populateCoacheeSelector();
+                // Forzar un pequeño delay para asegurar que el selector esté listo
+                setTimeout(() => {
+                    populateCoacheeSelector();
+                }, 50);
             }
         }
 
@@ -3608,7 +3655,25 @@
             if (createTaskTab) {
                 createTaskTab.addEventListener('shown.bs.tab', function() {
                     console.log('🎯 Pestaña "Crear Tareas" activada, poblando selector...');
-                    populateCoacheeSelector();
+                    // Forzar un pequeño delay para asegurar que el DOM esté listo
+                    setTimeout(() => {
+                        console.log('🔄 Re-poblando selector después de activar pestaña...');
+                        populateCoacheeSelector();
+                    }, 100);
+                });
+                
+                createTaskTab.addEventListener('click', function() {
+                    console.log('👆 Click en pestaña "Crear Tareas", preparando datos...');
+                    // También cuando se hace click, por si acaso
+                    setTimeout(() => {
+                        if (coacheesForTasks.length > 0) {
+                            console.log('📊 Datos ya disponibles, poblando...');
+                            populateCoacheeSelector();
+                        } else {
+                            console.log('📡 Datos no disponibles, cargando...');
+                            loadCoacheesForTasks();
+                        }
+                    }, 150);
                 });
             }
             
@@ -3670,8 +3735,8 @@
         // Función específica para probar el selector de tareas
         window.testTaskSelector = function() {
             console.log('🧪 PRUEBA DEL SELECTOR DE TAREAS');
-            console.log('   Datos globales disponibles:', coacheesForTasks.length);
-            console.log('   Elemento selector existe:', !!document.getElementById('taskCoacheeSelect'));
+            const state = window.debugCoacheesState();
+            console.log('   Estado actual:', state);
             
             if (coacheesForTasks.length > 0) {
                 const result = populateCoacheeSelector();
