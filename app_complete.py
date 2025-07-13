@@ -4,7 +4,7 @@ Aplicación Flask completa con frontend y backend integrados
 Perfecta para desplegar en Render como un solo servicio
 FIXED: Botón 'Iniciar Evaluación' - Endpoint /api/register actualizado
 """
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session, render_template_string
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
@@ -12,41 +12,21 @@ from datetime import datetime, timedelta
 import os
 import json
 import secrets
-import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func
 import sqlite3
-
-# Funciones de análisis de coach (módulo no disponible)
-# Definimos funciones dummy para evitar errores
-COACH_ANALYSIS_AVAILABLE = False
-
-def calculate_dimensional_scores_from_responses(*args, **kwargs):
-    """Función dummy para análisis dimensional"""
-    return {}
-
-def get_assessment_strengths(*args, **kwargs):
-    """Función dummy para fortalezas de evaluación"""
-    return []
-
-def get_assessment_improvements(*args, **kwargs):
-    """Función dummy para mejoras de evaluación"""
-    return []
-
-def get_coach_recommendations(*args, **kwargs):
-    """Función dummy para recomendaciones del coach"""
-    return []
-
-def calculate_progress_trend(*args, **kwargs):
-    """Función dummy para tendencia de progreso"""
-    return {}
 
 # Configuración de Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-fixed-2024')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Constantes de la aplicación
+DEFAULT_ASSESSMENT_ID = 1
+LIKERT_SCALE_MIN = 1
+LIKERT_SCALE_MAX = 5
 
 # Configuración de sesiones permanentes (no expiran automáticamente)
 from datetime import timedelta
@@ -376,7 +356,7 @@ def auto_initialize_database():
                 print("ℹ️ AUTO-INIT: Assessment de asertividad ya existe")
             
             # Verificar y crear las 10 preguntas de asertividad
-            existing_questions = Question.query.filter_by(assessment_id=1).count()
+            existing_questions = Question.query.filter_by(assessment_id=DEFAULT_ASSESSMENT_ID).count()
             if existing_questions == 0:
                 print("❓ AUTO-INIT: Creando 10 preguntas de asertividad...")
                 
@@ -395,7 +375,7 @@ def auto_initialize_database():
                 
                 for i, question_text in enumerate(assertiveness_questions, 1):
                     question = Question(
-                        assessment_id=1,
+                        assessment_id=DEFAULT_ASSESSMENT_ID,
                         text=question_text,
                         question_type='likert',
                         order=i
@@ -1337,16 +1317,16 @@ def api_questions():
         cursor = conn.cursor()
         
         # Primero verificar que existe el assessment
-        cursor.execute('SELECT COUNT(*) FROM assessment WHERE id = 1')
+        cursor.execute(f'SELECT COUNT(*) FROM assessment WHERE id = {DEFAULT_ASSESSMENT_ID}')
         if cursor.fetchone()[0] == 0:
             conn.close()
             return jsonify({'error': 'Assessment no encontrado'}), 404
         
         # Obtener las preguntas directamente de SQLite
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT id, assessment_id, text, question_type, "order"
             FROM question 
-            WHERE assessment_id = 1 
+            WHERE assessment_id = {DEFAULT_ASSESSMENT_ID} 
             ORDER BY "order"
         ''')
         
@@ -1383,7 +1363,7 @@ def api_questions():
             'assessment_title': 'Evaluación de Asertividad',
             'total_questions': len(formatted_questions),
             'questions': formatted_questions
-        }, 200)
+        }), 200
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo preguntas: {str(e)}'}), 500
@@ -1395,89 +1375,98 @@ def api_save_assessment(current_coachee):
     try:
         data = request.get_json()
         
-        # Datos demográficos
-        age = data.get('age')
-        gender = data.get('gender')
-        answers = data.get('answers', {})
-        
-        # Validar datos
-        if not answers:
-            return jsonify({'error': 'No se recibieron respuestas'}), 400
-            
-        # Validar que todas las respuestas estén en el rango correcto
-        valid_answers = {}
-        for q_idx, answer in answers.items():
-            try:
-                answer_value = int(answer)
-                if 1 <= answer_value <= 5:
-                    valid_answers[q_idx] = answer_value
-            except (ValueError, TypeError):
-                continue
-        
-        if len(valid_answers) == 0:
+        # Validar y procesar respuestas
+        valid_answers = validate_assessment_answers(data.get('answers', {}))
+        if not valid_answers:
             return jsonify({'error': 'No se recibieron respuestas válidas'}), 400
         
-        # Calcular dimensiones usando la misma lógica del frontend
-        dimensional_scores = calculate_dimensional_scores_backend(valid_answers)
+        # Calcular puntuaciones y crear resultado
+        assessment_result = create_assessment_result(current_coachee, valid_answers, data)
         
-        # Calcular puntuación total
-        total_score = sum(dimensional_scores.values()) / len(dimensional_scores)
-        
-        # Determinar nivel de asertividad
-        assertiveness_level = get_assertiveness_level(total_score)
-        
-        # Obtener información adicional del coachee
-        coach_id = current_coachee.coach_id if hasattr(current_coachee, 'coach_id') else None
-        participant_name = current_coachee.full_name if hasattr(current_coachee, 'full_name') else None
-        participant_email = current_coachee.email if hasattr(current_coachee, 'email') else None
-        
-        # Crear resultado de evaluación
-        assessment_result = AssessmentResult(
-            user_id=current_coachee.id,
-            assessment_id=1,  # Asumiendo que tenemos una evaluación con ID 1
-            score=total_score,
-            total_questions=len(valid_answers),
-            result_text=f"Nivel: {assertiveness_level}, Puntuaciones: {dimensional_scores}",
-            coach_id=coach_id,
-            participant_name=participant_name,
-            participant_email=participant_email,
-            dimensional_scores=dimensional_scores
-        )
-        
-        db.session.add(assessment_result)
-        db.session.flush()  # Flush to get the ID without committing
-        
-        # Guardar respuestas individuales para análisis detallado
-        # Obtener los IDs reales de las preguntas desde la base de datos
-        questions = Question.query.filter_by(assessment_id=1).order_by(Question.order).all()
-        
-        for question_index, answer in valid_answers.items():
-            idx = int(question_index)
-            if idx < len(questions):  # Verificar que el índice sea válido
-                question_id = questions[idx].id
-                # La validación ya se hizo arriba, answer ya es un entero válido
-                response = Response(
-                    user_id=current_coachee.id,
-                    question_id=question_id,
-                    selected_option=answer,
-                    assessment_result_id=assessment_result.id
-                )
-                db.session.add(response)
+        # Guardar respuestas individuales
+        save_individual_responses(current_coachee, valid_answers, assessment_result.id)
         
         db.session.commit()
         
         return jsonify({
             'success': True,
             'result_id': assessment_result.id,
-            'total_score': int(total_score),
-            'assertiveness_level': assertiveness_level,
-            'dimensional_scores': dimensional_scores,
+            'total_score': int(assessment_result.score),
+            'assertiveness_level': get_assertiveness_level(assessment_result.score),
+            'dimensional_scores': assessment_result.dimensional_scores,
             'message': 'Evaluación guardada exitosamente'
         }), 200
         
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error guardando evaluación: {str(e)}'}), 500
+
+def validate_assessment_answers(answers):
+    """Validar y procesar respuestas del assessment"""
+    if not answers:
+        return {}
+        
+    valid_answers = {}
+    for q_idx, answer in answers.items():
+        try:
+            answer_value = int(answer)
+            if LIKERT_SCALE_MIN <= answer_value <= LIKERT_SCALE_MAX:
+                valid_answers[q_idx] = answer_value
+        except (ValueError, TypeError):
+            continue
+    
+    return valid_answers
+
+def create_assessment_result(current_coachee, valid_answers, data):
+    """Crear y guardar el resultado de la evaluación"""
+    # Calcular dimensiones usando la misma lógica del frontend
+    dimensional_scores = calculate_dimensional_scores_backend(valid_answers)
+    
+    # Calcular puntuación total
+    total_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+    
+    # Determinar nivel de asertividad
+    assertiveness_level = get_assertiveness_level(total_score)
+    
+    # Obtener información adicional del coachee
+    coach_id = getattr(current_coachee, 'coach_id', None)
+    participant_name = getattr(current_coachee, 'full_name', None)
+    participant_email = getattr(current_coachee, 'email', None)
+    
+    # Crear resultado de evaluación
+    assessment_result = AssessmentResult(
+        user_id=current_coachee.id,
+        assessment_id=DEFAULT_ASSESSMENT_ID,  # Usando el assessment de asertividad principal
+        score=total_score,
+        total_questions=len(valid_answers),
+        result_text=f"Nivel: {assertiveness_level}, Puntuaciones: {dimensional_scores}",
+        coach_id=coach_id,
+        participant_name=participant_name,
+        participant_email=participant_email,
+        dimensional_scores=dimensional_scores
+    )
+    
+    db.session.add(assessment_result)
+    db.session.flush()  # Flush to get the ID without committing
+    
+    return assessment_result
+
+def save_individual_responses(current_coachee, valid_answers, assessment_result_id):
+    """Guardar respuestas individuales para análisis detallado"""
+    # Obtener los IDs reales de las preguntas desde la base de datos
+    questions = Question.query.filter_by(assessment_id=DEFAULT_ASSESSMENT_ID).order_by(Question.order).all()
+    
+    for question_index, answer in valid_answers.items():
+        idx = int(question_index)
+        if idx < len(questions):  # Verificar que el índice sea válido
+            question_id = questions[idx].id
+            response = Response(
+                user_id=current_coachee.id,
+                question_id=question_id,
+                selected_option=answer,
+                assessment_result_id=assessment_result_id
+            )
+            db.session.add(response)
 
 def calculate_dimensional_scores_backend(answers):
     """Calcular puntuaciones dimensionales (backend)"""
@@ -1510,7 +1499,7 @@ def calculate_dimensional_scores_backend(answers):
             answer_value = int(answer)
             
             # Validar que la respuesta esté en el rango correcto (1-5)
-            if not (1 <= answer_value <= 5):
+            if not (LIKERT_SCALE_MIN <= answer_value <= LIKERT_SCALE_MAX):
                 continue  # Saltar respuestas inválidas
                 
             if idx in question_to_dimension:
@@ -2460,76 +2449,8 @@ def api_coachee_evaluation_details(evaluation_id):
         if not assessment:
             return jsonify({'error': 'Evaluación no encontrada'}), 404
         
-        # Obtener todas las respuestas de esta evaluación
-        responses = Response.query.filter_by(
-            user_id=coachee_user.id,
-            assessment_result_id=assessment.id
-        ).all()
-        
-        # Obtener las preguntas para referencia
-        questions = Question.query.filter_by(assessment_id=assessment.assessment_id).order_by(Question.order).all()
-        
-        # Procesar respuestas para análisis detallado
-        response_details = []
-        question_responses = {}
-        
-        for response in responses:
-            question = next((q for q in questions if q.id == response.question_id), None)
-            if question:
-                response_details.append({
-                    'question_id': question.id,
-                    'question_text': question.text,
-                    'response_value': response.selected_option,
-                    'order': question.order
-                })
-                question_responses[question.order - 1] = response.selected_option
-        
-        # Recalcular puntuaciones dimensionales para análisis detallado
-        dimensional_scores = calculate_dimensional_scores_backend(question_responses)
-        
-        # Generar interpretación y recomendaciones detalladas
-        total_score = sum(dimensional_scores.values()) / len(dimensional_scores) if dimensional_scores else 0
-        assertiveness_level = get_assertiveness_level(total_score)
-        
-        # Generar análisis por dimensión
-        dimension_analysis = {}
-        for dimension, score in dimensional_scores.items():
-            dimension_analysis[dimension] = {
-                'score': round(score, 1),
-                'percentage': round((score / 5) * 100, 1),
-                'level': get_dimension_level(score),
-                'interpretation': get_dimension_interpretation(dimension, score),
-                'recommendations': get_dimension_recommendations(dimension, score)
-            }
-        
-        # Obtener fortalezas y áreas de mejora
-        strengths = get_assessment_strengths_detailed(dimensional_scores)
-        improvements = get_assessment_improvements_detailed(dimensional_scores)
-        
-        # Generar recomendaciones generales
-        general_recommendations = get_general_recommendations(assertiveness_level, dimensional_scores)
-        
-        evaluation_details = {
-            'id': assessment.id,
-            'title': 'Evaluación de Asertividad',
-            'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
-            'total_score': round(total_score, 1),
-            'total_percentage': round((total_score / 5) * 100, 1),
-            'assertiveness_level': assertiveness_level,
-            'dimensional_scores': dimensional_scores,
-            'dimension_analysis': dimension_analysis,
-            'response_details': sorted(response_details, key=lambda x: x['order']),
-            'analysis': {
-                'strengths': strengths,
-                'improvements': improvements,
-                'general_recommendations': general_recommendations
-            },
-            'radar_data': {
-                'labels': [format_dimension_name(dim) for dim in dimensional_scores.keys()],
-                'scores': list(dimensional_scores.values()),
-                'percentages': [round((score / 5) * 100, 1) for score in dimensional_scores.values()]
-            }
-        }
+        # Procesar detalles de la evaluación
+        evaluation_details = process_evaluation_details(assessment, coachee_user)
         
         return jsonify({
             'success': True,
@@ -2538,6 +2459,85 @@ def api_coachee_evaluation_details(evaluation_id):
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo detalles de evaluación: {str(e)}'}), 500
+
+def process_evaluation_details(assessment, coachee_user):
+    """Procesar y generar detalles completos de una evaluación"""
+    # Obtener respuestas y preguntas
+    responses = Response.query.filter_by(
+        user_id=coachee_user.id,
+        assessment_result_id=assessment.id
+    ).all()
+    
+    questions = Question.query.filter_by(assessment_id=assessment.assessment_id).order_by(Question.order).all()
+    
+    # Procesar respuestas para análisis detallado
+    response_details, question_responses = process_response_details(responses, questions)
+    
+    # Recalcular puntuaciones dimensionales
+    dimensional_scores = calculate_dimensional_scores_backend(question_responses)
+    total_score = sum(dimensional_scores.values()) / len(dimensional_scores) if dimensional_scores else 0
+    assertiveness_level = get_assertiveness_level(total_score)
+    
+    # Generar análisis completo
+    dimension_analysis = generate_dimension_analysis(dimensional_scores)
+    analysis_data = generate_assessment_analysis(assertiveness_level, dimensional_scores)
+    
+    return {
+        'id': assessment.id,
+        'title': 'Evaluación de Asertividad',
+        'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
+        'total_score': round(total_score, 1),
+        'total_percentage': round((total_score / LIKERT_SCALE_MAX) * 100, 1),
+        'assertiveness_level': assertiveness_level,
+        'dimensional_scores': dimensional_scores,
+        'dimension_analysis': dimension_analysis,
+        'response_details': sorted(response_details, key=lambda x: x['order']),
+        'analysis': analysis_data,
+        'radar_data': {
+            'labels': [format_dimension_name(dim) for dim in dimensional_scores.keys()],
+            'scores': list(dimensional_scores.values()),
+            'percentages': [round((score / LIKERT_SCALE_MAX) * 100, 1) for score in dimensional_scores.values()]
+        }
+    }
+
+def process_response_details(responses, questions):
+    """Procesar detalles de respuestas individuales"""
+    response_details = []
+    question_responses = {}
+    
+    for response in responses:
+        question = next((q for q in questions if q.id == response.question_id), None)
+        if question:
+            response_details.append({
+                'question_id': question.id,
+                'question_text': question.text,
+                'response_value': response.selected_option,
+                'order': question.order
+            })
+            question_responses[question.order - 1] = response.selected_option
+    
+    return response_details, question_responses
+
+def generate_dimension_analysis(dimensional_scores):
+    """Generar análisis por dimensión"""
+    dimension_analysis = {}
+    for dimension, score in dimensional_scores.items():
+        dimension_analysis[dimension] = {
+            'score': round(score, 1),
+            'percentage': round((score / LIKERT_SCALE_MAX) * 100, 1),
+            'level': get_dimension_level(score),
+            'interpretation': get_dimension_interpretation(dimension, score),
+            'recommendations': get_dimension_recommendations(dimension, score)
+        }
+    return dimension_analysis
+
+def generate_assessment_analysis(assertiveness_level, dimensional_scores):
+    """Generar análisis completo del assessment"""
+    return {
+        'strengths': get_assessment_strengths_detailed(dimensional_scores),
+        'improvements': get_assessment_improvements_detailed(dimensional_scores),
+        'general_recommendations': get_general_recommendations(assertiveness_level, dimensional_scores)
+    }
 
 def get_dimension_level(score):
     """Determinar el nivel de una dimensión específica"""
@@ -2702,3 +2702,8 @@ def format_dimension_name(dimension):
         'opiniones': 'Expresión de Opiniones'
     }
     return dimension_names.get(dimension, dimension.title())
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(host='0.0.0.0', port=10000, debug=True)
