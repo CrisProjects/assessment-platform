@@ -3068,10 +3068,29 @@
 
         // Cargar resúmenes de evaluaciones de coachees
         async function loadEvaluationSummaries() {
+            const container = document.getElementById('evaluationSummariesContainer');
+            if (!container) {
+                console.error('Container evaluationSummariesContainer no encontrado');
+                return;
+            }
+            
             try {
+                // Mostrar loading
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Cargando resúmenes de evaluaciones...</p>
+                    </div>
+                `;
+                
                 // Primero cargar la lista de coachees para obtener resúmenes
                 const coacheesResponse = await fetch('/api/coach/my-coachees', {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 if (!coacheesResponse.ok) {
@@ -3080,8 +3099,9 @@
                 
                 const coacheesData = await coacheesResponse.json();
                 
-                if (!coacheesData.success || !coacheesData.coachees || coacheesData.coachees.length === 0) {
-                    document.getElementById('evaluationSummariesContainer').innerHTML = `
+                // La API devuelve directamente el array de coachees, no un objeto con success
+                if (!Array.isArray(coacheesData) || coacheesData.length === 0) {
+                    container.innerHTML = `
                         <div class="col-12 text-center py-4">
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
@@ -3095,10 +3115,13 @@
                 const summariesHTML = [];
                 
                 // Cargar resumen para cada coachee
-                for (const coachee of coacheesData.coachees) {
+                for (const coachee of coacheesData) {
                     try {
                         const summaryResponse = await fetch(`/api/coach/evaluation-summary/${coachee.id}`, {
-                            credentials: 'include'
+                            credentials: 'include',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
                         });
                         
                         if (summaryResponse.ok) {
@@ -3113,11 +3136,11 @@
                     }
                 }
                 
-                document.getElementById('evaluationSummariesContainer').innerHTML = summariesHTML.join('');
+                container.innerHTML = summariesHTML.join('');
                 
             } catch (error) {
                 console.error('Error cargando resúmenes de evaluaciones:', error);
-                document.getElementById('evaluationSummariesContainer').innerHTML = `
+                container.innerHTML = `
                     <div class="col-12">
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
@@ -3252,9 +3275,21 @@
 
         // Cargar lista de coachees en el selector
         async function loadCoacheesForTasks() {
+            const select = document.getElementById('taskCoacheeSelect');
+            if (!select) {
+                console.error('Select taskCoacheeSelect no encontrado');
+                return;
+            }
+            
             try {
+                // Mostrar loading
+                select.innerHTML = '<option value="">Cargando coachees...</option>';
+                
                 const response = await fetch('/api/coach/my-coachees', {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 if (!response.ok) {
@@ -3262,11 +3297,11 @@
                 }
                 
                 const data = await response.json();
-                const select = document.getElementById('taskCoacheeSelect');
                 
-                if (data.success && data.coachees) {
+                // La API devuelve directamente el array de coachees
+                if (Array.isArray(data) && data.length > 0) {
                     select.innerHTML = '<option value="">Seleccionar coachee...</option>';
-                    data.coachees.forEach(coachee => {
+                    data.forEach(coachee => {
                         select.innerHTML += `<option value="${coachee.id}">${coachee.full_name}</option>`;
                     });
                 } else {
@@ -3274,7 +3309,7 @@
                 }
             } catch (error) {
                 console.error('Error cargando coachees para tareas:', error);
-                document.getElementById('taskCoacheeSelect').innerHTML = '<option value="">Error cargando coachees</option>';
+                select.innerHTML = '<option value="">Error cargando coachees</option>';
             }
         }
 
@@ -3503,10 +3538,29 @@
 
         // Inicializar funciones del task management cuando se carga la página
         document.addEventListener('DOMContentLoaded', function() {
-            // Cargar datos iniciales para task management
-            loadEvaluationSummaries();
-            loadCoacheesForTasks();
-            loadTasks();
+            console.log('🚀 Inicializando dashboard de coach...');
+            
+            // Verificar que los elementos existen antes de cargar datos
+            const summariesContainer = document.getElementById('evaluationSummariesContainer');
+            const taskSelect = document.getElementById('taskCoacheeSelect');
+            
+            console.log('📋 Verificando elementos:');
+            console.log('  - evaluationSummariesContainer:', summariesContainer ? '✓' : '✗');
+            console.log('  - taskCoacheeSelect:', taskSelect ? '✓' : '✗');
+            
+            // Cargar datos iniciales para task management con delay para asegurar que el DOM esté listo
+            setTimeout(() => {
+                if (summariesContainer) {
+                    console.log('🔄 Cargando resúmenes de evaluaciones...');
+                    loadEvaluationSummaries();
+                }
+                if (taskSelect) {
+                    console.log('🔄 Cargando coachees para tareas...');
+                    loadCoacheesForTasks();
+                }
+                console.log('🔄 Cargando tareas...');
+                loadTasks();
+            }, 500);
             
             // Configurar formulario de crear tarea
             const createTaskForm = document.getElementById('createTaskForm');
@@ -3528,6 +3582,41 @@
                 }
             }, 60000);
         });
+        
+        // Función de prueba manual
+        window.testDashboardAPIs = async function() {
+            console.log('🧪 PRUEBA MANUAL DE APIs DEL DASHBOARD');
+            
+            try {
+                console.log('1. Probando API de coachees...');
+                const coacheesResponse = await fetch('/api/coach/my-coachees', {
+                    credentials: 'include'
+                });
+                console.log('   Status:', coacheesResponse.status);
+                if (coacheesResponse.ok) {
+                    const coachees = await coacheesResponse.json();
+                    console.log('   Coachees encontrados:', coachees.length);
+                    console.log('   Datos:', coachees);
+                    
+                    if (coachees.length > 0) {
+                        console.log('2. Probando API de resumen de evaluación...');
+                        const summaryResponse = await fetch(`/api/coach/evaluation-summary/${coachees[0].id}`, {
+                            credentials: 'include'
+                        });
+                        console.log('   Status:', summaryResponse.status);
+                        if (summaryResponse.ok) {
+                            const summary = await summaryResponse.json();
+                            console.log('   Resumen:', summary);
+                        }
+                    }
+                } else {
+                    const error = await coacheesResponse.text();
+                    console.error('   Error:', error);
+                }
+            } catch (error) {
+                console.error('❌ Error en prueba:', error);
+            }
+        };
     </script>
 </body>
 </html>
