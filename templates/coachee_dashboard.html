@@ -91,6 +91,66 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        /* Logout button styles */
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin-left: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive styles for logout button */
+        @media (max-width: 768px) {
+            .logout-btn {
+                margin-left: 0.5rem;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .logout-btn .fa-sign-out-alt {
+                margin-right: 0.3rem;
+            }
+            
+            .user-display {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .logout-btn {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            
+            .logout-btn span {
+                display: none; /* Hide text on very small screens */
+            }
+            
+            .logout-btn {
+                margin-left: 0.3rem;
+            }
+        }
+
         /* Main container */
         .main-container {
             position: relative;
@@ -135,26 +195,89 @@
         .nav-tabs {
             border-bottom: 2px solid var(--border-color);
             margin-bottom: 2rem;
+            background: var(--surface-elevated);
+            border-radius: 12px 12px 0 0;
+            padding: 0.5rem;
         }
 
         .nav-tabs .nav-link {
             border: none;
-            border-radius: 0;
+            border-radius: 8px;
             color: var(--text-secondary);
-            font-weight: 500;
+            font-weight: 600;
             padding: 1rem 1.5rem;
             transition: all 0.3s ease;
+            margin: 0 0.25rem;
+            position: relative;
+            background: transparent;
         }
 
         .nav-tabs .nav-link:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.05);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .nav-tabs .nav-link.active {
-            color: #667eea;
+            color: white;
             background: none;
-            border-bottom: 3px solid #667eea;
+            border-bottom: none;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Evaluaciones Tab - Azul */
+        .nav-tabs .nav-link#evaluations-tab {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .nav-tabs .nav-link#evaluations-tab:hover,
+        .nav-tabs .nav-link#evaluations-tab.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Assessment Tab - Verde */
+        .nav-tabs .nav-link#assessment-tab {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .nav-tabs .nav-link#assessment-tab:hover,
+        .nav-tabs .nav-link#assessment-tab.active {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Tareas Tab - Naranja */
+        .nav-tabs .nav-link#tasks-tab {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .nav-tabs .nav-link#tasks-tab:hover,
+        .nav-tabs .nav-link#tasks-tab.active {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Progreso Tab - Violeta */
+        .nav-tabs .nav-link#progress-tab {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .nav-tabs .nav-link#progress-tab:hover,
+        .nav-tabs .nav-link#progress-tab.active {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Iconos con animación */
+        .nav-tabs .nav-link i {
+            transition: transform 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover i,
+        .nav-tabs .nav-link.active i {
+            transform: scale(1.1);
         }
 
         /* Buttons */
@@ -185,6 +308,12 @@
             transition: all 0.3s ease;
         }
 
+        .btn-success-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            color: white;
+        }
+
         .btn-warning-custom {
             background: var(--warning-gradient);
             border: none;
@@ -193,6 +322,121 @@
             font-weight: 600;
             color: white;
             transition: all 0.3s ease;
+        }
+
+        .btn-warning-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            color: white;
+        }
+
+        /* Botones específicos para evaluaciones */
+        .btn-evaluation {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-evaluation:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+            color: white;
+        }
+
+        /* Botones específicos para tareas */
+        .btn-task {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-task:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            color: white;
+        }
+
+        /* Botones específicos para progreso */
+        .btn-progress {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-progress:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            color: white;
+        }
+
+        /* Botones de outline para acciones secundarias */
+        .btn-outline-evaluation {
+            background: transparent;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: #3b82f6;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-evaluation:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-outline-task {
+            background: transparent;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: #f59e0b;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-task:hover {
+            background: #f59e0b;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-outline-progress {
+            background: transparent;
+            border: 2px solid #8b5cf6;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: #8b5cf6;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-progress:hover {
+            background: #8b5cf6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
 
         /* Summary cards */
@@ -273,6 +517,15 @@
         .evaluation-level {
             font-weight: 600;
             margin-bottom: 1rem;
+        }
+
+        .evaluation-description {
+            line-height: 1.4;
+            font-style: italic;
+            background: rgba(102, 126, 234, 0.05);
+            padding: 0.5rem;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
         }
 
         .evaluation-date {
@@ -585,9 +838,15 @@
                 <i class="fas fa-tachometer-alt me-2"></i>
                 Dashboard Coachee
             </span>
-            <div class="user-display">
-                <i class="fas fa-user-circle me-2"></i>
-                <span id="userName">Cargando...</span>
+            <div class="d-flex align-items-center">
+                <div class="user-display">
+                    <i class="fas fa-user-circle me-2"></i>
+                    <span id="userName">Cargando...</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
             </div>
         </div>
     </nav>
@@ -760,11 +1019,11 @@
                                 <!-- Results interpretation will be loaded here -->
                             </div>
                             <div class="text-center mt-4">
-                                <button class="btn btn-primary-custom me-2" onclick="viewDetailedResults()">
+                                <button class="btn btn-progress me-2" onclick="viewDetailedResults()">
                                     <i class="fas fa-chart-radar me-2"></i>
                                     Ver Análisis Completo
                                 </button>
-                                <button class="btn btn-outline-primary" onclick="finishAssessment()">
+                                <button class="btn btn-outline-evaluation" onclick="finishAssessment()">
                                     <i class="fas fa-check me-2"></i>
                                     Finalizar y Volver
                                 </button>
@@ -909,7 +1168,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary-custom" onclick="saveTaskProgress()">
+                    <button type="button" class="btn btn-task" onclick="saveTaskProgress()">
                         <i class="fas fa-save me-2"></i>
                         Guardar Progreso
                     </button>
@@ -938,7 +1197,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary-custom" onclick="printEvaluationReport()">
+                    <button type="button" class="btn btn-progress" onclick="printEvaluationReport()">
                         <i class="fas fa-print me-2"></i>
                         Imprimir Reporte
                     </button>
@@ -963,6 +1222,34 @@
         let currentQuestionIndex = 0;
         let answers = {};
         let isAssessmentActive = false;
+
+        // Logout function
+        async function logout() {
+            try {
+                // Show loading state
+                const logoutBtn = document.querySelector('.logout-btn');
+                const originalContent = logoutBtn.innerHTML;
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cerrando...';
+                logoutBtn.disabled = true;
+
+                // Call logout API
+                const response = await fetch(`${API_BASE_URL}/api/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // Always redirect to access page regardless of API response
+                window.location.href = '/dashboard-selection';
+                
+            } catch (error) {
+                console.error('Error during logout:', error);
+                // Even if there's an error, redirect to access page
+                window.location.href = '/dashboard-selection';
+            }
+        }
 
         // Initialize particles animation
         function createParticles() {
@@ -1137,7 +1424,7 @@
                                 </small>
                             </div>
                         </div>
-                        <button class="btn btn-primary-custom w-100" onclick="startEvaluation('${evaluation.id}')">
+                        <button class="btn btn-evaluation w-100" onclick="startEvaluation('${evaluation.id}')">
                             <i class="fas fa-play me-2"></i>
                             Comenzar Evaluación
                         </button>
@@ -1169,8 +1456,9 @@
                             <span class="evaluation-score ${scoreColor}">${evaluation.total_score}%</span>
                         </div>
                         <div class="evaluation-level ${scoreColor} mb-2">${evaluation.assertiveness_level}</div>
+                        <div class="evaluation-description text-muted small mb-2">${evaluation.result_description || ''}</div>
                         <div class="evaluation-date">${formatDate(evaluation.completed_at)}</div>
-                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="viewEvaluationDetails(${evaluation.id})">
+                        <button class="btn btn-sm btn-outline-evaluation mt-2" onclick="viewEvaluationDetails(${evaluation.id})">
                             <i class="fas fa-eye me-1"></i>
                             Ver Detalles
                         </button>
@@ -1255,7 +1543,7 @@
                                 Coach: ${task.coach.full_name}
                                 ${task.last_update ? `• Actualizado: ${formatDate(task.last_update)}` : ''}
                             </small>
-                            <button class="btn btn-sm btn-primary-custom" onclick="openTaskProgressModal(${task.id})">
+                            <button class="btn btn-sm btn-task" onclick="openTaskProgressModal(${task.id})">
                                 <i class="fas fa-edit me-1"></i>
                                 Actualizar
                             </button>
@@ -1423,6 +1711,7 @@
                         <div class="text-center mb-4">
                             <div class="h1 text-primary">${latest.total_score}%</div>
                             <div class="h6 text-muted">${latest.assertiveness_level}</div>
+                            <div class="small text-secondary mb-2">${latest.result_description || ''}</div>
                             <small class="text-muted">Completado el ${formatDate(latest.completed_at)}</small>
                         </div>
                     </div>

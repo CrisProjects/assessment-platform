@@ -1401,6 +1401,38 @@ def api_save_assessment(current_coachee):
         db.session.rollback()
         return jsonify({'error': f'Error guardando evaluación: {str(e)}'}), 500
 
+def generate_elegant_result_text(assertiveness_level, dimensional_scores):
+    """Generar un texto de resultado elegante y amigable para el usuario"""
+    
+    # Mapeo de nombres de dimensiones a texto más amigable
+    dimension_names = {
+        'comunicacion': 'Comunicación',
+        'derechos': 'Defensa de Derechos',
+        'opiniones': 'Expresión de Opiniones',
+        'conflictos': 'Manejo de Conflictos',
+        'autoconfianza': 'Autoconfianza'
+    }
+    
+    # Encontrar fortalezas (puntuaciones más altas)
+    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True)
+    top_strengths = [dimension_names.get(dim, dim) for dim, score in sorted_dimensions[:2] if score >= 70]
+    
+    # Crear texto base
+    result_parts = [f"Nivel de Asertividad: {assertiveness_level}"]
+    
+    # Agregar fortalezas si las hay
+    if top_strengths:
+        if len(top_strengths) == 1:
+            result_parts.append(f"Fortaleza principal: {top_strengths[0]}")
+        else:
+            result_parts.append(f"Fortalezas principales: {', '.join(top_strengths)}")
+    
+    # Agregar puntuación general
+    avg_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+    result_parts.append(f"Puntuación general: {avg_score:.0f}%")
+    
+    return " • ".join(result_parts)
+
 def validate_assessment_answers(answers):
     """Validar y procesar respuestas del assessment"""
     if not answers:
@@ -1439,7 +1471,7 @@ def create_assessment_result(current_coachee, valid_answers, data):
         assessment_id=DEFAULT_ASSESSMENT_ID,  # Usando el assessment de asertividad principal
         score=total_score,
         total_questions=len(valid_answers),
-        result_text=f"Nivel: {assertiveness_level}, Puntuaciones: {dimensional_scores}",
+        result_text=generate_elegant_result_text(assertiveness_level, dimensional_scores),
         coach_id=coach_id,
         participant_name=participant_name,
         participant_email=participant_email,
@@ -1532,6 +1564,38 @@ def get_assertiveness_level(score):
         return "Moderadamente Asertivo"
     else:
         return "Poco Asertivo"
+
+def generate_elegant_result_text(assertiveness_level, dimensional_scores):
+    """Generar un texto de resultado elegante y amigable para el usuario"""
+    
+    # Mapeo de nombres de dimensiones a texto más amigable
+    dimension_names = {
+        'comunicacion': 'Comunicación',
+        'derechos': 'Defensa de Derechos',
+        'opiniones': 'Expresión de Opiniones',
+        'conflictos': 'Manejo de Conflictos',
+        'autoconfianza': 'Autoconfianza'
+    }
+    
+    # Encontrar fortalezas (puntuaciones más altas)
+    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True)
+    top_strengths = [dimension_names.get(dim, dim) for dim, score in sorted_dimensions[:2] if score >= 70]
+    
+    # Crear texto base
+    result_parts = [f"Nivel de Asertividad: {assertiveness_level}"]
+    
+    # Agregar fortalezas si las hay
+    if top_strengths:
+        if len(top_strengths) == 1:
+            result_parts.append(f"Fortaleza principal: {top_strengths[0]}")
+        else:
+            result_parts.append(f"Fortalezas principales: {', '.join(top_strengths)}")
+    
+    # Agregar puntuación general
+    avg_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+    result_parts.append(f"Puntuación general: {avg_score:.0f}%")
+    
+    return " • ".join(result_parts)
 
 # ========================
 # RUTAS PARA COACHEES
@@ -2347,7 +2411,8 @@ def api_coachee_get_evaluations():
                 'type': 'assertiveness',
                 'title': 'Evaluación de Asertividad',
                 'total_score': assessment.score,
-                'assertiveness_level': getattr(assessment, 'result_text', 'N/A'),
+                'assertiveness_level': get_assertiveness_level(assessment.score),
+                'result_description': getattr(assessment, 'result_text', 'N/A'),
                 'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
                 'dimensional_scores': assessment.dimensional_scores or {}
             }
@@ -2420,7 +2485,8 @@ def api_coachee_dashboard_summary():
             summary['latest_evaluation'] = {
                 'id': latest_assessment.id,
                 'total_score': latest_assessment.score,
-                'assertiveness_level': getattr(latest_assessment, 'result_text', 'N/A'),
+                'assertiveness_level': get_assertiveness_level(latest_assessment.score),
+                'result_description': getattr(latest_assessment, 'result_text', 'N/A'),
                 'completed_at': latest_assessment.completed_at.strftime('%Y-%m-%d'),
                 'days_ago': (datetime.utcnow().date() - latest_assessment.completed_at.date()).days
             }
