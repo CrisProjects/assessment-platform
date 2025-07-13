@@ -1579,36 +1579,8 @@ def evaluate_with_invitation(token):
         return redirect('/')
 
 # ========================
-# RUTAS DE DEBUGGING PARA SAFARI
+# CONFIGURACIÓN DE COOKIES ADAPTABLE
 # ========================
-
-@app.route('/safari-debug')
-def safari_debug():
-    """Página de debugging específica para Safari"""
-    debug_info = {
-        'user_agent': request.headers.get('User-Agent', 'No disponible'),
-        'current_user_authenticated': current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else False,
-        'session_keys': list(session.keys()) if session else [],
-        'temp_coachee_id': session.get('temp_coachee_id'),
-        'session_permanent': session.permanent if hasattr(session, 'permanent') else False,
-        'cookie_config': {
-            'SESSION_COOKIE_SAMESITE': app.config.get('SESSION_COOKIE_SAMESITE'),
-            'SESSION_COOKIE_SECURE': app.config.get('SESSION_COOKIE_SECURE'),
-            'SESSION_PERMANENT': app.config.get('SESSION_PERMANENT')
-        }
-    }
-    
-    # Intentar obtener el usuario coachee actual
-    coachee_user = get_current_coachee()
-    debug_info['coachee_found'] = coachee_user is not None
-    if coachee_user:
-        debug_info['coachee_info'] = {
-            'id': coachee_user.id,
-            'username': coachee_user.username,
-            'full_name': coachee_user.full_name
-        }
-    
-    return jsonify(debug_info)
 
 @app.route('/coachee-login-direct')
 def coachee_login_direct():
@@ -1632,97 +1604,7 @@ def coachee_login_direct():
         flash(f'Error en login directo: {str(e)}', 'error')
         return redirect(url_for('dashboard_selection'))
 
-@app.route('/safari-test')
-def safari_test():
-    """Página de prueba completa para Safari"""
-    html_content = '''
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Safari Test - Assessment Platform</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-            .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            .test-item { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-            .success { background-color: #d4edda; border-color: #c3e6cb; }
-            .warning { background-color: #fff3cd; border-color: #ffeaa7; }
-            .error { background-color: #f8d7da; border-color: #f5c6cb; }
-            .btn { display: inline-block; padding: 10px 20px; margin: 10px 5px; text-decoration: none; border-radius: 5px; color: white; font-weight: bold; }
-            .btn-primary { background-color: #007bff; }
-            .btn-success { background-color: #28a745; }
-            .btn-info { background-color: #17a2b8; }
-            pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🧪 Safari Compatibility Test</h1>
-            <p>Esta página está diseñada para probar la compatibilidad con Safari.</p>
-            
-            <div class="test-item success">
-                <h3>✅ Configuración Detectada</h3>
-                <p><strong>Entorno:</strong> Desarrollo Local</p>
-                <p><strong>Cookies:</strong> SameSite=Lax, Secure=False</p>
-                <p><strong>Auto-login:</strong> Habilitado</p>
-            </div>
-            
-            <div class="test-item">
-                <h3>🔗 Enlaces de Prueba</h3>
-                <a href="/coachee-dashboard" class="btn btn-primary">Dashboard Coachee (Auto-login)</a>
-                <a href="/safari-debug" class="btn btn-info">Debug Info</a>
-                <a href="/api/status" class="btn btn-success">API Status</a>
-                <a href="/api/questions" class="btn btn-success">API Questions</a>
-            </div>
-            
-            <div class="test-item">
-                <h3>📋 Instrucciones para Safari</h3>
-                <ol>
-                    <li>Abre las herramientas de desarrollo (Cmd+Option+I)</li>
-                    <li>Ve a la pestaña "Consola"</li>
-                    <li>Haz clic en "Dashboard Coachee"</li>
-                    <li>Verifica que no hay errores en la consola</li>
-                    <li>Confirma que la evaluación se carga correctamente</li>
-                </ol>
-            </div>
-            
-            <div class="test-item warning">
-                <h3>⚠️ Problemas Conocidos</h3>
-                <p>Si ves errores 404 para <code>/api/user/my-profile</code>, es normal - esa API será implementada próximamente.</p>
-            </div>
-            
-            <div class="test-item">
-                <h3>🎯 Objetivos del Test</h3>
-                <ul>
-                    <li>✅ Dashboard carga sin redirecciones</li>
-                    <li>✅ Auto-login funciona en Safari</li>
-                    <li>✅ JavaScript se ejecuta sin errores</li>
-                    <li>✅ APIs responden correctamente</li>
-                    <li>✅ Evaluación es completamente funcional</li>
-                </ul>
-            </div>
-        </div>
-        
-        <script>
-            console.log('🧪 Safari Test Page Loaded');
-            console.log('User Agent:', navigator.userAgent);
-            console.log('Cookie Support:', navigator.cookieEnabled);
-            
-            // Test básico de funcionalidad JavaScript
-            try {
-                fetch('/api/status')
-                    .then(response => response.json())
-                    .then(data => console.log('✅ API Status Test:', data))
-                    .catch(error => console.error('❌ API Status Error:', error));
-            } catch (e) {
-                console.error('❌ Fetch Error:', e);
-            }
-        </script>
-    </body>
-    </html>
-    '''
-    return html_content
+
 
 # Configuración de cookies adaptable a desarrollo y producción
 
