@@ -2149,6 +2149,123 @@ def api_coachee_update_task_progress(task_id):
 
 # === END TASK MANAGEMENT API ROUTES ===
 
+@app.route('/api/coachee/evaluations', methods=['GET'])
+@coachee_required
+def api_coachee_get_evaluations():
+    """API para que los coachees vean sus evaluaciones disponibles y completadas"""
+    try:
+        coachee_user = get_current_coachee()
+        
+        # Evaluaciones completadas por este coachee
+        completed_evaluations = AssessmentResult.query.filter_by(user_id=coachee_user.id).order_by(AssessmentResult.completed_at.desc()).all()
+        
+        evaluations_data = {
+            'completed': [],
+            'available': {
+                'assertiveness': {
+                    'id': 'assertiveness',
+                    'title': 'Evaluación de Asertividad',
+                    'description': 'Evalúa tu nivel de asertividad en diferentes situaciones',
+                    'duration': '10-15 minutos',
+                    'questions_count': 25,
+                    'available': True
+                }
+            }
+        }
+        
+        # Procesar evaluaciones completadas
+        for assessment in completed_evaluations:
+            eval_data = {
+                'id': assessment.id,
+                'type': 'assertiveness',
+                'title': 'Evaluación de Asertividad',
+                'total_score': assessment.score,
+                'assertiveness_level': getattr(assessment, 'result_text', 'N/A'),
+                'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
+                'dimensional_scores': assessment.dimensional_scores or {}
+            }
+            evaluations_data['completed'].append(eval_data)
+        
+        return jsonify({
+            'success': True,
+            'evaluations': evaluations_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
+
+@app.route('/api/coachee/dashboard-summary', methods=['GET'])
+@coachee_required
+def api_coachee_dashboard_summary():
+    """API para obtener un resumen completo del dashboard del coachee"""
+    try:
+        coachee_user = get_current_coachee()
+        
+        # Obtener última evaluación
+        latest_assessment = AssessmentResult.query.filter_by(user_id=coachee_user.id).order_by(AssessmentResult.completed_at.desc()).first()
+        
+        # Obtener tareas pendientes
+        pending_tasks = Task.query.filter_by(coachee_id=coachee_user.id, is_active=True).all()
+        pending_count = 0
+        overdue_count = 0
+        
+        for task in pending_tasks:
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
+            current_status = latest_progress.status if latest_progress else 'pending'
+            
+            if current_status != 'completed':
+                pending_count += 1
+                if task.due_date and task.due_date < datetime.utcnow().date():
+                    overdue_count += 1
+        
+        # Obtener información del coach
+        coach_info = None
+        if coachee_user.coach_id:
+            coach = User.query.filter_by(id=coachee_user.coach_id, role='coach').first()
+            if coach:
+                coach_info = {
+                    'id': coach.id,
+                    'name': coach.full_name,
+                    'email': coach.email
+                }
+        
+        summary = {
+            'coachee': {
+                'id': coachee_user.id,
+                'name': coachee_user.full_name,
+                'email': coachee_user.email,
+                'joined_at': coachee_user.created_at.strftime('%Y-%m-%d') if coachee_user.created_at else None
+            },
+            'coach': coach_info,
+            'latest_evaluation': None,
+            'tasks_summary': {
+                'total_active': len(pending_tasks),
+                'pending': pending_count,
+                'overdue': overdue_count
+            },
+            'evaluation_summary': {
+                'total_completed': AssessmentResult.query.filter_by(user_id=coachee_user.id).count(),
+                'available_types': ['assertiveness']
+            }
+        }
+        
+        if latest_assessment:
+            summary['latest_evaluation'] = {
+                'id': latest_assessment.id,
+                'total_score': latest_assessment.score,
+                'assertiveness_level': getattr(latest_assessment, 'result_text', 'N/A'),
+                'completed_at': latest_assessment.completed_at.strftime('%Y-%m-%d'),
+                'days_ago': (datetime.utcnow().date() - latest_assessment.completed_at.date()).days
+            }
+        
+        return jsonify({
+            'success': True,
+            'summary': summary
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo resumen: {str(e)}'}), 500
+
 # Configuración de cookies adaptable a desarrollo y producción
 
 # Solo aplicar configuraciones seguras en producción (HTTPS)

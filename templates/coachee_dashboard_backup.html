@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coachee - Evaluación de Asertividad</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js para gráficos de radar -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --surface: #ffffff;
+            --surface-elevated: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        .particle:nth-child(2n) { animation-duration: 25s; }
+        .particle:nth-child(3n) { animation-duration: 30s; }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Custom header */
+        .custom-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .custom-header .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .user-display {
+            color: white;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main container */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .assessment-card {
+            background: var(--surface);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 700px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Welcome section */
+        .welcome-header {
+            background: var(--surface-elevated);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .welcome-title {
+            color: var(--text-primary);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Progress bar */
+        .custom-progress {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .custom-progress-bar {
+            height: 100%;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        /* Question container */
+        .question-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .question-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .question-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        /* Radio options */
+        .option-item {
+            background: var(--surface-elevated);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .option-item:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .option-item.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .option-item input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .option-item label {
+            cursor: pointer;
+            margin: 0;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Results section */
+        .results-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 24px 24px 0 0;
+        }
+
+        .score-display {
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .level-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .completion-date {
+            opacity: 0.8;
+            margin-top: 1rem;
+        }
+
+        /* Interpretation section */
+        .interpretation-section {
+            padding: 2rem;
+        }
+
+        .interpretation-card {
+            background: var(--surface-elevated);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .level-description {
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+
+        .high-level {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border-left: 4px solid #10b981;
+        }
+
+        .good-level {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .moderate-level {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-left: 4px solid #f59e0b;
+        }
+
+        .low-level {
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+
+        /* Radar chart section */
+        .radar-section {
+            background: var(--surface-elevated);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .radar-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            position: relative;
+            height: 400px;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .radar-container canvas {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .legend-text {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .legend-text strong {
+            color: var(--text-primary);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem 0.5rem;
+            }
+            
+            .assessment-card {
+                margin: 0.5rem;
+                border-radius: 16px;
+            }
+            
+            .welcome-header,
+            .interpretation-section {
+                padding: 1.5rem;
+            }
+            
+            .score-display {
+                font-size: 3rem;
+            }
+            
+            .level-display {
+                font-size: 1.25rem;
+            }
+            
+            .question-card {
+                padding: 1.5rem;
+            }
+            
+            .option-item {
+                padding: 0.75rem 1rem;
+            }
+
+            .radar-container {
+                height: 300px;
+                padding: 1rem;
+            }
+
+            .legend-item {
+                margin-bottom: 0.75rem;
+                padding: 0.5rem;
+            }
+
+            .legend-text {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .welcome-header {
+                padding: 1rem;
+            }
+            
+            .welcome-icon {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 1rem;
+            }
+            
+            .score-display {
+                font-size: 2.5rem;
+            }
+            
+            .level-display {
+                font-size: 1.1rem;
+            }
+            
+            .radar-section,
+            .interpretation-section {
+                padding: 1rem;
+            }
+
+            .radar-container {
+                height: 250px;
+                padding: 0.75rem;
+            }
+
+            .legend-item {
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+                margin-bottom: 0.5rem;
+                padding: 0.75rem;
+            }
+
+            .legend-color {
+                margin-right: 0.5rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .legend-text {
+                font-size: 0.85rem;
+                line-height: 1.3;
+            }
+
+            .results-header {
+                padding: 1.5rem 1rem;
+            }
+        }
+
+        /* Toast notifications */
+        .toast {
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        .toast-success {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        .toast-error {
+            background: var(--danger-gradient);
+            color: white;
+        }
+
+        .toast-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .visible { display: block !important; }
+        /* Dimensional bars for results */
+        .dimensional-bars {
+            margin-top: 1.5rem;
+        }
+
+        .dimension-bar {
+            margin-bottom: 1rem;
+        }
+
+        .dimension-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .progress-bar-container {
+            position: relative;
+            background: var(--border-color);
+            height: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.6s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+        }
+
+        .progress-bar-fill.high {
+            background: var(--success-gradient);
+        }
+
+        .progress-bar-fill.medium {
+            background: var(--warning-gradient);
+        }
+
+        .progress-bar-fill.low {
+            background: var(--danger-gradient);
+        }
+
+        .score-label {
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* Next steps styling */
+        .next-steps {
+            background: var(--surface-elevated);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+        }
+
+        .next-steps h4 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .next-steps ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+
+        .next-steps li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles">
+        <!-- Particles will be generated by JavaScript -->
+    </div>
+
+    <!-- Header -->
+    <nav class="navbar custom-header">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-bullseye me-2"></i>
+                Dashboard Coachee
+            </span>
+            <div class="user-display">
+                <i class="fas fa-user-circle me-2"></i>
+                <span id="userName">Cargando...</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Toast Container -->
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+            <div id="toastNotification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    <strong class="me-auto">Notificación</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    <!-- Toast message will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Assessment Card Container -->
+        <div class="assessment-card">
+            <!-- Welcome Section -->
+            <div class="welcome-header" id="welcomeSection">
+                <div class="welcome-icon">
+                    <i class="fas fa-bullseye fa-2x text-white"></i>
+                </div>
+                {% if participant_data %}
+                <h2 class="welcome-title">¡Hola {{ participant_data.name }}! 👋</h2>
+                <p class="welcome-description">
+                    <strong>Tu coach {{ participant_data.coach_name }}</strong> te ha invitado a completar una evaluación de asertividad.
+                    Esta evaluación te ayudará a conocer tu nivel de asertividad y recibir recomendaciones personalizadas para tu desarrollo.
+                </p>
+                {% else %}
+                <h2 class="welcome-title">Bienvenido a tu Evaluación de Asertividad</h2>
+                <p class="welcome-description">
+                    Completa la evaluación para conocer tu nivel de asertividad y recibir recomendaciones personalizadas.
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Start Assessment Section -->
+            <div class="p-4 text-center" id="loginForm">
+                <button class="btn btn-primary-custom" id="startAssessmentBtn">
+                    <i class="fas fa-rocket me-2"></i>
+                    Comenzar Evaluación
+                </button>
+            </div>
+
+            <!-- Assessment Progress Section -->
+            <div class="hidden" id="assessmentContainer">
+                <div class="p-4">
+                    <div class="custom-progress">
+                        <div class="custom-progress-bar" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div id="questionContainer">
+                        <!-- Questions will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="hidden" id="resultsContainer">
+                <!-- Results Header -->
+                <div class="results-header">
+                    <h2>¡Evaluación Completada!</h2>
+                    <div class="score-display" id="scoreDisplay">0%</div>
+                    <div class="level-display" id="levelDisplay">Nivel de Asertividad</div>
+                    <div class="completion-date">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Completado el <span id="completionDate"></span>
+                    </div>
+                </div>
+
+                <!-- Interpretation Section -->
+                <div class="interpretation-section">
+                    <div class="interpretation-card" id="interpretationDisplay">
+                        <!-- Interpretation will be loaded dynamically -->
+                    </div>
+
+                    <!-- Dimensional Summary -->
+                    <div class="interpretation-card" id="dimensionalSummary">
+                        <!-- Dimensional analysis will be loaded dynamically -->
+                    </div>
+
+                    <!-- Radar Chart Section -->
+                    <div class="radar-section">
+                        <h3 class="text-center mb-4">
+                            <i class="fas fa-chart-radar me-2"></i>
+                            Análisis por Dimensiones
+                        </h3>
+                        
+                        <div class="radar-container">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h4 class="mb-3">
+                                    <i class="fas fa-list-ul me-2"></i>
+                                    Dimensiones Evaluadas:
+                                </h4>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background-color: #ff6384;"></div>
+                                            <div class="legend-text">
+                                                <strong>Comunicación Directa:</strong>
+                                                <span>Capacidad para expresar ideas claramente</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background-color: #36a2eb;"></div>
+                                            <div class="legend-text">
+                                                <strong>Defensa de Derechos:</strong>
+                                                <span>Habilidad para hacer valer los propios derechos</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background-color: #ffce56;"></div>
+                                            <div class="legend-text">
+                                                <strong>Expresión de Opiniones:</strong>
+                                                <span>Facilidad para compartir puntos de vista</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background-color: #4bc0c0;"></div>
+                                            <div class="legend-text">
+                                                <strong>Manejo de Conflictos:</strong>
+                                                <span>Gestión efectiva de situaciones difíciles</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="legend-item">
+                                            <div class="legend-color" style="background-color: #9966ff;"></div>
+                                            <div class="legend-text">
+                                                <strong>Autoconfianza:</strong>
+                                                <span>Seguridad en las propias capacidades</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary-custom" onclick="restartAssessment()">
+                            <i class="fas fa-redo me-2"></i>
+                            Realizar Nueva Evaluación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const API_BASE_URL = window.location.origin;
+        
+        // Application state
+        let currentUser = null;
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let answers = {};
+        let radarChartInstance = null;
+        
+        // Participant data - will be loaded dynamically if needed
+        let participantData = null;
+        let invitationToken = null;
+
+        // Initialize particles animation
+        function createParticles() {
+            const particlesContainer = document.querySelector('.particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.width = particle.style.height = (Math.random() * 4 + 2) + 'px';
+                particle.style.animationDuration = (Math.random() * 10 + 20) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastElement = document.getElementById('toastNotification');
+            const toastBody = toastElement.querySelector('.toast-body');
+            const toastHeader = toastElement.querySelector('.toast-header');
+            
+            // Update toast styling based on type
+            toastElement.className = `toast toast-${type}`;
+            
+            // Update icon
+            const icon = toastHeader.querySelector('i');
+            switch (type) {
+                case 'success':
+                    icon.className = 'fas fa-check-circle text-success me-2';
+                    break;
+                case 'error':
+                    icon.className = 'fas fa-exclamation-circle text-danger me-2';
+                    break;
+                case 'warning':
+                    icon.className = 'fas fa-exclamation-triangle text-warning me-2';
+                    break;
+                default:
+                    icon.className = 'fas fa-info-circle text-primary me-2';
+            }
+            
+            toastBody.textContent = message;
+            
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+        }
+
+        // Legacy message function for backwards compatibility
+        function showMessage(message, type = 'error') {
+            showToast(message, type);
+        }
+
+        // User profile loading
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentUser = data;
+                    document.getElementById('userName').textContent = data.full_name || 'Usuario';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando perfil:', error);
+                document.getElementById('userName').textContent = 'Usuario';
+            }
+        }
+
+        // Restart assessment
+        function restartAssessment() {
+            currentQuestionIndex = 0;
+            answers = {};
+            
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+                radarChartInstance = null;
+            }
+            
+            // Reset UI state
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('assessmentContainer').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('welcomeSection').classList.remove('hidden');
+            
+            showToast('Evaluación reiniciada. Puedes completarla nuevamente.', 'info');
+        }
+
+        // Start assessment (simplified version)
+        async function startAssessment() {
+            try {
+                // Create minimal user data
+                currentUser = {
+                    age: 25,
+                    gender: 'no_especificado'
+                };
+                
+                // Update UI state
+                document.getElementById('welcomeSection').classList.add('hidden');
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('assessmentContainer').classList.remove('hidden');
+                
+                showToast('¡Evaluación iniciada! Responde todas las preguntas honestamente.', 'success');
+                
+                // Load questions from API
+                await loadQuestionsFromAPI();
+                
+            } catch (error) {
+                console.error('Error starting assessment:', error);
+                showToast('Error iniciando evaluación: ' + error.message, 'error');
+            }
+        }
+
+        // Load questions from API
+        async function loadQuestionsFromAPI() {
+            try {
+                console.log('🚀 Loading questions from API:', `${API_BASE_URL}/api/questions`);
+                
+                const response = await fetch(`${API_BASE_URL}/api/questions`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login?role=coachee';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 API Response:', data);
+                
+                if (data.success && data.questions && data.questions.length > 0) {
+                    questions = data.questions;
+                    console.log(`✅ Loaded ${questions.length} questions from API`);
+                    showQuestion();
+                } else {
+                    console.error('⚠️ API did not return valid questions');
+                    showToast('Error: No se encontraron preguntas válidas. Contacta al administrador.', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error loading questions:', error);
+                showToast('Error: No se pudieron cargar las preguntas. Contacta al administrador.', 'error');
+            }
+        }
+
+        // Display current question
+        function showQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                completeAssessment();
+                return;
+            }
+            
+            const question = questions[currentQuestionIndex];
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            
+            // Update progress bar
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            // Create question HTML with Bootstrap 5 styling
+            document.getElementById('questionContainer').innerHTML = `
+                <div class="question-card">
+                    <div class="question-title">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Pregunta ${currentQuestionIndex + 1} de ${questions.length}
+                    </div>
+                    <div class="question-text">${question.content}</div>
+                    <div class="options-container">
+                        ${question.options.map((option, index) => `
+                            <div class="option-item" onclick="selectOption(${index + 1})">
+                                <input type="radio" name="question${currentQuestionIndex}" value="${index + 1}" id="option${index}">
+                                <label for="option${index}">${option}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary-custom" onclick="nextQuestion()">
+                            <i class="fas fa-${currentQuestionIndex === questions.length - 1 ? 'flag-checkered' : 'arrow-right'} me-2"></i>
+                            ${currentQuestionIndex === questions.length - 1 ? 'Finalizar Evaluación' : 'Siguiente Pregunta'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Select option helper
+        function selectOption(value) {
+            // Remove previous selections
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Mark selected option
+            const selectedOption = document.querySelector(`input[value="${value}"]`);
+            if (selectedOption) {
+                selectedOption.checked = true;
+                selectedOption.closest('.option-item').classList.add('selected');
+            }
+        }
+
+        // Move to next question
+        function nextQuestion() {
+            const selected = document.querySelector(`input[name="question${currentQuestionIndex}"]:checked`);
+            
+            if (!selected) {
+                showToast('Por favor selecciona una respuesta', 'warning');
+                return;
+            }
+            
+            answers[currentQuestionIndex] = parseInt(selected.value);
+            currentQuestionIndex++;
+            showQuestion();
+        }
+
+        // Complete assessment
+        async function completeAssessment() {
+            try {
+                console.log('Starting assessment completion...');
+                
+                // Validate user data
+                if (!currentUser) {
+                    throw new Error('Usuario no definido');
+                }
+                
+                if (!currentUser.age || !currentUser.gender) {
+                    throw new Error('Datos de usuario incompletos');
+                }
+                
+                if (Object.keys(answers).length === 0) {
+                    throw new Error('No hay respuestas guardadas');
+                }
+                
+                // Send assessment data
+                const response = await fetch(`${API_BASE_URL}/api/save_assessment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        age: currentUser.age,
+                        gender: currentUser.gender,
+                        answers: answers
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResults(data);
+                } else {
+                    throw new Error(data.error || 'Error guardando evaluación');
+                }
+                
+            } catch (error) {
+                console.error('Assessment completion error:', error);
+                showToast('Error completando evaluación: ' + error.message, 'error');
+            }
+        }
+
+        // Display assessment results
+        function showResults(data) {
+            console.log('Displaying complete results...');
+            
+            // Hide assessment, show results
+            document.getElementById('assessmentContainer').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+            
+            // Display main score
+            document.getElementById('scoreDisplay').textContent = data.total_score + '%';
+            document.getElementById('levelDisplay').textContent = data.assertiveness_level;
+            
+            // Set completion date
+            document.getElementById('completionDate').textContent = new Date().toLocaleDateString('es-ES');
+            
+            // Create detailed interpretation
+            const interpretation = getDetailedInterpretation(data);
+            document.getElementById('interpretationDisplay').innerHTML = interpretation;
+            
+            // Create radar chart if dimensional data exists
+            if (data.dimensional_scores) {
+                createRadarChart(data.dimensional_scores);
+                showDimensionalSummary(data.dimensional_scores);
+            }
+            
+            // Show success toast
+            showToast('¡Evaluación completada exitosamente!', 'success');
+            
+            console.log('Results displayed successfully');
+        }
+
+        // Generate detailed interpretation
+        function getDetailedInterpretation(data) {
+            const score = data.total_score;
+            const level = data.assertiveness_level;
+            
+            let interpretation = `
+                <div class="detailed-interpretation">
+                    <h3 class="mb-4">
+                        <i class="fas fa-bullseye me-2"></i>
+                        Tu Nivel de Asertividad: ${level}
+                    </h3>
+                    <p class="fs-5 mb-4">
+                        Has obtenido <strong class="text-primary">${score}%</strong> en la evaluación general.
+                    </p>
+            `;
+            
+            // Interpretation based on score level
+            if (score >= 80) {
+                interpretation += `
+                    <div class="level-description high-level">
+                        <h4>
+                            <i class="fas fa-star me-2"></i>
+                            ¡Excelente nivel de asertividad!
+                        </h4>
+                        <p>Demuestras una comunicación muy efectiva, sabes defender tus derechos con respeto y manejas los conflictos de manera constructiva. Mantienes un equilibrio entre expresar tus necesidades y respetar las de otros.</p>
+                    </div>
+                `;
+            } else if (score >= 60) {
+                interpretation += `
+                    <div class="level-description good-level">
+                        <h4>
+                            <i class="fas fa-thumbs-up me-2"></i>
+                            Buen nivel de asertividad
+                        </h4>
+                        <p>Tienes una base sólida en comunicación asertiva. En la mayoría de las situaciones sabes expresarte con claridad y respeto. Hay oportunidades de mejora en algunas áreas específicas.</p>
+                    </div>
+                `;
+            } else if (score >= 40) {
+                interpretation += `
+                    <div class="level-description moderate-level">
+                        <h4>
+                            <i class="fas fa-balance-scale me-2"></i>
+                            Nivel moderado de asertividad
+                        </h4>
+                        <p>Tu comunicación asertiva está en desarrollo. A veces logras expresarte de manera efectiva, pero en otras ocasiones podrías beneficiarte de ser más directo o más empático según la situación.</p>
+                    </div>
+                `;
+            } else {
+                interpretation += `
+                    <div class="level-description low-level">
+                        <h4>
+                            <i class="fas fa-seedling me-2"></i>
+                            Oportunidad de crecimiento
+                        </h4>
+                        <p>Tienes un gran potencial para desarrollar tu asertividad. Trabajar en estas habilidades te ayudará a comunicarte con mayor confianza y efectividad en todas las áreas de tu vida.</p>
+                    </div>
+                `;
+            }
+            
+            interpretation += `
+                    <div class="next-steps">
+                        <h4>
+                            <i class="fas fa-chart-line me-2"></i>
+                            Próximos pasos recomendados:
+                        </h4>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Revisa tu gráfico dimensional para identificar fortalezas y áreas de mejora
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Practica la comunicación asertiva en situaciones cotidianas
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Considera trabajar con un coach para desarrollo personalizado
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            return interpretation;
+        }
+
+        // Show dimensional summary with progress bars
+        function showDimensionalSummary(dimensionalScores) {
+            const summaryContainer = document.getElementById('dimensionalSummary');
+            if (!summaryContainer) return;
+            
+            let summaryHTML = `
+                <h4 class="mb-4">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Análisis por Dimensiones:
+                </h4>
+                <div class="dimensional-bars">
+            `;
+            
+            const dimensions = {
+                'comunicacion': 'Comunicación Directa',
+                'derechos': 'Defensa de Derechos',
+                'opiniones': 'Expresión de Opiniones',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            
+            Object.entries(dimensions).forEach(([key, label]) => {
+                const score = dimensionalScores[key] || 0;
+                const level = score >= 75 ? 'high' : score >= 50 ? 'medium' : 'low';
+                
+                summaryHTML += `
+                    <div class="dimension-bar">
+                        <div class="dimension-label">${label}</div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill ${level}" style="width: ${score}%">
+                                <span class="score-label">${score.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            summaryHTML += '</div>';
+            summaryContainer.innerHTML = summaryHTML;
+        }
+
+        // Create radar chart for dimensional analysis
+        function createRadarChart(dimensionalScores) {
+            try {
+                if (radarChartInstance) {
+                    radarChartInstance.destroy();
+                }
+
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                
+                const data = {
+                    labels: [
+                        'Comunicación\nDirecta',
+                        'Defensa de\nDerechos', 
+                        'Expresión de\nOpiniones',
+                        'Manejo de\nConflictos',
+                        'Autoconfianza'
+                    ],
+                    datasets: [{
+                        label: 'Nivel de Asertividad',
+                        data: [
+                            dimensionalScores.comunicacion || 0,
+                            dimensionalScores.derechos || 0,
+                            dimensionalScores.opiniones || 0,
+                            dimensionalScores.conflictos || 0,
+                            dimensionalScores.autoconfianza || 0
+                        ],
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                };
+
+                const config = {
+                    type: 'radar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        aspectRatio: 1,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                borderColor: 'rgba(102, 126, 234, 1)',
+                                borderWidth: 1,
+                                titleFont: {
+                                    size: 14
+                                },
+                                bodyFont: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    color: 'rgba(0, 0, 0, 0.1)',
+                                    lineWidth: 1
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)',
+                                    lineWidth: 1
+                                },
+                                pointLabels: {
+                                    font: {
+                                        size: window.innerWidth <= 576 ? 10 : window.innerWidth <= 768 ? 12 : 14,
+                                        weight: 'bold'
+                                    },
+                                    color: '#4a5568',
+                                    padding: window.innerWidth <= 576 ? 5 : 10
+                                },
+                                ticks: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    stepSize: 20,
+                                    color: '#718096',
+                                    backdropColor: 'transparent',
+                                    font: {
+                                        size: window.innerWidth <= 576 ? 10 : 12
+                                    }
+                                }
+                            }
+                        },
+                        elements: {
+                            point: {
+                                radius: window.innerWidth <= 576 ? 4 : window.innerWidth <= 768 ? 6 : 8,
+                                hoverRadius: window.innerWidth <= 576 ? 6 : window.innerWidth <= 768 ? 8 : 10
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: window.innerWidth <= 576 ? 10 : 20,
+                                bottom: window.innerWidth <= 576 ? 10 : 20,
+                                left: window.innerWidth <= 576 ? 10 : 20,
+                                right: window.innerWidth <= 576 ? 10 : 20
+                            }
+                        }
+                    }
+                };
+
+                radarChartInstance = new Chart(ctx, config);
+                console.log('✅ Radar chart created successfully');
+
+                // Add resize listener for mobile responsiveness
+                const resizeHandler = () => {
+                    if (radarChartInstance) {
+                        setTimeout(() => {
+                            radarChartInstance.resize();
+                        }, 100);
+                    }
+                };
+
+                window.addEventListener('resize', resizeHandler);
+                window.addEventListener('orientationchange', resizeHandler);
+
+            } catch (error) {
+                console.error('❌ Error creating radar chart:', error);
+                showToast('Error creando gráfico. Los datos están disponibles en el análisis dimensional.', 'warning');
+            }
+        }
+
+        // Initialize application
+        function initializeApp() {
+            console.log('Initializing coachee dashboard...');
+            
+            // Create animated particles
+            createParticles();
+            
+            // Load user profile
+            loadUserProfile();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            console.log('Dashboard initialized successfully');
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            console.log('Setting up event listeners...');
+            
+            const startBtn = document.getElementById('startAssessmentBtn');
+            if (startBtn) {
+                console.log('✅ Start assessment button found');
+                
+                // Remove any existing listeners
+                startBtn.removeEventListener('click', startAssessment);
+                
+                // Add new listener
+                startBtn.addEventListener('click', startAssessment);
+                
+                console.log('✅ Event listeners configured');
+            } else {
+                console.error('❌ Start assessment button not found');
+            }
+
+            // Add keyboard navigation support
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    const activeElement = document.activeElement;
+                    if (activeElement && activeElement.classList.contains('option-item')) {
+                        activeElement.click();
+                    }
+                }
+            });
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+        
+        // Backup initialization
+        setTimeout(initializeApp, 100);
+    </script>
+</body>
+</html>
