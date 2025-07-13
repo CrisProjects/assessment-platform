@@ -241,6 +241,17 @@ def coachee_api_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Decorador para rutas que requieren acceso de administrador
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Autenticación requerida'}), 401
+        if current_user.role != 'platform_admin':
+            return jsonify({'error': 'Acceso denegado. Solo administradores pueden acceder a esta función.'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
 # ====================================================
 # INICIALIZACIÓN AUTOMÁTICA DE BASE DE DATOS EN PRODUCCIÓN
 # ====================================================
@@ -667,6 +678,7 @@ def api_admin_login():
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
 
 @app.route('/api/admin/change-password', methods=['POST'])
+@admin_required
 def api_admin_change_password():
     """Cambiar contraseña del administrador"""
     try:
@@ -680,18 +692,12 @@ def api_admin_change_password():
         if len(new_password) < 6:
             return jsonify({'error': 'La nueva contraseña debe tener al menos 6 caracteres'}), 400
         
-        # Buscar el usuario admin
-        admin_user = User.query.filter_by(username='admin', role='platform_admin').first()
-        
-        if not admin_user:
-            return jsonify({'error': 'Usuario administrador no encontrado'}), 404
-        
-        # Verificar contraseña actual
-        if not admin_user.check_password(current_password):
+        # Verificar contraseña actual (current_user ya está autenticado como admin)
+        if not current_user.check_password(current_password):
             return jsonify({'error': 'Contraseña actual incorrecta'}), 401
         
         # Actualizar contraseña
-        admin_user.set_password(new_password)
+        current_user.set_password(new_password)
         db.session.commit()
         
         return jsonify({
@@ -704,6 +710,7 @@ def api_admin_change_password():
         return jsonify({'error': f'Error al cambiar contraseña: {str(e)}'}), 500
 
 @app.route('/api/admin/create-coach', methods=['POST'])
+@admin_required
 def api_admin_create_coach():
     """Crear un nuevo usuario Coach - Solo para administradores"""
     try:
@@ -770,6 +777,7 @@ def api_admin_create_coach():
         return jsonify({'error': f'Error creando coach: {str(e)}'}), 500
 
 @app.route('/api/admin/coaches', methods=['GET'])
+@admin_required
 def api_admin_get_coaches():
     """Obtener lista de todos los coaches - Solo para administradores"""
     try:
