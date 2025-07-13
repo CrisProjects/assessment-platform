@@ -812,6 +812,58 @@ def api_admin_get_coaches():
     except Exception as e:
         return jsonify({'error': f'Error obteniendo coaches: {str(e)}'}), 500
 
+@app.route('/api/admin/platform-stats', methods=['GET'])
+@admin_required
+def api_admin_platform_stats():
+    """Obtener estadísticas generales de la plataforma - Solo para administradores"""
+    try:
+        # Contar usuarios por rol
+        total_users = User.query.count()
+        total_coaches = User.query.filter_by(role='coach').count()
+        total_coachees = User.query.filter_by(role='coachee').count()
+        total_admins = User.query.filter_by(role='platform_admin').count()
+        
+        # Contar evaluaciones totales
+        total_assessments = AssessmentResult.query.count()
+        
+        # Calcular puntuación promedio global
+        avg_score_result = db.session.query(func.avg(AssessmentResult.score)).scalar()
+        avg_score = round(avg_score_result, 1) if avg_score_result else 0
+        
+        # Evaluaciones del último mes
+        last_month = datetime.utcnow() - timedelta(days=30)
+        recent_assessments = AssessmentResult.query.filter(
+            AssessmentResult.completed_at >= last_month
+        ).count()
+        
+        # Distribución de usuarios activos vs inactivos
+        active_users = User.query.filter_by(is_active=True).count()
+        inactive_users = User.query.filter_by(is_active=False).count()
+        
+        # Datos para gráfico de distribución de usuarios
+        user_distribution = {
+            'coaches': total_coaches,
+            'coachees': total_coachees,
+            'admins': total_admins
+        }
+        
+        return jsonify({
+            'success': True,
+            'total_users': total_users,
+            'total_coaches': total_coaches,
+            'total_coachees': total_coachees,
+            'total_admins': total_admins,
+            'total_assessments': total_assessments,
+            'avg_score': avg_score,
+            'recent_assessments': recent_assessments,
+            'active_users': active_users,
+            'inactive_users': inactive_users,
+            'user_distribution': user_distribution
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo estadísticas: {str(e)}'}), 500
+
 # ========================
 # RUTAS PARA COACHES
 # ========================
