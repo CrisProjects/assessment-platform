@@ -2006,8 +2006,8 @@ def api_coach_evaluation_summary(coachee_id):
         
         # Identificar fortalezas y áreas de mejora
         sorted_scores = sorted(average_scores.items(), key=lambda x: x[1], reverse=True)
-        strengths = [dim for dim, score in sorted_scores[:2] if score >= 3.5]
-        improvement_areas = [dim for dim, score in sorted_scores[-2:] if score < 3.0]
+        strengths = [dim for dim, score in sorted_scores[:2] if score >= 70]  # Convertido a porcentaje
+        improvement_areas = [dim for dim, score in sorted_scores[-2:] if score < 60]  # Convertido a porcentaje
         
         # Generar recomendaciones básicas
         recommendations = []
@@ -2487,7 +2487,7 @@ def process_evaluation_details(assessment, coachee_user):
         'title': 'Evaluación de Asertividad',
         'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
         'total_score': round(total_score, 1),
-        'total_percentage': round((total_score / LIKERT_SCALE_MAX) * 100, 1),
+        'total_percentage': round(total_score, 1),  # total_score ya es un porcentaje (0-100)
         'assertiveness_level': assertiveness_level,
         'dimensional_scores': dimensional_scores,
         'dimension_analysis': dimension_analysis,
@@ -2496,7 +2496,7 @@ def process_evaluation_details(assessment, coachee_user):
         'radar_data': {
             'labels': [format_dimension_name(dim) for dim in dimensional_scores.keys()],
             'scores': list(dimensional_scores.values()),
-            'percentages': [round((score / LIKERT_SCALE_MAX) * 100, 1) for score in dimensional_scores.values()]
+            'percentages': list(dimensional_scores.values())  # dimensional_scores ya son porcentajes
         }
     }
 
@@ -2524,7 +2524,7 @@ def generate_dimension_analysis(dimensional_scores):
     for dimension, score in dimensional_scores.items():
         dimension_analysis[dimension] = {
             'score': round(score, 1),
-            'percentage': round((score / LIKERT_SCALE_MAX) * 100, 1),
+            'percentage': round(score, 1),  # score ya es un porcentaje (0-100)
             'level': get_dimension_level(score),
             'interpretation': get_dimension_interpretation(dimension, score),
             'recommendations': get_dimension_recommendations(dimension, score)
@@ -2540,16 +2540,16 @@ def generate_assessment_analysis(assertiveness_level, dimensional_scores):
     }
 
 def get_dimension_level(score):
-    """Determinar el nivel de una dimensión específica"""
-    if score >= 4.5:
+    """Determinar el nivel de una dimensión específica basado en porcentaje (0-100)"""
+    if score >= 90:
         return 'Excelente'
-    elif score >= 4.0:
+    elif score >= 80:
         return 'Muy Bueno'
-    elif score >= 3.5:
+    elif score >= 70:
         return 'Bueno'
-    elif score >= 3.0:
+    elif score >= 60:
         return 'Regular'
-    elif score >= 2.5:
+    elif score >= 50:
         return 'Mejorable'
     else:
         return 'Necesita Atención'
@@ -2584,7 +2584,7 @@ def get_dimension_interpretation(dimension, score):
         }
     }
     
-    level = 'high' if score >= 4.0 else 'medium' if score >= 3.0 else 'low'
+    level = 'high' if score >= 80 else 'medium' if score >= 60 else 'low'
     return interpretations.get(dimension, {}).get(level, 'Puntuación en desarrollo.')
 
 def get_dimension_recommendations(dimension, score):
@@ -2617,7 +2617,7 @@ def get_dimension_recommendations(dimension, score):
         }
     }
     
-    level = 'high' if score >= 4.0 else 'medium' if score >= 3.0 else 'low'
+    level = 'high' if score >= 80 else 'medium' if score >= 60 else 'low'
     return recommendations.get(dimension, {}).get(level, ['Continúa desarrollando esta área.'])
 
 def get_assessment_strengths_detailed(dimensional_scores):
@@ -2626,7 +2626,7 @@ def get_assessment_strengths_detailed(dimensional_scores):
     sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True)
     
     for dimension, score in sorted_dimensions[:2]:  # Top 2 fortalezas
-        if score >= 3.5:
+        if score >= 70:  # Convertido a porcentaje (70% equivale a 3.5 en escala 1-5)
             dimension_name = format_dimension_name(dimension)
             strengths.append({
                 'dimension': dimension_name,
@@ -2642,7 +2642,7 @@ def get_assessment_improvements_detailed(dimensional_scores):
     sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1])
     
     for dimension, score in sorted_dimensions[:2]:  # Bottom 2 áreas de mejora
-        if score < 4.0:
+        if score < 80:  # Convertido a porcentaje (80% equivale a 4.0 en escala 1-5)
             dimension_name = format_dimension_name(dimension)
             improvements.append({
                 'dimension': dimension_name,
@@ -2659,25 +2659,25 @@ def get_general_recommendations(assertiveness_level, dimensional_scores):
     
     recommendations = []
     
-    if avg_score >= 4.5:
+    if avg_score >= 90:  # Convertido a porcentaje (4.5 -> 90%)
         recommendations = [
             "¡Excelente! Tu nivel de asertividad es muy alto. Mantén estas habilidades.",
             "Considera ser mentor de otros que estén desarrollando su asertividad.",
             "Continúa practicando para mantener tu nivel en diferentes contextos."
         ]
-    elif avg_score >= 4.0:
+    elif avg_score >= 80:  # Convertido a porcentaje (4.0 -> 80%)
         recommendations = [
             "Tu asertividad está en un nivel muy bueno. Sigue practicando.",
             "Identifica situaciones específicas donde puedes ser aún más asertivo.",
             "Mantén la constancia en tu desarrollo personal."
         ]
-    elif avg_score >= 3.5:
+    elif avg_score >= 70:  # Convertido a porcentaje (3.5 -> 70%)
         recommendations = [
             "Tu asertividad está en desarrollo. Hay áreas donde puedes mejorar.",
             "Practica técnicas de comunicación asertiva regularmente.",
             "Considera tomar un curso o workshop sobre asertividad."
         ]
-    elif avg_score >= 3.0:
+    elif avg_score >= 60:  # Convertido a porcentaje (3.0 -> 60%)
         recommendations = [
             "Tienes una base sólida, pero hay espacio significativo para mejorar.",
             "Enfócate en las dimensiones con puntuaciones más bajas.",
