@@ -475,8 +475,8 @@ def ensure_database_initialized():
         except Exception as auto_init_error:
             print(f"⚠️ Error en auto-inicialización: {auto_init_error}")
 
-# Inicializar inmediatamente al importar el módulo
-ensure_database_initialized()
+# Inicializar inmediatamente al importar el módulo  
+# ensure_database_initialized()  # DISABLED: Data is already initialized
 
 # Decoradores para control de acceso por roles
 def role_required(required_role):
@@ -1744,7 +1744,7 @@ def api_coach_evaluation_summary(coachee_id):
             return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
         
         # Obtener todas las evaluaciones del coachee
-        assessments = Assessment.query.filter_by(user_id=coachee_id).order_by(Assessment.created_at.desc()).all()
+        assessments = AssessmentResult.query.filter_by(user_id=coachee_id).order_by(AssessmentResult.completed_at.desc()).all()
         
         if not assessments:
             return jsonify({
@@ -1769,57 +1769,70 @@ def api_coach_evaluation_summary(coachee_id):
         latest_assessment = assessments[0]
         total_assessments = len(assessments)
         
-        # Calcular promedios por dimensión
-        dimension_totals = {
-            'comunicacion': 0, 'derechos': 0, 'opiniones': 0, 
-            'conflictos': 0, 'autoconfianza': 0
-        }
-        dimension_counts = {dim: 0 for dim in dimension_totals.keys()}
-        
-        for assessment in assessments:
-            responses = json.loads(assessment.responses)
-            for response in responses:
-                dimension = response.get('dimension')
-                if dimension in dimension_totals:
-                    dimension_totals[dimension] += response.get('score', 0)
-                    dimension_counts[dimension] += 1
-        
-        # Calcular promedios
+        # Intentar usar dimensional_scores si está disponible, sino calcular manualmente
         average_scores = {}
-        for dimension in dimension_totals:
-            if dimension_counts[dimension] > 0:
-                average_scores[dimension] = round(dimension_totals[dimension] / dimension_counts[dimension], 2)
-            else:
-                average_scores[dimension] = 0
+        
+        if latest_assessment.dimensional_scores:
+            try:
+                dimensional_data = json.loads(latest_assessment.dimensional_scores) if isinstance(latest_assessment.dimensional_scores, str) else latest_assessment.dimensional_scores
+                if dimensional_data and isinstance(dimensional_data, dict):
+                    average_scores = dimensional_data
+            except:
+                pass
+        
+        # Si no hay dimensional_scores, calcular desde responses
+        if not average_scores:
+            # Obtener responses de la evaluación más reciente
+            from sqlalchemy import text
+            responses_query = text("""
+                SELECT r.question_id, r.answer_value, q.dimension 
+                FROM response r 
+                JOIN question q ON r.question_id = q.id 
+                WHERE r.assessment_result_id = :assessment_id
+            """)
+            
+            try:
+                with db.engine.connect() as conn:
+                    responses_result = conn.execute(responses_query, assessment_id=latest_assessment.id)
+                    responses = responses_result.fetchall()
+                
+                # Calcular promedios por dimensión
+                dimension_totals = {
+                    'comunicacion': 0, 'derechos': 0, 'opiniones': 0, 
+                    'conflictos': 0, 'autoconfianza': 0
+                }
+                dimension_counts = {dim: 0 for dim in dimension_totals.keys()}
+                
+                for response in responses:
+                    dimension = response[2]  # q.dimension
+                    score = response[1]      # r.answer_value
+                    if dimension in dimension_totals:
+                        dimension_totals[dimension] += score
+                        dimension_counts[dimension] += 1
+                
+                # Calcular promedios
+                for dimension in dimension_totals:
+                    if dimension_counts[dimension] > 0:
+                        average_scores[dimension] = round(dimension_totals[dimension] / dimension_counts[dimension], 2)
+                    else:
+                        average_scores[dimension] = 0
+            except Exception as e:
+                print(f"Error calculando scores: {e}")
+                # Valores por defecto
+                average_scores = {
+                    'comunicacion': 0, 'derechos': 0, 'opiniones': 0, 
+                    'conflictos': 0, 'autoconfianza': 0
+                }
         
         # Determinar tendencia de progreso
         progress_trend = 'estable'
         if len(assessments) >= 2:
             recent_avg = sum(average_scores.values()) / len(average_scores) if average_scores else 0
+            older_score = assessments[1].score or 0
             
-            # Calcular promedio de evaluación anterior
-            older_assessment = assessments[1]
-            older_responses = json.loads(older_assessment.responses)
-            older_totals = {dim: 0 for dim in dimension_totals.keys()}
-            older_counts = {dim: 0 for dim in dimension_totals.keys()}
-            
-            for response in older_responses:
-                dimension = response.get('dimension')
-                if dimension in older_totals:
-                    older_totals[dimension] += response.get('score', 0)
-                    older_counts[dimension] += 1
-            
-            older_avg = 0
-            if any(older_counts.values()):
-                older_scores = []
-                for dim in older_totals:
-                    if older_counts[dim] > 0:
-                        older_scores.append(older_totals[dim] / older_counts[dim])
-                older_avg = sum(older_scores) / len(older_scores) if older_scores else 0
-            
-            if recent_avg > older_avg + 0.5:
+            if recent_avg > older_score + 5:
                 progress_trend = 'mejorando'
-            elif recent_avg < older_avg - 0.5:
+            elif recent_avg < older_score - 5:
                 progress_trend = 'empeorando'
         
         # Identificar fortalezas y áreas de mejora
@@ -1851,8 +1864,8 @@ def api_coach_evaluation_summary(coachee_id):
                 'total_assessments': total_assessments,
                 'latest_assessment': {
                     'id': latest_assessment.id,
-                    'date': latest_assessment.created_at.strftime('%Y-%m-%d %H:%M'),
-                    'score': latest_assessment.total_score
+                    'date': latest_assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
+                    'score': latest_assessment.score or 0
                 },
                 'average_scores': average_scores,
                 'progress_trend': progress_trend,
