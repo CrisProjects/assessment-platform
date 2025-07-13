@@ -1308,20 +1308,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 mb-4">
-                <div class="card modern-panel h-100">
-                    <div class="card-header panel-header">
-                        <h3 class="panel-title">
-                            <i class="fas fa-chart-pie me-2 text-primary"></i>Distribución de Niveles (Copia)
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="distributionChart2"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
         </div>
 
         <!-- Mis Coachees -->
@@ -1364,7 +1351,6 @@
         let coacheesData = [];
         let statsData = {};
         let distributionChart = null;
-        let distributionChart2 = null;  // Segunda copia del gráfico de distribución
         let progressChart = null;       // Ya no se usará
         let questions = [];
         const API_BASE_URL = '';
@@ -1558,7 +1544,6 @@
             console.log('📊 Progress data:', data.progress_data);
             
             updateDistributionChart(data.score_distribution || {});
-            updateDistributionChart2(data.score_distribution || {}); // Segunda copia del gráfico
         }
 
         // Gráfico de distribución
@@ -1602,46 +1587,6 @@
             });
         }
 
-        // Gráfico de distribución (segunda copia)
-        function updateDistributionChart2(distribution) {
-            const ctx = document.getElementById('distributionChart2').getContext('2d');
-            
-            if (distributionChart2) {
-                distributionChart2.destroy();
-            }
-            
-            const levels = ['Poco Asertivo', 'Moderadamente Asertivo', 'Asertivo', 'Muy Asertivo'];
-            const counts = levels.map(level => distribution[level] || 0);
-            const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
-            
-            distributionChart2 = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: levels,
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: colors,
-                        borderWidth: 0,
-                        hoverBorderWidth: 2,
-                        hoverBorderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: { size: 12 }
-                            }
-                        }
-                    }
-                }
-            });
-        }
 
         // Gráfico de progreso por coachee (ya no se usa)
         function updateProgressChart(progressData) {
