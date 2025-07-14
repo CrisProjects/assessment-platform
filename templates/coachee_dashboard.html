@@ -16,23 +16,62 @@
     
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            --info-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            --surface: #ffffff;
-            --surface-elevated: #f8fafc;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border-color: #e2e8f0;
+            /* Calm.com authentic color palette - extracted from their actual design */
+            --calm-primary: #5A67D8;           /* Calm's signature blue */
+            --calm-primary-light: #7C8AE6;    /* Lighter version of signature blue */
+            --calm-primary-dark: #4C51BF;     /* Darker version for depth */
+            --calm-primary-ultra-light: #EDF2F7; /* Very light blue for backgrounds */
+            
+            --calm-secondary: #68D391;        /* Calm's nature green */
+            --calm-secondary-light: #9AE6B4;  /* Light nature green */
+            --calm-secondary-dark: #48BB78;   /* Darker green for contrast */
+            
+            --calm-accent: #ED8936;           /* Warm sunset orange */
+            --calm-accent-light: #F6AD55;     /* Light sunset orange */
+            --calm-accent-dark: #DD6B20;      /* Dark sunset orange */
+            
+            /* Neutral tones - Calm's soft grays and whites */
+            --calm-background: #F7FAFC;       /* Soft off-white background */
+            --calm-surface: #FFFFFF;          /* Pure white surfaces */
+            --calm-surface-elevated: #EDF2F7; /* Slightly elevated surface */
+            --calm-border: #E2E8F0;           /* Soft gray border */
+            --calm-border-light: #F1F5F9;     /* Very light border */
+            
+            /* Text colors - Calm's readable grays */
+            --calm-text-primary: #2D3748;     /* Dark gray for primary text */
+            --calm-text-secondary: #4A5568;   /* Medium gray for secondary text */
+            --calm-text-muted: #718096;       /* Light gray for muted text */
+            --calm-text-subtle: #A0AEC0;      /* Very light gray for subtle text */
+            
+            /* Status colors inspired by Calm's peaceful approach */
+            --calm-success: #68D391;          /* Nature green */
+            --calm-warning: #ED8936;          /* Sunset orange */
+            --calm-danger: #F56565;           /* Soft coral red */
+            --calm-info: #5A67D8;             /* Signature blue */
+            
+            /* Gradients with Calm's serene feel */
+            --primary-gradient: linear-gradient(135deg, var(--calm-primary) 0%, var(--calm-primary-light) 100%);
+            --success-gradient: linear-gradient(135deg, var(--calm-secondary) 0%, var(--calm-secondary-light) 100%);
+            --warning-gradient: linear-gradient(135deg, var(--calm-accent) 0%, var(--calm-accent-light) 100%);
+            --danger-gradient: linear-gradient(135deg, var(--calm-danger) 0%, #FC8181 100%);
+            --info-gradient: linear-gradient(135deg, var(--calm-info) 0%, var(--calm-primary-light) 100%);
+            --background-gradient: linear-gradient(135deg, var(--calm-background) 0%, var(--calm-primary-ultra-light) 100%);
+            
+            /* Legacy variables for compatibility */
+            --surface: var(--calm-surface);
+            --surface-elevated: var(--calm-surface-elevated);
+            --text-primary: var(--calm-text-primary);
+            --text-secondary: var(--calm-text-secondary);
+            --border-color: var(--calm-border);
         }
 
         body {
-            background: var(--primary-gradient);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-gradient);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             min-height: 100vh;
             line-height: 1.6;
+            color: var(--calm-text-primary);
+            letter-spacing: -0.01em; /* Subtle letter spacing for elegance */
         }
 
         /* Animated background particles */
@@ -49,9 +88,9 @@
 
         .particle {
             position: absolute;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(90, 103, 216, 0.08); /* Calm's signature blue with very low opacity */
             border-radius: 50%;
-            animation: float 20s infinite linear;
+            animation: float 25s infinite linear; /* Slower, more peaceful animation */
         }
 
         @keyframes float {
@@ -69,33 +108,34 @@
 
         /* Custom header */
         .custom-header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--calm-border);
             position: relative;
             z-index: 2;
+            box-shadow: 0 1px 20px rgba(90, 103, 216, 0.06); /* Softer shadow with new blue */
         }
 
         .custom-header .navbar-brand {
-            color: white !important;
-            font-weight: 700;
+            color: var(--calm-text-primary) !important;
+            font-weight: 600;
             font-size: 1.5rem;
         }
 
         .user-display {
-            color: white;
+            color: var(--calm-text-primary);
             font-weight: 500;
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--calm-surface-elevated);
             padding: 0.5rem 1rem;
             border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--calm-border);
         }
 
         /* Logout button styles */
         .logout-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            background: var(--calm-surface-elevated);
+            border: 1px solid var(--calm-border);
+            color: var(--calm-text-primary);
             padding: 0.5rem 1rem;
             border-radius: 20px;
             margin-left: 1rem;
@@ -104,14 +144,15 @@
             display: inline-flex;
             align-items: center;
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
+            background: var(--calm-primary);
+            border-color: var(--calm-primary);
             color: white;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(90, 103, 216, 0.25); /* Updated with new primary color */
         }
 
         .logout-btn:active {
@@ -161,24 +202,24 @@
 
         /* Dashboard cards */
         .dashboard-card {
-            background: var(--surface);
+            background: var(--calm-surface);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(90, 103, 216, 0.06); /* Updated with new primary color */
             overflow: hidden;
             margin-bottom: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--calm-border);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .dashboard-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 12px 40px rgba(90, 103, 216, 0.10); /* Updated with new primary color */
         }
 
         .card-header {
-            background: var(--surface-elevated);
+            background: var(--calm-surface-elevated);
             padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--calm-border);
         }
 
         .card-header h3 {
@@ -226,48 +267,48 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
-        /* Evaluaciones Tab - Azul */
+        /* Evaluaciones Tab - Calm Blue */
         .nav-tabs .nav-link#evaluations-tab {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: linear-gradient(135deg, var(--calm-primary) 0%, var(--calm-primary-dark) 100%);
         }
 
         .nav-tabs .nav-link#evaluations-tab:hover,
         .nav-tabs .nav-link#evaluations-tab.active {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, var(--calm-primary-dark) 0%, #434190 100%);
+            box-shadow: 0 6px 20px rgba(90, 103, 216, 0.4); /* Updated with new primary color */
         }
 
-        /* Assessment Tab - Verde */
+        /* Assessment Tab - Calm Green */
         .nav-tabs .nav-link#assessment-tab {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, var(--calm-secondary) 0%, var(--calm-secondary-dark) 100%);
         }
 
         .nav-tabs .nav-link#assessment-tab:hover,
         .nav-tabs .nav-link#assessment-tab.active {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, var(--calm-secondary-dark) 0%, #38A169 100%);
+            box-shadow: 0 6px 20px rgba(104, 211, 145, 0.4); /* Updated with new secondary color */
         }
 
-        /* Tareas Tab - Naranja */
+        /* Tareas Tab - Calm Orange */
         .nav-tabs .nav-link#tasks-tab {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            background: linear-gradient(135deg, var(--calm-accent) 0%, var(--calm-accent-dark) 100%);
         }
 
         .nav-tabs .nav-link#tasks-tab:hover,
         .nav-tabs .nav-link#tasks-tab.active {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            background: linear-gradient(135deg, var(--calm-accent-dark) 0%, #C05621 100%);
+            box-shadow: 0 6px 20px rgba(237, 137, 54, 0.4); /* Updated with new accent color */
         }
 
-        /* Progreso Tab - Violeta */
+        /* Progreso Tab - Calm Secondary */
         .nav-tabs .nav-link#progress-tab {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            background: linear-gradient(135deg, var(--calm-secondary-light) 0%, var(--calm-success) 100%);
         }
 
         .nav-tabs .nav-link#progress-tab:hover,
         .nav-tabs .nav-link#progress-tab.active {
-            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            background: linear-gradient(135deg, var(--calm-success) 0%, #6AB91A 100%);
+            box-shadow: 0 6px 20px rgba(168, 230, 207, 0.4);
         }
 
         /* Iconos con animación */
@@ -284,17 +325,17 @@
         .btn-primary-custom {
             background: var(--primary-gradient);
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 0.75rem 1.5rem;
             font-weight: 600;
             color: white;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(90, 103, 216, 0.2); /* Updated with new primary color */
         }
 
         .btn-primary-custom:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(90, 103, 216, 0.4); /* Updated with new primary color */
             color: white;
         }
 
@@ -310,7 +351,7 @@
 
         .btn-success-custom:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 8px 25px rgba(104, 211, 145, 0.4); /* Updated with new secondary/success color */
             color: white;
         }
 
@@ -326,7 +367,7 @@
 
         .btn-warning-custom:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 8px 25px rgba(237, 137, 54, 0.4); /* Updated with new accent/warning color */
             color: white;
         }
 
@@ -441,16 +482,18 @@
 
         /* Summary cards */
         .summary-card {
-            background: var(--surface);
-            border-radius: 12px;
+            background: var(--calm-surface);
+            border-radius: 16px;
             padding: 1.5rem;
             text-align: center;
-            border: 1px solid var(--border-color);
-            transition: transform 0.2s ease;
+            border: 1px solid var(--calm-border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 20px rgba(90, 103, 216, 0.05); /* Updated with new primary color */
         }
 
         .summary-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(90, 103, 216, 0.1); /* Updated with new primary color */
         }
 
         .summary-icon {
@@ -522,10 +565,11 @@
         .evaluation-description {
             line-height: 1.4;
             font-style: italic;
-            background: rgba(102, 126, 234, 0.05);
-            padding: 0.5rem;
-            border-radius: 6px;
-            border-left: 3px solid #667eea;
+            background: rgba(74, 144, 226, 0.05);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--calm-primary);
+            color: var(--calm-text-secondary);
         }
 
         .evaluation-date {

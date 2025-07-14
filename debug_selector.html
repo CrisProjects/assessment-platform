@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Selector Coachees</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .button { background: #007bff; color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 4px; cursor: pointer; }
+        .result { background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; }
+        select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Debug: Selector de Coachees para Tareas</h1>
+    
+    <div class="section">
+        <h3>1. Login</h3>
+        <button class="button" onclick="doLogin()">Login como Coach</button>
+        <div id="loginResult" class="result" style="display: none;"></div>
+    </div>
+    
+    <div class="section">
+        <h3>2. Test API Directa</h3>
+        <button class="button" onclick="testAPI()">Probar /api/coach/my-coachees</button>
+        <div id="apiResult" class="result" style="display: none;"></div>
+    </div>
+    
+    <div class="section">
+        <h3>3. Test Selector</h3>
+        <button class="button" onclick="testSelector()">Crear y Poblar Selector</button>
+        <select id="testCoacheeSelect">
+            <option value="">Seleccionar coachee...</option>
+        </select>
+        <div id="selectorResult" class="result" style="display: none;"></div>
+    </div>
+    
+    <div class="section">
+        <h3>4. Simular Funciones Dashboard</h3>
+        <button class="button" onclick="simulateDashboardFlow()">Simular Flujo Dashboard</button>
+        <div id="simulationResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        let coacheesForTasks = [];
+        
+        async function doLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Haciendo login...';
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: 'coach@assessment.com',
+                        password: 'coach123'
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    resultDiv.textContent = `✅ Login exitoso: ${data.user.full_name} (${data.user.role})`;
+                } else {
+                    resultDiv.textContent = `❌ Error: ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Probando API...';
+            
+            try {
+                const response = await fetch('/api/coach/my-coachees', {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                console.log('🔍 Response status:', response.status);
+                console.log('🔍 Response headers:', [...response.headers.entries()]);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('🔍 Response data:', data);
+                    
+                    resultDiv.textContent = `✅ API Response (${response.status}):\n` +
+                        `Tipo: ${typeof data}\n` +
+                        `Es Array: ${Array.isArray(data)}\n` +
+                        `Cantidad: ${Array.isArray(data) ? data.length : 'N/A'}\n` +
+                        `Datos: ${JSON.stringify(data, null, 2)}`;
+                    
+                    // Guardar para otros tests
+                    coacheesForTasks = Array.isArray(data) ? data : [];
+                } else {
+                    const error = await response.text();
+                    resultDiv.textContent = `❌ Error ${response.status}: ${error}`;
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        function testSelector() {
+            const resultDiv = document.getElementById('selectorResult');
+            const select = document.getElementById('testCoacheeSelect');
+            resultDiv.style.display = 'block';
+            
+            console.log('🔍 Datos disponibles:', coacheesForTasks);
+            console.log('🔍 Selector encontrado:', !!select);
+            
+            if (!select) {
+                resultDiv.textContent = '❌ Selector no encontrado';
+                return;
+            }
+            
+            if (coacheesForTasks.length === 0) {
+                resultDiv.textContent = '⚠️ No hay datos. Ejecuta primero "Probar API"';
+                return;
+            }
+            
+            // Limpiar selector
+            select.innerHTML = '<option value="">Seleccionar coachee...</option>';
+            
+            // Poblar con datos
+            coacheesForTasks.forEach(coachee => {
+                const option = document.createElement('option');
+                option.value = coachee.id;
+                option.textContent = coachee.full_name;
+                select.appendChild(option);
+            });
+            
+            resultDiv.textContent = `✅ Selector poblado con ${coacheesForTasks.length} coachees:\n` +
+                coacheesForTasks.map(c => `- ${c.full_name} (ID: ${c.id})`).join('\n');
+        }
+        
+        async function simulateDashboardFlow() {
+            const resultDiv = document.getElementById('simulationResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Simulando flujo del dashboard...\n';
+            
+            // Simulación exacta de las funciones del dashboard
+            try {
+                console.log('🔄 loadCoacheesForTasks: Iniciando...');
+                resultDiv.textContent += '🔄 Iniciando loadCoacheesForTasks...\n';
+                
+                console.log('📡 Cargando coachees desde API...');
+                resultDiv.textContent += '📡 Cargando desde API...\n';
+                
+                const response = await fetch('/api/coach/my-coachees', {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error al cargar coachees: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 Datos recibidos:', data);
+                resultDiv.textContent += `📊 Datos recibidos: ${data.length} items\n`;
+                
+                // Guardar datos globalmente (como en dashboard)
+                coacheesForTasks = Array.isArray(data) ? data : [];
+                resultDiv.textContent += `💾 Datos guardados: ${coacheesForTasks.length} coachees\n`;
+                
+                // Intentar poblar el selector si existe (como en dashboard)
+                const success = populateCoacheeSelectorTest();
+                resultDiv.textContent += `🎯 Población selector: ${success ? '✅' : '❌'}\n`;
+                
+            } catch (error) {
+                console.error('❌ Error cargando coachees para tareas:', error);
+                resultDiv.textContent += `❌ Error: ${error.message}\n`;
+                coacheesForTasks = [];
+            }
+        }
+        
+        function populateCoacheeSelectorTest() {
+            const select = document.getElementById('testCoacheeSelect');
+            if (!select) {
+                console.log('⚠️ Select taskCoacheeSelect no encontrado (podría estar en pestaña inactiva)');
+                return false;
+            }
+            
+            console.log('🎯 Poblando selector con', coacheesForTasks.length, 'coachees');
+            
+            if (coacheesForTasks.length > 0) {
+                select.innerHTML = '<option value="">Seleccionar coachee...</option>';
+                coacheesForTasks.forEach(coachee => {
+                    select.innerHTML += `<option value="${coachee.id}">${coachee.full_name}</option>`;
+                });
+                console.log('✅ Selector poblado exitosamente');
+                return true;
+            } else {
+                select.innerHTML = '<option value="">No hay coachees disponibles</option>';
+                console.log('❌ No hay coachees disponibles');
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

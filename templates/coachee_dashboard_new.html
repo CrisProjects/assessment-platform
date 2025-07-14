@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coachee - Plataforma de Evaluación</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --info-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --surface: #ffffff;
+            --surface-elevated: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Custom header */
+        .custom-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .custom-header .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .user-display {
+            color: white;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main container */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            min-height: calc(100vh - 80px);
+            padding: 2rem 1rem;
+        }
+
+        /* Dashboard cards */
+        .dashboard-card {
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: var(--surface-elevated);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Navigation tabs */
+        .nav-tabs {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 0;
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            background: none;
+            border-bottom: 3px solid #667eea;
+        }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-success-custom {
+            background: var(--success-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-warning-custom {
+            background: var(--warning-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        /* Summary cards */
+        .summary-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .summary-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .summary-icon.primary {
+            background: var(--primary-gradient);
+        }
+
+        .summary-icon.success {
+            background: var(--success-gradient);
+        }
+
+        .summary-icon.warning {
+            background: var(--warning-gradient);
+        }
+
+        .summary-icon.danger {
+            background: var(--danger-gradient);
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Evaluation cards */
+        .evaluation-item {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .evaluation-item:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .evaluation-score {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .evaluation-level {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .evaluation-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Task cards */
+        .task-item {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .task-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .task-description {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .task-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .task-badge.priority-high {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .task-badge.priority-medium {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .task-badge.priority-low {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .task-badge.status-pending {
+            background: rgba(156, 163, 175, 0.1);
+            color: #6b7280;
+            border: 1px solid rgba(156, 163, 175, 0.2);
+        }
+
+        .task-badge.status-in_progress {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .task-badge.status-completed {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Progress bars */
+        .progress-container {
+            margin: 1rem 0;
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.low {
+            background: var(--danger-gradient);
+        }
+
+        .progress-fill.medium {
+            background: var(--warning-gradient);
+        }
+
+        .progress-fill.high {
+            background: var(--success-gradient);
+        }
+
+        /* Chart container */
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            height: 400px;
+            position: relative;
+        }
+
+        /* Loading states */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+
+        .spinner-border-custom {
+            width: 3rem;
+            height: 3rem;
+            border: 0.3em solid rgba(102, 126, 234, 0.25);
+            border-top-color: #667eea;
+        }
+
+        /* Empty states */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem 0.5rem;
+            }
+            
+            .dashboard-card {
+                margin-bottom: 1rem;
+            }
+            
+            .card-header,
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .summary-card {
+                padding: 1rem;
+            }
+            
+            .summary-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+            }
+            
+            .summary-number {
+                font-size: 1.5rem;
+            }
+            
+            .task-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .chart-container {
+                height: 300px;
+                padding: 1rem;
+            }
+        }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .visible { display: block !important; }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles">
+        <!-- Particles will be generated by JavaScript -->
+    </div>
+
+    <!-- Header -->
+    <nav class="navbar custom-header">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Dashboard Coachee
+            </span>
+            <div class="user-display">
+                <i class="fas fa-user-circle me-2"></i>
+                <span id="userName">Cargando...</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="container-fluid">
+            <!-- Welcome Section -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3>
+                                <i class="fas fa-home me-2"></i>
+                                <span id="welcomeMessage">Bienvenido</span>
+                            </h3>
+                            <p class="mb-0 text-muted" id="coachInfo">Cargando información...</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-primary-custom" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row" id="summaryCards">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon primary">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="summary-number" id="totalEvaluations">-</div>
+                        <div class="summary-label">Evaluaciones Completadas</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon success">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="summary-number" id="latestScore">-</div>
+                        <div class="summary-label">Última Puntuación</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon warning">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="summary-number" id="pendingTasks">-</div>
+                        <div class="summary-label">Tareas Pendientes</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="summary-number" id="overdueTasks">-</div>
+                        <div class="summary-label">Tareas Vencidas</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="evaluations-tab" data-bs-toggle="tab" data-bs-target="#evaluations" type="button" role="tab">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Evaluaciones
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
+                        <i class="fas fa-tasks me-2"></i>
+                        Tareas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="progress-tab" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">
+                        <i class="fas fa-chart-area me-2"></i>
+                        Progreso
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="mainTabContent">
+                <!-- Evaluations Tab -->
+                <div class="tab-pane fade show active" id="evaluations" role="tabpanel">
+                    <div class="row">
+                        <!-- Available Evaluations -->
+                        <div class="col-lg-6">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-plus-circle me-2"></i>
+                                        Evaluaciones Disponibles
+                                    </h3>
+                                </div>
+                                <div class="card-body" id="availableEvaluations">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border spinner-border-custom" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Completed Evaluations -->
+                        <div class="col-lg-6">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-history me-2"></i>
+                                        Evaluaciones Completadas
+                                    </h3>
+                                </div>
+                                <div class="card-body" id="completedEvaluations">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border spinner-border-custom" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Tab -->
+                <div class="tab-pane fade" id="tasks" role="tabpanel">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>
+                                <i class="fas fa-tasks me-2"></i>
+                                Mis Tareas Asignadas
+                            </h3>
+                        </div>
+                        <div class="card-body" id="tasksContainer">
+                            <div class="loading-spinner">
+                                <div class="spinner-border spinner-border-custom" role="status">
+                                    <span class="visually-hidden">Cargando tareas...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Tab -->
+                <div class="tab-pane fade" id="progress" role="tabpanel">
+                    <div class="row">
+                        <!-- Evaluation History Chart -->
+                        <div class="col-lg-8">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        Historial de Evaluaciones
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="progressChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics -->
+                        <div class="col-lg-4">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-calculator me-2"></i>
+                                        Estadísticas
+                                    </h3>
+                                </div>
+                                <div class="card-body" id="statisticsContainer">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border spinner-border-custom" role="status">
+                                            <span class="visually-hidden">Cargando estadísticas...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Latest Evaluation Details -->
+                    <div class="dashboard-card" id="latestEvaluationDetails">
+                        <div class="card-header">
+                            <h3>
+                                <i class="fas fa-bullseye me-2"></i>
+                                Última Evaluación - Análisis Detallado
+                            </h3>
+                        </div>
+                        <div class="card-body" id="latestEvaluationContainer">
+                            <div class="loading-spinner">
+                                <div class="spinner-border spinner-border-custom" role="status">
+                                    <span class="visually-hidden">Cargando análisis...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+        <div id="toastNotification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                <strong class="me-auto">Notificación</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <!-- Toast message will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Progress Modal -->
+    <div class="modal fade" id="taskProgressModal" tabindex="-1" aria-labelledby="taskProgressModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskProgressModalLabel">
+                        <i class="fas fa-tasks me-2"></i>
+                        Actualizar Progreso de Tarea
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskProgressForm">
+                        <input type="hidden" id="taskId" />
+                        
+                        <div class="mb-3">
+                            <label for="taskStatus" class="form-label">Estado de la Tarea</label>
+                            <select class="form-select" id="taskStatus" required>
+                                <option value="pending">Pendiente</option>
+                                <option value="in_progress">En Progreso</option>
+                                <option value="completed">Completada</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="taskProgress" class="form-label">Progreso (%)</label>
+                            <input type="range" class="form-range" id="taskProgress" min="0" max="100" value="0">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="progressValue">0%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="taskNotes" class="form-label">Notas (Opcional)</label>
+                            <textarea class="form-control" id="taskNotes" rows="3" placeholder="Añade comentarios sobre tu progreso..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary-custom" onclick="saveTaskProgress()">
+                        <i class="fas fa-save me-2"></i>
+                        Guardar Progreso
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const API_BASE_URL = window.location.origin;
+        
+        // Application state
+        let currentUser = null;
+        let dashboardData = null;
+        let evaluationsData = null;
+        let tasksData = null;
+        let progressChart = null;
+
+        // Initialize particles animation
+        function createParticles() {
+            const particlesContainer = document.querySelector('.particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.width = particle.style.height = (Math.random() * 4 + 2) + 'px';
+                particle.style.animationDuration = (Math.random() * 10 + 20) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastElement = document.getElementById('toastNotification');
+            const toastBody = toastElement.querySelector('.toast-body');
+            const toastHeader = toastElement.querySelector('.toast-header');
+            
+            // Update icon
+            const icon = toastHeader.querySelector('i');
+            switch (type) {
+                case 'success':
+                    icon.className = 'fas fa-check-circle text-success me-2';
+                    break;
+                case 'error':
+                    icon.className = 'fas fa-exclamation-circle text-danger me-2';
+                    break;
+                case 'warning':
+                    icon.className = 'fas fa-exclamation-triangle text-warning me-2';
+                    break;
+                default:
+                    icon.className = 'fas fa-info-circle text-primary me-2';
+            }
+            
+            toastBody.textContent = message;
+            
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+        }
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentUser = data.user;
+                    document.getElementById('userName').textContent = data.user.full_name || 'Usuario';
+                    document.getElementById('welcomeMessage').textContent = `¡Hola ${data.user.full_name || 'Usuario'}!`;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando perfil:', error);
+                document.getElementById('userName').textContent = 'Usuario';
+                showToast('Error cargando perfil de usuario', 'error');
+            }
+        }
+
+        // Load dashboard summary
+        async function loadDashboardSummary() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    dashboardData = data.summary;
+                    updateSummaryCards();
+                    updateCoachInfo();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando resumen:', error);
+                showToast('Error cargando resumen del dashboard', 'error');
+            }
+        }
+
+        // Update summary cards
+        function updateSummaryCards() {
+            if (!dashboardData) return;
+            
+            document.getElementById('totalEvaluations').textContent = 
+                dashboardData.evaluation_summary.total_completed || '0';
+            
+            document.getElementById('latestScore').textContent = 
+                dashboardData.latest_evaluation ? 
+                `${dashboardData.latest_evaluation.total_score}%` : '-';
+            
+            document.getElementById('pendingTasks').textContent = 
+                dashboardData.tasks_summary.pending || '0';
+            
+            document.getElementById('overdueTasks').textContent = 
+                dashboardData.tasks_summary.overdue || '0';
+        }
+
+        // Update coach info
+        function updateCoachInfo() {
+            if (!dashboardData) return;
+            
+            const coachInfoElement = document.getElementById('coachInfo');
+            if (dashboardData.coach) {
+                coachInfoElement.textContent = `Tu coach: ${dashboardData.coach.name}`;
+            } else {
+                coachInfoElement.textContent = 'Sin coach asignado';
+            }
+        }
+
+        // Load evaluations data
+        async function loadEvaluations() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/evaluations`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    evaluationsData = data.evaluations;
+                    renderAvailableEvaluations();
+                    renderCompletedEvaluations();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando evaluaciones:', error);
+                showToast('Error cargando evaluaciones', 'error');
+                
+                // Show error in both containers
+                document.getElementById('availableEvaluations').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando evaluaciones disponibles</p></div>';
+                document.getElementById('completedEvaluations').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando historial de evaluaciones</p></div>';
+            }
+        }
+
+        // Render available evaluations
+        function renderAvailableEvaluations() {
+            const container = document.getElementById('availableEvaluations');
+            
+            if (!evaluationsData || !evaluationsData.available) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay evaluaciones disponibles</p></div>';
+                return;
+            }
+            
+            let html = '';
+            Object.values(evaluationsData.available).forEach(evaluation => {
+                html += `
+                    <div class="evaluation-item">
+                        <h5 class="mb-3">${evaluation.title}</h5>
+                        <p class="text-muted mb-3">${evaluation.description}</p>
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Duración: ${evaluation.duration}
+                                </small>
+                            </div>
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-question-circle me-1"></i>
+                                    ${evaluation.questions_count} preguntas
+                                </small>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary-custom w-100" onclick="startEvaluation('${evaluation.id}')">
+                            <i class="fas fa-play me-2"></i>
+                            Comenzar Evaluación
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Render completed evaluations
+        function renderCompletedEvaluations() {
+            const container = document.getElementById('completedEvaluations');
+            
+            if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-clipboard-list"></i><p>Aún no has completado ninguna evaluación</p></div>';
+                return;
+            }
+            
+            let html = '';
+            evaluationsData.completed.forEach(evaluation => {
+                const scoreColor = evaluation.total_score >= 75 ? 'text-success' : 
+                                  evaluation.total_score >= 50 ? 'text-warning' : 'text-danger';
+                
+                html += `
+                    <div class="evaluation-item">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">${evaluation.title}</h6>
+                            <span class="evaluation-score ${scoreColor}">${evaluation.total_score}%</span>
+                        </div>
+                        <div class="evaluation-level ${scoreColor} mb-2">${evaluation.assertiveness_level}</div>
+                        <div class="evaluation-date">${formatDate(evaluation.completed_at)}</div>
+                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="viewEvaluationDetails(${evaluation.id})">
+                            <i class="fas fa-eye me-1"></i>
+                            Ver Detalles
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Load tasks data
+        async function loadTasks() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    tasksData = data.tasks;
+                    renderTasks();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando tareas:', error);
+                showToast('Error cargando tareas', 'error');
+                
+                document.getElementById('tasksContainer').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando tareas</p></div>';
+            }
+        }
+
+        // Render tasks
+        function renderTasks() {
+            const container = document.getElementById('tasksContainer');
+            
+            if (!tasksData || tasksData.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>No tienes tareas asignadas</p></div>';
+                return;
+            }
+            
+            let html = '';
+            tasksData.forEach(task => {
+                const priorityClass = `priority-${task.priority}`;
+                const statusClass = `status-${task.current_status}`;
+                const progressClass = task.current_progress >= 75 ? 'high' : 
+                                     task.current_progress >= 25 ? 'medium' : 'low';
+                
+                html += `
+                    <div class="task-item">
+                        <div class="task-header">
+                            <div class="flex-grow-1">
+                                <h5 class="task-title">${task.title}</h5>
+                                <p class="task-description">${task.description}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="task-meta">
+                            <span class="task-badge ${priorityClass}">
+                                <i class="fas fa-flag me-1"></i>
+                                ${task.priority}
+                            </span>
+                            <span class="task-badge ${statusClass}">
+                                <i class="fas fa-circle me-1"></i>
+                                ${getStatusLabel(task.current_status)}
+                            </span>
+                            ${task.category ? `<span class="task-badge"><i class="fas fa-tag me-1"></i>${task.category}</span>` : ''}
+                            ${task.due_date ? `<span class="task-badge"><i class="fas fa-calendar me-1"></i>${formatDate(task.due_date)}</span>` : ''}
+                        </div>
+                        
+                        <div class="progress-container">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Progreso</small>
+                                <small>${task.current_progress}%</small>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill ${progressClass}" style="width: ${task.current_progress}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                Coach: ${task.coach.full_name}
+                                ${task.last_update ? `• Actualizado: ${formatDate(task.last_update)}` : ''}
+                            </small>
+                            <button class="btn btn-sm btn-primary-custom" onclick="openTaskProgressModal(${task.id})">
+                                <i class="fas fa-edit me-1"></i>
+                                Actualizar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Load evaluation history for progress chart
+        async function loadEvaluationHistory() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderProgressChart(data.history);
+                    renderStatistics(data.statistics);
+                    renderLatestEvaluationDetails(data.history);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+                showToast('Error cargando historial de evaluaciones', 'error');
+                
+                document.getElementById('statisticsContainer').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando estadísticas</p></div>';
+            }
+        }
+
+        // Render progress chart
+        function renderProgressChart(history) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            if (progressChart) {
+                progressChart.destroy();
+            }
+            
+            if (!history || history.length === 0) {
+                document.querySelector('#progressChart').parentElement.innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-chart-line"></i><p>No hay datos de evaluaciones para mostrar</p></div>';
+                return;
+            }
+            
+            const labels = history.reverse().map(eval => formatDate(eval.completed_at));
+            const scores = history.map(eval => eval.total_score);
+            
+            progressChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Puntuación de Asertividad',
+                        data: scores,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render statistics
+        function renderStatistics(statistics) {
+            const container = document.getElementById('statisticsContainer');
+            
+            if (!statistics) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-calculator"></i><p>No hay estadísticas disponibles</p></div>';
+                return;
+            }
+            
+            let trendIcon = '';
+            let trendColor = '';
+            let trendText = '';
+            
+            if (statistics.improvement_trend === 'improving') {
+                trendIcon = 'fas fa-arrow-up';
+                trendColor = 'text-success';
+                trendText = 'Mejorando';
+            } else if (statistics.improvement_trend === 'declining') {
+                trendIcon = 'fas fa-arrow-down';
+                trendColor = 'text-danger';
+                trendText = 'Descendiendo';
+            } else if (statistics.improvement_trend === 'stable') {
+                trendIcon = 'fas fa-minus';
+                trendColor = 'text-warning';
+                trendText = 'Estable';
+            } else {
+                trendIcon = 'fas fa-question';
+                trendColor = 'text-muted';
+                trendText = 'Sin datos';
+            }
+            
+            container.innerHTML = `
+                <div class="mb-4">
+                    <h6 class="mb-2">Total de Evaluaciones</h6>
+                    <div class="h4 text-primary">${statistics.total_evaluations || 0}</div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2">Puntuación Promedio</h6>
+                    <div class="h4 text-success">${statistics.average_score || '-'}${statistics.average_score ? '%' : ''}</div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2">Última Puntuación</h6>
+                    <div class="h4 text-info">${statistics.latest_score || '-'}${statistics.latest_score ? '%' : ''}</div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2">Tendencia</h6>
+                    <div class="h5 ${trendColor}">
+                        <i class="${trendIcon} me-2"></i>
+                        ${trendText}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render latest evaluation details
+        function renderLatestEvaluationDetails(history) {
+            const container = document.getElementById('latestEvaluationContainer');
+            
+            if (!history || history.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-bullseye"></i><p>No hay evaluaciones completadas</p></div>';
+                return;
+            }
+            
+            const latest = history[history.length - 1];
+            const dimensions = latest.dimensional_scores;
+            
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-4">Puntuación General</h5>
+                        <div class="text-center mb-4">
+                            <div class="h1 text-primary">${latest.total_score}%</div>
+                            <div class="h6 text-muted">${latest.assertiveness_level}</div>
+                            <small class="text-muted">Completado el ${formatDate(latest.completed_at)}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-4">Análisis por Dimensiones</h5>
+                        ${Object.entries(dimensions).map(([key, value]) => {
+                            const progressClass = value >= 75 ? 'high' : value >= 25 ? 'medium' : 'low';
+                            const dimensionLabel = getDimensionLabel(key);
+                            
+                            return `
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>${dimensionLabel}</small>
+                                        <small>${value.toFixed(1)}%</small>
+                                    </div>
+                                    <div class="progress-bar-custom">
+                                        <div class="progress-fill ${progressClass}" style="width: ${value}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Open task progress modal
+        function openTaskProgressModal(taskId) {
+            const task = tasksData.find(t => t.id === taskId);
+            if (!task) return;
+            
+            document.getElementById('taskId').value = taskId;
+            document.getElementById('taskStatus').value = task.current_status;
+            document.getElementById('taskProgress').value = task.current_progress;
+            document.getElementById('progressValue').textContent = task.current_progress + '%';
+            document.getElementById('taskNotes').value = '';
+            
+            // Update progress display when slider changes
+            const progressSlider = document.getElementById('taskProgress');
+            progressSlider.oninput = function() {
+                document.getElementById('progressValue').textContent = this.value + '%';
+            };
+            
+            const modal = new bootstrap.Modal(document.getElementById('taskProgressModal'));
+            modal.show();
+        }
+
+        // Save task progress
+        async function saveTaskProgress() {
+            const taskId = document.getElementById('taskId').value;
+            const status = document.getElementById('taskStatus').value;
+            const progress = parseInt(document.getElementById('taskProgress').value);
+            const notes = document.getElementById('taskNotes').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/tasks/${taskId}/progress`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        progress_percentage: progress,
+                        notes: notes
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Progreso actualizado exitosamente', 'success');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('taskProgressModal'));
+                    modal.hide();
+                    
+                    // Refresh tasks
+                    await loadTasks();
+                    await loadDashboardSummary();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error actualizando progreso:', error);
+                showToast('Error actualizando progreso: ' + error.message, 'error');
+            }
+        }
+
+        // Start evaluation
+        function startEvaluation(evaluationType) {
+            // Redirect to the assessment page
+            window.location.href = '/coachee-dashboard';
+        }
+
+        // View evaluation details
+        function viewEvaluationDetails(evaluationId) {
+            // For now, just show a message. Could be expanded to show detailed view
+            showToast('Funcionalidad de detalles próximamente disponible', 'info');
+        }
+
+        // Refresh dashboard
+        async function refreshDashboard() {
+            showToast('Actualizando dashboard...', 'info');
+            
+            try {
+                await Promise.all([
+                    loadDashboardSummary(),
+                    loadEvaluations(),
+                    loadTasks(),
+                    loadEvaluationHistory()
+                ]);
+                
+                showToast('Dashboard actualizado', 'success');
+            } catch (error) {
+                console.error('Error actualizando dashboard:', error);
+                showToast('Error actualizando dashboard', 'error');
+            }
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pending': 'Pendiente',
+                'in_progress': 'En Progreso',
+                'completed': 'Completada',
+                'cancelled': 'Cancelada'
+            };
+            return labels[status] || status;
+        }
+
+        function getDimensionLabel(key) {
+            const labels = {
+                'comunicacion': 'Comunicación Directa',
+                'derechos': 'Defensa de Derechos',
+                'opiniones': 'Expresión de Opiniones',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            return labels[key] || key;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab change events
+            document.querySelectorAll('#mainTabs button[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (event) {
+                    const target = event.target.getAttribute('data-bs-target');
+                    
+                    // Load data when tabs are activated
+                    if (target === '#evaluations' && !evaluationsData) {
+                        loadEvaluations();
+                    } else if (target === '#tasks' && !tasksData) {
+                        loadTasks();
+                    } else if (target === '#progress') {
+                        loadEvaluationHistory();
+                    }
+                });
+            });
+        }
+
+        // Initialize application
+        async function initializeApp() {
+            console.log('Inicializando dashboard de coachee...');
+            
+            // Create animated particles
+            createParticles();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load initial data
+            await loadUserProfile();
+            await loadDashboardSummary();
+            
+            // Load data for active tab
+            await loadEvaluations();
+            
+            console.log('Dashboard inicializado correctamente');
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+</body>
+</html>
