@@ -418,6 +418,46 @@
             padding: 1rem;
         }
 
+        /* Responsive Radar Chart Container */
+        .radar-chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px; /* Base height */
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .radar-chart-container canvas {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Mobile optimizations for radar chart */
+        @media (max-width: 576px) {
+            .radar-chart-container {
+                height: 280px; /* Smaller on mobile but still prominent */
+                padding: 0 0.5rem;
+            }
+        }
+
+        @media (min-width: 577px) and (max-width: 768px) {
+            .radar-chart-container {
+                height: 320px; /* Medium size for tablets */
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 991px) {
+            .radar-chart-container {
+                height: 350px; /* Standard size for larger tablets */
+            }
+        }
+
+        @media (min-width: 992px) {
+            .radar-chart-container {
+                height: 380px; /* Largest size for desktop */
+            }
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .stat-number {
@@ -2317,11 +2357,12 @@
                             ${getDetailedInterpretationForCoach(assessment)}
                         </div>
                         
-                        <!-- Radar Chart Section igual al del coachee -->
-                        <div style="background: #f7fafc; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; text-align: center;">
+                        <!-- Radar Chart Section - Responsive -->
+                        <div style="background: #f7fafc; padding: 1.5rem; border-radius: 15px; margin-bottom: 2rem; text-align: center;">
                             <h3 style="color: #2d3748; margin-bottom: 1.5rem;">📊 Análisis por Dimensiones</h3>
-                            <div style="max-width: 500px; margin: 0 auto;">
-                                <canvas id="modalRadarChart" width="400" height="400"></canvas>
+                            <!-- Responsive radar chart container -->
+                            <div class="radar-chart-container w-100" style="max-width: 100%; margin: 0 auto;">
+                                <canvas id="modalRadarChart"></canvas>
                             </div>
                             
                             <!-- Leyenda de Dimensiones IGUAL a la del coachee -->
@@ -2397,6 +2438,11 @@
             
             const chartCtx = ctx.getContext('2d');
             
+            // Destroy existing chart if it exists
+            if (window.modalRadarChartInstance) {
+                window.modalRadarChartInstance.destroy();
+            }
+            
             // Usar EXACTAMENTE los mismos datos y formato que el dashboard del coachee
             const data = {
                 labels: [
@@ -2415,29 +2461,46 @@
                         dimensionalScores.conflictos || 0,
                         dimensionalScores.autoconfianza || 0
                     ],
-                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    borderWidth: 2,
-                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgba(102, 126, 234, 1)',
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
+                    backgroundColor: 'rgba(90, 103, 216, 0.15)', /* Updated with Calm colors */
+                    borderColor: 'rgba(90, 103, 216, 1)',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: 'rgba(90, 103, 216, 1)',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#ffffff',
+                    pointHoverBorderColor: 'rgba(90, 103, 216, 1)',
+                    pointHoverBorderWidth: 3
                 }]
             };
 
             const options = {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false, /* Key for mobile responsiveness */
+                interaction: {
+                    intersect: false,
+                    mode: 'point'
+                },
                 plugins: {
                     legend: {
-                        display: false // Ocultar leyenda porque ya tenemos la descripción abajo
+                        display: false /* Ocultar leyenda porque ya tenemos la descripción abajo */
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: 'var(--calm-text-primary)',
+                        bodyColor: 'var(--calm-text-secondary)',
+                        borderColor: 'rgba(90, 103, 216, 0.3)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 12,
+                        displayColors: false,
                         callbacks: {
+                            title: function(context) {
+                                return context[0].label.replace('\n', ' ');
+                            },
                             label: function(context) {
-                                return `${context.label}: ${context.raw.toFixed(1)}%`;
+                                return `Puntuación: ${context.parsed.r.toFixed(1)}%`;
                             }
                         }
                     }
@@ -2446,33 +2509,65 @@
                     r: {
                         beginAtZero: true,
                         max: 100,
+                        angleLines: {
+                            display: true,
+                            color: 'rgba(74, 85, 104, 0.1)',
+                            lineWidth: 1
+                        },
+                        grid: {
+                            color: 'rgba(74, 85, 104, 0.1)',
+                            lineWidth: 1
+                        },
                         ticks: {
                             stepSize: 20,
+                            color: 'var(--calm-text-secondary)',
                             font: {
-                                size: 12
+                                size: window.innerWidth < 576 ? 9 : 10
+                            },
+                            backdropColor: 'transparent',
+                            callback: function(value) {
+                                return value + '%';
                             }
                         },
                         pointLabels: {
+                            color: 'var(--calm-text-primary)',
                             font: {
-                                size: 11,
-                                weight: 'bold'
+                                size: window.innerWidth < 576 ? 10 : 
+                                      window.innerWidth < 768 ? 11 : 
+                                      window.innerWidth < 992 ? 12 : 13,
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                weight: '500'
                             },
-                            color: '#2d3748'
-                        },
-                        grid: {
-                            color: 'rgba(0,0,0,0.1)'
-                        },
-                        angleLines: {
-                            color: 'rgba(0,0,0,0.1)'
+                            padding: window.innerWidth < 576 ? 8 : 12
                         }
                     }
+                },
+                animation: {
+                    duration: 1200,
+                    easing: 'easeInOutCubic'
                 }
             };
 
-            new Chart(chartCtx, {
+            window.modalRadarChartInstance = new Chart(chartCtx, {
                 type: 'radar',
                 data: data,
                 options: options
+            });
+            
+            // Handle window resize for responsiveness
+            window.addEventListener('resize', function() {
+                if (window.modalRadarChartInstance) {
+                    // Update font sizes based on screen size
+                    const newFontSize = window.innerWidth < 576 ? 10 : 
+                                       window.innerWidth < 768 ? 11 : 
+                                       window.innerWidth < 992 ? 12 : 13;
+                    
+                    window.modalRadarChartInstance.options.scales.r.pointLabels.font.size = newFontSize;
+                    window.modalRadarChartInstance.options.scales.r.pointLabels.padding = window.innerWidth < 576 ? 8 : 12;
+                    window.modalRadarChartInstance.options.scales.r.ticks.font.size = window.innerWidth < 576 ? 9 : 10;
+                    
+                    window.modalRadarChartInstance.update('none'); // Update without animation
+                }
             });
         }
 

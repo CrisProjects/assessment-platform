@@ -695,6 +695,46 @@
             position: relative;
         }
 
+        /* Responsive Radar Chart Container */
+        .radar-chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px; /* Base height */
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .radar-chart-container canvas {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Mobile optimizations for radar chart */
+        @media (max-width: 576px) {
+            .radar-chart-container {
+                height: 280px; /* Smaller on mobile but still prominent */
+                padding: 0 0.5rem;
+            }
+        }
+
+        @media (min-width: 577px) and (max-width: 768px) {
+            .radar-chart-container {
+                height: 320px; /* Medium size for tablets */
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 991px) {
+            .radar-chart-container {
+                height: 350px; /* Standard size for larger tablets */
+            }
+        }
+
+        @media (min-width: 992px) {
+            .radar-chart-container {
+                height: 380px; /* Largest size for desktop */
+            }
+        }
+
         /* Loading states */
         .loading-spinner {
             display: flex;
@@ -819,48 +859,242 @@
             gap: 1rem;
         }
 
-        /* Mobile optimizations */
+        /* Improved Assessment Results Styles */
+        .assessment-result-card {
+            background: var(--calm-surface);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(90, 103, 216, 0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid var(--calm-border);
+            transition: all 0.3s ease;
+        }
+
+        .assessment-result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(90, 103, 216, 0.12);
+        }
+
+        .assessment-result-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .assessment-result-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="60" cy="10" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="30" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="70" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="70" cy="60" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            pointer-events: none;
+        }
+
+        .assessment-score-display {
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 0.5rem 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 2;
+        }
+
+        .assessment-level-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            opacity: 0.95;
+            position: relative;
+            z-index: 2;
+        }
+
+        .assessment-completion-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .assessment-result-body {
+            padding: 2rem;
+        }
+
+        .assessment-interpretation {
+            background: var(--calm-surface-elevated);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--calm-primary);
+        }
+
+        .assessment-interpretation h5 {
+            color: var(--calm-primary);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .assessment-interpretation p {
+            color: var(--calm-text-secondary);
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .dimensions-overview {
+            background: var(--calm-surface);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--calm-border);
+        }
+
+        .dimensions-overview h6 {
+            color: var(--calm-text-primary);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .dimension-item {
+            background: var(--calm-surface-elevated);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--calm-border);
+            transition: all 0.2s ease;
+        }
+
+        .dimension-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(90, 103, 216, 0.08);
+        }
+
+        .dimension-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .dimension-label {
+            font-weight: 600;
+            color: var(--calm-text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .dimension-score {
+            font-weight: 700;
+            color: var(--calm-primary);
+        }
+
+        .dimension-progress {
+            background: var(--calm-border);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .dimension-progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.8s ease-in-out;
+            background: var(--primary-gradient);
+            position: relative;
+        }
+
+        .dimension-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .assessment-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .assessment-action-btn {
+            background: var(--calm-surface-elevated);
+            border: 2px solid var(--calm-border);
+            color: var(--calm-text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .assessment-action-btn:hover {
+            background: var(--calm-primary);
+            border-color: var(--calm-primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(90, 103, 216, 0.25);
+        }
+
+        .assessment-action-btn.primary {
+            background: var(--primary-gradient);
+            border-color: var(--calm-primary);
+            color: white;
+        }
+
+        .assessment-action-btn.primary:hover {
+            background: var(--calm-primary-dark);
+            border-color: var(--calm-primary-dark);
+            color: white;
+        }
+
+        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .main-container {
-                padding: 1rem 0.5rem;
+            .assessment-score-display {
+                font-size: 3rem;
             }
             
-            .dashboard-card {
-                margin-bottom: 1rem;
+            .assessment-level-display {
+                font-size: 1.2rem;
             }
             
-            .card-header,
-            .card-body {
-                padding: 1rem;
+            .assessment-result-header {
+                padding: 1.5rem;
             }
             
-            .nav-tabs .nav-link {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
+            .assessment-result-body {
+                padding: 1.5rem;
             }
             
-            .summary-card {
-                padding: 1rem;
-            }
-            
-            .summary-icon {
-                width: 50px;
-                height: 50px;
-                font-size: 1.25rem;
-            }
-            
-            .summary-number {
-                font-size: 1.5rem;
-            }
-            
-            .task-meta {
+            .assessment-actions {
                 flex-direction: column;
-                gap: 0.5rem;
             }
             
-            .chart-container {
-                height: 300px;
-                padding: 1rem;
+            .assessment-action-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
 
@@ -1052,23 +1286,26 @@
                     </div>
 
                     <!-- Assessment Results Container -->
-                    <div class="dashboard-card" id="assessmentResults" style="display: none;">
-                        <div class="card-header text-center" style="background: var(--primary-gradient); color: white;">
-                            <h3>¡Evaluación Completada!</h3>
-                            <div class="h1 mb-0" id="assessmentScore">0%</div>
-                            <div class="h5" id="assessmentLevel">Nivel de Asertividad</div>
+                    <div class="assessment-result-card" id="assessmentResults" style="display: none;">
+                        <div class="assessment-result-header">
+                            <div class="assessment-completion-badge">
+                                <i class="fas fa-check-circle me-2"></i>
+                                ¡Evaluación Completada!
+                            </div>
+                            <div class="assessment-score-display" id="assessmentScore">0%</div>
+                            <h3 class="assessment-level-display" id="assessmentLevel">Nivel de Asertividad</h3>
                         </div>
-                        <div class="card-body">
+                        <div class="assessment-result-body">
                             <div id="assessmentInterpretation">
                                 <!-- Results interpretation will be loaded here -->
                             </div>
-                            <div class="text-center mt-4">
-                                <button class="btn btn-progress me-2" onclick="viewDetailedResults()">
-                                    <i class="fas fa-chart-radar me-2"></i>
+                            <div class="assessment-actions">
+                                <button class="assessment-action-btn primary" onclick="viewDetailedResults()">
+                                    <i class="fas fa-chart-radar"></i>
                                     Ver Análisis Completo
                                 </button>
-                                <button class="btn btn-outline-evaluation" onclick="finishAssessment()">
-                                    <i class="fas fa-check me-2"></i>
+                                <button class="assessment-action-btn" onclick="finishAssessment()">
+                                    <i class="fas fa-check"></i>
                                     Finalizar y Volver
                                 </button>
                             </div>
@@ -2223,20 +2460,25 @@
                     </div>
                 </div>
 
-                <!-- Gráfico Radar y Análisis Dimensional -->
+                <!-- Gráfico Radar y Análisis Dimensional - Responsive -->
                 <div class="row mb-4">
-                    <div class="col-lg-6">
-                        <div class="card border-0" style="background: var(--surface-elevated);">
+                    <!-- Radar Chart - Full width on mobile -->
+                    <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                        <div class="card border-0 h-100" style="background: var(--surface-elevated);">
                             <div class="card-header">
                                 <h5><i class="fas fa-chart-radar me-2"></i>Radar de Competencias</h5>
                             </div>
-                            <div class="card-body">
-                                <canvas id="evaluationRadarChart" width="400" height="400"></canvas>
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <!-- Responsive container for radar chart -->
+                                <div class="radar-chart-container w-100">
+                                    <canvas id="evaluationRadarChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <div class="card border-0" style="background: var(--surface-elevated);">
+                    <!-- Dimensional Scores -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border-0 h-100" style="background: var(--surface-elevated);">
                             <div class="card-header">
                                 <h5><i class="fas fa-analytics me-2"></i>Puntuaciones por Dimensión</h5>
                             </div>
@@ -2373,42 +2615,120 @@
         function createRadarChart(radarData) {
             const ctx = document.getElementById('evaluationRadarChart').getContext('2d');
             
-            new Chart(ctx, {
+            // Destroy existing chart if it exists
+            if (window.evaluationRadarChartInstance) {
+                window.evaluationRadarChartInstance.destroy();
+            }
+            
+            // Create responsive radar chart
+            window.evaluationRadarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
                     labels: radarData.labels,
                     datasets: [{
                         label: 'Puntuación',
                         data: radarData.scores,
-                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+                        backgroundColor: 'rgba(90, 103, 216, 0.15)', /* Updated with Calm colors */
+                        borderColor: 'rgba(90, 103, 216, 1)',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: 'rgba(90, 103, 216, 1)',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#ffffff',
+                        pointHoverBorderColor: 'rgba(90, 103, 216, 1)',
+                        pointHoverBorderWidth: 3
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false, /* Key for mobile responsiveness */
+                    interaction: {
+                        intersect: false,
+                        mode: 'point'
+                    },
                     scales: {
                         r: {
                             angleLines: {
-                                display: true
+                                display: true,
+                                color: 'rgba(74, 85, 104, 0.1)',
+                                lineWidth: 1
+                            },
+                            grid: {
+                                color: 'rgba(74, 85, 104, 0.1)',
+                                lineWidth: 1
+                            },
+                            pointLabels: {
+                                color: 'var(--calm-text-primary)',
+                                font: {
+                                    size: window.innerWidth < 576 ? 10 : 
+                                          window.innerWidth < 768 ? 11 : 
+                                          window.innerWidth < 992 ? 12 : 13,
+                                    family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                    weight: '500'
+                                },
+                                padding: window.innerWidth < 576 ? 8 : 12
                             },
                             suggestedMin: 0,
-                            suggestedMax: 5,
+                            suggestedMax: 100, /* Using percentage scale */
+                            beginAtZero: true,
                             ticks: {
-                                stepSize: 1
+                                stepSize: 20,
+                                color: 'var(--calm-text-secondary)',
+                                font: {
+                                    size: window.innerWidth < 576 ? 9 : 10
+                                },
+                                backdropColor: 'transparent',
+                                callback: function(value) {
+                                    return value + '%';
+                                }
                             }
                         }
                     },
                     plugins: {
                         legend: {
-                            display: false
+                            display: false /* Hide legend for cleaner look */
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: 'var(--calm-text-primary)',
+                            bodyColor: 'var(--calm-text-secondary)',
+                            borderColor: 'rgba(90, 103, 216, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    return `Puntuación: ${context.parsed.r}%`;
+                                }
+                            }
                         }
+                    },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeInOutCubic'
                     }
+                }
+            });
+            
+            // Handle window resize for responsiveness
+            window.addEventListener('resize', function() {
+                if (window.evaluationRadarChartInstance) {
+                    // Update font sizes based on screen size
+                    const newFontSize = window.innerWidth < 576 ? 10 : 
+                                       window.innerWidth < 768 ? 11 : 
+                                       window.innerWidth < 992 ? 12 : 13;
+                    
+                    window.evaluationRadarChartInstance.options.scales.r.pointLabels.font.size = newFontSize;
+                    window.evaluationRadarChartInstance.options.scales.r.pointLabels.padding = window.innerWidth < 576 ? 8 : 12;
+                    window.evaluationRadarChartInstance.options.scales.r.ticks.font.size = window.innerWidth < 576 ? 9 : 10;
+                    
+                    window.evaluationRadarChartInstance.update('none'); // Update without animation
                 }
             });
         }
