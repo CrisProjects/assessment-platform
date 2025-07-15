@@ -1279,6 +1279,25 @@
             border-right-color: transparent;
         }
 
+        /* Botones específicos para progreso - IDENTICAL to coachee */
+        .btn-progress {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-progress:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            color: white;
+        }
+
         /* Variables CSS para el modal */
         :root {
             --calm-surface: #FFFFFF;
@@ -1695,6 +1714,35 @@
     <!-- Toast Container -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
         <!-- Toasts will be inserted here -->
+    </div>
+
+    <!-- Coachee Evaluation Details Modal - IDENTICAL to coachee dashboard -->
+    <div class="modal fade" id="coacheeEvaluationDetailsModal" tabindex="-1" aria-labelledby="coacheeEvaluationDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                    <h5 class="modal-title" id="coacheeEvaluationDetailsModalLabel">
+                        <i class="fas fa-chart-radar me-2"></i>
+                        Detalles de Evaluación del Coachee
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="coacheeEvaluationDetailsContent">
+                    <div class="loading-spinner">
+                        <div class="spinner-border spinner-border-custom" role="status">
+                            <span class="visually-hidden">Cargando detalles...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-progress" onclick="printCoacheeEvaluationReport()">
+                        <i class="fas fa-print me-2"></i>
+                        Imprimir Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
