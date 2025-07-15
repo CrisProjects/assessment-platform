@@ -2286,6 +2286,44 @@ def api_coach_update_task_progress(task_id):
         db.session.rollback()
         return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
 
+@app.route('/api/coach/coachee-evaluation-details/<int:coachee_id>', methods=['GET'])
+@coach_required
+def api_coach_coachee_evaluation_details(coachee_id):
+    """API para que el coach vea los detalles completos de la evaluación más reciente de un coachee"""
+    try:
+        # Verificar que el coachee esté asignado a este coach
+        coachee = User.query.filter_by(
+            id=coachee_id, 
+            role='coachee', 
+            coach_id=current_user.id
+        ).first()
+        
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no asignado a tu supervisión'}), 404
+        
+        # Buscar la evaluación más reciente del coachee
+        latest_assessment = AssessmentResult.query.filter_by(
+            user_id=coachee_id
+        ).order_by(AssessmentResult.completed_at.desc()).first()
+        
+        if not latest_assessment:
+            return jsonify({'error': 'El coachee no tiene evaluaciones completadas'}), 404
+        
+        # Procesar detalles de la evaluación usando la misma función que el coachee
+        evaluation_details = process_evaluation_details(latest_assessment, coachee)
+        
+        # Agregar información del coachee para el coach
+        evaluation_details['coachee_name'] = coachee.full_name
+        evaluation_details['coachee_email'] = coachee.email
+        
+        return jsonify({
+            'success': True,
+            'evaluation': evaluation_details
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo detalles de evaluación del coachee: {str(e)}'}), 500
+
 @app.route('/api/coachee/tasks', methods=['GET'])
 @coachee_required
 def api_coachee_get_tasks():
