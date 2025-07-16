@@ -1734,6 +1734,58 @@
         </div>
     </div>
 
+    <!-- Invitation Modal -->
+    <div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                    <h5 class="modal-title" id="invitationModalLabel">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Invitar Nuevo Coachee
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="invitationForm">
+                        <div class="mb-3">
+                            <label for="coacheeEmail" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>
+                                Email del Coachee
+                            </label>
+                            <input type="email" class="form-control invitation-input" id="coacheeEmail" placeholder="ejemplo@correo.com" required>
+                            <div class="form-text">El coachee recibirá una invitación por email para registrarse en la plataforma.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="coacheeName" class="form-label">
+                                <i class="fas fa-user me-2"></i>
+                                Nombre del Coachee *
+                            </label>
+                            <input type="text" class="form-control invitation-input" id="coacheeName" placeholder="Nombre completo" required>
+                            <div class="form-text">Este nombre aparecerá en la invitación para personalizar el mensaje.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="invitationMessage" class="form-label">
+                                <i class="fas fa-comment me-2"></i>
+                                Mensaje Personal (Opcional)
+                            </label>
+                            <textarea class="form-control invitation-input" id="invitationMessage" rows="3" placeholder="Escribe un mensaje personal para tu coachee..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-gradient invitation-btn" onclick="sendInvitation()">
+                        <i class="fas fa-paper-plane me-2"></i>
+                        Enviar Invitación
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Variables globales
         let coacheesData = [];
@@ -1756,6 +1808,24 @@
                 loadCoachees();
             }, 30000);
         });
+
+        // Cargar preguntas de la evaluación (para referencia)
+        async function loadQuestions() {
+            try {
+                const response = await fetch('/api/questions', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    questions = data.questions || [];
+                    console.log('📋 Questions loaded:', questions.length);
+                }
+            } catch (error) {
+                console.log('ℹ️  Questions not loaded (optional):', error.message);
+                // No es crítico si no se pueden cargar las preguntas
+            }
+        }
 
         // Cargar estadísticas del dashboard
         async function loadDashboardStats() {
@@ -2567,6 +2637,518 @@
             if (modal) {
                 modal.remove();
             }
+        }
+        
+        // ============================================================================
+        // FUNCIONES PARA MODAL DE INVITACIÓN
+        // ============================================================================
+        
+        function openInvitationModal() {
+            const modal = new bootstrap.Modal(document.getElementById('invitationModal'));
+            
+            // Limpiar el formulario
+            document.getElementById('invitationForm').reset();
+            
+            modal.show();
+        }
+        
+        async function sendInvitation() {
+            const email = document.getElementById('coacheeEmail').value.trim();
+            const name = document.getElementById('coacheeName').value.trim();
+            const message = document.getElementById('invitationMessage').value.trim();
+            
+            // Validación básica
+            if (!email) {
+                showToast('Por favor, ingresa el email del coachee', 'error');
+                return;
+            }
+            
+            if (!name) {
+                showToast('Por favor, ingresa el nombre del coachee', 'error');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showToast('Por favor, ingresa un email válido', 'error');
+                return;
+            }
+            
+            const inviteButton = document.querySelector('.invitation-btn');
+            const originalText = inviteButton.innerHTML;
+            
+            try {
+                // Deshabilitar botón y mostrar loading
+                inviteButton.disabled = true;
+                inviteButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+                
+                const response = await fetch('/api/coach/create-invitation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: email,
+                        full_name: name,  // Cambiar 'name' por 'full_name'
+                        message: message || null
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error al enviar la invitación');
+                }
+                
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('invitationModal'));
+                modal.hide();
+                
+                // Mostrar mensaje de éxito
+                showToast('Invitación enviada exitosamente', 'success');
+                
+                // Actualizar lista de coachees después de un breve delay
+                setTimeout(() => {
+                    loadCoachees();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error enviando invitación:', error);
+                showToast(error.message || 'Error al enviar la invitación', 'error');
+            } finally {
+                // Restaurar botón
+                inviteButton.disabled = false;
+                inviteButton.innerHTML = originalText;
+            }
+        }
+        
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // Función auxiliar para mostrar toasts
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: type === 'error' ? 5000 : 3000
+            });
+            
+            toast.show();
+            
+            // Remover el toast del DOM después de que se oculte
+            toastElement.addEventListener('hidden.bs.toast', function () {
+                toastElement.remove();
+            });
+        }
+        
+        // Función para ver los detalles de evaluación de un coachee usando el modal homologado
+        async function viewCoacheeEvaluationDetails(coacheeId) {
+            try {
+                // Buscar el coachee en los datos locales
+                const coachee = coacheesData.find(c => c.id === coacheeId);
+                if (!coachee || !coachee.last_assessment) {
+                    showToast('No hay evaluaciones disponibles para este coachee', 'error');
+                    return;
+                }
+                
+                // Cargar los detalles completos de la evaluación desde el API
+                const response = await fetch(`/api/coach/coachee-evaluation-details/${coacheeId}`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar detalles de la evaluación');
+                }
+                
+                const evaluationData = await response.json();
+                
+                // Mostrar el modal de evaluación con los datos completos
+                const modal = new bootstrap.Modal(document.getElementById('coacheeEvaluationDetailsModal'));
+                const modalContent = document.getElementById('coacheeEvaluationDetailsContent');
+                
+                // Actualizar el título del modal
+                document.getElementById('coacheeEvaluationDetailsModalLabel').innerHTML = `
+                    <i class="fas fa-chart-radar me-2"></i>
+                    Detalles de Evaluación - ${coachee.full_name}
+                `;
+                
+                // Mostrar loading mientras se carga el contenido
+                modalContent.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border spinner-border-custom" role="status">
+                            <span class="visually-hidden">Cargando detalles...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Cargando detalles de la evaluación...</p>
+                    </div>
+                `;
+                
+                modal.show();
+                
+                // Crear el contenido del modal con el mismo formato del coachee
+                modalContent.innerHTML = createCoacheeEvaluationDetailsContent(evaluationData, coachee);
+                
+                // Crear el radar chart después de un pequeño delay para que el DOM esté listo
+                setTimeout(() => {
+                    createCoacheeModalRadarChart(evaluationData.dimensional_scores || {});
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error cargando detalles de evaluación:', error);
+                showToast('Error al cargar los detalles de la evaluación', 'error');
+            }
+        }
+        
+        // Función para crear el contenido del modal de evaluación del coachee
+        function createCoacheeEvaluationDetailsContent(evaluation, coachee) {
+            const score = Math.round(evaluation.overall_score || evaluation.score || 0);
+            const level = getAssertivityLevel(score);
+            const completedDate = new Date(evaluation.completed_at || evaluation.created_at).toLocaleDateString('es-ES', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            return `
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Score Section -->
+                        <div class="text-center mb-4">
+                            <div class="display-3 fw-bold text-primary mb-2">${score}%</div>
+                            <h4 class="text-secondary mb-2">${level}</h4>
+                            <p class="text-muted">Evaluación completada el ${completedDate}</p>
+                        </div>
+                        
+                        <!-- Interpretación -->
+                        <div class="alert alert-info mb-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Interpretación del Resultado
+                            </h6>
+                            <p class="mb-0">${getScoreInterpretation(score)}</p>
+                        </div>
+                        
+                        <!-- Radar Chart Section -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chart-radar me-2"></i>
+                                    Análisis por Dimensiones
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center">
+                                    <canvas id="coacheeModalRadarChart" width="400" height="400"></canvas>
+                                </div>
+                                
+                                <!-- Leyenda de dimensiones -->
+                                <div class="mt-4">
+                                    <h6 class="mb-3">Dimensiones Evaluadas:</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul class="list-unstyled">
+                                                <li class="mb-2">
+                                                    <span class="badge me-2" style="background-color: #ff6384;">&nbsp;</span>
+                                                    <strong>Comunicación Directa:</strong> Capacidad para expresar ideas claramente
+                                                </li>
+                                                <li class="mb-2">
+                                                    <span class="badge me-2" style="background-color: #36a2eb;">&nbsp;</span>
+                                                    <strong>Defensa de Derechos:</strong> Habilidad para hacer valer los propios derechos
+                                                </li>
+                                                <li class="mb-2">
+                                                    <span class="badge me-2" style="background-color: #ffce56;">&nbsp;</span>
+                                                    <strong>Expresión de Opiniones:</strong> Facilidad para compartir puntos de vista
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul class="list-unstyled">
+                                                <li class="mb-2">
+                                                    <span class="badge me-2" style="background-color: #4bc0c0;">&nbsp;</span>
+                                                    <strong>Manejo de Conflictos:</strong> Gestión efectiva de situaciones difíciles
+                                                </li>
+                                                <li class="mb-2">
+                                                    <span class="badge me-2" style="background-color: #9966ff;">&nbsp;</span>
+                                                    <strong>Autoconfianza:</strong> Seguridad en las propias capacidades
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Función para crear el radar chart en el modal del coachee
+        function createCoacheeModalRadarChart(dimensionalScores) {
+            const canvas = document.getElementById('coacheeModalRadarChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Destruir chart existente si existe
+            if (window.coacheeModalRadarChartInstance) {
+                window.coacheeModalRadarChartInstance.destroy();
+            }
+            
+            const dimensions = [
+                'Comunicación Directa',
+                'Defensa de Derechos', 
+                'Expresión de Opiniones',
+                'Manejo de Conflictos',
+                'Autoconfianza'
+            ];
+            
+            const scores = dimensions.map(dim => dimensionalScores[dim] || 0);
+            
+            window.coacheeModalRadarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: dimensions,
+                    datasets: [{
+                        label: 'Puntuación',
+                        data: scores,
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Función para imprimir reporte de evaluación del coachee
+        function printCoacheeEvaluationReport() {
+            window.print();
+        }
+        
+        // Función para enviar recordatorios a coachees
+        async function sendReminder(coacheeId) {
+            try {
+                const response = await fetch(`/api/coach/send-reminder/${coacheeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast('Recordatorio enviado exitosamente', 'success');
+                } else {
+                    throw new Error(result.error || 'Error al enviar recordatorio');
+                }
+                
+            } catch (error) {
+                console.error('Error enviando recordatorio:', error);
+                showToast(error.message || 'Error al enviar recordatorio', 'error');
+            }
+        }
+        
+        // Función para obtener interpretación detallada para el coach
+        function getDetailedInterpretationForCoach(assessment) {
+            const score = assessment.overall_score || assessment.score || 0;
+            
+            if (score >= 80) {
+                return `
+                    <h5 class="text-success">
+                        <i class="fas fa-star me-2"></i>
+                        Nivel Muy Asertivo (${Math.round(score)}%)
+                    </h5>
+                    <p>Este coachee demuestra un excelente nivel de asertividad. Sus fortalezas incluyen:</p>
+                    <ul>
+                        <li>Comunicación clara y directa</li>
+                        <li>Capacidad para defender sus derechos de manera apropiada</li>
+                        <li>Expresión adecuada de opiniones y sentimientos</li>
+                        <li>Manejo efectivo de conflictos</li>
+                        <li>Alta autoconfianza en sus habilidades</li>
+                    </ul>
+                    <p class="mb-0"><strong>Recomendación:</strong> Continuar fortaleciendo estas habilidades y considerar rol de mentor para otros.</p>
+                `;
+            } else if (score >= 60) {
+                return `
+                    <h5 class="text-info">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Nivel Asertivo (${Math.round(score)}%)
+                    </h5>
+                    <p>Este coachee muestra un buen nivel de asertividad con algunas áreas de oportunidad:</p>
+                    <ul>
+                        <li>Comunicación generalmente efectiva</li>
+                        <li>Capacidad adecuada para expresar necesidades</li>
+                        <li>Manejo apropiado de la mayoría de situaciones</li>
+                    </ul>
+                    <p class="mb-0"><strong>Recomendación:</strong> Identificar áreas específicas para fortalecer y practicar técnicas de asertividad.</p>
+                `;
+            } else if (score >= 40) {
+                return `
+                    <h5 class="text-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Nivel Moderadamente Asertivo (${Math.round(score)}%)
+                    </h5>
+                    <p>Este coachee presenta un nivel moderado de asertividad que se beneficiaría de desarrollo:</p>
+                    <ul>
+                        <li>Dificultades ocasionales para expresar opiniones</li>
+                        <li>Tendencia a evitar algunos conflictos</li>
+                        <li>Necesidad de mayor confianza en ciertas situaciones</li>
+                    </ul>
+                    <p class="mb-0"><strong>Recomendación:</strong> Programa de entrenamiento en habilidades asertivas y técnicas de comunicación.</p>
+                `;
+            } else {
+                return `
+                    <h5 class="text-danger">
+                        <i class="fas fa-flag me-2"></i>
+                        Nivel Poco Asertivo (${Math.round(score)}%)
+                    </h5>
+                    <p>Este coachee requiere apoyo significativo para desarrollar habilidades asertivas:</p>
+                    <ul>
+                        <li>Dificultad para expresar necesidades y opiniones</li>
+                        <li>Tendencia a evitar conflictos incluso cuando es necesario abordarlos</li>
+                        <li>Baja autoconfianza en habilidades de comunicación</li>
+                        <li>Posible dificultad para establecer límites</li>
+                    </ul>
+                    <p class="mb-0"><strong>Recomendación:</strong> Plan de desarrollo intensivo con enfoque en autoestima, comunicación asertiva y manejo de conflictos.</p>
+                `;
+            }
+        }
+        
+        // Función para crear radar chart en el modal personalizado
+        function createModalRadarChart(dimensionalScores) {
+            const canvas = document.getElementById('modalRadarChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Destruir chart existente si existe
+            if (window.modalRadarChartInstance) {
+                window.modalRadarChartInstance.destroy();
+            }
+            
+            const dimensions = [
+                'Comunicación Directa',
+                'Defensa de Derechos', 
+                'Expresión de Opiniones',
+                'Manejo de Conflictos',
+                'Autoconfianza'
+            ];
+            
+            const scores = dimensions.map(dim => dimensionalScores[dim] || 0);
+            
+            window.modalRadarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: dimensions,
+                    datasets: [{
+                        label: 'Puntuación',
+                        data: scores,
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                },
+                                color: '#666',
+                                backdropColor: 'transparent'
+                            },
+                            grid: {
+                                color: 'rgba(102, 126, 234, 0.2)'
+                            },
+                            angleLines: {
+                                color: 'rgba(102, 126, 234, 0.3)'
+                            },
+                            pointLabels: {
+                                color: '#333',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.r + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
         
         // ============================================================================
