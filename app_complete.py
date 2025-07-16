@@ -2054,7 +2054,7 @@ def api_coach_evaluation_summary(coachee_id):
                 dimension_counts = {dim: 0 for dim in dimension_totals.keys()}
                 
                 for response in responses:
-                    dimension = response[2]  # q.dimension
+                    dimension = response[2]  # q
                     score = response[1]      # r.answer_value
                     if dimension in dimension_totals:
                         dimension_totals[dimension] += score
@@ -2341,6 +2341,118 @@ def api_coach_coachee_evaluation_details(coachee_id):
     except Exception as e:
         return jsonify({'error': f'Error obteniendo detalles de evaluación del coachee: {str(e)}'}), 500
 
+@app.route('/api/coach/evaluation-summaries', methods=['GET'])
+@coach_required
+def api_coach_evaluation_summaries():
+    """API para que el coach vea resúmenes de evaluaciones de todos sus coachees"""
+    try:
+        # Obtener todos los coachees asignados a este coach
+        coachees = User.query.filter_by(
+            role='coachee', 
+            coach_id=current_user.id
+        ).all()
+        
+        summaries = []
+        
+        for coachee in coachees:
+            # Obtener evaluaciones del coachee
+            assessments = AssessmentResult.query.filter_by(
+                user_id=coachee.id
+            ).order_by(AssessmentResult.completed_at.desc()).all()
+            
+            if not assessments:
+                continue  # Skip coachees without assessments
+            
+            latest_assessment = assessments[0]
+            
+            # Procesar datos de la evaluación más reciente
+            evaluation_data = {}
+            if latest_assessment.result_text:
+                try:
+                    evaluation_data = json.loads(latest_assessment.result_text)
+                except json.JSONDecodeError:
+                    pass
+            
+            latest_score = latest_assessment.score or 0
+            if 'total_score' in evaluation_data:
+                latest_score = evaluation_data['total_score']
+            
+            # Determinar áreas de enfoque basadas en puntuaciones dimensionales
+            focus_areas = []
+            if 'dimensional_scores' in evaluation_data:
+                dim_scores = evaluation_data['dimensional_scores']
+                for dim, score in dim_scores.items():
+                    if score < 60:  # Areas que necesitan mejora
+                        dim_name = format_dimension_name(dim)
+                        focus_areas.append(dim_name)
+            
+            # Si no hay áreas específicas, usar áreas generales
+            if not focus_areas:
+                if latest_score < 60:
+                    focus_areas = ['Comunicación', 'Autoconfianza']
+                elif latest_score < 80:
+                    focus_areas = ['Asertividad avanzada']
+                else:
+                    focus_areas = ['Mantenimiento']
+            
+            summary = {
+                'coachee_id': coachee.id,
+                'coachee_name': coachee.full_name,
+                'coachee_email': coachee.email,
+                'total_evaluations': len(assessments),
+                'latest_score': round(latest_score, 1),
+                'last_evaluation_date': latest_assessment.completed_at.isoformat(),
+                'focus_areas': focus_areas[:3],  # Limitar a 3 áreas principales
+                'trend': calculate_score_trend(assessments),
+                'status': 'active' if latest_assessment.completed_at >= datetime.utcnow() - timedelta(days=30) else 'inactive'
+            }
+            
+            summaries.append(summary)
+        
+        # Ordenar por fecha de última evaluación (más reciente primero)
+        summaries.sort(key=lambda x: x['last_evaluation_date'], reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'summaries': summaries,
+            'total_coachees': len(summaries)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo resúmenes de evaluaciones: {str(e)}'}), 500
+
+def calculate_score_trend(assessments):
+    """Calcular tendencia de puntuaciones (mejora, estable, declive)"""
+    if len(assessments) < 2:
+        return 'new'
+    
+    # Comparar las dos evaluaciones más recientes
+    latest = assessments[0].score or 0
+    previous = assessments[1].score or 0
+    
+    # Procesar scores de result_text si están disponibles
+    try:
+        if assessments[0].result_text:
+            latest_data = json.loads(assessments[0].result_text)
+            if 'total_score' in latest_data:
+                latest = latest_data['total_score']
+        
+        if assessments[1].result_text:
+            previous_data = json.loads(assessments[1].result_text)
+            if 'total_score' in previous_data:
+                previous = previous_data['total_score']
+    except json.JSONDecodeError:
+        pass
+    
+    difference = latest - previous
+    
+    if difference > 5:
+        return 'improving'
+    elif difference < -5:
+        return 'declining'
+    else:
+        return 'stable'
+
 @app.route('/api/coachee/tasks', methods=['GET'])
 @coachee_required
 def api_coachee_get_tasks():
@@ -2583,6 +2695,33 @@ def api_coachee_evaluation_details(evaluation_id):
 
 def process_evaluation_details(assessment, coachee_user):
     """Procesar y generar detalles completos de una evaluación"""
+    # Primero intentar usar los datos existentes del result_text si están disponibles
+    if assessment.result_text:
+        try:
+            existing_data = json.loads(assessment.result_text)
+            if existing_data and 'dimensional_scores' in existing_data:
+                # Los datos ya están procesados, usarlos directamente
+                return {
+                    'id': assessment.id,
+                    'title': 'Evaluación de Asertividad',
+                    'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
+                    'total_score': existing_data.get('total_score', assessment.score or 0),
+                    'total_percentage': existing_data.get('total_score', assessment.score or 0),
+                    'assertiveness_level': existing_data.get('assertiveness_level', get_assertiveness_level(assessment.score or 0)),
+                    'dimensional_scores': existing_data.get('dimensional_scores', {}),
+                    'dimension_analysis': existing_data.get('dimension_analysis', {}),
+                    'response_details': existing_data.get('response_details', []),
+                    'analysis': existing_data.get('analysis', {}),
+                    'radar_data': {
+                        'labels': [format_dimension_name(dim) for dim in existing_data.get('dimensional_scores', {}).keys()],
+                        'scores': list(existing_data.get('dimensional_scores', {}).values()),
+                        'percentages': list(existing_data.get('dimensional_scores', {}).values())
+                    }
+                }
+        except json.JSONDecodeError:
+            pass  # Si no se puede parsear, continuar con el procesamiento normal
+    
+    # Si no hay datos procesados, hacer el procesamiento completo
     # Obtener respuestas y preguntas
     responses = Response.query.filter_by(
         user_id=coachee_user.id,
