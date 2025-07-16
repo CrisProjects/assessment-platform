@@ -941,7 +941,7 @@ def api_coach_login():
         
         if coach_user and coach_user.check_password(password) and coach_user.is_active:
             login_user(coach_user, remember=True)
-            session.permanent = True  # Hacer la sesión permanente
+            session.permanent = True
             coach_user.last_login = datetime.utcnow()
             db.session.commit()
             
@@ -1756,20 +1756,21 @@ def coachee_dashboard():
     participant_data = {
         'name': coachee_user.full_name,
         'email': coachee_user.email,
-        'coach_name': coachee_user.coach.full_name if coachee_user.coach else 'Sin asignar'
+        'coach_name': 'Sin asignar'  # Default value
     }
     
-    # Buscar el token de invitación (si existe)
-    invitation_token = session.get('temp_coachee_token')  # Primero verificar sesión temporal
-    if not invitation_token:
-        # Si no hay token temporal, buscar en la base de datos
-        invitation = Invitation.query.filter_by(
-            email=coachee_user.email,
-            is_used=True
-        ).order_by(Invitation.used_at.desc()).first()
-        
-        if invitation:
-            invitation_token = invitation.token
+    # Obtener el coach de forma segura
+    try:
+        if coachee_user.coach_id:
+            coach = User.query.get(coachee_user.coach_id)
+            if coach:
+                participant_data['coach_name'] = coach.full_name
+    except Exception as e:
+        print(f"Error obteniendo coach: {e}")
+        # Mantener valor por defecto
+    
+    # Buscar el token de invitación (si existe) - VERSIÓN SIMPLIFICADA
+    invitation_token = session.get('temp_coachee_token')  # Solo desde sesión temporal
     
     return render_template('coachee_dashboard.html', 
                          user=coachee_user, 
@@ -2340,6 +2341,42 @@ def api_coach_coachee_evaluation_details(coachee_id):
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo detalles de evaluación del coachee: {str(e)}'}), 500
+
+@app.route('/api/coach/evaluation-details/<int:evaluation_id>', methods=['GET'])
+@coach_required
+def api_coach_evaluation_details(evaluation_id):
+    """API para que el coach vea los detalles de una evaluación específica usando el mismo formato que el coachee"""
+    try:
+        # Buscar la evaluación específica
+        assessment = AssessmentResult.query.filter_by(id=evaluation_id).first()
+        
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Verificar que el coachee pertenece a este coach
+        coachee = User.query.filter_by(
+            id=assessment.user_id,
+            role='coachee',
+            coach_id=current_user.id
+        ).first()
+        
+        if not coachee:
+            return jsonify({'error': 'No tienes acceso a esta evaluación'}), 403
+        
+        # Procesar detalles de la evaluación usando la misma función que el coachee
+        evaluation_details = process_evaluation_details(assessment, coachee)
+        
+        # Agregar información del coachee para el coach
+        evaluation_details['coachee_name'] = coachee.full_name
+        evaluation_details['coachee_email'] = coachee.email
+        
+        return jsonify({
+            'success': True,
+            'evaluation': evaluation_details
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo detalles de evaluación: {str(e)}'}), 500
 
 @app.route('/api/coach/evaluation-summaries', methods=['GET'])
 @coach_required
