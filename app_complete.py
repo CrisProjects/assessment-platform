@@ -1245,11 +1245,11 @@ def api_coach_get_coachees():
                 'full_name': coachee.full_name,
                 'created_at': coachee.created_at.isoformat() if coachee.created_at else None,
                 'total_assessments': total_assessments,
-                'latest_assessment': None
+                'last_assessment': None  # Cambiado de latest_assessment a last_assessment
             }
             
             if latest_assessment:
-                coachee_data['latest_assessment'] = {
+                coachee_data['last_assessment'] = {
                     'id': latest_assessment.id,
                     'score': latest_assessment.score,
                     'overall_score': latest_assessment.score,  # Para compatibilidad
