@@ -1366,6 +1366,54 @@
                 margin-bottom: 1rem;
             }
         }
+        
+        /* Estilos específicos para modal de evaluación detallada */
+        .dimension-scores .badge {
+            min-width: 60px;
+        }
+        
+        .accordion-button:not(.collapsed) {
+            background-color: #f8f9fa;
+            box-shadow: none;
+        }
+        
+        .bg-orange {
+            background-color: #fd7e14 !important;
+        }
+        
+        .score-badge {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .card-header.bg-primary,
+        .card-header.bg-success,
+        .card-header.bg-info,
+        .card-header.bg-warning,
+        .card-header.bg-secondary {
+            border: none;
+        }
+        
+        .alert-success.py-2,
+        .alert-warning.py-2 {
+            padding: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .accordion-item {
+            border: 1px solid rgba(0,0,0,.125);
+            margin-bottom: 0.25rem;
+        }
+        
+        .accordion-item:first-of-type {
+            border-top-left-radius: 0.375rem;
+            border-top-right-radius: 0.375rem;
+        }
+        
+        .accordion-item:last-of-type {
+            border-bottom-left-radius: 0.375rem;
+            border-bottom-right-radius: 0.375rem;
+        }
     </style>
 </head>
 <body>
@@ -2995,7 +3043,9 @@ Tu Coach
                 
                 // Crear el radar chart después de un pequeño delay para que el DOM esté listo
                 setTimeout(() => {
-                    createCoacheeModalRadarChart(evaluationData.dimensional_scores || {});
+                    const evaluation = evaluationData.evaluation || evaluationData;
+                    const dimensionalScores = evaluation.dimensional_scores || {};
+                    createCoacheeModalRadarChart(dimensionalScores);
                 }, 100);
                 
             } catch (error) {
@@ -3004,11 +3054,13 @@ Tu Coach
             }
         }
         
-        // Función para crear el contenido del modal de evaluación del coachee
-        function createCoacheeEvaluationDetailsContent(evaluation, coachee) {
-            const score = Math.round(evaluation.overall_score || evaluation.score || 0);
-            const level = getAssertivityLevel(score);
-            const completedDate = new Date(evaluation.completed_at || evaluation.created_at).toLocaleDateString('es-ES', { 
+        // Función para crear el contenido del modal de evaluación del coachee con detalles completos
+        function createCoacheeEvaluationDetailsContent(evaluationResponse, coachee) {
+            const evaluation = evaluationResponse.evaluation || evaluationResponse;
+            const score = Math.round(evaluation.total_score || evaluation.overall_score || evaluation.score || 0);
+            const level = evaluation.assertiveness_level || getAssertivityLevel(score);
+            const completedDate = evaluation.completed_at || evaluation.created_at;
+            const formattedDate = new Date(completedDate).toLocaleDateString('es-ES', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric', 
@@ -3016,77 +3068,254 @@ Tu Coach
                 minute: '2-digit' 
             });
             
+            // Obtener análisis por dimensiones
+            const dimensionAnalysis = evaluation.dimension_analysis || {};
+            const dimensionalScores = evaluation.dimensional_scores || {};
+            const responseDetails = evaluation.response_details || [];
+            const strengths = evaluation.analysis?.strengths || [];
+            const improvements = evaluation.analysis?.improvements || [];
+            const generalRecommendations = evaluation.analysis?.general_recommendations || [];
+            
             return `
                 <div class="row">
-                    <div class="col-12">
-                        <!-- Score Section -->
-                        <div class="text-center mb-4">
-                            <div class="display-3 fw-bold text-primary mb-2">${score}%</div>
-                            <h4 class="text-secondary mb-2">${level}</h4>
-                            <p class="text-muted">Evaluación completada el ${completedDate}</p>
+                    <!-- Header con Score Principal -->
+                    <div class="col-12 mb-4">
+                        <div class="text-center p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+                            <div class="display-2 fw-bold mb-2">${score}%</div>
+                            <h3 class="mb-2">${level}</h3>
+                            <p class="mb-0 opacity-75">
+                                <i class="fas fa-calendar me-2"></i>
+                                Evaluación completada el ${formattedDate}
+                            </p>
                         </div>
-                        
-                        <!-- Interpretación -->
-                        <div class="alert alert-info mb-4">
-                            <h6 class="alert-heading">
-                                <i class="fas fa-lightbulb me-2"></i>
-                                Interpretación del Resultado
-                            </h6>
-                            <p class="mb-0">${getScoreInterpretation(score)}</p>
-                        </div>
-                        
-                        <!-- Radar Chart Section -->
-                        <div class="card mb-4">
-                            <div class="card-header">
+                    </div>
+                    
+                    <!-- Análisis por Dimensiones - Radar Chart -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
                                 <h5 class="card-title mb-0">
                                     <i class="fas fa-chart-radar me-2"></i>
                                     Análisis por Dimensiones
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div class="text-center">
-                                    <canvas id="coacheeModalRadarChart" width="400" height="400"></canvas>
+                                <div class="text-center mb-3">
+                                    <canvas id="coacheeModalRadarChart" width="350" height="350"></canvas>
                                 </div>
                                 
-                                <!-- Leyenda de dimensiones -->
-                                <div class="mt-4">
-                                    <h6 class="mb-3">Dimensiones Evaluadas:</h6>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li class="mb-2">
-                                                    <span class="badge me-2" style="background-color: #ff6384;">&nbsp;</span>
-                                                    <strong>Comunicación Directa:</strong> Capacidad para expresar ideas claramente
-                                                </li>
-                                                <li class="mb-2">
-                                                    <span class="badge me-2" style="background-color: #36a2eb;">&nbsp;</span>
-                                                    <strong>Defensa de Derechos:</strong> Habilidad para hacer valer los propios derechos
-                                                </li>
-                                                <li class="mb-2">
-                                                    <span class="badge me-2" style="background-color: #ffce56;">&nbsp;</span>
-                                                    <strong>Expresión de Opiniones:</strong> Facilidad para compartir puntos de vista
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li class="mb-2">
-                                                    <span class="badge me-2" style="background-color: #4bc0c0;">&nbsp;</span>
-                                                    <strong>Manejo de Conflictos:</strong> Gestión efectiva de situaciones difíciles
-                                                </li>
-                                                <li class="mb-2">
-                                                    <span class="badge me-2" style="background-color: #9966ff;">&nbsp;</span>
-                                                    <strong>Autoconfianza:</strong> Seguridad en las propias capacidades
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
+                                <!-- Puntuaciones por Dimensión -->
+                                <div class="dimension-scores">
+                                    ${Object.keys(dimensionalScores).map(dim => {
+                                        const score = Math.round(dimensionalScores[dim] || 0);
+                                        const analysis = dimensionAnalysis[dim] || {};
+                                        const level = analysis.level || getScoreClass(score);
+                                        return `
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="fw-bold">${formatDimensionName(dim)}:</span>
+                                                <span class="badge ${getScoreClass(score)} score-badge">${score}%</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Fortalezas y Áreas de Mejora -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-star me-2"></i>
+                                    Fortalezas y Oportunidades
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Fortalezas -->
+                                ${strengths.length > 0 ? `
+                                    <h6 class="text-success mb-3">
+                                        <i class="fas fa-thumbs-up me-2"></i>
+                                        Fortalezas Identificadas
+                                    </h6>
+                                    <div class="mb-4">
+                                        ${strengths.map(strength => `
+                                            <div class="alert alert-success py-2 mb-2">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <strong>${strength.dimension}</strong>
+                                                        <p class="mb-0 small">${strength.description}</p>
+                                                    </div>
+                                                    <span class="badge bg-success">${Math.round(strength.score)}%</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                                
+                                <!-- Áreas de Mejora -->
+                                ${improvements.length > 0 ? `
+                                    <h6 class="text-warning mb-3">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Áreas de Mejora
+                                    </h6>
+                                    <div>
+                                        ${improvements.map(improvement => `
+                                            <div class="alert alert-warning py-2 mb-2">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <strong>${improvement.dimension}</strong>
+                                                        <p class="mb-0 small">${improvement.description}</p>
+                                                    </div>
+                                                    <span class="badge bg-warning text-dark">${Math.round(improvement.score)}%</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Análisis Detallado por Dimensión -->
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-microscope me-2"></i>
+                                    Análisis Detallado por Dimensión
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    ${Object.keys(dimensionAnalysis).map(dim => {
+                                        const analysis = dimensionAnalysis[dim];
+                                        const score = Math.round(analysis.score || 0);
+                                        return `
+                                            <div class="col-md-6 mb-3">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h6 class="mb-0">${formatDimensionName(dim)}</h6>
+                                                        <span class="badge ${getScoreClass(score)} score-badge">${score}%</span>
+                                                    </div>
+                                                    <p class="small text-muted mb-2">${analysis.interpretation}</p>
+                                                    <div class="small">
+                                                        <strong>Nivel:</strong> <span class="text-primary">${analysis.level}</span>
+                                                    </div>
+                                                    ${analysis.recommendations && analysis.recommendations.length > 0 ? `
+                                                        <div class="mt-2">
+                                                            <strong class="small">Recomendaciones:</strong>
+                                                            <ul class="small mb-0 mt-1">
+                                                                ${analysis.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                                                            </ul>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recomendaciones Generales -->
+                    ${generalRecommendations.length > 0 ? `
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        Recomendaciones Generales para el Coach
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="mb-0">
+                                        ${generalRecommendations.map(rec => `<li class="mb-1">${rec}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Detalles de Respuestas -->
+                    ${responseDetails.length > 0 ? `
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-list me-2"></i>
+                                        Respuestas Detalladas (${responseDetails.length} preguntas)
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="accordion" id="responsesAccordion">
+                                        ${responseDetails.map((response, index) => `
+                                            <div class="accordion-item">
+                                                <h6 class="accordion-header" id="heading${index}">
+                                                    <button class="accordion-button ${index > 2 ? 'collapsed' : ''}" type="button" 
+                                                            data-bs-toggle="collapse" data-bs-target="#collapse${index}" 
+                                                            aria-expanded="${index <= 2 ? 'true' : 'false'}" aria-controls="collapse${index}">
+                                                        <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                                            <span class="fw-bold">Pregunta ${response.order}</span>
+                                                            <span class="badge ${getResponseValueClass(response.response_value)} ms-2">
+                                                                ${response.response_value}/5
+                                                            </span>
+                                                        </div>
+                                                    </button>
+                                                </h6>
+                                                <div id="collapse${index}" class="accordion-collapse collapse ${index <= 2 ? 'show' : ''}" 
+                                                     aria-labelledby="heading${index}" data-bs-parent="#responsesAccordion">
+                                                    <div class="accordion-body">
+                                                        <p class="mb-2"><strong>Pregunta:</strong> ${response.question_text}</p>
+                                                        <p class="mb-0">
+                                                            <strong>Respuesta:</strong> 
+                                                            <span class="badge ${getResponseValueClass(response.response_value)} ms-1">
+                                                                ${response.response_value}/5 - ${getResponseValueText(response.response_value)}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
+        }
+        
+        // Funciones auxiliares para el modal de evaluación detallada
+        function formatDimensionName(dimensionKey) {
+            const dimensionNames = {
+                'comunicacion': 'Comunicación Directa',
+                'derechos': 'Defensa de Derechos',
+                'opiniones': 'Expresión de Opiniones', 
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            return dimensionNames[dimensionKey] || dimensionKey;
+        }
+        
+        function getResponseValueClass(value) {
+            if (value >= 5) return 'bg-success';
+            if (value >= 4) return 'bg-info';
+            if (value >= 3) return 'bg-warning';
+            if (value >= 2) return 'bg-orange';
+            return 'bg-danger';
+        }
+        
+        function getResponseValueText(value) {
+            const responses = {
+                5: 'Totalmente de acuerdo',
+                4: 'De acuerdo', 
+                3: 'Neutral',
+                2: 'En desacuerdo',
+                1: 'Totalmente en desacuerdo'
+            };
+            return responses[value] || 'Sin respuesta';
         }
         
         // Función para crear el radar chart en el modal del coachee
@@ -3101,15 +3330,20 @@ Tu Coach
                 window.coacheeModalRadarChartInstance.destroy();
             }
             
-            const dimensions = [
-                'Comunicación Directa',
-                'Defensa de Derechos', 
-                'Expresión de Opiniones',
-                'Manejo de Conflictos',
-                'Autoconfianza'
-            ];
+            // Mapeo de dimensiones del backend al frontend
+            const dimensionMapping = {
+                'comunicacion': 'Comunicación Directa',
+                'derechos': 'Defensa de Derechos', 
+                'opiniones': 'Expresión de Opiniones',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
             
-            const scores = dimensions.map(dim => dimensionalScores[dim] || 0);
+            const dimensions = Object.values(dimensionMapping);
+            const dimensionKeys = Object.keys(dimensionMapping);
+            
+            // Mapear las puntuaciones usando las claves correctas
+            const scores = dimensionKeys.map(key => dimensionalScores[key] || 0);
             
             window.coacheeModalRadarChartInstance = new Chart(ctx, {
                 type: 'radar',
@@ -3120,11 +3354,12 @@ Tu Coach
                         data: scores,
                         backgroundColor: 'rgba(102, 126, 234, 0.2)',
                         borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 2,
+                        borderWidth: 3,
                         pointBackgroundColor: 'rgba(102, 126, 234, 1)',
                         pointBorderColor: '#fff',
                         pointBorderWidth: 2,
-                        pointRadius: 5
+                        pointRadius: 6,
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
@@ -3138,19 +3373,35 @@ Tu Coach
                                 stepSize: 20,
                                 callback: function(value) {
                                     return value + '%';
-                                }
+                                },
+                                color: '#666',
+                                backdropColor: 'transparent'
                             },
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
+                                color: 'rgba(102, 126, 234, 0.2)'
                             },
                             angleLines: {
-                                color: 'rgba(0, 0, 0, 0.1)'
+                                color: 'rgba(102, 126, 234, 0.3)'
+                            },
+                            pointLabels: {
+                                color: '#333',
+                                font: {
+                                    size: 11,
+                                    weight: 'bold'
+                                }
                             }
                         }
                     },
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.r + '%';
+                                }
+                            }
                         }
                     }
                 }
