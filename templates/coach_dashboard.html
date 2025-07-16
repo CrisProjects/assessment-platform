@@ -1697,7 +1697,7 @@
                                                 <i class="fas fa-list-check me-2 text-warning"></i>
                                                 Tareas Asignadas
                                             </h5>
-                                            <button class="btn btn-outline-primary btn-sm" onclick="loadTasks()">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="loadCoachTasks()">
                                                 <i class="fas fa-refresh me-1"></i>Actualizar
                                             </button>
                                         </div>
@@ -1708,6 +1708,8 @@
                                                 <div class="loading-spinner me-2"></div>
                                                 <span class="text-muted">Cargando tareas...</span>
                                             </div>
+                                        </div>
+                                    </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1850,1940 +1852,383 @@
             loadCoachees();
             loadQuestions();
             loadEvaluationSummaries(); // Cargar resúmenes de evaluaciones
+            loadCoachTasks(); // Cargar tareas del coach
+            
+            // Configurar event listeners
+            setupTaskFormListener();
             
             // Configurar auto-refresh cada 30 segundos
             setInterval(() => {
                 loadDashboardStats();
                 loadCoachees();
                 loadEvaluationSummaries();
+                loadCoachTasks();
             }, 30000);
         });
 
-        // Cargar preguntas de la evaluación (para referencia)
-        async function loadQuestions() {
-            try {
-                const response = await fetch('/api/questions', {
-                    credentials: 'include'
+        // Configurar event listener para el formulario de crear tareas
+        function setupTaskFormListener() {
+            const createTaskForm = document.getElementById('createTaskForm');
+            if (createTaskForm) {
+                createTaskForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    await createTask();
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    questions = data.questions || [];
-                    console.log('📋 Questions loaded:', questions.length);
-                }
-            } catch (error) {
-                console.log('ℹ️  Questions not loaded (optional):', error.message);
-                // No es crítico si no se pueden cargar las preguntas
             }
         }
 
-        // Cargar estadísticas del dashboard
-        async function loadDashboardStats() {
-            try {
-                const response = await fetch('/api/coach/dashboard-stats', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('🔍 API Response from /api/coach/dashboard-stats:', data);
-                
-                updateStatsDisplay(data);
-                updateCharts(data);
-                
-                // Actualizar nombre del coach
-                if (data.coach_name) {
-                    document.getElementById('coachName').textContent = data.coach_name;
-                }
-                
-            } catch (error) {
-                console.error('Error loading stats:', error);
-                showToast('Error al cargar estadísticas', 'error');
-            }
-        }
+        // Función para crear una nueva tarea
+        async function createTask() {
+            const coacheeId = document.getElementById('taskCoacheeSelect').value;
+            const title = document.getElementById('taskTitle').value.trim();
+            const description = document.getElementById('taskDescription').value.trim();
+            const category = document.getElementById('taskCategory').value;
+            const priority = document.getElementById('taskPriority').value;
+            const dueDate = document.getElementById('taskDueDate').value;
 
-        // Actualizar visualización de estadísticas
-        function updateStatsDisplay(data) {
-            statsData = data;
-            
-            document.getElementById('totalCoachees').textContent = data.total_coachees || 0;
-            document.getElementById('totalAssessments').textContent = data.total_assessments || 0;
-            document.getElementById('avgScore').textContent = data.avg_score ? 
-                Math.round(data.avg_score) + '%' : '-';
-            document.getElementById('recentActivity').textContent = data.recent_activity || 0;
-        }
-
-        // Cargar lista de coachees
-        async function loadCoachees() {
-            const container = document.getElementById('coacheesContainer');
-            
-            try {
-                const response = await fetch('/api/coach/my-coachees', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                coacheesData = data.coachees || [];
-                displayCoachees(coacheesData);
-                
-            } catch (error) {
-                console.error('Error loading coachees:', error);
-                container.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-danger text-center" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar la lista de coachees
-                            <button class="btn btn-sm btn-outline-danger ms-2" onclick="loadCoachees()">
-                                <i class="fas fa-refresh me-1"></i>Reintentar
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Mostrar lista de coachees
-        function displayCoachees(coachees) {
-            const container = document.getElementById('coacheesContainer');
-            
-            if (!coachees || coachees.length === 0) {
-                container.innerHTML = `
-                    <div class="col-12">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <h4>No hay coachees asignados</h4>
-                            <p>Los participantes aparecerán aquí una vez que acepten tu invitación y completen su registro.</p>
-                            <button class="btn btn-gradient" onclick="openInvitationModal()">
-                                <i class="fas fa-envelope me-2"></i>
-                                Invitar Nuevo Participante
-                            </button>
-                        </div>
-                    </div>
-                `;
+            // Validación
+            if (!coacheeId) {
+                showToast('Por favor, selecciona un coachee', 'error');
                 return;
             }
             
-            const coacheesHTML = coachees.map(coachee => `
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card coachee-card h-100" onclick="showCoacheeDetails('${coachee.id}')">
-                        <div class="card-body p-4">
-                            <!-- Header Section -->
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="flex-grow-1">
-                                    <h5 class="coachee-name">${coachee.full_name}</h5>
-                                    <p class="coachee-email">${coachee.email}</p>
-                                </div>
-                                <span class="status-badge ${getStatusBadgeClass(coachee.status)}">
-                                    ${getStatusText(coachee.status)}
-                                </span>
-                            </div>
-                            
-                            <!-- Stats Section -->
-                            <div class="coachee-stats">
-                                <div class="coachee-stat">
-                                    <div class="coachee-stat-number">${coachee.total_assessments || 0}</div>
-                                    <div class="coachee-stat-label">Evaluaciones</div>
-                                </div>
-                                <div class="coachee-stat">
-                                    <div class="coachee-stat-number">
-                                        ${coachee.average_score ? Math.round(coachee.average_score) + '%' : 'N/A'}
-                                    </div>
-                                    <div class="coachee-stat-label">Promedio</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Assessment Section -->
-                            ${coachee.last_assessment ? `
-                                <div class="last-assessment">
-                                    <div class="assessment-header">
-                                        <span class="assessment-title">Última Evaluación</span>
-                                        <div class="assessment-icon">
-                                            <i class="fas fa-chart-line"></i>
-                                        </div>
-                                    </div>
-                                    <div class="assessment-score">
-                                        <span class="score-badge ${getScoreClass(coachee.last_assessment.score)}">
-                                            ${Math.round(coachee.last_assessment.score)}% - ${getAssertivityLevel(coachee.last_assessment.score)}
-                                        </span>
-                                    </div>
-                                    <div class="assessment-date">
-                                        <i class="fas fa-clock"></i>
-                                        ${formatDate(coachee.last_assessment.created_at)}
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="last-assessment">
-                                    <div class="assessment-header">
-                                        <span class="assessment-title">Estado</span>
-                                        <div class="assessment-icon">
-                                            <i class="fas fa-user-clock"></i>
-                                        </div>
-                                    </div>
-                                    <div class="assessment-score">
-                                        <span class="text-muted small">Sin evaluaciones completadas</span>
-                                    </div>
-                                    <div class="assessment-date">
-                                        <i class="fas fa-info-circle"></i>
-                                        <span class="small">Pendiente primera evaluación</span>
-                                    </div>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            
-            container.innerHTML = coacheesHTML;
-        }
-
-        // Actualizar gráficos
-        function updateCharts(data) {
-            console.log('🎯 updateCharts called with data:', data);
-            console.log('📈 Score distribution:', data.score_distribution);
-            console.log('📊 Progress data:', data.progress_data);
-            
-            updateDistributionChart(data.score_distribution || {});
-        }
-
-        // Gráfico de distribución
-        function updateDistributionChart(distribution) {
-            const ctx = document.getElementById('distributionChart').getContext('2d');
-            
-            if (distributionChart) {
-                distributionChart.destroy();
-            }
-            
-            const levels = ['Poco Asertivo', 'Moderadamente Asertivo', 'Asertivo', 'Muy Asertivo'];
-            const counts = levels.map(level => distribution[level] || 0);
-            const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
-            
-            distributionChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: levels,
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: colors,
-                        borderWidth: 0,
-                        hoverBorderWidth: 2,
-                        hoverBorderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: { size: 12 }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-
-        // Gráfico de progreso por coachee (ya no se usa)
-        function updateProgressChart(progressData) {
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            
-            // DEBUG: Log de los datos recibidos
-            console.log('🔍 updateProgressChart called with:', progressData);
-            console.log('📊 Progress data length:', progressData ? progressData.length : 'undefined');
-            
-            if (progressChart) {
-                progressChart.destroy();
-            }
-            
-            if (!progressData || progressData.length === 0) {
-                // Mostrar mensaje cuando no hay datos
-                console.log('❌ No progress data available');
-                ctx.fillStyle = '#6b7280';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('No hay datos de progreso disponibles', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            if (!title) {
+                showToast('Por favor, ingresa un título para la tarea', 'error');
                 return;
             }
             
-            console.log('✅ Progress data found, creating chart with', progressData.length, 'coachees');
-            
-            // Generar colores diferentes para cada coachee
-            const colors = [
-                '#667eea', '#f093fb', '#4facfe', '#43e97b', 
-                '#fa709a', '#fad0c4', '#a8edea', '#ffecd2',
-                '#ff9a9e', '#a8e6cf', '#ffd3a5', '#fd8085'
-            ];
-            
-            // Crear datasets para cada coachee
-            const datasets = progressData.map((coachee, index) => {
-                const color = colors[index % colors.length];
-                
-                return {
-                    label: coachee.coachee_name,
-                    data: coachee.assessments.map(assessment => ({
-                        x: new Date(assessment.date),
-                        y: assessment.score
-                    })),
-                    borderColor: color,
-                    backgroundColor: color + '20',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4,
-                    pointBackgroundColor: color,
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                };
-            });
-            
-            progressChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day',
-                                displayFormats: {
-                                    day: 'MMM DD'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Fecha'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Puntuación (%)'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 15,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            mode: 'point',
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y + '%';
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'point'
-                    }
-                }
-            });
-        }
-
-        // Mostrar detalles del coachee
-        function showCoacheeDetails(coacheeId) {
-            const coachee = coacheesData.find(c => c.id === coacheeId);
-            if (!coachee) return;
-            
-            const modal = new bootstrap.Modal(document.createElement('div'));
-            modal._element.innerHTML = `
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-user me-2"></i>${coachee.full_name}
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <h6 class="card-title">Información General</h6>
-                                            <p class="mb-1"><strong>Email:</strong> ${coachee.email}</p>
-                                            <p class="mb-1"><strong>Estado:</strong> 
-                                                <span class="badge ${getStatusBadgeClass(coachee.status)}">
-                                                    ${getStatusText(coachee.status)}
-                                                </span>
-                                            </p>
-                                            <p class="mb-0"><strong>Registrado:</strong> ${formatDate(coachee.created_at)}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <h6 class="card-title">Estadísticas</h6>
-                                            <p class="mb-1"><strong>Evaluaciones:</strong> ${coachee.total_assessments || 0}</p>
-                                            <p class="mb-1"><strong>Promedio:</strong> 
-                                                ${coachee.average_score ? Math.round(coachee.average_score) + '%' : 'N/A'}
-                                            </p>
-                                            ${coachee.last_assessment ? `
-                                                <p class="mb-0"><strong>Última evaluación:</strong> ${formatDate(coachee.last_assessment.created_at)}</p>
-                                            ` : '<p class="mb-0">Sin evaluaciones</p>'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            ${coachee.last_assessment ? `
-                                <div class="mt-3">
-                                    <h6>Último Resultado de Asertividad</h6>
-                                    <div class="alert alert-info">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span><strong>Puntuación:</strong> ${Math.round(coachee.last_assessment.score)}%</span>
-                                            <span class="badge ${getScoreClass(coachee.last_assessment.score)} score-badge">
-                                                ${getAssertivityLevel(coachee.last_assessment.score)}
-                                            </span>
-                                        </div>
-                                        <div class="mt-2">
-                                            ${getScoreInterpretation(coachee.last_assessment.score)}
-                                        </div>
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            ${coachee.last_assessment ? `
-                                <button type="button" class="btn btn-success" onclick="viewCoacheeEvaluationDetails('${coacheeId}')">
-                                    <i class="fas fa-chart-radar me-1"></i>Ver Resultados Detallados
-                                </button>
-                            ` : ''}
-                            <button type="button" class="btn btn-primary" onclick="sendReminder('${coacheeId}')">
-                                <i class="fas fa-bell me-1"></i>Enviar Recordatorio
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal._element);
-            modal.show();
-            
-            modal._element.addEventListener('hidden.bs.modal', function() {
-                modal._element.remove();
-            });
-        }
-
-        function setCoachName() {
-            // Obtener el nombre del coach desde la API de estadísticas
-            fetch('/api/coach/dashboard-stats', {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.coach_name) {
-                        document.getElementById('coachName').textContent = data.coach_name;
-                    } else {
-                        document.getElementById('coachName').textContent = 'Coach';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error obteniendo nombre del coach:', error);
-                    document.getElementById('coachName').textContent = 'Coach';
-                });
-        }
-
-        async function loadDashboardStats() {
-            try {
-                const response = await fetch('/api/coach/dashboard-stats', {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    
-                    // Si hay error de autenticación o autorización, redirigir al login
-                    if (response.status === 401 || response.status === 403) {
-                        console.log('Error de autorización en stats:', response.status, errorData);
-                        window.location.href = '/login?role=coach';
-                        return;
-                    }
-                    
-                    throw new Error(errorData.error || 'No se pudieron cargar las estadísticas del dashboard');
-                }
-                
-                const stats = await response.json();
-                statsData = stats;
-                
-                // Actualizar estadísticas
-                document.getElementById('totalCoachees').textContent = stats.total_coachees || 0;
-                document.getElementById('totalAssessments').textContent = stats.total_assessments || 0;
-                document.getElementById('avgScore').textContent = stats.avg_score ? stats.avg_score + '%' : '-';
-                document.getElementById('recentActivity').textContent = stats.recent_activity || 0;
-                
-                // Crear gráficos con manejo de errores
-                try {
-                    createDistributionChart(stats.score_distribution);
-                } catch (chartError) {
-                    console.error('Error creando gráfico:', chartError);
-                    // Continuar sin mostrar error al usuario por el gráfico
-                }
-                
-            } catch (error) {
-                console.error('Error cargando estadísticas:', error);
-                showError('No se pudieron cargar las estadísticas del dashboard. Por favor, recarga la página.');
-            }
-        }
-
-        async function loadCoachees() {
-            try {
-                const container = document.getElementById('coacheesContainer');
-                container.innerHTML = '<div class="loading">Cargando coachees...</div>';
-                
-                const response = await fetch('/api/coach/my-coachees', {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    
-                    // Si hay error de autenticación o autorización, redirigir al login
-                    if (response.status === 401 || response.status === 403) {
-                        console.log('Error de autorización:', response.status, errorData);
-                        window.location.href = "/login?role=coach";
-                        return;
-                    }
-                    
-                    throw new Error(errorData.error || 'No se pudo cargar la lista de coachees');
-                }
-                
-                const coachees = await response.json();
-                coacheesData = coachees;
-                
-                if (coachees.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <h3>No tienes coachees asignados</h3>
-                            <p>Los coachees aparecerán aquí una vez que sean asignados a tu supervisión.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Crear grid de coachees
-                const coacheeGrid = document.createElement('div');
-                coacheeGrid.className = 'coachee-grid';
-                
-                coachees.forEach(coachee => {
-                    const card = createCoacheeCard(coachee);
-                    coacheeGrid.appendChild(card);
-                });
-                
-                container.innerHTML = '';
-                container.appendChild(coacheeGrid);
-                
-            } catch (error) {
-                console.error('Error cargando coachees:', error);
-                const container = document.getElementById('coacheesContainer');
-                container.innerHTML = `
-                    <div class="error-state">
-                        <h3>Error al cargar coachees</h3>
-                        <p>No se pudieron cargar los coachees. <button onclick="loadCoachees()" style="
-                            background: #007bff; 
-                            color: white; 
-                            border: none; 
-                            padding: 8px 16px; 
-                            border-radius: 4px; 
-                            cursor: pointer;
-                            margin-left: 8px;
-                        ">Reintentar</button></p>
-                    </div>
-                `;
-                showError('No se pudo cargar la lista de coachees. Verifica tu conexión.');
-            }
-        }
-
-        function createCoacheeCard(coachee) {
-            const card = document.createElement('div');
-            card.className = 'coachee-card';
-            card.onclick = () => viewCoacheeEvaluationDetails(coachee.id);
-            
-            let lastAssessmentHtml = '';
-            if (coachee.latest_assessment) {
-                const score = coachee.latest_assessment.overall_score;
-                const scoreClass = getScoreClass(score);
-                const level = getAssertivityLevel(score);
-                const date = new Date(coachee.latest_assessment.created_at).toLocaleDateString();
-                
-                lastAssessmentHtml = `
-                    <div class="last-assessment">
-                        <div class="assessment-header">
-                            <span class="assessment-title">Última Evaluación</span>
-                            <div class="assessment-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                        </div>
-                        <div class="assessment-score">
-                            <span class="score-badge ${scoreClass}">
-                                ${score}% - ${level}
-                            </span>
-                        </div>
-                        <div class="assessment-date">
-                            <i class="fas fa-clock"></i>
-                            ${date}
-                        </div>
-                    </div>
-                `;
-            } else {
-                lastAssessmentHtml = `
-                    <div class="last-assessment">
-                        <div class="assessment-header">
-                            <span class="assessment-title">Estado</span>
-                            <div class="assessment-icon">
-                                <i class="fas fa-hourglass-half"></i>
-                            </div>
-                        </div>
-                        <div class="assessment-score">
-                            <span class="text-muted">Sin evaluaciones completadas</span>
-                        </div>
-                        <div class="assessment-date">
-                            <i class="fas fa-info-circle"></i>
-                            Pendiente de primera evaluación
-                        </div>
-                    </div>
-                `;
-            }
-            
-            card.innerHTML = `
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="flex-grow-1">
-                            <h5 class="coachee-name mb-1">${coachee.full_name}</h5>
-                            <p class="coachee-email mb-0">${coachee.email}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="coachee-stats">
-                        <div class="coachee-stat">
-                            <div class="coachee-stat-number">${coachee.total_assessments || 0}</div>
-                            <div class="coachee-stat-label">Evaluaciones</div>
-                        </div>
-                        <div class="coachee-stat">
-                            <div class="coachee-stat-number">
-                                ${coachee.latest_assessment ? getAssertivityLevel(coachee.latest_assessment.overall_score) : 'N/A'}
-                            </div>
-                            <div class="coachee-stat-label">Nivel Actual</div>
-                        </div>
-                    </div>
-                    
-                    ${lastAssessmentHtml}
-                </div>
-            `;
-            
-            return card;
-        }
-
-        function createDistributionChart(distribution) {
-            const ctx = document.getElementById('distributionChart').getContext('2d');
-            
-            if (distributionChart) {
-                distributionChart.destroy();
-            }
-            
-            distributionChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(distribution),
-                    datasets: [{
-                        data: Object.values(distribution),
-                        backgroundColor: [
-                            '#e53e3e',  // Poco Asertivo
-                            '#d69e2e',  // Moderadamente Asertivo
-                            '#3182ce',  // Asertivo
-                            '#38a169'   // Muy Asertivo
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        }
-
-        async function viewCoacheeDetails(coacheeId) {
-            // Redirigir a la nueva función de evaluación detallada
-            return viewCoacheeEvaluationDetails(coacheeId);
-        }
-
-        
-        // ============================================================================
-        // FUNCIONES PARA MODAL DE INVITACIÓN
-        // ============================================================================
-        
-        function openInvitationModal() {
-            const modal = new bootstrap.Modal(document.getElementById('invitationModal'));
-            
-            // Limpiar el formulario
-            document.getElementById('invitationForm').reset();
-            
-            modal.show();
-        }
-        
-        async function sendInvitation() {
-            const email = document.getElementById('coacheeEmail').value.trim();
-            const name = document.getElementById('coacheeName').value.trim();
-            const message = document.getElementById('invitationMessage').value.trim();
-            
-            // Validación básica
-            if (!email) {
-                showToast('Por favor, ingresa el email del coachee', 'error');
+            if (!description) {
+                showToast('Por favor, ingresa una descripción para la tarea', 'error');
                 return;
             }
             
-            if (!name) {
-                showToast('Por favor, ingresa el nombre del coachee', 'error');
+            if (!category) {
+                showToast('Por favor, selecciona una categoría', 'error');
                 return;
             }
-            
-            if (!isValidEmail(email)) {
-                showToast('Por favor, ingresa un email válido', 'error');
-                return;
-            }
-            
-            const inviteButton = document.querySelector('.invitation-btn');
-            const originalText = inviteButton.innerHTML;
+
+            const submitButton = document.querySelector('#createTaskForm button[type="submit"]');
+            const originalText = submitButton.innerHTML;
             
             try {
-                // Deshabilitar botón y mostrar loading
-                inviteButton.disabled = true;
-                inviteButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+                // Mostrar loading
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando tarea...';
                 
-                const response = await fetch('/api/coach/create-invitation', {
+                const response = await fetch('/api/coach/tasks', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     credentials: 'include',
                     body: JSON.stringify({
-                        email: email,
-                        full_name: name,
-                        message: message || null
+                        coachee_id: parseInt(coacheeId),
+                        title: title,
+                        description: description,
+                        category: category,
+                        priority: priority,
+                        due_date: dueDate || null
                     })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (!response.ok) {
-                    throw new Error(result.error || 'Error al enviar la invitación');
+                    throw new Error(result.error || 'Error al crear la tarea');
                 }
+
+                // Mostrar éxito
+                showToast('Tarea creada exitosamente', 'success');
                 
-                // Cerrar modal de invitación
-                const modal = bootstrap.Modal.getInstance(document.getElementById('invitationModal'));
-                modal.hide();
+                // Limpiar formulario
+                document.getElementById('createTaskForm').reset();
                 
-                // Mostrar modal con credenciales generadas
-                showCredentialsModal(result.coachee);
+                // Recargar tareas
+                await loadCoachTasks();
                 
-                // Actualizar lista de coachees después de un breve delay
-                setTimeout(() => {
-                    loadCoachees();
-                }, 1000);
-                
+                // Cambiar a la pestaña de seguimiento para ver la tarea creada
+                document.getElementById('task-track-tab').click();
+
             } catch (error) {
-                console.error('Error enviando invitación:', error);
-                showToast(error.message || 'Error al enviar la invitación', 'error');
+                console.error('Error creando tarea:', error);
+                showToast(error.message || 'Error al crear la tarea', 'error');
             } finally {
                 // Restaurar botón
-                inviteButton.disabled = false;
-                inviteButton.innerHTML = originalText;
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
             }
         }
-        
-        // Función para mostrar las credenciales generadas
-        function showCredentialsModal(coacheeData) {
-            const credentialsModal = document.createElement('div');
-            credentialsModal.className = 'modal fade';
-            credentialsModal.id = 'credentialsModal';
-            credentialsModal.setAttribute('tabindex', '-1');
-            credentialsModal.setAttribute('aria-hidden', 'true');
-            
-            credentialsModal.innerHTML = `
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
-                            <h5 class="modal-title">
-                                <i class="fas fa-check-circle me-2"></i>
-                                ¡Coachee Creado Exitosamente!
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="alert alert-success">
-                                <h6 class="alert-heading">
-                                    <i class="fas fa-user-plus me-2"></i>
-                                    Nuevo Coachee Registrado
-                                </h6>
-                                <p class="mb-0">El coachee <strong>${coacheeData.full_name}</strong> ha sido creado exitosamente con credenciales de acceso.</p>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-key me-2"></i>
-                                        Credenciales de Acceso
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-sm-4"><strong>Nombre:</strong></div>
-                                        <div class="col-sm-8">${coacheeData.full_name}</div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-sm-4"><strong>Email:</strong></div>
-                                        <div class="col-sm-8">${coacheeData.email}</div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-sm-4"><strong>Usuario:</strong></div>
-                                        <div class="col-sm-8">
-                                            <code id="username-${coacheeData.id}">${coacheeData.username}</code>
-                                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('username-${coacheeData.id}')">
-                                                <i class="fas fa-copy"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-sm-4"><strong>Contraseña:</strong></div>
-                                        <div class="col-sm-8">
-                                            <code id="password-${coacheeData.id}">${coacheeData.password}</code>
-                                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('password-${coacheeData.id}')">
-                                                <i class="fas fa-copy"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-sm-4"><strong>URL de Login:</strong></div>
-                                        <div class="col-sm-8">
-                                            <a href="${coacheeData.login_url}" target="_blank" class="text-primary">
-                                                ${coacheeData.login_url}
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="alert alert-warning mt-3">
-                                <h6 class="alert-heading">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Importante
-                                </h6>
-                                <ul class="mb-0">
-                                    <li>Comparte estas credenciales de forma segura con tu coachee</li>
-                                    <li>El coachee puede cambiar su contraseña después del primer login</li>
-                                    <li>Estas credenciales no se mostrarán nuevamente</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-2"></i>
-                                Cerrar
-                            </button>
-                            <button type="button" class="btn btn-primary" onclick="copyAllCredentials('${coacheeData.username}', '${coacheeData.password}', '${coacheeData.email}')">
-                                <i class="fas fa-copy me-2"></i>
-                                Copiar Todo
-                            </button>
-                            <button type="button" class="btn btn-success" onclick="sendCredentialsByEmail('${coacheeData.email}', '${coacheeData.full_name}', '${coacheeData.username}', '${coacheeData.password}')">
-                                <i class="fas fa-envelope me-2"></i>
-                                Enviar por Email
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(credentialsModal);
-            const modal = new bootstrap.Modal(credentialsModal);
-            modal.show();
-            
-            // Remover modal del DOM cuando se cierre
-            credentialsModal.addEventListener('hidden.bs.modal', function () {
-                credentialsModal.remove();
-            });
-            
-            // Mostrar toast de éxito
-            showToast('¡Coachee creado exitosamente con credenciales!', 'success');
-        }
-        
-        // Función para copiar texto al portapapeles
-        function copyToClipboard(elementId) {
-            const element = document.getElementById(elementId);
-            const text = element.textContent;
-            
-            navigator.clipboard.writeText(text).then(function() {
-                showToast('Copiado al portapapeles', 'success');
-            }).catch(function(err) {
-                console.error('Error copiando al portapapeles: ', err);
-                showToast('Error al copiar', 'error');
-            });
-        }
-        
-        // Función para copiar todas las credenciales
-        function copyAllCredentials(username, password, email) {
-            const credentials = `
-Credenciales de Acceso - Plataforma de Evaluación
 
-Nombre de Usuario: ${username}
-Contraseña: ${password}
-Email: ${email}
-URL de Login: ${window.location.origin}/login?role=coachee
-
-Instrucciones:
-1. Ingresa a la URL de login
-2. Selecciona "Coachee" si no se selecciona automáticamente
-3. Usa las credenciales proporcionadas
-4. Podrás cambiar tu contraseña después del primer login
-            `.trim();
-            
-            navigator.clipboard.writeText(credentials).then(function() {
-                showToast('Todas las credenciales copiadas al portapapeles', 'success');
-            }).catch(function(err) {
-                console.error('Error copiando credenciales: ', err);
-                showToast('Error al copiar credenciales', 'error');
-            });
-        }
-        
-        // Función para enviar credenciales por email (simulado)
-        function sendCredentialsByEmail(email, fullName, username, password) {
-            // En una implementación real, esto llamaría a un endpoint del backend
-            showToast('Funcionalidad de envío por email en desarrollo', 'info');
-            
-            // Por ahora, abrimos el cliente de email por defecto
-            const subject = encodeURIComponent('Credenciales de Acceso - Plataforma de Evaluación');
-            const body = encodeURIComponent(`
-Hola ${fullName},
-
-Te han invitado a participar en la Plataforma de Evaluación de Asertividad.
-
-Tus credenciales de acceso son:
-
-Usuario: ${username}
-Contraseña: ${password}
-URL de Login: ${window.location.origin}/login?role=coachee
-
-Instrucciones:
-1. Haz clic en la URL de login o cópiala en tu navegador
-2. Selecciona "Coachee" si no se selecciona automáticamente  
-3. Ingresa con las credenciales proporcionadas
-4. Podrás cambiar tu contraseña después del primer login
-
-¡Esperamos verte pronto en la plataforma!
-
-Saludos,
-Tu Coach
-            `);
-            
-            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-            window.open(mailtoLink);
-        }
-        
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-        
-        // Función auxiliar para mostrar toasts
-        function showToast(message, type = 'info') {
-            const toastContainer = document.querySelector('.toast-container');
-            const toastId = 'toast-' + Date.now();
-            
-            const toastHTML = `
-                <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                </div>
-            `;
-            
-            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-            
-            const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement, {
-                autohide: true,
-                delay: type === 'error' ? 5000 : 3000
-            });
-            
-            toast.show();
-            
-            // Remover el toast del DOM después de que se oculte
-            toastElement.addEventListener('hidden.bs.toast', function () {
-                toastElement.remove();
-            });
-        }
-        
-        // Función para ver los detalles de evaluación de un coachee usando el modal homologado
-        async function viewCoacheeEvaluationDetails(coacheeId) {
+        // Función para cargar las tareas del coach
+        async function loadCoachTasks() {
             try {
-                // Buscar el coachee en los datos locales
-                const coachee = coacheesData.find(c => c.id === coacheeId);
-                if (!coachee || !coachee.last_assessment) {
-                    showToast('No hay evaluaciones disponibles para este coachee', 'error');
-                    return;
-                }
-                
-                // Cargar los detalles completos de la evaluación desde el API
-                const response = await fetch(`/api/coach/coachee-evaluation-details/${coacheeId}`, {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Error al cargar detalles de la evaluación');
-                }
-                
-                const evaluationData = await response.json();
-                
-                // Mostrar el modal de evaluación con los datos completos
-                const modal = new bootstrap.Modal(document.getElementById('coacheeEvaluationDetailsModal'));
-                const modalContent = document.getElementById('coacheeEvaluationDetailsContent');
-                
-                // Actualizar el título del modal
-                document.getElementById('coacheeEvaluationDetailsModalLabel').innerHTML = `
-                    <i class="fas fa-chart-radar me-2"></i>
-                    Detalles de Evaluación - ${coachee.full_name}
-                `;
-                
-                // Mostrar loading mientras se carga el contenido
-                modalContent.innerHTML = `
-                    <div class="text-center py-5">
-                        <div class="spinner-border spinner-border-custom" role="status">
-                            <span class="visually-hidden">Cargando detalles...</span>
-                        </div>
-                        <p class="mt-3 text-muted">Cargando detalles de la evaluación...</p>
-                    </div>
-                `;
-                
-                modal.show();
-                
-                // Crear el contenido del modal con el mismo formato del coachee
-                modalContent.innerHTML = createCoacheeEvaluationDetailsContent(evaluationData, coachee);
-                
-                // Crear el radar chart después de un pequeño delay para que el DOM esté listo
-                setTimeout(() => {
-                    const evaluation = evaluationData.evaluation || evaluationData;
-                    const dimensionalScores = evaluation.dimensional_scores || {};
-                    createCoacheeModalRadarChart(dimensionalScores);
-                }, 100);
-                
-            } catch (error) {
-                console.error('Error cargando detalles de evaluación:', error);
-                showToast('Error al cargar los detalles de la evaluación', 'error');
-            }
-        }
-        
-        // Función para crear el contenido del modal de evaluación del coachee con detalles completos
-        function createCoacheeEvaluationDetailsContent(evaluationResponse, coachee) {
-            const evaluation = evaluationResponse.evaluation || evaluationResponse;
-            const score = Math.round(evaluation.total_score || evaluation.overall_score || evaluation.score || 0);
-            const level = evaluation.assertiveness_level || getAssertivityLevel(score);
-            const completedDate = evaluation.completed_at || evaluation.created_at;
-            const formattedDate = new Date(completedDate).toLocaleDateString('es-ES', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-            
-            // Obtener análisis por dimensiones
-            const dimensionAnalysis = evaluation.dimension_analysis || {};
-            const dimensionalScores = evaluation.dimensional_scores || {};
-            const responseDetails = evaluation.response_details || [];
-            const strengths = evaluation.analysis?.strengths || [];
-            const improvements = evaluation.analysis?.improvements || [];
-            const generalRecommendations = evaluation.analysis?.general_recommendations || [];
-            
-            return `
-                <div class="row">
-                    <!-- Header con Score Principal -->
-                    <div class="col-12 mb-4">
-                        <div class="text-center p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
-                            <div class="display-2 fw-bold mb-2">${score}%</div>
-                            <h3 class="mb-2">${level}</h3>
-                            <p class="mb-0 opacity-75">
-                                <i class="fas fa-calendar me-2"></i>
-                                Evaluación completada el ${formattedDate}
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <!-- Análisis por Dimensiones - Radar Chart -->
-                    <div class="col-lg-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-chart-radar me-2"></i>
-                                    Análisis por Dimensiones
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="text-center mb-3">
-                                    <canvas id="coacheeModalRadarChart" width="350" height="350"></canvas>
-                                </div>
-                                
-                                <!-- Puntuaciones por Dimensión -->
-                                <div class="dimension-scores">
-                                    ${Object.keys(dimensionalScores).map(dim => {
-                                        const score = Math.round(dimensionalScores[dim] || 0);
-                                        const analysis = dimensionAnalysis[dim] || {};
-                                        const level = analysis.level || getScoreClass(score);
-                                        return `
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="fw-bold">${formatDimensionName(dim)}:</span>
-                                                <span class="badge ${getScoreClass(score)} score-badge">${score}%</span>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Fortalezas y Áreas de Mejora -->
-                    <div class="col-lg-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header bg-success text-white">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-star me-2"></i>
-                                    Fortalezas y Oportunidades
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- Fortalezas -->
-                                ${strengths.length > 0 ? `
-                                    <h6 class="text-success mb-3">
-                                        <i class="fas fa-thumbs-up me-2"></i>
-                                        Fortalezas Identificadas
-                                    </h6>
-                                    <div class="mb-4">
-                                        ${strengths.map(strength => `
-                                            <div class="alert alert-success py-2 mb-2">
-                                                <div class="d-flex justify-content-between align-items-start">
-                                                    <div class="flex-grow-1">
-                                                        <strong>${strength.dimension}</strong>
-                                                        <p class="mb-0 small">${strength.description}</p>
-                                                    </div>
-                                                    <span class="badge bg-success">${Math.round(strength.score)}%</span>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
-                                
-                                <!-- Áreas de Mejora -->
-                                ${improvements.length > 0 ? `
-                                    <h6 class="text-warning mb-3">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        Áreas de Mejora
-                                    </h6>
-                                    <div>
-                                        ${improvements.map(improvement => `
-                                            <div class="alert alert-warning py-2 mb-2">
-                                                <div class="d-flex justify-content-between align-items-start">
-                                                    <div class="flex-grow-1">
-                                                        <strong>${improvement.dimension}</strong>
-                                                        <p class="mb-0 small">${improvement.description}</p>
-                                                    </div>
-                                                    <span class="badge bg-warning text-dark">${Math.round(improvement.score)}%</span>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Análisis Detallado por Dimensión -->
-                    <div class="col-12 mb-4">
-                        <div class="card">
-                            <div class="card-header bg-info text-white">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-microscope me-2"></i>
-                                    Análisis Detallado por Dimensión
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    ${Object.keys(dimensionAnalysis).map(dim => {
-                                        const analysis = dimensionAnalysis[dim];
-                                        const score = Math.round(analysis.score || 0);
-                                        return `
-                                            <div class="col-md-6 mb-3">
-                                                <div class="border rounded p-3 h-100">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <h6 class="mb-0">${formatDimensionName(dim)}</h6>
-                                                        <span class="badge ${getScoreClass(score)} score-badge">${score}%</span>
-                                                    </div>
-                                                    <p class="small text-muted mb-2">${analysis.interpretation}</p>
-                                                    <div class="small">
-                                                        <strong>Nivel:</strong> <span class="text-primary">${analysis.level}</span>
-                                                    </div>
-                                                    ${analysis.recommendations && analysis.recommendations.length > 0 ? `
-                                                        <div class="mt-2">
-                                                            <strong class="small">Recomendaciones:</strong>
-                                                            <ul class="small mb-0 mt-1">
-                                                                ${analysis.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-                                                            </ul>
-                                                        </div>
-                                                    ` : ''}
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Recomendaciones Generales -->
-                    ${generalRecommendations.length > 0 ? `
-                        <div class="col-12 mb-4">
-                            <div class="card">
-                                <div class="card-header bg-warning text-dark">
-                                    <h5 class="card-title mb-0">
-                                        <i class="fas fa-lightbulb me-2"></i>
-                                        Recomendaciones Generales para el Coach
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="mb-0">
-                                        ${generalRecommendations.map(rec => `<li class="mb-1">${rec}</li>`).join('')}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Detalles de Respuestas -->
-                    ${responseDetails.length > 0 ? `
-                        <div class="col-12 mb-4">
-                            <div class="card">
-                                <div class="card-header bg-secondary text-white">
-                                    <h5 class="card-title mb-0">
-                                        <i class="fas fa-list me-2"></i>
-                                        Respuestas Detalladas (${responseDetails.length} preguntas)
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="accordion" id="responsesAccordion">
-                                        ${responseDetails.map((response, index) => `
-                                            <div class="accordion-item">
-                                                <h6 class="accordion-header" id="heading${index}">
-                                                    <button class="accordion-button ${index > 2 ? 'collapsed' : ''}" type="button" 
-                                                            data-bs-toggle="collapse" data-bs-target="#collapse${index}" 
-                                                            aria-expanded="${index <= 2 ? 'true' : 'false'}" aria-controls="collapse${index}">
-                                                        <div class="d-flex justify-content-between align-items-center w-100 me-3">
-                                                            <span class="fw-bold">Pregunta ${response.order}</span>
-                                                            <span class="badge ${getResponseValueClass(response.response_value)} ms-2">
-                                                                ${response.response_value}/5
-                                                            </span>
-                                                        </div>
-                                                    </button>
-                                                </h6>
-                                                <div id="collapse${index}" class="accordion-collapse collapse ${index <= 2 ? 'show' : ''}" 
-                                                     aria-labelledby="heading${index}" data-bs-parent="#responsesAccordion">
-                                                    <div class="accordion-body">
-                                                        <p class="mb-2"><strong>Pregunta:</strong> ${response.question_text}</p>
-                                                        <p class="mb-0">
-                                                            <strong>Respuesta:</strong> 
-                                                            <span class="badge ${getResponseValueClass(response.response_value)} ms-1">
-                                                                ${response.response_value}/5 - ${getResponseValueText(response.response_value)}
-                                                            </span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-        
-        // Funciones auxiliares para el modal de evaluación detallada
-        function formatDimensionName(dimensionKey) {
-            const dimensionNames = {
-                'comunicacion': 'Comunicación Directa',
-                'derechos': 'Defensa de Derechos',
-                'opiniones': 'Expresión de Opiniones', 
-                'conflictos': 'Manejo de Conflictos',
-                'autoconfianza': 'Autoconfianza'
-            };
-            return dimensionNames[dimensionKey] || dimensionKey;
-        }
-        
-        function getResponseValueClass(value) {
-            if (value >= 5) return 'bg-success';
-            if (value >= 4) return 'bg-info';
-            if (value >= 3) return 'bg-warning';
-            if (value >= 2) return 'bg-orange';
-            return 'bg-danger';
-        }
-        
-        function getResponseValueText(value) {
-            const responses = {
-                5: 'Totalmente de acuerdo',
-                4: 'De acuerdo', 
-                3: 'Neutral',
-                2: 'En desacuerdo',
-                1: 'Totalmente en desacuerdo'
-            };
-            return responses[value] || 'Sin respuesta';
-        }
-        
-        // Función para crear el radar chart en el modal del coachee
-        function createCoacheeModalRadarChart(dimensionalScores) {
-            const canvas = document.getElementById('coacheeModalRadarChart');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            
-            // Destruir chart existente si existe
-            if (window.coacheeModalRadarChartInstance) {
-                window.coacheeModalRadarChartInstance.destroy();
-            }
-            
-            // Mapeo de dimensiones del backend al frontend
-            const dimensionMapping = {
-                'comunicacion': 'Comunicación Directa',
-                'derechos': 'Defensa de Derechos', 
-                'opiniones': 'Expresión de Opiniones',
-                'conflictos': 'Manejo de Conflictos',
-                'autoconfianza': 'Autoconfianza'
-            };
-            
-            const dimensions = Object.values(dimensionMapping);
-            const dimensionKeys = Object.keys(dimensionMapping);
-            
-            // Mapear las puntuaciones usando las claves correctas
-            const scores = dimensionKeys.map(key => dimensionalScores[key] || 0);
-            
-            window.coacheeModalRadarChartInstance = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: dimensions,
-                    datasets: [{
-                        label: 'Puntuación',
-                        data: scores,
-                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 20,
-                                callback: function(value) {
-                                    return value + '%';
-                                },
-                                color: '#666',
-                                backdropColor: 'transparent'
-                            },
-                            grid: {
-                                color: 'rgba(102, 126, 234, 0.2)'
-                            },
-                            angleLines: {
-                                color: 'rgba(102, 126, 234, 0.3)'
-                            },
-                            pointLabels: {
-                                color: '#333',
-                                font: {
-                                    size: 11,
-                                    weight: 'bold'
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed.r + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Función para imprimir reporte de evaluación del coachee
-        function printCoacheeEvaluationReport() {
-            window.print();
-        }
-        
-        // Función para enviar recordatorios a coachees
-        async function sendReminder(coacheeId) {
-            try {
-                const response = await fetch(`/api/coach/send-reminder/${coacheeId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include'
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    showToast('Recordatorio enviado exitosamente', 'success');
-                } else {
-                    throw new Error(result.error || 'Error al enviar recordatorio');
-                }
-                
-            } catch (error) {
-                console.error('Error enviando recordatorio:', error);
-                showToast(error.message || 'Error al enviar recordatorio', 'error');
-            }
-        }
-        
-        // Función para obtener interpretación detallada para el coach
-        function getDetailedInterpretationForCoach(assessment) {
-            const score = assessment.overall_score || assessment.score || 0;
-            
-            if (score >= 80) {
-                return `
-                    <h5 class="text-success">
-                        <i class="fas fa-star me-2"></i>
-                        Nivel Muy Asertivo (${Math.round(score)}%)
-                    </h5>
-                    <p>Este coachee demuestra un excelente nivel de asertividad. Sus fortalezas incluyen:</p>
-                    <ul>
-                        <li>Comunicación clara y directa</li>
-                        <li>Capacidad para defender sus derechos de manera apropiada</li>
-                        <li>Expresión adecuada de opiniones y sentimientos</li>
-                        <li>Manejo efectivo de conflictos</li>
-                        <li>Alta autoconfianza en sus habilidades</li>
-                    </ul>
-                    <p class="mb-0"><strong>Recomendación:</strong> Continuar fortaleciendo estas habilidades y considerar rol de mentor para otros.</p>
-                `;
-            } else if (score >= 60) {
-                return `
-                    <h5 class="text-info">
-                        <i class="fas fa-check-circle me-2"></i>
-                        Nivel Asertivo (${Math.round(score)}%)
-                    </h5>
-                    <p>Este coachee muestra un buen nivel de asertividad con algunas áreas de oportunidad:</p>
-                    <ul>
-                        <li>Comunicación generalmente efectiva</li>
-                        <li>Capacidad adecuada para expresar necesidades</li>
-                        <li>Manejo apropiado de la mayoría de situaciones</li>
-                    </ul>
-                    <p class="mb-0"><strong>Recomendación:</strong> Identificar áreas específicas para fortalecer y practicar técnicas de asertividad.</p>
-                `;
-            } else if (score >= 40) {
-                return `
-                    <h5 class="text-warning">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        Nivel Moderadamente Asertivo (${Math.round(score)}%)
-                    </h5>
-                    <p>Este coachee presenta un nivel moderado de asertividad que se beneficiaría de desarrollo:</p>
-                    <ul>
-                        <li>Dificultades ocasionales para expresar opiniones</li>
-                        <li>Tendencia a evitar algunos conflictos</li>
-                        <li>Necesidad de mayor confianza en ciertas situaciones</li>
-                    </ul>
-                    <p class="mb-0"><strong>Recomendación:</strong> Programa de entrenamiento en habilidades asertivas y técnicas de comunicación.</p>
-                `;
-            } else {
-                return `
-                    <h5 class="text-danger">
-                        <i class="fas fa-flag me-2"></i>
-                        Nivel Poco Asertivo (${Math.round(score)}%)
-                    </h5>
-                    <p>Este coachee requiere apoyo significativo para desarrollar habilidades asertivas:</p>
-                    <ul>
-                        <li>Dificultad para expresar necesidades y opiniones</li>
-                        <li>Tendencia a evitar conflictos incluso cuando es necesario abordarlos</li>
-                        <li>Baja autoconfianza en habilidades de comunicación</li>
-                        <li>Posible dificultad para establecer límites</li>
-                    </ul>
-                    <p class="mb-0"><strong>Recomendación:</strong> Plan de desarrollo intensivo con enfoque en autoestima, comunicación asertiva y manejo de conflictos.</p>
-                `;
-            }
-        }
-        
-        // Función para crear radar chart en el modal personalizado
-        function createModalRadarChart(dimensionalScores) {
-            const canvas = document.getElementById('modalRadarChart');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            
-            // Destruir chart existente si existe
-            if (window.modalRadarChartInstance) {
-                window.modalRadarChartInstance.destroy();
-            }
-            
-            const dimensions = [
-                'Comunicación Directa',
-                'Defensa de Derechos', 
-                'Expresión de Opiniones',
-                'Manejo de Conflictos',
-                'Autoconfianza'
-            ];
-            
-            const scores = dimensions.map(dim => dimensionalScores[dim] || 0);
-            
-            window.modalRadarChartInstance = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: dimensions,
-                    datasets: [{
-                        label: 'Puntuación',
-                        data: scores,
-                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 20,
-                                callback: function(value) {
-                                    return value + '%';
-                                },
-                                color: '#666',
-                                backdropColor: 'transparent'
-                            },
-                            grid: {
-                                color: 'rgba(102, 126, 234, 0.2)'
-                            },
-                            angleLines: {
-                                color: 'rgba(102, 126, 234, 0.3)'
-                            },
-                            pointLabels: {
-                                color: '#333',
-                                font: {
-                                    size: 12,
-                                    weight: 'bold'
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed.r + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // ============================================================================
-        // FUNCIONES AUXILIARES PARA EL MODAL DE EVALUACIÓN (IDÉNTICAS AL COACHEE)
-        // ============================================================================
-        function getStatusBadgeClass(status) {
-            switch(status) {
-                case 'active':
-                    return 'status-active';
-                case 'pending':
-                    return 'status-pending';
-                case 'inactive':
-                    return 'status-inactive';
-                default:
-                    return 'status-pending';
-            }
-        }
-        
-        // Función para cargar resúmenes de evaluaciones
-        async function loadEvaluationSummaries() {
-            const container = document.getElementById('evaluationSummariesContainer');
-            
-            try {
-                container.innerHTML = `
-                    <div class="col-12 text-center py-4">
-                        <div class="spinner-border spinner-border-custom" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Cargando resúmenes de evaluaciones...</p>
-                    </div>
-                `;
-                
-                const response = await fetch('/api/coach/evaluation-summaries', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                displayEvaluationSummaries(data.summaries || []);
-                
-            } catch (error) {
-                console.error('Error loading evaluation summaries:', error);
-                container.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-warning text-center">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar resúmenes. 
-                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="loadEvaluationSummaries()">
-                                Reintentar
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        
-        // Función para mostrar resúmenes de evaluaciones
-        function displayEvaluationSummaries(summaries) {
-            const container = document.getElementById('evaluationSummariesContainer');
-            
-            if (!summaries || summaries.length === 0) {
-                container.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle me-2"></i>
-                            No hay evaluaciones disponibles para mostrar resúmenes.
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-            
-            const summariesHTML = summaries.map(summary => `
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-gradient-primary text-white">
-                            <h6 class="mb-0">
-                                <i class="fas fa-user me-2"></i>
-                                ${summary.coachee_name}
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-6 text-center">
-                                    <div class="h3 mb-1 ${getScoreClass(summary.latest_score)}">${summary.latest_score}%</div>
-                                    <small class="text-muted">Última Evaluación</small>
-                                </div>
-                                <div class="col-6 text-center">
-                                    <div class="h5 mb-1 text-primary">${summary.total_evaluations}</div>
-                                    <small class="text-muted">Total Evaluaciones</small>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <span class="badge ${getAssertivityBadgeClass(summary.latest_score)} mb-2">
-                                    ${getAssertivityLevel(summary.latest_score)}
-                                </span>
-                                <div class="small text-muted">
-                                    <i class="fas fa-calendar me-1"></i>
-                                    ${formatDate(summary.last_evaluation_date)}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <h6 class="small text-uppercase text-muted mb-2">Áreas de Enfoque:</h6>
-                                ${summary.focus_areas.map(area => `
-                                    <span class="badge bg-light text-dark me-1 mb-1">${area}</span>
-                                `).join('')}
-                            </div>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-primary btn-sm" onclick="viewCoacheeEvaluationDetails('${summary.coachee_id}')">
-                                    <i class="fas fa-chart-radar me-1"></i>Ver Detalles
-                                </button>
-                                <button class="btn btn-outline-success btn-sm" onclick="createTaskForCoachee('${summary.coachee_id}', '${summary.coachee_name}')">
-                                    <i class="fas fa-plus me-1"></i>Crear Tarea
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            
-            container.innerHTML = summariesHTML;
-        }
-        
-        // Función para crear tarea para un coachee específico
-        function createTaskForCoachee(coacheeId, coacheeName) {
-            // Cambiar a la pestaña de crear tareas
-            document.getElementById('task-manage-tab').click();
-            
-            // Seleccionar el coachee en el dropdown
-            setTimeout(() => {
-                const select = document.getElementById('taskCoacheeSelect');
-                select.value = coacheeId;
-                
-                // Mostrar mensaje de confirmación
-                showToast(`Coachee "${coacheeName}" seleccionado para crear nueva tarea`, 'success');
-            }, 100);
-        }
-        
-        // Función auxiliar para obtener clase de badge de asertividad
-        function getAssertivityBadgeClass(score) {
-            if (score >= 80) return 'bg-success';
-            if (score >= 60) return 'bg-primary';
-            if (score >= 40) return 'bg-warning';
-            return 'bg-danger';
-        }
-        
-        // Función para formatear fechas
-        function formatDate(dateString) {
-            if (!dateString) return 'No disponible';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        }
-        
-        // Función para cargar tareas asignadas
-        async function loadTasks() {
-            const container = document.getElementById('tasksContainer');
-            
-            try {
-                container.innerHTML = `
-                    <div class="col-12 text-center py-4">
-                        <div class="spinner-border spinner-border-custom" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Cargando tareas asignadas...</p>
-                    </div>
-                `;
-                
                 const response = await fetch('/api/coach/tasks', {
+                    method: 'GET',
                     credentials: 'include'
                 });
-                
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error('Error al cargar las tareas');
                 }
-                
+
                 const data = await response.json();
-                displayTasks(data.tasks || []);
+                displayCoachTasks(data.tasks || []);
                 
             } catch (error) {
-                console.error('Error loading tasks:', error);
-                container.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-warning text-center">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar tareas. 
-                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="loadTasks()">
-                                Reintentar
-                            </button>
+                console.error('Error cargando tareas del coach:', error);
+                const container = document.getElementById('task-track').querySelector('.row');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Error al cargar las tareas
+                                <button class="btn btn-sm btn-outline-danger ms-2" onclick="loadCoachTasks()">
+                                    <i class="fas fa-refresh me-1"></i>Reintentar
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             }
         }
-        
-        // Función para mostrar tareas
-        function displayTasks(tasks) {
-            const container = document.getElementById('tasksContainer');
-            
+
+        // Función para mostrar las tareas del coach
+        function displayCoachTasks(tasks) {
+            const container = document.getElementById('task-track').querySelector('.row');
+            if (!container) return;
+
             if (!tasks || tasks.length === 0) {
                 container.innerHTML = `
                     <div class="col-12">
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle me-2"></i>
-                            No hay tareas asignadas. ¡Crea la primera tarea para tus coachees!
+                        <div class="empty-state text-center py-5">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <h4>No hay tareas asignadas</h4>
+                            <p>Las tareas que crees aparecerán aquí para su seguimiento.</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('task-manage-tab').click()">
+                                <i class="fas fa-plus me-2"></i>
+                                Crear Primera Tarea
+                            </button>
                         </div>
                     </div>
                 `;
                 return;
             }
-            
-            const tasksHTML = tasks.map(task => `
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card border-0 shadow-sm h-100">
+
+            // Agrupar tareas por estado
+            const tasksByStatus = {
+                pending: tasks.filter(t => t.current_status === 'pending'),
+                in_progress: tasks.filter(t => t.current_status === 'in_progress'),
+                completed: tasks.filter(t => t.current_status === 'completed')
+            };
+
+            const html = `
+                <div class="col-12 mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Tareas Asignadas (${tasks.length})</h5>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterTasks('all')">
+                                Todas (${tasks.length})
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterTasks('pending')">
+                                Pendientes (${tasksByStatus.pending.length})
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="filterTasks('in_progress')">
+                                En Progreso (${tasksByStatus.in_progress.length})
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="filterTasks('completed')">
+                                Completadas (${tasksByStatus.completed.length})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                ${tasks.map(task => createTaskCard(task)).join('')}
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Función para crear una tarjeta de tarea
+        function createTaskCard(task) {
+            const priorityColors = {
+                low: 'success',
+                medium: 'warning', 
+                high: 'danger',
+                urgent: 'dark'
+            };
+
+            const statusColors = {
+                pending: 'warning',
+                in_progress: 'info',
+                completed: 'success',
+                cancelled: 'secondary'
+            };
+
+            const statusIcons = {
+                pending: 'clock',
+                in_progress: 'spinner',
+                completed: 'check-circle',
+                cancelled: 'times-circle'
+            };
+
+            const categoryNames = {
+                comunicacion: 'Comunicación',
+                derechos: 'Derechos',
+                opiniones: 'Opiniones',
+                conflictos: 'Conflictos',
+                autoconfianza: 'Autoconfianza'
+            };
+
+            const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.current_status !== 'completed';
+
+            return `
+                <div class="col-lg-6 col-xl-4 mb-4 task-card" data-status="${task.current_status}">
+                    <div class="card h-100 ${isOverdue ? 'border-danger' : ''}">
                         <div class="card-header d-flex justify-content-between align-items-start">
                             <div>
-                                <h6 class="mb-1">${task.title}</h6>
-                                <small class="text-muted">
-                                    <i class="fas fa-user me-1"></i>${task.coachee_name}
-                                </small>
+                                <h6 class="card-title mb-1">${task.title}</h6>
+                                <small class="text-muted">Para: ${task.coachee.full_name}</small>
                             </div>
-                            <span class="badge ${getTaskStatusBadgeClass(task.status)}">
-                                ${getTaskStatusText(task.status)}
+                            <span class="badge bg-${priorityColors[task.priority]} ms-2">
+                                ${task.priority.toUpperCase()}
                             </span>
                         </div>
                         <div class="card-body">
-                            <p class="small text-muted mb-3">${task.description}</p>
-                            <div class="mb-2">
-                                <span class="badge bg-light text-dark me-1">${task.category}</span>
-                                <span class="badge ${getTaskPriorityBadgeClass(task.priority)}">${task.priority}</span>
+                            <p class="card-text small mb-3">${task.description}</p>
+                            
+                            <div class="task-meta mb-3">
+                                <span class="badge bg-secondary me-2">
+                                    <i class="fas fa-tag me-1"></i>
+                                    ${categoryNames[task.category] || task.category}
+                                </span>
+                                <span class="badge bg-info">
+                                    <i class="fas fa-${statusIcons[task.current_status]} me-1"></i>
+                                    ${getStatusLabel(task.current_status)}
+                                </span>
                             </div>
+
                             ${task.due_date ? `
-                                <div class="small text-muted mb-3">
+                                <div class="small mb-2 ${isOverdue ? 'text-danger fw-bold' : 'text-muted'}">
                                     <i class="fas fa-calendar me-1"></i>
                                     Vence: ${formatDate(task.due_date)}
+                                    ${isOverdue ? ' (Vencida)' : ''}
                                 </div>
                             ` : ''}
-                            <div class="small text-muted">
-                                Creada: ${formatDate(task.created_at)}
+
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar bg-${statusColors[task.current_status]}" 
+                                     style="width: ${task.current_progress || 0}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Progreso: ${task.current_progress || 0}%</small>
+                                ${task.last_update ? `
+                                    <small class="text-muted">
+                                        Actualizado: ${formatDate(task.last_update)}
+                                    </small>
+                                ` : ''}
                             </div>
                         </div>
                         <div class="card-footer bg-transparent">
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewTaskDetails('${task.id}')">
-                                    <i class="fas fa-eye me-1"></i>Ver
-                                </button>
-                                <button class="btn btn-sm btn-outline-success flex-fill" onclick="editTask('${task.id}')">
-                                    <i class="fas fa-edit me-1"></i>Editar
-                                </button>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Creada: ${formatDate(task.created_at)}
+                                </small>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewTaskDetails(${task.id})" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editTask(${task.id})" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+        }
+
+        // Función para filtrar tareas por estado
+        function filterTasks(status) {
+            const taskCards = document.querySelectorAll('.task-card');
             
-            container.innerHTML = tasksHTML;
+            taskCards.forEach(card => {
+                if (status === 'all' || card.getAttribute('data-status') === status) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Actualizar botones activos
+            document.querySelectorAll('#task-track .btn-group button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
         }
-        
-        // Funciones auxiliares para tareas
-        function getTaskStatusBadgeClass(status) {
-            switch(status) {
-                case 'completed': return 'bg-success';
-                case 'in_progress': return 'bg-primary';
-                case 'pending': return 'bg-warning';
-                case 'overdue': return 'bg-danger';
-                default: return 'bg-secondary';
-            }
+
+        // Función para obtener etiqueta de estado
+        function getStatusLabel(status) {
+            const statusLabels = {
+                pending: 'Pendiente',
+                in_progress: 'En Progreso',
+                completed: 'Completada',
+                cancelled: 'Cancelada'
+            };
+            return statusLabels[status] || status;
         }
-        
-        function getTaskStatusText(status) {
-            switch(status) {
-                case 'completed': return 'Completada';
-                case 'in_progress': return 'En Progreso';
-                case 'pending': return 'Pendiente';
-                case 'overdue': return 'Vencida';
-                default: return 'Pendiente';
-            }
+
+        // Función para ver detalles de una tarea
+        function viewTaskDetails(taskId) {
+            // Esta función se puede expandir para mostrar un modal con detalles completos
+            showToast('Función de detalles en desarrollo', 'info');
         }
-        
-        function getTaskPriorityBadgeClass(priority) {
-            switch(priority) {
-                case 'urgent': return 'bg-danger';
-                case 'high': return 'bg-warning';
-                case 'medium': return 'bg-primary';
-                case 'low': return 'bg-secondary';
-                default: return 'bg-secondary';
-            }
+
+        // Función para editar una tarea
+        function editTask(taskId) {
+            // Esta función se puede expandir para permitir edición de tareas
+            showToast('Función de edición en desarrollo', 'info');
         }
-        
-        // Función para asegurar que los coachees están cargados en el select
+
+        // Función para asegurar que los coachees estén cargados en el select
         function ensureCoacheesLoaded() {
             const select = document.getElementById('taskCoacheeSelect');
-            if (select.options.length <= 1) { // Solo tiene la opción por defecto
+            
+            // Si ya tiene opciones (más que la opción por defecto), no hacer nada
+            if (select.options.length > 1) {
+                return;
+            }
+
+            // Cargar coachees en el select
+            if (coacheesData && coacheesData.length > 0) {
                 populateCoacheeSelect();
+            } else {
+                loadCoachees().then(() => {
+                    populateCoacheeSelect();
+                });
             }
         }
-        
+
         // Función para poblar el select de coachees
         function populateCoacheeSelect() {
             const select = document.getElementById('taskCoacheeSelect');
-            
+            if (!select) return;
+
             // Limpiar opciones existentes excepto la primera
             while (select.options.length > 1) {
                 select.removeChild(select.lastChild);
             }
-            
-            // Agregar coachees desde los datos globales
-            if (coacheesData && coacheesData.length > 0) {
-                coacheesData.forEach(coachee => {
-                    const option = document.createElement('option');
-                    option.value = coachee.id;
-                    option.textContent = `${coachee.full_name} (${coachee.email})`;
-                    select.appendChild(option);
-                });
-            }
+
+            // Agregar coachees
+            coacheesData.forEach(coachee => {
+                const option = document.createElement('option');
+                option.value = coachee.id;
+                option.textContent = `${coachee.full_name} (${coachee.email})`;
+                select.appendChild(option);
+            });
         }
         
         function getStatusText(status) {
@@ -3797,8 +2242,10 @@ Tu Coach
                 default:
                     return 'Pendiente';
             }
+       
         }
         function getScoreClass(score) {
+ {
             if (score >= 80) {
                 return 'score-excellent';
             } else if (score >= 60) {
@@ -3826,11 +2273,245 @@ Tu Coach
             } else if (score >= 60) {
                 return 'Buen nivel de asertividad. Hay oportunidades de mejora en algunas áreas.';
             } else if (score >= 40) {
-                return 'Nivel moderado de asertividad. Se beneficiaría de trabajar en su comunicación asertiva.';
             } else {
                 return 'Oportunidad de crecimiento significativa en habilidades de asertividad.';
             }
         }
+        
+        // Función para mostrar las tareas en la pestaña de seguimiento
+        function displayCoachTasks() {
+            const container = document.getElementById('taskTrackContainer');
+            if (!container) {
+                console.log('Container taskTrackContainer not found');
+                return;
+            }
+            
+            if (!tasksData || tasksData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state text-center py-5">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <h4>No hay tareas asignadas</h4>
+                            <p>Las tareas que asignes a tus coachees aparecerán aquí para seguimiento.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            tasksData.forEach(task => {
+                const priorityClass = `priority-${task.priority}`;
+                const statusClass = `status-${task.current_status}`;
+                const progressClass = task.current_progress >= 75 ? 'bg-success' : 
+                                     task.current_progress >= 25 ? 'bg-warning' : 'bg-danger';
+                
+                html += `
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">${task.title}</h6>
+                                <span class="badge bg-primary">${task.priority}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-2">${task.description}</p>
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary me-1">${task.category}</span>
+                                    <span class="badge bg-info">${getTaskStatusLabel(task.current_status)}</span>
+                                    ${task.due_date ? `<span class="badge bg-warning text-dark ms-1">${formatDate(task.due_date)}</span>` : ''}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Progreso</small>
+                                        <small>${task.current_progress}%</small>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar ${progressClass}" style="width: ${task.current_progress}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <strong>Coachee:</strong> ${task.coachee.full_name}
+                                    ${task.last_update ? `<br><small class="text-muted">Actualizado: ${formatDate(task.last_update)}</small>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Función para cargar resúmenes de evaluaciones de coachees
+        async function loadEvaluationSummaries() {
+            try {
+                const container = document.getElementById('evaluationSummariesContainer');
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <div class="loading-spinner me-2"></div>
+                        <span class="text-muted">Cargando resúmenes de evaluaciones...</span>
+                    </div>
+                `;
+
+                if (!coacheesData || coacheesData.length === 0) {
+                    // Si no hay coachees cargados, cargarlos primero
+                    await loadCoachees();
+                }
+
+                if (!coacheesData || coacheesData.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="empty-state text-center py-5">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h4>No hay coachees asignados</h4>
+                                <p>Los resúmenes de evaluaciones aparecerán aquí cuando tengas coachees asignados.</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Crear resúmenes para cada coachee
+                const summariesPromises = coacheesData.map(async (coachee) => {
+                    try {
+                        const response = await fetch(`/api/coach/evaluation-summary/${coachee.id}`, {
+                            credentials: 'include'
+                        });
+
+                        if (response.ok) {
+                            const summaryData = await response.json();
+                            return { coachee, summary: summaryData.summary };
+                        } else {
+                            return { coachee, summary: null };
+                        }
+                    } catch (error) {
+                        console.error(`Error loading summary for coachee ${coachee.id}:`, error);
+                        return { coachee, summary: null };
+                    }
+                });
+
+                const summaries = await Promise.all(summariesPromises);
+                displayEvaluationSummaries(summaries);
+
+            } catch (error) {
+                console.error('Error loading evaluation summaries:', error);
+                const container = document.getElementById('evaluationSummariesContainer');
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar resúmenes de evaluaciones
+                            <button class="btn btn-sm btn-outline-danger ms-2" onclick="loadEvaluationSummaries()">
+                                <i class="fas fa-refresh me-1"></i>Reintentar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para mostrar resúmenes de evaluaciones
+        function displayEvaluationSummaries(summaries) {
+            const container = document.getElementById('evaluationSummariesContainer');
+
+            if (!summaries || summaries.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state text-center py-5">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h4>No hay resúmenes disponibles</h4>
+                            <p>Los resúmenes aparecerán cuando los coachees completen evaluaciones.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = summaries.map(({ coachee, summary }) => {
+                const hasEvaluations = summary && summary.total_assessments > 0;
+
+                return `
+                    <div class="col-lg-6 col-xl-4 mb-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">${coachee.full_name}</h6>
+                                    <span class="badge bg-light text-dark">${summary?.total_assessments || 0} evaluaciones</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                ${hasEvaluations ? `
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="fw-bold">Progreso Actual</span>
+                                            <span class="badge bg-${getScoreClass(summary.latest_assessment.score)} score-badge">
+                                                ${Math.round(summary.latest_assessment.score)}%
+                                            </span>
+                                        </div>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar bg-${getScoreClass(summary.latest_assessment.score)}" 
+                                                 style="width: ${summary.latest_assessment.score}%"></div>
+                                        </div>
+                                        <small class="text-muted">
+                                            Nivel: ${getAssertivityLevel(summary.latest_assessment.score)}
+                                        </small>
+                                    </div>
+
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="border-end">
+                                                <div class="h5 mb-0 text-primary">${Math.round(summary.average_score || 0)}%</div>
+                                                <small class="text-muted">Promedio</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="h5 mb-0 text-${summary.progress_trend === 'improving' ? 'success' : summary.progress_trend === 'declining' ? 'danger' : 'warning'}">
+                                                <i class="fas fa-arrow-${summary.progress_trend === 'improving' ? 'up' : summary.progress_trend === 'declining' ? 'down' : 'right'}"></i>
+                                            </div>
+                                            <small class="text-muted">Tendencia</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="small text-muted mb-3">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Última evaluación: ${formatDate(summary.latest_assessment.completed_at)}
+                                    </div>
+                                ` : `
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-hourglass-half text-muted mb-2" style="font-size: 2rem;"></i>
+                                        <p class="text-muted mb-0">Sin evaluaciones completadas</p>
+                                        <small class="text-muted">Pendiente de primera evaluación</small>
+                                    </div>
+                                `}
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="d-flex gap-2">
+                                    ${hasEvaluations ? `
+                                        <button class="btn btn-primary btn-sm flex-fill" onclick="viewCoacheeEvaluationDetails('${coachee.id}')">
+                                            <i class="fas fa-chart-radar me-1"></i>
+                                            Ver Detalles
+                                        </button>
+                                    ` : ''}
+                                    <button class="btn btn-outline-success btn-sm ${hasEvaluations ? '' : 'flex-fill'}" onclick="createTaskForCoachee('${coachee.id}', '${coachee.full_name}')">
+                                        <i class="fas fa-plus me-1"></i>
+                                        Crear Tarea
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+    </script>
     </script>
 </body>
 </html>
