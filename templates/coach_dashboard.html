@@ -2689,7 +2689,7 @@
                     credentials: 'include',
                     body: JSON.stringify({
                         email: email,
-                        full_name: name,  // Cambiar 'name' por 'full_name'
+                        full_name: name,
                         message: message || null
                     })
                 });
@@ -2700,12 +2700,12 @@
                     throw new Error(result.error || 'Error al enviar la invitación');
                 }
                 
-                // Cerrar modal
+                // Cerrar modal de invitación
                 const modal = bootstrap.Modal.getInstance(document.getElementById('invitationModal'));
                 modal.hide();
                 
-                // Mostrar mensaje de éxito
-                showToast('Invitación enviada exitosamente', 'success');
+                // Mostrar modal con credenciales generadas
+                showCredentialsModal(result.coachee);
                 
                 // Actualizar lista de coachees después de un breve delay
                 setTimeout(() => {
@@ -2720,6 +2720,193 @@
                 inviteButton.disabled = false;
                 inviteButton.innerHTML = originalText;
             }
+        }
+        
+        // Función para mostrar las credenciales generadas
+        function showCredentialsModal(coacheeData) {
+            const credentialsModal = document.createElement('div');
+            credentialsModal.className = 'modal fade';
+            credentialsModal.id = 'credentialsModal';
+            credentialsModal.setAttribute('tabindex', '-1');
+            credentialsModal.setAttribute('aria-hidden', 'true');
+            
+            credentialsModal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                            <h5 class="modal-title">
+                                <i class="fas fa-check-circle me-2"></i>
+                                ¡Coachee Creado Exitosamente!
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-success">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Nuevo Coachee Registrado
+                                </h6>
+                                <p class="mb-0">El coachee <strong>${coacheeData.full_name}</strong> ha sido creado exitosamente con credenciales de acceso.</p>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-key me-2"></i>
+                                        Credenciales de Acceso
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Nombre:</strong></div>
+                                        <div class="col-sm-8">${coacheeData.full_name}</div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-sm-4"><strong>Email:</strong></div>
+                                        <div class="col-sm-8">${coacheeData.email}</div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-sm-4"><strong>Usuario:</strong></div>
+                                        <div class="col-sm-8">
+                                            <code id="username-${coacheeData.id}">${coacheeData.username}</code>
+                                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('username-${coacheeData.id}')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-sm-4"><strong>Contraseña:</strong></div>
+                                        <div class="col-sm-8">
+                                            <code id="password-${coacheeData.id}">${coacheeData.password}</code>
+                                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('password-${coacheeData.id}')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-sm-4"><strong>URL de Login:</strong></div>
+                                        <div class="col-sm-8">
+                                            <a href="${coacheeData.login_url}" target="_blank" class="text-primary">
+                                                ${coacheeData.login_url}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning mt-3">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Importante
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>Comparte estas credenciales de forma segura con tu coachee</li>
+                                    <li>El coachee puede cambiar su contraseña después del primer login</li>
+                                    <li>Estas credenciales no se mostrarán nuevamente</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>
+                                Cerrar
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="copyAllCredentials('${coacheeData.username}', '${coacheeData.password}', '${coacheeData.email}')">
+                                <i class="fas fa-copy me-2"></i>
+                                Copiar Todo
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="sendCredentialsByEmail('${coacheeData.email}', '${coacheeData.full_name}', '${coacheeData.username}', '${coacheeData.password}')">
+                                <i class="fas fa-envelope me-2"></i>
+                                Enviar por Email
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(credentialsModal);
+            const modal = new bootstrap.Modal(credentialsModal);
+            modal.show();
+            
+            // Remover modal del DOM cuando se cierre
+            credentialsModal.addEventListener('hidden.bs.modal', function () {
+                credentialsModal.remove();
+            });
+            
+            // Mostrar toast de éxito
+            showToast('¡Coachee creado exitosamente con credenciales!', 'success');
+        }
+        
+        // Función para copiar texto al portapapeles
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(function() {
+                showToast('Copiado al portapapeles', 'success');
+            }).catch(function(err) {
+                console.error('Error copiando al portapapeles: ', err);
+                showToast('Error al copiar', 'error');
+            });
+        }
+        
+        // Función para copiar todas las credenciales
+        function copyAllCredentials(username, password, email) {
+            const credentials = `
+Credenciales de Acceso - Plataforma de Evaluación
+
+Nombre de Usuario: ${username}
+Contraseña: ${password}
+Email: ${email}
+URL de Login: ${window.location.origin}/login?role=coachee
+
+Instrucciones:
+1. Ingresa a la URL de login
+2. Selecciona "Coachee" si no se selecciona automáticamente
+3. Usa las credenciales proporcionadas
+4. Podrás cambiar tu contraseña después del primer login
+            `.trim();
+            
+            navigator.clipboard.writeText(credentials).then(function() {
+                showToast('Todas las credenciales copiadas al portapapeles', 'success');
+            }).catch(function(err) {
+                console.error('Error copiando credenciales: ', err);
+                showToast('Error al copiar credenciales', 'error');
+            });
+        }
+        
+        // Función para enviar credenciales por email (simulado)
+        function sendCredentialsByEmail(email, fullName, username, password) {
+            // En una implementación real, esto llamaría a un endpoint del backend
+            showToast('Funcionalidad de envío por email en desarrollo', 'info');
+            
+            // Por ahora, abrimos el cliente de email por defecto
+            const subject = encodeURIComponent('Credenciales de Acceso - Plataforma de Evaluación');
+            const body = encodeURIComponent(`
+Hola ${fullName},
+
+Te han invitado a participar en la Plataforma de Evaluación de Asertividad.
+
+Tus credenciales de acceso son:
+
+Usuario: ${username}
+Contraseña: ${password}
+URL de Login: ${window.location.origin}/login?role=coachee
+
+Instrucciones:
+1. Haz clic en la URL de login o cópiala en tu navegador
+2. Selecciona "Coachee" si no se selecciona automáticamente  
+3. Ingresa con las credenciales proporcionadas
+4. Podrás cambiar tu contraseña después del primer login
+
+¡Esperamos verte pronto en la plataforma!
+
+Saludos,
+Tu Coach
+            `);
+            
+            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+            window.open(mailtoLink);
         }
         
         function isValidEmail(email) {

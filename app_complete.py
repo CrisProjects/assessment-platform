@@ -171,16 +171,19 @@ class Response(db.Model):
 class Invitation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Usuario coachee creado
     email = db.Column(db.String(120), nullable=False)
     full_name = db.Column(db.String(200), nullable=False)
     token = db.Column(db.String(128), unique=True, nullable=False)
+    message = db.Column(db.Text, nullable=True)  # Mensaje personalizado del coach
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
     used_at = db.Column(db.DateTime, nullable=True)
     is_used = db.Column(db.Boolean, default=False)
     
     # Relaciones
-    coach = db.relationship('User', backref='sent_invitations')
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='sent_invitations')
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_invitation')
     
     def is_valid(self):
         """Verificar si la invitación es válida"""
@@ -1028,7 +1031,7 @@ def api_coach_get_profile():
 @app.route('/api/coach/create-invitation', methods=['POST'])
 @login_required
 def api_coach_create_invitation():
-    """Crear una invitación para un nuevo coachee"""
+    """Crear una invitación para un nuevo coachee y generar credenciales automáticamente"""
     try:
         if current_user.role != 'coach':
             return jsonify({'error': 'Acceso denegado: Solo coaches pueden crear invitaciones'}), 403
@@ -1036,6 +1039,7 @@ def api_coach_create_invitation():
         data = request.get_json()
         full_name = data.get('full_name')
         email = data.get('email')
+        message = data.get('message', '')
         
         if not full_name or not email:
             return jsonify({'error': 'Nombre completo y email son requeridos'}), 400
@@ -1043,6 +1047,11 @@ def api_coach_create_invitation():
         # Validar formato de email básico
         if '@' not in email:
             return jsonify({'error': 'Formato de email inválido'}), 400
+        
+        # Verificar si ya existe un usuario con este email
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({'error': 'Ya existe un usuario registrado con este email'}), 400
         
         # Verificar si ya existe una invitación activa para este email
         existing_invitation = Invitation.query.filter_by(
@@ -1054,7 +1063,41 @@ def api_coach_create_invitation():
         if existing_invitation and existing_invitation.is_valid():
             return jsonify({'error': 'Ya existe una invitación activa para este email'}), 400
         
-        # Crear nueva invitación
+        # GENERAR CREDENCIALES AUTOMÁTICAMENTE
+        import re
+        import secrets
+        import string
+        
+        # Generar username basado en el email (parte antes del @)
+        base_username = re.sub(r'[^a-zA-Z0-9]', '', email.split('@')[0])
+        username = base_username.lower()
+        
+        # Asegurar que el username sea único
+        counter = 1
+        original_username = username
+        while User.query.filter_by(username=username).first():
+            username = f"{original_username}{counter}"
+            counter += 1
+        
+        # Generar contraseña segura
+        password_chars = string.ascii_letters + string.digits
+        password = ''.join(secrets.choice(password_chars) for _ in range(8))
+        
+        # Crear el usuario coachee inmediatamente
+        new_coachee = User(
+            username=username,
+            email=email,
+            full_name=full_name,
+            role='coachee',
+            coach_id=current_user.id,
+            is_active=True
+        )
+        new_coachee.set_password(password)
+        
+        db.session.add(new_coachee)
+        db.session.flush()  # Para obtener el ID
+        
+        # Crear token de invitación
         token = secrets.token_urlsafe(32)
         expires_at = datetime.utcnow() + timedelta(days=30)  # Válida por 30 días
         
@@ -1063,32 +1106,40 @@ def api_coach_create_invitation():
             email=email,
             full_name=full_name,
             token=token,
-            expires_at=expires_at
+            expires_at=expires_at,
+            coachee_id=new_coachee.id,  # Vincular con el usuario creado
+            message=message
         )
         
         db.session.add(new_invitation)
         db.session.commit()
         
-        # Generar URL de invitación
+        # Generar URL de acceso directo (ya puede hacer login)
         base_url = request.url_root.rstrip('/')
-        invitation_url = f"{base_url}/evaluate/{token}"  # Cambiar a /evaluate/ directamente
+        login_url = f"{base_url}/login?role=coachee"
         
         return jsonify({
             'success': True,
-            'message': f'Invitación creada para {full_name}',
-            'invitation': {
-                'id': new_invitation.id,
+            'message': f'Coachee creado e invitación enviada para {full_name}',
+            'coachee': {
+                'id': new_coachee.id,
+                'username': username,
                 'email': email,
                 'full_name': full_name,
+                'password': password,  # Se incluye para mostrar al coach
+                'login_url': login_url
+            },
+            'invitation': {
+                'id': new_invitation.id,
                 'token': token,
                 'expires_at': expires_at.isoformat(),
-                'invitation_url': invitation_url
+                'message': message
             }
         }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Error creando invitación: {str(e)}'}), 500
+        return jsonify({'error': f'Error creando coachee e invitación: {str(e)}'}), 500
 
 @app.route('/api/coach/create-coachee-with-credentials', methods=['POST'])
 @login_required
