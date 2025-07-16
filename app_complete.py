@@ -455,9 +455,6 @@ def ensure_database_initialized():
         except Exception as auto_init_error:
             print(f"⚠️ Error en auto-inicialización: {auto_init_error}")
 
-# Inicializar inmediatamente al importar el módulo  
-# ensure_database_initialized()  # DISABLED: Data is already initialized
-
 # Decoradores para control de acceso por roles
 def role_required(required_role):
     def decorator(f):
@@ -1564,38 +1561,6 @@ def get_assertiveness_level(score):
         return "Moderadamente Asertivo"
     else:
         return "Poco Asertivo"
-
-def generate_elegant_result_text(assertiveness_level, dimensional_scores):
-    """Generar un texto de resultado elegante y amigable para el usuario"""
-    
-    # Mapeo de nombres de dimensiones a texto más amigable
-    dimension_names = {
-        'comunicacion': 'Comunicación',
-        'derechos': 'Defensa de Derechos',
-        'opiniones': 'Expresión de Opiniones',
-        'conflictos': 'Manejo de Conflictos',
-        'autoconfianza': 'Autoconfianza'
-    }
-    
-    # Encontrar fortalezas (puntuaciones más altas)
-    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True)
-    top_strengths = [dimension_names.get(dim, dim) for dim, score in sorted_dimensions[:2] if score >= 70]
-    
-    # Crear texto base
-    result_parts = [f"Nivel de Asertividad: {assertiveness_level}"]
-    
-    # Agregar fortalezas si las hay
-    if top_strengths:
-        if len(top_strengths) == 1:
-            result_parts.append(f"Fortaleza principal: {top_strengths[0]}")
-        else:
-            result_parts.append(f"Fortalezas principales: {', '.join(top_strengths)}")
-    
-    # Agregar puntuación general
-    avg_score = sum(dimensional_scores.values()) / len(dimensional_scores)
-    result_parts.append(f"Puntuación general: {avg_score:.0f}%")
-    
-    return " • ".join(result_parts)
 
 # ========================
 # RUTAS PARA COACHEES
