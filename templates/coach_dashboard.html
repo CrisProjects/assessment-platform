@@ -1784,53 +1784,30 @@
         </div>
     </div>
 
-    <!-- Invitation Modal -->
+    <!-- Modal de invitación de coachee -->
     <div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                <div class="modal-header bg-success-gradient text-white">
                     <h5 class="modal-title" id="invitationModalLabel">
-                        <i class="fas fa-user-plus me-2"></i>
-                        Invitar Nuevo Coachee
+                        <i class="fas fa-envelope me-2"></i>Invitar Coachee
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="invitationForm">
                         <div class="mb-3">
-                            <label for="coacheeEmail" class="form-label">
-                                <i class="fas fa-envelope me-2"></i>
-                                Email del Coachee
-                            </label>
-                            <input type="email" class="form-control invitation-input" id="coacheeEmail" placeholder="ejemplo@correo.com" required>
-                            <div class="form-text">El coachee recibirá una invitación por email para registrarse en la plataforma.</div>
+                            <label for="inviteEmail" class="form-label">Correo electrónico del coachee</label>
+                            <input type="email" class="form-control" id="inviteEmail" placeholder="coachee@email.com" required>
                         </div>
                         <div class="mb-3">
-                            <label for="coacheeName" class="form-label">
-                                <i class="fas fa-user me-2"></i>
-                                Nombre del Coachee *
-                            </label>
-                            <input type="text" class="form-control invitation-input" id="coacheeName" placeholder="Nombre completo" required>
-                            <div class="form-text">Este nombre aparecerá en la invitación para personalizar el mensaje.</div>
+                            <label for="inviteFullName" class="form-label">Nombre completo</label>
+                            <input type="text" class="form-control" id="inviteFullName" placeholder="Nombre del coachee" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="invitationMessage" class="form-label">
-                                <i class="fas fa-comment me-2"></i>
-                                Mensaje Personal (Opcional)
-                            </label>
-                            <textarea class="form-control invitation-input" id="invitationMessage" rows="3" placeholder="Escribe un mensaje personal para tu coachee..."></textarea>
-                        </div>
+                        <button type="submit" class="btn btn-success-gradient w-100">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Invitación
+                        </button>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>
-                        Cancelar
-                    </button>
-                    <button type="button" class="btn btn-gradient invitation-btn" onclick="sendInvitation()">
-                        <i class="fas fa-paper-plane me-2"></i>
-                        Enviar Invitación
-                    </button>
                 </div>
             </div>
         </div>
@@ -2510,6 +2487,59 @@
             }).join('');
 
             container.innerHTML = html;
+        }
+
+        // Función para abrir el modal de invitación
+        function openInvitationModal() {
+            const modal = new bootstrap.Modal(document.getElementById('invitationModal'));
+            document.getElementById('invitationForm').reset();
+            modal.show();
+        }
+
+        // Función para enviar la invitación
+        document.addEventListener('DOMContentLoaded', function() {
+            // ...existing code...
+            const invitationForm = document.getElementById('invitationForm');
+            if (invitationForm) {
+                invitationForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    await sendInvitation();
+                });
+            }
+        });
+
+        async function sendInvitation() {
+            const email = document.getElementById('inviteEmail').value.trim();
+            const fullName = document.getElementById('inviteFullName').value.trim();
+            const submitBtn = document.querySelector('#invitationForm button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            if (!email || !fullName) {
+                showToast('Completa todos los campos para invitar al coachee', 'error');
+                return;
+            }
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+                const response = await fetch('/api/coach/invite-coachee', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, full_name: fullName })
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error al enviar invitación');
+                }
+                showToast('Invitación enviada exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('invitationModal')).hide();
+                loadCoachees();
+            } catch (error) {
+                showToast(error.message || 'Error al enviar invitación', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
         }
     </script>
     </script>
