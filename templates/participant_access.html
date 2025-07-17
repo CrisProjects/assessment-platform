@@ -268,6 +268,18 @@
                             </ul>
                         </div>
 
+                        <!-- Demo Credentials Info -->
+                        <div class="process-info" style="border-left-color: #28a745; background: rgba(40, 167, 69, 0.05);">
+                            <h4><i class="fas fa-play-circle me-2"></i>Credenciales de Demo</h4>
+                            <ul class="process-steps">
+                                <li><i class="fas fa-user-circle"></i><strong>Email:</strong> coachee@assessment.com</li>
+                                <li><i class="fas fa-key"></i><strong>Contraseña:</strong> coachee123</li>
+                            </ul>
+                            <button type="button" class="btn btn-sm btn-outline-success mt-2" id="fillDemoCredentials">
+                                <i class="fas fa-magic me-1"></i>Usar credenciales de demo
+                            </button>
+                        </div>
+
                         <!-- Access Options -->
                         <div class="access-options">
                             <div class="access-option" data-option="existing">
@@ -464,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('¡Perfecto! Redirigiendo a tu evaluación...', 'success');
                 
                 setTimeout(() => {
-                    window.location.href = result.redirect || '/coachee-dashboard';
+                    window.location.href = result.redirect || result.redirect_url || '/coachee-dashboard';
                 }, 1500);
             } else {
                 // Error
@@ -524,6 +536,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set default selection to existing user
     document.querySelector('.access-option[data-option="existing"]').click();
+    
+    // Handle demo credentials button
+    document.getElementById('fillDemoCredentials').addEventListener('click', function() {
+        // Make sure the existing user form is active
+        document.querySelector('.access-option[data-option="existing"]').click();
+        
+        // Fill demo credentials
+        document.getElementById('loginEmail').value = 'coachee@assessment.com';
+        document.getElementById('loginPassword').value = 'coachee123';
+        
+        // Add visual feedback
+        this.innerHTML = '<i class="fas fa-check me-1"></i>¡Credenciales listas!';
+        this.classList.add('btn-success');
+        this.classList.remove('btn-outline-success');
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            this.innerHTML = '<i class="fas fa-magic me-1"></i>Usar credenciales de demo';
+            this.classList.remove('btn-success');
+            this.classList.add('btn-outline-success');
+        }, 2000);
+    });
 });
 </script>
 {% endblock %}

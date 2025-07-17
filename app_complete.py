@@ -699,7 +699,7 @@ def api_login():
     """Login API para autenticación de usuarios"""
     try:
         data = request.get_json()
-        username = data.get('username')
+        username = data.get('username') or data.get('email')  # Aceptar username o email
         password = data.get('password')
         
         if not username or not password:
@@ -729,7 +729,7 @@ def api_login():
                     'role': user.role,
                     'coach_id': user.coach_id
                 },
-                'redirect_url': get_dashboard_url(user.role)
+                'redirect': get_dashboard_url(user.role)
             }), 200
         else:
             logger.warning(f"Failed login attempt for username '{username}' from {request.remote_addr}")
