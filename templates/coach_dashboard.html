@@ -238,32 +238,68 @@
 {% block extra_css %}
 <style>
     .glass-input {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        color: white !important;
         backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
     }
     
     .glass-input::placeholder {
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255, 255, 255, 0.7) !important;
     }
     
     .glass-input:focus {
-        background: rgba(255, 255, 255, 0.15);
-        border-color: var(--havelock-blue);
-        box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25);
-        color: white;
+        background: rgba(255, 255, 255, 0.25) !important;
+        border-color: var(--havelock-blue) !important;
+        box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25) !important;
+        color: white !important;
+        outline: none !important;
+    }
+    
+    .glass-input:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+    }
+    
+    .form-select.glass-input {
+        cursor: pointer;
     }
     
     .form-select.glass-input option {
-        background: var(--cloud-burst);
-        color: white;
+        background: var(--cloud-burst) !important;
+        color: white !important;
+        padding: 8px 12px;
+    }
+    
+    /* Asegurar que los inputs sean interactivos */
+    .modal-body input,
+    .modal-body textarea,
+    .modal-body select {
+        position: relative;
+        z-index: 1000;
+        pointer-events: auto !important;
     }
     
     .modal-content {
-        background: rgba(27, 34, 80, 0.95);
+        background: rgba(27, 34, 80, 0.95) !important;
         backdrop-filter: blur(25px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        z-index: 1050;
+    }
+    
+    .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+    
+    /* Asegurar que el modal esté por encima de todo */
+    .modal {
+        z-index: 1055 !important;
+    }
+    
+    .modal-dialog {
+        z-index: 1056 !important;
     }
     
     .spinner-border {
@@ -363,9 +399,48 @@
         // Función para abrir el modal de invitación
         function openInvitationModal() {
             console.log('Abriendo modal de invitación...');
+            
+            // Asegurar que el formulario esté limpio
+            const form = document.getElementById('invitationForm');
+            if (form) {
+                form.reset();
+                
+                // Verificar que los campos estén disponibles
+                const emailInput = document.getElementById('inviteEmail');
+                const nameInput = document.getElementById('inviteFullName');
+                const messageInput = document.getElementById('inviteMessage');
+                
+                if (emailInput) {
+                    emailInput.value = '';
+                    emailInput.removeAttribute('disabled');
+                    emailInput.style.pointerEvents = 'auto';
+                }
+                if (nameInput) {
+                    nameInput.value = '';
+                    nameInput.removeAttribute('disabled');
+                    nameInput.style.pointerEvents = 'auto';
+                }
+                if (messageInput) {
+                    messageInput.value = '';
+                    messageInput.removeAttribute('disabled');
+                    messageInput.style.pointerEvents = 'auto';
+                }
+                
+                console.log('Formulario reseteado y campos habilitados');
+            }
+            
+            // Abrir el modal
             const modal = new bootstrap.Modal(document.getElementById('invitationModal'));
-            document.getElementById('invitationForm').reset();
             modal.show();
+            
+            // Enfocar el primer campo después de que se abra el modal
+            setTimeout(() => {
+                const emailInput = document.getElementById('inviteEmail');
+                if (emailInput) {
+                    emailInput.focus();
+                    console.log('Campo email enfocado');
+                }
+            }, 300);
         }
 
         // Función para enviar la invitación
@@ -831,13 +906,47 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM cargado, inicializando dashboard del coach...');
             
+            // Verificar que Bootstrap esté disponible
+            if (typeof bootstrap === 'undefined') {
+                console.error('Bootstrap no está disponible');
+                showToast('Error: Bootstrap no está cargado', 'error');
+                return;
+            }
+            
+            // Verificar que el modal existe
+            const modalElement = document.getElementById('invitationModal');
+            if (!modalElement) {
+                console.error('Modal de invitación no encontrado');
+                return;
+            }
+            
             // Configurar event listener para el formulario de invitación
             const invitationForm = document.getElementById('invitationForm');
             if (invitationForm) {
+                console.log('Formulario de invitación encontrado, configurando event listener...');
                 invitationForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
+                    console.log('Formulario de invitación enviado');
                     await sendInvitation();
                 });
+                
+                // Agregar listeners a los inputs para debugging
+                const emailInput = document.getElementById('inviteEmail');
+                const nameInput = document.getElementById('inviteFullName');
+                
+                if (emailInput) {
+                    emailInput.addEventListener('input', function(e) {
+                        console.log('Email input changed:', e.target.value);
+                    });
+                }
+                
+                if (nameInput) {
+                    nameInput.addEventListener('input', function(e) {
+                        console.log('Name input changed:', e.target.value);
+                    });
+                }
+            } else {
+                console.error('Formulario de invitación no encontrado');
             }
 
             // Configurar event listener para el formulario de tareas
