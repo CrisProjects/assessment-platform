@@ -15,20 +15,32 @@
     <style>
         /* === CALM.COM DESIGN SYSTEM === */
         :root {
-            /* Paleta Azul Calm.com */
-            --cloud-burst: #1B2250;
-            --havelock-blue: #6282E3;
-            --pure-white: #FFFFFF;
-            --soft-blue: #8DA5F5;
-            --deep-blue: #0F1A40;
-            --medium-blue: #2D4AA7;
-            --light-blue: #7BA3F7;
+            /* Paleta Oficial Calm.com */
+            --calm-dark-blue: #243447;
+            --calm-medium-blue: #4A6C85;
+            --calm-mint-green: #A0D8CC;
+            --calm-light-blue: #E8F0F5;
+            --calm-white: #FFFFFF;
+            --calm-light-gray: #F7F9FA;
+            --calm-soft-blue: #6B8DA6;
+            --calm-accent-blue: #5A7A94;
             
-            /* Gradientes Azules Calm */
-            --gradient-main: linear-gradient(135deg, #1B2250 0%, #2D4AA7 50%, #1B2250 100%);
-            --gradient-overlay: linear-gradient(135deg, rgba(27, 34, 80, 0.95), rgba(45, 74, 167, 0.7));
-            --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            --gradient-button: linear-gradient(135deg, var(--havelock-blue), #5A7CE8);
+            /* Variables principales actualizadas */
+            --cloud-burst: #243447;
+            --havelock-blue: #4A6C85;
+            --pure-white: #FFFFFF;
+            --soft-blue: #6B8DA6;
+            --deep-blue: #1A2B38;
+            --medium-blue: #5A7A94;
+            --light-blue: #E8F0F5;
+            --mint-accent: #A0D8CC;
+            
+            /* Gradientes estilo Calm */
+            --gradient-main: linear-gradient(135deg, #243447 0%, #4A6C85 50%, #243447 100%);
+            --gradient-overlay: linear-gradient(135deg, rgba(36, 52, 71, 0.95), rgba(74, 108, 133, 0.8));
+            --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(160, 216, 204, 0.05));
+            --gradient-button: linear-gradient(135deg, var(--calm-medium-blue), var(--calm-soft-blue));
+            --gradient-accent: linear-gradient(135deg, var(--calm-mint-green), #92C9BD);
             
             /* Espaciado Sistema */
             --space-xs: 0.25rem;
@@ -85,7 +97,7 @@
             font-weight: 400;
         }
 
-        /* Fondo Paisaje Chileno - Tonos Azules */
+        /* Fondo Principal - Azul Oscuro Calm */
         body::before {
             content: '';
             position: fixed;
@@ -93,12 +105,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:%231B2250;stop-opacity:1" /><stop offset="50%" style="stop-color:%232D4AA7;stop-opacity:0.9" /><stop offset="100%" style="stop-color:%231B2250;stop-opacity:1" /></linearGradient></defs><rect width="1920" height="1080" fill="url(%23sky)"/><ellipse cx="300" cy="300" rx="2" ry="2" fill="white" opacity="0.3"/><ellipse cx="800" cy="200" rx="1.5" ry="1.5" fill="white" opacity="0.4"/><ellipse cx="1400" cy="350" rx="1" ry="1" fill="white" opacity="0.2"/><ellipse cx="600" cy="150" rx="1.2" ry="1.2" fill="white" opacity="0.3"/><ellipse cx="1600" cy="250" rx="0.8" ry="0.8" fill="white" opacity="0.2"/><path d="M0,700 C200,650 400,680 600,660 C800,640 1000,670 1200,650 C1400,630 1600,660 1920,640 L1920,1080 L0,1080 Z" fill="%230F1A40" opacity="0.6"/><path d="M0,750 C300,720 600,740 900,730 C1200,720 1500,750 1920,740 L1920,1080 L0,1080 Z" fill="%231B2250" opacity="0.8"/><path d="M0,850 C400,830 800,850 1200,840 C1400,835 1600,845 1920,850 L1920,1080 L0,1080 Z" fill="%231B2250" opacity="1"/></svg>') center/cover no-repeat;
+            background: var(--calm-dark-blue);
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(74, 108, 133, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(160, 216, 204, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(74, 108, 133, 0.2) 0%, transparent 50%);
             z-index: -2;
-            opacity: 0.4;
-        }
 
-        /* Overlay Glassmorphism - Cloud Burst */
+        /* Overlay Glassmorphism - Calm */
         body::after {
             content: '';
             position: fixed;
@@ -106,19 +120,19 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(27, 34, 80, 0.3), rgba(27, 34, 80, 0.1));
+            background: linear-gradient(135deg, rgba(36, 52, 71, 0.3), rgba(36, 52, 71, 0.1));
             z-index: -1;
             opacity: 0.6;
         }
 
         /* === NAVEGACIÓN CALM === */
         .navbar {
-            background: rgba(27, 34, 80, 0.9) !important;
+            background: rgba(36, 52, 71, 0.9) !important;
             backdrop-filter: var(--glass-backdrop);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding: var(--space-md) 0;
             transition: var(--transition-normal);
-            box-shadow: 0 4px 20px rgba(27, 34, 80, 0.3);
+            box-shadow: 0 4px 20px rgba(36, 52, 71, 0.3);
             position: relative;
             z-index: 1000;
         }
@@ -223,37 +237,45 @@
         }
 
         .btn-primary {
-            background: var(--gradient-button);
+            background: linear-gradient(135deg, var(--calm-medium-blue), var(--calm-soft-blue));
             color: var(--pure-white);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 8px 25px rgba(74, 108, 133, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #4F73E0, #3A5FDD);
+            background: linear-gradient(135deg, #5A7A94, #4A6C85);
             transform: translateY(-4px) scale(1.02);
-            box-shadow: var(--shadow-strong);
+            box-shadow: 0 12px 30px rgba(74, 108, 133, 0.35);
             color: var(--pure-white);
         }
 
         .btn-outline-primary {
-            background: var(--glass-bg);
-            color: var(--havelock-blue);
-            border: 2px solid var(--havelock-blue);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--calm-medium-blue);
+            border: 2px solid var(--calm-medium-blue);
             backdrop-filter: var(--glass-backdrop);
         }
 
         .btn-outline-primary:hover {
-            background: var(--havelock-blue);
+            background: var(--calm-medium-blue);
             color: var(--pure-white);
             transform: translateY(-4px);
-            box-shadow: var(--shadow-glow);
+            box-shadow: 0 12px 30px rgba(74, 108, 133, 0.35);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #4CAF50, #66BB6A);
-            color: var(--pure-white);
-            box-shadow: var(--shadow-medium);
+            background: linear-gradient(135deg, var(--calm-mint-green), #92C9BD);
+            color: var(--calm-dark-blue);
+            box-shadow: 0 8px 25px rgba(160, 216, 204, 0.25);
+            font-weight: 500;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #92C9BD, var(--calm-mint-green));
+            color: var(--calm-dark-blue);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(160, 216, 204, 0.35);
         }
 
         .btn-danger {
@@ -274,11 +296,11 @@
 
         /* === GLASSMORPHISM CARDS === */
         .glass-card {
-            background: var(--glass-card);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(160, 216, 204, 0.05));
             backdrop-filter: var(--glass-backdrop);
-            border: 1px solid var(--glass-border);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 8px 32px rgba(36, 52, 71, 0.2);
             transition: var(--transition-normal);
             position: relative;
             overflow: hidden;
@@ -291,14 +313,14 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(160, 216, 204, 0.4), transparent);
         }
 
         .glass-card:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(160, 216, 204, 0.08));
             transform: translateY(-8px) scale(1.02);
-            box-shadow: var(--shadow-strong);
-            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(36, 52, 71, 0.3);
+            border-color: rgba(160, 216, 204, 0.3);
         }
 
         /* === FORMULARIOS CALM === */
@@ -499,7 +521,7 @@
 
         /* === UTILIDADES === */
         .text-gradient {
-            background: linear-gradient(135deg, var(--pure-white), var(--soft-blue));
+            background: linear-gradient(135deg, var(--pure-white), var(--calm-mint-green));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;

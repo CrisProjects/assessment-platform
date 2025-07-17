@@ -272,34 +272,60 @@
         padding: 8px 12px;
     }
     
-    /* Asegurar que los inputs sean interactivos */
+    /* Asegurar que los inputs sean completamente interactivos */
     .modal-body input,
     .modal-body textarea,
     .modal-body select {
-        position: relative;
-        z-index: 1000;
+        position: relative !important;
+        z-index: 9999 !important;
         pointer-events: auto !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+        cursor: text !important;
+    }
+    
+    .modal-body .form-select {
+        cursor: pointer !important;
     }
     
     .modal-content {
-        background: rgba(27, 34, 80, 0.95) !important;
+        background: rgba(36, 52, 71, 0.95) !important;
         backdrop-filter: blur(25px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(160, 216, 204, 0.2);
         position: relative;
         z-index: 1050;
+        pointer-events: auto !important;
     }
     
     .modal-backdrop {
         background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1040 !important;
     }
     
     /* Asegurar que el modal esté por encima de todo */
     .modal {
         z-index: 1055 !important;
+        pointer-events: auto !important;
     }
     
     .modal-dialog {
         z-index: 1056 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Eliminar cualquier posible conflicto de backdrop-filter en inputs */
+    .modal-body .glass-input {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    /* Asegurar que los labels y formularios también sean clickeables */
+    .modal-body .form-label,
+    .modal-body form {
+        pointer-events: auto !important;
+        z-index: 9998 !important;
     }
     
     .spinner-border {
@@ -686,6 +712,12 @@
         function openTaskModal() {
             console.log('Abriendo modal de nueva tarea...');
             
+            // Resetear el formulario
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                taskForm.reset();
+            }
+            
             // Cargar coachees en el select
             const coacheeSelect = document.getElementById('taskCoachee');
             coacheeSelect.innerHTML = '<option value="">Selecciona un coachee...</option>';
@@ -697,9 +729,27 @@
                 coacheeSelect.appendChild(option);
             });
             
+            // Asegurar que todos los inputs estén habilitados
+            const inputs = document.querySelectorAll('#taskModal input, #taskModal textarea, #taskModal select');
+            inputs.forEach(input => {
+                input.removeAttribute('disabled');
+                input.style.pointerEvents = 'auto';
+                input.style.userSelect = 'text';
+                input.style.cursor = input.type === 'text' || input.tagName === 'TEXTAREA' ? 'text' : 'pointer';
+            });
+            
+            // Abrir el modal
             const modal = new bootstrap.Modal(document.getElementById('taskModal'));
-            document.getElementById('taskForm').reset();
             modal.show();
+            
+            // Enfocar el primer select después de que se abra
+            setTimeout(() => {
+                const firstInput = document.getElementById('taskCoachee');
+                if (firstInput) {
+                    firstInput.focus();
+                    console.log('Primer campo enfocado');
+                }
+            }, 300);
         }
 
         // Función para crear nueva tarea
@@ -956,11 +1006,65 @@
                     e.preventDefault();
                     await createTask();
                 });
+                
+                // Agregar listeners a los inputs de tareas para debugging
+                const taskInputs = [
+                    'taskCoachee', 'taskCategory', 'taskPriority', 
+                    'taskDueDate', 'taskTitle', 'taskDescription'
+                ];
+                
+                taskInputs.forEach(inputId => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        input.addEventListener('input', function(e) {
+                            console.log(`${inputId} changed:`, e.target.value);
+                        });
+                        
+                        input.addEventListener('focus', function(e) {
+                            console.log(`${inputId} focused`);
+                            e.target.style.pointerEvents = 'auto';
+                        });
+                        
+                        input.addEventListener('click', function(e) {
+                            console.log(`${inputId} clicked`);
+                        });
+                    }
+                });
+            } else {
+                console.error('Formulario de tareas no encontrado');
             }
 
             // Cargar datos iniciales
             loadCoachees();
             loadTasks();
+            
+            // Agregar event listeners para when modals are shown
+            const invitationModal = document.getElementById('invitationModal');
+            const taskModal = document.getElementById('taskModal');
+            
+            if (invitationModal) {
+                invitationModal.addEventListener('shown.bs.modal', function () {
+                    console.log('Modal de invitación mostrado');
+                    // Forzar focus en el primer input
+                    const firstInput = document.getElementById('inviteEmail');
+                    if (firstInput) {
+                        firstInput.focus();
+                        firstInput.click();
+                    }
+                });
+            }
+            
+            if (taskModal) {
+                taskModal.addEventListener('shown.bs.modal', function () {
+                    console.log('Modal de tareas mostrado');
+                    // Forzar focus en el primer select
+                    const firstSelect = document.getElementById('taskCoachee');
+                    if (firstSelect) {
+                        firstSelect.focus();
+                        firstSelect.click();
+                    }
+                });
+            }
         });
 </script>
 {% endblock %}

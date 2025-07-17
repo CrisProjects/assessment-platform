@@ -1536,262 +1536,208 @@ def api_coach_dashboard_stats():
     except Exception as e:
         return jsonify({'error': f'Error obteniendo estadísticas: {str(e)}'}), 500
 
-@app.route('/api/questions', methods=['GET'])
-def api_questions():
-    """API endpoint para obtener las preguntas del assessment"""
+# ========================
+# RUTAS API PARA GESTIÓN DE TAREAS
+# ===================================
+
+@app.route('/api/coach/tasks', methods=['GET'])
+@login_required
+def api_coach_get_tasks():
+    """Obtener todas las tareas asignadas por el coach"""
     try:
-        # Usar query SQL directa para evitar problemas de metadatos SQLAlchemy
-        conn = sqlite3.connect('assessments.db')
-        cursor = conn.cursor()
+        if current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver tareas'}), 403
         
-        # Primero verificar que existe el assessment
-        cursor.execute(f'SELECT COUNT(*) FROM assessment WHERE id = {DEFAULT_ASSESSMENT_ID}')
-        if cursor.fetchone()[0] == 0:
-            conn.close()
-            return jsonify({'error': 'Assessment no encontrado'}), 404
+        tasks = Task.query.filter_by(coach_id=current_user.id, is_active=True).all()
+        tasks_data = []
         
-        # Obtener las preguntas directamente de SQLite
-        cursor.execute(f'''
-            SELECT id, assessment_id, text, question_type, "order"
-            FROM question 
-            WHERE assessment_id = {DEFAULT_ASSESSMENT_ID} 
-            ORDER BY "order"
-        ''')
+        for task in tasks:
+            # Obtener el último progreso
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
+            
+            task_data = {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'category': task.category,
+                'priority': task.priority,
+                'due_date': task.due_date.isoformat() if task.due_date else None,
+                'created_at': task.created_at.isoformat(),
+                'coachee': {
+                    'id': task.coachee.id,
+                    'name': task.coachee.full_name,
+                    'email': task.coachee.email
+                },
+                'status': latest_progress.status if latest_progress else 'pending',
+                'progress_percentage': latest_progress.progress_percentage if latest_progress else 0,
+                'last_update': latest_progress.created_at.isoformat() if latest_progress else None
+            }
+            tasks_data.append(task_data)
         
-        questions_data = cursor.fetchall()
-        conn.close()
-        
-        if not questions_data:
-            return jsonify({'error': 'No se encontraron preguntas para este assessment'}), 404
-        
-        # Formatear las preguntas para el frontend
-        formatted_questions = []
-        
-        # Opciones estándar para preguntas tipo Likert
-        likert_options = [
-            "Totalmente en desacuerdo",
-            "En desacuerdo", 
-            "Neutral",
-            "De acuerdo",
-            "Totalmente de acuerdo"
-        ]
-        
-        for question_data in questions_data:
-            # question_data es una tuple: (id, assessment_id, text, question_type, order)
-            formatted_questions.append({
-                'id': question_data[0],
-                'content': question_data[2],  # text
-                'options': likert_options,
-                'question_type': question_data[3] if question_data[3] else 'likert'
-            })
-        
-        return jsonify({
-            'success': True,
-            'assessment_id': 1,
-            'assessment_title': 'Evaluación de Asertividad',
-            'total_questions': len(formatted_questions),
-            'questions': formatted_questions
-        }), 200
+        return jsonify(tasks_data), 200
         
     except Exception as e:
-        return jsonify({'error': f'Error obteniendo preguntas: {str(e)}'}), 500
+        return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
 
-@app.route('/api/save_assessment', methods=['POST'])
-@coachee_api_required
-def api_save_assessment(current_coachee):
-    """Guardar evaluación de asertividad con análisis dimensional"""
+@app.route('/api/coach/tasks', methods=['POST'])
+@login_required
+def api_coach_create_task():
+    """Crear una nueva tarea para un coachee"""
     try:
+        if current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado: Solo coaches pueden crear tareas'}), 403
+        
         data = request.get_json()
         
-        # Validar y procesar respuestas
-        valid_answers = validate_assessment_answers(data.get('answers', {}))
-        if not valid_answers:
-            return jsonify({'error': 'No se recibieron respuestas válidas'}), 400
+        # Validar datos requeridos
+        required_fields = ['coachee_id', 'title', 'description', 'category']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Campo requerido: {field}'}), 400
         
-        # Calcular puntuaciones y crear resultado
-        assessment_result = create_assessment_result(current_coachee, valid_answers, data)
+        # Verificar que el coachee pertenece al coach
+        coachee = User.query.filter_by(
+            id=data['coachee_id'],
+            coach_id=current_user.id,
+            role='coachee'
+        ).first()
         
-        # Guardar respuestas individuales
-        save_individual_responses(current_coachee, valid_answers, assessment_result.id)
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no asignado a este coach'}), 404
         
+        # Crear la tarea
+        due_date = None
+        if data.get('due_date'):
+            due_date = datetime.fromisoformat(data['due_date']).date()
+        
+        new_task = Task(
+            coach_id=current_user.id,
+            coachee_id=data['coachee_id'],
+            title=data['title'],
+            description=data['description'],
+            category=data['category'],
+            priority=data.get('priority', 'medium'),
+            due_date=due_date
+        )
+        
+        db.session.add(new_task)
+        db.session.flush()
+        
+        # Crear entrada inicial de progreso
+        initial_progress = TaskProgress(
+            task_id=new_task.id,
+            status='pending',
+            progress_percentage=0,
+            notes='Tarea creada',
+            updated_by=current_user.id
+        )
+        
+        db.session.add(initial_progress)
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'result_id': assessment_result.id,
-            'total_score': int(assessment_result.score),
-            'assertiveness_level': get_assertiveness_level(assessment_result.score),
-            'dimensional_scores': assessment_result.dimensional_scores,
-            'message': 'Evaluación guardada exitosamente'
+            'message': 'Tarea creada exitosamente',
+            'task': {
+                'id': new_task.id,
+                'title': new_task.title,
+                'coachee_name': coachee.full_name
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
+
+@app.route('/api/coach/tasks/<int:task_id>/progress', methods=['POST'])
+@login_required
+def api_coach_update_task_progress(task_id):
+    """Actualizar el progreso de una tarea"""
+    try:
+        if current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado: Solo coaches pueden actualizar tareas'}), 403
+        
+        task = Task.query.filter_by(id=task_id, coach_id=current_user.id).first()
+        if not task:
+            return jsonify({'error': 'Tarea no encontrada'}), 404
+        
+        data = request.get_json()
+        
+        # Crear nueva entrada de progreso
+        progress_entry = TaskProgress(
+            task_id=task_id,
+            status=data.get('status', 'in_progress'),
+            progress_percentage=data.get('progress_percentage', 0),
+            notes=data.get('notes', ''),
+            updated_by=current_user.id
+        )
+        
+        db.session.add(progress_entry)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progreso actualizado exitosamente'
         }), 200
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Error guardando evaluación: {str(e)}'}), 500
+        return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
 
-def generate_elegant_result_text(assertiveness_level, dimensional_scores):
-    """Generar un texto de resultado elegante y amigable para el usuario"""
-    
-    # Mapeo de nombres de dimensiones a texto más amigable
-    dimension_names = {
-        'comunicacion': 'Comunicación',
-        'derechos': 'Defensa de Derechos',
-        'opiniones': 'Expresión de Opiniones',
-        'conflictos': 'Manejo de Conflictos',
-        'autoconfianza': 'Autoconfianza'
-    }
-    
-    # Encontrar fortalezas (puntuaciones más altas)
-    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True)
-    top_strengths = [dimension_names.get(dim, dim) for dim, score in sorted_dimensions[:2] if score >= 70]
-    
-    # Crear texto base
-    result_parts = [f"Nivel de Asertividad: {assertiveness_level}"]
-    
-    # Agregar fortalezas si las hay
-    if top_strengths:
-        if len(top_strengths) == 1:
-            result_parts.append(f"Fortaleza principal: {top_strengths[0]}")
-        else:
-            result_parts.append(f"Fortalezas principales: {', '.join(top_strengths)}")
-    
-    # Agregar puntuación general
-    avg_score = sum(dimensional_scores.values()) / len(dimensional_scores)
-    result_parts.append(f"Puntuación general: {avg_score:.0f}%")
-    
-    return " • ".join(result_parts)
-
-def validate_assessment_answers(answers):
-    """Validar y procesar respuestas del assessment"""
-    if not answers:
-        return {}
+@app.route('/api/coach/coachee-tasks/<int:coachee_id>', methods=['GET'])
+@login_required
+def api_coach_get_coachee_tasks(coachee_id):
+    """Obtener todas las tareas de un coachee específico"""
+    try:
+        if current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver tareas'}), 403
         
-    valid_answers = {}
-    for q_idx, answer in answers.items():
-        try:
-            answer_value = int(answer)
-            if LIKERT_SCALE_MIN <= answer_value <= LIKERT_SCALE_MAX:
-                valid_answers[q_idx] = answer_value
-        except (ValueError, TypeError):
-            continue
-    
-    return valid_answers
-
-def create_assessment_result(current_coachee, valid_answers, data):
-    """Crear y guardar el resultado de la evaluación"""
-    # Calcular dimensiones usando la misma lógica del frontend
-    dimensional_scores = calculate_dimensional_scores_backend(valid_answers)
-    
-    # Calcular puntuación total
-    total_score = sum(dimensional_scores.values()) / len(dimensional_scores)
-    
-    # Determinar nivel de asertividad
-    assertiveness_level = get_assertiveness_level(total_score)
-    
-    # Obtener información adicional del coachee
-    coach_id = getattr(current_coachee, 'coach_id', None)
-    participant_name = getattr(current_coachee, 'full_name', None)
-    participant_email = getattr(current_coachee, 'email', None)
-    
-    # Crear resultado de evaluación
-    assessment_result = AssessmentResult(
-        user_id=current_coachee.id,
-        assessment_id=DEFAULT_ASSESSMENT_ID,  # Usando el assessment de asertividad principal
-        score=total_score,
-        total_questions=len(valid_answers),
-        result_text=generate_elegant_result_text(assertiveness_level, dimensional_scores),
-        coach_id=coach_id,
-        participant_name=participant_name,
-        participant_email=participant_email,
-        dimensional_scores=dimensional_scores
-    )
-    
-    db.session.add(assessment_result)
-    db.session.flush()  # Flush to get the ID without committing
-    
-    return assessment_result
-
-def save_individual_responses(current_coachee, valid_answers, assessment_result_id):
-    """Guardar respuestas individuales para análisis detallado"""
-    # Obtener los IDs reales de las preguntas desde la base de datos
-    questions = Question.query.filter_by(assessment_id=DEFAULT_ASSESSMENT_ID).order_by(Question.order).all()
-    
-    for question_index, answer in valid_answers.items():
-        idx = int(question_index)
-        if idx < len(questions):  # Verificar que el índice sea válido
-            question_id = questions[idx].id
-            response = Response(
-                user_id=current_coachee.id,
-                question_id=question_id,
-                selected_option=answer,
-                assessment_result_id=assessment_result_id
-            )
-            db.session.add(response)
-
-def calculate_dimensional_scores_backend(answers):
-    """Calcular puntuaciones dimensionales (backend)"""
-    # Mapeo de preguntas a dimensiones (misma lógica que frontend)
-    question_to_dimension = {
-        0: 'conflictos',       # Pregunta 1
-        1: 'derechos',         # Pregunta 2
-        2: 'opiniones',        # Pregunta 3
-        3: 'derechos',         # Pregunta 4
-        4: 'comunicacion',     # Pregunta 5
-        5: 'comunicacion',     # Pregunta 6
-        6: 'autoconfianza',    # Pregunta 7
-        7: 'conflictos',       # Pregunta 8
-        8: 'conflictos',       # Pregunta 9
-        9: 'autoconfianza'     # Pregunta 10
-    }
-    
-    dimension_scores = {
-        'comunicacion': [],
-        'derechos': [],
-        'opiniones': [],
-        'conflictos': [],
-        'autoconfianza': []
-    }
-    
-    # Agrupar respuestas por dimensión
-    for question_index, answer in answers.items():
-        try:
-            idx = int(question_index)
-            answer_value = int(answer)
+        # Verificar que el coachee pertenece al coach
+        coachee = User.query.filter_by(
+            id=coachee_id,
+            coach_id=current_user.id,
+            role='coachee'
+        ).first()
+        
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado'}), 404
+        
+        tasks = Task.query.filter_by(
+            coach_id=current_user.id,
+            coachee_id=coachee_id,
+            is_active=True
+        ).all()
+        
+        tasks_data = []
+        for task in tasks:
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
             
-            # Validar que la respuesta esté en el rango correcto (1-5)
-            if not (LIKERT_SCALE_MIN <= answer_value <= LIKERT_SCALE_MAX):
-                continue  # Saltar respuestas inválidas
-                
-            if idx in question_to_dimension:
-                dimension = question_to_dimension[idx]
-                dimension_scores[dimension].append(answer_value)
-        except (ValueError, TypeError):
-            # Saltar respuestas que no se puedan convertir a entero
-            continue
-    
-    # Calcular promedio por dimensión y convertir a porcentaje
-    final_scores = {}
-    for dimension, scores in dimension_scores.items():
-        if scores:
-            avg_score = sum(scores) / len(scores)
-            # Convertir de escala 1-5 a 0-100
-            percentage = ((avg_score - 1) / 4) * 100
-            final_scores[dimension] = round(percentage, 1)
-        else:
-            final_scores[dimension] = 0
-    
-    return final_scores
-
-def get_assertiveness_level(score):
-    """Determinar nivel de asertividad basado en puntuación"""
-    if score >= 80:
-        return "Muy Asertivo"
-    elif score >= 60:
-        return "Asertivo"
-    elif score >= 40:
-        return "Moderadamente Asertivo"
-    else:
-        return "Poco Asertivo"
+            task_data = {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'category': task.category,
+                'priority': task.priority,
+                'due_date': task.due_date.isoformat() if task.due_date else None,
+                'created_at': task.created_at.isoformat(),
+                'status': latest_progress.status if latest_progress else 'pending',
+                'progress_percentage': latest_progress.progress_percentage if latest_progress else 0,
+                'last_update': latest_progress.created_at.isoformat() if latest_progress else None,
+                'last_notes': latest_progress.notes if latest_progress else ''
+            }
+            tasks_data.append(task_data)
+        
+        return jsonify({
+            'coachee': {
+                'id': coachee.id,
+                'name': coachee.full_name,
+                'email': coachee.email
+            },
+            'tasks': tasks_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo tareas del coachee: {str(e)}'}), 500
 
 # ========================
 # RUTAS PARA COACHEES
@@ -2032,6 +1978,49 @@ def forbidden_error(error):
                          error_code=403,
                          error_message="Acceso prohibido",
                          error_description="No tienes permisos para acceder a esta página."), 403
+
+@app.errorhandler(401)
+def unauthorized_error(error):
+    """Manejo de errores 401 - No autorizado"""
+    logger.warning(f"401 Error: Unauthorized access to {request.url}")
+    
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': 'Autenticación requerida',
+            'status_code': 401,
+            'message': 'Debes iniciar sesión para acceder a este recurso.'
+        }), 401
+    
+    return redirect(url_for('dashboard_selection'))
+
+@app.errorhandler(400)
+def bad_request_error(error):
+    """Manejo de errores 400 - Solicitud incorrecta"""
+    logger.warning(f"400 Error: Bad request to {request.url}. Error: {str(error)}")
+    
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': 'Solicitud incorrecta',
+            'status_code': 400,
+            'message': 'Los datos enviados no son válidos.'
+        }), 400
+    
+    return render_template('error.html',
+                         error_code=400,
+                         error_message="Solicitud incorrecta",
+                         error_description="Los datos enviados no son válidos."), 400
+
+# Logging de requests para debugging
+@app.before_request
+def log_request_info():
+    """Log de información de requests para debugging"""
+    if not request.path.startswith('/static/'):  # No loggear recursos estáticos
+        logger.debug(f"Request: {request.method} {request.path} from {request.remote_addr}")
+        if request.is_json and request.method in ['POST', 'PUT', 'PATCH']:
+            # Log solo los campos no sensibles
+            data = request.get_json() or {}
+            safe_data = {k: v for k, v in data.items() if k not in ['password', 'token', 'secret']}
+            logger.debug(f"Request data: {safe_data}")
 
 @app.errorhandler(401)
 def unauthorized_error(error):
