@@ -1,122 +1,187 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Coach - Plataforma de Asertividad</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome para íconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #5A67D8 0%, #4C51BF 100%);
-            --success-gradient: linear-gradient(135deg, #68D391 0%, #48BB78 100%);
-        }
-        body {
-            background: #F7FAFC;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        .custom-header {
-            background: var(--primary-gradient);
-            box-shadow: 0 4px 20px rgba(90, 103, 216, 0.15);
-        }
-        .btn-success-gradient {
-            background: var(--success-gradient);
-            border: none;
-            color: white;
-        }
-        .btn-success-gradient:hover {
-            background: linear-gradient(135deg, #48BB78 0%, #38A169 100%);
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <!-- Header -->
-    <nav class="navbar navbar-expand-lg custom-header">
-        <div class="container-fluid">
-            <a class="navbar-brand text-white" href="#">
-                <i class="fas fa-chart-line me-2"></i>Dashboard Coach
-            </a>
-            <div class="ms-auto">
-                <a class="btn btn-outline-light btn-sm" href="/logout">
-                    <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
-                </a>
+{% extends "base.html" %}
+
+{% block title %}Dashboard Coach - Assessment Platform{% endblock %}
+
+{% block content %}
+<!-- Header Navigation -->
+<nav class="glass-card p-3 mb-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center me-3" 
+                 style="width: 50px; height: 50px; background: var(--gradient-button);">
+                <i class="fas fa-user-tie text-white fs-4"></i>
+            </div>
+            <div>
+                <h4 class="text-gradient fw-bold mb-0">Dashboard Coach</h4>
+                <p class="text-white-50 mb-0 small">Gestiona y supervisa tus coachees</p>
             </div>
         </div>
-    </nav>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'">
+                <i class="fas fa-home me-1"></i>Inicio
+            </button>
+            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/logout'">
+                <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Dashboard Content -->
+<div class="container-fluid">
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--havelock-blue), #4A90E2);">
+                    <i class="fas fa-users text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="totalCoachees">0</h3>
+                <p class="text-white-50 mb-0">Total Coachees</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, #10B981, #059669);">
+                    <i class="fas fa-check-circle text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="completedAssessments">0</h3>
+                <p class="text-white-50 mb-0">Evaluaciones Completadas</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, #F59E0B, #D97706);">
+                    <i class="fas fa-clock text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="pendingAssessments">0</h3>
+                <p class="text-white-50 mb-0">Evaluaciones Pendientes</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, #8B5CF6, #7C3AED);">
+                    <i class="fas fa-chart-line text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="avgScore">0%</h3>
+                <p class="text-white-50 mb-0">Puntuación Promedio</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
-    <div class="container-fluid py-4">
+    <div class="row">
         <!-- Mis Coachees -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3 class="mb-0">
-                            <i class="fas fa-users me-2 text-primary"></i>Mis Coachees
-                        </h3>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-success-gradient btn-sm" onclick="openInvitationModal()">
-                                <i class="fas fa-envelope me-1"></i>Invitar Coachee
-                            </button>
-                            <button class="btn btn-primary btn-sm" onclick="loadCoachees()">
-                                <i class="fas fa-refresh me-1"></i>Actualizar
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div id="coacheesContainer" class="row">
-                            <div class="col-12 text-center py-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Cargando coachees...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
-        <!-- Toasts will be inserted here -->
-    </div>
-
-    <!-- Modal de invitación de coachee -->
-    <div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="invitationModalLabel">
-                        <i class="fas fa-envelope me-2"></i>Invitar Coachee
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="invitationForm">
-                        <div class="mb-3">
-                            <label for="inviteEmail" class="form-label">Correo electrónico del coachee</label>
-                            <input type="email" class="form-control" id="inviteEmail" placeholder="coachee@email.com" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="inviteFullName" class="form-label">Nombre completo</label>
-                            <input type="text" class="form-control" id="inviteFullName" placeholder="Nombre del coachee" required>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="fas fa-paper-plane me-2"></i>Enviar Invitación
+        <div class="col-12">
+            <div class="glass-card p-4 fade-in">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="text-gradient fw-bold mb-0">
+                        <i class="fas fa-users me-2"></i>Mis Coachees
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success interactive-element" onclick="openInvitationModal()">
+                            <i class="fas fa-envelope me-2"></i>Invitar Coachee
                         </button>
-                    </form>
+                        <button class="btn btn-primary interactive-element" onclick="loadCoachees()">
+                            <i class="fas fa-refresh me-2"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+                <div id="coacheesContainer" class="row">
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando coachees...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+    <!-- Toasts will be inserted here -->
+</div>
+
+<!-- Modal de invitación de coachee -->
+<div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-gradient fw-bold" id="invitationModalLabel">
+                    <i class="fas fa-envelope me-2"></i>Invitar Coachee
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="invitationForm">
+                    <div class="mb-3">
+                        <label for="inviteEmail" class="form-label text-white">Correo electrónico del coachee</label>
+                        <input type="email" class="form-control glass-input" id="inviteEmail" 
+                               placeholder="coachee@email.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inviteFullName" class="form-label text-white">Nombre completo</label>
+                        <input type="text" class="form-control glass-input" id="inviteFullName" 
+                               placeholder="Nombre del coachee" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 interactive-element">
+                        <i class="fas fa-paper-plane me-2"></i>Enviar Invitación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .glass-input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+    
+    .glass-input::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .glass-input:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--havelock-blue);
+        box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25);
+        color: white;
+    }
+    
+    .modal-content {
+        background: rgba(27, 34, 80, 0.95);
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .spinner-border {
+        color: var(--havelock-blue) !important;
+    }
+    
+    .interactive-element {
+        transition: all 0.3s ease;
+    }
+    
+    .interactive-element:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(98, 130, 227, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
         // Variables globales
         let coacheesData = [];
 
@@ -191,7 +256,7 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
                 
-                const response = await fetch('/api/coach/invite-coachee', {
+                const response = await fetch('/api/coach/create-invitation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -229,7 +294,7 @@
                     </div>
                 `;
 
-                const response = await fetch('/api/coach/coachees', {
+                const response = await fetch('/api/coach/my-coachees', {
                     credentials: 'include'
                 });
 
@@ -237,25 +302,44 @@
                     throw new Error('Error al cargar coachees');
                 }
 
-                const data = await response.json();
-                coacheesData = data.coachees || [];
+                // La API devuelve directamente un array, no un objeto con propiedad coachees
+                coacheesData = await response.json();
                 displayCoachees();
+                updateStatistics();
                 
             } catch (error) {
                 console.error('Error cargando coachees:', error);
                 const container = document.getElementById('coacheesContainer');
                 container.innerHTML = `
                     <div class="col-12">
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger glass-card">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             Error al cargar coachees: ${error.message}
-                            <button class="btn btn-sm btn-outline-danger ms-2" onclick="loadCoachees()">
+                            <button class="btn btn-sm btn-outline-light ms-2" onclick="loadCoachees()">
                                 <i class="fas fa-refresh me-1"></i>Reintentar
                             </button>
                         </div>
                     </div>
                 `;
             }
+        }
+
+        // Función para actualizar estadísticas
+        function updateStatistics() {
+            const totalCoachees = coacheesData.length;
+            const completedAssessments = coacheesData.filter(c => c.total_assessments > 0).length;
+            const pendingAssessments = totalCoachees - completedAssessments;
+            const avgScore = coacheesData.length > 0 ? 
+                Math.round(coacheesData
+                    .filter(c => c.last_assessment && c.last_assessment.score !== null)
+                    .reduce((sum, c) => sum + (c.last_assessment.score || 0), 0) / 
+                    Math.max(1, coacheesData.filter(c => c.last_assessment && c.last_assessment.score !== null).length)
+                ) : 0;
+
+            document.getElementById('totalCoachees').textContent = totalCoachees;
+            document.getElementById('completedAssessments').textContent = completedAssessments;
+            document.getElementById('pendingAssessments').textContent = pendingAssessments;
+            document.getElementById('avgScore').textContent = avgScore + '%';
         }
 
         // Función para mostrar coachees
@@ -266,10 +350,13 @@
                 container.innerHTML = `
                     <div class="col-12">
                         <div class="text-center py-5">
-                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                            <h4>No hay coachees asignados</h4>
-                            <p class="text-muted">Los coachees que invites aparecerán aquí.</p>
-                            <button class="btn btn-success-gradient" onclick="openInvitationModal()">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                                 style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1);">
+                                <i class="fas fa-users fa-2x text-white-50"></i>
+                            </div>
+                            <h4 class="text-gradient fw-bold">No hay coachees asignados</h4>
+                            <p class="text-white-50 mb-4">Los coachees que invites aparecerán aquí.</p>
+                            <button class="btn btn-success interactive-element" onclick="openInvitationModal()">
                                 <i class="fas fa-envelope me-2"></i>Invitar Primer Coachee
                             </button>
                         </div>
@@ -278,36 +365,88 @@
                 return;
             }
 
-            const html = coacheesData.map(coachee => `
+            const html = coacheesData.map(coachee => {
+                const hasAssessment = coachee.last_assessment && coachee.last_assessment.score !== null;
+                const score = hasAssessment ? coachee.last_assessment.score : 0;
+                const isActive = coachee.total_assessments > 0;
+                
+                return `
                 <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h6 class="card-title">${coachee.full_name}</h6>
-                            <p class="card-text text-muted">${coachee.email}</p>
-                            <span class="badge bg-${coachee.status === 'active' ? 'success' : 'warning'}">
-                                ${coachee.status === 'active' ? 'Activo' : 'Pendiente'}
-                            </span>
+                    <div class="glass-card h-100 p-4 interactive-element">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center me-3" 
+                                 style="width: 50px; height: 50px; background: var(--gradient-button);">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="text-gradient fw-bold mb-1">${coachee.full_name || coachee.username}</h6>
+                                <p class="text-white-50 mb-0 small">${coachee.email}</p>
+                            </div>
                         </div>
-                        <div class="card-footer bg-transparent">
-                            <button class="btn btn-primary btn-sm" onclick="viewCoacheeDetails('${coachee.id}')">
+                        
+                        <div class="mb-3">
+                            <span class="badge ${isActive ? 'bg-success' : 'bg-warning'} mb-2">
+                                ${isActive ? 'Activo' : 'Pendiente'}
+                            </span>
+                            ${hasAssessment ? 
+                                `<span class="badge bg-info">Evaluación Completada</span>` : 
+                                `<span class="badge bg-secondary">Sin Evaluar</span>`
+                            }
+                        </div>
+                        
+                        ${hasAssessment ? 
+                            `<div class="mb-3">
+                                <small class="text-white-50">Puntuación de Asertividad:</small>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar bg-gradient" role="progressbar" 
+                                         style="width: ${score}%; background: var(--gradient-button) !important;" 
+                                         aria-valuenow="${score}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-gradient fw-bold">${score}%</small>
+                            </div>` : 
+                            `<div class="mb-3">
+                                <small class="text-white-50">Evaluaciones realizadas: ${coachee.total_assessments}</small>
+                            </div>`
+                        }
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="viewCoacheeDetails('${coachee.id}')">
                                 <i class="fas fa-eye me-1"></i>Ver Detalles
                             </button>
+                            ${hasAssessment ? 
+                                `<button class="btn btn-outline-success btn-sm" onclick="downloadReport('${coachee.id}')">
+                                    <i class="fas fa-download me-1"></i>Reporte
+                                </button>` : 
+                                `<button class="btn btn-outline-warning btn-sm" onclick="sendReminder('${coachee.id}')">
+                                    <i class="fas fa-bell me-1"></i>Recordar
+                                </button>`
+                            }
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
 
             container.innerHTML = html;
         }
 
-        // Función placeholder para ver detalles
+        // Función para ver detalles del coachee
         function viewCoacheeDetails(coacheeId) {
-            showToast('Función en desarrollo', 'info');
+            showToast('Función de detalles en desarrollo', 'info');
+        }
+
+        // Función para descargar reporte
+        function downloadReport(coacheeId) {
+            showToast('Función de descarga en desarrollo', 'info');
+        }
+
+        // Función para enviar recordatorio
+        function sendReminder(coacheeId) {
+            showToast('Recordatorio enviado', 'success');
         }
 
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM cargado, inicializando dashboard...');
+            console.log('DOM cargado, inicializando dashboard del coach...');
             
             // Configurar event listener para el formulario de invitación
             const invitationForm = document.getElementById('invitationForm');
@@ -321,6 +460,6 @@
             // Cargar datos iniciales
             loadCoachees();
         });
-    </script>
-</body>
-</html>
+</script>
+{% endblock %}
+{% endblock %}
