@@ -4,6 +4,10 @@ Aplicación Flask completa con frontend y backend integrados
 Perfecta para desplegar en Render como un solo servicio
 FIXED: Botón 'Iniciar Evaluación' - Endpoint /api/register actualizado
 """
+# Cargar variables de entorno desde .env
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
