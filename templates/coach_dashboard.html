@@ -76,7 +76,7 @@
     <!-- Main Content -->
     <div class="row">
         <!-- Mis Coachees -->
-        <div class="col-12">
+        <div class="col-12 mb-4">
             <div class="glass-card p-4 fade-in">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="text-gradient fw-bold mb-0">
@@ -95,6 +95,32 @@
                     <div class="col-12 text-center py-5">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Cargando coachees...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión de Tareas -->
+        <div class="col-12 mb-4">
+            <div class="glass-card p-4 fade-in">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="text-gradient fw-bold mb-0">
+                        <i class="fas fa-tasks me-2"></i>Gestión de Tareas
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success interactive-element" onclick="openTaskModal()">
+                            <i class="fas fa-plus me-2"></i>Nueva Tarea
+                        </button>
+                        <button class="btn btn-primary interactive-element" onclick="loadTasks()">
+                            <i class="fas fa-refresh me-2"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+                <div id="tasksContainer" class="row">
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando tareas...</span>
                         </div>
                     </div>
                 </div>
@@ -130,8 +156,78 @@
                         <input type="text" class="form-control glass-input" id="inviteFullName" 
                                placeholder="Nombre del coachee" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="inviteMessage" class="form-label text-white">Mensaje personalizado (opcional)</label>
+                        <textarea class="form-control glass-input" id="inviteMessage" rows="3" 
+                                  placeholder="Escribe un mensaje de bienvenida para tu coachee..."></textarea>
+                    </div>
                     <button type="submit" class="btn btn-success w-100 interactive-element">
                         <i class="fas fa-paper-plane me-2"></i>Enviar Invitación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear nueva tarea -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-gradient fw-bold" id="taskModalLabel">
+                    <i class="fas fa-plus me-2"></i>Nueva Tarea
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="taskCoachee" class="form-label text-white">Asignar a Coachee</label>
+                            <select class="form-select glass-input" id="taskCoachee" required>
+                                <option value="">Selecciona un coachee...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="taskCategory" class="form-label text-white">Categoría</label>
+                            <select class="form-select glass-input" id="taskCategory" required>
+                                <option value="">Selecciona categoría...</option>
+                                <option value="comunicacion">Comunicación Asertiva</option>
+                                <option value="derechos">Defensa de Derechos</option>
+                                <option value="opiniones">Expresión de Opiniones</option>
+                                <option value="conflictos">Manejo de Conflictos</option>
+                                <option value="autoconfianza">Autoconfianza</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="taskPriority" class="form-label text-white">Prioridad</label>
+                            <select class="form-select glass-input" id="taskPriority" required>
+                                <option value="low">Baja</option>
+                                <option value="medium" selected>Media</option>
+                                <option value="high">Alta</option>
+                                <option value="urgent">Urgente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="taskDueDate" class="form-label text-white">Fecha límite (opcional)</label>
+                            <input type="date" class="form-control glass-input" id="taskDueDate">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label text-white">Título de la tarea</label>
+                        <input type="text" class="form-control glass-input" id="taskTitle" 
+                               placeholder="Ej: Practicar expresión de opiniones en reuniones" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label text-white">Descripción detallada</label>
+                        <textarea class="form-control glass-input" id="taskDescription" rows="4" 
+                                  placeholder="Describe la tarea, objetivos y pasos a seguir..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 interactive-element">
+                        <i class="fas fa-plus me-2"></i>Crear Tarea
                     </button>
                 </form>
             </div>
@@ -159,6 +255,11 @@
         color: white;
     }
     
+    .form-select.glass-input option {
+        background: var(--cloud-burst);
+        color: white;
+    }
+    
     .modal-content {
         background: rgba(27, 34, 80, 0.95);
         backdrop-filter: blur(25px);
@@ -177,6 +278,32 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(98, 130, 227, 0.3);
     }
+    
+    .task-card {
+        border-left: 4px solid var(--havelock-blue);
+        transition: all 0.3s ease;
+    }
+    
+    .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(98, 130, 227, 0.2);
+    }
+    
+    .priority-low { border-left-color: #10B981; }
+    .priority-medium { border-left-color: #F59E0B; }
+    .priority-high { border-left-color: #EF4444; }
+    .priority-urgent { border-left-color: #DC2626; }
+    
+    .status-pending { background: linear-gradient(90deg, #64748B 0%, #64748B 0%); }
+    .status-in_progress { background: linear-gradient(90deg, var(--havelock-blue) 0%, var(--havelock-blue) 50%); }
+    .status-completed { background: linear-gradient(90deg, #10B981 0%, #10B981 100%); }
+    
+    .credentials-alert {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
 </style>
 {% endblock %}
 
@@ -184,6 +311,7 @@
 <script>
         // Variables globales
         let coacheesData = [];
+        let tasksData = [];
 
         // Función para mostrar notificaciones toast
         function showToast(message, type = 'info', duration = 5000) {
@@ -244,11 +372,12 @@
         async function sendInvitation() {
             const email = document.getElementById('inviteEmail').value.trim();
             const fullName = document.getElementById('inviteFullName').value.trim();
+            const message = document.getElementById('inviteMessage').value.trim();
             const submitBtn = document.querySelector('#invitationForm button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             
             if (!email || !fullName) {
-                showToast('Completa todos los campos para invitar al coachee', 'error');
+                showToast('Completa todos los campos requeridos para invitar al coachee', 'error');
                 return;
             }
 
@@ -260,7 +389,11 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ email, full_name: fullName })
+                    body: JSON.stringify({ 
+                        email: email, 
+                        full_name: fullName,
+                        message: message
+                    })
                 });
 
                 const result = await response.json();
@@ -269,9 +402,35 @@
                     throw new Error(result.error || 'Error al enviar invitación');
                 }
 
-                showToast('Invitación enviada exitosamente', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('invitationModal')).hide();
-                loadCoachees();
+                // Mostrar credenciales generadas
+                const credentialsHtml = `
+                    <div class="credentials-alert p-3 mb-3">
+                        <h6 class="text-success fw-bold mb-2">
+                            <i class="fas fa-check-circle me-2"></i>¡Coachee creado exitosamente!
+                        </h6>
+                        <p class="text-white-50 mb-2">Credenciales generadas para ${result.coachee.full_name}:</p>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong class="text-white">Usuario:</strong><br>
+                                <code class="text-info">${result.coachee.username}</code>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-white">Contraseña:</strong><br>
+                                <code class="text-warning">${result.coachee.password}</code>
+                            </div>
+                        </div>
+                        <small class="text-white-50">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Comparte estas credenciales con tu coachee de forma segura.
+                        </small>
+                    </div>
+                `;
+                
+                document.getElementById('invitationForm').innerHTML = credentialsHtml + 
+                    '<button type="button" class="btn btn-primary w-100" onclick="location.reload()">Continuar</button>';
+                
+                showToast('Coachee creado e invitación enviada exitosamente', 'success');
+                loadCoachees(); // Recargar lista de coachees
                 
             } catch (error) {
                 console.error('Error enviando invitación:', error);
@@ -444,6 +603,230 @@
             showToast('Recordatorio enviado', 'success');
         }
 
+        // ==========================================
+        // FUNCIONES DE GESTIÓN DE TAREAS
+        // ==========================================
+
+        // Función para abrir el modal de nueva tarea
+        function openTaskModal() {
+            console.log('Abriendo modal de nueva tarea...');
+            
+            // Cargar coachees en el select
+            const coacheeSelect = document.getElementById('taskCoachee');
+            coacheeSelect.innerHTML = '<option value="">Selecciona un coachee...</option>';
+            
+            coacheesData.forEach(coachee => {
+                const option = document.createElement('option');
+                option.value = coachee.id;
+                option.textContent = coachee.full_name || coachee.username;
+                coacheeSelect.appendChild(option);
+            });
+            
+            const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+            document.getElementById('taskForm').reset();
+            modal.show();
+        }
+
+        // Función para crear nueva tarea
+        async function createTask() {
+            const formData = {
+                coachee_id: document.getElementById('taskCoachee').value,
+                title: document.getElementById('taskTitle').value.trim(),
+                description: document.getElementById('taskDescription').value.trim(),
+                category: document.getElementById('taskCategory').value,
+                priority: document.getElementById('taskPriority').value,
+                due_date: document.getElementById('taskDueDate').value
+            };
+
+            const submitBtn = document.querySelector('#taskForm button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Validar campos requeridos
+            if (!formData.coachee_id || !formData.title || !formData.description || !formData.category) {
+                showToast('Completa todos los campos requeridos', 'error');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando...';
+
+                const response = await fetch('/api/coach/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error al crear tarea');
+                }
+
+                showToast('Tarea creada exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+                loadTasks();
+
+            } catch (error) {
+                console.error('Error creando tarea:', error);
+                showToast(error.message || 'Error al crear tarea', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Función para cargar tareas
+        async function loadTasks() {
+            try {
+                const container = document.getElementById('tasksContainer');
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando tareas...</span>
+                        </div>
+                    </div>
+                `;
+
+                const response = await fetch('/api/coach/tasks', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar tareas');
+                }
+
+                tasksData = await response.json();
+                displayTasks();
+
+            } catch (error) {
+                console.error('Error cargando tareas:', error);
+                const container = document.getElementById('tasksContainer');
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger glass-card">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar tareas: ${error.message}
+                            <button class="btn btn-sm btn-outline-light ms-2" onclick="loadTasks()">
+                                <i class="fas fa-refresh me-1"></i>Reintentar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para mostrar tareas
+        function displayTasks() {
+            const container = document.getElementById('tasksContainer');
+
+            if (!tasksData || tasksData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                                 style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1);">
+                                <i class="fas fa-tasks fa-2x text-white-50"></i>
+                            </div>
+                            <h4 class="text-gradient fw-bold">No hay tareas asignadas</h4>
+                            <p class="text-white-50 mb-4">Las tareas que crees para tus coachees aparecerán aquí.</p>
+                            <button class="btn btn-success interactive-element" onclick="openTaskModal()">
+                                <i class="fas fa-plus me-2"></i>Crear Primera Tarea
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = tasksData.map(task => {
+                const priorityColors = {
+                    low: 'success',
+                    medium: 'warning', 
+                    high: 'danger',
+                    urgent: 'danger'
+                };
+
+                const statusColors = {
+                    pending: 'secondary',
+                    in_progress: 'primary',
+                    completed: 'success',
+                    cancelled: 'dark'
+                };
+
+                const statusLabels = {
+                    pending: 'Pendiente',
+                    in_progress: 'En Progreso',
+                    completed: 'Completada',
+                    cancelled: 'Cancelada'
+                };
+
+                return `
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="glass-card task-card priority-${task.priority} h-100 p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <h6 class="text-gradient fw-bold mb-1">${task.title}</h6>
+                                <p class="text-white-50 mb-2 small">${task.coachee.name}</p>
+                            </div>
+                            <span class="badge bg-${priorityColors[task.priority]} ms-2">
+                                ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                            </span>
+                        </div>
+                        
+                        <p class="text-white-50 mb-3 small">${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-white-50">Progreso:</small>
+                                <small class="text-gradient fw-bold">${task.progress_percentage}%</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar status-${task.status}" role="progressbar" 
+                                     style="width: ${task.progress_percentage}%;" 
+                                     aria-valuenow="${task.progress_percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span class="badge bg-${statusColors[task.status]} mb-2">
+                                ${statusLabels[task.status]}
+                            </span>
+                            <span class="badge bg-info">${task.category}</span>
+                            ${task.due_date ? `<br><small class="text-warning">
+                                <i class="fas fa-calendar me-1"></i>Vence: ${new Date(task.due_date).toLocaleDateString()}
+                            </small>` : ''}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="viewTaskDetails(${task.id})">
+                                <i class="fas fa-eye me-1"></i>Ver
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="updateTaskProgress(${task.id})">
+                                <i class="fas fa-edit me-1"></i>Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Función para ver detalles de tarea
+        function viewTaskDetails(taskId) {
+            const task = tasksData.find(t => t.id === taskId);
+            if (task) {
+                showToast(`Detalles de: ${task.title}`, 'info');
+            }
+        }
+
+        // Función para actualizar progreso de tarea
+        function updateTaskProgress(taskId) {
+            showToast('Función de actualización en desarrollo', 'info');
+        }
+
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM cargado, inicializando dashboard del coach...');
@@ -457,8 +840,18 @@
                 });
             }
 
+            // Configurar event listener para el formulario de tareas
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                taskForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    await createTask();
+                });
+            }
+
             // Cargar datos iniciales
             loadCoachees();
+            loadTasks();
         });
 </script>
 {% endblock %}
