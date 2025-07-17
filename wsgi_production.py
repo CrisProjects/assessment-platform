@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 """
-WSGI entry point optimizado para Render
+WSGI entry point optimizado para Railway
 Incluye inicialización completa de base de datos con preguntas de asertividad
 Versión mejorada con mejor manejo de errores y logging
 """
 import os
 import sys
 import logging
+
+# Cargar variables de entorno
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # En producción, dotenv puede no estar disponible
 
 # Configurar logging para production
 logging.basicConfig(
@@ -20,23 +27,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the complete application with proper error handling
 try:
-    logger.info("🔄 RENDER DEPLOY: Importando aplicación...")
+    logger.info("🔄 RAILWAY DEPLOY: Importando aplicación...")
     from app_complete import app
-    logger.info("✅ RENDER DEPLOY: App importada exitosamente")
+    logger.info("✅ RAILWAY DEPLOY: App importada exitosamente")
     
     # Initialize database in production with complete setup
-    logger.info("🔄 RENDER DEPLOY: Inicializando base de datos completa...")
+    logger.info("🔄 RAILWAY DEPLOY: Inicializando base de datos completa...")
     with app.app_context():
         from app_complete import db, auto_initialize_database
         try:
             # Force create all tables first
             db.create_all()
-            logger.info("✅ RENDER DEPLOY: Tablas creadas")
+            logger.info("✅ RAILWAY DEPLOY: Tablas creadas")
             
             # Run complete auto-initialization
             init_success = auto_initialize_database()
             if init_success:
-                logger.info("✅ RENDER DEPLOY: Base de datos inicializada completamente")
+                logger.info("✅ RAILWAY DEPLOY: Base de datos inicializada completamente")
                 
                 # Verify critical data exists
                 from app_complete import Question, Assessment, User
@@ -44,10 +51,10 @@ try:
                 assessment_count = Assessment.query.count()
                 admin_exists = User.query.filter_by(role='platform_admin').first() is not None
                 
-                logger.info(f"📊 RENDER DEPLOY: Verificación - Questions: {question_count}, Assessments: {assessment_count}, Admin: {admin_exists}")
+                logger.info(f"📊 RAILWAY DEPLOY: Verificación - Questions: {question_count}, Assessments: {assessment_count}, Admin: {admin_exists}")
                 
                 if question_count >= 10 and assessment_count >= 1 and admin_exists:
-                    logger.info("🎉 RENDER DEPLOY: Validación exitosa - Sistema listo")
+                    logger.info("🎉 RAILWAY DEPLOY: Validación exitosa - Sistema listo")
                 else:
                     logger.warning("⚠️ RENDER DEPLOY: Warning - Algunos datos podrían estar incompletos")
             else:

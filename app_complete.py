@@ -63,16 +63,29 @@ app = Flask(__name__)
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     # En desarrollo, generar una clave aleatoria
-    if os.environ.get('FLASK_ENV') == 'development':
+    if os.environ.get('FLASK_ENV') == 'development' or os.environ.get('RAILWAY_ENVIRONMENT') == 'development':
         import secrets
         SECRET_KEY = secrets.token_hex(32)
         logger.warning("⚠️ DEVELOPMENT: Usando SECRET_KEY generada aleatoriamente")
     else:
         # En producción, requerir SECRET_KEY
-        raise ValueError("SECRET_KEY environment variable is required in production")
+        logger.error("❌ SECRET_KEY environment variable is required in production")
+        # Para Railway, usar una clave por defecto en caso de emergencia
+        if os.environ.get('RAILWAY_ENVIRONMENT'):
+            SECRET_KEY = 'railway-emergency-key-assessment-platform-2025'
+            logger.warning("⚠️ RAILWAY: Usando SECRET_KEY de emergencia")
+        else:
+            raise ValueError("SECRET_KEY environment variable is required in production")
 
 app.config['SECRET_KEY'] = SECRET_KEY
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///assessments.db')
+
+# Configuración de base de datos mejorada para Railway
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///assessments.db')
+# Railway PostgreSQL URLs sometimes start with postgres:// but SQLAlchemy needs postgresql://
+if DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Constantes de la aplicación
