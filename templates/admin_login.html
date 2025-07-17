@@ -13,38 +13,62 @@
     }
 
     .login-card {
-        background: var(--pure-white);
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        background: var(--glass-card);
+        backdrop-filter: var(--glass-backdrop);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-strong);
         overflow: hidden;
         max-width: 420px;
         width: 100%;
     }
 
     .login-header {
-        background: linear-gradient(135deg, var(--primary-sky), var(--primary-mint));
+        background: linear-gradient(135deg, #FF6B6B, #EE5A52);
         padding: 2rem;
         text-align: center;
-        color: var(--dark-gray);
+        color: var(--pure-white);
+        position: relative;
+    }
+
+    .login-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
     }
 
     .login-header i {
         font-size: 3rem;
         margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
 
     .login-header h2 {
-        font-weight: 600;
+        font-weight: 700;
         margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
 
     .login-header p {
-        opacity: 0.8;
+        opacity: 0.9;
         margin: 0;
+        position: relative;
+        z-index: 1;
+        font-weight: 500;
     }
 
     .login-body {
         padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
     }
 
     .form-floating {
@@ -52,33 +76,49 @@
     }
 
     .form-floating .form-control {
-        border: 2px solid rgba(167, 215, 197, 0.3);
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--radius-lg);
         height: 58px;
         font-size: 1rem;
+        color: var(--pure-white);
+        backdrop-filter: blur(10px);
     }
 
     .form-floating .form-control:focus {
-        border-color: var(--primary-mint);
-        box-shadow: 0 0 0 0.2rem rgba(92, 219, 149, 0.25);
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #FF6B6B;
+        box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
+        color: var(--pure-white);
+    }
+
+    .form-floating .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.6);
     }
 
     .form-floating label {
-        color: var(--medium-gray);
+        color: rgba(255, 255, 255, 0.8);
         font-weight: 500;
+    }
+
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        color: #FF6B6B;
+        font-weight: 600;
     }
 
     .login-btn {
         width: 100%;
         padding: 1rem;
-        border-radius: 25px;
+        border-radius: var(--radius-full);
         font-weight: 600;
-        background: linear-gradient(135deg, var(--primary-mint), var(--primary-sky));
+        background: linear-gradient(135deg, #FF6B6B, #EE5A52);
         border: none;
-        color: var(--dark-gray);
-        transition: all 0.3s ease;
+        color: var(--pure-white);
+        transition: var(--transition-normal);
         position: relative;
         overflow: hidden;
+        box-shadow: var(--shadow-medium);
     }
 
     .login-btn::before {
@@ -88,17 +128,18 @@
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
         transition: left 0.6s;
-    }
-
-    .login-btn:hover::before {
-        left: 100%;
     }
 
     .login-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 32px rgba(92, 219, 149, 0.3);
+        box-shadow: var(--shadow-strong);
+        background: linear-gradient(135deg, #FF5252, #E53935);
+    }
+
+    .login-btn:hover::before {
+        left: 100%;
     }
 
     .back-link {
@@ -107,14 +148,15 @@
     }
 
     .back-link a {
-        color: var(--medium-gray);
+        color: rgba(255, 255, 255, 0.7);
         text-decoration: none;
         font-weight: 500;
-        transition: color 0.3s ease;
+        transition: var(--transition-normal);
     }
 
     .back-link a:hover {
-        color: var(--primary-mint);
+        color: #FF6B6B;
+        text-decoration: underline;
     }
 
     /* Responsive */

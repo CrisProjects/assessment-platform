@@ -1,0 +1,882 @@
+{% extends "base.html" %}
+
+{% block title %}Selección de Dashboard - Assessment Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para dashboard selection con diseño Calm */
+    .hero-section {
+        background: linear-gradient(135deg, rgba(167, 215, 197, 0.1), rgba(92, 219, 149, 0.05));
+        padding: 4rem 0;
+        margin-bottom: 3rem;
+    }
+
+    .dashboard-card {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+        background: var(--pure-white);
+        height: 100%;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(135deg, var(--primary-sky), var(--primary-mint));
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+
+    .dashboard-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--primary-mint);
+        box-shadow: 0 20px 60px rgba(92, 219, 149, 0.15);
+    }
+
+    .dashboard-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, var(--primary-sky), var(--primary-mint));
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover .dashboard-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .dashboard-icon i {
+        font-size: 2.5rem;
+        color: var(--dark-gray);
+    }
+
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-bottom: 1rem;
+    }
+
+    .dashboard-description {
+        color: var(--medium-gray);
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .access-btn {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .access-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.6s;
+    }
+
+    .access-btn:hover::before {
+        left: 100%;
+    }
+
+    .stats-grid {
+        margin-top: 4rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary-mint), var(--primary-sky));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .stat-label {
+        color: var(--medium-gray);
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 2rem 0;
+        }
+        
+        .dashboard-icon {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .dashboard-icon i {
+            font-size: 2rem;
+        }
+        
+        .dashboard-title {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-light mb-4">
+                    Bienvenido a <span class="text-gradient">Assessment Platform</span>
+                </h1>
+                <p class="lead text-muted">
+                    Selecciona tu tipo de acceso para comenzar tu journey de desarrollo personal y profesional
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row g-4 justify-content-center">
+        <!-- Admin Access -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="dashboard-title">Administrador</h3>
+                    <p class="dashboard-description">
+                        Acceso completo a la plataforma. Gestiona coaches, supervisa métricas globales y administra el sistema.
+                    </p>
+                    <a href="/admin-login" class="btn btn-primary access-btn">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Acceso Administrativo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coach Access -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="dashboard-title">Coach</h3>
+                    <p class="dashboard-description">
+                        Guía y acompaña a tus coachees. Crea invitaciones, revisa evaluaciones y monitorea el progreso.
+                    </p>
+                    <a href="/coach-login" class="btn btn-primary access-btn">
+                        <i class="fas fa-user-tie me-2"></i>
+                        Portal de Coach
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coachee Access -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3 class="dashboard-title">Participante</h3>
+                    <p class="dashboard-description">
+                        Realiza tu evaluación de asertividad, visualiza resultados y accede a recomendaciones personalizadas.
+                    </p>
+                                                <a href="/participant-access" class="btn btn-primary access-btn">
+                                <i class="fas fa-play-circle"></i>
+                                Comenzar Evaluación
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="stats-grid">
+        <div class="row text-center">
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalUsers">1,247</div>
+                    <div class="stat-label">Usuarios Activos</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number" id="completedAssessments">3,892</div>
+                    <div class="stat-label">Evaluaciones Completadas</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number" id="activeCoaches">45</div>
+                    <div class="stat-label">Coaches Certificados</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Satisfacción</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Overview -->
+    <div class="row mt-5 mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="h3 mb-4">¿Por qué elegir Assessment Platform?</h2>
+            <div class="row g-4 mt-3">
+                <div class="col-md-4">
+                    <div class="feature-highlight">
+                        <i class="fas fa-brain text-gradient fs-2 mb-3"></i>
+                        <h4 class="h6">Evaluación Científica</h4>
+                        <p class="small text-muted">Basado en metodologías validadas de evaluación de asertividad</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-highlight">
+                        <i class="fas fa-chart-bar text-gradient fs-2 mb-3"></i>
+                        <h4 class="h6">Resultados Visuales</h4>
+                        <p class="small text-muted">Gráficos interactivos que facilitan la comprensión del progreso</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-highlight">
+                        <i class="fas fa-hands-helping text-gradient fs-2 mb-3"></i>
+                        <h4 class="h6">Acompañamiento Personal</h4>
+                        <p class="small text-muted">Coaches especializados para guiar tu desarrollo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación de números incrementales
+    function animateNumber(element, target, duration = 2000) {
+        const start = 0;
+        const increment = target / (duration / 16);
+        let current = start;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = target.toLocaleString();
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current).toLocaleString();
+            }
+        }, 16);
+    }
+
+    // Observador para animar números cuando entren en vista
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const element = entry.target;
+                const target = parseInt(element.textContent.replace(/,/g, ''));
+                animateNumber(element, target);
+                observer.unobserve(element);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    // Observar elementos numéricos
+    document.querySelectorAll('.stat-number').forEach(el => {
+        if (el.id) observer.observe(el);
+    });
+
+    // Efecto hover mejorado para cards
+    document.querySelectorAll('.dashboard-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Preload de páginas al hacer hover en botones
+    document.querySelectorAll('.access-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            const href = this.getAttribute('href');
+            if (href) {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = href;
+                document.head.appendChild(link);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+                height: 4px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .particle {
+                width: 6px;
+                height: 6px;
+            }
+        }
+
+        .particle:nth-child(2n) {
+            animation-duration: 20s;
+            width: 150%;
+            height: 150%;
+        }
+
+        .particle:nth-child(3n) {
+            animation-duration: 25s;
+            width: 200%;
+            height: 200%;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main container - Fully responsive */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .main-container {
+                padding: 2rem;
+            }
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            box-shadow: 0 1.875rem 5rem rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transform: translateY(20px);
+            animation: slideUp 0.8s ease-out forwards;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .main-card {
+                border-radius: 2rem;
+            }
+        }
+
+        @keyframes slideUp {
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        /* Logo section - Responsive */
+        .logo-icon {
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 1rem;
+            box-shadow: 0 0.625rem 1.875rem rgba(102, 126, 234, 0.3);
+        }
+
+        @media (min-width: 768px) {
+            .logo-icon {
+                width: 5rem;
+                height: 5rem;
+                border-radius: 1.25rem;
+            }
+        }
+
+        /* Typography - Responsive */
+        .main-title {
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.2;
+        }
+
+        .main-subtitle {
+            color: #666;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        /* Access buttons - Fully responsive */
+        .access-btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            text-decoration: none;
+            color: #2d3748;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            min-height: 4.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .access-btn {
+                border-radius: 1.25rem;
+                min-height: 5rem;
+            }
+        }
+
+        .access-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .access-btn:hover::before {
+            left: 100%;
+        }
+
+        .access-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1.5625rem rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+            text-decoration: none;
+            color: #2d3748;
+        }
+
+        .admin-btn:hover {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white !important;
+            border-color: #ff6b6b;
+        }
+
+        .coach-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white !important;
+            border-color: #667eea;
+        }
+
+        .coachee-btn:hover {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white !important;
+            border-color: #10b981;
+        }
+
+        /* Button icons - Responsive */
+        .btn-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.75rem;
+            color: white;
+        }
+
+        @media (min-width: 768px) {
+            .btn-icon {
+                width: 3.5rem;
+                height: 3.5rem;
+                border-radius: 1rem;
+            }
+        }
+
+        .admin-btn .btn-icon {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .coach-btn .btn-icon {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .coachee-btn .btn-icon {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .btn-arrow {
+            color: #cbd5e0;
+            transition: transform 0.3s ease;
+        }
+
+        .access-btn:hover .btn-arrow {
+            transform: translateX(4px);
+            color: white;
+        }
+
+        /* Loading state */
+        .access-btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .access-btn.loading .btn-arrow {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Touch feedback for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .access-btn:active {
+                transform: scale(0.98);
+                transition: transform 0.1s ease;
+            }
+        }
+
+        /* Reduced particles on mobile for performance */
+        @media (max-width: 767px) {
+            .particle:nth-child(n+26) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles"></div>
+
+    <!-- Main Container -->
+    <div class="main-container d-flex align-items-center justify-content-center">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-6 col-xxl-5">
+                    
+                    <div class="main-card">
+                        <!-- Header Section -->
+                        <div class="text-center p-4 p-md-5 pb-3 pb-md-4">
+                            <div class="logo-icon d-flex align-items-center justify-content-center mx-auto mb-3 mb-md-4">
+                                <i class="fas fa-chart-line fs-3 fs-md-2"></i>
+                            </div>
+                            
+                            <h1 class="main-title fs-2 fs-md-1 mb-3 mb-md-4">
+                                Plataforma de Evaluación
+                            </h1>
+                            
+                            <p class="main-subtitle fs-6 fs-md-5 mb-0">
+                                Portal de acceso profesional para evaluaciones de competencias y desarrollo personal
+                            </p>
+                        </div>
+                        
+                        <!-- Access Buttons Section -->
+                        <div class="px-4 px-md-5 pb-4 pb-md-5">
+                            <div class="d-grid gap-3 gap-md-4">
+                                
+                                <!-- Coachee Access Button -->
+                                <a href="/coachee-login" 
+                                   class="access-btn coachee-btn d-flex align-items-center justify-content-between p-3 p-md-4"
+                                   onclick="handleNavigation(this, event)">
+                                    
+                                    <div class="d-flex align-items-center gap-3 gap-md-4">
+                                        <div class="btn-icon d-flex align-items-center justify-content-center flex-shrink-0">
+                                            <i class="fas fa-user-graduate fs-5 fs-md-4"></i>
+                                        </div>
+                                        <div class="text-start">
+                                            <div class="fw-semibold fs-6 fs-md-5 mb-1">
+                                                Panel de Coachee
+                                            </div>
+                                            <div class="text-muted fs-7 fs-md-6" style="font-size: 0.875rem;">
+                                                Acceso a evaluaciones y seguimiento personal
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <i class="fas fa-arrow-right btn-arrow fs-5"></i>
+                                </a>
+                                
+                                <!-- Coach Access Button -->
+                                <a href="/coach-login" 
+                                   class="access-btn coach-btn d-flex align-items-center justify-content-between p-3 p-md-4"
+                                   onclick="handleNavigation(this, event)">
+                                    
+                                    <div class="d-flex align-items-center gap-3 gap-md-4">
+                                        <div class="btn-icon d-flex align-items-center justify-content-center flex-shrink-0">
+                                            <i class="fas fa-users fs-5 fs-md-4"></i>
+                                        </div>
+                                        <div class="text-start">
+                                            <div class="fw-semibold fs-6 fs-md-5 mb-1">
+                                                Panel de Coach
+                                            </div>
+                                            <div class="text-muted fs-7 fs-md-6" style="font-size: 0.875rem;">
+                                                Acceso a evaluaciones y seguimiento de coachees
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <i class="fas fa-arrow-right btn-arrow fs-5"></i>
+                                </a>
+                                
+                                <!-- Admin Access Button -->
+                                <a href="/admin-login" 
+                                   class="access-btn admin-btn d-flex align-items-center justify-content-between p-3 p-md-4"
+                                   onclick="handleNavigation(this, event)">
+                                    
+                                    <div class="d-flex align-items-center gap-3 gap-md-4">
+                                        <div class="btn-icon d-flex align-items-center justify-content-center flex-shrink-0">
+                                            <i class="fas fa-shield-alt fs-5 fs-md-4"></i>
+                                        </div>
+                                        <div class="text-start">
+                                            <div class="fw-semibold fs-6 fs-md-5 mb-1">
+                                                Panel de Administración
+                                            </div>
+                                            <div class="text-muted fs-7 fs-md-6" style="font-size: 0.875rem;">
+                                                Acceso seguro para administradores de la plataforma
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <i class="fas fa-arrow-right btn-arrow fs-5"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        
+                        <!-- Footer Section -->
+                        <div class="border-top bg-light bg-opacity-50 text-center p-3 p-md-4">
+                            <p class="text-muted mb-0 fs-7 fs-md-6" style="font-size: 0.875rem;">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Sistema de autenticación implementado • Acceso seguro protegido
+                            </p>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Create responsive floating particles
+        function createParticles() {
+            const particlesContainer = document.querySelector('.particles');
+            // Responsive particle count
+            const isMobile = window.innerWidth < 768;
+            const particleCount = isMobile ? 25 : 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Handle navigation with loading state and better UX
+        function handleNavigation(element, event) {
+            event.preventDefault();
+            
+            // Add loading state
+            element.classList.add('loading');
+            
+            // Provide haptic feedback on mobile
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+            
+            // Navigate with appropriate delay
+            setTimeout(() => {
+                window.location.href = element.href;
+            }, 300);
+        }
+
+        // Enhanced initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create particles
+            createParticles();
+            
+            // Add staggered entrance animation to buttons
+            const buttons = document.querySelectorAll('.access-btn');
+            buttons.forEach((btn, index) => {
+                btn.style.opacity = '0';
+                btn.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    btn.style.transition = 'all 0.6s ease';
+                    btn.style.opacity = '1';
+                    btn.style.transform = 'translateY(0)';
+                }, 600 + (index * 200));
+            });
+            
+            // Add keyboard navigation support
+            buttons.forEach(btn => {
+                btn.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+        });
+
+        // Enhanced hover effects with better performance
+        document.querySelectorAll('.access-btn').forEach(btn => {
+            let hoverTimeout;
+            
+            btn.addEventListener('mouseenter', function() {
+                clearTimeout(hoverTimeout);
+                if (!this.classList.contains('loading')) {
+                    this.style.transform = 'translateY(-2px) scale(1.02)';
+                }
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                clearTimeout(hoverTimeout);
+                hoverTimeout = setTimeout(() => {
+                    if (!this.classList.contains('loading')) {
+                        this.style.transform = 'translateY(0) scale(1)';
+                    }
+                }, 50);
+            });
+            
+            // Touch feedback for mobile devices
+            btn.addEventListener('touchstart', function() {
+                if (!this.classList.contains('loading')) {
+                    this.style.transform = 'scale(0.98)';
+                }
+            });
+            
+            btn.addEventListener('touchend', function() {
+                setTimeout(() => {
+                    if (!this.classList.contains('loading')) {
+                        this.style.transform = 'translateY(0) scale(1)';
+                    }
+                }, 100);
+            });
+        });
+
+        // Handle window resize for particle optimization
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Recreate particles with new count if screen size changed significantly
+                const currentParticleCount = document.querySelectorAll('.particle').length;
+                const expectedCount = window.innerWidth < 768 ? 25 : 50;
+                
+                if (Math.abs(currentParticleCount - expectedCount) > 10) {
+                    document.querySelector('.particles').innerHTML = '';
+                    createParticles();
+                }
+            }, 500);
+        });
+
+        // Add focus management for accessibility
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                // Ensure proper focus outline visibility
+                document.body.classList.add('keyboard-navigation');
+            }
+        });
+
+        document.addEventListener('mousedown', function() {
+            document.body.classList.remove('keyboard-navigation');
+        });
+
+        // Performance optimization: Pause animations when page is not visible
+        document.addEventListener('visibilitychange', function() {
+            const particles = document.querySelectorAll('.particle');
+            if (document.hidden) {
+                particles.forEach(p => p.style.animationPlayState = 'paused');
+            } else {
+                particles.forEach(p => p.style.animationPlayState = 'running');
+            }
+        });
+    </script>
+    
+    <!-- Accessibility and focus styles -->
+    <style>
+        /* Focus styles for keyboard navigation */
+        .keyboard-navigation .access-btn:focus {
+            outline: 3px solid #667eea;
+            outline-offset: 3px;
+        }
+        
+        /* Reduced motion for users who prefer it */
+        @media (prefers-reduced-motion: reduce) {
+            .particle {
+                animation: none;
+            }
+            
+            .main-card {
+                animation: none;
+                transform: translateY(0);
+            }
+            
+            .access-btn {
+                transition: none;
+            }
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .main-card {
+                background: white;
+                border: 2px solid black;
+            }
+            
+            .access-btn {
+                border: 2px solid black;
+            }
+        }
+    </style>
+</body>
+</html>
