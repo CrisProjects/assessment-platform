@@ -1,53 +1,352 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma de Evaluación - Portal de Acceso</title>
-    
-    <!-- Bootstrap 5 and Fonts -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        /* Custom styles with full responsive design and Calm.com colors */
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #5A67D8 0%, #4C51BF 100%); /* Calm.com blue gradient */
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
+{% extends "base.html" %}
 
-        /* Animated background particles - Responsive */
-        .particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 1;
-            pointer-events: none;
-        }
+{% block title %}Selección de Dashboard - Assessment Platform{% endblock %}
 
-        .particle {
-            position: absolute;
-            background: rgba(90, 103, 216, 0.1); /* Updated with Calm's signature blue */
-            border-radius: 50%;
-            animation: float 15s infinite linear;
-        }
+{% block extra_css %}
+<style>
+    /* Estilos específicos para dashboard selection con diseño Calm */
+    .hero-section {
+        background: linear-gradient(135deg, rgba(167, 215, 197, 0.1), rgba(92, 219, 149, 0.05));
+        padding: 4rem 0;
+        margin-bottom: 3rem;
+    }
 
-        /* Responsive particle sizes */
-        .particle {
-            width: 3px;
-            height: 3px;
-        }
+    .dashboard-card {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+        background: var(--pure-white);
+        height: 100%;
+    }
 
-        @media (min-width: 768px) {
-            .particle {
-                width: 4px;
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(135deg, var(--primary-sky), var(--primary-mint));
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+
+    .dashboard-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--primary-mint);
+        box-shadow: 0 20px 60px rgba(92, 219, 149, 0.15);
+    }
+
+    .dashboard-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, var(--primary-sky), var(--primary-mint));
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover .dashboard-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .dashboard-icon i {
+        font-size: 2.5rem;
+        color: var(--dark-gray);
+    }
+
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-bottom: 1rem;
+    }
+
+    .dashboard-description {
+        color: var(--medium-gray);
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .access-btn {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .access-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.6s;
+    }
+
+    .access-btn:hover::before {
+        left: 100%;
+    }
+
+    .stats-grid {
+        margin-top: 4rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary-mint), var(--primary-sky));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .stat-label {
+        color: var(--medium-gray);
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 2rem 0;
+        }
+        
+        .dashboard-icon {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .dashboard-icon i {
+            font-size: 2rem;
+        }
+        
+        .dashboard-title {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-light mb-4">
+                    Bienvenido a <span class="text-gradient">Assessment Platform</span>
+                </h1>
+                <p class="lead text-muted">
+                    Selecciona tu tipo de acceso para comenzar tu journey de desarrollo personal y profesional
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row g-4 justify-content-center">
+        <!-- Admin Access -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="dashboard-title">Administrador</h3>
+                    <p class="dashboard-description">
+                        Acceso completo a la plataforma. Gestiona coaches, supervisa métricas globales y administra el sistema.
+                    </p>
+                    <a href="/admin-login" class="btn btn-primary access-btn">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Acceso Administrativo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coach Access -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="dashboard-title">Coach</h3>
+                    <p class="dashboard-description">
+                        Guía y acompaña a tus coachees. Crea invitaciones, revisa evaluaciones y monitorea el progreso.
+                    </p>
+                    <a href="/coach-login" class="btn btn-primary access-btn">
+                        <i class="fas fa-user-tie me-2"></i>
+                        Portal de Coach
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coachee Access -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3 class="dashboard-title">Participante</h3>
+                    <p class="dashboard-description">
+                        Realiza tu evaluación de asertividad, visualiza resultados y accede a recomendaciones personalizadas.
+                    </p>
+                                                <a href="/participant-access" class="btn btn-primary access-btn">
+                                <i class="fas fa-play-circle"></i>
+                                Comenzar Evaluación
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="stats-grid">
+        <div class="row text-center">
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalUsers">1,247</div>
+                    <div class="stat-label">Usuarios Activos</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number" id="completedAssessments">3,892</div>
+                    <div class="stat-label">Evaluaciones Completadas</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number" id="activeCoaches">45</div>
+                    <div class="stat-label">Coaches Certificados</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Satisfacción</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Overview -->
+    <div class="row mt-5 mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="h3 mb-4">¿Por qué elegir Assessment Platform?</h2>
+            <div class="row g-4 mt-3">
+                <div class="col-md-4">
+                    <div class="feature-highlight">
+                        <i class="fas fa-brain text-gradient fs-2 mb-3"></i>
+                        <h4 class="h6">Evaluación Científica</h4>
+                        <p class="small text-muted">Basado en metodologías validadas de evaluación de asertividad</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-highlight">
+                        <i class="fas fa-chart-bar text-gradient fs-2 mb-3"></i>
+                        <h4 class="h6">Resultados Visuales</h4>
+                        <p class="small text-muted">Gráficos interactivos que facilitan la comprensión del progreso</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-highlight">
+                        <i class="fas fa-hands-helping text-gradient fs-2 mb-3"></i>
+                        <h4 class="h6">Acompañamiento Personal</h4>
+                        <p class="small text-muted">Coaches especializados para guiar tu desarrollo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación de números incrementales
+    function animateNumber(element, target, duration = 2000) {
+        const start = 0;
+        const increment = target / (duration / 16);
+        let current = start;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = target.toLocaleString();
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current).toLocaleString();
+            }
+        }, 16);
+    }
+
+    // Observador para animar números cuando entren en vista
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const element = entry.target;
+                const target = parseInt(element.textContent.replace(/,/g, ''));
+                animateNumber(element, target);
+                observer.unobserve(element);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    // Observar elementos numéricos
+    document.querySelectorAll('.stat-number').forEach(el => {
+        if (el.id) observer.observe(el);
+    });
+
+    // Efecto hover mejorado para cards
+    document.querySelectorAll('.dashboard-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Preload de páginas al hacer hover en botones
+    document.querySelectorAll('.access-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            const href = this.getAttribute('href');
+            if (href) {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = href;
+                document.head.appendChild(link);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
                 height: 4px;
             }
         }

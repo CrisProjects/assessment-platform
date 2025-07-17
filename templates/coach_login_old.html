@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach Login - Assessment Platform</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            /* Calm.com colors for coach login */
+            --primary-gradient: linear-gradient(135deg, #5A67D8 0%, #4C51BF 100%);
+            --success-gradient: linear-gradient(135deg, #68D391 0%, #48BB78 100%);
+            --warning-gradient: linear-gradient(135deg, #ED8936 0%, #DD6B20 100%);
+            --danger-gradient: linear-gradient(135deg, #F56565 0%, #E53E3E 100%);
+            
+            /* Calm surfaces and text */
+            --surface: #FFFFFF;
+            --surface-elevated: #F7FAFC;
+            --text-primary: #2D3748;
+            --text-secondary: #4A5568;
+            --border-color: #E2E8F0;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        .particle:nth-child(2n) { animation-duration: 25s; }
+        .particle:nth-child(3n) { animation-duration: 30s; }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main container */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .login-card {
+            background: var(--surface);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 450px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: drift 30s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes drift {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-subtitle {
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .login-body {
+            padding: 2.5rem;
+        }
+
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-floating input {
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1rem 1rem 1rem;
+            font-size: 1rem;
+            background: var(--surface-elevated);
+            transition: all 0.3s ease;
+        }
+
+        .form-floating input:focus {
+            border-color: #667eea;
+            background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-floating label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .btn-login {
+            width: 100%;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .change-password-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            color: #667eea;
+            font-weight: 500;
+            padding: 0;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .btn-toggle:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
+        .collapse-content {
+            margin-top: 1rem;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-link a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-link a:hover {
+            color: #667eea;
+            transform: translateX(-2px);
+        }
+
+        /* Toast notifications */
+        .toast {
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        .toast-success {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        .toast-error {
+            background: var(--danger-gradient);
+            color: white;
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem 0.5rem;
+            }
+            
+            .login-card {
+                margin: 0.5rem;
+                border-radius: 16px;
+            }
+            
+            .login-header {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-body {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-icon {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 1rem;
+            }
+            
+            .login-title {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .login-header {
+                padding: 1.5rem 1rem;
+            }
+            
+            .login-body {
+                padding: 1.5rem 1rem;
+            }
+            
+            .login-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles">
+        <!-- Particles will be generated by JavaScript -->
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+        <div id="toastNotification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                <strong class="me-auto">Notificación</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <!-- Toast message will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="login-card">
+            <!-- Header -->
+            <div class="login-header">
+                <div class="login-icon">
+                    <i class="fas fa-users fa-2x text-white"></i>
+                </div>
+                <h1 class="login-title">Coach</h1>
+                <p class="login-subtitle">Assessment Platform</p>
+            </div>
+
+            <!-- Body -->
+            <div class="login-body">
+                <!-- Login Form -->
+                <form id="loginForm">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Usuario o Email" required>
+                        <label for="username">
+                            <i class="fas fa-user me-2"></i>
+                            Usuario o Email
+                        </label>
+                    </div>
+
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
+                        <label for="password">
+                            <i class="fas fa-lock me-2"></i>
+                            Contraseña
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-login">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="loginSpinner" role="status" aria-hidden="true"></span>
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Ingresar
+                    </button>
+                </form>
+
+                <!-- Change Password Section -->
+                <div class="change-password-section">
+                    <button type="button" class="btn-toggle" data-bs-toggle="collapse" data-bs-target="#changePasswordCollapse" aria-expanded="false">
+                        <i class="fas fa-key me-2"></i>
+                        Cambiar mi contraseña
+                    </button>
+
+                    <div class="collapse" id="changePasswordCollapse">
+                        <div class="collapse-content">
+                            <form id="passwordChangeForm">
+                                <div class="form-floating mb-3">
+                                    <input type="password" class="form-control" id="currentPassword" name="currentPassword" placeholder="Contraseña actual" required>
+                                    <label for="currentPassword">
+                                        <i class="fas fa-lock me-2"></i>
+                                        Contraseña actual
+                                    </label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="password" class="form-control" id="newPassword" name="newPassword" placeholder="Nueva contraseña" required minlength="6">
+                                    <label for="newPassword">
+                                        <i class="fas fa-key me-2"></i>
+                                        Nueva contraseña
+                                    </label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirmar nueva contraseña" required minlength="6">
+                                    <label for="confirmPassword">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        Confirmar nueva contraseña
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-login">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="passwordSpinner" role="status" aria-hidden="true"></span>
+                                    <i class="fas fa-save me-2"></i>
+                                    Actualizar contraseña
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Back Link -->
+                <div class="back-link">
+                    <a href="/">
+                        <i class="fas fa-arrow-left"></i>
+                        Volver al inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize particles animation
+        function createParticles() {
+            const particlesContainer = document.querySelector('.particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.width = particle.style.height = (Math.random() * 4 + 2) + 'px';
+                particle.style.animationDuration = (Math.random() * 10 + 20) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastElement = document.getElementById('toastNotification');
+            const toastBody = toastElement.querySelector('.toast-body');
+            const toastHeader = toastElement.querySelector('.toast-header');
+            
+            // Update toast styling based on type
+            toastElement.className = `toast toast-${type}`;
+            
+            // Update icon
+            const icon = toastHeader.querySelector('i');
+            switch (type) {
+                case 'success':
+                    icon.className = 'fas fa-check-circle text-success me-2';
+                    break;
+                case 'error':
+                    icon.className = 'fas fa-exclamation-circle text-danger me-2';
+                    break;
+                case 'warning':
+                    icon.className = 'fas fa-exclamation-triangle text-warning me-2';
+                    break;
+                default:
+                    icon.className = 'fas fa-info-circle text-primary me-2';
+            }
+            
+            toastBody.textContent = message;
+            
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+        }
+
+        // Legacy function for backwards compatibility
+        function showAlert(message, type) {
+            showToast(message, type);
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('.btn-login');
+            const spinner = document.getElementById('loginSpinner');
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // Validation
+            if (!username || !password) {
+                showToast('Por favor completa todos los campos', 'warning');
+                return;
+            }
+            
+            // Show loading state
+            spinner.classList.remove('d-none');
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/coach/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showToast('¡Login exitoso! Redirigiendo...', 'success');
+                    
+                    // Smooth redirect with delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/coach-dashboard';
+                    }, 1500);
+                } else {
+                    showToast(data.error || 'Credenciales incorrectas', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Error de conexión. Inténtalo de nuevo.', 'error');
+            } finally {
+                spinner.classList.add('d-none');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Handle password change form submission
+        document.getElementById('passwordChangeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Client-side validation
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showToast('Por favor completa todos los campos', 'warning');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showToast('Las contraseñas no coinciden', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showToast('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            if (newPassword === currentPassword) {
+                showToast('La nueva contraseña debe ser diferente a la actual', 'warning');
+                return;
+            }
+            
+            const submitBtn = this.querySelector('.btn-login');
+            const spinner = document.getElementById('passwordSpinner');
+            
+            // Show loading state
+            spinner.classList.remove('d-none');
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/coach/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showToast('Contraseña actualizada exitosamente', 'success');
+                    
+                    // Reset form and close collapse
+                    this.reset();
+                    setTimeout(() => {
+                        const collapseElement = document.getElementById('changePasswordCollapse');
+                        const collapse = bootstrap.Collapse.getInstance(collapseElement);
+                        if (collapse) {
+                            collapse.hide();
+                        }
+                    }, 2000);
+                } else {
+                    showToast(data.error || 'Error al cambiar la contraseña', 'error');
+                }
+            } catch (error) {
+                console.error('Password change error:', error);
+                showToast('Error de conexión. Inténtalo de nuevo.', 'error');
+            } finally {
+                spinner.classList.add('d-none');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Enhanced form validation
+        function setupFormValidation() {
+            const forms = document.querySelectorAll('form');
+            
+            forms.forEach(form => {
+                const inputs = form.querySelectorAll('input');
+                
+                inputs.forEach(input => {
+                    // Real-time validation feedback
+                    input.addEventListener('blur', function() {
+                        validateInput(this);
+                    });
+                    
+                    input.addEventListener('input', function() {
+                        // Clear validation state on input
+                        this.classList.remove('is-valid', 'is-invalid');
+                    });
+                });
+            });
+        }
+
+        function validateInput(input) {
+            const isValid = input.checkValidity();
+            input.classList.toggle('is-valid', isValid);
+            input.classList.toggle('is-invalid', !isValid);
+            return isValid;
+        }
+
+        // Password strength indicator
+        function setupPasswordStrength() {
+            const newPasswordInput = document.getElementById('newPassword');
+            if (!newPasswordInput) return;
+            
+            newPasswordInput.addEventListener('input', function() {
+                const password = this.value;
+                const strength = calculatePasswordStrength(password);
+                updatePasswordStrengthIndicator(strength);
+            });
+        }
+
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            
+            if (password.length >= 8) score += 25;
+            if (/[a-z]/.test(password)) score += 25;
+            if (/[A-Z]/.test(password)) score += 25;
+            if (/[0-9]/.test(password)) score += 25;
+            if (/[^A-Za-z0-9]/.test(password)) score += 25;
+            
+            return Math.min(score, 100);
+        }
+
+        function updatePasswordStrengthIndicator(strength) {
+            // This could be enhanced with a visual indicator
+            console.log('Password strength:', strength);
+        }
+
+        // Initialize application
+        function initializeApp() {
+            console.log('Initializing coach login...');
+            
+            // Create animated particles
+            createParticles();
+            
+            // Setup form validation
+            setupFormValidation();
+            
+            // Setup password strength indicator
+            setupPasswordStrength();
+            
+            // Focus on username field
+            document.getElementById('username').focus();
+            
+            console.log('Coach login initialized successfully');
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+</body>
+</html>

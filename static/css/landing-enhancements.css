@@ -1,0 +1,114 @@
+/* CSS adicional para mejorar la experiencia visual de la landing page */
+
+/* Animaciones fluidas inspiradas en Calm.com */
+@keyframes breathe {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.05) rotate(2deg); opacity: 0.8; }
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(100px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}
+
+/* Efectos adicionales para botones */
+.cta-button {
+    background: linear-gradient(
+        135deg, 
+        var(--primary-mint), 
+        var(--primary-sky),
+        var(--primary-mint)
+    );
+    background-size: 200% 200%;
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+.cta-button:hover {
+    animation-play-state: paused;
+}
+
+/* Partículas flotantes de fondo */
+.hero::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 200px 200px, 150px 150px, 100px 100px;
+    animation: gentleFloat 20s linear infinite;
+    pointer-events: none;
+}
+
+/* Mejoras para accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    .hero::before,
+    .hero::after,
+    .cta-button,
+    .feature-icon {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .feature-card:hover {
+        transform: none !important;
+    }
+}
+
+/* Tema oscuro (respeta preferencias del sistema) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --dark-gray: #f0f0f0;
+        --pure-white: #1a1a1a;
+        --light-gray: #2a2a2a;
+    }
+    
+    .features {
+        background: var(--pure-white);
+    }
+    
+    .feature-card {
+        background: #252525;
+        color: #f0f0f0;
+    }
+    
+    .feature-card p {
+        color: #cccccc;
+    }
+}
+
+/* Estilos para pantallas de alta densidad */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .hero {
+        background-size: cover;
+    }
+}
+
+/* Optimizaciones para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .feature-card:hover {
+        transform: none;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+    }
+    
+    .cta-button:hover {
+        transform: none;
+    }
+    
+    .feature-card:active {
+        transform: scale(0.98);
+    }
+    
+    .cta-button:active {
+        transform: scale(0.95);
+    }
+}

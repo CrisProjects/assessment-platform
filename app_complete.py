@@ -14,14 +14,61 @@ import json
 import secrets
 import re
 import sqlite3
+import logging
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func
 
+# Configurar logging
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Configuración de logging basada en entorno
+IS_PRODUCTION = os.environ.get('FLASK_ENV') == 'production'
+LOG_LEVEL = getattr(logging, os.environ.get('LOG_LEVEL', 'INFO').upper())
+
+# Configurar logging básico
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+
+# Configurar archivo de log si se especifica
+log_file = os.environ.get('LOG_FILE')
+if log_file and not IS_PRODUCTION:  # En desarrollo, usar archivo si se especifica
+    file_handler = RotatingFileHandler(
+        log_file, 
+        maxBytes=10485760,  # 10MB
+        backupCount=3
+    )
+    file_handler.setLevel(LOG_LEVEL)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    ))
+    logger.addHandler(file_handler)
+    logger.info(f"Logging configurado con archivo: {log_file}")
+
+logger.info(f"Logging iniciado - Nivel: {logging.getLevelName(LOG_LEVEL)}, Producción: {IS_PRODUCTION}")
+
 # Configuración de Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-fixed-2024')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assessments.db'
+
+# Configuración de SECRET_KEY más segura
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    # En desarrollo, generar una clave aleatoria
+    if os.environ.get('FLASK_ENV') == 'development':
+        import secrets
+        SECRET_KEY = secrets.token_hex(32)
+        logger.warning("⚠️ DEVELOPMENT: Usando SECRET_KEY generada aleatoriamente")
+    else:
+        # En producción, requerir SECRET_KEY
+        raise ValueError("SECRET_KEY environment variable is required in production")
+
+app.config['SECRET_KEY'] = SECRET_KEY
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///assessments.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Constantes de la aplicación
@@ -34,29 +81,46 @@ from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # 30 días de duración
 app.config['SESSION_PERMANENT'] = True
 
-# Configuraciones mejoradas de cookies para múltiples sesiones
-app.config['SESSION_COOKIE_SECURE'] = False  # True en producción HTTPS
+# Configuraciones mejoradas de cookies con seguridad condicional
+IS_PRODUCTION = os.environ.get('FLASK_ENV') == 'production'
+
+app.config['SESSION_COOKIE_SECURE'] = IS_PRODUCTION  # True en producción HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Mayor seguridad
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Permite múltiples pestañas
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
-app.config['REMEMBER_COOKIE_SECURE'] = False  # True en producción HTTPS
+app.config['REMEMBER_COOKIE_SECURE'] = IS_PRODUCTION  # True en producción HTTPS
 app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 
-# Configurar CORS - Incluir Vercel y Render
+# Configurar CORS con orígenes desde variables de entorno o lista predeterminada
+allowed_origins = []
+
+# Agregar orígenes desde variable de entorno si existe
+env_origins = os.environ.get('ALLOWED_ORIGINS', '')
+if env_origins:
+    allowed_origins.extend([origin.strip() for origin in env_origins.split(',')])
+
+# Agregar orígenes predeterminados para desarrollo y producción
+default_origins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://assessment-platform-1nuo.onrender.com',  # Render backend
+    'https://assessment-platform-final.vercel.app',   # Vercel principal
+    'https://assessment-platform-deploy.vercel.app'   # Vercel deploy
+]
+
+# En desarrollo, agregar localhost
+if not IS_PRODUCTION:
+    default_origins.extend([
+        'http://localhost:5002',
+        'http://127.0.0.1:5002'
+    ])
+
+# Combinar y eliminar duplicados
+allowed_origins.extend(default_origins)
+allowed_origins = list(set(allowed_origins))
+
 CORS(app, 
-     origins=[
-         'http://localhost:3000',
-         'https://assessment-platform-1nuo.onrender.com',  # Render backend (para auto-requests)
-         'https://assessment-platform-final.vercel.app',  # URL PRINCIPAL de Vercel ✅
-         'https://assessment-platform-deploy.vercel.app',  # NUEVA URL DE DEPLOY ✅
-         'https://assessment-platform-final-o6uoi0a9a-cris-projects-92f3df55.vercel.app',  # URLs de preview
-         'https://assessment-platform-final-nkfv3eieh-cris-projects-92f3df55.vercel.app',
-         'https://assessment-platform-final-e7ygyztfi-cris-projects-92f3df55.vercel.app',
-         'https://assessment-platform-4h58ggw5n-cris-projects-92f3df55.vercel.app',  # URLs anteriores
-         'https://assessment-platform-g18jyp9wv-cris-projects-92f3df55.vercel.app',
-         'https://assessment-platform-lg8l1boz6-cris-projects-92f3df55.vercel.app',
-         'https://assessment-platform-7p39xmngl-cris-projects-92f3df55.vercel.app'
-     ], 
+     origins=allowed_origins, 
      supports_credentials=True,
      allow_headers=['Content-Type', 'Authorization', 'Origin', 'Accept'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
@@ -89,22 +153,24 @@ def unauthorized():
 
 # Modelos de base de datos
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
+    
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(120), nullable=False)
     full_name = db.Column(db.String(200), nullable=False)
     
     # Sistema de roles de 3 niveles
-    role = db.Column(db.String(20), default='coachee')  # 'platform_admin', 'coach', 'coachee'
-    is_active = db.Column(db.Boolean, default=True)
+    role = db.Column(db.String(20), default='coachee', index=True)  # 'platform_admin', 'coach', 'coachee'
+    is_active = db.Column(db.Boolean, default=True, index=True)
     
     # Relación coach-coachee
-    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    last_login = db.Column(db.DateTime, index=True)
     
     # Relaciones
     coach = db.relationship('User', remote_side=[id], backref='coachees')
@@ -129,57 +195,88 @@ class User(UserMixin, db.Model):
         return self.role == 'coachee'
 
 class Assessment(db.Model):
+    __tablename__ = 'assessment'
+    
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
+    title = db.Column(db.String(200), nullable=False, index=True)
     description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relaciones
+    questions = db.relationship('Question', backref='assessment', lazy=True, cascade='all, delete-orphan')
+    results = db.relationship('AssessmentResult', backref='assessment_ref', lazy=True)
 
 class Question(db.Model):
+    __tablename__ = 'question'
+    
     id = db.Column(db.Integer, primary_key=True)
-    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=False)
-    text = db.Column(db.Text, nullable=False)  # Cambiado de 'content' a 'text'
-    question_type = db.Column(db.String(50), default='likert')  # Cambiado default
-    order = db.Column(db.Integer)  # Agregado campo order
+    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=False, index=True)
+    text = db.Column(db.Text, nullable=False)
+    question_type = db.Column(db.String(50), default='likert')
+    order = db.Column(db.Integer, index=True)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relaciones
+    responses = db.relationship('Response', backref='question', lazy=True)
 
 class AssessmentResult(db.Model):
+    __tablename__ = 'assessment_result'
+    
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=False, index=True)
     score = db.Column(db.Float)
     total_questions = db.Column(db.Integer)
-    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     result_text = db.Column(db.Text)
     
     # Campos adicionales para tracking del coach
-    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Coach que supervisó
-    invitation_id = db.Column(db.Integer, db.ForeignKey('invitation.id'), nullable=True)  # Invitación origen
-    participant_name = db.Column(db.String(200), nullable=True)  # Nombre del participante
-    participant_email = db.Column(db.String(120), nullable=True)  # Email del participante
-    dimensional_scores = db.Column(db.JSON, nullable=True)  # Puntuaciones por dimensión
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    invitation_id = db.Column(db.Integer, db.ForeignKey('invitation.id'), nullable=True, index=True)
+    participant_name = db.Column(db.String(200), nullable=True)
+    participant_email = db.Column(db.String(120), nullable=True)
+    dimensional_scores = db.Column(db.JSON, nullable=True)
     
     # Relaciones
     coach = db.relationship('User', foreign_keys=[coach_id], backref='supervised_assessments')
     invitation = db.relationship('Invitation', backref='assessment_results')
+    
+    # Índice compuesto para consultas frecuentes
+    __table_args__ = (
+        db.Index('idx_user_assessment', 'user_id', 'assessment_id'),
+        db.Index('idx_coach_completed', 'coach_id', 'completed_at'),
+    )
 
 class Response(db.Model):
+    __tablename__ = 'response'
+    
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False, index=True)
     selected_option = db.Column(db.Integer)
-    assessment_result_id = db.Column(db.Integer, db.ForeignKey('assessment_result.id'), nullable=True)
+    assessment_result_id = db.Column(db.Integer, db.ForeignKey('assessment_result.id'), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Índice compuesto para evitar respuestas duplicadas
+    __table_args__ = (
+        db.Index('idx_user_question', 'user_id', 'question_id'),
+    )
 
 class Invitation(db.Model):
+    __tablename__ = 'invitation'
+    
     id = db.Column(db.Integer, primary_key=True)
-    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Usuario coachee creado
-    email = db.Column(db.String(120), nullable=False)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    email = db.Column(db.String(120), nullable=False, index=True)
     full_name = db.Column(db.String(200), nullable=False)
-    token = db.Column(db.String(128), unique=True, nullable=False)
-    message = db.Column(db.Text, nullable=True)  # Mensaje personalizado del coach
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    expires_at = db.Column(db.DateTime, nullable=False)
+    token = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
     used_at = db.Column(db.DateTime, nullable=True)
-    is_used = db.Column(db.Boolean, default=False)
+    is_used = db.Column(db.Boolean, default=False, index=True)
     
     # Relaciones
     coach = db.relationship('User', foreign_keys=[coach_id], backref='sent_invitations')
@@ -234,18 +331,18 @@ def get_current_coachee():
     """Obtiene el usuario coachee actual, ya sea por login regular o sesión temporal"""
     # Primero verificar si hay un usuario logueado regular
     if current_user.is_authenticated and current_user.role == 'coachee':
-        print(f"DEBUG: Usuario coachee regular encontrado: {current_user.id}")
+        logger.debug(f"Usuario coachee regular encontrado: {current_user.id}")
         return current_user
     
     # Si no, verificar si hay una sesión temporal de coachee
     temp_coachee_id = session.get('temp_coachee_id')
-    print(f"DEBUG: temp_coachee_id en sesión: {temp_coachee_id}")
+    logger.debug(f"temp_coachee_id en sesión: {temp_coachee_id}")
     if temp_coachee_id:
         user = db.session.get(User, temp_coachee_id)
-        print(f"DEBUG: Usuario temporal encontrado: {user.id if user else 'None'}")
+        logger.debug(f"Usuario temporal encontrado: {user.id if user else 'None'}")
         return user
     
-    print("DEBUG: No se encontró usuario coachee")
+    logger.debug("No se encontró usuario coachee")
     return None
 
 # Decorador personalizado para rutas de coachee que permite sesiones temporales
@@ -292,17 +389,35 @@ def coach_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Decorador para logging de funciones críticas
+def log_function_call(func_name=None):
+    """Decorador para loggear llamadas a funciones críticas"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            name = func_name or f.__name__
+            try:
+                logger.debug(f"Calling {name}")
+                result = f(*args, **kwargs)
+                logger.debug(f"Completed {name} successfully")
+                return result
+            except Exception as e:
+                logger.error(f"Error in {name}: {str(e)}")
+                raise
+        return decorated_function
+    return decorator
+
 # ====================================================
 # INICIALIZACIÓN AUTOMÁTICA DE BASE DE DATOS EN PRODUCCIÓN
 # ====================================================
 def auto_initialize_database():
     """Inicialización automática completa para producción (Render, etc.)"""
     try:
-        print("🚀 AUTO-INICIALIZACIÓN: Verificando base de datos...")
+        logger.info("🚀 AUTO-INICIALIZACIÓN: Verificando base de datos...")
         
         # Crear todas las tablas
         db.create_all()
-        print("✅ AUTO-INIT: db.create_all() ejecutado")
+        logger.info("✅ AUTO-INIT: db.create_all() ejecutado")
         
         # Verificar tabla crítica 'user'
         from sqlalchemy import inspect
@@ -310,7 +425,7 @@ def auto_initialize_database():
         tables = inspector.get_table_names()
         
         if 'user' not in tables:
-            print("🔧 AUTO-INIT: Tabla 'user' no existe, creando...")
+            logger.warning("🔧 AUTO-INIT: Tabla 'user' no existe, creando...")
             User.__table__.create(db.engine, checkfirst=True)
             
             # Re-verificar
@@ -318,13 +433,13 @@ def auto_initialize_database():
             tables = inspector.get_table_names()
             
         if 'user' in tables:
-            print("✅ AUTO-INIT: Tabla 'user' confirmada")
+            logger.info("✅ AUTO-INIT: Tabla 'user' confirmada")
             
             # Crear usuario admin si no existe
             try:
                 admin_user = User.query.filter_by(username='admin').first()
                 if not admin_user:
-                    print("👤 AUTO-INIT: Creando usuario admin...")
+                    logger.info("👤 AUTO-INIT: Creando usuario admin...")
                     admin_user = User(
                         username='admin',
                         email='admin@assessment.com',
@@ -334,13 +449,13 @@ def auto_initialize_database():
                     admin_user.set_password('admin123')
                     db.session.add(admin_user)
                     db.session.commit()
-                    print("✅ AUTO-INIT: Usuario admin creado")
+                    logger.info("✅ AUTO-INIT: Usuario admin creado")
                 else:
-                    print("ℹ️ AUTO-INIT: Usuario admin ya existe")
+                    logger.info("ℹ️ AUTO-INIT: Usuario admin ya existe")
             except Exception as user_err:
-                print(f"⚠️ AUTO-INIT: Error creando usuario admin: {user_err}")
+                logger.error(f"⚠️ AUTO-INIT: Error creando usuario admin: {user_err}")
         else:
-            print("❌ AUTO-INIT: Tabla 'user' NO pudo ser creada")
+            logger.error("❌ AUTO-INIT: Tabla 'user' NO pudo ser creada")
         
         # ===== INICIALIZACIÓN DEL ASSESSMENT DE ASERTIVIDAD =====
         try:
@@ -523,8 +638,8 @@ def can_access_coachee_data(target_user_id):
 # Rutas del Frontend
 @app.route('/')
 def index():
-    """Pantalla principal de selección de dashboards"""
-    return render_template('dashboard_selection.html')
+    """Landing page principal - Diseño inspirado en Calm.com"""
+    return render_template('landing.html')
 
 @app.route('/api/status')
 def api_status():
@@ -550,6 +665,11 @@ def login():
     """Servir la página de login"""
     return render_template('login.html')
 
+@app.route('/participant-access')
+def participant_access():
+    """Servir la página de acceso específica para participantes"""
+    return render_template('participant_access.html')
+
 # API Routes
 @app.route('/dashboard_selection')
 @app.route('/dashboard-selection')  # Ruta alternativa con guión
@@ -566,6 +686,7 @@ def api_login():
         password = data.get('password')
         
         if not username or not password:
+            logger.warning(f"Login attempt with missing credentials from {request.remote_addr}")
             return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
         
         # Buscar usuario por username o email
@@ -578,6 +699,8 @@ def api_login():
             session.permanent = True  # Hacer la sesión permanente
             user.last_login = datetime.utcnow()
             db.session.commit()
+            
+            logger.info(f"Successful login for user {user.username} (ID: {user.id}, Role: {user.role}) from {request.remote_addr}")
             
             return jsonify({
                 'success': True,
@@ -592,14 +715,19 @@ def api_login():
                 'redirect_url': get_dashboard_url(user.role)
             }), 200
         else:
+            logger.warning(f"Failed login attempt for username '{username}' from {request.remote_addr}")
             return jsonify({'error': 'Credenciales inválidas o cuenta desactivada'}), 401
             
     except Exception as e:
+        logger.error(f"Error in api_login: {str(e)}")
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
 
 @app.route('/logout')
 def logout_page():
     """Logout y redirección a la página principal"""
+    user_info = f"user {current_user.username} (ID: {current_user.id})" if current_user.is_authenticated else "anonymous user"
+    logger.info(f"Logout for {user_info}")
+    
     logout_user()
     # Limpiar sesiones temporales si existen
     session.pop('temp_coachee_id', None)
@@ -611,6 +739,8 @@ def logout_page():
 @login_required
 def api_logout():
     """Logout API"""
+    logger.info(f"API logout for user {current_user.username} (ID: {current_user.id})")
+    
     logout_user()
     # Limpiar sesiones temporales si existen
     session.pop('temp_coachee_id', None)
@@ -620,19 +750,51 @@ def api_logout():
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
-    """Registro de nuevos usuarios (solo coachees por defecto)"""
+    """Registro de nuevos usuarios (solo coachees por defecto) con validación mejorada"""
     try:
         data = request.get_json()
+        
+        # Validar que se recibió JSON
+        if not data:
+            return jsonify({'error': 'Datos JSON requeridos'}), 400
         
         # Validar datos requeridos
         required_fields = ['username', 'email', 'password', 'full_name']
         for field in required_fields:
-            if not data.get(field):
+            if not data.get(field) or not str(data.get(field)).strip():
                 return jsonify({'error': f'Campo requerido: {field}'}), 400
         
+        username = str(data['username']).strip()
+        email = str(data['email']).strip().lower()
+        password = str(data['password'])
+        full_name = str(data['full_name']).strip()
+        
+        # Validaciones adicionales
+        if len(username) < 3:
+            return jsonify({'error': 'El nombre de usuario debe tener al menos 3 caracteres'}), 400
+        
+        if len(password) < 6:
+            return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+        
+        # Validar formato de email básico
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return jsonify({'error': 'Formato de email inválido'}), 400
+        
+        if len(full_name) < 2:
+            return jsonify({'error': 'El nombre completo debe tener al menos 2 caracteres'}), 400
+        
         # Verificar si el usuario ya existe
-        if User.query.filter((User.username == data['username']) | (User.email == data['email'])).first():
-            return jsonify({'error': 'Usuario o email ya registrado'}), 400
+        existing_user = User.query.filter(
+            (User.username == username) | (User.email == email)
+        ).first()
+        
+        if existing_user:
+            if existing_user.username == username:
+                return jsonify({'error': 'El nombre de usuario ya está en uso'}), 409
+            else:
+                return jsonify({'error': 'El email ya está registrado'}), 409
         
         # Crear nuevo usuario con rol especificado o coachee por defecto
         role = data.get('role', 'coachee')
@@ -642,12 +804,12 @@ def api_register():
             role = 'coachee'
             
         new_user = User(
-            username=data['username'],
-            email=data['email'],
-            full_name=data['full_name'],
+            username=username,
+            email=email,
+            full_name=full_name,
             role=role
         )
-        new_user.set_password(data['password'])
+        new_user.set_password(password)
         
         # Si se especifica un coach
         if data.get('coach_id'):
@@ -1798,1209 +1960,155 @@ def admin_dashboard():
     
     return redirect(url_for('platform_admin_dashboard'))
 
-# ========================
-# INICIALIZACIÓN DE LA APLICACIÓN
-# ========================
+# ====================================================
+# MANEJADORES DE ERRORES
+# ====================================================
 
-@app.route('/register/<token>')
-def register_with_invitation(token):
-    """Página de registro usando token de invitación"""
-    try:
-        # Buscar invitación válida
-        invitation = Invitation.query.filter_by(token=token).first()
-        
-        if not invitation:
-            flash('Invitación no encontrada o inválida', 'error')
-            return redirect('/')
-        
-        if not invitation.is_valid():
-            flash('Esta invitación ha expirado o ya fue utilizada', 'error')
-            return redirect('/')
-        
-        # Renderizar página de registro con datos de la invitación
-        return render_template('register_invitation.html', invitation=invitation)
-        
-    except Exception as e:
-        flash(f'Error procesando invitación: {str(e)}', 'error')
-        return redirect('/')
-
-@app.route('/api/register-invitation', methods=['POST'])
-def api_register_with_invitation():
-    """Registrar usuario a través de invitación"""
-    try:
-        data = request.get_json()
-        token = data.get('token')
-        password = data.get('password')
-        
-        if not token or not password:
-            return jsonify({'error': 'Token y contraseña son requeridos'}), 400
-        
-        # Buscar invitación válida
-        invitation = Invitation.query.filter_by(token=token).first()
-        
-        if not invitation or not invitation.is_valid():
-            return jsonify({'error': 'Invitación inválida o expirada'}), 400
-        
-        # Verificar si ya existe un usuario con este email
-        existing_user = User.query.filter_by(email=invitation.email).first()
-        if existing_user:
-            return jsonify({'error': 'Ya existe un usuario con este email'}), 400
-        
-        # Crear nuevo usuario coachee
-        new_user = User(
-            username=data.get('username', invitation.email.split('@')[0]),  # Username por defecto
-            email=invitation.email,
-            full_name=invitation.full_name,
-            role='coachee',
-            coach_id=invitation.coach_id
-        )
-        new_user.set_password(password)
-        
-        # Marcar invitación como usada
-        invitation.mark_as_used()
-        
-        db.session.add(new_user)
-        db.session.commit()
-        
+@app.errorhandler(404)
+def not_found_error(error):
+    """Manejo de errores 404 - Página no encontrada"""
+    logger.warning(f"404 Error: {request.url} not found. User: {current_user.id if current_user.is_authenticated else 'Anonymous'}")
+    
+    if request.path.startswith('/api/'):
         return jsonify({
-            'success': True,
-            'message': 'Usuario registrado exitosamente',
-            'user_id': new_user.id,
-            'redirect_url': '/coachee-dashboard'
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Error en registro: {str(e)}'}), 500
+            'error': 'Endpoint no encontrado',
+            'status_code': 404,
+            'path': request.path
+        }), 404
+    
+    return render_template('error.html', 
+                         error_code=404, 
+                         error_message="Página no encontrada",
+                         error_description="La página que buscas no existe o ha sido movida."), 404
 
-@app.route('/evaluate/<token>')
-def evaluate_with_invitation(token):
-    """Página directa de evaluación usando token de invitación"""
-    try:
-        print(f"DEBUG: Accediendo con token: {token}")
-        
-        # Buscar invitación válida
-        invitation = Invitation.query.filter_by(token=token).first()
-        
-        if not invitation:
-            print(f"DEBUG: Invitación no encontrada para token: {token}")
-            flash('Invitación no encontrada o inválida', 'error')
-            return redirect('/')
-        
-        print(f"DEBUG: Invitación encontrada: {invitation.email}, used: {invitation.is_used}, valid: {invitation.is_valid()}")
-        
-        # Verificar si ya existe un usuario registrado con este email
-        existing_user = User.query.filter_by(email=invitation.email).first()
-        
-        # Si el usuario ya existe, usar sesión temporal en lugar de login_user
-        if existing_user:
-            print(f"DEBUG: Usuario existente encontrado: {existing_user.id}")
-            # Usar sesión temporal para coachees que no interfiera con sesiones de coaches
-            session['temp_coachee_id'] = existing_user.id
-            session['temp_coachee_token'] = token
-            session.permanent = True
-            flash(f'Bienvenido de nuevo, {existing_user.full_name}!', 'success')
-            return redirect('/coachee-dashboard')
-        
-        # Si no existe usuario, verificar que la invitación sea válida
-        if not invitation.is_valid():
-            print(f"DEBUG: Invitación inválida - used: {invitation.is_used}, expires_at: {invitation.expires_at}")
-            flash('Esta invitación ha expirado o ya fue utilizada', 'error')
-            return redirect('/')
-        
-        print(f"DEBUG: Creando nuevo usuario para: {invitation.email}")
-        # Resto del código para crear nuevo usuario...
-        # Si no existe el usuario, crearlo automáticamente con una contraseña temporal
-        temp_password = secrets.token_urlsafe(12)  # Contraseña temporal de 16 caracteres
-        username = invitation.email.split('@')[0]  # Username basado en el email
-        
-        # Verificar que el username sea único
-        counter = 1
-        original_username = username
-        while User.query.filter_by(username=username).first():
-            username = f"{original_username}{counter}"
-            counter += 1
-        
-        # Crear nuevo usuario coachee
-        new_user = User(
-            username=username,
-            email=invitation.email,
-            full_name=invitation.full_name,
-            role='coachee',
-            coach_id=invitation.coach_id
-        )
-        new_user.set_password(temp_password)
-        
-        # Marcar invitación como usada
-        invitation.mark_as_used()
-        
-        db.session.add(new_user)
-        db.session.commit()
-        
-        # Usar sesión temporal en lugar de login_user para no interferir con coaches
-        session['temp_coachee_id'] = new_user.id
-        session['temp_coachee_token'] = token
-        session.permanent = True
-        
-        print(f"DEBUG: Usuario creado y sesión temporal establecida: {new_user.id}")
-        
-        # Mostrar mensaje con las credenciales temporales
-        flash(f'¡Bienvenido {new_user.full_name}! Tu cuenta ha sido creada. Usuario: {username}, Contraseña temporal: {temp_password}', 'info')
-        
-        return redirect('/coachee-dashboard')
-        
-    except Exception as e:
-        print(f"DEBUG: Error en evaluate_with_invitation: {str(e)}")
-        flash(f'Error procesando invitación: {str(e)}', 'error')
-        return redirect('/')
-
-# ========================
-# CONFIGURACIÓN DE COOKIES ADAPTABLE
-# ========================
-
-@app.route('/coachee-login-direct')
-def coachee_login_direct():
-    """Login directo como coachee para pruebas en Safari"""
-    try:
-        # Buscar el usuario coachee de prueba
-        coachee_user = User.query.filter_by(username='coachee').first()
-        
-        if not coachee_user:
-            flash('Usuario coachee de prueba no encontrado', 'error')
-            return redirect(url_for('dashboard_selection'))
-        
-        # Hacer login directo del usuario
-        login_user(coachee_user, remember=True)
-        session.permanent = True
-        
-        flash(f'Login directo exitoso como {coachee_user.full_name}', 'success')
-        return redirect('/coachee-dashboard')
-        
-    except Exception as e:
-        flash(f'Error en login directo: {str(e)}', 'error')
-        return redirect(url_for('dashboard_selection'))
-
-
-
-# === API ROUTES FOR TASK MANAGEMENT ===
-
-@app.route('/api/coach/evaluation-summary/<int:coachee_id>', methods=['GET'])
-@coach_required
-def api_coach_evaluation_summary(coachee_id):
-    """API para obtener resumen de evaluaciones de un coachee específico"""
-    try:
-        # Verificar que el coachee pertenece a este coach
-        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
-        if not coachee:
-            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
-        
-        # Obtener todas las evaluaciones del coachee
-        assessments = AssessmentResult.query.filter_by(user_id=coachee_id).order_by(AssessmentResult.completed_at.desc()).all()
-        
-        if not assessments:
-            return jsonify({
-                'success': True,
-                'coachee': {
-                    'id': coachee.id,
-                    'full_name': coachee.full_name,
-                    'email': coachee.email
-                },
-                'summary': {
-                    'total_assessments': 0,
-                    'latest_assessment': None,
-                    'average_scores': {},
-                    'progress_trend': 'sin_datos',
-                    'strengths': [],
-                    'improvement_areas': [],
-                    'recommendations': []
-                }
-            }), 200
-        
-        # Calcular estadísticas
-        latest_assessment = assessments[0]
-        total_assessments = len(assessments)
-        
-        # Intentar usar dimensional_scores si está disponible, sino calcular manualmente
-        average_scores = {}
-        
-        if latest_assessment.dimensional_scores:
-            try:
-                dimensional_data = json.loads(latest_assessment.dimensional_scores) if isinstance(latest_assessment.dimensional_scores, str) else latest_assessment.dimensional_scores
-                if dimensional_data and isinstance(dimensional_data, dict):
-                    average_scores = dimensional_data
-            except:
-                pass
-        
-        # Si no hay dimensional_scores, calcular desde responses
-        if not average_scores:
-            # Obtener responses de la evaluación más reciente
-            from sqlalchemy import text
-            responses_query = text("""
-                SELECT r.question_id, r.answer_value, q.dimension 
-                FROM response r 
-                JOIN question q ON r.question_id = q.id 
-                WHERE r.assessment_result_id = :assessment_id
-            """)
-            
-            try:
-                with db.engine.connect() as conn:
-                    responses_result = conn.execute(responses_query, assessment_id=latest_assessment.id)
-                    responses = responses_result.fetchall()
-                
-                # Calcular promedios por dimensión
-                dimension_totals = {
-                    'comunicacion': 0, 'derechos': 0, 'opiniones': 0, 
-                    'conflictos': 0, 'autoconfianza': 0
-                }
-                dimension_counts = {dim: 0 for dim in dimension_totals.keys()}
-                
-                for response in responses:
-                    dimension = response[2]  # q
-                    score = response[1]      # r.answer_value
-                    if dimension in dimension_totals:
-                        dimension_totals[dimension] += score
-                        dimension_counts[dimension] += 1
-                
-                # Calcular promedios
-                for dimension in dimension_totals:
-                    if dimension_counts[dimension] > 0:
-                        average_scores[dimension] = round(dimension_totals[dimension] / dimension_counts[dimension], 2)
-                    else:
-                        average_scores[dimension] = 0
-            except Exception as e:
-                print(f"Error calculando scores: {e}")
-                # Valores por defecto
-                average_scores = {
-                    'comunicacion': 0, 'derechos': 0, 'opiniones': 0, 
-                    'conflictos': 0, 'autoconfianza': 0
-                }
-        
-        # Determinar tendencia de progreso
-        progress_trend = 'estable'
-        if len(assessments) >= 2:
-            recent_avg = sum(average_scores.values()) / len(average_scores) if average_scores else 0
-            older_score = assessments[1].score or 0
-            
-            if recent_avg > older_score + 5:
-                progress_trend = 'mejorando'
-            elif recent_avg < older_score - 5:
-                progress_trend = 'empeorando'
-        
-        # Identificar fortalezas y áreas de mejora
-        sorted_scores = sorted(average_scores.items(), key=lambda x: x[1], reverse=True)
-        strengths = [dim for dim, score in sorted_scores[:2] if score >= 70]  # Convertido a porcentaje
-        improvement_areas = [dim for dim, score in sorted_scores[-2:] if score < 60]  # Convertido a porcentaje
-        
-        # Generar recomendaciones básicas
-        recommendations = []
-        if 'comunicacion' in improvement_areas:
-            recommendations.append("Practicar técnicas de comunicación asertiva y escucha activa")
-        if 'derechos' in improvement_areas:
-            recommendations.append("Reforzar conocimiento sobre derechos personales y límites")
-        if 'opiniones' in improvement_areas:
-            recommendations.append("Ejercitar la expresión de opiniones de forma clara y respetuosa")
-        if 'conflictos' in improvement_areas:
-            recommendations.append("Desarrollar estrategias de resolución de conflictos")
-        if 'autoconfianza' in improvement_areas:
-            recommendations.append("Trabajar en el fortalecimiento de la autoestima y confianza personal")
-        
+@app.errorhandler(500)
+def internal_error(error):
+    """Manejo de errores 500 - Error interno del servidor"""
+    logger.error(f"500 Error: {str(error)}. URL: {request.url}. User: {current_user.id if current_user.is_authenticated else 'Anonymous'}")
+    db.session.rollback()
+    
+    if request.path.startswith('/api/'):
         return jsonify({
-            'success': True,
-            'coachee': {
-                'id': coachee.id,
-                'full_name': coachee.full_name,
-                'email': coachee.email
-            },
-            'summary': {
-                'total_assessments': total_assessments,
-                'latest_assessment': {
-                    'id': latest_assessment.id,
-                    'date': latest_assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
-                    'score': latest_assessment.score or 0
-                },
-                'average_scores': average_scores,
-                'progress_trend': progress_trend,
-                'strengths': strengths,
-                'improvement_areas': improvement_areas,
-                'recommendations': recommendations
-            }
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo resumen de evaluaciones: {str(e)}'}), 500
+            'error': 'Error interno del servidor',
+            'status_code': 500,
+            'message': 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.'
+        }), 500
+    
+    return render_template('error.html',
+                         error_code=500,
+                         error_message="Error interno del servidor",
+                         error_description="Ocurrió un error inesperado. Nuestro equipo ha sido notificado."), 500
 
-@app.route('/api/coach/tasks', methods=['GET'])
-@coach_required
-def api_coach_get_tasks():
-    """API para obtener todas las tareas del coach"""
-    try:
-        # Obtener tareas asignadas por este coach
-        tasks = Task.query.filter_by(coach_id=current_user.id, is_active=True).order_by(Task.created_at.desc()).all()
-        
-        tasks_data = []
-        for task in tasks:
-            # Obtener último progreso
-            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
-            
-            tasks_data.append({
-                'id': task.id,
-                'title': task.title,
-                'description': task.description,
-                'category': task.category,
-                'priority': task.priority,
-                'due_date': task.due_date.strftime('%Y-%m-%d') if task.due_date else None,
-                'created_at': task.created_at.strftime('%Y-%m-%d %H:%M'),
-                'coachee': {
-                    'id': task.coachee.id,
-                    'full_name': task.coachee.full_name,
-                    'email': task.coachee.email
-                },
-                'current_status': latest_progress.status if latest_progress else 'pending',
-                'current_progress': latest_progress.progress_percentage if latest_progress else 0,
-                'last_update': latest_progress.created_at.strftime('%Y-%m-%d %H:%M') if latest_progress else None
-            })
-        
+@app.errorhandler(403)
+def forbidden_error(error):
+    """Manejo de errores 403 - Acceso prohibido"""
+    logger.warning(f"403 Error: Access denied to {request.url}. User: {current_user.id if current_user.is_authenticated else 'Anonymous'}")
+    
+    if request.path.startswith('/api/'):
         return jsonify({
-            'success': True,
-            'tasks': tasks_data
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
+            'error': 'Acceso prohibido',
+            'status_code': 403,
+            'message': 'No tienes permisos para acceder a este recurso.'
+        }), 403
+    
+    return render_template('error.html',
+                         error_code=403,
+                         error_message="Acceso prohibido",
+                         error_description="No tienes permisos para acceder a esta página."), 403
 
-@app.route('/api/coach/tasks', methods=['POST'])
-@coach_required
-def api_coach_create_task():
-    """API para crear una nueva tarea para un coachee"""
-    try:
-        data = request.get_json()
-        
-        # Validar campos requeridos
-        required_fields = ['coachee_id', 'title', 'description', 'category']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({'error': f'Campo requerido: {field}'}), 400
-        
-        # Verificar que el coachee pertenece a este coach
-        coachee = User.query.filter_by(id=data['coachee_id'], coach_id=current_user.id, role='coachee').first()
-        if not coachee:
-            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
-        
-        # Validar categoría
-        valid_categories = ['comunicacion', 'derechos', 'opiniones', 'conflictos', 'autoconfianza']
-        if data['category'] not in valid_categories:
-            return jsonify({'error': 'Categoría inválida'}), 400
-        
-        # Validar prioridad
-        valid_priorities = ['low', 'medium', 'high', 'urgent']
-        priority = data.get('priority', 'medium')
-        if priority not in valid_priorities:
-            priority = 'medium'
-        
-        # Procesar fecha de vencimiento
-        due_date = None
-        if data.get('due_date'):
-            try:
-                due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
-            except ValueError:
-                return jsonify({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}), 400
-        
-        # Crear la tarea
-        new_task = Task(
-            coach_id=current_user.id,
-            coachee_id=data['coachee_id'],
-            title=data['title'].strip(),
-            description=data['description'].strip(),
-            category=data['category'],
-            priority=priority,
-            due_date=due_date
-        )
-        
-        db.session.add(new_task)
-        db.session.commit()
-        
-        # Crear entrada inicial de progreso
-        initial_progress = TaskProgress(
-            task_id=new_task.id,
-            status='pending',
-            progress_percentage=0,
-            notes='Tarea creada por el coach',
-            updated_by=current_user.id
-        )
-        
-        db.session.add(initial_progress)
-        db.session.commit()
-        
+@app.errorhandler(401)
+def unauthorized_error(error):
+    """Manejo de errores 401 - No autorizado"""
+    logger.warning(f"401 Error: Unauthorized access to {request.url}")
+    
+    if request.path.startswith('/api/'):
         return jsonify({
-            'success': True,
-            'message': 'Tarea creada exitosamente',
-            'task': {
-                'id': new_task.id,
-                'title': new_task.title,
-                'description': new_task.description,
-                'category': new_task.category,
-                'priority': new_task.priority,
-                'due_date': new_task.due_date.strftime('%Y-%m-%d') if new_task.due_date else None,
-                'coachee': {
-                    'id': coachee.id,
-                    'full_name': coachee.full_name,
-                    'email': coachee.email
-                }
-            }
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
+            'error': 'Autenticación requerida',
+            'status_code': 401,
+            'message': 'Debes iniciar sesión para acceder a este recurso.'
+        }), 401
+    
+    return redirect(url_for('dashboard_selection'))
 
-@app.route('/api/coach/tasks/<int:task_id>/progress', methods=['PUT'])
-@coach_required
-def api_coach_update_task_progress(task_id):
-    """API para actualizar el progreso de una tarea"""
-    try:
-        # Verificar que la tarea pertenece a este coach
-        task = Task.query.filter_by(id=task_id, coach_id=current_user.id, is_active=True).first()
-        if not task:
-            return jsonify({'error': 'Tarea no encontrada o no pertenece a este coach'}), 404
-        
-        data = request.get_json()
-        
-        # Validar status
-        valid_statuses = ['pending', 'in_progress', 'completed', 'cancelled']
-        status = data.get('status', 'pending')
-        if status not in valid_statuses:
-            return jsonify({'error': 'Status inválido'}), 400
-        
-        # Validar progreso
-        progress = data.get('progress_percentage', 0)
-        if not isinstance(progress, int) or progress < 0 or progress > 100:
-            return jsonify({'error': 'Progreso debe ser un entero entre 0 y 100'}), 400
-        
-        # Crear nueva entrada de progreso
-        new_progress = TaskProgress(
-            task_id=task_id,
-            status=status,
-            progress_percentage=progress,
-            notes=data.get('notes', '').strip(),
-            updated_by=current_user.id
-        )
-        
-        db.session.add(new_progress)
-        db.session.commit()
-        
+@app.errorhandler(400)
+def bad_request_error(error):
+    """Manejo de errores 400 - Solicitud incorrecta"""
+    logger.warning(f"400 Error: Bad request to {request.url}. Error: {str(error)}")
+    
+    if request.path.startswith('/api/'):
         return jsonify({
-            'success': True,
-            'message': 'Progreso de tarea actualizado exitosamente',
-            'progress': {
-                'id': new_progress.id,
-                'status': new_progress.status,
-                'progress_percentage': new_progress.progress_percentage,
-                'notes': new_progress.notes,
-                'updated_at': new_progress.created_at.strftime('%Y-%m-%d %H:%M')
-            }
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
+            'error': 'Solicitud incorrecta',
+            'status_code': 400,
+            'message': 'Los datos enviados no son válidos.'
+        }), 400
+    
+    return render_template('error.html',
+                         error_code=400,
+                         error_message="Solicitud incorrecta",
+                         error_description="Los datos enviados no son válidos."), 400
 
-@app.route('/api/coach/coachee-evaluation-details/<int:coachee_id>', methods=['GET'])
-@coach_required
-def api_coach_coachee_evaluation_details(coachee_id):
-    """API para que el coach vea los detalles completos de la evaluación más reciente de un coachee"""
-    try:
-        # Verificar que el coachee esté asignado a este coach
-        coachee = User.query.filter_by(
-            id=coachee_id, 
-            role='coachee', 
-            coach_id=current_user.id
-        ).first()
-        
-        if not coachee:
-            return jsonify({'error': 'Coachee no encontrado o no asignado a tu supervisión'}), 404
-        
-        # Buscar la evaluación más reciente del coachee
-        latest_assessment = AssessmentResult.query.filter_by(
-            user_id=coachee_id
-        ).order_by(AssessmentResult.completed_at.desc()).first()
-        
-        if not latest_assessment:
-            return jsonify({'error': 'El coachee no tiene evaluaciones completadas'}), 404
-        
-        # Procesar detalles de la evaluación usando la misma función que el coachee
-        evaluation_details = process_evaluation_details(latest_assessment, coachee)
-        
-        # Agregar información del coachee para el coach
-        evaluation_details['coachee_name'] = coachee.full_name
-        evaluation_details['coachee_email'] = coachee.email
-        
-        return jsonify({
-            'success': True,
-            'evaluation': evaluation_details
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo detalles de evaluación del coachee: {str(e)}'}), 500
+# Logging de requests para debugging
+@app.before_request
+def log_request_info():
+    """Log de información de requests para debugging"""
+    if not request.path.startswith('/static/'):  # No loggear recursos estáticos
+        logger.debug(f"Request: {request.method} {request.path} from {request.remote_addr}")
+        if request.is_json and request.method in ['POST', 'PUT', 'PATCH']:
+            # Log solo los campos no sensibles
+            data = request.get_json() or {}
+            safe_data = {k: v for k, v in data.items() if k not in ['password', 'current_password', 'new_password']}
+            logger.debug(f"Request data: {safe_data}")
 
-@app.route('/api/coach/evaluation-details/<int:evaluation_id>', methods=['GET'])
-@coach_required
-def api_coach_evaluation_details(evaluation_id):
-    """API para que el coach vea los detalles de una evaluación específica usando el mismo formato que el coachee"""
-    try:
-        # Buscar la evaluación específica
-        assessment = AssessmentResult.query.filter_by(id=evaluation_id).first()
-        
-        if not assessment:
-            return jsonify({'error': 'Evaluación no encontrada'}), 404
-        
-        # Verificar que el coachee pertenece a este coach
-        coachee = User.query.filter_by(
-            id=assessment.user_id,
-            role='coachee',
-            coach_id=current_user.id
-        ).first()
-        
-        if not coachee:
-            return jsonify({'error': 'No tienes acceso a esta evaluación'}), 403
-        
-        # Procesar detalles de la evaluación usando la misma función que el coachee
-        evaluation_details = process_evaluation_details(assessment, coachee)
-        
-        # Agregar información del coachee para el coach
-        evaluation_details['coachee_name'] = coachee.full_name
-        evaluation_details['coachee_email'] = coachee.email
-        
-        return jsonify({
-            'success': True,
-            'evaluation': evaluation_details
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo detalles de evaluación: {str(e)}'}), 500
+@app.after_request
+def log_response_info(response):
+    """Log de información de responses"""
+    if not request.path.startswith('/static/'):
+        logger.debug(f"Response: {response.status_code} for {request.method} {request.path}")
+        if response.status_code >= 400:
+            logger.warning(f"Error response: {response.status_code} for {request.method} {request.path}")
+    return response
 
-@app.route('/api/coach/evaluation-summaries', methods=['GET'])
-@coach_required
-def api_coach_evaluation_summaries():
-    """API para que el coach vea resúmenes de evaluaciones de todos sus coachees"""
-    try:
-        # Obtener todos los coachees asignados a este coach
-        coachees = User.query.filter_by(
-            role='coachee', 
-            coach_id=current_user.id
-        ).all()
-        
-        summaries = []
-        
-        for coachee in coachees:
-            # Obtener evaluaciones del coachee
-            assessments = AssessmentResult.query.filter_by(
-                user_id=coachee.id
-            ).order_by(AssessmentResult.completed_at.desc()).all()
-            
-            if not assessments:
-                continue  # Skip coachees without assessments
-            
-            latest_assessment = assessments[0]
-            
-            # Procesar datos de la evaluación más reciente
-            evaluation_data = {}
-            if latest_assessment.result_text:
-                try:
-                    evaluation_data = json.loads(latest_assessment.result_text)
-                except json.JSONDecodeError:
-                    pass
-            
-            latest_score = latest_assessment.score or 0
-            if 'total_score' in evaluation_data:
-                latest_score = evaluation_data['total_score']
-            
-            # Determinar áreas de enfoque basadas en puntuaciones dimensionales
-            focus_areas = []
-            if 'dimensional_scores' in evaluation_data:
-                dim_scores = evaluation_data['dimensional_scores']
-                for dim, score in dim_scores.items():
-                    if score < 60:  # Areas que necesitan mejora
-                        dim_name = format_dimension_name(dim)
-                        focus_areas.append(dim_name)
-            
-            # Si no hay áreas específicas, usar áreas generales
-            if not focus_areas:
-                if latest_score < 60:
-                    focus_areas = ['Comunicación', 'Autoconfianza']
-                elif latest_score < 80:
-                    focus_areas = ['Asertividad avanzada']
-                else:
-                    focus_areas = ['Mantenimiento']
-            
-            summary = {
-                'coachee_id': coachee.id,
-                'coachee_name': coachee.full_name,
-                'coachee_email': coachee.email,
-                'total_evaluations': len(assessments),
-                'latest_score': round(latest_score, 1),
-                'last_evaluation_date': latest_assessment.completed_at.isoformat(),
-                'focus_areas': focus_areas[:3],  # Limitar a 3 áreas principales
-                'trend': calculate_score_trend(assessments),
-                'status': 'active' if latest_assessment.completed_at >= datetime.utcnow() - timedelta(days=30) else 'inactive'
-            }
-            
-            summaries.append(summary)
-        
-        # Ordenar por fecha de última evaluación (más reciente primero)
-        summaries.sort(key=lambda x: x['last_evaluation_date'], reverse=True)
-        
-        return jsonify({
-            'success': True,
-            'summaries': summaries,
-            'total_coachees': len(summaries)
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo resúmenes de evaluaciones: {str(e)}'}), 500
-
-def calculate_score_trend(assessments):
-    """Calcular tendencia de puntuaciones (mejora, estable, declive)"""
-    if len(assessments) < 2:
-        return 'new'
-    
-    # Comparar las dos evaluaciones más recientes
-    latest = assessments[0].score or 0
-    previous = assessments[1].score or 0
-    
-    # Procesar scores de result_text si están disponibles
-    try:
-        if assessments[0].result_text:
-            latest_data = json.loads(assessments[0].result_text)
-            if 'total_score' in latest_data:
-                latest = latest_data['total_score']
-        
-        if assessments[1].result_text:
-            previous_data = json.loads(assessments[1].result_text)
-            if 'total_score' in previous_data:
-                previous = previous_data['total_score']
-    except json.JSONDecodeError:
-        pass
-    
-    difference = latest - previous
-    
-    if difference > 5:
-        return 'improving'
-    elif difference < -5:
-        return 'declining'
-    else:
-        return 'stable'
-
-@app.route('/api/coachee/tasks', methods=['GET'])
-@coachee_required
-def api_coachee_get_tasks():
-    """API para que los coachees vean sus tareas asignadas"""
-    try:
-        coachee_user = get_current_coachee()
-        
-        # Obtener tareas asignadas a este coachee
-        tasks = Task.query.filter_by(coachee_id=coachee_user.id, is_active=True).order_by(Task.created_at.desc()).all()
-        
-        tasks_data = []
-        for task in tasks:
-            # Obtener último progreso
-            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
-            
-            tasks_data.append({
-                'id': task.id,
-                'title': task.title,
-                'description': task.description,
-                'category': task.category,
-                'priority': task.priority,
-                'due_date': task.due_date.strftime('%Y-%m-%d') if task.due_date else None,
-                'created_at': task.created_at.strftime('%Y-%m-%d %H:%M'),
-                'coach': {
-                    'id': task.coach.id,
-                    'full_name': task.coach.full_name,
-                    'email': task.coach.email
-                },
-                'current_status': latest_progress.status if latest_progress else 'pending',
-                'current_progress': latest_progress.progress_percentage if latest_progress else 0,
-                'last_update': latest_progress.created_at.strftime('%Y-%m-%d %H:%M') if latest_progress else None
-            })
-        
-        return jsonify({
-            'success': True,
-            'tasks': tasks_data
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
-
-@app.route('/api/coachee/tasks/<int:task_id>/progress', methods=['PUT'])
-@coachee_required
-def api_coachee_update_task_progress(task_id):
-    """API para que los coachees actualicen el progreso de sus tareas"""
-    try:
-        coachee_user = get_current_coachee()
-        
-        # Verificar que la tarea pertenece a este coachee
-        task = Task.query.filter_by(id=task_id, coachee_id=coachee_user.id, is_active=True).first()
-        if not task:
-            return jsonify({'error': 'Tarea no encontrada o no pertenece a este coachee'}), 404
-        
-        data = request.get_json()
-        
-        # Validar status (coachees no pueden cancelar tareas)
-        valid_statuses = ['pending', 'in_progress', 'completed']
-        status = data.get('status', 'pending')
-        if status not in valid_statuses:
-            return jsonify({'error': 'Status inválido'}), 400
-        
-        # Validar progreso
-        progress = data.get('progress_percentage', 0)
-        if not isinstance(progress, int) or progress < 0 or progress > 100:
-            return jsonify({'error': 'Progreso debe ser un entero entre 0 y 100'}), 400
-        
-        # Crear nueva entrada de progreso
-        new_progress = TaskProgress(
-            task_id=task_id,
-            status=status,
-            progress_percentage=progress,
-            notes=data.get('notes', '').strip(),
-            updated_by=coachee_user.id
-        )
-        
-        db.session.add(new_progress)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Progreso de tarea actualizado exitosamente',
-            'progress': {
-                'id': new_progress.id,
-                'status': new_progress.status,
-                'progress_percentage': new_progress.progress_percentage,
-                'notes': new_progress.notes,
-                'updated_at': new_progress.created_at.strftime('%Y-%m-%d %H:%M')
-            }
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
-
-@app.route('/api/coachee/evaluations', methods=['GET'])
-@coachee_required
-def api_coachee_get_evaluations():
-    """API para que los coachees vean sus evaluaciones disponibles y completadas"""
-    try:
-        coachee_user = get_current_coachee()
-        
-        # Evaluaciones completadas por este coachee
-        completed_evaluations = AssessmentResult.query.filter_by(user_id=coachee_user.id).order_by(AssessmentResult.completed_at.desc()).all()
-        
-        evaluations_data = {
-            'completed': [],
-            'available': {
-                'assertiveness': {
-                    'id': 'assertiveness',
-                    'title': 'Evaluación de Asertividad',
-                    'description': 'Evalúa tu nivel de asertividad en diferentes situaciones',
-                    'duration': '10-15 minutos',
-                    'questions_count': 25,
-                    'available': True
-                }
-            }
-        }
-        
-        # Procesar evaluaciones completadas
-        for assessment in completed_evaluations:
-            eval_data = {
-                'id': assessment.id,
-                'type': 'assertiveness',
-                'title': 'Evaluación de Asertividad',
-                'total_score': assessment.score,
-                'assertiveness_level': get_assertiveness_level(assessment.score),
-                'result_description': getattr(assessment, 'result_text', 'N/A'),
-                'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
-                'dimensional_scores': assessment.dimensional_scores or {}
-            }
-            evaluations_data['completed'].append(eval_data)
-        
-        return jsonify({
-            'success': True,
-            'evaluations': evaluations_data
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
-
-@app.route('/api/coachee/dashboard-summary', methods=['GET'])
-@coachee_required
-def api_coachee_dashboard_summary():
-    """API para obtener un resumen completo del dashboard del coachee"""
-    try:
-        coachee_user = get_current_coachee()
-        
-        # Obtener última evaluación
-        latest_assessment = AssessmentResult.query.filter_by(user_id=coachee_user.id).order_by(AssessmentResult.completed_at.desc()).first()
-        
-        # Obtener tareas pendientes
-        pending_tasks = Task.query.filter_by(coachee_id=coachee_user.id, is_active=True).all()
-        pending_count = 0
-        overdue_count = 0
-        
-        for task in pending_tasks:
-            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
-            current_status = latest_progress.status if latest_progress else 'pending'
-            
-            if current_status != 'completed':
-                pending_count += 1
-                if task.due_date and task.due_date < datetime.utcnow().date():
-                    overdue_count += 1
-        
-        # Obtener información del coach
-        coach_info = None
-        if coachee_user.coach_id:
-            coach = User.query.filter_by(id=coachee_user.coach_id, role='coach').first()
-            if coach:
-                coach_info = {
-                    'id': coach.id,
-                    'name': coach.full_name,
-                    'email': coach.email
-                }
-        
-        summary = {
-            'coachee': {
-                'id': coachee_user.id,
-                'name': coachee_user.full_name,
-                'email': coachee_user.email,
-                'joined_at': coachee_user.created_at.strftime('%Y-%m-%d') if coachee_user.created_at else None
-            },
-            'coach': coach_info,
-            'latest_evaluation': None,
-            'tasks_summary': {
-                'total_active': len(pending_tasks),
-                'pending': pending_count,
-                'overdue': overdue_count
-            },
-            'evaluation_summary': {
-                'total_completed': AssessmentResult.query.filter_by(user_id=coachee_user.id).count(),
-                'available_types': ['assertiveness']
-            }
-        }
-        
-        if latest_assessment:
-            summary['latest_evaluation'] = {
-                'id': latest_assessment.id,
-                'total_score': latest_assessment.score,
-                'assertiveness_level': get_assertiveness_level(latest_assessment.score),
-                'result_description': getattr(latest_assessment, 'result_text', 'N/A'),
-                'completed_at': latest_assessment.completed_at.strftime('%Y-%m-%d'),
-                'days_ago': (datetime.utcnow().date() - latest_assessment.completed_at.date()).days
-            }
-        
-        return jsonify({
-            'success': True,
-            'summary': summary
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo resumen: {str(e)}'}), 500
-
-@app.route('/api/coachee/evaluation-details/<int:evaluation_id>', methods=['GET'])
-@coachee_required
-def api_coachee_evaluation_details(evaluation_id):
-    """API para obtener detalles completos de una evaluación específica"""
-    try:
-        coachee_user = get_current_coachee()
-        
-        # Buscar la evaluación específica del coachee
-        assessment = AssessmentResult.query.filter_by(
-            id=evaluation_id, 
-            user_id=coachee_user.id
-        ).first()
-        
-        if not assessment:
-            return jsonify({'error': 'Evaluación no encontrada'}), 404
-        
-        # Procesar detalles de la evaluación
-        evaluation_details = process_evaluation_details(assessment, coachee_user)
-        
-        return jsonify({
-            'success': True,
-            'evaluation': evaluation_details
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error obteniendo detalles de evaluación: {str(e)}'}), 500
-
-def process_evaluation_details(assessment, coachee_user):
-    """Procesar y generar detalles completos de una evaluación"""
-    # Primero intentar usar los datos existentes del result_text si están disponibles
-    if assessment.result_text:
-        try:
-            existing_data = json.loads(assessment.result_text)
-            if existing_data and 'dimensional_scores' in existing_data:
-                # Los datos ya están procesados, usarlos directamente
-                return {
-                    'id': assessment.id,
-                    'title': 'Evaluación de Asertividad',
-                    'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
-                    'total_score': existing_data.get('total_score', assessment.score or 0),
-                    'total_percentage': existing_data.get('total_score', assessment.score or 0),
-                    'assertiveness_level': existing_data.get('assertiveness_level', get_assertiveness_level(assessment.score or 0)),
-                    'dimensional_scores': existing_data.get('dimensional_scores', {}),
-                    'dimension_analysis': existing_data.get('dimension_analysis', {}),
-                    'response_details': existing_data.get('response_details', []),
-                    'analysis': existing_data.get('analysis', {}),
-                    'radar_data': {
-                        'labels': [format_dimension_name(dim) for dim in existing_data.get('dimensional_scores', {}).keys()],
-                        'scores': list(existing_data.get('dimensional_scores', {}).values()),
-                        'percentages': list(existing_data.get('dimensional_scores', {}).values())
-                    }
-                }
-        except json.JSONDecodeError:
-            pass  # Si no se puede parsear, continuar con el procesamiento normal
-    
-    # Si no hay datos procesados, hacer el procesamiento completo
-    # Obtener respuestas y preguntas
-    responses = Response.query.filter_by(
-        user_id=coachee_user.id,
-        assessment_result_id=assessment.id
-    ).all()
-    
-    questions = Question.query.filter_by(assessment_id=assessment.assessment_id).order_by(Question.order).all()
-    
-    # Procesar respuestas para análisis detallado
-    response_details, question_responses = process_response_details(responses, questions)
-    
-    # Recalcular puntuaciones dimensionales
-    dimensional_scores = calculate_dimensional_scores_backend(question_responses)
-    total_score = sum(dimensional_scores.values()) / len(dimensional_scores) if dimensional_scores else 0
-    assertiveness_level = get_assertiveness_level(total_score)
-    
-    # Generar análisis completo
-    dimension_analysis = generate_dimension_analysis(dimensional_scores)
-    analysis_data = generate_assessment_analysis(assertiveness_level, dimensional_scores)
-    
-    return {
-        'id': assessment.id,
-        'title': 'Evaluación de Asertividad',
-        'completed_at': assessment.completed_at.strftime('%Y-%m-%d %H:%M'),
-        'total_score': round(total_score, 1),
-        'total_percentage': round(total_score, 1),  # total_score ya es un porcentaje (0-100)
-        'assertiveness_level': assertiveness_level,
-        'dimensional_scores': dimensional_scores,
-        'dimension_analysis': dimension_analysis,
-        'response_details': sorted(response_details, key=lambda x: x['order']),
-        'analysis': analysis_data,
-        'radar_data': {
-            'labels': [format_dimension_name(dim) for dim in dimensional_scores.keys()],
-            'scores': list(dimensional_scores.values()),
-            'percentages': list(dimensional_scores.values())  # dimensional_scores ya son porcentajes
-        }
-    }
-
-def process_response_details(responses, questions):
-    """Procesar detalles de respuestas individuales"""
-    response_details = []
-    question_responses = {}
-    
-    for response in responses:
-        question = next((q for q in questions if q.id == response.question_id), None)
-        if question:
-            response_details.append({
-                'question_id': question.id,
-                'question_text': question.text,
-                'response_value': response.selected_option,
-                'order': question.order
-            })
-            question_responses[question.order - 1] = response.selected_option
-    
-    return response_details, question_responses
-
-def generate_dimension_analysis(dimensional_scores):
-    """Generar análisis por dimensión"""
-    dimension_analysis = {}
-    for dimension, score in dimensional_scores.items():
-        dimension_analysis[dimension] = {
-            'score': round(score, 1),
-            'percentage': round(score, 1),  # score ya es un porcentaje (0-100)
-            'level': get_dimension_level(score),
-            'interpretation': get_dimension_interpretation(dimension, score),
-            'recommendations': get_dimension_recommendations(dimension, score)
-        }
-    return dimension_analysis
-
-def generate_assessment_analysis(assertiveness_level, dimensional_scores):
-    """Generar análisis completo del assessment"""
-    return {
-        'strengths': get_assessment_strengths_detailed(dimensional_scores),
-        'improvements': get_assessment_improvements_detailed(dimensional_scores),
-        'general_recommendations': get_general_recommendations(assertiveness_level, dimensional_scores)
-    }
-
-def get_dimension_level(score):
-    """Determinar el nivel de una dimensión específica basado en porcentaje (0-100)"""
-    if score >= 90:
-        return 'Excelente'
-    elif score >= 80:
-        return 'Muy Bueno'
-    elif score >= 70:
-        return 'Bueno'
-    elif score >= 60:
-        return 'Regular'
-    elif score >= 50:
-        return 'Mejorable'
-    else:
-        return 'Necesita Atención'
-
-def get_dimension_interpretation(dimension, score):
-    """Generar interpretación específica por dimensión"""
-    interpretations = {
-        'comunicacion': {
-            'high': 'Tienes excelentes habilidades de comunicación asertiva. Sabes expresar tus ideas de manera clara y directa.',
-            'medium': 'Tu comunicación es generalmente efectiva, pero puedes mejorar en la claridad y directness.',
-            'low': 'Te beneficiarías de desarrollar habilidades de comunicación más directa y clara.'
-        },
-        'derechos': {
-            'high': 'Tienes una excelente comprensión y defensa de tus derechos personales.',
-            'medium': 'Generalmente reconoces tus derechos, pero a veces puedes dudar en defenderlos.',
-            'low': 'Es importante que trabajes en reconocer y defender tus derechos personales.'
-        },
-        'conflictos': {
-            'high': 'Manejas los conflictos de manera asertiva y constructiva.',
-            'medium': 'Tu manejo de conflictos es adecuado, pero puedes mejorar en algunas situaciones.',
-            'low': 'Te beneficiarías de desarrollar mejores estrategias para manejar conflictos.'
-        },
-        'autoconfianza': {
-            'high': 'Tienes una excelente autoconfianza y seguridad en ti mismo.',
-            'medium': 'Tu autoconfianza es buena, pero puede fluctuar en ciertas situaciones.',
-            'low': 'Trabajar en tu autoconfianza te ayudará a ser más asertivo.'
-        },
-        'opiniones': {
-            'high': 'Expresas tus opiniones de manera clara y respetuosa.',
-            'medium': 'Generalmente compartes tus opiniones, pero a veces puedes ser indeciso.',
-            'low': 'Te beneficiarías de practicar expresar tus opiniones de manera más directa.'
-        }
-    }
-    
-    level = 'high' if score >= 80 else 'medium' if score >= 60 else 'low'
-    return interpretations.get(dimension, {}).get(level, 'Puntuación en desarrollo.')
-
-def get_dimension_recommendations(dimension, score):
-    """Generar recomendaciones específicas por dimensión"""
-    recommendations = {
-        'comunicacion': {
-            'high': ['Mantén tu estilo de comunicación directa', 'Ayuda a otros a desarrollar estas habilidades'],
-            'medium': ['Practica expresar tus ideas de manera más directa', 'Utiliza el contacto visual al comunicarte'],
-            'low': ['Practica técnicas de comunicación asertiva', 'Toma un curso de habilidades comunicativas']
-        },
-        'derechos': {
-            'high': ['Mantén tu capacidad de defender tus derechos', 'Ayuda a otros a reconocer los suyos'],
-            'medium': ['Identifica situaciones donde no defiendes tus derechos', 'Practica decir "no" cuando es necesario'],
-            'low': ['Aprende sobre tus derechos fundamentales', 'Practica defenderte en situaciones de bajo riesgo']
-        },
-        'conflictos': {
-            'high': ['Mantén tu enfoque constructivo', 'Considera mediar en conflictos de otros'],
-            'medium': ['Practica técnicas de resolución de conflictos', 'Mantén la calma en situaciones tensas'],
-            'low': ['Aprende estrategias básicas de manejo de conflictos', 'Practica la comunicación no violenta']
-        },
-        'autoconfianza': {
-            'high': ['Mantén tu autoestima positiva', 'Comparte tu seguridad con otros'],
-            'medium': ['Identifica qué situaciones afectan tu confianza', 'Practica autoaceptación'],
-            'low': ['Trabaja en reconocer tus fortalezas', 'Considera terapia de autoestima si es necesario']
-        },
-        'opiniones': {
-            'high': ['Mantén tu capacidad de expresarte', 'Ayuda a otros a encontrar su voz'],
-            'medium': ['Practica expresar opiniones en grupos pequeños', 'Prepara tus ideas antes de reuniones importantes'],
-            'low': ['Comienza expresando opiniones en entornos seguros', 'Practica con amigos o familiares cercanos']
-        }
-    }
-    
-    level = 'high' if score >= 80 else 'medium' if score >= 60 else 'low'
-    return recommendations.get(dimension, {}).get(level, ['Continúa desarrollando esta área.'])
-
-def get_assessment_strengths_detailed(dimensional_scores):
-    """Identificar fortalezas principales basadas en puntuaciones dimensionales"""
-    strengths = []
-    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True)
-    
-    for dimension, score in sorted_dimensions[:2]:  # Top 2 fortalezas
-        if score >= 70:  # Convertido a porcentaje (70% equivale a 3.5 en escala 1-5)
-            dimension_name = format_dimension_name(dimension)
-            strengths.append({
-                'dimension': dimension_name,
-                'score': round(score, 1),
-                'description': get_dimension_interpretation(dimension, score)
-            })
-    
-    return strengths
-
-def get_assessment_improvements_detailed(dimensional_scores):
-    """Identificar áreas de mejora basadas en puntuaciones dimensionales"""
-    improvements = []
-    sorted_dimensions = sorted(dimensional_scores.items(), key=lambda x: x[1])
-    
-    for dimension, score in sorted_dimensions[:2]:  # Bottom 2 áreas de mejora
-        if score < 80:  # Convertido a porcentaje (80% equivale a 4.0 en escala 1-5)
-            dimension_name = format_dimension_name(dimension)
-            improvements.append({
-                'dimension': dimension_name,
-                'score': round(score, 1),
-                'description': get_dimension_interpretation(dimension, score),
-                'recommendations': get_dimension_recommendations(dimension, score)
-            })
-    
-    return improvements
-
-def get_general_recommendations(assertiveness_level, dimensional_scores):
-    """Generar recomendaciones generales basadas en el nivel de asertividad"""
-    avg_score = sum(dimensional_scores.values()) / len(dimensional_scores)
-    
-    recommendations = []
-    
-    if avg_score >= 90:  # Convertido a porcentaje (4.5 -> 90%)
-        recommendations = [
-            "¡Excelente! Tu nivel de asertividad es muy alto. Mantén estas habilidades.",
-            "Considera ser mentor de otros que estén desarrollando su asertividad.",
-            "Continúa practicando para mantener tu nivel en diferentes contextos."
-        ]
-    elif avg_score >= 80:  # Convertido a porcentaje (4.0 -> 80%)
-        recommendations = [
-            "Tu asertividad está en un nivel muy bueno. Sigue practicando.",
-            "Identifica situaciones específicas donde puedes ser aún más asertivo.",
-            "Mantén la constancia en tu desarrollo personal."
-        ]
-    elif avg_score >= 70:  # Convertido a porcentaje (3.5 -> 70%)
-        recommendations = [
-            "Tu asertividad está en desarrollo. Hay áreas donde puedes mejorar.",
-            "Practica técnicas de comunicación asertiva regularmente.",
-            "Considera tomar un curso o workshop sobre asertividad."
-        ]
-    elif avg_score >= 60:  # Convertido a porcentaje (3.0 -> 60%)
-        recommendations = [
-            "Tienes una base sólida, pero hay espacio significativo para mejorar.",
-            "Enfócate en las dimensiones con puntuaciones más bajas.",
-            "Practica en situaciones de bajo riesgo antes de situaciones importantes."
-        ]
-    else:
-        recommendations = [
-            "Es importante que te enfoques en desarrollar tu asertividad.",
-            "Considera buscar apoyo profesional para desarrollar estas habilidades.",
-            "Comienza con ejercicios básicos de autoafirmación."
-        ]
-    
-    return recommendations
-
-def format_dimension_name(dimension):
-    """Formatear nombres de dimensiones para mostrar"""
-    dimension_names = {
-        'comunicacion': 'Comunicación',
-        'derechos': 'Defensa de Derechos',
-        'conflictos': 'Manejo de Conflictos',
-        'autoconfianza': 'Autoconfianza',
-        'opiniones': 'Expresión de Opiniones'
-    }
-    return dimension_names.get(dimension, dimension.title())
+# ==========================================
+# PUNTO DE ENTRADA PRINCIPAL
+# ==========================================
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(host='0.0.0.0', port=10000, debug=True)
+    # Inicializar la base de datos si no existe
+    try:
+        with app.app_context():
+            db.create_all()
+            
+            # Crear admin por defecto si no existe
+            admin = User.query.filter_by(role='platform_admin').first()
+            if not admin:
+                admin_user = User(
+                    username='admin',
+                    email='admin@assessmentplatform.com',
+                    password_hash=generate_password_hash('admin123'),
+                    role='platform_admin',
+                    is_active=True
+                )
+                db.session.add(admin_user)
+                db.session.commit()
+                logger.info("✅ Usuario admin creado: admin/admin123")
+            
+            logger.info("✅ Base de datos inicializada correctamente")
+    except Exception as e:
+        logger.error(f"❌ Error inicializando base de datos: {e}")
+    
+    # Configuración del servidor
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', 5002))
+    debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    
+    logger.info(f"🚀 Iniciando Assessment Platform en http://{host}:{port}")
+    logger.info(f"🎯 Landing Page disponible en: http://{host}:{port}/")
+    logger.info(f"🎛️ Dashboard disponible en: http://{host}:{port}/dashboard-selection")
+    
+    # Ejecutar la aplicación
+    app.run(
+        host=host, 
+        port=port, 
+        debug=debug,
+        threaded=True
+    )
