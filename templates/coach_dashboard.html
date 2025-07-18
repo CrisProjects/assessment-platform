@@ -241,8 +241,15 @@
         background: rgba(255, 255, 255, 0.15) !important;
         border: 1px solid rgba(255, 255, 255, 0.3) !important;
         color: white !important;
-        backdrop-filter: blur(10px);
         transition: all 0.3s ease;
+        position: relative !important;
+        z-index: auto !important;
+        pointer-events: auto !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+        cursor: text !important;
     }
     
     .glass-input::placeholder {
@@ -263,7 +270,7 @@
     }
     
     .form-select.glass-input {
-        cursor: pointer;
+        cursor: pointer !important;
     }
     
     .form-select.glass-input option {
@@ -275,14 +282,19 @@
     /* Asegurar que los inputs sean completamente interactivos */
     .modal-body input,
     .modal-body textarea,
-    .modal-body select {
+    .modal-body select,
+    .modal-body label {
         position: relative !important;
-        z-index: 9999 !important;
+        z-index: auto !important;
         pointer-events: auto !important;
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
         -ms-user-select: text !important;
         user-select: text !important;
+    }
+    
+    .modal-body input,
+    .modal-body textarea {
         cursor: text !important;
     }
     
@@ -295,37 +307,20 @@
         backdrop-filter: blur(25px);
         border: 1px solid rgba(160, 216, 204, 0.2);
         position: relative;
-        z-index: 1050;
         pointer-events: auto !important;
     }
     
     .modal-backdrop {
         background-color: rgba(0, 0, 0, 0.7);
-        z-index: 1040 !important;
     }
     
-    /* Asegurar que el modal esté por encima de todo */
+    /* Asegurar que el modal esté correctamente posicionado */
     .modal {
-        z-index: 1055 !important;
         pointer-events: auto !important;
     }
     
     .modal-dialog {
-        z-index: 1056 !important;
         pointer-events: auto !important;
-    }
-    
-    /* Eliminar cualquier posible conflicto de backdrop-filter en inputs */
-    .modal-body .glass-input {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-    }
-    
-    /* Asegurar que los labels y formularios también sean clickeables */
-    .modal-body .form-label,
-    .modal-body form {
-        pointer-events: auto !important;
-        z-index: 9998 !important;
     }
     
     .spinner-border {

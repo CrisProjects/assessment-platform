@@ -694,6 +694,90 @@ def dashboard_selection():
     """Servir la página de selección de dashboards"""
     return render_template('dashboard_selection.html')
 
+@app.route('/test-modal')
+def test_modal():
+    """Página de test para el modal de invitación"""
+    return '''<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Invitar Coachee</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #243447, #4A6C85);
+            min-height: 100vh;
+            padding: 50px;
+        }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            color: white !important;
+            transition: all 0.3s ease;
+        }
+        .glass-input::placeholder { color: rgba(255, 255, 255, 0.7) !important; }
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.25) !important;
+            border-color: #6282E3 !important;
+            box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25) !important;
+            color: white !important;
+        }
+        .modal-content {
+            background: rgba(36, 52, 71, 0.95) !important;
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(160, 216, 204, 0.2);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #6282E3, #A0D8CC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .form-label { color: white !important; }
+        .btn-success { background: linear-gradient(135deg, #6282E3, #4e6fc8); border: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-white text-center mb-4">Test Modal - CLICK en los campos de entrada</h1>
+        <div class="text-center">
+            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#invitationModal">
+                <i class="fas fa-envelope me-2"></i>Abrir Modal Test
+            </button>
+        </div>
+        <div class="modal fade" id="invitationModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title text-gradient fw-bold">
+                            <i class="fas fa-envelope me-2"></i>Test Modal Coachee
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="mb-3">
+                                <label for="inviteEmail" class="form-label">Email del coachee</label>
+                                <input type="email" class="form-control glass-input" id="inviteEmail" placeholder="test@example.com">
+                            </div>
+                            <div class="mb-3">
+                                <label for="inviteFullName" class="form-label">Nombre completo</label>
+                                <input type="text" class="form-control glass-input" id="inviteFullName" placeholder="Nombre del coachee">
+                            </div>
+                            <button type="button" class="btn btn-success w-100" onclick="alert('¡Modal funcionando!')">
+                                <i class="fas fa-paper-plane me-2"></i>Test Envío
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>'''
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
     """Login API para autenticación de usuarios"""
