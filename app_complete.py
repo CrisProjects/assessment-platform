@@ -1748,20 +1748,25 @@ def coachee_login_page():
     """Página de login específica para coachees"""
     return render_template('coachee_login.html')
 
+@app.route('/coachee-login-simple')
+def coachee_login_simple_page():
+    """Página de login simple para coachees"""
+    return render_template('coachee_login_simple.html')
+
 @app.route('/coachee-login', methods=['POST'])
 def coachee_login_form():
     """Manejo de login de coachee via formulario"""
     try:
-        username = request.form.get('username')
+        email = request.form.get('email') or request.form.get('username')
         password = request.form.get('password')
         
-        if not username or not password:
-            flash('Usuario y contraseña requeridos', 'error')
-            return redirect('/coachee-login')
+        if not email or not password:
+            flash('Email y contraseña requeridos', 'error')
+            return redirect('/coachee-login-simple')
         
         # Buscar usuario coachee
         coachee_user = User.query.filter(
-            (User.username == username) | (User.email == username),
+            (User.username == email) | (User.email == email),
             User.role == 'coachee'
         ).first()
         
@@ -1775,11 +1780,11 @@ def coachee_login_form():
             return redirect('/coachee-dashboard')
         else:
             flash('Credenciales de coachee inválidas o cuenta desactivada', 'error')
-            return redirect('/coachee-login')
+            return redirect('/coachee-login-simple')
             
     except Exception as e:
         flash(f'Error en login: {str(e)}', 'error')
-        return redirect('/coachee-login')
+        return redirect('/coachee-login-simple')
 
 @app.route('/api/coachee/login', methods=['POST'])
 def api_coachee_login():
