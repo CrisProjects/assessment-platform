@@ -1813,7 +1813,7 @@ def api_coach_create_task():
         db.session.rollback()
         return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
 
-@app.route('/api/coach/tasks/<int:task_id>/progress', methods=['POST'])
+@app.route('/api/coach/tasks/<int:task_id>/progress', methods=['POST', 'PUT'])
 @login_required
 def api_coach_update_task_progress(task_id):
     """Actualizar el progreso de una tarea"""
@@ -2024,11 +2024,47 @@ def api_coachee_dashboard_summary(current_coachee):
             user_id=current_coachee.id
         ).order_by(AssessmentResult.completed_at.desc()).first()
         
-        # Contar tareas activas
+        # Contar tareas activas y obtener estadísticas
         active_tasks = Task.query.filter_by(
             coachee_id=current_coachee.id,
             is_active=True
         ).count()
+        
+        # Contar tareas por estado
+        from sqlalchemy import func
+        task_stats = db.session.query(
+            func.count(Task.id).label('total'),
+            TaskProgress.status
+        ).select_from(Task).join(
+            TaskProgress, Task.id == TaskProgress.task_id
+        ).filter(
+            Task.coachee_id == current_coachee.id,
+            Task.is_active == True
+        ).group_by(TaskProgress.status).all()
+        
+        # Procesar estadísticas de tareas
+        tasks_summary = {
+            'pending': 0,
+            'in_progress': 0,
+            'completed': 0,
+            'overdue': 0
+        }
+        
+        for stat in task_stats:
+            if stat.status in tasks_summary:
+                tasks_summary[stat.status] = stat.total
+        
+        # Contar tareas vencidas (simplificado - tareas pendientes con fecha de vencimiento pasada)
+        from datetime import datetime
+        overdue_tasks = Task.query.filter(
+            Task.coachee_id == current_coachee.id,
+            Task.is_active == True,
+            Task.due_date < datetime.utcnow().date()
+        ).join(TaskProgress).filter(
+            TaskProgress.status.in_(['pending', 'in_progress'])
+        ).count()
+        
+        tasks_summary['overdue'] = overdue_tasks
         
         # Obtener nombre del coach
         coach_name = "Sin asignar"
@@ -2042,6 +2078,7 @@ def api_coachee_dashboard_summary(current_coachee):
             'coach_name': coach_name,
             'total_evaluations': total_evaluations,
             'active_tasks': active_tasks,
+            'tasks_summary': tasks_summary,
             'latest_score': latest_evaluation.score if latest_evaluation else None,
             'latest_evaluation_date': latest_evaluation.completed_at.isoformat() if latest_evaluation else None
         }), 200
@@ -2138,7 +2175,13 @@ def api_coachee_tasks(current_coachee):
                 'created_at': task.created_at.isoformat(),
                 'status': latest_progress.status if latest_progress else 'pending',
                 'progress_percentage': latest_progress.progress_percentage if latest_progress else 0,
-                'notes': latest_progress.notes if latest_progress else ''
+                'notes': latest_progress.notes if latest_progress else '',
+                'coach': {
+                    'id': task.coach.id,
+                    'name': task.coach.full_name,
+                    'email': task.coach.email
+                },
+                'last_update': latest_progress.created_at.isoformat() if latest_progress else task.created_at.isoformat()
             })
         
         return jsonify(tasks_data), 200
@@ -2171,7 +2214,7 @@ def api_coachee_evaluation_history(current_coachee):
     except Exception as e:
         return jsonify({'error': f'Error obteniendo historial: {str(e)}'}), 500
 
-@app.route('/api/coachee/tasks/<int:task_id>/progress', methods=['POST'])
+@app.route('/api/coachee/tasks/<int:task_id>/progress', methods=['POST', 'PUT'])
 @coachee_api_required
 def api_coachee_update_task_progress(task_id, current_coachee):
     """Actualizar progreso de tarea desde el lado del coachee"""
