@@ -2239,8 +2239,29 @@
             try {
                 showToast('Procesando evaluación...', 'info');
                 
+                console.log('Answers object:', answers);
+                console.log('Questions array:', questions);
+                
                 if (Object.keys(answers).length === 0) {
                     throw new Error('No hay respuestas guardadas');
+                }
+                
+                // Convert answers to the format expected by the API
+                const responses = [];
+                for (const [questionIndex, answer] of Object.entries(answers)) {
+                    const question = questions[parseInt(questionIndex)];
+                    if (question && question.id) {
+                        responses.push({
+                            question_id: question.id,
+                            selected_option: answer
+                        });
+                    }
+                }
+                
+                console.log('Converted responses:', responses);
+                
+                if (responses.length === 0) {
+                    throw new Error('No se pudieron procesar las respuestas');
                 }
                 
                 // Create user data for assessment
@@ -2249,6 +2270,14 @@
                     gender: 'no_especificado'
                 };
                 
+                const requestBody = {
+                    age: userData.age,
+                    gender: userData.gender,
+                    responses: responses
+                };
+                
+                console.log('Request body:', requestBody);
+                
                 // Send assessment data
                 const response = await fetch(`${API_BASE_URL}/api/save_assessment`, {
                     method: 'POST',
@@ -2256,14 +2285,11 @@
                         'Content-Type': 'application/json',
                     },
                     credentials: 'include',
-                    body: JSON.stringify({
-                        age: userData.age,
-                        gender: userData.gender,
-                        answers: answers
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const data = await response.json();
+                console.log('API response:', data);
                 
                 if (response.ok && data.success) {
                     showAssessmentResults(data);
