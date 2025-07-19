@@ -2243,6 +2243,221 @@ def api_get_questions(current_coachee):
             'error': f'Error obteniendo preguntas: {str(e)}'
         }), 500
 
+# ===== FUNCIONES DE ANÁLISIS DIMENSIONAL =====
+
+def calculate_dimensional_scores(responses):
+    """Calcular puntuaciones por dimensiones de asertividad"""
+    # Mapeo de preguntas a dimensiones (basado en las 10 preguntas de asertividad)
+    question_dimensions = {
+        1: 'comunicacion',      # "Cuando alguien me crítica injustamente, expreso mi desacuerdo..."
+        2: 'derechos',          # "Puedo decir 'no' a las peticiones de otros..."
+        3: 'opiniones',         # "Expreso mis opiniones abiertamente..."
+        4: 'comunicacion',      # "Cuando estoy en desacuerdo con algo, lo digo..."
+        5: 'autoconfianza',     # "Me resulta fácil pedir ayuda..."
+        6: 'comunicacion',      # "Puedo dar retroalimentación constructiva..."
+        7: 'derechos',          # "Defiendo mis derechos sin agredir..."
+        8: 'autoconfianza',     # "Expreso mis emociones de manera apropiada..."
+        9: 'conflictos',        # "Puedo manejar conflictos de manera constructiva..."
+        10: 'autoconfianza'     # "Me siento cómodo/a expresando mis necesidades..."
+    }
+    
+    # Inicializar contadores por dimensión
+    dimension_scores = {
+        'comunicacion': [],
+        'derechos': [],
+        'opiniones': [],
+        'conflictos': [],
+        'autoconfianza': []
+    }
+    
+    # Agrupar respuestas por dimensión
+    for response in responses:
+        question_id = response.get('question_id')
+        selected_option = response.get('selected_option')
+        
+        if question_id in question_dimensions and selected_option is not None:
+            dimension = question_dimensions[question_id]
+            dimension_scores[dimension].append(selected_option)
+    
+    # Calcular promedios y convertir a porcentajes
+    dimensional_percentages = {}
+    for dimension, scores in dimension_scores.items():
+        if scores:
+            avg_score = sum(scores) / len(scores)
+            percentage = (avg_score / LIKERT_SCALE_MAX) * 100
+            dimensional_percentages[dimension] = round(percentage, 1)
+        else:
+            dimensional_percentages[dimension] = 0.0
+    
+    return dimensional_percentages
+
+def generate_personalized_recommendations(dimensional_scores, overall_score):
+    """Generar recomendaciones personalizadas basadas en las puntuaciones"""
+    recommendations = []
+    
+    # Recomendaciones por dimensión según el puntaje
+    dimension_recommendations = {
+        'comunicacion': {
+            'low': "Practica la comunicación clara y directa. Ejercita expresar tus ideas de manera estructurada.",
+            'medium': "Mejora tu comunicación no verbal y la escucha activa para complementar tus habilidades verbales.",
+            'high': "Excelente comunicación. Considera mentorear a otros en estas habilidades."
+        },
+        'derechos': {
+            'low': "Aprende a identificar y defender tus derechos personales de manera respetuosa pero firme.",
+            'medium': "Fortalece tu capacidad de establecer límites claros en diferentes contextos.",
+            'high': "Mantén el equilibrio entre defender tus derechos y respetar los de otros."
+        },
+        'opiniones': {
+            'low': "Practica expresar tus ideas y opiniones en entornos seguros antes de hacerlo en situaciones más desafiantes.",
+            'medium': "Desarrolla confianza en la validez de tus perspectivas y practica argumentar constructivamente.",
+            'high': "Utiliza tu habilidad para expresar opiniones para facilitar discusiones grupales productivas."
+        },
+        'conflictos': {
+            'low': "Aprende técnicas de resolución de conflictos como la negociación colaborativa y la mediación.",
+            'medium': "Practica mantener la calma durante los conflictos y buscar soluciones win-win.",
+            'high': "Tu habilidad para manejar conflictos es valiosa. Considera desarrollar habilidades de liderazgo."
+        },
+        'autoconfianza': {
+            'low': "Trabaja en reconocer tus fortalezas y logros. Practica la autoafirmación positiva.",
+            'medium': "Continúa construyendo tu confianza a través de nuevos desafíos y logros incrementales.",
+            'high': "Tu autoconfianza es sólida. Úsala para inspirar confianza en otros."
+        }
+    }
+    
+    # Identificar áreas que necesitan mejora (puntaje < 70%)
+    for dimension, score in dimensional_scores.items():
+        if score < 70:
+            level = 'low' if score < 50 else 'medium'
+            recommendations.append({
+                'dimension': dimension,
+                'score': score,
+                'level': level,
+                'recommendation': dimension_recommendations[dimension][level],
+                'priority': 'high' if score < 50 else 'medium'
+            })
+        elif score >= 80:
+            recommendations.append({
+                'dimension': dimension,
+                'score': score,
+                'level': 'high',
+                'recommendation': dimension_recommendations[dimension]['high'],
+                'priority': 'maintenance'
+            })
+    
+    # Recomendación general basada en puntaje total
+    if overall_score < 60:
+        recommendations.insert(0, {
+            'dimension': 'general',
+            'score': overall_score,
+            'level': 'low',
+            'recommendation': "Enfócate en desarrollar habilidades asertivas básicas a través de práctica diaria y autoreflexión.",
+            'priority': 'high'
+        })
+    elif overall_score >= 80:
+        recommendations.append({
+            'dimension': 'general',
+            'score': overall_score,
+            'level': 'high',
+            'recommendation': "¡Excelente nivel de asertividad! Considera compartir tus habilidades ayudando a otros en su desarrollo.",
+            'priority': 'growth'
+        })
+    
+    return recommendations
+
+def get_strengths_from_scores(dimensional_scores):
+    """Identificar fortalezas basadas en puntuaciones altas"""
+    dimension_names = {
+        'comunicacion': 'Comunicación Efectiva',
+        'derechos': 'Defensa de Derechos',
+        'opiniones': 'Expresión de Opiniones',
+        'conflictos': 'Manejo de Conflictos',
+        'autoconfianza': 'Autoconfianza'
+    }
+    
+    strengths = []
+    for dimension, score in dimensional_scores.items():
+        if score >= 75:
+            strengths.append({
+                'dimension': dimension,
+                'name': dimension_names[dimension],
+                'score': score,
+                'description': get_strength_description(dimension, score)
+            })
+    
+    return strengths
+
+def get_improvement_areas_from_scores(dimensional_scores):
+    """Identificar áreas de mejora basadas en puntuaciones bajas"""
+    dimension_names = {
+        'comunicacion': 'Comunicación Efectiva',
+        'derechos': 'Defensa de Derechos',
+        'opiniones': 'Expresión de Opiniones',
+        'conflictos': 'Manejo de Conflictos',
+        'autoconfianza': 'Autoconfianza'
+    }
+    
+    improvement_areas = []
+    for dimension, score in dimensional_scores.items():
+        if score < 70:
+            improvement_areas.append({
+                'dimension': dimension,
+                'name': dimension_names[dimension],
+                'score': score,
+                'priority': 'high' if score < 50 else 'medium',
+                'description': get_improvement_description(dimension, score)
+            })
+    
+    return improvement_areas
+
+def get_strength_description(dimension, score):
+    """Obtener descripción de fortaleza por dimensión"""
+    descriptions = {
+        'comunicacion': f"Demuestras excelentes habilidades de comunicación ({score}%). Eres claro, directo y respetuoso al expresarte.",
+        'derechos': f"Tienes una sólida capacidad para defender tus derechos ({score}%). Sabes establecer límites apropiados.",
+        'opiniones': f"Expresas tus opiniones con confianza ({score}%). No temes compartir tu perspectiva de manera constructiva.",
+        'conflictos': f"Manejas los conflictos de manera efectiva ({score}%). Buscas soluciones colaborativas y mantenes la calma.",
+        'autoconfianza': f"Posees una autoconfianza sólida ({score}%). Confías en tus habilidades y valor personal."
+    }
+    return descriptions.get(dimension, f"Fortaleza en {dimension} con {score}% de efectividad.")
+
+def get_improvement_description(dimension, score):
+    """Obtener descripción de área de mejora por dimensión"""
+    descriptions = {
+        'comunicacion': f"Oportunidad de mejorar la comunicación ({score}%). Enfócate en expresarte de manera más clara y directa.",
+        'derechos': f"Área de crecimiento en defensa de derechos ({score}%). Practica establecer límites saludables.",
+        'opiniones': f"Desarrollo necesario en expresión de opiniones ({score}%). Trabaja en compartir tus ideas con más confianza.",
+        'conflictos': f"Mejora requerida en manejo de conflictos ({score}%). Aprende técnicas de resolución constructiva.",
+        'autoconfianza': f"Fortalecimiento de autoconfianza necesario ({score}%). Reconoce tus logros y valor personal."
+    }
+    return descriptions.get(dimension, f"Área de mejora en {dimension} con {score}% actual.")
+
+def get_assertiveness_level(percentage_score):
+    """Determinar nivel de asertividad basado en puntuación"""
+    if percentage_score >= 85:
+        return {
+            'level': 'Muy Asertivo',
+            'description': 'Excelente nivel de asertividad en la mayoría de situaciones.',
+            'color': 'success'
+        }
+    elif percentage_score >= 70:
+        return {
+            'level': 'Asertivo',
+            'description': 'Buen nivel de asertividad con oportunidades de refinamiento.',
+            'color': 'primary'
+        }
+    elif percentage_score >= 50:
+        return {
+            'level': 'Moderadamente Asertivo',
+            'description': 'Nivel básico de asertividad con necesidad de desarrollo.',
+            'color': 'warning'
+        }
+    else:
+        return {
+            'level': 'Poco Asertivo',
+            'description': 'Nivel bajo de asertividad. Se recomienda entrenamiento específico.',
+            'color': 'danger'
+        }
+
 @app.route('/api/save_assessment', methods=['POST'])
 @coachee_api_required
 def api_save_assessment(current_coachee):
@@ -2296,6 +2511,12 @@ def api_save_assessment(current_coachee):
         max_possible_score = total_questions * LIKERT_SCALE_MAX
         percentage_score = (total_score / max_possible_score) * 100 if max_possible_score > 0 else 0
         
+        # Calcular puntuaciones por dimensiones de asertividad
+        dimensional_scores = calculate_dimensional_scores(responses)
+        
+        # Generar recomendaciones personalizadas
+        recommendations = generate_personalized_recommendations(dimensional_scores, percentage_score)
+        
         # Generar texto de resultado
         if percentage_score < 40:
             result_text = "Nivel de asertividad bajo. Se recomienda trabajar en el desarrollo de habilidades asertivas."
@@ -2315,7 +2536,8 @@ def api_save_assessment(current_coachee):
             result_text=result_text,
             coach_id=current_coachee.coach_id,
             participant_name=current_coachee.full_name,
-            participant_email=current_coachee.email
+            participant_email=current_coachee.email,
+            dimensional_scores=dimensional_scores
         )
         
         db.session.add(assessment_result)
@@ -2343,7 +2565,14 @@ def api_save_assessment(current_coachee):
             'assessment_id': assessment_result.id,
             'total_questions': total_questions,
             'completed_at': assessment_result.completed_at.isoformat() if hasattr(assessment_result, 'completed_at') else datetime.utcnow().isoformat(),
-            'participant_name': current_coachee.full_name
+            'participant_name': current_coachee.full_name,
+            'dimensional_scores': dimensional_scores,
+            'recommendations': recommendations,
+            'detailed_analysis': {
+                'strengths': get_strengths_from_scores(dimensional_scores),
+                'improvement_areas': get_improvement_areas_from_scores(dimensional_scores),
+                'overall_level': get_assertiveness_level(percentage_score)
+            }
         }), 200
         
     except Exception as e:
@@ -2712,7 +2941,7 @@ if __name__ == '__main__':
     
     # Configuración del servidor
     host = os.environ.get('HOST', '0.0.0.0')
-    port = int(os.environ.get('PORT', 5002))
+    port = int(os.environ.get('PORT', 5005))
     debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
     
     logger.info(f"🚀 Iniciando Assessment Platform en http://{host}:{port}")

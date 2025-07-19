@@ -2332,7 +2332,7 @@
             
             document.getElementById('assessmentLevel').textContent = assertivenessLevel;
             
-            // Create interpretation
+            // Create interpretation with dimensional analysis
             let interpretation = `
                 <div class="text-center mb-4">
                     <h4>Tu Nivel de Asertividad: ${assertivenessLevel}</h4>
@@ -2344,23 +2344,145 @@
                 </div>
             `;
             
+            // Add dimensional scores if available
+            if (data.dimensional_scores) {
+                interpretation += `
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Análisis por Dimensiones:</h6>
+                            <div class="row">
+                `;
+                
+                for (const [dimension, score] of Object.entries(data.dimensional_scores)) {
+                    const percentage = Math.round(score);
+                    const dimensionName = formatDimensionName(dimension);
+                    let colorClass = 'bg-danger';
+                    if (percentage >= 70) colorClass = 'bg-success';
+                    else if (percentage >= 50) colorClass = 'bg-warning';
+                    
+                    interpretation += `
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><strong>${dimensionName}</strong></small>
+                                <small class="text-muted">${percentage}%</small>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar ${colorClass}" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                interpretation += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add strengths section
+            if (data.detailed_analysis && data.detailed_analysis.strengths && data.detailed_analysis.strengths.length > 0) {
+                interpretation += `
+                    <div class="mt-4">
+                        <h6 class="text-success mb-3"><i class="fas fa-star me-2"></i>Tus Fortalezas:</h6>
+                        <div class="row">
+                `;
+                
+                data.detailed_analysis.strengths.forEach(strength => {
+                    interpretation += `
+                        <div class="col-12 mb-2">
+                            <div class="alert alert-success p-2">
+                                <strong>${strength.name}</strong> (${strength.score}%)
+                                <br><small>${strength.description}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                interpretation += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add improvement areas section
+            if (data.detailed_analysis && data.detailed_analysis.improvement_areas && data.detailed_analysis.improvement_areas.length > 0) {
+                interpretation += `
+                    <div class="mt-4">
+                        <h6 class="text-warning mb-3"><i class="fas fa-target me-2"></i>Áreas de Mejora:</h6>
+                        <div class="row">
+                `;
+                
+                data.detailed_analysis.improvement_areas.forEach(area => {
+                    const priorityClass = area.priority === 'high' ? 'alert-danger' : 'alert-warning';
+                    interpretation += `
+                        <div class="col-12 mb-2">
+                            <div class="alert ${priorityClass} p-2">
+                                <strong>${area.name}</strong> (${area.score}%) - Prioridad: ${area.priority}
+                                <br><small>${area.description}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                interpretation += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add recommendations section
+            if (data.recommendations && data.recommendations.length > 0) {
+                interpretation += `
+                    <div class="mt-4">
+                        <h6 class="text-primary mb-3"><i class="fas fa-lightbulb me-2"></i>Recomendaciones Personalizadas:</h6>
+                        <div class="accordion" id="recommendationsAccordion">
+                `;
+                
+                data.recommendations.forEach((rec, index) => {
+                    const priorityBadge = rec.priority === 'high' ? 'badge-danger' : 
+                                         rec.priority === 'medium' ? 'badge-warning' : 'badge-info';
+                    
+                    interpretation += `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="rec${index}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}">
+                                    ${formatDimensionName(rec.dimension)} 
+                                    <span class="badge ${priorityBadge} ms-2">${rec.priority}</span>
+                                </button>
+                            </h2>
+                            <div id="collapse${index}" class="accordion-collapse collapse" data-bs-parent="#recommendationsAccordion">
+                                <div class="accordion-body">
+                                    ${rec.recommendation}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                interpretation += `
+                        </div>
+                    </div>
+                `;
+            }
+            
             if (data.score >= 75) {
                 interpretation += `
-                    <div class="alert alert-success">
+                    <div class="alert alert-success mt-4">
                         <h5><i class="fas fa-star me-2"></i>¡Excelente nivel de asertividad!</h5>
                         <p>Demuestras una comunicación muy efectiva y sabes manejar las situaciones con confianza.</p>
                     </div>
                 `;
             } else if (data.score >= 50) {
                 interpretation += `
-                    <div class="alert alert-info">
+                    <div class="alert alert-info mt-4">
                         <h5><i class="fas fa-thumbs-up me-2"></i>Buen nivel de asertividad</h5>
                         <p>Tienes una base sólida en comunicación asertiva con oportunidades de mejora.</p>
                     </div>
                 `;
             } else {
                 interpretation += `
-                    <div class="alert alert-warning">
+                    <div class="alert alert-warning mt-4">
                         <h5><i class="fas fa-seedling me-2"></i>Oportunidad de crecimiento</h5>
                         <p>Tienes un gran potencial para desarrollar tu asertividad trabajando en estas habilidades.</p>
                     </div>
@@ -2372,12 +2494,12 @@
                 <div class="text-center mt-4 p-3 border rounded" style="background: rgba(102, 126, 234, 0.1);">
                     <h6 class="text-primary mb-2">
                         <i class="fas fa-chart-radar me-2"></i>
-                        ¿Quieres ver tu análisis completo?
+                        ¿Quieres ver tu gráfico radar detallado?
                     </h6>
-                    <p class="mb-3 text-muted">Obtén tu reporte detallado con gráfico radar, fortalezas, áreas de mejora y recomendaciones personalizadas.</p>
+                    <p class="mb-3 text-muted">Visualiza tu perfil de asertividad en un gráfico radar interactivo con análisis completo.</p>
                     <button class="btn btn-primary-custom me-2" onclick="viewDetailedResults()">
-                        <i class="fas fa-eye me-2"></i>
-                        Ver Análisis Completo
+                        <i class="fas fa-chart-line me-2"></i>
+                        Ver Gráfico Radar
                     </button>
                 </div>
             `;
@@ -2459,28 +2581,37 @@
         function renderEvaluationDetails(evaluation) {
             const container = document.getElementById('evaluationDetailsContent');
             
+            // Si tenemos datos de la evaluación más reciente (cuando se acaba de completar)
+            const currentData = window.lastAssessmentData;
+            const useCurrent = currentData && window.lastEvaluationId === evaluation.id;
+            
+            const data = useCurrent ? currentData : evaluation;
+            const dimensionalScores = useCurrent ? currentData.dimensional_scores : evaluation.dimensional_scores;
+            const recommendations = useCurrent ? currentData.recommendations : [];
+            const detailedAnalysis = useCurrent ? currentData.detailed_analysis : null;
+            
             const html = `
                 <!-- Resumen General -->
                 <div class="row mb-4">
                     <div class="col-12">
                         <div class="card border-0" style="background: var(--surface-elevated);">
                             <div class="card-body text-center">
-                                <h4 class="mb-3">${evaluation.title}</h4>
+                                <h4 class="mb-3">Análisis Completo de Asertividad</h4>
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <div class="h2 text-primary">${evaluation.total_percentage}%</div>
+                                        <div class="h2 text-primary">${Math.round(data.score || evaluation.score)}%</div>
                                         <div class="text-muted">Puntuación Total</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h4 text-success">${evaluation.assertiveness_level}</div>
+                                        <div class="h4 text-success">${getAssertiveLevelFromScore(data.score || evaluation.score)}</div>
                                         <div class="text-muted">Nivel de Asertividad</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h6">${evaluation.completed_at}</div>
+                                        <div class="h6">${formatDate(data.completed_at || evaluation.completed_at)}</div>
                                         <div class="text-muted">Fecha de Completado</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h6">${evaluation.response_details.length}</div>
+                                        <div class="h6">${data.total_questions || evaluation.total_questions}</div>
                                         <div class="text-muted">Preguntas Respondidas</div>
                                     </div>
                                 </div>
@@ -2489,144 +2620,47 @@
                     </div>
                 </div>
 
-                <!-- Gráfico Radar y Análisis Dimensional - Responsive -->
+                <!-- Gráfico Radar y Análisis Dimensional -->
                 <div class="row mb-4">
-                    <!-- Radar Chart - Full width on mobile -->
-                    <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                    <div class="col-lg-6 mb-4">
                         <div class="card border-0 h-100" style="background: var(--surface-elevated);">
                             <div class="card-header">
                                 <h5><i class="fas fa-chart-radar me-2"></i>Radar de Competencias</h5>
                             </div>
-                            <div class="card-body d-flex align-items-center justify-content-center">
-                                <!-- Responsive container for radar chart -->
-                                <div class="radar-chart-container w-100">
-                                    <canvas id="evaluationRadarChart"></canvas>
+                            <div class="card-body">
+                                <div class="radar-chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="radarChart" width="300" height="300"></canvas>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Dimensional Scores -->
-                    <div class="col-12 col-lg-6">
+                    
+                    <div class="col-lg-6 mb-4">
                         <div class="card border-0 h-100" style="background: var(--surface-elevated);">
                             <div class="card-header">
-                                <h5><i class="fas fa-analytics me-2"></i>Puntuaciones por Dimensión</h5>
+                                <h5><i class="fas fa-chart-bar me-2"></i>Puntuaciones por Dimensión</h5>
                             </div>
                             <div class="card-body">
-                                ${Object.entries(evaluation.dimension_analysis).map(([dimension, analysis]) => `
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <strong>${analysis.dimension || dimension}</strong>
-                                            <span class="badge bg-primary">${analysis.percentage}%</span>
-                                        </div>
-                                        <div class="progress mt-2">
-                                            <div class="progress-bar" style="width: ${analysis.percentage}%"></div>
-                                        </div>
-                                        <small class="text-muted">${analysis.level} - ${analysis.interpretation}</small>
-                                    </div>
-                                `).join('')}
+                                <div id="dimensionalScoresContainer">
+                                    ${generateDimensionalScoresHTML(dimensionalScores)}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Fortalezas y Áreas de Mejora -->
-                <div class="row mb-4">
-                    <div class="col-lg-6">
-                        <div class="card border-0" style="background: var(--surface-elevated);">
-                            <div class="card-header bg-success text-white">
-                                <h5><i class="fas fa-thumbs-up me-2"></i>Fortalezas Identificadas</h5>
-                            </div>
-                            <div class="card-body">
-                                ${evaluation.analysis.strengths.length > 0 ? 
-                                    evaluation.analysis.strengths.map(strength => `
-                                        <div class="mb-3 p-3 border-start border-success border-3" style="background: rgba(16, 185, 129, 0.1);">
-                                            <h6 class="text-success">${strength.dimension} (${strength.score}/5)</h6>
-                                            <p class="mb-0">${strength.description}</p>
-                                        </div>
-                                    `).join('') : 
-                                    '<p class="text-muted">Continúa desarrollando para identificar más fortalezas.</p>'
-                                }
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card border-0" style="background: var(--surface-elevated);">
-                            <div class="card-header bg-warning text-white">
-                                <h5><i class="fas fa-chart-line me-2"></i>Áreas de Mejora</h5>
-                            </div>
-                            <div class="card-body">
-                                ${evaluation.analysis.improvements.length > 0 ? 
-                                    evaluation.analysis.improvements.map(improvement => `
-                                        <div class="mb-3 p-3 border-start border-warning border-3" style="background: rgba(245, 158, 11, 0.1);">
-                                            <h6 class="text-warning">${improvement.dimension} (${improvement.score}/5)</h6>
-                                            <p class="mb-2">${improvement.description}</p>
-                                            <div class="recommendations">
-                                                <strong>Recomendaciones:</strong>
-                                                <ul class="mt-2 mb-0">
-                                                    ${improvement.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    `).join('') : 
-                                    '<p class="text-muted">¡Excelente! No se identificaron áreas críticas de mejora.</p>'
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recomendaciones Generales -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card border-0" style="background: var(--surface-elevated);">
-                            <div class="card-header bg-info text-white">
-                                <h5><i class="fas fa-lightbulb me-2"></i>Recomendaciones Generales</h5>
-                            </div>
-                            <div class="card-body">
-                                <ul class="list-group list-group-flush">
-                                    ${evaluation.analysis.general_recommendations.map(recommendation => `
-                                        <li class="list-group-item border-0 bg-transparent">
-                                            <i class="fas fa-check-circle text-info me-2"></i>
-                                            ${recommendation}
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Respuestas Detalladas (Colapsible) -->
+                ${detailedAnalysis ? generateDetailedAnalysisHTML(detailedAnalysis) : ''}
+                ${recommendations && recommendations.length > 0 ? generateRecommendationsHTML(recommendations) : ''}
+                
+                <!-- Respuestas Detalladas -->
                 <div class="row">
                     <div class="col-12">
                         <div class="card border-0" style="background: var(--surface-elevated);">
                             <div class="card-header">
-                                <h5>
-                                    <button class="btn btn-link text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#responseDetails" aria-expanded="false">
-                                        <i class="fas fa-list me-2"></i>Ver Respuestas Detalladas
-                                        <i class="fas fa-chevron-down ms-2"></i>
-                                    </button>
-                                </h5>
+                                <h5><i class="fas fa-list me-2"></i>Respuestas Detalladas</h5>
                             </div>
-                            <div class="collapse" id="responseDetails">
-                                <div class="card-body">
-                                    <div class="row">
-                                        ${evaluation.response_details.map((response, index) => `
-                                            <div class="col-md-6 mb-3">
-                                                <div class="p-3 border rounded">
-                                                    <h6>Pregunta ${response.order}</h6>
-                                                    <p class="mb-2">${response.question_text}</p>
-                                                    <div class="d-flex align-items-center">
-                                                        <span class="badge bg-primary me-2">Respuesta: ${response.response_value}/5</span>
-                                                        <div class="progress flex-grow-1">
-                                                            <div class="progress-bar" style="width: ${(response.response_value / 5) * 100}%"></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
+                            <div class="card-body">
+                                ${generateResponsesHTML(evaluation.responses || [])}
                             </div>
                         </div>
                     </div>
@@ -2635,166 +2669,305 @@
             
             container.innerHTML = html;
             
-            // Crear el gráfico radar después de que el HTML se haya renderizado
+            // Crear el gráfico radar después de insertar el HTML
             setTimeout(() => {
-                createRadarChart(evaluation.radar_data);
+                createRadarChart(dimensionalScores);
             }, 100);
         }
 
-        function createRadarChart(radarData) {
-            const ctx = document.getElementById('evaluationRadarChart').getContext('2d');
+        function generateDimensionalScoresHTML(dimensionalScores) {
+            if (!dimensionalScores) return '<p class="text-muted">No hay datos dimensionales disponibles.</p>';
             
-            // Destroy existing chart if it exists
-            if (window.evaluationRadarChartInstance) {
-                window.evaluationRadarChartInstance.destroy();
+            let html = '';
+            for (const [dimension, score] of Object.entries(dimensionalScores)) {
+                const dimensionName = formatDimensionName(dimension);
+                const percentage = Math.round(score);
+                let colorClass = 'danger';
+                if (percentage >= 70) colorClass = 'success';
+                else if (percentage >= 50) colorClass = 'warning';
+                
+                html += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong>${dimensionName}</strong>
+                            <span class="badge bg-${colorClass}">${percentage}%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-${colorClass}" style="width: ${percentage}%"></div>
+                        </div>
+                        <small class="text-muted">${getDimensionDescription(dimension, percentage)}</small>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function generateDetailedAnalysisHTML(analysis) {
+            let html = '<div class="row mb-4">';
+            
+            // Fortalezas
+            if (analysis.strengths && analysis.strengths.length > 0) {
+                html += `
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: var(--surface-elevated); border-left: 4px solid var(--success) !important;">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="fas fa-star me-2"></i>Fortalezas Identificadas</h6>
+                            </div>
+                            <div class="card-body">
+                `;
+                
+                analysis.strengths.forEach(strength => {
+                    html += `
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0">
+                                <span class="badge bg-success rounded-pill">${strength.score}%</span>
+                            </div>
+                            <div class="flex-grow-1 ms-2">
+                                <strong>${strength.name}</strong>
+                                <p class="mb-0 small text-muted">${strength.description}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
             
-            // Create responsive radar chart
-            window.evaluationRadarChartInstance = new Chart(ctx, {
+            // Áreas de mejora
+            if (analysis.improvement_areas && analysis.improvement_areas.length > 0) {
+                html += `
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: var(--surface-elevated); border-left: 4px solid var(--warning) !important;">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0"><i class="fas fa-target me-2"></i>Áreas de Mejora</h6>
+                            </div>
+                            <div class="card-body">
+                `;
+                
+                analysis.improvement_areas.forEach(area => {
+                    const priorityClass = area.priority === 'high' ? 'danger' : 'warning';
+                    html += `
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0">
+                                <span class="badge bg-${priorityClass} rounded-pill">${area.score}%</span>
+                            </div>
+                            <div class="flex-grow-1 ms-2">
+                                <strong>${area.name}</strong> 
+                                <span class="badge bg-${priorityClass} ms-1">${area.priority}</span>
+                                <p class="mb-0 small text-muted">${area.description}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function generateRecommendationsHTML(recommendations) {
+            if (!recommendations || recommendations.length === 0) return '';
+            
+            let html = `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: var(--surface-elevated);">
+                            <div class="card-header">
+                                <h5><i class="fas fa-lightbulb me-2"></i>Recomendaciones Personalizadas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="accordion" id="recommendationsAccordion">
+            `;
+            
+            recommendations.forEach((rec, index) => {
+                const priorityClass = rec.priority === 'high' ? 'danger' : 
+                                     rec.priority === 'medium' ? 'warning' : 'info';
+                
+                html += `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="rec${index}">
+                            <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}">
+                                ${formatDimensionName(rec.dimension)} 
+                                <span class="badge bg-${priorityClass} ms-2">${rec.priority}</span>
+                                <span class="badge bg-secondary ms-1">${rec.score}%</span>
+                            </button>
+                        </h2>
+                        <div id="collapse${index}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" data-bs-parent="#recommendationsAccordion">
+                            <div class="accordion-body">
+                                <p>${rec.recommendation}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+
+        function generateResponsesHTML(responses) {
+            if (!responses || responses.length === 0) {
+                return '<p class="text-muted">No hay respuestas detalladas disponibles.</p>';
+            }
+            
+            const optionLabels = {
+                1: 'Totalmente en desacuerdo',
+                2: 'En desacuerdo', 
+                3: 'Neutral',
+                4: 'De acuerdo',
+                5: 'Totalmente de acuerdo'
+            };
+            
+            let html = '';
+            responses.forEach((response, index) => {
+                const scoreClass = response.selected_option >= 4 ? 'success' : 
+                                  response.selected_option === 3 ? 'warning' : 'danger';
+                
+                html += `
+                    <div class="border-start border-3 border-primary ps-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>Pregunta ${index + 1}:</strong>
+                                <p class="mb-1">${response.question_text}</p>
+                                <small class="text-${scoreClass}">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    ${optionLabels[response.selected_option]}
+                                </small>
+                            </div>
+                            <span class="badge bg-${scoreClass} ms-2">${response.selected_option}/5</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+
+        function createRadarChart(dimensionalScores) {
+            const ctx = document.getElementById('radarChart');
+            if (!ctx || !dimensionalScores) return;
+            
+            const labels = Object.keys(dimensionalScores).map(dim => formatDimensionName(dim));
+            const data = Object.values(dimensionalScores);
+            
+            new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: radarData.labels,
+                    labels: labels,
                     datasets: [{
-                        label: 'Puntuación',
-                        data: radarData.scores,
-                        backgroundColor: 'rgba(90, 103, 216, 0.15)', /* Updated with Calm colors */
-                        borderColor: 'rgba(90, 103, 216, 1)',
-                        borderWidth: 2.5,
-                        pointBackgroundColor: 'rgba(90, 103, 216, 1)',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        pointHoverBackgroundColor: '#ffffff',
-                        pointHoverBorderColor: 'rgba(90, 103, 216, 1)',
-                        pointHoverBorderWidth: 3
+                        label: 'Tu Nivel de Asertividad',
+                        data: data,
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgb(102, 126, 234)',
+                        pointBorderColor: '#fff',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false, /* Key for mobile responsiveness */
-                    interaction: {
-                        intersect: false,
-                        mode: 'point'
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
                     },
                     scales: {
                         r: {
-                            angleLines: {
-                                display: true,
-                                color: 'rgba(74, 85, 104, 0.1)',
-                                lineWidth: 1
-                            },
-                            grid: {
-                                color: 'rgba(74, 85, 104, 0.1)',
-                                lineWidth: 1
-                            },
-                            pointLabels: {
-                                color: 'var(--calm-text-primary)',
-                                font: {
-                                    size: window.innerWidth < 576 ? 10 : 
-                                          window.innerWidth < 768 ? 11 : 
-                                          window.innerWidth < 992 ? 12 : 13,
-                                    family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                    weight: '500'
-                                },
-                                padding: window.innerWidth < 576 ? 8 : 12
-                            },
-                            suggestedMin: 0,
-                            suggestedMax: 100, /* Using percentage scale */
                             beginAtZero: true,
+                            max: 100,
                             ticks: {
                                 stepSize: 20,
-                                color: 'var(--calm-text-secondary)',
-                                font: {
-                                    size: window.innerWidth < 576 ? 9 : 10
-                                },
-                                backdropColor: 'transparent',
                                 callback: function(value) {
                                     return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
                                 }
                             }
                         }
                     },
                     plugins: {
                         legend: {
-                            display: false /* Hide legend for cleaner look */
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            titleColor: 'var(--calm-text-primary)',
-                            bodyColor: 'var(--calm-text-secondary)',
-                            borderColor: 'rgba(90, 103, 216, 0.3)',
-                            borderWidth: 1,
-                            cornerRadius: 8,
-                            padding: 12,
-                            displayColors: false,
                             callbacks: {
-                                title: function(context) {
-                                    return context[0].label;
-                                },
                                 label: function(context) {
-                                    return `Puntuación: ${context.parsed.r}%`;
+                                    return context.dataset.label + ': ' + Math.round(context.parsed.r) + '%';
                                 }
                             }
                         }
-                    },
-                    animation: {
-                        duration: 1200,
-                        easing: 'easeInOutCubic'
                     }
-                }
-            });
-            
-            // Handle window resize for responsiveness
-            window.addEventListener('resize', function() {
-                if (window.evaluationRadarChartInstance) {
-                    // Update font sizes based on screen size
-                    const newFontSize = window.innerWidth < 576 ? 10 : 
-                                       window.innerWidth < 768 ? 11 : 
-                                       window.innerWidth < 992 ? 12 : 13;
-                    
-                    window.evaluationRadarChartInstance.options.scales.r.pointLabels.font.size = newFontSize;
-                    window.evaluationRadarChartInstance.options.scales.r.pointLabels.padding = window.innerWidth < 576 ? 8 : 12;
-                    window.evaluationRadarChartInstance.options.scales.r.ticks.font.size = window.innerWidth < 576 ? 9 : 10;
-                    
-                    window.evaluationRadarChartInstance.update('none'); // Update without animation
                 }
             });
         }
 
-        function printEvaluationReport() {
-            // Crear una nueva ventana para imprimir
-            const printWindow = window.open('', '_blank');
-            const evaluationContent = document.getElementById('evaluationDetailsContent').innerHTML;
-            
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Reporte de Evaluación</title>
-                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                    <style>
-                        body { font-family: Arial, sans-serif; }
-                        .card { border: 1px solid #dee2e6; margin-bottom: 1rem; }
-                        .badge { display: inline-block; padding: 0.25em 0.6em; }
-                        @media print { 
-                            .btn { display: none; }
-                            canvas { max-width: 400px; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <h1 class="text-center mb-4">Reporte de Evaluación de Asertividad</h1>
-                        ${evaluationContent}
-                    </div>
-                </body>
-                </html>
-            `);
-            
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
+        function getAssertiveLevelFromScore(score) {
+            if (score >= 85) return 'Muy Asertivo';
+            if (score >= 70) return 'Asertivo';
+            if (score >= 50) return 'Moderadamente Asertivo';
+            return 'Poco Asertivo';
+        }
+
+        function getDimensionDescription(dimension, score) {
+            const descriptions = {
+                'comunicacion': score >= 70 ? 'Excelente comunicación interpersonal' : 'Oportunidad de mejorar la comunicación',
+                'derechos': score >= 70 ? 'Sabe defender sus derechos apropiadamente' : 'Necesita fortalecer la defensa de derechos',
+                'opiniones': score >= 70 ? 'Expresa opiniones con confianza' : 'Puede mejorar la expresión de opiniones',
+                'conflictos': score >= 70 ? 'Maneja conflictos efectivamente' : 'Requiere desarrollo en manejo de conflictos',
+                'autoconfianza': score >= 70 ? 'Alta confianza en sí mismo/a' : 'Oportunidad de fortalecer autoconfianza'
+            };
+            return descriptions[dimension] || 'Área de desarrollo personal';
+        }
+
+        function formatDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return dateString;
+            }
         }
 
         // Refresh dashboard
@@ -2804,9 +2977,7 @@
             try {
                 await Promise.all([
                     loadDashboardSummary(),
-                    loadEvaluations(),
-                    loadTasks(),
-                    loadEvaluationHistory()
+                    loadEvaluations()
                 ]);
                 
                 showToast('Dashboard actualizado', 'success');
