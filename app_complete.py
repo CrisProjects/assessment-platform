@@ -2340,7 +2340,10 @@ def api_save_assessment(current_coachee):
             'message': 'Evaluación guardada exitosamente',
             'score': percentage_score,
             'result_text': result_text,
-            'assessment_id': assessment_result.id
+            'assessment_id': assessment_result.id,
+            'total_questions': total_questions,
+            'completed_at': assessment_result.completed_at.isoformat() if hasattr(assessment_result, 'completed_at') else datetime.utcnow().isoformat(),
+            'participant_name': current_coachee.full_name
         }), 200
         
     except Exception as e:
@@ -2388,6 +2391,64 @@ def api_coachee_evaluation_details(evaluation_id, current_coachee):
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo detalles: {str(e)}'}), 500
+
+@app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
+@login_required
+def api_coach_coachee_evaluations(coachee_id):
+    """Obtener evaluaciones de un coachee específico para el coach"""
+    try:
+        if current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver evaluaciones'}), 403
+        
+        # Verificar que el coachee pertenece al coach actual
+        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no autorizado'}), 404
+        
+        # Obtener todas las evaluaciones del coachee
+        evaluations = AssessmentResult.query.filter_by(
+            user_id=coachee_id
+        ).order_by(AssessmentResult.completed_at.desc()).all()
+        
+        evaluations_data = []
+        for evaluation in evaluations:
+            # Obtener respuestas para esta evaluación
+            responses = Response.query.filter_by(
+                assessment_result_id=evaluation.id
+            ).all()
+            
+            responses_data = []
+            for response in responses:
+                question = Question.query.get(response.question_id)
+                if question:
+                    responses_data.append({
+                        'question_id': response.question_id,
+                        'question_text': question.text,
+                        'selected_option': response.selected_option,
+                        'question_order': question.order
+                    })
+            
+            evaluations_data.append({
+                'id': evaluation.id,
+                'score': evaluation.score,
+                'total_questions': evaluation.total_questions,
+                'completed_at': evaluation.completed_at.isoformat(),
+                'result_text': evaluation.result_text,
+                'dimensional_scores': evaluation.dimensional_scores or {},
+                'responses': sorted(responses_data, key=lambda x: x['question_order'])
+            })
+        
+        return jsonify({
+            'coachee': {
+                'id': coachee.id,
+                'name': coachee.full_name,
+                'email': coachee.email
+            },
+            'evaluations': evaluations_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
 
 # ========================
 # RUTAS DE DASHBOARD

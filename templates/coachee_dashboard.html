@@ -2306,7 +2306,7 @@
         // Show assessment results
         function showAssessmentResults(data) {
             // Store the result_id for detailed view
-            window.lastEvaluationId = data.result_id;
+            window.lastEvaluationId = data.assessment_id;
             
             // Hide question container
             document.getElementById('assessmentContainer').style.display = 'none';
@@ -2315,26 +2315,43 @@
             const resultsContainer = document.getElementById('assessmentResults');
             resultsContainer.style.display = 'block';
             
-            // Display results
-            document.getElementById('assessmentScore').textContent = data.total_score + '%';
-            document.getElementById('assessmentLevel').textContent = data.assertiveness_level;
+            // Display results - Corregir nombres de propiedades del API
+            document.getElementById('assessmentScore').textContent = data.score + '%';
+            
+            // Determinar nivel de asertividad basado en el score
+            let assertivenessLevel = '';
+            if (data.score >= 80) {
+                assertivenessLevel = 'Muy Asertivo';
+            } else if (data.score >= 60) {
+                assertivenessLevel = 'Asertivo';
+            } else if (data.score >= 40) {
+                assertivenessLevel = 'Moderadamente Asertivo';
+            } else {
+                assertivenessLevel = 'Poco Asertivo';
+            }
+            
+            document.getElementById('assessmentLevel').textContent = assertivenessLevel;
             
             // Create interpretation
             let interpretation = `
                 <div class="text-center mb-4">
-                    <h4>Tu Nivel de Asertividad: ${data.assertiveness_level}</h4>
-                    <p class="lead">Has obtenido <strong>${data.total_score}%</strong> en la evaluación.</p>
+                    <h4>Tu Nivel de Asertividad: ${assertivenessLevel}</h4>
+                    <p class="lead">Has obtenido <strong>${data.score}%</strong> en la evaluación.</p>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        ${data.result_text}
+                    </div>
                 </div>
             `;
             
-            if (data.total_score >= 75) {
+            if (data.score >= 75) {
                 interpretation += `
                     <div class="alert alert-success">
                         <h5><i class="fas fa-star me-2"></i>¡Excelente nivel de asertividad!</h5>
                         <p>Demuestras una comunicación muy efectiva y sabes manejar las situaciones con confianza.</p>
                     </div>
                 `;
-            } else if (data.total_score >= 50) {
+            } else if (data.score >= 50) {
                 interpretation += `
                     <div class="alert alert-info">
                         <h5><i class="fas fa-thumbs-up me-2"></i>Buen nivel de asertividad</h5>
@@ -2346,38 +2363,6 @@
                     <div class="alert alert-warning">
                         <h5><i class="fas fa-seedling me-2"></i>Oportunidad de crecimiento</h5>
                         <p>Tienes un gran potencial para desarrollar tu asertividad trabajando en estas habilidades.</p>
-                    </div>
-                `;
-            }
-            
-            // Add dimensional scores preview
-            if (data.dimensional_scores) {
-                interpretation += `
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Resumen por Dimensiones:</h6>
-                            <div class="row">
-                `;
-                
-                for (const [dimension, score] of Object.entries(data.dimensional_scores)) {
-                    const percentage = Math.round(score); // score ya es un porcentaje (0-100)
-                    const dimensionName = formatDimensionName(dimension);
-                    interpretation += `
-                        <div class="col-md-6 mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small><strong>${dimensionName}</strong></small>
-                                <small class="text-muted">${percentage}%</small>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-primary" style="width: ${percentage}%"></div>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                interpretation += `
-                            </div>
-                        </div>
                     </div>
                 `;
             }

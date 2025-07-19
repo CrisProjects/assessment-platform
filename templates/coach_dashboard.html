@@ -779,8 +779,157 @@
         }
 
         // Función para ver detalles del coachee
-        function viewCoacheeDetails(coacheeId) {
-            showToast('Función de detalles en desarrollo', 'info');
+        async function viewCoacheeDetails(coacheeId) {
+            try {
+                showToast('Cargando detalles del coachee...', 'info');
+                
+                // Obtener evaluaciones del coachee
+                const response = await fetch(`/api/coach/coachee-evaluations/${coacheeId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showCoacheeDetailsModal(data);
+                } else {
+                    throw new Error(data.error || 'Error cargando detalles');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error cargando detalles: ' + error.message, 'error');
+            }
+        }
+
+        // Mostrar modal con detalles del coachee
+        function showCoacheeDetailsModal(data) {
+            const modal = document.getElementById('coacheeDetailsModal');
+            if (!modal) {
+                // Crear modal dinámicamente si no existe
+                createCoacheeDetailsModal();
+            }
+            
+            // Actualizar contenido del modal
+            document.getElementById('coacheeDetailsModalLabel').textContent = `Evaluaciones de ${data.coachee.name}`;
+            
+            let evaluationsHtml = '';
+            if (data.evaluations.length === 0) {
+                evaluationsHtml = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5>Sin evaluaciones</h5>
+                        <p class="text-muted">Este coachee aún no ha completado ninguna evaluación.</p>
+                    </div>
+                `;
+            } else {
+                evaluationsHtml = '<div class="row">';
+                data.evaluations.forEach((evaluation, index) => {
+                    const date = new Date(evaluation.completed_at).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    let scoreColor = 'text-danger';
+                    if (evaluation.score >= 70) scoreColor = 'text-success';
+                    else if (evaluation.score >= 50) scoreColor = 'text-warning';
+                    
+                    evaluationsHtml += `
+                        <div class="col-12 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">Evaluación #${index + 1}</h6>
+                                        <span class="badge bg-primary">${date}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold ${scoreColor}">${evaluation.score}%</span>
+                                        <small class="text-muted">${evaluation.total_questions} preguntas</small>
+                                    </div>
+                                    <p class="text-muted small mb-2">${evaluation.result_text}</p>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="showEvaluationResponses(${evaluation.id}, ${JSON.stringify(evaluation.responses).replace(/"/g, '&quot;')})">
+                                        <i class="fas fa-eye me-1"></i>Ver Respuestas
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                evaluationsHtml += '</div>';
+            }
+            
+            document.getElementById('coacheeDetailsContent').innerHTML = evaluationsHtml;
+            
+            // Mostrar el modal
+            const bsModal = new bootstrap.Modal(document.getElementById('coacheeDetailsModal'));
+            bsModal.show();
+        }
+
+        // Crear modal de detalles del coachee
+        function createCoacheeDetailsModal() {
+            const modalHtml = `
+                <div class="modal fade" id="coacheeDetailsModal" tabindex="-1" aria-labelledby="coacheeDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="coacheeDetailsModalLabel">Detalles del Coachee</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="coacheeDetailsContent">
+                                    <!-- Contenido cargado dinámicamente -->
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Mostrar respuestas de una evaluación específica
+        function showEvaluationResponses(evaluationId, responses) {
+            let responsesHtml = '<div class="mt-3">';
+            responsesHtml += '<h6><i class="fas fa-list me-2"></i>Respuestas Detalladas:</h6>';
+            
+            const optionLabels = {
+                1: 'Totalmente en desacuerdo',
+                2: 'En desacuerdo',
+                3: 'Neutral',
+                4: 'De acuerdo',
+                5: 'Totalmente de acuerdo'
+            };
+            
+            responses.forEach((response, index) => {
+                responsesHtml += `
+                    <div class="border-start border-3 border-primary ps-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>Pregunta ${index + 1}:</strong>
+                                <p class="mb-1">${response.question_text}</p>
+                                <small class="text-primary">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    ${optionLabels[response.selected_option]}
+                                </small>
+                            </div>
+                            <span class="badge bg-secondary ms-2">${response.selected_option}/5</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            responsesHtml += '</div>';
+            
+            // Mostrar en un segundo modal o expandir el actual
+            const detailsContent = document.getElementById('coacheeDetailsContent');
+            detailsContent.innerHTML += responsesHtml;
         }
 
         // Función para descargar reporte
