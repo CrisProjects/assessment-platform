@@ -2212,24 +2212,36 @@ def api_coachee_update_task_progress(task_id, current_coachee):
 def api_get_questions(current_coachee):
     """Obtener preguntas del assessment para el coachee"""
     try:
-        questions = Question.query.filter_by(
-            assessment_id=DEFAULT_ASSESSMENT_ID,
-            is_active=True
-        ).order_by(Question.order).all()
+        # Usar consulta SQL directa para evitar problemas con columnas faltantes
+        query = db.text("""
+            SELECT id, text, question_type, "order" 
+            FROM question 
+            WHERE assessment_id = :assessment_id 
+            ORDER BY "order"
+        """)
         
+        result = db.session.execute(query, {'assessment_id': DEFAULT_ASSESSMENT_ID})
         questions_data = []
-        for question in questions:
+        
+        for row in result:
             questions_data.append({
-                'id': question.id,
-                'text': question.text,
-                'type': question.question_type,
-                'order': question.order
+                'id': row[0],
+                'text': row[1],
+                'type': row[2] or 'likert',
+                'order': row[3] or 0
             })
         
-        return jsonify(questions_data), 200
+        return jsonify({
+            'success': True,
+            'questions': questions_data,
+            'total_questions': len(questions_data)
+        }), 200
         
     except Exception as e:
-        return jsonify({'error': f'Error obteniendo preguntas: {str(e)}'}), 500
+        return jsonify({
+            'success': False,
+            'error': f'Error obteniendo preguntas: {str(e)}'
+        }), 500
 
 @app.route('/api/save_assessment', methods=['POST'])
 @coachee_api_required

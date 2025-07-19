@@ -2165,6 +2165,15 @@
             // Update progress bar
             document.getElementById('assessmentProgress').style.width = progress + '%';
             
+            // Opciones estándar para escala Likert de asertividad
+            const likertOptions = [
+                'Totalmente en desacuerdo',
+                'En desacuerdo',
+                'Neutral',
+                'De acuerdo',
+                'Totalmente de acuerdo'
+            ];
+            
             // Create question HTML
             document.getElementById('questionContainer').innerHTML = `
                 <div class="question-card">
@@ -2172,9 +2181,9 @@
                         <i class="fas fa-question-circle me-2"></i>
                         Pregunta ${currentQuestionIndex + 1} de ${questions.length}
                     </div>
-                    <div class="question-text mb-4">${question.content}</div>
+                    <div class="question-text mb-4">${question.text}</div>
                     <div class="options-container mb-4">
-                        ${question.options.map((option, index) => `
+                        ${likertOptions.map((option, index) => `
                             <div class="form-check mb-3 p-3 border rounded option-item" onclick="selectAssessmentOption(${index + 1})">
                                 <input class="form-check-input" type="radio" name="question${currentQuestionIndex}" value="${index + 1}" id="option${index}">
                                 <label class="form-check-label w-100" for="option${index}">
