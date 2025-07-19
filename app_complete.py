@@ -22,7 +22,7 @@ import logging
 import string
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 # Configurar logging
 import logging
@@ -2258,31 +2258,38 @@ def api_save_assessment(current_coachee):
         total_score = 0
         total_questions = len(responses)
         
-        # Guardar respuestas individuales
+        # Guardar respuestas individuales usando SQL directo
         saved_responses = []
         for response_data in responses:
             question_id = response_data.get('question_id')
             selected_option = response_data.get('selected_option')
             
             if question_id and selected_option is not None:
-                # Eliminar respuesta anterior si existe
-                existing_response = Response.query.filter_by(
-                    user_id=current_coachee.id,
-                    question_id=question_id
-                ).first()
+                # Eliminar respuesta anterior si existe usando SQL directo
+                delete_query = db.text("""
+                    DELETE FROM response 
+                    WHERE user_id = :user_id AND question_id = :question_id
+                """)
+                db.session.execute(delete_query, {
+                    'user_id': current_coachee.id,
+                    'question_id': question_id
+                })
                 
-                if existing_response:
-                    db.session.delete(existing_response)
+                # Insertar nueva respuesta usando SQL directo
+                insert_query = db.text("""
+                    INSERT INTO response (user_id, question_id, selected_option)
+                    VALUES (:user_id, :question_id, :selected_option)
+                """)
+                db.session.execute(insert_query, {
+                    'user_id': current_coachee.id,
+                    'question_id': question_id,
+                    'selected_option': selected_option
+                })
                 
-                # Crear nueva respuesta
-                new_response = Response(
-                    user_id=current_coachee.id,
-                    question_id=question_id,
-                    selected_option=selected_option
-                )
-                
-                db.session.add(new_response)
-                saved_responses.append(new_response)
+                saved_responses.append({
+                    'question_id': question_id,
+                    'selected_option': selected_option
+                })
                 total_score += selected_option
         
         # Calcular puntaje como porcentaje
@@ -2314,9 +2321,17 @@ def api_save_assessment(current_coachee):
         db.session.add(assessment_result)
         db.session.flush()
         
-        # Actualizar respuestas con el ID del resultado
-        for response in saved_responses:
-            response.assessment_result_id = assessment_result.id
+        # Actualizar respuestas con el ID del resultado usando SQL directo
+        for response in responses:
+            db.session.execute(text("""
+                UPDATE response 
+                SET assessment_result_id = :assessment_result_id 
+                WHERE user_id = :user_id AND question_id = :question_id
+            """), {
+                'assessment_result_id': assessment_result.id,
+                'user_id': current_coachee.id,
+                'question_id': response['question_id']
+            })
         
         db.session.commit()
         
