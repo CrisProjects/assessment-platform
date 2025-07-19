@@ -1860,6 +1860,319 @@ def api_user_my_profile(current_coachee):
     except Exception as e:
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
+@app.route('/api/coachee/dashboard-summary', methods=['GET'])
+@coachee_api_required
+def api_coachee_dashboard_summary(current_coachee):
+    """Obtener resumen del dashboard para coachee"""
+    try:
+        # Contar evaluaciones completadas
+        total_evaluations = AssessmentResult.query.filter_by(user_id=current_coachee.id).count()
+        
+        # Obtener la última evaluación
+        latest_evaluation = AssessmentResult.query.filter_by(
+            user_id=current_coachee.id
+        ).order_by(AssessmentResult.completed_at.desc()).first()
+        
+        # Contar tareas activas
+        active_tasks = Task.query.filter_by(
+            coachee_id=current_coachee.id,
+            is_active=True
+        ).count()
+        
+        # Obtener nombre del coach
+        coach_name = "Sin asignar"
+        if current_coachee.coach_id:
+            coach = User.query.get(current_coachee.coach_id)
+            if coach:
+                coach_name = coach.full_name
+        
+        return jsonify({
+            'participant_name': current_coachee.full_name,
+            'coach_name': coach_name,
+            'total_evaluations': total_evaluations,
+            'active_tasks': active_tasks,
+            'latest_score': latest_evaluation.score if latest_evaluation else None,
+            'latest_evaluation_date': latest_evaluation.completed_at.isoformat() if latest_evaluation else None
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo resumen: {str(e)}'}), 500
+
+@app.route('/api/coachee/evaluations', methods=['GET'])
+@coachee_api_required
+def api_coachee_evaluations(current_coachee):
+    """Obtener evaluaciones del coachee"""
+    try:
+        evaluations = AssessmentResult.query.filter_by(
+            user_id=current_coachee.id
+        ).order_by(AssessmentResult.completed_at.desc()).all()
+        
+        evaluations_data = []
+        for eval in evaluations:
+            evaluations_data.append({
+                'id': eval.id,
+                'score': eval.score,
+                'completed_at': eval.completed_at.isoformat(),
+                'result_text': eval.result_text,
+                'dimensional_scores': eval.dimensional_scores or {}
+            })
+        
+        return jsonify(evaluations_data), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
+
+@app.route('/api/coachee/tasks', methods=['GET'])
+@coachee_api_required
+def api_coachee_tasks(current_coachee):
+    """Obtener tareas asignadas al coachee"""
+    try:
+        tasks = Task.query.filter_by(
+            coachee_id=current_coachee.id,
+            is_active=True
+        ).order_by(Task.created_at.desc()).all()
+        
+        tasks_data = []
+        for task in tasks:
+            # Obtener el último progreso
+            latest_progress = TaskProgress.query.filter_by(
+                task_id=task.id
+            ).order_by(TaskProgress.created_at.desc()).first()
+            
+            tasks_data.append({
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'category': task.category,
+                'priority': task.priority,
+                'due_date': task.due_date.isoformat() if task.due_date else None,
+                'created_at': task.created_at.isoformat(),
+                'status': latest_progress.status if latest_progress else 'pending',
+                'progress_percentage': latest_progress.progress_percentage if latest_progress else 0,
+                'notes': latest_progress.notes if latest_progress else ''
+            })
+        
+        return jsonify(tasks_data), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
+
+@app.route('/api/coachee/evaluation-history', methods=['GET'])
+@coachee_api_required
+def api_coachee_evaluation_history(current_coachee):
+    """Obtener historial completo de evaluaciones del coachee"""
+    try:
+        evaluations = AssessmentResult.query.filter_by(
+            user_id=current_coachee.id
+        ).order_by(AssessmentResult.completed_at.asc()).all()
+        
+        history_data = []
+        for eval in evaluations:
+            history_data.append({
+                'id': eval.id,
+                'date': eval.completed_at.isoformat(),
+                'score': eval.score,
+                'total_questions': eval.total_questions,
+                'result_text': eval.result_text,
+                'dimensional_scores': eval.dimensional_scores or {}
+            })
+        
+        return jsonify(history_data), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo historial: {str(e)}'}), 500
+
+@app.route('/api/coachee/tasks/<int:task_id>/progress', methods=['POST'])
+@coachee_api_required
+def api_coachee_update_task_progress(task_id, current_coachee):
+    """Actualizar progreso de tarea desde el lado del coachee"""
+    try:
+        task = Task.query.filter_by(
+            id=task_id,
+            coachee_id=current_coachee.id
+        ).first()
+        
+        if not task:
+            return jsonify({'error': 'Tarea no encontrada'}), 404
+        
+        data = request.get_json()
+        
+        # Crear nueva entrada de progreso
+        progress_entry = TaskProgress(
+            task_id=task_id,
+            status=data.get('status', 'in_progress'),
+            progress_percentage=data.get('progress_percentage', 0),
+            notes=data.get('notes', ''),
+            updated_by=current_coachee.id
+        )
+        
+        db.session.add(progress_entry)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progreso actualizado exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
+
+@app.route('/api/questions', methods=['GET'])
+@coachee_api_required
+def api_get_questions(current_coachee):
+    """Obtener preguntas del assessment para el coachee"""
+    try:
+        questions = Question.query.filter_by(
+            assessment_id=DEFAULT_ASSESSMENT_ID,
+            is_active=True
+        ).order_by(Question.order).all()
+        
+        questions_data = []
+        for question in questions:
+            questions_data.append({
+                'id': question.id,
+                'text': question.text,
+                'type': question.question_type,
+                'order': question.order
+            })
+        
+        return jsonify(questions_data), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo preguntas: {str(e)}'}), 500
+
+@app.route('/api/save_assessment', methods=['POST'])
+@coachee_api_required
+def api_save_assessment(current_coachee):
+    """Guardar resultados de assessment para el coachee"""
+    try:
+        data = request.get_json()
+        responses = data.get('responses', [])
+        
+        if not responses:
+            return jsonify({'error': 'No se recibieron respuestas'}), 400
+        
+        # Calcular puntaje total
+        total_score = 0
+        total_questions = len(responses)
+        
+        # Guardar respuestas individuales
+        saved_responses = []
+        for response_data in responses:
+            question_id = response_data.get('question_id')
+            selected_option = response_data.get('selected_option')
+            
+            if question_id and selected_option is not None:
+                # Eliminar respuesta anterior si existe
+                existing_response = Response.query.filter_by(
+                    user_id=current_coachee.id,
+                    question_id=question_id
+                ).first()
+                
+                if existing_response:
+                    db.session.delete(existing_response)
+                
+                # Crear nueva respuesta
+                new_response = Response(
+                    user_id=current_coachee.id,
+                    question_id=question_id,
+                    selected_option=selected_option
+                )
+                
+                db.session.add(new_response)
+                saved_responses.append(new_response)
+                total_score += selected_option
+        
+        # Calcular puntaje como porcentaje
+        max_possible_score = total_questions * LIKERT_SCALE_MAX
+        percentage_score = (total_score / max_possible_score) * 100 if max_possible_score > 0 else 0
+        
+        # Generar texto de resultado
+        if percentage_score < 40:
+            result_text = "Nivel de asertividad bajo. Se recomienda trabajar en el desarrollo de habilidades asertivas."
+        elif percentage_score < 60:
+            result_text = "Nivel de asertividad moderado. Hay oportunidades de mejora en algunas áreas."
+        elif percentage_score < 80:
+            result_text = "Buen nivel de asertividad. Continúa desarrollando estas habilidades."
+        else:
+            result_text = "Excelente nivel de asertividad. Mantén estas fortalezas."
+        
+        # Crear registro de resultado
+        assessment_result = AssessmentResult(
+            user_id=current_coachee.id,
+            assessment_id=DEFAULT_ASSESSMENT_ID,
+            score=round(percentage_score, 1),
+            total_questions=total_questions,
+            result_text=result_text,
+            coach_id=current_coachee.coach_id,
+            participant_name=current_coachee.full_name,
+            participant_email=current_coachee.email
+        )
+        
+        db.session.add(assessment_result)
+        db.session.flush()
+        
+        # Actualizar respuestas con el ID del resultado
+        for response in saved_responses:
+            response.assessment_result_id = assessment_result.id
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Evaluación guardada exitosamente',
+            'score': percentage_score,
+            'result_text': result_text,
+            'assessment_id': assessment_result.id
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error guardando evaluación: {str(e)}'}), 500
+
+@app.route('/api/coachee/evaluation-details/<int:evaluation_id>', methods=['GET'])
+@coachee_api_required
+def api_coachee_evaluation_details(evaluation_id, current_coachee):
+    """Obtener detalles específicos de una evaluación"""
+    try:
+        evaluation = AssessmentResult.query.filter_by(
+            id=evaluation_id,
+            user_id=current_coachee.id
+        ).first()
+        
+        if not evaluation:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Obtener respuestas individuales
+        responses = Response.query.filter_by(
+            assessment_result_id=evaluation_id
+        ).all()
+        
+        responses_data = []
+        for response in responses:
+            question = Question.query.get(response.question_id)
+            if question:
+                responses_data.append({
+                    'question_id': response.question_id,
+                    'question_text': question.text,
+                    'selected_option': response.selected_option,
+                    'question_order': question.order
+                })
+        
+        return jsonify({
+            'id': evaluation.id,
+            'score': evaluation.score,
+            'total_questions': evaluation.total_questions,
+            'completed_at': evaluation.completed_at.isoformat(),
+            'result_text': evaluation.result_text,
+            'dimensional_scores': evaluation.dimensional_scores or {},
+            'responses': sorted(responses_data, key=lambda x: x['question_order'])
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error obteniendo detalles: {str(e)}'}), 500
+
 # ========================
 # RUTAS DE DASHBOARD
 # ========================
