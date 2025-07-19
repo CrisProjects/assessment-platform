@@ -2052,15 +2052,16 @@ def api_coachee_dashboard_summary(current_coachee):
 @app.route('/api/coachee/evaluations', methods=['GET'])
 @coachee_api_required
 def api_coachee_evaluations(current_coachee):
-    """Obtener evaluaciones del coachee"""
+    """Obtener evaluaciones del coachee (disponibles y completadas)"""
     try:
-        evaluations = AssessmentResult.query.filter_by(
+        # Evaluaciones completadas
+        completed_evaluations = AssessmentResult.query.filter_by(
             user_id=current_coachee.id
         ).order_by(AssessmentResult.completed_at.desc()).all()
         
-        evaluations_data = []
-        for eval in evaluations:
-            evaluations_data.append({
+        completed_data = []
+        for eval in completed_evaluations:
+            completed_data.append({
                 'id': eval.id,
                 'score': eval.score,
                 'completed_at': eval.completed_at.isoformat(),
@@ -2068,7 +2069,44 @@ def api_coachee_evaluations(current_coachee):
                 'dimensional_scores': eval.dimensional_scores or {}
             })
         
-        return jsonify(evaluations_data), 200
+        # Evaluaciones disponibles (assessments que el coachee puede tomar)
+        # Por ahora, incluir el assessment principal de asertividad
+        available_evaluations = {}
+        
+        # Verificar si el assessment principal existe
+        try:
+            main_assessment = db.session.get(Assessment, 1)
+            if main_assessment:
+                # Verificar si el coachee puede tomar esta evaluación
+                # (puede tomarla múltiples veces para seguimiento de progreso)
+                questions_count = Question.query.filter_by(assessment_id=1).count()
+                available_evaluations['1'] = {
+                    'id': '1',
+                    'title': main_assessment.title,
+                    'description': main_assessment.description,
+                    'duration': '10-15 minutos',
+                    'questions_count': questions_count
+                }
+        except Exception as e:
+            # Si hay problemas con la consulta, crear una evaluación por defecto
+            available_evaluations['1'] = {
+                'id': '1',
+                'title': 'Evaluación de Asertividad',
+                'description': 'Evaluación completa de habilidades asertivas en diferentes situaciones',
+                'duration': '10-15 minutos',
+                'questions_count': 10
+            }
+        
+        # Si el coachee tiene un coach asignado, buscar evaluaciones específicas asignadas
+        if current_coachee.coach_id:
+            # Aquí se podrían agregar evaluaciones específicas asignadas por el coach
+            # Por ahora, mantener la evaluación principal disponible
+            pass
+        
+        return jsonify({
+            'available': available_evaluations,
+            'completed': completed_data
+        }), 200
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500

@@ -1658,7 +1658,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    evaluationsData = data; // La API devuelve directamente el array
+                    evaluationsData = data; // Ahora contiene {available: {}, completed: []}
                     renderAvailableEvaluations();
                     renderCompletedEvaluations();
                 } else {
@@ -1674,6 +1674,15 @@
                 document.getElementById('completedEvaluations').innerHTML = 
                     '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando historial de evaluaciones</p></div>';
             }
+        }
+
+        // Helper function to get assertativeness level
+        function getAssertativenessLevel(score) {
+            if (score >= 80) return 'Muy Asertivo';
+            if (score >= 65) return 'Asertivo';
+            if (score >= 50) return 'Moderadamente Asertivo';
+            if (score >= 35) return 'Poco Asertivo';
+            return 'Muy Poco Asertivo';
         }
 
         // Render available evaluations
@@ -1727,17 +1736,17 @@
             
             let html = '';
             evaluationsData.completed.forEach(evaluation => {
-                const scoreColor = evaluation.total_score >= 75 ? 'text-success' : 
-                                  evaluation.total_score >= 50 ? 'text-warning' : 'text-danger';
+                const scoreColor = evaluation.score >= 75 ? 'text-success' : 
+                                  evaluation.score >= 50 ? 'text-warning' : 'text-danger';
                 
                 html += `
                     <div class="evaluation-item">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0">${evaluation.title}</h6>
-                            <span class="evaluation-score ${scoreColor}">${evaluation.total_score}%</span>
+                            <h6 class="mb-0">Evaluación de Asertividad</h6>
+                            <span class="evaluation-score ${scoreColor}">${evaluation.score}%</span>
                         </div>
-                        <div class="evaluation-level ${scoreColor} mb-2">${evaluation.assertiveness_level}</div>
-                        <div class="evaluation-description text-muted small mb-2">${evaluation.result_description || ''}</div>
+                        <div class="evaluation-level ${scoreColor} mb-2">${getAssertativenessLevel(evaluation.score)}</div>
+                        <div class="evaluation-description text-muted small mb-2">${evaluation.result_text || ''}</div>
                         <div class="evaluation-date">${formatDate(evaluation.completed_at)}</div>
                         <button class="btn btn-sm btn-outline-evaluation mt-2" onclick="viewEvaluationDetails(${evaluation.id})">
                             <i class="fas fa-eye me-1"></i>
