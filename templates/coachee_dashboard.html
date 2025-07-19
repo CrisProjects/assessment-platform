@@ -1658,7 +1658,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    evaluationsData = data.evaluations;
+                    evaluationsData = data; // La API devuelve directamente el array
                     renderAvailableEvaluations();
                     renderCompletedEvaluations();
                 } else {
@@ -1757,7 +1757,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    tasksData = data.tasks;
+                    tasksData = data; // La API devuelve directamente el array
                     renderTasks();
                 } else {
                     throw new Error(data.error);
@@ -1783,9 +1783,9 @@
             let html = '';
             tasksData.forEach(task => {
                 const priorityClass = `priority-${task.priority}`;
-                const statusClass = `status-${task.current_status}`;
-                const progressClass = task.current_progress >= 75 ? 'high' : 
-                                     task.current_progress >= 25 ? 'medium' : 'low';
+                const statusClass = `status-${task.status}`;
+                const progressClass = task.progress_percentage >= 75 ? 'high' : 
+                                     task.progress_percentage >= 25 ? 'medium' : 'low';
                 
                 html += `
                     <div class="task-item">
@@ -1803,7 +1803,7 @@
                             </span>
                             <span class="task-badge ${statusClass}">
                                 <i class="fas fa-circle me-1"></i>
-                                ${getStatusLabel(task.current_status)}
+                                ${getStatusLabel(task.status)}
                             </span>
                             ${task.category ? `<span class="task-badge"><i class="fas fa-tag me-1"></i>${task.category}</span>` : ''}
                             ${task.due_date ? `<span class="task-badge"><i class="fas fa-calendar me-1"></i>${formatDate(task.due_date)}</span>` : ''}
@@ -1812,10 +1812,10 @@
                         <div class="progress-container">
                             <div class="d-flex justify-content-between mb-1">
                                 <small>Progreso</small>
-                                <small>${task.current_progress}%</small>
+                                <small>${task.progress_percentage}%</small>
                             </div>
                             <div class="progress-bar-custom">
-                                <div class="progress-fill ${progressClass}" style="width: ${task.current_progress}%"></div>
+                                <div class="progress-fill ${progressClass}" style="width: ${task.progress_percentage}%"></div>
                             </div>
                         </div>
                         
@@ -2025,9 +2025,9 @@
             if (!task) return;
             
             document.getElementById('taskId').value = taskId;
-            document.getElementById('taskStatus').value = task.current_status;
-            document.getElementById('taskProgress').value = task.current_progress;
-            document.getElementById('progressValue').textContent = task.current_progress + '%';
+            document.getElementById('taskStatus').value = task.status;
+            document.getElementById('taskProgress').value = task.progress_percentage;
+            document.getElementById('progressValue').textContent = task.progress_percentage + '%';
             document.getElementById('taskNotes').value = '';
             
             // Update progress display when slider changes
