@@ -1213,15 +1213,16 @@ def api_coach_get_profile():
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
 @app.route('/api/coach/create-invitation', methods=['POST'])
+@login_required
 def api_coach_create_invitation():
     """Crear una invitación para un nuevo coachee y generar credenciales automáticamente"""
     try:
-        # Debug: verificar sesión
-        app.logger.info(f"📧 INVITACIÓN - Session: {session}")
+        # Debug: verificar autenticación
+        app.logger.info(f"📧 INVITACIÓN - User: {current_user.username if current_user.is_authenticated else 'No auth'}")
         app.logger.info(f"📧 INVITACIÓN - Request data: {request.get_json()}")
         
-        # Verificar si tenemos una sesión de coach válida
-        if 'user_role' not in session or session['user_role'] != 'coach':
+        # Verificar que el usuario es un coach autenticado
+        if not current_user.is_authenticated or current_user.role != 'coach':
             return jsonify({'error': 'Acceso denegado: Solo coaches pueden crear invitaciones'}), 403
         
         data = request.get_json()
@@ -1244,9 +1245,8 @@ def api_coach_create_invitation():
             return jsonify({'error': 'Ya existe un usuario registrado con este email'}), 400
         
         # Verificar si ya existe una invitación activa para este email
-        coach_id = session.get('user_id', 999)  # Usar ID de sesión temporal
         existing_invitation = Invitation.query.filter_by(
-            coach_id=coach_id,
+            coach_id=current_user.id,
             email=email,
             is_used=False
         ).first()
@@ -1280,7 +1280,7 @@ def api_coach_create_invitation():
             email=email,
             full_name=full_name,
             role='coachee',
-            coach_id=coach_id,  # Usar ID de sesión temporal
+            coach_id=current_user.id,  # Usar el coach autenticado
             is_active=True
         )
         new_coachee.set_password(password)
@@ -1293,7 +1293,7 @@ def api_coach_create_invitation():
         expires_at = datetime.utcnow() + timedelta(days=30)  # Válida por 30 días
         
         new_invitation = Invitation(
-            coach_id=coach_id,  # Usar ID de sesión temporal
+            coach_id=current_user.id,  # Usar el coach autenticado
             email=email,
             full_name=full_name,
             token=token,
