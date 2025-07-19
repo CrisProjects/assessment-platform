@@ -243,7 +243,7 @@
         color: white !important;
         transition: all 0.3s ease;
         position: relative !important;
-        z-index: auto !important;
+        z-index: 10000 !important;
         pointer-events: auto !important;
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
@@ -278,14 +278,46 @@
         color: white !important;
         padding: 8px 12px;
     }
+
+    /* CORRECCIONES ULTRA AGRESIVAS PARA MODAL */
+    #invitationModal input, #invitationModal textarea,
+    #taskModal input, #taskModal textarea,
+    .modal input, .modal textarea, .modal select {
+        pointer-events: auto !important;
+        user-select: text !important;
+        cursor: text !important;
+        position: relative !important;
+        z-index: 10000 !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+    }
     
+    /* DESHABILITAR BACKDROP */
+    .modal-backdrop { 
+        pointer-events: none !important; 
+        z-index: 1040 !important;
+    }
+    
+    /* FORZAR Z-INDEX EN MODALES */
+    .modal { z-index: 1050 !important; }
+    .modal-dialog { z-index: 1051 !important; }
+    .modal-content { z-index: 1052 !important; }
+    
+    /* BOTONES DE MODAL */
+    .modal button {
+        pointer-events: auto !important;
+        z-index: 10000 !important;
+        cursor: pointer !important;
+    }
+
     /* Asegurar que los inputs sean completamente interactivos */
     .modal-body input,
     .modal-body textarea,
     .modal-body select,
     .modal-body label {
         position: relative !important;
-        z-index: auto !important;
+        z-index: 10000 !important;
         pointer-events: auto !important;
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
@@ -304,26 +336,56 @@
     
     .modal-content {
         background: rgba(36, 52, 71, 0.95) !important;
-        backdrop-filter: blur(25px);
         border: 1px solid rgba(160, 216, 204, 0.2);
         position: relative;
         pointer-events: auto !important;
     }
-    
+
     .modal-backdrop {
         background-color: rgba(0, 0, 0, 0.7);
+        pointer-events: none !important;
     }
-    
+
     /* Asegurar que el modal esté correctamente posicionado */
     .modal {
         pointer-events: auto !important;
     }
-    
+
     .modal-dialog {
         pointer-events: auto !important;
     }
-    
-    .spinner-border {
+
+    /* IMPORTANTE: Forzar interactividad completa en inputs del modal */
+    #invitationModal .form-control,
+    #invitationModal .form-select,
+    #invitationModal textarea,
+    #invitationModal input,
+    #taskModal .form-control,
+    #taskModal .form-select,
+    #taskModal textarea,
+    #taskModal input {
+        pointer-events: auto !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        user-select: text !important;
+        cursor: text !important;
+        position: relative !important;
+        z-index: 1 !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        color: white !important;
+    }
+
+    #invitationModal .form-select,
+    #taskModal .form-select {
+        cursor: pointer !important;
+    }
+
+    /* Eliminar cualquier overlay que pueda estar bloqueando */
+    .modal-body::before,
+    .modal-body::after {
+        display: none !important;
+    }    .spinner-border {
         color: var(--havelock-blue) !important;
     }
     
@@ -417,51 +479,83 @@
             });
         }
 
-        // Función para abrir el modal de invitación
+        // Función para abrir el modal de invitación - VERSIÓN ULTRA AGRESIVA
         function openInvitationModal() {
-            console.log('Abriendo modal de invitación...');
+            console.log('🚀 MODAL: Abriendo modal de invitación AGRESIVO...');
             
             // Asegurar que el formulario esté limpio
             const form = document.getElementById('invitationForm');
             if (form) {
                 form.reset();
                 
-                // Verificar que los campos estén disponibles
-                const emailInput = document.getElementById('inviteEmail');
-                const nameInput = document.getElementById('inviteFullName');
-                const messageInput = document.getElementById('inviteMessage');
-                
-                if (emailInput) {
-                    emailInput.value = '';
-                    emailInput.removeAttribute('disabled');
-                    emailInput.style.pointerEvents = 'auto';
-                }
-                if (nameInput) {
-                    nameInput.value = '';
-                    nameInput.removeAttribute('disabled');
-                    nameInput.style.pointerEvents = 'auto';
-                }
-                if (messageInput) {
-                    messageInput.value = '';
-                    messageInput.removeAttribute('disabled');
-                    messageInput.style.pointerEvents = 'auto';
-                }
-                
-                console.log('Formulario reseteado y campos habilitados');
+                // FORZAR INTERACTIVIDAD ULTRA AGRESIVA
+                const inputs = ['inviteEmail', 'inviteFullName', 'inviteMessage'];
+                inputs.forEach((inputId, index) => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        input.value = '';
+                        input.removeAttribute('disabled');
+                        input.style.pointerEvents = 'auto';
+                        input.style.userSelect = 'text';
+                        input.style.cursor = 'text';
+                        input.style.position = 'relative';
+                        input.style.zIndex = '10000';
+                        input.style.webkitUserSelect = 'text';
+                        input.style.mozUserSelect = 'text';
+                        input.style.msUserSelect = 'text';
+                        
+                        // Eventos de debug
+                        input.addEventListener('click', function() {
+                            console.log(`🎯 MODAL: Input ${inputId} clickeado`);
+                        });
+                        input.addEventListener('focus', function() {
+                            console.log(`🎯 MODAL: Input ${inputId} enfocado`);
+                        });
+                        input.addEventListener('input', function() {
+                            console.log(`🎯 MODAL: Input ${inputId} escribiendo:`, this.value);
+                        });
+                        
+                        console.log(`✅ MODAL: ${inputId} configurado agresivamente`);
+                    }
+                });
             }
             
             // Abrir el modal
-            const modal = new bootstrap.Modal(document.getElementById('invitationModal'));
+            const modal = new bootstrap.Modal(document.getElementById('invitationModal'), {
+                backdrop: 'static',
+                keyboard: true
+            });
             modal.show();
             
-            // Enfocar el primer campo después de que se abra el modal
+            // Forzar interactividad después de abrir
             setTimeout(() => {
-                const emailInput = document.getElementById('inviteEmail');
-                if (emailInput) {
-                    emailInput.focus();
-                    console.log('Campo email enfocado');
+                const modalElement = document.getElementById('invitationModal');
+                if (modalElement) {
+                    // Asegurar que el backdrop no bloquee
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.style.pointerEvents = 'none';
+                    }
+                    
+                    // Forzar z-index y pointer events en todos los inputs
+                    const inputs = modalElement.querySelectorAll('input, textarea, select');
+                    inputs.forEach(input => {
+                        input.style.pointerEvents = 'auto';
+                        input.style.position = 'relative';
+                        input.style.zIndex = '9999';
+                        input.style.userSelect = 'text';
+                        input.style.cursor = input.tagName === 'SELECT' ? 'pointer' : 'text';
+                    });
+                    
+                    // Enfocar el primer campo
+                    const emailInput = document.getElementById('inviteEmail');
+                    if (emailInput) {
+                        emailInput.focus();
+                        emailInput.click();
+                        console.log('Campo email enfocado y clickeado');
+                    }
                 }
-            }, 300);
+            }, 500);
         }
 
         // Función para enviar la invitación
@@ -968,12 +1062,41 @@
             // Configurar event listener para el formulario de invitación
             const invitationForm = document.getElementById('invitationForm');
             if (invitationForm) {
-                console.log('Formulario de invitación encontrado, configurando event listener...');
+                console.log('📋 FORM: Formulario de invitación encontrado, configurando event listener...');
+                
+                // Event listener para submit del formulario
                 invitationForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    console.log('Formulario de invitación enviado');
+                    console.log('📋 FORM: Formulario de invitación enviado');
                     await sendInvitation();
                 });
+                
+                // Event listener ADICIONAL para el botón específico
+                const submitBtn = invitationForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    console.log('🔘 BTN: Botón submit encontrado, configurando...');
+                    
+                    // Forzar estilos del botón
+                    submitBtn.style.pointerEvents = 'auto';
+                    submitBtn.style.cursor = 'pointer';
+                    submitBtn.style.zIndex = '10000';
+                    submitBtn.style.position = 'relative';
+                    
+                    // Event listener adicional para click directo
+                    submitBtn.addEventListener('click', async function(e) {
+                        console.log('🔘 BTN: Botón clickeado directamente');
+                        e.preventDefault();
+                        await sendInvitation();
+                    });
+                    
+                    // Debug del botón
+                    submitBtn.addEventListener('mouseenter', function() {
+                        console.log('🔘 BTN: Mouse sobre botón');
+                    });
+                    submitBtn.addEventListener('mouseleave', function() {
+                        console.log('🔘 BTN: Mouse fuera del botón');
+                    });
+                }
                 
                 // Agregar listeners a los inputs para debugging
                 const emailInput = document.getElementById('inviteEmail');
@@ -983,15 +1106,51 @@
                     emailInput.addEventListener('input', function(e) {
                         console.log('Email input changed:', e.target.value);
                     });
+                    emailInput.addEventListener('click', function(e) {
+                        console.log('Email input clicked');
+                        e.stopPropagation();
+                    });
                 }
                 
                 if (nameInput) {
                     nameInput.addEventListener('input', function(e) {
                         console.log('Name input changed:', e.target.value);
                     });
+                    nameInput.addEventListener('click', function(e) {
+                        console.log('Name input clicked');
+                        e.stopPropagation();
+                    });
                 }
             } else {
                 console.error('Formulario de invitación no encontrado');
+            }
+
+            // Agregar evento al modal para forzar interactividad cuando se muestre
+            const inviteModalEl = document.getElementById('invitationModal');
+            if (inviteModalEl) {
+                inviteModalEl.addEventListener('shown.bs.modal', function() {
+                    console.log('Modal shown event triggered');
+                    
+                    // Forzar estilos en todos los inputs
+                    const allInputs = this.querySelectorAll('input, textarea, select');
+                    allInputs.forEach((input, index) => {
+                        input.style.pointerEvents = 'auto';
+                        input.style.userSelect = 'text';
+                        input.style.position = 'relative';
+                        input.style.zIndex = '10000';
+                        input.style.cursor = input.tagName === 'SELECT' ? 'pointer' : 'text';
+                        
+                        console.log(`Input ${index} configured:`, input.id || input.name);
+                    });
+                    
+                    // Eliminar pointer-events del backdrop
+                    setTimeout(() => {
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) {
+                            backdrop.style.pointerEvents = 'none';
+                        }
+                    }, 100);
+                });
             }
 
             // Configurar event listener para el formulario de tareas

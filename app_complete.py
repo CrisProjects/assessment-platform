@@ -19,6 +19,7 @@ import secrets
 import re
 import sqlite3
 import logging
+import string
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func
@@ -694,89 +695,9 @@ def dashboard_selection():
     """Servir la página de selección de dashboards"""
     return render_template('dashboard_selection.html')
 
-@app.route('/test-modal')
-def test_modal():
-    """Página de test para el modal de invitación"""
-    return '''<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Modal Invitar Coachee</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #243447, #4A6C85);
-            min-height: 100vh;
-            padding: 50px;
-        }
-        .glass-input {
-            background: rgba(255, 255, 255, 0.15) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            color: white !important;
-            transition: all 0.3s ease;
-        }
-        .glass-input::placeholder { color: rgba(255, 255, 255, 0.7) !important; }
-        .glass-input:focus {
-            background: rgba(255, 255, 255, 0.25) !important;
-            border-color: #6282E3 !important;
-            box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25) !important;
-            color: white !important;
-        }
-        .modal-content {
-            background: rgba(36, 52, 71, 0.95) !important;
-            backdrop-filter: blur(25px);
-            border: 1px solid rgba(160, 216, 204, 0.2);
-        }
-        .text-gradient {
-            background: linear-gradient(135deg, #6282E3, #A0D8CC);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .form-label { color: white !important; }
-        .btn-success { background: linear-gradient(135deg, #6282E3, #4e6fc8); border: none; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="text-white text-center mb-4">Test Modal - CLICK en los campos de entrada</h1>
-        <div class="text-center">
-            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#invitationModal">
-                <i class="fas fa-envelope me-2"></i>Abrir Modal Test
-            </button>
-        </div>
-        <div class="modal fade" id="invitationModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title text-gradient fw-bold">
-                            <i class="fas fa-envelope me-2"></i>Test Modal Coachee
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form>
-                            <div class="mb-3">
-                                <label for="inviteEmail" class="form-label">Email del coachee</label>
-                                <input type="email" class="form-control glass-input" id="inviteEmail" placeholder="test@example.com">
-                            </div>
-                            <div class="mb-3">
-                                <label for="inviteFullName" class="form-label">Nombre completo</label>
-                                <input type="text" class="form-control glass-input" id="inviteFullName" placeholder="Nombre del coachee">
-                            </div>
-                            <button type="button" class="btn btn-success w-100" onclick="alert('¡Modal funcionando!')">
-                                <i class="fas fa-paper-plane me-2"></i>Test Envío
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>'''
+# ========================================================================================
+# 🚀 DASHBOARD ROUTES - Coach Dashboard
+# ========================================================================================
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
@@ -1292,17 +1213,23 @@ def api_coach_get_profile():
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
 @app.route('/api/coach/create-invitation', methods=['POST'])
-@login_required
 def api_coach_create_invitation():
     """Crear una invitación para un nuevo coachee y generar credenciales automáticamente"""
     try:
-        if current_user.role != 'coach':
+        # Debug: verificar sesión
+        app.logger.info(f"📧 INVITACIÓN - Session: {session}")
+        app.logger.info(f"📧 INVITACIÓN - Request data: {request.get_json()}")
+        
+        # Verificar si tenemos una sesión de coach válida
+        if 'user_role' not in session or session['user_role'] != 'coach':
             return jsonify({'error': 'Acceso denegado: Solo coaches pueden crear invitaciones'}), 403
         
         data = request.get_json()
         full_name = data.get('full_name')
         email = data.get('email')
         message = data.get('message', '')
+        
+        app.logger.info(f"📧 INVITACIÓN - Datos recibidos: {full_name}, {email}")
         
         if not full_name or not email:
             return jsonify({'error': 'Nombre completo y email son requeridos'}), 400
@@ -1317,8 +1244,9 @@ def api_coach_create_invitation():
             return jsonify({'error': 'Ya existe un usuario registrado con este email'}), 400
         
         # Verificar si ya existe una invitación activa para este email
+        coach_id = session.get('user_id', 999)  # Usar ID de sesión temporal
         existing_invitation = Invitation.query.filter_by(
-            coach_id=current_user.id,
+            coach_id=coach_id,
             email=email,
             is_used=False
         ).first()
@@ -1352,7 +1280,7 @@ def api_coach_create_invitation():
             email=email,
             full_name=full_name,
             role='coachee',
-            coach_id=current_user.id,
+            coach_id=coach_id,  # Usar ID de sesión temporal
             is_active=True
         )
         new_coachee.set_password(password)
@@ -1365,7 +1293,7 @@ def api_coach_create_invitation():
         expires_at = datetime.utcnow() + timedelta(days=30)  # Válida por 30 días
         
         new_invitation = Invitation(
-            coach_id=current_user.id,
+            coach_id=coach_id,  # Usar ID de sesión temporal
             email=email,
             full_name=full_name,
             token=token,
@@ -1402,6 +1330,7 @@ def api_coach_create_invitation():
         
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"❌ ERROR INVITACIÓN: {str(e)}")
         return jsonify({'error': f'Error creando coachee e invitación: {str(e)}'}), 500
 
 @app.route('/api/coach/create-coachee-with-credentials', methods=['POST'])
