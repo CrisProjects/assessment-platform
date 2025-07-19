@@ -780,13 +780,27 @@ def api_register():
         if not data:
             return jsonify({'error': 'Datos JSON requeridos'}), 400
         
-        # Validar datos requeridos
-        required_fields = ['username', 'email', 'password', 'full_name']
-        for field in required_fields:
+        # Validar datos requeridos básicos
+        required_basic_fields = ['email', 'password', 'full_name']
+        for field in required_basic_fields:
             if not data.get(field) or not str(data.get(field)).strip():
                 return jsonify({'error': f'Campo requerido: {field}'}), 400
         
-        username = str(data['username']).strip()
+        # Si no se proporciona username, generarlo desde el email
+        if not data.get('username'):
+            email_temp = str(data['email']).strip().lower()
+            base_username = re.sub(r'[^a-zA-Z0-9]', '', email_temp.split('@')[0])
+            username = base_username.lower()
+            
+            # Asegurar que el username sea único
+            counter = 1
+            original_username = username
+            while User.query.filter_by(username=username).first():
+                username = f"{original_username}{counter}"
+                counter += 1
+        else:
+            username = str(data['username']).strip()
+        
         email = str(data['email']).strip().lower()
         password = str(data['password'])
         full_name = str(data['full_name']).strip()
@@ -842,11 +856,16 @@ def api_register():
         db.session.add(new_user)
         db.session.commit()
         
+        # Auto-login después del registro exitoso
+        login_user(new_user, remember=True)
+        session.permanent = True
+        
         return jsonify({
             'success': True,
             'message': 'Usuario registrado exitosamente',
-            'user_id': new_user.id
-        }, 201)
+            'user_id': new_user.id,
+            'redirect': get_dashboard_url(new_user.role)
+        }), 201
         
     except Exception as e:
         db.session.rollback()
