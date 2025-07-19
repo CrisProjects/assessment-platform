@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Coachee APIs</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .evaluation, .task { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        button { padding: 10px 20px; margin: 5px; }
+        #results { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Test Coachee Dashboard APIs</h1>
+    
+    <button onclick="testLogin()">1. Test Login</button>
+    <button onclick="testEvaluations()">2. Test Evaluations</button>
+    <button onclick="testTasks()">3. Test Tasks</button>
+    <button onclick="testAll()">4. Test All</button>
+    
+    <div class="section">
+        <h3>Results:</h3>
+        <div id="results"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Evaluations:</h3>
+        <div id="evaluations"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Tasks:</h3>
+        <div id="tasks"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5003';
+        let sessionCookies = '';
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+        
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'coachee@assessment.com',
+                        password: 'coachee123'
+                    }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                log(`Login: ${response.status} - ${data.success ? 'SUCCESS' : 'FAILED'}`);
+                if (data.user) {
+                    log(`User: ${data.user.full_name} (${data.user.role})`);
+                }
+                return response.ok;
+            } catch (error) {
+                log(`Login Error: ${error.message}`);
+                return false;
+            }
+        }
+        
+        async function testEvaluations() {
+            try {
+                const response = await fetch(`${API_BASE}/api/coachee/evaluations`, {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                log(`Evaluations: ${response.status} - ${response.ok ? 'SUCCESS' : 'FAILED'}`);
+                
+                if (response.ok) {
+                    log(`Found ${data.length} evaluations`);
+                    const container = document.getElementById('evaluations');
+                    container.innerHTML = '';
+                    
+                    data.forEach((eval, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'evaluation';
+                        div.innerHTML = `
+                            <strong>Evaluation ${index + 1}</strong><br>
+                            Score: ${eval.score}<br>
+                            Date: ${new Date(eval.completed_at).toLocaleDateString()}<br>
+                            Text: ${eval.result_text || 'N/A'}
+                        `;
+                        container.appendChild(div);
+                    });
+                } else {
+                    log(`Evaluations Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                log(`Evaluations Error: ${error.message}`);
+            }
+        }
+        
+        async function testTasks() {
+            try {
+                const response = await fetch(`${API_BASE}/api/coachee/tasks`, {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                log(`Tasks: ${response.status} - ${response.ok ? 'SUCCESS' : 'FAILED'}`);
+                
+                if (response.ok) {
+                    log(`Found ${data.length} tasks`);
+                    const container = document.getElementById('tasks');
+                    container.innerHTML = '';
+                    
+                    data.forEach((task, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'task';
+                        div.innerHTML = `
+                            <strong>Task ${index + 1}: ${task.title}</strong><br>
+                            Description: ${task.description}<br>
+                            Category: ${task.category}<br>
+                            Status: ${task.status}<br>
+                            Progress: ${task.progress_percentage}%<br>
+                            Priority: ${task.priority}
+                        `;
+                        container.appendChild(div);
+                    });
+                } else {
+                    log(`Tasks Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                log(`Tasks Error: ${error.message}`);
+            }
+        }
+        
+        async function testAll() {
+            log('=== TESTING ALL APIS ===');
+            const loginOk = await testLogin();
+            if (loginOk) {
+                await testEvaluations();
+                await testTasks();
+            } else {
+                log('Login failed, skipping other tests');
+            }
+            log('=== TESTING COMPLETE ===');
+        }
+    </script>
+</body>
+</html>

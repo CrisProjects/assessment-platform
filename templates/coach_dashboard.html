@@ -3,6 +3,9 @@
 {% block title %}Dashboard Coach - Assessment Platform{% endblock %}
 
 {% block content %}
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <!-- Header Navigation -->
 <nav class="glass-card p-3 mb-4 fade-in">
     <div class="d-flex justify-content-between align-items-center">
@@ -851,9 +854,14 @@
                                         <small class="text-muted">${evaluation.total_questions} preguntas</small>
                                     </div>
                                     <p class="text-muted small mb-2">${evaluation.result_text}</p>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="showEvaluationResponses(${evaluation.id}, ${JSON.stringify(evaluation.responses).replace(/"/g, '&quot;')})">
-                                        <i class="fas fa-eye me-1"></i>Ver Respuestas
-                                    </button>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="showEvaluationResponses(${evaluation.id}, ${JSON.stringify(evaluation.responses).replace(/"/g, '&quot;')})">
+                                            <i class="fas fa-eye me-1"></i>Ver Respuestas
+                                        </button>
+                                        <button class="btn btn-outline-success btn-sm" onclick="showEvaluationDetailsWithRadar(${JSON.stringify(evaluation).replace(/"/g, '&quot;')})">
+                                            <i class="fas fa-chart-radar me-1"></i>Ver Radar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -930,6 +938,336 @@
             // Mostrar en un segundo modal o expandir el actual
             const detailsContent = document.getElementById('coacheeDetailsContent');
             detailsContent.innerHTML += responsesHtml;
+        }
+
+        // Variable global para almacenar el gráfico radar
+        let coachRadarChart = null;
+
+        // Mostrar detalles completos de evaluación con radar chart
+        function showEvaluationDetailsWithRadar(evaluation) {
+            // Crear modal especializado para detalles de evaluación
+            createEvaluationDetailsModal();
+            
+            const dimensionalScores = evaluation.dimensional_scores || {};
+            
+            const html = `
+                <!-- Resumen General -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa;">
+                            <div class="card-body text-center">
+                                <h4 class="mb-3">Análisis Completo de Asertividad</h4>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="h2 text-primary">${Math.round(evaluation.score)}%</div>
+                                        <div class="text-muted">Puntuación Total</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h4 text-success">${getAssertiveLevelFromScore(evaluation.score)}</div>
+                                        <div class="text-muted">Nivel de Asertividad</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h6">${formatDate(evaluation.completed_at)}</div>
+                                        <div class="text-muted">Fecha de Completado</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h6">${evaluation.total_questions}</div>
+                                        <div class="text-muted">Preguntas Respondidas</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Radar y Análisis Dimensional -->
+                <div class="row mb-4">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: #f8f9fa;">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-radar me-2"></i>Radar de Competencias</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="radar-chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="coachRadarChart" width="300" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: #f8f9fa;">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-bar me-2"></i>Puntuaciones por Dimensión</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="dimensionalScoresContainer">
+                                    ${generateDimensionalScoresHTML(dimensionalScores)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Respuestas Detalladas -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa;">
+                            <div class="card-header">
+                                <h5><i class="fas fa-list me-2"></i>Respuestas Detalladas</h5>
+                            </div>
+                            <div class="card-body">
+                                ${generateResponsesHTML(evaluation.responses || [])}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('evaluationDetailsContent').innerHTML = html;
+            
+            // Crear el gráfico radar después de insertar el HTML
+            setTimeout(() => {
+                createCoachRadarChart(dimensionalScores);
+            }, 100);
+            
+            // Mostrar el modal
+            const modal = new bootstrap.Modal(document.getElementById('evaluationDetailsModal'));
+            modal.show();
+        }
+
+        function createCoachRadarChart(dimensionalScores) {
+            const ctx = document.getElementById('coachRadarChart');
+            if (!ctx || !dimensionalScores) {
+                console.warn('No se puede crear el radar chart: elemento canvas no encontrado o datos faltantes');
+                return;
+            }
+
+            // Destruir gráfico existente si existe
+            if (coachRadarChart) {
+                coachRadarChart.destroy();
+            }
+
+            // Preparar datos para el gráfico radar
+            const labels = [
+                'Comunicación',
+                'Derechos',
+                'Opiniones',
+                'Conflictos',
+                'Autoconfianza'
+            ];
+
+            const dataValues = [
+                dimensionalScores.comunicacion || 0,
+                dimensionalScores.derechos || 0,
+                dimensionalScores.opiniones || 0,
+                dimensionalScores.conflictos || 0,
+                dimensionalScores.autoconfianza || 0
+            ];
+
+            coachRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Nivel de Asertividad',
+                        data: dataValues,
+                        backgroundColor: 'rgba(98, 130, 227, 0.2)',
+                        borderColor: 'rgba(98, 130, 227, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(98, 130, 227, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${Math.round(context.raw)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            min: 0,
+                            ticks: {
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                },
+                                color: '#6B8DA6',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(107, 141, 166, 0.2)'
+                            },
+                            angleLines: {
+                                color: 'rgba(107, 141, 166, 0.2)'
+                            },
+                            pointLabels: {
+                                color: '#243447',
+                                font: {
+                                    size: 11,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.2
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear modal de detalles de evaluación
+        function createEvaluationDetailsModal() {
+            const existingModal = document.getElementById('evaluationDetailsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            const modalHtml = `
+                <div class="modal fade" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="evaluationDetailsModalLabel">
+                                    <i class="fas fa-chart-radar me-2"></i>
+                                    Análisis Detallado de Evaluación
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="evaluationDetailsContent">
+                                    <!-- Contenido cargado dinámicamente -->
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Funciones auxiliares
+        function generateDimensionalScoresHTML(dimensionalScores) {
+            if (!dimensionalScores) return '<p class="text-muted">No hay datos dimensionales disponibles.</p>';
+            
+            let html = '';
+            for (const [dimension, score] of Object.entries(dimensionalScores)) {
+                const dimensionName = formatDimensionName(dimension);
+                const percentage = Math.round(score);
+                let colorClass = 'danger';
+                if (percentage >= 70) colorClass = 'success';
+                else if (percentage >= 50) colorClass = 'warning';
+                
+                html += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong>${dimensionName}</strong>
+                            <span class="badge bg-${colorClass}">${percentage}%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-${colorClass}" style="width: ${percentage}%"></div>
+                        </div>
+                        <small class="text-muted">${getDimensionDescription(dimension, percentage)}</small>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function generateResponsesHTML(responses) {
+            if (!responses || responses.length === 0) {
+                return '<p class="text-muted">No hay respuestas disponibles.</p>';
+            }
+            
+            const optionLabels = {
+                1: 'Totalmente en desacuerdo',
+                2: 'En desacuerdo', 
+                3: 'Neutral',
+                4: 'De acuerdo',
+                5: 'Totalmente de acuerdo'
+            };
+            
+            let html = '';
+            responses.forEach((response, index) => {
+                html += `
+                    <div class="border-start border-3 border-primary ps-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>Pregunta ${index + 1}:</strong>
+                                <p class="mb-1">${response.question_text}</p>
+                                <small class="text-primary">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    ${optionLabels[response.selected_option]}
+                                </small>
+                            </div>
+                            <span class="badge bg-secondary ms-2">${response.selected_option}/5</span>
+                        </div>
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        function formatDimensionName(dimension) {
+            const names = {
+                'comunicacion': 'Comunicación Efectiva',
+                'derechos': 'Defensa de Derechos',
+                'opiniones': 'Expresión de Opiniones',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            return names[dimension] || dimension;
+        }
+
+        function getDimensionDescription(dimension, score) {
+            const descriptions = {
+                'comunicacion': score >= 70 ? 'Comunicación clara y efectiva' : 'Oportunidad de mejorar la comunicación',
+                'derechos': score >= 70 ? 'Defiende bien sus derechos' : 'Necesita fortalecer la defensa de derechos',
+                'opiniones': score >= 70 ? 'Expresa opiniones con confianza' : 'Puede mejorar la expresión de opiniones',
+                'conflictos': score >= 70 ? 'Maneja conflictos efectivamente' : 'Requiere mejorar manejo de conflictos',
+                'autoconfianza': score >= 70 ? 'Autoconfianza sólida' : 'Necesita fortalecer la autoconfianza'
+            };
+            return descriptions[dimension] || 'Sin descripción disponible';
+        }
+
+        function getAssertiveLevelFromScore(score) {
+            if (score >= 85) return 'Muy Asertivo';
+            if (score >= 70) return 'Asertivo';
+            if (score >= 50) return 'Moderadamente Asertivo';
+            return 'Poco Asertivo';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
 
         // Función para descargar reporte
