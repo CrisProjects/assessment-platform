@@ -305,6 +305,8 @@ class Invitation(db.Model):
         self.used_at = datetime.utcnow()
 
 class Task(db.Model):
+    __tablename__ = 'task'
+    
     id = db.Column(db.Integer, primary_key=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -323,6 +325,8 @@ class Task(db.Model):
     progress_entries = db.relationship('TaskProgress', backref='task', lazy=True, cascade='all, delete-orphan')
 
 class TaskProgress(db.Model):
+    __tablename__ = 'task_progress'
+    
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
     status = db.Column(db.String(20), default='pending')  # 'pending', 'in_progress', 'completed', 'cancelled'
@@ -1901,17 +1905,14 @@ def api_coachee_dashboard_summary(current_coachee):
             is_active=True
         ).count()
         
-        # Contar tareas por estado
+        # Contar tareas por estado de manera más robusta
         from sqlalchemy import func
-        task_stats = db.session.query(
-            func.count(Task.id).label('total'),
-            TaskProgress.status
-        ).select_from(Task).join(
-            TaskProgress, Task.id == TaskProgress.task_id
-        ).filter(
-            Task.coachee_id == current_coachee.id,
-            Task.is_active == True
-        ).group_by(TaskProgress.status).all()
+        
+        # Obtener todas las tareas activas del coachee
+        active_tasks_query = Task.query.filter_by(
+            coachee_id=current_coachee.id,
+            is_active=True
+        )
         
         # Procesar estadísticas de tareas
         tasks_summary = {
@@ -1921,21 +1922,33 @@ def api_coachee_dashboard_summary(current_coachee):
             'overdue': 0
         }
         
-        for stat in task_stats:
-            if stat.status in tasks_summary:
-                tasks_summary[stat.status] = stat.total
+        # Contar tareas por su último estado de progreso
+        for task in active_tasks_query.all():
+            # Obtener el último progreso de cada tarea
+            latest_progress = TaskProgress.query.filter_by(
+                task_id=task.id
+            ).order_by(TaskProgress.created_at.desc()).first()
+            
+            # Si no hay progreso, la tarea está pendiente
+            status = latest_progress.status if latest_progress else 'pending'
+            
+            if status in tasks_summary:
+                tasks_summary[status] += 1
         
-        # Contar tareas vencidas (simplificado - tareas pendientes con fecha de vencimiento pasada)
+        # Contar tareas vencidas (tareas pendientes o en progreso con fecha de vencimiento pasada)
         from datetime import datetime
-        overdue_tasks = Task.query.filter(
-            Task.coachee_id == current_coachee.id,
-            Task.is_active == True,
-            Task.due_date < datetime.utcnow().date()
-        ).join(TaskProgress).filter(
-            TaskProgress.status.in_(['pending', 'in_progress'])
-        ).count()
+        overdue_count = 0
+        for task in active_tasks_query.all():
+            if task.due_date and task.due_date < datetime.utcnow().date():
+                latest_progress = TaskProgress.query.filter_by(
+                    task_id=task.id
+                ).order_by(TaskProgress.created_at.desc()).first()
+                
+                status = latest_progress.status if latest_progress else 'pending'
+                if status in ['pending', 'in_progress']:
+                    overdue_count += 1
         
-        tasks_summary['overdue'] = overdue_tasks
+        tasks_summary['overdue'] = overdue_count
         
         # Obtener nombre del coach
         coach_name = "Sin asignar"
@@ -2048,9 +2061,9 @@ def api_coachee_tasks(current_coachee):
                 'progress_percentage': latest_progress.progress_percentage if latest_progress else 0,
                 'notes': latest_progress.notes if latest_progress else '',
                 'coach': {
-                    'id': task.coach.id,
-                    'name': task.coach.full_name,
-                    'email': task.coach.email
+                    'id': task.coach.id if task.coach else None,
+                    'name': task.coach.full_name if task.coach else 'Sin asignar',
+                    'email': task.coach.email if task.coach else ''
                 },
                 'last_update': latest_progress.created_at.isoformat() if latest_progress else task.created_at.isoformat()
             })

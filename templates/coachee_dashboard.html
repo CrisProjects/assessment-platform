@@ -3183,8 +3183,8 @@
                     // Load data when tabs are activated
                     if (target === '#evaluations' && !evaluationsData) {
                         loadEvaluations();
-                    } else if (target === '#tasks' && !tasksData) {
-                        loadTasks();
+                    } else if (target === '#tasks') {
+                        loadTasks(); // Siempre cargar tareas para mantener datos actualizados
                     } else if (target === '#progress') {
                         loadEvaluationHistory();
                     }
@@ -3208,6 +3208,7 @@
             
             // Load data for active tab
             await loadEvaluations();
+            await loadTasks();
             
             console.log('Dashboard inicializado correctamente');
         }
