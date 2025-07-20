@@ -14,10 +14,8 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import os
-import json
 import secrets
 import re
-import sqlite3
 import logging
 import string
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -25,7 +23,6 @@ from functools import wraps
 from sqlalchemy import func, text
 
 # Configurar logging
-import logging
 from logging.handlers import RotatingFileHandler
 
 # Configuración de logging basada en entorno
@@ -65,7 +62,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     # En desarrollo, generar una clave aleatoria
     if os.environ.get('FLASK_ENV') == 'development' or os.environ.get('RAILWAY_ENVIRONMENT') == 'development':
-        import secrets
         SECRET_KEY = secrets.token_hex(32)
         logger.warning("⚠️ DEVELOPMENT: Usando SECRET_KEY generada aleatoriamente")
     else:
@@ -95,7 +91,6 @@ LIKERT_SCALE_MIN = 1
 LIKERT_SCALE_MAX = 5
 
 # Configuración de sesiones permanentes (no expiran automáticamente)
-from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # 30 días de duración
 app.config['SESSION_PERMANENT'] = True
 
@@ -407,24 +402,6 @@ def coach_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Decorador para logging de funciones críticas
-def log_function_call(func_name=None):
-    """Decorador para loggear llamadas a funciones críticas"""
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            name = func_name or f.__name__
-            try:
-                logger.debug(f"Calling {name}")
-                result = f(*args, **kwargs)
-                logger.debug(f"Completed {name} successfully")
-                return result
-            except Exception as e:
-                logger.error(f"Error in {name}: {str(e)}")
-                raise
-        return decorated_function
-    return decorator
-
 # ====================================================
 # INICIALIZACIÓN AUTOMÁTICA DE BASE DE DATOS EN PRODUCCIÓN
 # ====================================================
@@ -578,22 +555,6 @@ def auto_initialize_database():
     except Exception as e:
         print(f"❌ AUTO-INIT: Error en inicialización automática: {e}")
         return False
-
-# Ejecutar inicialización automática cuando el módulo se importe
-# (Esto es especialmente importante para Render y otros servicios de hosting)
-# Evitamos doble inicialización usando una bandera global
-_db_initialized = False
-
-def ensure_database_initialized():
-    """Asegurar que la base de datos esté inicializada una sola vez"""
-    global _db_initialized
-    if not _db_initialized:
-        try:
-            with app.app_context():
-                auto_initialize_database()
-                _db_initialized = True
-        except Exception as auto_init_error:
-            print(f"⚠️ Error en auto-inicialización: {auto_init_error}")
 
 def create_demo_data_for_coachee(coachee_user):
     """Crear datos de ejemplo para mostrar en el dashboard del coachee"""
@@ -763,28 +724,6 @@ def role_required(required_role):
         return decorated_function
     return decorator
 
-def coach_access_required(f):
-    @wraps(f)
-    @login_required
-    def decorated_function(*args, **kwargs):
-        if not (current_user.is_coach or current_user.is_platform_admin):
-            return jsonify({'error': 'Acceso denegado: Se requieren permisos de coach o superior'}), 403
-        return f(*args, **kwargs)
-    return decorated_function
-
-# Función helper para verificar acceso a datos de coachee
-def can_access_coachee_data(target_user_id):
-    if current_user.is_platform_admin:
-        return True
-    elif current_user.is_coach:
-        # Coach puede acceder a datos de sus coachees
-        target_user = db.session.get(User, target_user_id)
-        return target_user and target_user.coach_id == current_user.id
-    elif current_user.is_coachee:
-        # Coachee solo puede acceder a sus propios datos
-        return current_user.id == target_user_id
-    return False
-
 # Rutas del Frontend
 @app.route('/')
 def index():
@@ -814,11 +753,6 @@ def favicon():
 def login():
     """Servir la página de login"""
     return render_template('login.html')
-
-@app.route('/participant-access')
-def participant_access():
-    """Servir la página de acceso específica para participantes"""
-    return render_template('participant_access.html')
 
 # API Routes
 @app.route('/dashboard_selection')
@@ -1402,9 +1336,6 @@ def api_coach_create_invitation():
             return jsonify({'error': 'Ya existe una invitación activa para este email'}), 400
         
         # GENERAR CREDENCIALES AUTOMÁTICAMENTE
-        import re
-        import secrets
-        import string
         
         # Generar username basado en el email (parte antes del @)
         base_username = re.sub(r'[^a-zA-Z0-9]', '', email.split('@')[0])
@@ -1884,49 +1815,6 @@ def api_coach_get_coachee_tasks(coachee_id):
 # ========================
 # RUTAS PARA COACHEES
 # ========================
-
-@app.route('/coachee-login')
-def coachee_login_page():
-    """Página de login específica para coachees"""
-    return render_template('coachee_login.html')
-
-@app.route('/coachee-login-simple')
-def coachee_login_simple_page():
-    """Página de login simple para coachees"""
-    return render_template('coachee_login_simple.html')
-
-@app.route('/coachee-login', methods=['POST'])
-def coachee_login_form():
-    """Manejo de login de coachee via formulario"""
-    try:
-        email = request.form.get('email') or request.form.get('username')
-        password = request.form.get('password')
-        
-        if not email or not password:
-            flash('Email y contraseña requeridos', 'error')
-            return redirect('/coachee-login-simple')
-        
-        # Buscar usuario coachee
-        coachee_user = User.query.filter(
-            (User.username == email) | (User.email == email),
-            User.role == 'coachee'
-        ).first()
-        
-        if coachee_user and coachee_user.check_password(password) and coachee_user.is_active:
-            login_user(coachee_user, remember=True)
-            session.permanent = True
-            coachee_user.last_login = datetime.utcnow()
-            db.session.commit()
-            
-            flash(f'Bienvenido, {coachee_user.full_name}', 'success')
-            return redirect('/coachee-dashboard')
-        else:
-            flash('Credenciales de coachee inválidas o cuenta desactivada', 'error')
-            return redirect('/coachee-login-simple')
-            
-    except Exception as e:
-        flash(f'Error en login: {str(e)}', 'error')
-        return redirect('/coachee-login-simple')
 
 @app.route('/api/coachee/login', methods=['POST'])
 def api_coachee_login():
