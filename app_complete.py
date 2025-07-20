@@ -1735,9 +1735,6 @@ def api_coach_get_tasks():
 def api_coach_create_task():
     """Crear una nueva tarea para un coachee"""
     try:
-        if current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado: Solo coaches pueden crear tareas'}), 403
-        
         data = request.get_json()
         
         # Validar datos requeridos
@@ -1801,13 +1798,10 @@ def api_coach_create_task():
         return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
 
 @app.route('/api/coach/tasks/<int:task_id>/progress', methods=['POST', 'PUT'])
-@login_required
+@coach_required
 def api_coach_update_task_progress(task_id):
     """Actualizar el progreso de una tarea"""
     try:
-        if current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado: Solo coaches pueden actualizar tareas'}), 403
-        
         task = Task.query.filter_by(id=task_id, coach_id=current_user.id).first()
         if not task:
             return jsonify({'error': 'Tarea no encontrada'}), 404
@@ -1836,13 +1830,10 @@ def api_coach_update_task_progress(task_id):
         return jsonify({'error': f'Error actualizando progreso: {str(e)}'}), 500
 
 @app.route('/api/coach/coachee-tasks/<int:coachee_id>', methods=['GET'])
-@login_required
+@coach_required
 def api_coach_get_coachee_tasks(coachee_id):
     """Obtener todas las tareas de un coachee específico"""
     try:
-        if current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver tareas'}), 403
-        
         # Verificar que el coachee pertenece al coach
         coachee = User.query.filter_by(
             id=coachee_id,
