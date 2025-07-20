@@ -20,6 +20,9 @@
             </div>
         </div>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-1"></i>Actualizar Todo
+            </button>
             <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'">
                 <i class="fas fa-home me-1"></i>Inicio
             </button>
@@ -651,13 +654,21 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Error al cargar coachees');
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 // La API devuelve directamente un array, no un objeto con propiedad coachees
-                coacheesData = await response.json();
-                displayCoachees();
-                updateStatistics();
+                const data = await response.json();
+                
+                // Verificar que los datos sean válidos
+                if (Array.isArray(data)) {
+                    coacheesData = data;
+                    displayCoachees();
+                    updateStatistics();
+                } else {
+                    console.error('Formato de datos inesperado:', data);
+                    throw new Error('Formato de datos inesperado del servidor');
+                }
                 
             } catch (error) {
                 console.error('Error cargando coachees:', error);
@@ -673,25 +684,42 @@
                         </div>
                     </div>
                 `;
+                
+                // Inicializar datos vacíos para evitar errores en otras funciones
+                coacheesData = [];
+                updateStatistics();
             }
         }
 
         // Función para actualizar estadísticas
         function updateStatistics() {
+            // Verificar que coacheesData existe y es un array
+            if (!Array.isArray(coacheesData)) {
+                coacheesData = [];
+            }
+            
             const totalCoachees = coacheesData.length;
-            const completedAssessments = coacheesData.filter(c => c.total_assessments > 0).length;
+            const completedAssessments = coacheesData.filter(c => c && c.total_assessments > 0).length;
             const pendingAssessments = totalCoachees - completedAssessments;
-            const avgScore = coacheesData.length > 0 ? 
-                Math.round(coacheesData
-                    .filter(c => c.last_assessment && c.last_assessment.score !== null)
-                    .reduce((sum, c) => sum + (c.last_assessment.score || 0), 0) / 
-                    Math.max(1, coacheesData.filter(c => c.last_assessment && c.last_assessment.score !== null).length)
-                ) : 0;
+            
+            // Calcular promedio de puntuaciones solo para quienes tienen evaluaciones
+            const assessedCoachees = coacheesData.filter(c => 
+                c && c.last_assessment && typeof c.last_assessment.score === 'number'
+            );
+            
+            const avgScore = assessedCoachees.length > 0 ? 
+                Math.round(assessedCoachees.reduce((sum, c) => sum + c.last_assessment.score, 0) / assessedCoachees.length) : 0;
 
-            document.getElementById('totalCoachees').textContent = totalCoachees;
-            document.getElementById('completedAssessments').textContent = completedAssessments;
-            document.getElementById('pendingAssessments').textContent = pendingAssessments;
-            document.getElementById('avgScore').textContent = avgScore + '%';
+            // Actualizar elementos del DOM de manera segura
+            const totalElement = document.getElementById('totalCoachees');
+            const completedElement = document.getElementById('completedAssessments');
+            const pendingElement = document.getElementById('pendingAssessments');
+            const avgElement = document.getElementById('avgScore');
+            
+            if (totalElement) totalElement.textContent = totalCoachees;
+            if (completedElement) completedElement.textContent = completedAssessments;
+            if (pendingElement) pendingElement.textContent = pendingAssessments;
+            if (avgElement) avgElement.textContent = avgScore + '%';
         }
 
         // Función para mostrar coachees
@@ -1395,11 +1423,19 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Error al cargar tareas');
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
-                tasksData = await response.json();
-                displayTasks();
+                const data = await response.json();
+                
+                // Verificar que los datos sean válidos
+                if (Array.isArray(data)) {
+                    tasksData = data;
+                    displayTasks();
+                } else {
+                    console.error('Formato de datos inesperado para tareas:', data);
+                    throw new Error('Formato de datos inesperado del servidor');
+                }
 
             } catch (error) {
                 console.error('Error cargando tareas:', error);
@@ -1415,6 +1451,9 @@
                         </div>
                     </div>
                 `;
+                
+                // Inicializar datos vacíos para evitar errores en otras funciones
+                tasksData = [];
             }
         }
 
@@ -1678,6 +1717,21 @@
             // Cargar datos iniciales
             loadCoachees();
             loadTasks();
+            
+            // Función para actualizar todo el dashboard
+            window.refreshDashboard = async function() {
+                try {
+                    showToast('Actualizando dashboard...', 'info');
+                    await Promise.all([
+                        loadCoachees(),
+                        loadTasks()
+                    ]);
+                    showToast('Dashboard actualizado', 'success');
+                } catch (error) {
+                    console.error('Error actualizando dashboard:', error);
+                    showToast('Error actualizando dashboard', 'error');
+                }
+            };
             
             // Agregar event listeners para when modals are shown
             const invitationModal = document.getElementById('invitationModal');

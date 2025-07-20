@@ -1601,18 +1601,34 @@
         async function loadDashboardSummary() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
-                if (response.ok) {
+                if (data && data.summary) {
                     dashboardData = data.summary;
                     updateSummaryCards();
                     updateUserInfo();
                 } else {
-                    throw new Error(data.error);
+                    console.error('Formato de datos inesperado:', data);
+                    throw new Error('Formato de datos inesperado del servidor');
                 }
             } catch (error) {
                 console.error('Error cargando resumen:', error);
-                showToast('Error cargando resumen del dashboard', 'error');
+                showToast('Error cargando resumen del dashboard: ' + error.message, 'error');
+                
+                // Inicializar con datos vacíos para evitar errores
+                dashboardData = {
+                    evaluation_summary: { total_completed: 0 },
+                    latest_evaluation: null,
+                    tasks_summary: { pending: 0, overdue: 0 },
+                    coachee: {}
+                };
+                updateSummaryCards();
+                updateUserInfo();
             }
         }
 
@@ -1620,18 +1636,32 @@
         function updateSummaryCards() {
             if (!dashboardData) return;
             
-            document.getElementById('totalEvaluations').textContent = 
-                dashboardData.evaluation_summary.total_completed || '0';
+            // Actualizar elementos del DOM de manera segura
+            const totalEvaluationsElement = document.getElementById('totalEvaluations');
+            const latestScoreElement = document.getElementById('latestScore');
+            const pendingTasksElement = document.getElementById('pendingTasks');
+            const overdueTasksElement = document.getElementById('overdueTasks');
             
-            document.getElementById('latestScore').textContent = 
-                dashboardData.latest_evaluation ? 
-                `${dashboardData.latest_evaluation.total_score}%` : '-';
+            if (totalEvaluationsElement) {
+                totalEvaluationsElement.textContent = 
+                    (dashboardData.evaluation_summary && dashboardData.evaluation_summary.total_completed) || '0';
+            }
             
-            document.getElementById('pendingTasks').textContent = 
-                dashboardData.tasks_summary.pending || '0';
+            if (latestScoreElement) {
+                latestScoreElement.textContent = 
+                    (dashboardData.latest_evaluation && dashboardData.latest_evaluation.total_score) ? 
+                    `${dashboardData.latest_evaluation.total_score}%` : '-';
+            }
             
-            document.getElementById('overdueTasks').textContent = 
-                dashboardData.tasks_summary.overdue || '0';
+            if (pendingTasksElement) {
+                pendingTasksElement.textContent = 
+                    (dashboardData.tasks_summary && dashboardData.tasks_summary.pending) || '0';
+            }
+            
+            if (overdueTasksElement) {
+                overdueTasksElement.textContent = 
+                    (dashboardData.tasks_summary && dashboardData.tasks_summary.overdue) || '0';
+            }
         }
 
         // Update user info
@@ -1639,6 +1669,8 @@
             if (!dashboardData) return;
             
             const userInfoElement = document.getElementById('userInfo');
+            if (!userInfoElement) return;
+            
             const coacheeData = dashboardData.coachee;
             
             if (coacheeData && coacheeData.joined_at) {
@@ -1655,18 +1687,27 @@
         async function loadEvaluations() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/coachee/evaluations`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
-                if (response.ok) {
+                if (data && typeof data === 'object') {
                     evaluationsData = data; // Ahora contiene {available: {}, completed: []}
                     renderAvailableEvaluations();
                     renderCompletedEvaluations();
                 } else {
-                    throw new Error(data.error);
+                    console.error('Formato de datos inesperado:', data);
+                    throw new Error('Formato de datos inesperado del servidor');
                 }
             } catch (error) {
                 console.error('Error cargando evaluaciones:', error);
-                showToast('Error cargando evaluaciones', 'error');
+                showToast('Error cargando evaluaciones: ' + error.message, 'error');
+                
+                // Inicializar con datos vacíos
+                evaluationsData = { available: {}, completed: [] };
                 
                 // Show error in both containers
                 document.getElementById('availableEvaluations').innerHTML = 
@@ -1763,17 +1804,26 @@
         async function loadTasks() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
-                if (response.ok) {
+                if (Array.isArray(data)) {
                     tasksData = data; // La API devuelve directamente el array
                     renderTasks();
                 } else {
-                    throw new Error(data.error);
+                    console.error('Formato de datos inesperado para tareas:', data);
+                    throw new Error('Formato de datos inesperado del servidor');
                 }
             } catch (error) {
                 console.error('Error cargando tareas:', error);
-                showToast('Error cargando tareas', 'error');
+                showToast('Error cargando tareas: ' + error.message, 'error');
+                
+                // Inicializar con datos vacíos
+                tasksData = [];
                 
                 document.getElementById('tasksContainer').innerHTML = 
                     '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando tareas</p></div>';
@@ -2978,7 +3028,8 @@
             try {
                 await Promise.all([
                     loadDashboardSummary(),
-                    loadEvaluations()
+                    loadEvaluations(),
+                    loadTasks()
                 ]);
                 
                 showToast('Dashboard actualizado', 'success');
