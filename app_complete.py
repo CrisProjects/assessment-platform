@@ -754,6 +754,11 @@ def login():
     """Servir la página de login"""
     return render_template('login.html')
 
+@app.route('/participant-access')
+def participant_access():
+    """Servir la página de acceso específica para participantes"""
+    return render_template('participant_access.html')
+
 # API Routes
 @app.route('/dashboard_selection')
 @app.route('/dashboard-selection')  # Ruta alternativa con guión
