@@ -1364,24 +1364,20 @@ def api_coach_get_profile():
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
 @app.route('/api/coach/create-invitation', methods=['POST'])
-@login_required
+@coach_required
 def api_coach_create_invitation():
     """Crear una invitación para un nuevo coachee y generar credenciales automáticamente"""
     try:
         # Debug: verificar autenticación
-        app.logger.info(f"📧 INVITACIÓN - User: {current_user.username if current_user.is_authenticated else 'No auth'}")
-        app.logger.info(f"📧 INVITACIÓN - Request data: {request.get_json()}")
-        
-        # Verificar que el usuario es un coach autenticado
-        if not current_user.is_authenticated or current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado: Solo coaches pueden crear invitaciones'}), 403
+        logger.info(f"📧 INVITACIÓN - User: {current_user.username if current_user.is_authenticated else 'No auth'}")
+        logger.info(f"📧 INVITACIÓN - Request data: {request.get_json()}")
         
         data = request.get_json()
         full_name = data.get('full_name')
         email = data.get('email')
         message = data.get('message', '')
         
-        app.logger.info(f"📧 INVITACIÓN - Datos recibidos: {full_name}, {email}")
+        logger.info(f"📧 INVITACIÓN - Datos recibidos: {full_name}, {email}")
         
         if not full_name or not email:
             return jsonify({'error': 'Nombre completo y email son requeridos'}), 400
@@ -1481,7 +1477,7 @@ def api_coach_create_invitation():
         
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"❌ ERROR INVITACIÓN: {str(e)}")
+        logger.error(f"❌ ERROR INVITACIÓN: {str(e)}")
         return jsonify({'error': f'Error creando coachee e invitación: {str(e)}'}), 500
 
 @app.route('/api/coach/create-coachee-with-credentials', methods=['POST'])
@@ -1561,13 +1557,10 @@ def api_coach_create_coachee_with_credentials():
         return jsonify({'error': f'Error creando coachee: {str(e)}'}), 500
 
 @app.route('/api/coach/my-coachees', methods=['GET'])
-@login_required
+@coach_required
 def api_coach_get_coachees():
     """Obtener lista de coachees del coach autenticado"""
     try:
-        if current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver coachees'}), 403
-        
         # Obtener coachees asignados
         coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
         
@@ -1609,13 +1602,10 @@ def api_coach_get_coachees():
         return jsonify({'error': f'Error obteniendo coachees: {str(e)}'}), 500
 
 @app.route('/api/coach/dashboard-stats', methods=['GET'])
-@login_required
+@coach_required
 def api_coach_dashboard_stats():
     """Obtener estadísticas del dashboard del coach"""
     try:
-        if current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver estadísticas'}), 403
-        
         # DEBUG: Log del usuario actual
         print(f"🔍 DEBUG - Current user: ID={current_user.id}, Name={current_user.full_name}, Email={current_user.email}")
         
@@ -1705,13 +1695,10 @@ def api_coach_dashboard_stats():
 # ===================================
 
 @app.route('/api/coach/tasks', methods=['GET'])
-@login_required
+@coach_required
 def api_coach_get_tasks():
     """Obtener todas las tareas asignadas por el coach"""
     try:
-        if current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado: Solo coaches pueden ver tareas'}), 403
-        
         tasks = Task.query.filter_by(coach_id=current_user.id, is_active=True).all()
         tasks_data = []
         
@@ -1744,7 +1731,7 @@ def api_coach_get_tasks():
         return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
 
 @app.route('/api/coach/tasks', methods=['POST'])
-@login_required
+@coach_required
 def api_coach_create_task():
     """Crear una nueva tarea para un coachee"""
     try:
