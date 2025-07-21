@@ -12,7 +12,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import os
 import secrets
 import re
@@ -20,7 +20,7 @@ import logging
 import string
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from sqlalchemy import func, text
+from sqlalchemy import func, text, desc, asc
 
 # Configurar logging
 from logging.handlers import RotatingFileHandler
@@ -144,7 +144,7 @@ db = SQLAlchemy(app)
 # Configuración de Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'dashboard_selection'  # Redirigir a página de selección cuando se requiere login
+login_manager.login_view = 'dashboard_selection'  # type: ignore
 login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
 login_manager.login_message_category = 'info'
 
@@ -176,7 +176,7 @@ class User(UserMixin, db.Model):
     
     # Sistema de roles de 3 niveles
     role = db.Column(db.String(20), default='coachee', index=True)  # 'platform_admin', 'coach', 'coachee'
-    is_active = db.Column(db.Boolean, default=True, index=True)
+    active = db.Column(db.Boolean, default=True, index=True)
     
     # Relación coach-coachee
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
@@ -189,11 +189,36 @@ class User(UserMixin, db.Model):
     coach = db.relationship('User', remote_side=[id], backref='coachees')
     assessments = db.relationship('AssessmentResult', foreign_keys='AssessmentResult.user_id', backref='user', lazy=True)
 
+    def __init__(self, username=None, email=None, password_hash=None, full_name=None, role='coachee', is_active=True, coach_id=None, created_at=None, last_login=None):
+        """Constructor explícito para resolver errores de Pylance"""
+        self.username = username
+        self.email = email
+        self.password_hash = password_hash
+        self.full_name = full_name
+        self.role = role
+        self.active = is_active
+        self.coach_id = coach_id
+        self.created_at = created_at or datetime.utcnow()
+        self.last_login = last_login
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        if self.password_hash is None:
+            return False
         return check_password_hash(self.password_hash, password)
+    
+    
+    @property
+    def is_active(self):  # type: ignore
+        """Compatibility property for Flask-Login UserMixin"""
+        return self.active
+    
+    @is_active.setter
+    def is_active(self, value):  # type: ignore
+        """Compatibility property setter for Flask-Login UserMixin"""
+        self.active = value
     
     @property
     def is_platform_admin(self):
@@ -220,6 +245,15 @@ class Assessment(db.Model):
     questions = db.relationship('Question', backref='assessment', lazy=True, cascade='all, delete-orphan')
     results = db.relationship('AssessmentResult', backref='assessment_ref', lazy=True)
 
+    def __init__(self, id=None, title=None, description=None, created_at=None, is_active=True):
+        """Constructor explícito para resolver errores de Pylance"""
+        if id is not None:
+            self.id = id
+        self.title = title
+        self.description = description
+        self.created_at = created_at or datetime.utcnow()
+        self.is_active = is_active
+
 class Question(db.Model):
     __tablename__ = 'question'
     
@@ -232,6 +266,14 @@ class Question(db.Model):
     
     # Relaciones
     responses = db.relationship('Response', backref='question', lazy=True)
+
+    def __init__(self, assessment_id=None, text=None, question_type='likert', order=None, is_active=True):
+        """Constructor explícito para resolver errores de Pylance"""
+        self.assessment_id = assessment_id
+        self.text = text
+        self.question_type = question_type
+        self.order = order
+        self.is_active = is_active
 
 class AssessmentResult(db.Model):
     __tablename__ = 'assessment_result'
@@ -260,6 +302,22 @@ class AssessmentResult(db.Model):
         db.Index('idx_user_assessment', 'user_id', 'assessment_id'),
         db.Index('idx_coach_completed', 'coach_id', 'completed_at'),
     )
+
+    def __init__(self, user_id=None, assessment_id=None, score=None, total_questions=None, 
+                 completed_at=None, result_text=None, coach_id=None, invitation_id=None, 
+                 participant_name=None, participant_email=None, dimensional_scores=None):
+        """Constructor explícito para resolver errores de Pylance"""
+        self.user_id = user_id
+        self.assessment_id = assessment_id
+        self.score = score
+        self.total_questions = total_questions
+        self.completed_at = completed_at or datetime.utcnow()
+        self.result_text = result_text
+        self.coach_id = coach_id
+        self.invitation_id = invitation_id
+        self.participant_name = participant_name
+        self.participant_email = participant_email
+        self.dimensional_scores = dimensional_scores
 
 class Response(db.Model):
     __tablename__ = 'response'
@@ -295,8 +353,25 @@ class Invitation(db.Model):
     coach = db.relationship('User', foreign_keys=[coach_id], backref='sent_invitations')
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_invitation')
     
+    def __init__(self, coach_id=None, coachee_id=None, email=None, full_name=None, 
+                 token=None, message=None, created_at=None, expires_at=None, 
+                 used_at=None, is_used=False):
+        """Constructor explícito para resolver errores de Pylance"""
+        self.coach_id = coach_id
+        self.coachee_id = coachee_id
+        self.email = email
+        self.full_name = full_name
+        self.token = token
+        self.message = message
+        self.created_at = created_at or datetime.utcnow()
+        self.expires_at = expires_at
+        self.used_at = used_at
+        self.is_used = is_used
+    
     def is_valid(self):
         """Verificar si la invitación es válida"""
+        if self.expires_at is None:
+            return False
         return not self.is_used and datetime.utcnow() < self.expires_at
     
     def mark_as_used(self):
@@ -324,6 +399,21 @@ class Task(db.Model):
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_tasks')
     progress_entries = db.relationship('TaskProgress', backref='task', lazy=True, cascade='all, delete-orphan')
 
+    def __init__(self, coach_id=None, coachee_id=None, title=None, description=None, 
+                 category=None, priority='medium', due_date=None, created_at=None, 
+                 updated_at=None, is_active=True):
+        """Constructor explícito para resolver errores de Pylance"""
+        self.coach_id = coach_id
+        self.coachee_id = coachee_id
+        self.title = title
+        self.description = description
+        self.category = category
+        self.priority = priority
+        self.due_date = due_date
+        self.created_at = created_at or datetime.utcnow()
+        self.updated_at = updated_at or datetime.utcnow()
+        self.is_active = is_active
+
 class TaskProgress(db.Model):
     __tablename__ = 'task_progress'
     
@@ -337,6 +427,16 @@ class TaskProgress(db.Model):
     
     # Relaciones
     updated_by_user = db.relationship('User', backref='task_updates')
+
+    def __init__(self, task_id=None, status='pending', progress_percentage=0, notes=None, 
+                 updated_by=None, created_at=None):
+        """Constructor explícito para resolver errores de Pylance"""
+        self.task_id = task_id
+        self.status = status
+        self.progress_percentage = progress_percentage
+        self.notes = notes
+        self.updated_by = updated_by
+        self.created_at = created_at or datetime.utcnow()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -425,7 +525,7 @@ def auto_initialize_database():
         
         if 'user' not in tables:
             logger.warning("🔧 AUTO-INIT: Tabla 'user' no existe, creando...")
-            User.__table__.create(db.engine, checkfirst=True)
+            User.__table__.create(db.engine, checkfirst=True)  # type: ignore
             
             # Re-verificar
             inspector = inspect(db.engine)
@@ -571,7 +671,6 @@ def create_demo_data_for_coachee(coachee_user):
             print("📊 AUTO-INIT: Creando evaluaciones de ejemplo para coachee...")
             
             # Crear algunas evaluaciones de ejemplo
-            from datetime import date, timedelta
             
             demo_assessments = [
                 {
@@ -622,7 +721,7 @@ def create_demo_data_for_coachee(coachee_user):
             # Buscar un coach para asignar las tareas (usar el admin como coach temporal)
             coach_user = User.query.filter_by(role='platform_admin').first()
             if not coach_user:
-                coach_user = User.query.filter(User.role.in_(['coach', 'platform_admin'])).first()
+                coach_user = User.query.filter_by(role='coach').first()
             
             if coach_user:
                 demo_tasks = [
@@ -732,7 +831,7 @@ def role_required(required_role):
 @app.route('/')
 def index():
     """Landing page principal - Diseño inspirado en Calm.com"""
-    return render_template('landing.html')
+    return render_template('index.html')
 
 @app.route('/api/status')
 def api_status():
@@ -787,7 +886,7 @@ def api_login():
             return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
         
         # Buscar usuario por username o email
-        user = User.query.filter(
+        user = User.query.filter(  # type: ignore
             (User.username == username) | (User.email == username)
         ).first()
         
@@ -864,7 +963,7 @@ def api_register():
         # Si no se proporciona username, generarlo desde el email
         if not data.get('username'):
             email_temp = str(data['email']).strip().lower()
-            base_username = re.sub(r'[^a-zA-Z0-9]', '', email_temp.split('@')[0])
+            base_username = re.sub(r'[^a-zA-Z0-9]', '', email_temp.split('@')[0])  # type: ignore
             username = base_username.lower()
             
             # Asegurar que el username sea único
@@ -897,7 +996,7 @@ def api_register():
             return jsonify({'error': 'El nombre completo debe tener al menos 2 caracteres'}), 400
         
         # Verificar si el usuario ya existe
-        existing_user = User.query.filter(
+        existing_user = User.query.filter(  # type: ignore
             (User.username == username) | (User.email == email)
         ).first()
         
@@ -976,9 +1075,9 @@ def api_admin_login():
             return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
         
         # Buscar específicamente el usuario admin
-        admin_user = User.query.filter(
-            User.username == username,
-            User.role == 'platform_admin'
+        admin_user = User.query.filter(  # type: ignore
+            User.username == username,  # type: ignore
+            User.role == 'platform_admin'  # type: ignore
         ).first()
         
         if admin_user and admin_user.check_password(password) and admin_user.is_active:
@@ -1063,7 +1162,7 @@ def api_admin_create_coach():
             return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
         
         # Verificar si el usuario ya existe
-        existing_user = User.query.filter(
+        existing_user = User.query.filter(  # type: ignore
             (User.username == username) | (User.email == email)
         ).first()
         
@@ -1108,7 +1207,7 @@ def api_admin_create_coach():
 def api_admin_get_coaches():
     """Obtener lista de todos los coaches - Solo para administradores"""
     try:
-        coaches = User.query.filter_by(role='coach').order_by(User.created_at.desc()).all()
+        coaches = User.query.filter_by(role='coach').order_by(desc(User.created_at)).all()  # type: ignore
         
         coaches_data = []
         for coach in coaches:
@@ -1159,13 +1258,13 @@ def api_admin_platform_stats():
         
         # Evaluaciones del último mes
         last_month = datetime.utcnow() - timedelta(days=30)
-        recent_assessments = AssessmentResult.query.filter(
-            AssessmentResult.completed_at >= last_month
+        recent_assessments = AssessmentResult.query.filter(  # type: ignore
+            AssessmentResult.completed_at >= last_month  # type: ignore
         ).count()
         
         # Distribución de usuarios activos vs inactivos
-        active_users = User.query.filter_by(is_active=True).count()
-        inactive_users = User.query.filter_by(is_active=False).count()
+        active_users = User.query.filter_by(active=True).count()
+        inactive_users = User.query.filter_by(active=False).count()
         
         # Datos para gráfico de distribución de usuarios
         user_distribution = {
@@ -1212,9 +1311,9 @@ def api_coach_login():
             return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
         
         # Buscar usuario coach
-        coach_user = User.query.filter(
-            (User.username == username) | (User.email == username),
-            User.role == 'coach'
+        coach_user = User.query.filter(  # type: ignore
+            (User.username == username) | (User.email == username),  # type: ignore
+            User.role == 'coach'  # type: ignore
         ).first()
         
         if coach_user and coach_user.check_password(password) and coach_user.is_active:
@@ -1450,7 +1549,7 @@ def api_coach_create_coachee_with_credentials():
         
         # Validar formato de usuario
         import re
-        if not re.match(r'^[a-zA-Z0-9._]+$', username):
+        if not re.match(r'^[a-zA-Z0-9._]+$', username):  # type: ignore
             return jsonify({'error': 'El usuario solo puede contener letras, números, puntos y guiones bajos'}), 400
         
         # Verificar si el username ya existe
@@ -1509,7 +1608,7 @@ def api_coach_get_coachees():
             # Obtener última evaluación
             latest_assessment = AssessmentResult.query.filter_by(
                 user_id=coachee.id
-            ).order_by(AssessmentResult.completed_at.desc()).first()
+            ).order_by(AssessmentResult.completed_at.desc()).first()  # type: ignore
             
             # Contar evaluaciones totales
             total_assessments = AssessmentResult.query.filter_by(user_id=coachee.id).count()
@@ -1565,9 +1664,9 @@ def api_coach_dashboard_stats():
         
         # Actividad reciente (evaluaciones del último mes)
         last_month = datetime.utcnow() - timedelta(days=30)
-        recent_activity = AssessmentResult.query.filter(
-            AssessmentResult.coach_id == current_user.id,
-            AssessmentResult.completed_at >= last_month
+        recent_activity = AssessmentResult.query.filter(  # type: ignore
+            AssessmentResult.coach_id == current_user.id,  # type: ignore
+            AssessmentResult.completed_at >= last_month  # type: ignore
         ).count()
         
         # Distribución de niveles de asertividad
@@ -1598,9 +1697,9 @@ def api_coach_dashboard_stats():
         
         for coachee in coachees:
             # Obtener TODAS las evaluaciones del coachee (sin filtro temporal - MISMA FUENTE que distribución)
-            coachee_assessments = AssessmentResult.query.filter(
+            coachee_assessments = AssessmentResult.query.filter(  # type: ignore
                 AssessmentResult.user_id == coachee.id
-            ).order_by(AssessmentResult.completed_at).all()
+            ).order_by(AssessmentResult.completed_at).all()  # type: ignore
             
             if coachee_assessments:
                 coachee_progress = {
@@ -1644,7 +1743,7 @@ def api_coach_get_tasks():
         
         for task in tasks:
             # Obtener el último progreso
-            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()  # type: ignore
             
             task_data = {
                 'id': task.id,
@@ -1792,7 +1891,7 @@ def api_coach_get_coachee_tasks(coachee_id):
         
         tasks_data = []
         for task in tasks:
-            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()  # type: ignore
             
             task_data = {
                 'id': task.id,
@@ -1837,9 +1936,9 @@ def api_coachee_login():
             return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
         
         # Buscar usuario coachee
-        coachee_user = User.query.filter(
-            (User.username == username) | (User.email == username),
-            User.role == 'coachee'
+        coachee_user = User.query.filter(  # type: ignore
+            (User.username == username) | (User.email == username),  # type: ignore
+            User.role == 'coachee'  # type: ignore
         ).first()
         
         if coachee_user and coachee_user.check_password(password) and coachee_user.is_active:
@@ -1897,7 +1996,7 @@ def api_coachee_dashboard_summary(current_coachee):
         # Obtener la última evaluación
         latest_evaluation = AssessmentResult.query.filter_by(
             user_id=current_coachee.id
-        ).order_by(AssessmentResult.completed_at.desc()).first()
+        ).order_by(AssessmentResult.completed_at.desc()).first()  # type: ignore
         
         # Contar tareas activas y obtener estadísticas
         active_tasks = Task.query.filter_by(
@@ -1927,7 +2026,7 @@ def api_coachee_dashboard_summary(current_coachee):
             # Obtener el último progreso de cada tarea
             latest_progress = TaskProgress.query.filter_by(
                 task_id=task.id
-            ).order_by(TaskProgress.created_at.desc()).first()
+            ).order_by(TaskProgress.created_at.desc()).first()  # type: ignore
             
             # Si no hay progreso, la tarea está pendiente
             status = latest_progress.status if latest_progress else 'pending'
@@ -1942,7 +2041,7 @@ def api_coachee_dashboard_summary(current_coachee):
             if task.due_date and task.due_date < datetime.utcnow().date():
                 latest_progress = TaskProgress.query.filter_by(
                     task_id=task.id
-                ).order_by(TaskProgress.created_at.desc()).first()
+                ).order_by(TaskProgress.created_at.desc()).first()  # type: ignore
                 
                 status = latest_progress.status if latest_progress else 'pending'
                 if status in ['pending', 'in_progress']:
@@ -1978,7 +2077,7 @@ def api_coachee_evaluations(current_coachee):
         # Evaluaciones completadas
         completed_evaluations = AssessmentResult.query.filter_by(
             user_id=current_coachee.id
-        ).order_by(AssessmentResult.completed_at.desc()).all()
+        ).order_by(AssessmentResult.completed_at.desc()).all()  # type: ignore
         
         completed_data = []
         for eval in completed_evaluations:
@@ -2040,14 +2139,14 @@ def api_coachee_tasks(current_coachee):
         tasks = Task.query.filter_by(
             coachee_id=current_coachee.id,
             is_active=True
-        ).order_by(Task.created_at.desc()).all()
+        ).order_by(Task.created_at.desc()).all()  # type: ignore
         
         tasks_data = []
         for task in tasks:
             # Obtener el último progreso
             latest_progress = TaskProgress.query.filter_by(
                 task_id=task.id
-            ).order_by(TaskProgress.created_at.desc()).first()
+            ).order_by(TaskProgress.created_at.desc()).first()  # type: ignore
             
             tasks_data.append({
                 'id': task.id,
@@ -2080,7 +2179,7 @@ def api_coachee_evaluation_history(current_coachee):
     try:
         evaluations = AssessmentResult.query.filter_by(
             user_id=current_coachee.id
-        ).order_by(AssessmentResult.completed_at.asc()).all()
+        ).order_by(AssessmentResult.completed_at.asc()).all()  # type: ignore
         
         history_data = []
         for eval in evaluations:
@@ -2564,7 +2663,7 @@ def api_coach_coachee_evaluations(coachee_id):
         # Obtener todas las evaluaciones del coachee
         evaluations = AssessmentResult.query.filter_by(
             user_id=coachee_id
-        ).order_by(AssessmentResult.completed_at.desc()).all()
+        ).order_by(AssessmentResult.completed_at.desc()).all()  # type: ignore
         
         evaluations_data = []
         for evaluation in evaluations:
@@ -2786,49 +2885,6 @@ def log_request_info():
             safe_data = {k: v for k, v in data.items() if k not in ['password', 'token', 'secret']}
             logger.debug(f"Request data: {safe_data}")
 
-@app.errorhandler(401)
-def unauthorized_error(error):
-    """Manejo de errores 401 - No autorizado"""
-    logger.warning(f"401 Error: Unauthorized access to {request.url}")
-    
-    if request.path.startswith('/api/'):
-        return jsonify({
-            'error': 'Autenticación requerida',
-            'status_code': 401,
-            'message': 'Debes iniciar sesión para acceder a este recurso.'
-        }), 401
-    
-    return redirect(url_for('dashboard_selection'))
-
-@app.errorhandler(400)
-def bad_request_error(error):
-    """Manejo de errores 400 - Solicitud incorrecta"""
-    logger.warning(f"400 Error: Bad request to {request.url}. Error: {str(error)}")
-    
-    if request.path.startswith('/api/'):
-        return jsonify({
-            'error': 'Solicitud incorrecta',
-            'status_code': 400,
-            'message': 'Los datos enviados no son válidos.'
-        }), 400
-    
-    return render_template('error.html',
-                         error_code=400,
-                         error_message="Solicitud incorrecta",
-                         error_description="Los datos enviados no son válidos."), 400
-
-# Logging de requests para debugging
-@app.before_request
-def log_request_info():
-    """Log de información de requests para debugging"""
-    if not request.path.startswith('/static/'):  # No loggear recursos estáticos
-        logger.debug(f"Request: {request.method} {request.path} from {request.remote_addr}")
-        if request.is_json and request.method in ['POST', 'PUT', 'PATCH']:
-            # Log solo los campos no sensibles
-            data = request.get_json() or {}
-            safe_data = {k: v for k, v in data.items() if k not in ['password', 'current_password', 'new_password']}
-            logger.debug(f"Request data: {safe_data}")
-
 @app.after_request
 def log_response_info(response):
     """Log de información de responses"""
@@ -2855,6 +2911,7 @@ if __name__ == '__main__':
                     username='admin',
                     email='admin@assessmentplatform.com',
                     password_hash=generate_password_hash('admin123'),
+                    full_name='Platform Administrator',
                     role='platform_admin',
                     is_active=True
                 )
