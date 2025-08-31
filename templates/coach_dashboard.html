@@ -365,6 +365,93 @@
         .recommendation-item {
             padding: 1rem !important;
         }
+        
+        /* Mejoras para header en móviles */
+        .dashboard-header {
+            padding: 1rem !important;
+        }
+        
+        .dashboard-header .d-flex {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 1rem !important;
+        }
+        
+        .dashboard-header .btn-group-mobile {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+        }
+        
+        .dashboard-header .btn-group-mobile .btn {
+            flex: 1 !important;
+            min-width: 0 !important;
+            font-size: 0.75rem !important;
+            padding: 0.375rem 0.5rem !important;
+        }
+        
+        .dashboard-header .btn-group-mobile .btn .fas {
+            margin-right: 0.25rem !important;
+        }
+        
+        /* Statistics cards responsive */
+        .stats-card-mobile {
+            margin-bottom: 1rem !important;
+        }
+        
+        .stats-card-mobile .card-body {
+            padding: 1rem 0.75rem !important;
+        }
+        
+        .stats-card-mobile .fa-2x {
+            font-size: 1.5rem !important;
+        }
+        
+        .stats-card-mobile h4 {
+            font-size: 1.5rem !important;
+        }
+        
+        /* Container fluid para móviles */
+        .container-fluid {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        
+        /* Sidebar en móviles */
+        .sidebar .card {
+            margin-bottom: 1rem !important;
+        }
+        
+        .sidebar .card-body {
+            padding: 0.75rem !important;
+        }
+        
+        /* Títulos más pequeños en móvil */
+        .dashboard-header h3 {
+            font-size: 1.5rem !important;
+        }
+        
+        .dashboard-header p {
+            font-size: 0.875rem !important;
+        }
+        
+        /* Ajustes adicionales para textos en móvil */
+        .small {
+            font-size: 0.75rem !important;
+        }
+    }
+    
+    /* Estilos adicionales para tablets */
+    @media (max-width: 992px) {
+        .dashboard-header .btn-group-mobile .btn {
+            font-size: 0.8rem !important;
+            padding: 0.4rem 0.6rem !important;
+        }
+        
+        .stats-card-mobile h4 {
+            font-size: 1.3rem !important;
+        }
     }
     
     /* Estilos para evaluaciones del coachee */
@@ -558,21 +645,21 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card bg-dark border-secondary">
-                <div class="card-body">
+                <div class="card-body dashboard-header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div>
+                        <div class="header-info">
                             <h3 class="text-white mb-1">Dashboard Coach</h3>
                             <p class="text-muted mb-0">Bienvenido, <span id="coachName">Coach</span></p>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()">
-                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                        <div class="btn-group-mobile d-flex gap-2">
+                            <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()" title="Actualizar">
+                                <i class="fas fa-sync-alt me-1"></i><span class="d-none d-sm-inline">Actualizar</span>
                             </button>
-                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'">
-                                <i class="fas fa-home me-1"></i>Inicio
+                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'" title="Inicio">
+                                <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Inicio</span>
                             </button>
-                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/logout'">
-                                <i class="fas fa-sign-out-alt me-1"></i>Salir
+                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/logout'" title="Salir">
+                                <i class="fas fa-sign-out-alt me-1"></i><span class="d-none d-sm-inline">Salir</span>
                             </button>
                         </div>
                     </div>
@@ -583,39 +670,39 @@
 
     <!-- Statistics Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 stats-card-mobile">
             <div class="card bg-dark border-secondary text-center">
                 <div class="card-body">
                     <i class="fas fa-users fa-2x text-primary mb-3"></i>
                     <h4 class="text-white" id="totalCoachees">0</h4>
-                    <p class="text-muted mb-0">Total Coachees</p>
+                    <p class="text-muted mb-0 small">Total Coachees</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 stats-card-mobile">
             <div class="card bg-dark border-secondary text-center">
                 <div class="card-body">
                     <i class="fas fa-clipboard-check fa-2x text-success mb-3"></i>
                     <h4 class="text-white" id="completedAssessments">0</h4>
-                    <p class="text-muted mb-0">Evaluaciones Completadas</p>
+                    <p class="text-muted mb-0 small">Evaluaciones Completadas</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 stats-card-mobile">
             <div class="card bg-dark border-secondary text-center">
                 <div class="card-body">
                     <i class="fas fa-hourglass-half fa-2x text-warning mb-3"></i>
                     <h4 class="text-white" id="pendingAssessments">0</h4>
-                    <p class="text-muted mb-0">Evaluaciones Pendientes</p>
+                    <p class="text-muted mb-0 small">Evaluaciones Pendientes</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 stats-card-mobile">
             <div class="card bg-dark border-secondary text-center">
                 <div class="card-body">
                     <i class="fas fa-chart-bar fa-2x text-info mb-3"></i>
                     <h4 class="text-white" id="avgScore">0%</h4>
-                    <p class="text-muted mb-0">Promedio General</p>
+                    <p class="text-muted mb-0 small">Promedio General</p>
                 </div>
             </div>
         </div>
@@ -633,24 +720,24 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        <a href="#" class="list-group-item list-group-item-action border-secondary active" 
-                           onclick="showModule('mis-coachees')" data-module="mis-coachees">
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary active" 
+                           onclick="showModule('mis-coachees'); return false;" data-module="mis-coachees">
                             <i class="fas fa-users me-3"></i>Mis Coachees
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action border-secondary" 
-                           onclick="showModule('gestion-tareas')" data-module="gestion-tareas">
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                           onclick="showModule('gestion-tareas'); return false;" data-module="gestion-tareas">
                             <i class="fas fa-tasks me-3"></i>Gestión de Tareas
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action border-secondary" 
-                           onclick="showModule('invitar-coachee')" data-module="invitar-coachee">
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                           onclick="showModule('invitar-coachee'); return false;" data-module="invitar-coachee">
                             <i class="fas fa-envelope me-3"></i>Invitar Coachee
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action border-secondary" 
-                           onclick="showModule('seleccionar-evaluaciones')" data-module="seleccionar-evaluaciones">
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                           onclick="showModule('seleccionar-evaluaciones'); return false;" data-module="seleccionar-evaluaciones">
                             <i class="fas fa-clipboard-list me-3"></i>Evaluaciones
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action border-secondary" 
-                           onclick="showModule('agregar-contenido')" data-module="agregar-contenido">
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                           onclick="showModule('agregar-contenido'); return false;" data-module="agregar-contenido">
                             <i class="fas fa-plus-circle me-3"></i>Contenido
                         </a>
                     </div>
@@ -857,6 +944,11 @@ let tasksData = [];
 
 // Función para mostrar módulos
 function showModule(moduleId) {
+    // Prevenir scroll automático
+    if (event) {
+        event.preventDefault();
+    }
+    
     // Ocultar todos los módulos
     document.querySelectorAll('.module-content').forEach(module => {
         module.style.display = 'none';
@@ -868,10 +960,36 @@ function showModule(moduleId) {
     });
     
     // Mostrar módulo seleccionado
-    document.getElementById(moduleId).style.display = 'block';
+    const selectedModule = document.getElementById(moduleId);
+    if (selectedModule) {
+        selectedModule.style.display = 'block';
+        
+        // En móviles, hacer scroll suave hacia el contenido
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                selectedModule.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            }, 100);
+        }
+    }
     
     // Agregar clase active al enlace seleccionado
-    document.querySelector(`[data-module="${moduleId}"]`).classList.add('active');
+    const selectedLink = document.querySelector(`[data-module="${moduleId}"]`);
+    if (selectedLink) {
+        selectedLink.classList.add('active');
+    }
+    
+    // Cargar datos específicos del módulo si es necesario
+    if (moduleId === 'mis-coachees') {
+        loadCoachees();
+    } else if (moduleId === 'gestion-tareas') {
+        loadTasks();
+    }
+    
+    return false; // Prevenir comportamiento por defecto
 }
 
 // Función para refrescar dashboard
@@ -2161,7 +2279,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-// Cache buster - Forzar recarga: 2025-08-31-12:58
-console.log('🔄 Template actualizado: 2025-08-31-12:58 - Listado de evaluaciones mejorado');
+// Mejorar navegación del panel de control - Prevenir scroll automático
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar event listeners a todos los enlaces del menú
+    document.querySelectorAll('[data-module]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevenir comportamiento por defecto
+            e.stopPropagation(); // Prevenir propagación del evento
+            
+            const moduleId = this.getAttribute('data-module');
+            if (moduleId) {
+                showModule(moduleId);
+            }
+            
+            return false;
+        });
+    });
+    
+    console.log('✅ Event listeners del panel de control configurados');
+});
+
+// Cache buster - Forzar recarga: 2025-08-31-16:58
+console.log('🔄 Template actualizado: 2025-08-31-16:58 - Navegación del panel mejorada');
 </script>
 {% endblock %}
