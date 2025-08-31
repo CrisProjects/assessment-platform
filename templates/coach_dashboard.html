@@ -701,14 +701,31 @@
                                 <input type="text" class="form-control border-secondary" 
                                        placeholder="Título de la tarea" id="taskTitle" style="background-color: white; color: #212529;">
                             </div>
+                            <div class="col-md-6">
+                                <textarea class="form-control border-secondary" 
+                                          placeholder="Descripción de la tarea" id="taskDescription" rows="2" 
+                                          style="background-color: white; color: #212529;"></textarea>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <select class="form-select border-secondary" id="taskCategory" style="background-color: white; color: #212529;">
+                                    <option value="">Seleccionar categoría</option>
+                                    <option value="coaching">Coaching</option>
+                                    <option value="evaluacion">Evaluación</option>
+                                    <option value="desarrollo">Desarrollo</option>
+                                    <option value="seguimiento">Seguimiento</option>
+                                    <option value="planificacion">Planificación</option>
+                                </select>
+                            </div>
                             <div class="col-md-4">
                                 <select class="form-select border-secondary" id="taskCoachee" style="background-color: white; color: #212529;">
                                     <option value="">Seleccionar coachee</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-4">
                                 <button class="btn btn-primary w-100" onclick="createTask()">
-                                    <i class="fas fa-plus me-1"></i>Crear
+                                    <i class="fas fa-plus me-1"></i>Crear Tarea
                                 </button>
                             </div>
                         </div>
@@ -1017,10 +1034,22 @@ function displayTasks() {
 // Función para crear tarea
 function createTask() {
     const title = document.getElementById('taskTitle').value.trim();
+    const description = document.getElementById('taskDescription').value.trim();
+    const category = document.getElementById('taskCategory').value;
     const coacheeId = document.getElementById('taskCoachee').value;
     
     if (!title) {
         alert('Por favor ingrese un título para la tarea');
+        return;
+    }
+    
+    if (!description) {
+        alert('Por favor ingrese una descripción para la tarea');
+        return;
+    }
+    
+    if (!category) {
+        alert('Por favor seleccione una categoría para la tarea');
         return;
     }
     
@@ -1036,6 +1065,8 @@ function createTask() {
         },
         body: JSON.stringify({
             title: title,
+            description: description,
+            category: category,
             coachee_id: parseInt(coacheeId)
         })
     })
@@ -1043,6 +1074,8 @@ function createTask() {
     .then(data => {
         if (data.success) {
             document.getElementById('taskTitle').value = '';
+            document.getElementById('taskDescription').value = '';
+            document.getElementById('taskCategory').value = '';
             document.getElementById('taskCoachee').value = '';
             loadTasks();
             alert('Tarea creada exitosamente');
