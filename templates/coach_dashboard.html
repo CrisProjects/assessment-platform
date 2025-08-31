@@ -398,6 +398,108 @@
         /* Statistics cards responsive */
         .stats-card-mobile {
             margin-bottom: 1rem !important;
+            min-height: 140px !important;
+        }
+        
+        .stats-card-mobile .card-body {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center !important;
+            padding: 1.5rem 1rem !important;
+        }
+        
+        .stats-card-mobile h3 {
+            font-size: 2rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .stats-card-mobile .text-muted {
+            font-size: 0.875rem !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* Mobile coachees cards */
+        .coachee-card-mobile {
+            margin-bottom: 1rem !important;
+            border: 1px solid #e3e6f0 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .coachee-card-mobile:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+            transform: translateY(-1px);
+            transition: all 0.3s ease;
+        }
+        
+        /* Task management mobile styles */
+        #gestion-tareas .row.g-3 {
+            margin-bottom: 1rem !important;
+        }
+        
+        #gestion-tareas .col-md-6 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        #gestion-tareas .form-label {
+            font-size: 0.875rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+        
+        #gestion-tareas .form-control,
+        #gestion-tareas .form-select {
+            font-size: 0.875rem !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+        
+        #gestion-tareas textarea.form-control {
+            min-height: 80px !important;
+        }
+        
+        #gestion-tareas .btn {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.875rem !important;
+        }
+        
+        /* Task cards mobile */
+        #tasksCardsContainer .card {
+            border: 1px solid #e3e6f0 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        #tasksCardsContainer .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            transform: translateY(-2px);
+        }
+        
+        #tasksCardsContainer .card-title {
+            font-size: 1rem !important;
+            line-height: 1.3 !important;
+        }
+        
+        #tasksCardsContainer .card-text {
+            font-size: 0.875rem !important;
+            line-height: 1.4 !important;
+        }
+        
+        #tasksCardsContainer .btn-group .btn {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.75rem !important;
+        }
+        
+        #tasksCardsContainer .row.g-2 {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        #tasksCardsContainer .small {
+            font-size: 0.75rem !important;
+        }
+        
+        .stats-card-mobile {
             height: 100% !important;
         }
         
@@ -568,6 +670,76 @@
     .summary-label {
         font-size: 0.85rem;
         color: #666;
+    }
+    
+    /* Estilos para evaluaciones disponibles */
+    .assessment-card {
+        background: white;
+        border: 1px solid #e3e6f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .assessment-card:hover {
+        border-color: #4e73df;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .assessment-card.selected {
+        border-color: #4e73df;
+        background-color: #f8f9fc;
+    }
+    
+    .assessment-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+    
+    .assessment-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+    }
+    
+    .assessment-badge {
+        background: #e7f1ff;
+        color: #4e73df;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .assessment-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+    
+    .assessment-stats {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #8b949e;
+    }
+    
+    .assessment-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .assessment-stat i {
+        color: #4e73df;
     }
     
     .evaluation-card {
@@ -873,56 +1045,99 @@
                         <h5 class="text-dark mb-0">Gestión de Tareas</h5>
                     </div>
                     <div class="card-body" style="background-color: white !important;">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <input type="text" class="form-control border-secondary" 
-                                       placeholder="Título de la tarea" id="taskTitle" style="background-color: white; color: #212529;">
+                        
+                        <!-- Formulario de Creación de Tareas -->
+                        <div class="card mb-4" style="border: 1px solid #e3e6f0; border-radius: 8px;">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 text-dark">
+                                    <i class="fas fa-plus-circle me-2"></i>Crear Nueva Tarea
+                                </h6>
                             </div>
-                            <div class="col-md-6">
-                                <textarea class="form-control border-secondary" 
-                                          placeholder="Descripción de la tarea" id="taskDescription" rows="2" 
-                                          style="background-color: white; color: #212529;"></textarea>
+                            <div class="card-body">
+                                <!-- Formulario responsive -->
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark small fw-bold">Título de la Tarea</label>
+                                        <input type="text" class="form-control border-secondary" 
+                                               placeholder="Ingrese el título" id="taskTitle" 
+                                               style="background-color: white; color: #212529;">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark small fw-bold">Categoría</label>
+                                        <select class="form-select border-secondary" id="taskCategory" 
+                                                style="background-color: white; color: #212529;">
+                                            <option value="">Seleccionar categoría</option>
+                                            <option value="coaching">Coaching</option>
+                                            <option value="evaluacion">Evaluación</option>
+                                            <option value="desarrollo">Desarrollo</option>
+                                            <option value="seguimiento">Seguimiento</option>
+                                            <option value="planificacion">Planificación</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark small fw-bold">Asignar a Coachee</label>
+                                        <select class="form-select border-secondary" id="taskCoachee" 
+                                                style="background-color: white; color: #212529;">
+                                            <option value="">Seleccionar coachee</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark small fw-bold">Fecha de Vencimiento</label>
+                                        <input type="date" class="form-control border-secondary" 
+                                               id="taskDueDate" 
+                                               style="background-color: white; color: #212529;">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-dark small fw-bold">Descripción</label>
+                                        <textarea class="form-control border-secondary" 
+                                                  placeholder="Descripción detallada de la tarea" 
+                                                  id="taskDescription" rows="3" 
+                                                  style="background-color: white; color: #212529;"></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button class="btn btn-primary w-100" onclick="createTask()">
+                                            <i class="fas fa-plus me-1"></i>Crear Tarea
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <select class="form-select border-secondary" id="taskCategory" style="background-color: white; color: #212529;">
-                                    <option value="">Seleccionar categoría</option>
-                                    <option value="coaching">Coaching</option>
-                                    <option value="evaluacion">Evaluación</option>
-                                    <option value="desarrollo">Desarrollo</option>
-                                    <option value="seguimiento">Seguimiento</option>
-                                    <option value="planificacion">Planificación</option>
-                                </select>
+
+                        <!-- Lista de Tareas -->
+                        <div class="card" style="border: 1px solid #e3e6f0; border-radius: 8px;">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 text-dark">
+                                    <i class="fas fa-tasks me-2"></i>Lista de Tareas
+                                </h6>
                             </div>
-                            <div class="col-md-4">
-                                <select class="form-select border-secondary" id="taskCoachee" style="background-color: white; color: #212529;">
-                                    <option value="">Seleccionar coachee</option>
-                                </select>
+                            <div class="card-body p-0">
+                                <!-- Vista tabla para desktop -->
+                                <div class="table-responsive d-none d-md-block">
+                                    <table class="table table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="color: #212529;">Tarea</th>
+                                                <th style="color: #212529;">Coachee</th>
+                                                <th style="color: #212529;">Categoría</th>
+                                                <th style="color: #212529;">Estado</th>
+                                                <th style="color: #212529;">Vencimiento</th>
+                                                <th style="color: #212529;">Creada</th>
+                                                <th style="color: #212529;">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tasksTableBody">
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted">No hay tareas creadas</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Vista cards para móvil -->
+                                <div class="d-block d-md-none p-3" id="tasksCardsContainer">
+                                    <div class="text-center text-muted">No hay tareas creadas</div>
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-primary w-100" onclick="createTask()">
-                                    <i class="fas fa-plus me-1"></i>Crear Tarea
-                                </button>
-                            </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th style="color: #212529;">Tarea</th>
-                                        <th style="color: #212529;">Coachee</th>
-                                        <th style="color: #212529;">Estado</th>
-                                        <th style="color: #212529;">Fecha</th>
-                                        <th style="color: #212529;">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tasksTableBody">
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted">No hay tareas creadas</td>
-                                    </tr>
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -960,10 +1175,34 @@
             <div id="seleccionar-evaluaciones" class="module-content" style="display: none;">
                 <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">Seleccionar Evaluaciones</h5>
+                        <h5 class="text-dark mb-0">Evaluaciones Disponibles</h5>
+                        <p class="text-muted mb-0 small">Selecciona evaluaciones para asignar a tus coachees</p>
                     </div>
                     <div class="card-body" style="background-color: white !important;">
-                        <p class="text-muted">Módulo de evaluaciones en desarrollo</p>
+                        <!-- Loading spinner -->
+                        <div id="assessments-loading" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando evaluaciones...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Assessments list -->
+                        <div id="assessments-list" style="display: none;">
+                            <!-- Assessment cards will be populated here -->
+                        </div>
+                        
+                        <!-- Error message -->
+                        <div id="assessments-error" class="alert alert-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar las evaluaciones disponibles.
+                        </div>
+                        
+                        <!-- No assessments message -->
+                        <div id="no-assessments" class="text-center py-4" style="display: none;">
+                            <i class="fas fa-clipboard-list text-muted mb-3" style="font-size: 3rem;"></i>
+                            <h6 class="text-muted">No hay evaluaciones disponibles</h6>
+                            <p class="text-muted small">Las evaluaciones aparecerán aquí cuando estén disponibles.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1077,6 +1316,8 @@ function showModule(moduleId) {
         loadCoachees();
     } else if (moduleId === 'gestion-tareas') {
         loadTasks();
+    } else if (moduleId === 'seleccionar-evaluaciones') {
+        loadAvailableAssessments();
     }
     
     return false; // Prevenir comportamiento por defecto
@@ -1136,6 +1377,97 @@ function loadStats() {
             }
         })
         .catch(error => console.error('Error loading stats:', error));
+}
+
+// Función para cargar evaluaciones disponibles
+function loadAvailableAssessments() {
+    const loadingElement = document.getElementById('assessments-loading');
+    const listElement = document.getElementById('assessments-list');
+    const errorElement = document.getElementById('assessments-error');
+    const noAssessmentsElement = document.getElementById('no-assessments');
+    
+    // Mostrar loading y ocultar otros elementos
+    loadingElement.style.display = 'block';
+    listElement.style.display = 'none';
+    errorElement.style.display = 'none';
+    noAssessmentsElement.style.display = 'none';
+    
+    fetch('/api/coach/available-assessments')
+        .then(response => response.json())
+        .then(data => {
+            loadingElement.style.display = 'none';
+            
+            if (data.success && data.assessments && data.assessments.length > 0) {
+                displayAvailableAssessments(data.assessments);
+                listElement.style.display = 'block';
+            } else {
+                noAssessmentsElement.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading assessments:', error);
+            loadingElement.style.display = 'none';
+            errorElement.style.display = 'block';
+        });
+}
+
+// Función para mostrar evaluaciones disponibles
+function displayAvailableAssessments(assessments) {
+    const container = document.getElementById('assessments-list');
+    container.innerHTML = '';
+    
+    assessments.forEach(assessment => {
+        const card = document.createElement('div');
+        card.className = 'assessment-card';
+        card.onclick = () => selectAssessment(assessment.id);
+        
+        const createdDate = assessment.created_at ? 
+            new Date(assessment.created_at).toLocaleDateString('es-ES') : 'No disponible';
+        
+        card.innerHTML = `
+            <div class="assessment-header">
+                <h6 class="assessment-title">${assessment.title}</h6>
+                <span class="assessment-badge">
+                    <i class="fas fa-check-circle me-1"></i>Disponible
+                </span>
+            </div>
+            
+            <p class="assessment-description">
+                ${assessment.description || 'Sin descripción disponible'}
+            </p>
+            
+            <div class="assessment-stats">
+                <div class="assessment-stat">
+                    <i class="fas fa-question-circle"></i>
+                    <span>${assessment.questions_count} preguntas</span>
+                </div>
+                <div class="assessment-stat">
+                    <i class="fas fa-users"></i>
+                    <span>${assessment.completed_count} completadas</span>
+                </div>
+                <div class="assessment-stat">
+                    <i class="fas fa-calendar"></i>
+                    <span>Creada: ${createdDate}</span>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+// Función para seleccionar una evaluación
+function selectAssessment(assessmentId) {
+    // Remover selección previa
+    document.querySelectorAll('.assessment-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Seleccionar la card clickeada
+    event.target.closest('.assessment-card').classList.add('selected');
+    
+    console.log('Evaluación seleccionada:', assessmentId);
+    // Aquí se puede agregar lógica adicional para asignar la evaluación
 }
 
 // Función para cargar coachees
@@ -1274,30 +1606,143 @@ function loadTasks() {
 
 // Función para mostrar tareas
 function displayTasks() {
-    const tbody = document.getElementById('tasksTableBody');
+    const tableBody = document.getElementById('tasksTableBody');
+    const cardsContainer = document.getElementById('tasksCardsContainer');
     
     if (tasksData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay tareas creadas</td></tr>';
+        // Vista tabla vacia
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay tareas creadas</td></tr>';
+        // Vista cards vacia
+        cardsContainer.innerHTML = '<div class="text-center text-muted">No hay tareas creadas</div>';
         return;
     }
-    
-    tbody.innerHTML = tasksData.map(task => `
-        <tr>
-            <td>${task.title}</td>
-            <td>${task.coachee_name || 'N/A'}</td>
+
+    // Limpiar contenedores
+    tableBody.innerHTML = '';
+    cardsContainer.innerHTML = '';
+
+    tasksData.forEach(task => {
+        const fechaCreated = new Date(task.created_at).toLocaleDateString('es-ES');
+        const coacheeName = task.coachee_name || 'No asignado';
+        
+        // Formatear fecha de vencimiento
+        let fechaVencimiento = 'Sin fecha';
+        let vencimientoClass = '';
+        if (task.due_date) {
+            const dueDate = new Date(task.due_date);
+            const today = new Date();
+            const diffTime = dueDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            fechaVencimiento = dueDate.toLocaleDateString('es-ES');
+            
+            if (diffDays < 0) {
+                vencimientoClass = 'text-danger fw-bold'; // Vencida
+                fechaVencimiento += ' <small>(Vencida)</small>';
+            } else if (diffDays <= 3) {
+                vencimientoClass = 'text-warning fw-bold'; // Próxima a vencer
+                fechaVencimiento += ` <small>(${diffDays} días)</small>`;
+            } else {
+                vencimientoClass = 'text-success'; // A tiempo
+            }
+        }
+        
+        // Determinar el estado visual
+        let estadoBadge = '';
+        if (task.completed) {
+            estadoBadge = '<span class="badge bg-success">Completada</span>';
+        } else {
+            estadoBadge = '<span class="badge bg-warning text-dark">Pendiente</span>';
+        }
+
+        // Crear fila para tabla (desktop)
+        const row = document.createElement('tr');
+        row.innerHTML = `
             <td>
-                <span class="badge ${task.completed ? 'bg-success' : 'bg-warning'}">
-                    ${task.completed ? 'Completada' : 'Pendiente'}
-                </span>
+                <div class="fw-bold text-dark">${task.title}</div>
+                <small class="text-muted">${task.description || 'Sin descripción'}</small>
             </td>
-            <td>${task.created_at}</td>
+            <td class="text-dark">${coacheeName}</td>
             <td>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <span class="badge bg-light text-dark border">${task.category || 'Sin categoría'}</span>
             </td>
-        </tr>
-    `).join('');
+            <td>${estadoBadge}</td>
+            <td class="${vencimientoClass}">${fechaVencimiento}</td>
+            <td class="text-dark">${fechaCreated}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary btn-sm" onclick="editTask(${task.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteTask(${task.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+
+        // Crear card para móvil
+        const card = document.createElement('div');
+        card.className = 'card mb-3 border-light shadow-sm';
+        card.innerHTML = `
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-1 text-dark fw-bold">${task.title}</h6>
+                    ${estadoBadge}
+                </div>
+                
+                <p class="card-text text-muted small mb-3">${task.description || 'Sin descripción'}</p>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user text-primary me-2"></i>
+                            <div>
+                                <div class="small text-muted">Coachee</div>
+                                <div class="fw-medium text-dark small">${coacheeName}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-tag text-info me-2"></i>
+                            <div>
+                                <div class="small text-muted">Categoría</div>
+                                <div class="fw-medium text-dark small">${task.category || 'Sin categoría'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${task.due_date ? `
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-clock text-warning me-2"></i>
+                            <div>
+                                <div class="small text-muted">Vencimiento</div>
+                                <div class="fw-medium small ${vencimientoClass}">${fechaVencimiento}</div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>Creada: ${fechaCreated}
+                    </small>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary btn-sm" onclick="editTask(${task.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteTask(${task.id})" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        cardsContainer.appendChild(card);
+    });
 }
 
 // Función para crear tarea
@@ -1306,6 +1751,7 @@ function createTask() {
     const description = document.getElementById('taskDescription').value.trim();
     const category = document.getElementById('taskCategory').value;
     const coacheeId = document.getElementById('taskCoachee').value;
+    const dueDate = document.getElementById('taskDueDate').value;
     
     if (!title) {
         alert('Por favor ingrese un título para la tarea');
@@ -1327,17 +1773,24 @@ function createTask() {
         return;
     }
     
+    const taskData = {
+        title: title,
+        description: description,
+        category: category,
+        coachee_id: parseInt(coacheeId)
+    };
+    
+    // Agregar fecha de vencimiento solo si se especifica
+    if (dueDate) {
+        taskData.due_date = dueDate;
+    }
+    
     fetch('/api/coach/tasks', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            title: title,
-            description: description,
-            category: category,
-            coachee_id: parseInt(coacheeId)
-        })
+        body: JSON.stringify(taskData)
     })
     .then(response => response.json())
     .then(data => {
@@ -1346,6 +1799,7 @@ function createTask() {
             document.getElementById('taskDescription').value = '';
             document.getElementById('taskCategory').value = '';
             document.getElementById('taskCoachee').value = '';
+            document.getElementById('taskDueDate').value = '';
             loadTasks();
             alert('Tarea creada exitosamente');
         } else {
@@ -1361,8 +1815,129 @@ function createTask() {
 // Función para eliminar tarea
 function deleteTask(taskId) {
     if (confirm('¿Está seguro de que desea eliminar esta tarea?')) {
-        // Implementar delete de tarea
-        console.log('Delete task:', taskId);
+        fetch(`/api/coach/tasks/${taskId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Tarea eliminada exitosamente');
+                loadTasks(); // Recargar la lista de tareas
+            } else {
+                alert('Error al eliminar la tarea: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting task:', error);
+            alert('Error al eliminar la tarea');
+        });
+    }
+}
+
+// Función para editar tarea
+function editTask(taskId) {
+    const task = tasksData.find(t => t.id === taskId);
+    if (!task) {
+        alert('Tarea no encontrada');
+        return;
+    }
+    
+    // Llenar el formulario con los datos de la tarea
+    document.getElementById('taskTitle').value = task.title;
+    document.getElementById('taskDescription').value = task.description || '';
+    document.getElementById('taskCategory').value = task.category || '';
+    document.getElementById('taskCoachee').value = task.coachee_id || '';
+    
+    // Llenar fecha de vencimiento si existe
+    if (task.due_date) {
+        document.getElementById('taskDueDate').value = task.due_date;
+    } else {
+        document.getElementById('taskDueDate').value = '';
+    }
+    
+    // Cambiar el botón de crear por actualizar
+    const createButton = document.querySelector('#gestion-tareas button[onclick="createTask()"]');
+    createButton.innerHTML = '<i class="fas fa-save me-1"></i>Actualizar Tarea';
+    createButton.onclick = function() { updateTask(taskId); };
+    
+    // Agregar botón de cancelar
+    const cancelButton = document.createElement('button');
+    cancelButton.className = 'btn btn-secondary ms-2';
+    cancelButton.innerHTML = '<i class="fas fa-times me-1"></i>Cancelar';
+    cancelButton.onclick = cancelEdit;
+    createButton.parentNode.appendChild(cancelButton);
+    
+    // Scroll al formulario
+    document.getElementById('gestion-tareas').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Función para actualizar tarea
+function updateTask(taskId) {
+    const title = document.getElementById('taskTitle').value.trim();
+    const description = document.getElementById('taskDescription').value.trim();
+    const category = document.getElementById('taskCategory').value;
+    const coacheeId = document.getElementById('taskCoachee').value;
+    const dueDate = document.getElementById('taskDueDate').value;
+    
+    if (!title) {
+        alert('Por favor ingrese un título para la tarea');
+        return;
+    }
+    
+    const taskData = {
+        title: title,
+        description: description,
+        category: category,
+        coachee_id: coacheeId || null,
+        due_date: dueDate || null
+    };
+    
+    fetch(`/api/coach/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Tarea actualizada exitosamente');
+            cancelEdit(); // Resetear formulario
+            loadTasks(); // Recargar la lista de tareas
+        } else {
+            alert('Error al actualizar la tarea: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error updating task:', error);
+        alert('Error al actualizar la tarea');
+    });
+}
+
+// Función para cancelar edición
+function cancelEdit() {
+    // Limpiar formulario
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskDescription').value = '';
+    document.getElementById('taskCategory').value = '';
+    document.getElementById('taskCoachee').value = '';
+    document.getElementById('taskDueDate').value = '';
+    
+    // Restaurar botón de crear
+    const updateButton = document.querySelector('#gestion-tareas button[onclick*="updateTask"]');
+    if (updateButton) {
+        updateButton.innerHTML = '<i class="fas fa-plus me-1"></i>Crear Tarea';
+        updateButton.onclick = createTask;
+        
+        // Remover botón cancelar
+        const cancelButton = updateButton.parentNode.querySelector('.btn-secondary');
+        if (cancelButton) {
+            cancelButton.remove();
+        }
     }
 }
 

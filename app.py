@@ -1895,6 +1895,145 @@ def api_coach_tasks_post():
         db.session.rollback()
         return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
 
+@app.route('/api/coach/tasks/<int:task_id>', methods=['PUT'])
+@login_required
+def api_coach_update_task(task_id):
+    """Actualizar una tarea existente"""
+    try:
+        app.logger.info(f"=== INICIO ACTUALIZACIÓN TAREA {task_id} - Usuario: {current_user.email} ===")
+        
+        if not current_user.is_authenticated or current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado.'}), 403
+        
+        # Buscar la tarea
+        task = Task.query.filter_by(id=task_id, coach_id=current_user.id).first()
+        if not task:
+            return jsonify({'error': 'Tarea no encontrada.'}), 404
+        
+        data = request.get_json()
+        app.logger.info(f"Datos recibidos para actualización: {data}")
+        
+        # Validar campos requeridos
+        if not data.get('title') or not data.get('title').strip():
+            return jsonify({'error': 'El título es obligatorio'}), 400
+        
+        # Actualizar campos
+        task.title = data['title'].strip()
+        task.description = data.get('description', '').strip()
+        task.category = data.get('category', '')
+        
+        # Actualizar fecha de vencimiento
+        if data.get('due_date'):
+            try:
+                task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}), 400
+        else:
+            task.due_date = None
+        
+        # Actualizar coachee si se proporciona
+        if data.get('coachee_id'):
+            coachee = User.query.filter_by(id=data['coachee_id'], coach_id=current_user.id, role='coachee').first()
+            if not coachee:
+                return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
+            task.coachee_id = data['coachee_id']
+        
+        db.session.commit()
+        app.logger.info(f"Tarea {task_id} actualizada exitosamente")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tarea actualizada exitosamente',
+            'task': {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'category': task.category,
+                'due_date': task.due_date.isoformat() if task.due_date else None,
+                'coachee_name': task.coachee.full_name if task.coachee else 'No asignado'
+            }
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"ERROR ACTUALIZANDO TAREA {task_id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': f'Error actualizando tarea: {str(e)}'}), 500
+
+@app.route('/api/coach/tasks/<int:task_id>', methods=['DELETE'])
+@login_required
+def api_coach_delete_task(task_id):
+    """Eliminar una tarea"""
+    try:
+        app.logger.info(f"=== INICIO ELIMINACIÓN TAREA {task_id} - Usuario: {current_user.email} ===")
+        
+        if not current_user.is_authenticated or current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado.'}), 403
+        
+        # Buscar la tarea
+        task = Task.query.filter_by(id=task_id, coach_id=current_user.id).first()
+        if not task:
+            return jsonify({'error': 'Tarea no encontrada.'}), 404
+        
+        # Eliminar progreso asociado
+        TaskProgress.query.filter_by(task_id=task_id).delete()
+        
+        # Eliminar la tarea
+        db.session.delete(task)
+        db.session.commit()
+        
+        app.logger.info(f"Tarea {task_id} eliminada exitosamente")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tarea eliminada exitosamente'
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"ERROR ELIMINANDO TAREA {task_id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': f'Error eliminando tarea: {str(e)}'}), 500
+
+@app.route('/api/coach/available-assessments', methods=['GET'])
+@login_required
+def api_coach_available_assessments():
+    """Obtener evaluaciones disponibles para asignar a coachees"""
+    try:
+        app.logger.info(f"=== OBTENIENDO EVALUACIONES DISPONIBLES - Usuario: {current_user.email} ===")
+        
+        if not current_user.is_authenticated or current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado.'}), 403
+        
+        # Obtener todas las evaluaciones activas
+        assessments = Assessment.query.filter_by(is_active=True).all()
+        
+        assessments_data = []
+        for assessment in assessments:
+            # Contar preguntas de la evaluación
+            questions_count = Question.query.filter_by(assessment_id=assessment.id, is_active=True).count()
+            
+            # Contar resultados completados para esta evaluación
+            completed_count = AssessmentResult.query.filter_by(assessment_id=assessment.id).count()
+            
+            assessments_data.append({
+                'id': assessment.id,
+                'title': assessment.title,
+                'description': assessment.description,
+                'questions_count': questions_count,
+                'completed_count': completed_count,
+                'created_at': assessment.created_at.isoformat() if assessment.created_at else None
+            })
+        
+        app.logger.info(f"Evaluaciones disponibles encontradas: {len(assessments_data)}")
+        
+        return jsonify({
+            'success': True,
+            'assessments': assessments_data
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"ERROR OBTENIENDO EVALUACIONES DISPONIBLES: {str(e)}")
+        return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
+
 @app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
 @login_required
 def api_coach_coachee_evaluations(coachee_id):
