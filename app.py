@@ -371,14 +371,23 @@ def auto_initialize_database():
             logger.warning(f"⚠️ AUTO-INIT: No se pudo inspeccionar tablas: {e}")
             tables = ['user']  # Asumir que la tabla existe
         
-        if 'user' not in tables:
-            logger.warning("🔧 AUTO-INIT: Tabla 'user' no existe, creando...")
+        # Verificar tablas críticas
+        required_tables = ['user', 'task', 'task_progress']
+        missing_tables = [table for table in required_tables if table not in tables]
+        
+        if missing_tables:
+            logger.warning(f"🔧 AUTO-INIT: Tablas faltantes: {missing_tables}, creando...")
             db.create_all()
-            time.sleep(1)
-            User.__table__.create(db.engine, checkfirst=True)  # type: ignore
-            inspector = inspect(db.engine)
-            tables = inspector.get_table_names()
+            time.sleep(2)
             
+            # Verificar nuevamente
+            try:
+                inspector = inspect(db.engine)
+                tables = inspector.get_table_names()
+                logger.info(f"📋 AUTO-INIT: Tablas después de crear: {tables}")
+            except Exception as e:
+                logger.warning(f"⚠️ AUTO-INIT: Error verificando tablas: {e}")
+        
         if 'user' in tables:
             logger.info("✅ AUTO-INIT: Tabla 'user' confirmada")
             
