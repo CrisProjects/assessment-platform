@@ -355,14 +355,26 @@ def auto_initialize_database():
     try:
         logger.info("🚀 AUTO-INICIALIZACIÓN: Verificando base de datos...")
         
+        # Esperar un momento en caso de PostgreSQL
+        import time
+        time.sleep(1)
+        
         db.create_all()
         logger.info("✅ AUTO-INIT: db.create_all() ejecutado")
         
-        inspector = inspect(db.engine)
-        tables = inspector.get_table_names()
+        # Usar try-except para inspector en caso de problemas con PostgreSQL
+        try:
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            logger.info(f"📋 AUTO-INIT: Tablas encontradas: {tables}")
+        except Exception as e:
+            logger.warning(f"⚠️ AUTO-INIT: No se pudo inspeccionar tablas: {e}")
+            tables = ['user']  # Asumir que la tabla existe
         
         if 'user' not in tables:
             logger.warning("🔧 AUTO-INIT: Tabla 'user' no existe, creando...")
+            db.create_all()
+            time.sleep(1)
             User.__table__.create(db.engine, checkfirst=True)  # type: ignore
             inspector = inspect(db.engine)
             tables = inspector.get_table_names()
@@ -371,7 +383,8 @@ def auto_initialize_database():
             logger.info("✅ AUTO-INIT: Tabla 'user' confirmada")
             
             # Crear usuario admin si no existe
-            if not User.query.filter_by(username='admin').first():
+            admin_exists = User.query.filter_by(username='admin').first()
+            if not admin_exists:
                 logger.info("👤 AUTO-INIT: Creando usuario admin...")
                 admin_user = User(
                     username='admin',
@@ -382,12 +395,20 @@ def auto_initialize_database():
                 admin_user.set_password('admin123')
                 db.session.add(admin_user)
                 db.session.commit()
-                logger.info("✅ AUTO-INIT: Usuario admin creado")
+                logger.info("✅ AUTO-INIT: Usuario admin creado correctamente")
             else:
                 logger.info("ℹ️ AUTO-INIT: Usuario admin ya existe")
+                # Verificar contraseña
+                if admin_exists.check_password('admin123'):
+                    logger.info("✅ AUTO-INIT: Contraseña admin verificada")
+                else:
+                    logger.warning("🔧 AUTO-INIT: Actualizando contraseña admin")
+                    admin_exists.set_password('admin123')
+                    db.session.commit()
                 
             # Crear usuario coach si no existe
-            if not User.query.filter_by(username='coach').first():
+            coach_exists = User.query.filter_by(username='coach').first()
+            if not coach_exists:
                 logger.info("👤 AUTO-INIT: Creando usuario coach...")
                 coach_user = User(
                     username='coach',
@@ -398,9 +419,16 @@ def auto_initialize_database():
                 coach_user.set_password('coach123')
                 db.session.add(coach_user)
                 db.session.commit()
-                logger.info("✅ AUTO-INIT: Usuario coach creado")
+                logger.info("✅ AUTO-INIT: Usuario coach creado correctamente")
             else:
                 logger.info("ℹ️ AUTO-INIT: Usuario coach ya existe")
+                # Verificar contraseña
+                if coach_exists.check_password('coach123'):
+                    logger.info("✅ AUTO-INIT: Contraseña coach verificada")
+                else:
+                    logger.warning("🔧 AUTO-INIT: Actualizando contraseña coach")
+                    coach_exists.set_password('coach123')
+                    db.session.commit()
         
         # Inicializar assessment de asertividad
         if not Assessment.query.filter_by(id=1).first():
