@@ -1549,6 +1549,7 @@ def api_coach_create_invitation_v2():
         
         # Crear el usuario coachee
         logger.info(f"👤 INVITATION: Creating coachee {full_name} with username {username}")
+        logger.info(f"👤 INVITATION: Coach ID will be set to: {current_user.id}")
         new_coachee = User(
             username=username,
             email=email,
@@ -1562,7 +1563,15 @@ def api_coach_create_invitation_v2():
         db.session.add(new_coachee)
         db.session.commit()
         
+        # Verificar que se creó correctamente
         logger.info(f"✅ INVITATION: Coachee {full_name} created successfully with ID {new_coachee.id}")
+        logger.info(f"✅ INVITATION: Verification - Coach ID: {new_coachee.coach_id}, Role: {new_coachee.role}")
+        
+        # Verificar que se puede encontrar en consulta
+        verification_query = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
+        logger.info(f"🔍 INVITATION: Post-creation verification - Found {len(verification_query)} coachees for coach {current_user.id}")
+        for v_coachee in verification_query:
+            logger.info(f"🔍 INVITATION: Verification coachee: ID={v_coachee.id}, Name={v_coachee.full_name}, Coach_ID={v_coachee.coach_id}")
         
         return jsonify({
             'success': True,
@@ -1587,12 +1596,21 @@ def api_coach_create_invitation_v2():
 def api_coach_my_coachees():
     """Obtener la lista de coachees del coach actual"""
     try:
+        logger.info(f"🔍 MY-COACHEES: Request from user {current_user.username} (ID: {current_user.id}, role: {current_user.role})")
+        
         # Verificar que es un coach
         if not current_user.is_authenticated or current_user.role != 'coach':
+            logger.warning(f"❌ MY-COACHEES: Access denied for user {current_user.username} (role: {current_user.role})")
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver sus coachees.'}), 403
         
         # Obtener coachees del coach actual
+        logger.info(f"🔍 MY-COACHEES: Querying coachees for coach_id={current_user.id}")
         coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
+        logger.info(f"📊 MY-COACHEES: Found {len(coachees)} coachees")
+        
+        # Log de cada coachee encontrado
+        for coachee in coachees:
+            logger.info(f"👤 MY-COACHEES: Coachee found - ID: {coachee.id}, Username: {coachee.username}, Email: {coachee.email}, Full Name: {coachee.full_name}, Coach ID: {coachee.coach_id}")
         
         coachees_data = []
         for coachee in coachees:
@@ -1617,17 +1635,22 @@ def api_coach_my_coachees():
                 if valid_scores:
                     avg_score = round(sum(valid_scores) / len(valid_scores), 1)
             
-            coachees_data.append({
+            coachee_data = {
                 'id': coachee.id,
                 'username': coachee.username,
                 'email': coachee.email,
                 'full_name': coachee.full_name,
+                'name': coachee.full_name,  # ✅ Agregar campo 'name' para compatibilidad
                 'created_at': coachee.created_at.isoformat() if coachee.created_at else None,
                 'is_active': coachee.is_active,
                 'evaluations_count': len(evaluations),
                 'last_evaluation': last_evaluation_data,
                 'avg_score': avg_score
-            })
+            }
+            coachees_data.append(coachee_data)
+            logger.info(f"✅ MY-COACHEES: Processed coachee {coachee.full_name} with data: {coachee_data}")
+        
+        logger.info(f"📤 MY-COACHEES: Returning {len(coachees_data)} coachees in response")
         
         return jsonify({
             'success': True,
@@ -1636,7 +1659,76 @@ def api_coach_my_coachees():
         }), 200
         
     except Exception as e:
+        logger.error(f"❌ MY-COACHEES: Error getting coachees for coach {current_user.username} (ID: {current_user.id}): {str(e)}")
+        logger.error(f"❌ MY-COACHEES: Exception details: {e.__class__.__name__}: {str(e)}")
+        import traceback
+        logger.error(f"❌ MY-COACHEES: Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error obteniendo coachees: {str(e)}'}), 500
+
+@app.route('/api/coach/debug-users', methods=['GET'])
+@login_required
+def api_coach_debug_users():
+    """Endpoint de debug para verificar usuarios en Railway"""
+    try:
+        if not current_user.is_authenticated or current_user.role != 'coach':
+            return jsonify({'error': 'Access denied'}), 403
+            
+        logger.info(f"🐛 DEBUG: Coach {current_user.username} (ID: {current_user.id}) requesting user debug info")
+        
+        # Obtener todos los usuarios
+        all_users = User.query.all()
+        logger.info(f"🐛 DEBUG: Total users in database: {len(all_users)}")
+        
+        # Obtener usuarios por rol
+        admins = User.query.filter_by(role='platform_admin').all()
+        coaches = User.query.filter_by(role='coach').all()
+        coachees = User.query.filter_by(role='coachee').all()
+        
+        # Obtener coachees específicos del coach actual
+        my_coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
+        
+        debug_info = {
+            'current_coach': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'role': current_user.role
+            },
+            'database_stats': {
+                'total_users': len(all_users),
+                'admins': len(admins),
+                'coaches': len(coaches),
+                'coachees': len(coachees),
+                'my_coachees': len(my_coachees)
+            },
+            'my_coachees_details': [
+                {
+                    'id': c.id,
+                    'username': c.username,
+                    'email': c.email,
+                    'full_name': c.full_name,
+                    'coach_id': c.coach_id,
+                    'is_active': c.is_active,
+                    'created_at': c.created_at.isoformat() if c.created_at else None
+                } for c in my_coachees
+            ],
+            'all_coachees_summary': [
+                {
+                    'id': c.id,
+                    'username': c.username,
+                    'email': c.email,
+                    'coach_id': c.coach_id,
+                    'belongs_to_current_coach': c.coach_id == current_user.id
+                } for c in coachees
+            ]
+        }
+        
+        logger.info(f"🐛 DEBUG: Debug info prepared: {debug_info}")
+        return jsonify(debug_info), 200
+        
+    except Exception as e:
+        logger.error(f"❌ DEBUG: Error in debug endpoint: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/coach/tasks', methods=['GET'])
 @login_required
