@@ -2,11 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python create_admin.py && gunicorn wsgi_production:app --bind 0.0.0.0:$PORT"
+startCommand = "./start.sh"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
-
-[env]
-FLASK_ENV = "production"
-FLASK_DEBUG = "False"
