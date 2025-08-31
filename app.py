@@ -1776,17 +1776,24 @@ def api_coach_tasks_get():
 def api_coach_tasks_post():
     """Crear nueva tarea del coach"""
     try:
+        app.logger.info(f"=== INICIO CREACIÓN TAREA - Usuario: {current_user.email} ===")
+        
         # Verificar que es un coach
         if not current_user.is_authenticated or current_user.role != 'coach':
+            app.logger.error(f"Acceso denegado - Usuario: {current_user.email}, Role: {current_user.role}")
             return jsonify({'error': 'Acceso denegado.'}), 403
         
         data = request.get_json()
+        app.logger.info(f"Datos recibidos: {data}")
         
         # Validar datos requeridos
         required_fields = ['coachee_id', 'title', 'description', 'category']
         for field in required_fields:
             if not data.get(field):
+                app.logger.error(f"Campo faltante: {field}")
                 return jsonify({'error': f'Campo requerido: {field}'}), 400
+        
+        app.logger.info(f"Validación de campos exitosa")
         
         # Verificar que el coachee pertenece al coach
         coachee = User.query.filter_by(
@@ -1796,7 +1803,10 @@ def api_coach_tasks_post():
         ).first()
         
         if not coachee:
+            app.logger.error(f"Coachee no encontrado - ID: {data['coachee_id']}, Coach ID: {current_user.id}")
             return jsonify({'error': 'Coachee no encontrado o no asignado a este coach'}), 404
+        
+        app.logger.info(f"Coachee encontrado: {coachee.email}")
         
         # Crear la tarea
         due_date = None
@@ -1804,8 +1814,10 @@ def api_coach_tasks_post():
             try:
                 due_date = datetime.fromisoformat(data['due_date']).date()
             except ValueError:
+                app.logger.error(f"Formato de fecha inválido: {data['due_date']}")
                 return jsonify({'error': 'Formato de fecha inválido'}), 400
         
+        app.logger.info(f"Creando nueva tarea...")
         new_task = Task(
             coach_id=current_user.id,
             coachee_id=data['coachee_id'],
@@ -1816,10 +1828,14 @@ def api_coach_tasks_post():
             due_date=due_date
         )
         
+        app.logger.info(f"Tarea creada, agregando a sesión...")
         db.session.add(new_task)
         db.session.flush()
+        app.logger.info(f"Tarea agregada con ID: {new_task.id}")
+        app.logger.info(f"Tarea agregada con ID: {new_task.id}")
         
         # Crear entrada inicial de progreso
+        app.logger.info(f"Creando progreso inicial...")
         initial_progress = TaskProgress(
             task_id=new_task.id,
             status='pending',
@@ -1829,7 +1845,11 @@ def api_coach_tasks_post():
         )
         
         db.session.add(initial_progress)
+        app.logger.info(f"Progreso inicial agregado")
+        
+        app.logger.info(f"Haciendo commit...")
         db.session.commit()
+        app.logger.info(f"Commit exitoso")
         
         return jsonify({
             'success': True,
@@ -1842,6 +1862,10 @@ def api_coach_tasks_post():
         }), 201
         
     except Exception as e:
+        app.logger.error(f"ERROR CREANDO TAREA: {str(e)}")
+        app.logger.error(f"Tipo de error: {type(e).__name__}")
+        import traceback
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
         db.session.rollback()
         return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
 
