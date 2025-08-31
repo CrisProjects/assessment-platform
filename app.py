@@ -385,6 +385,22 @@ def auto_initialize_database():
                 logger.info("✅ AUTO-INIT: Usuario admin creado")
             else:
                 logger.info("ℹ️ AUTO-INIT: Usuario admin ya existe")
+                
+            # Crear usuario coach si no existe
+            if not User.query.filter_by(username='coach').first():
+                logger.info("👤 AUTO-INIT: Creando usuario coach...")
+                coach_user = User(
+                    username='coach',
+                    email='coach@assessment.com',
+                    full_name='Coach Principal',
+                    role='coach'
+                )
+                coach_user.set_password('coach123')
+                db.session.add(coach_user)
+                db.session.commit()
+                logger.info("✅ AUTO-INIT: Usuario coach creado")
+            else:
+                logger.info("ℹ️ AUTO-INIT: Usuario coach ya existe")
         
         # Inicializar assessment de asertividad
         if not Assessment.query.filter_by(id=1).first():
@@ -457,14 +473,9 @@ def auto_initialize_database():
             db.session.commit()
             logger.info(f"✅ AUTO-INIT: {len(questions)} preguntas de asertividad creadas con dimensiones")
         
-        # Verificar y configurar coaches
+        # Verificar coaches existentes
         coach_count = User.query.filter_by(role='coach').count()
-        if coach_count > 0:
-            logger.info(f"✅ AUTO-INIT: {coach_count} coaches encontrados")
-            if main_coach := User.query.filter_by(email='coach@assessment.com').first():
-                main_coach.set_password('coach123')
-                db.session.commit()
-                logger.info(f"🔧 AUTO-INIT: Contraseña del coach '{main_coach.full_name}' actualizada")
+        logger.info(f"✅ AUTO-INIT: {coach_count} coaches encontrados en total")
         
         # Crear coachee de prueba
         if not User.query.filter_by(email='coachee@assessment.com').first():
