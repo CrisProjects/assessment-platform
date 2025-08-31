@@ -1744,12 +1744,17 @@ def api_coach_debug_users():
 def api_coach_tasks_get():
     """Obtener tareas del coach"""
     try:
+        app.logger.info(f"=== OBTENER TAREAS - Usuario: {current_user.email} ===")
+        
         # Verificar que es un coach
         if not current_user.is_authenticated or current_user.role != 'coach':
+            app.logger.error(f"Acceso denegado - Usuario: {current_user.email}, Role: {current_user.role}")
             return jsonify({'error': 'Acceso denegado.'}), 403
         
         # Obtener todas las tareas asignadas por el coach
         tasks = Task.query.filter_by(coach_id=current_user.id, is_active=True).all()
+        app.logger.info(f"Tareas encontradas: {len(tasks)}")
+        
         tasks_data = []
         
         for task in tasks:
@@ -1764,6 +1769,7 @@ def api_coach_tasks_get():
                 'priority': task.priority,
                 'due_date': task.due_date.isoformat() if task.due_date else None,
                 'created_at': task.created_at.isoformat(),
+                'coachee_name': task.coachee.full_name,  # Nombre directo para compatibilidad frontend
                 'coachee': {
                     'id': task.coachee.id,
                     'name': task.coachee.full_name,
@@ -1771,14 +1777,25 @@ def api_coach_tasks_get():
                 },
                 'status': latest_progress.status if latest_progress else 'pending',
                 'progress_percentage': latest_progress.progress_percentage if latest_progress else 0,
-                'last_update': latest_progress.created_at.isoformat() if latest_progress else None
+                'last_update': latest_progress.created_at.isoformat() if latest_progress else None,
+                'completed': latest_progress.status == 'completed' if latest_progress else False
             }
             tasks_data.append(task_data)
         
-        return jsonify(tasks_data), 200
+        app.logger.info(f"Devolviendo {len(tasks_data)} tareas procesadas")
+        return jsonify({
+            'success': True,
+            'tasks': tasks_data
+        }), 200
         
     except Exception as e:
-        return jsonify({'error': f'Error obteniendo tareas: {str(e)}'}), 500
+        app.logger.error(f"ERROR OBTENIENDO TAREAS: {str(e)}")
+        import traceback
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Error obteniendo tareas: {str(e)}'
+        }), 500
 
 @app.route('/api/coach/tasks', methods=['POST'])
 @login_required
