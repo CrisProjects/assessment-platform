@@ -398,18 +398,39 @@
         /* Statistics cards responsive */
         .stats-card-mobile {
             margin-bottom: 1rem !important;
+            height: 100% !important;
+        }
+        
+        .stats-card-mobile .card {
+            height: 100% !important;
+            min-height: 140px !important;
         }
         
         .stats-card-mobile .card-body {
             padding: 1rem 0.75rem !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center !important;
+            height: 100% !important;
         }
         
         .stats-card-mobile .fa-2x {
             font-size: 1.5rem !important;
+            margin-bottom: 0.5rem !important;
         }
         
         .stats-card-mobile h4 {
-            font-size: 1.5rem !important;
+            font-size: 1.25rem !important;
+            margin-bottom: 0.25rem !important;
+            line-height: 1.2 !important;
+        }
+        
+        .stats-card-mobile .small {
+            font-size: 0.7rem !important;
+            line-height: 1.1 !important;
+            margin-bottom: 0 !important;
         }
         
         /* Container fluid para móviles */
@@ -439,6 +460,68 @@
         /* Ajustes adicionales para textos en móvil */
         .small {
             font-size: 0.75rem !important;
+        }
+        
+        /* Coachees cards para móvil */
+        .coachee-card-mobile {
+            background-color: white !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 8px !important;
+            margin-bottom: 1rem !important;
+            padding: 1rem !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .coachee-card-mobile .coachee-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            margin-bottom: 0.75rem !important;
+            border-bottom: 1px solid #eee !important;
+            padding-bottom: 0.5rem !important;
+        }
+        
+        .coachee-card-mobile .coachee-name {
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            color: #212529 !important;
+            margin: 0 !important;
+        }
+        
+        .coachee-card-mobile .coachee-status {
+            font-size: 0.75rem !important;
+        }
+        
+        .coachee-card-mobile .coachee-details {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .coachee-card-mobile .coachee-detail-item {
+            display: flex !important;
+            justify-content: space-between !important;
+            margin-bottom: 0.5rem !important;
+            font-size: 0.85rem !important;
+        }
+        
+        .coachee-card-mobile .coachee-detail-label {
+            font-weight: 500 !important;
+            color: #666 !important;
+        }
+        
+        .coachee-card-mobile .coachee-detail-value {
+            color: #212529 !important;
+            text-align: right !important;
+        }
+        
+        .coachee-card-mobile .coachee-actions {
+            display: flex !important;
+            gap: 0.5rem !important;
+            justify-content: center !important;
+        }
+        
+        .coachee-card-mobile .btn-sm {
+            font-size: 0.75rem !important;
+            padding: 0.25rem 0.5rem !important;
         }
     }
     
@@ -754,23 +837,30 @@
                         <h5 class="text-dark mb-0">Mis Coachees</h5>
                     </div>
                     <div class="card-body" style="background-color: white !important;">
-                        <div class="table-responsive">
+                        <!-- Vista tabla para desktop -->
+                        <div class="table-responsive d-none d-md-block">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
                                         <th style="color: #212529;">Nombre</th>
                                         <th style="color: #212529;">Email</th>
                                         <th style="color: #212529;">Estado</th>
+                                        <th style="color: #212529;">Evaluaciones</th>
                                         <th style="color: #212529;">Último Acceso</th>
                                         <th style="color: #212529;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="coacheesTableBody">
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">Cargando coachees...</td>
+                                        <td colspan="6" class="text-center text-muted">Cargando coachees...</td>
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                        
+                        <!-- Vista cards para móvil -->
+                        <div class="d-block d-md-none" id="coacheesCardsContainer">
+                            <div class="text-center text-muted p-3">Cargando coachees...</div>
                         </div>
                     </div>
                 </div>
@@ -1062,19 +1152,24 @@ function loadCoachees() {
         .catch(error => {
             console.error('Error loading coachees:', error);
             document.getElementById('coacheesTableBody').innerHTML = 
-                '<tr><td colspan="5" class="text-center text-danger">Error al cargar coachees</td></tr>';
+                '<tr><td colspan="6" class="text-center text-danger">Error al cargar coachees</td></tr>';
+            document.getElementById('coacheesCardsContainer').innerHTML = 
+                '<div class="text-center text-danger p-3">Error al cargar coachees</div>';
         });
 }
 
-// Función para mostrar coachees en la tabla
+// Función para mostrar coachees en la tabla y cards móviles
 function displayCoachees() {
     const tbody = document.getElementById('coacheesTableBody');
+    const cardsContainer = document.getElementById('coacheesCardsContainer');
     
     if (coacheesData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay coachees asignados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay coachees asignados</td></tr>';
+        cardsContainer.innerHTML = '<div class="text-center text-muted p-3">No hay coachees asignados</div>';
         return;
     }
     
+    // Vista tabla para desktop
     tbody.innerHTML = coacheesData.map(coachee => `
         <tr>
             <td>${coachee.name || 'Sin nombre'}</td>
@@ -1084,16 +1179,72 @@ function displayCoachees() {
                     ${coachee.is_active ? 'Activo' : 'Inactivo'}
                 </span>
             </td>
-            <td>${coachee.last_access || 'Nunca'}</td>
             <td>
-                <button class="btn btn-sm btn-outline-primary" onclick="viewCoacheeDetails(${coachee.id})">
+                <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
+                ${coachee.avg_score ? `<br><small class="text-muted">Promedio: ${Math.round(coachee.avg_score)}%</small>` : ''}
+            </td>
+            <td>${coachee.last_evaluation ? new Date(coachee.last_evaluation.completed_at).toLocaleDateString() : 'Nunca'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewCoacheeDetails(${coachee.id})" title="Ver detalles">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-warning" onclick="editCoachee(${coachee.id})">
+                <button class="btn btn-sm btn-outline-warning" onclick="editCoachee(${coachee.id})" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
             </td>
         </tr>
+    `).join('');
+    
+    // Vista cards para móvil
+    cardsContainer.innerHTML = coacheesData.map(coachee => `
+        <div class="coachee-card-mobile">
+            <div class="coachee-header">
+                <h6 class="coachee-name">${coachee.name || 'Sin nombre'}</h6>
+                <span class="badge coachee-status ${coachee.is_active ? 'bg-success' : 'bg-secondary'}">
+                    ${coachee.is_active ? 'Activo' : 'Inactivo'}
+                </span>
+            </div>
+            <div class="coachee-details">
+                <div class="coachee-detail-item">
+                    <span class="coachee-detail-label">Email:</span>
+                    <span class="coachee-detail-value">${coachee.email || 'Sin email'}</span>
+                </div>
+                <div class="coachee-detail-item">
+                    <span class="coachee-detail-label">Evaluaciones:</span>
+                    <span class="coachee-detail-value">
+                        <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
+                    </span>
+                </div>
+                ${coachee.avg_score ? `
+                <div class="coachee-detail-item">
+                    <span class="coachee-detail-label">Promedio:</span>
+                    <span class="coachee-detail-value">
+                        <span class="badge bg-success">${Math.round(coachee.avg_score)}%</span>
+                    </span>
+                </div>
+                ` : ''}
+                <div class="coachee-detail-item">
+                    <span class="coachee-detail-label">Última evaluación:</span>
+                    <span class="coachee-detail-value">
+                        ${coachee.last_evaluation ? new Date(coachee.last_evaluation.completed_at).toLocaleDateString() : 'Nunca'}
+                    </span>
+                </div>
+                <div class="coachee-detail-item">
+                    <span class="coachee-detail-label">Registrado:</span>
+                    <span class="coachee-detail-value">
+                        ${new Date(coachee.created_at).toLocaleDateString()}
+                    </span>
+                </div>
+            </div>
+            <div class="coachee-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="viewCoacheeDetails(${coachee.id})" title="Ver detalles">
+                    <i class="fas fa-eye me-1"></i>Ver
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="editCoachee(${coachee.id})" title="Editar">
+                    <i class="fas fa-edit me-1"></i>Editar
+                </button>
+            </div>
+        </div>
     `).join('');
 }
 
