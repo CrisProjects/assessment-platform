@@ -709,12 +709,22 @@
     }
     
     .assessment-badge {
-        background: #e7f1ff;
-        color: #4e73df;
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 600;
+        color: white !important;
+        border: none;
+    }
+    
+    .assessment-badge.bg-success {
+        background: #28a745 !important;
+        color: white !important;
+    }
+    
+    .assessment-badge.bg-primary {
+        background: #007bff !important;
+        color: white !important;
     }
     
     .assessment-description {
@@ -740,6 +750,279 @@
     
     .assessment-stat i {
         color: #4e73df;
+    }
+    
+    /* Responsive styles para evaluaciones en móvil */
+    @media (max-width: 768px) {
+        .assessment-card {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .assessment-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .assessment-title {
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+        
+        .assessment-badge {
+            align-self: flex-start;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+        }
+        
+        .assessment-badge.bg-success {
+            background: #28a745 !important;
+            color: white !important;
+        }
+        
+        .assessment-badge.bg-primary {
+            background: #007bff !important;
+            color: white !important;
+        }
+        
+        .assessment-description {
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+        
+        .assessment-stats {
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.8rem;
+        }
+        
+        .assessment-stat {
+            gap: 0.4rem;
+            flex: 1;
+            min-width: calc(50% - 0.5rem);
+        }
+        
+        .assessment-stat i {
+            font-size: 0.9rem;
+        }
+        
+        /* Mejorar el spacing del spinner de carga */
+        #assessments-loading {
+            padding: 2rem 1rem !important;
+        }
+        
+        /* Mejorar mensaje de no evaluaciones */
+        #no-assessments {
+            padding: 2rem 1rem !important;
+        }
+        
+        #no-assessments i {
+            font-size: 2.5rem !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        #no-assessments h6 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        #no-assessments p {
+            font-size: 0.85rem;
+        }
+        
+        /* Mejorar alertas de error */
+        #assessments-error {
+            margin: 0;
+            font-size: 0.85rem;
+            padding: 0.75rem;
+        }
+    }
+    
+    /* Extra small devices (portrait phones, less than 576px) */
+    @media (max-width: 575.98px) {
+        .assessment-card {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .assessment-header {
+            margin-bottom: 0.5rem;
+        }
+        
+        .assessment-title {
+            font-size: 0.95rem;
+        }
+        
+        .assessment-description {
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .assessment-stats {
+            gap: 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .assessment-stat {
+            min-width: 100%;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Mejorar card-body padding en móvil */
+        #seleccionar-evaluaciones .card-body {
+            padding: 0.75rem !important;
+        }
+        
+        /* Header más compacto en móvil */
+        #seleccionar-evaluaciones .card-header {
+            padding: 0.75rem !important;
+        }
+        
+        #seleccionar-evaluaciones .card-header h5 {
+            font-size: 1rem;
+        }
+        
+        #seleccionar-evaluaciones .card-header .small {
+            font-size: 0.75rem;
+        }
+    }
+    
+    /* Touch-friendly interactions */
+    @media (hover: none) and (pointer: coarse) {
+        .assessment-card:hover {
+            transform: none;
+        }
+        
+        .assessment-card:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+        }
+    }
+    
+    /* High contrast mode for accessibility */
+    @media (prefers-contrast: high) {
+        .assessment-card {
+            border-width: 2px;
+        }
+        
+        .assessment-badge {
+            border: 1px solid #4e73df;
+        }
+    }
+    
+    /* Reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+        .assessment-card {
+            transition: none;
+        }
+        
+        .assessment-card:hover {
+            transform: none;
+        }
+    }
+    
+    /* Estilos adicionales para interacciones móviles */
+    .selection-indicator {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #28a745;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        animation: selectionPulse 0.3s ease-out;
+        z-index: 10;
+    }
+    
+    @keyframes selectionPulse {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.2);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .assessment-card.selected {
+        border-color: #28a745;
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+        background: rgba(40, 167, 69, 0.05);
+    }
+    
+    .assessment-preview-card {
+        background: rgba(13, 110, 253, 0.1);
+        border: 1px solid rgba(13, 110, 253, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    
+    /* Mejoras para modales en móvil */
+    @media (max-width: 575.98px) {
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+        
+        .modal-content {
+            border-radius: 12px;
+        }
+        
+        .modal-header {
+            padding: 1rem;
+        }
+        
+        .modal-title {
+            font-size: 1.1rem;
+        }
+        
+        .modal-body {
+            padding: 1rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem;
+            gap: 0.5rem;
+        }
+        
+        .assessment-preview-card {
+            padding: 0.75rem;
+        }
+    }
+    
+    /* Botones táctiles mejorados */
+    @media (hover: none) and (pointer: coarse) {
+        .assessment-card {
+            transition: background-color 0.2s ease;
+        }
+        
+        .assessment-card:active {
+            background: rgba(13, 110, 253, 0.1);
+            transform: scale(0.98);
+        }
+        
+        .btn {
+            min-height: 44px;
+            padding: 0.75rem 1rem;
+        }
+        
+        .btn-sm {
+            min-height: 40px;
+            padding: 0.5rem 0.75rem;
+        }
     }
     
     .evaluation-card {
@@ -1174,16 +1457,27 @@
             <!-- Seleccionar Evaluaciones Module -->
             <div id="seleccionar-evaluaciones" class="module-content" style="display: none;">
                 <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
-                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">Evaluaciones Disponibles</h5>
-                        <p class="text-muted mb-0 small">Selecciona evaluaciones para asignar a tus coachees</p>
+                    <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                        <div>
+                            <h5 class="text-dark mb-1">
+                                <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                                Evaluaciones Disponibles
+                            </h5>
+                            <p class="text-muted mb-0 small">Selecciona evaluaciones para asignar a tus coachees</p>
+                        </div>
+                        <!-- Botón de actualizar para móvil -->
+                        <button class="btn btn-outline-primary btn-sm mt-2 mt-sm-0" onclick="loadAvailableAssessments()" title="Actualizar evaluaciones">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            <span class="d-none d-sm-inline">Actualizar</span>
+                        </button>
                     </div>
-                    <div class="card-body" style="background-color: white !important;">
+                    <div class="card-body" style="background-color: white !important; padding: 1rem;">
                         <!-- Loading spinner -->
                         <div id="assessments-loading" class="text-center py-4">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Cargando evaluaciones...</span>
                             </div>
+                            <p class="text-muted small mt-2 mb-0">Cargando evaluaciones disponibles...</p>
                         </div>
                         
                         <!-- Assessments list -->
@@ -1192,16 +1486,24 @@
                         </div>
                         
                         <!-- Error message -->
-                        <div id="assessments-error" class="alert alert-warning" style="display: none;">
+                        <div id="assessments-error" class="alert alert-warning d-flex align-items-center" style="display: none;">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar las evaluaciones disponibles.
+                            <div>
+                                <strong>Error:</strong> No se pudieron cargar las evaluaciones disponibles.
+                                <br><small>Intenta actualizar la página o contacta al administrador.</small>
+                            </div>
                         </div>
                         
                         <!-- No assessments message -->
                         <div id="no-assessments" class="text-center py-4" style="display: none;">
-                            <i class="fas fa-clipboard-list text-muted mb-3" style="font-size: 3rem;"></i>
-                            <h6 class="text-muted">No hay evaluaciones disponibles</h6>
-                            <p class="text-muted small">Las evaluaciones aparecerán aquí cuando estén disponibles.</p>
+                            <div class="mb-3">
+                                <i class="fas fa-clipboard-list text-muted" style="font-size: 3rem;"></i>
+                            </div>
+                            <h6 class="text-muted mb-2">No hay evaluaciones disponibles</h6>
+                            <p class="text-muted small mb-3">Las evaluaciones aparecerán aquí cuando estén disponibles.</p>
+                            <button class="btn btn-primary btn-sm" onclick="loadAvailableAssessments()">
+                                <i class="fas fa-sync-alt me-1"></i>Intentar de nuevo
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1416,19 +1718,43 @@ function displayAvailableAssessments(assessments) {
     const container = document.getElementById('assessments-list');
     container.innerHTML = '';
     
-    assessments.forEach(assessment => {
+    if (assessments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-search text-muted mb-3" style="font-size: 2rem;"></i>
+                <h6 class="text-muted">No se encontraron evaluaciones</h6>
+                <p class="text-muted small">No hay evaluaciones disponibles en este momento.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    assessments.forEach((assessment, index) => {
         const card = document.createElement('div');
         card.className = 'assessment-card';
+        card.setAttribute('data-assessment-id', assessment.id);
         card.onclick = () => selectAssessment(assessment.id);
         
+        // Agregar animación de entrada escalonada
+        card.style.animationDelay = `${index * 0.1}s`;
+        
         const createdDate = assessment.created_at ? 
-            new Date(assessment.created_at).toLocaleDateString('es-ES') : 'No disponible';
+            new Date(assessment.created_at).toLocaleDateString('es-ES', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            }) : 'No disponible';
+        
+        // Determinar color del badge basado en estadísticas
+        const badgeClass = assessment.completed_count > 0 ? 'success' : 'primary';
+        const badgeIcon = assessment.completed_count > 0 ? 'check-circle' : 'clipboard-list';
         
         card.innerHTML = `
             <div class="assessment-header">
                 <h6 class="assessment-title">${assessment.title}</h6>
-                <span class="assessment-badge">
-                    <i class="fas fa-check-circle me-1"></i>Disponible
+                <span class="assessment-badge bg-${badgeClass}">
+                    <i class="fas fa-${badgeIcon} me-1"></i>
+                    ${assessment.completed_count > 0 ? 'Activa' : 'Nueva'}
                 </span>
             </div>
             
@@ -1439,35 +1765,179 @@ function displayAvailableAssessments(assessments) {
             <div class="assessment-stats">
                 <div class="assessment-stat">
                     <i class="fas fa-question-circle"></i>
-                    <span>${assessment.questions_count} preguntas</span>
+                    <span>${assessment.questions_count} ${assessment.questions_count === 1 ? 'pregunta' : 'preguntas'}</span>
                 </div>
                 <div class="assessment-stat">
                     <i class="fas fa-users"></i>
-                    <span>${assessment.completed_count} completadas</span>
+                    <span>${assessment.completed_count} ${assessment.completed_count === 1 ? 'completada' : 'completadas'}</span>
                 </div>
                 <div class="assessment-stat">
-                    <i class="fas fa-calendar"></i>
-                    <span>Creada: ${createdDate}</span>
+                    <i class="fas fa-calendar-plus"></i>
+                    <span class="d-none d-sm-inline">Creada: </span>${createdDate}</span>
                 </div>
+            </div>
+            
+            <!-- Botón de acción para móvil -->
+            <div class="d-block d-sm-none mt-2">
+                <button class="btn btn-primary btn-sm w-100" onclick="event.stopPropagation(); selectAssessment(${assessment.id})">
+                    <i class="fas fa-plus me-1"></i>Seleccionar Evaluación
+                </button>
             </div>
         `;
         
         container.appendChild(card);
     });
+    
+    // Agregar mensaje informativo al final
+    const infoMessage = document.createElement('div');
+    infoMessage.className = 'alert alert-info mt-3';
+    infoMessage.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle me-2"></i>
+            <div>
+                <strong>${assessments.length} ${assessments.length === 1 ? 'evaluación disponible' : 'evaluaciones disponibles'}</strong>
+                <br><small>Toca una evaluación para seleccionarla y asignarla a tus coachees.</small>
+            </div>
+        </div>
+    `;
+    container.appendChild(infoMessage);
 }
 
 // Función para seleccionar una evaluación
 function selectAssessment(assessmentId) {
+    // Añadir feedback visual inmediato
+    const allCards = document.querySelectorAll('.assessment-card');
+    const selectedCard = document.querySelector(`[data-assessment-id="${assessmentId}"]`);
+    
     // Remover selección previa
-    document.querySelectorAll('.assessment-card').forEach(card => {
+    allCards.forEach(card => {
         card.classList.remove('selected');
+        card.style.transform = '';
     });
     
-    // Seleccionar la card clickeada
-    event.target.closest('.assessment-card').classList.add('selected');
+    // Añadir selección actual con animación
+    if (selectedCard) {
+        selectedCard.classList.add('selected');
+        
+        // Efecto de pulso para feedback táctil en móvil
+        selectedCard.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+            selectedCard.style.transform = 'scale(1)';
+        }, 150);
+        
+        // Añadir indicador visual de selección
+        const existingCheck = selectedCard.querySelector('.selection-indicator');
+        if (existingCheck) {
+            existingCheck.remove();
+        }
+        
+        const selectionIndicator = document.createElement('div');
+        selectionIndicator.className = 'selection-indicator';
+        selectionIndicator.innerHTML = '<i class="fas fa-check-circle"></i>';
+        selectedCard.appendChild(selectionIndicator);
+    }
     
-    console.log('Evaluación seleccionada:', assessmentId);
-    // Aquí se puede agregar lógica adicional para asignar la evaluación
+    // Mostrar modal de confirmación optimizado para móvil
+    const assessmentCard = selectedCard;
+    const assessmentTitle = assessmentCard.querySelector('.assessment-title').textContent;
+    const assessmentDescription = assessmentCard.querySelector('.assessment-description').textContent;
+    
+    // Crear modal responsive
+    const modalHtml = `
+        <div class="modal fade" id="confirmAssessmentModal" tabindex="-1" aria-labelledby="confirmAssessmentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="confirmAssessmentModalLabel">
+                            <i class="fas fa-clipboard-check me-2"></i>Confirmar Evaluación
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <div class="assessment-preview-card">
+                                <h6 class="fw-bold text-primary">${assessmentTitle}</h6>
+                                <p class="text-muted small mb-0">${assessmentDescription}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info d-flex align-items-start">
+                            <i class="fas fa-info-circle me-2 mt-1"></i>
+                            <div>
+                                <strong>¿Deseas asignar esta evaluación?</strong>
+                                <br><small>Podrás enviarla a tus coachees para que la completen.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer flex-column flex-sm-row">
+                        <button type="button" class="btn btn-outline-secondary mb-2 mb-sm-0 w-100 w-sm-auto" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary w-100 w-sm-auto" onclick="confirmAssignAssessment(${assessmentId})">
+                            <i class="fas fa-paper-plane me-1"></i>Asignar Evaluación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal previo si existe
+    const existingModal = document.getElementById('confirmAssessmentModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Añadir nuevo modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal con mejor experiencia móvil
+    const modal = new bootstrap.Modal(document.getElementById('confirmAssessmentModal'), {
+        backdrop: 'static',
+        keyboard: true
+    });
+    
+    modal.show();
+    
+    // Limpiar modal cuando se cierre
+    document.getElementById('confirmAssessmentModal').addEventListener('hidden.bs.modal', function () {
+        this.remove();
+        // Remover selección visual
+        if (selectedCard) {
+            selectedCard.classList.remove('selected');
+            const indicator = selectedCard.querySelector('.selection-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+    });
+}
+
+// Función para confirmar la asignación de evaluación
+function confirmAssignAssessment(assessmentId) {
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmAssessmentModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Mostrar notificación de éxito con mejor UX móvil
+    showNotification('Evaluación asignada exitosamente', 'success');
+    
+    // Opcional: Aquí se puede agregar lógica para realizar la asignación real
+    console.log('Evaluación confirmada:', assessmentId);
+    
+    // Feedback visual adicional
+    setTimeout(() => {
+        // Limpiar selecciones
+        document.querySelectorAll('.assessment-card').forEach(card => {
+            card.classList.remove('selected');
+            const indicator = card.querySelector('.selection-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        });
+    }, 1000);
 }
 
 // Función para cargar coachees
