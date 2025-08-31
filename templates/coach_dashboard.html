@@ -2041,23 +2041,28 @@ document.getElementById('inviteForm').addEventListener('submit', function(e) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            coachee_name: name,
-            coachee_email: email
+            full_name: name,
+            email: email,
+            message: 'Invitación para participar en evaluación de asertividad'
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             document.getElementById('inviteForm').reset();
-            alert('Invitación enviada exitosamente');
+            alert('¡Coachee creado exitosamente!\n\nCredenciales:\nUsuario: ' + data.coachee.username + '\nContraseña: ' + data.coachee.password);
             loadCoachees();
         } else {
-            alert('Error al enviar la invitación: ' + (data.message || 'Error desconocido'));
+            alert('Error al crear el coachee: ' + (data.error || data.message || 'Error desconocido'));
         }
     })
     .catch(error => {
         console.error('Error sending invitation:', error);
-        alert('Error al enviar la invitación');
+        alert('Error al enviar la invitación: ' + error.message);
     });
 });
 

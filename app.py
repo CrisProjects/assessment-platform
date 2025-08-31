@@ -1506,25 +1506,33 @@ def admin_dashboard():
 def api_coach_create_invitation_v2():
     """Crear una invitación para un nuevo coachee (versión funcional)"""
     try:
+        logger.info(f"💌 INVITATION: Request from user {current_user.username} ({current_user.role})")
+        
         # Verificar que es un coach
         if not current_user.is_authenticated or current_user.role != 'coach':
+            logger.warning(f"❌ INVITATION: Access denied for user {current_user.username} (role: {current_user.role})")
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden crear invitaciones.'}), 403
             
         data = request.get_json()
+        logger.info(f"📝 INVITATION: Received data: {data}")
+        
         full_name = data.get('full_name')
         email = data.get('email')
         message = data.get('message', '')
         
         if not full_name or not email:
+            logger.warning("❌ INVITATION: Missing required fields")
             return jsonify({'error': 'Nombre completo y email son requeridos'}), 400
         
         # Validar formato de email
         if '@' not in email:
+            logger.warning(f"❌ INVITATION: Invalid email format: {email}")
             return jsonify({'error': 'Formato de email inválido'}), 400
         
         # Verificar si ya existe un usuario con este email
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
+            logger.warning(f"❌ INVITATION: Email already exists: {email}")
             return jsonify({'error': 'Ya existe un usuario registrado con este email'}), 400
         
         # Generar username único basado en el email
@@ -1540,6 +1548,7 @@ def api_coach_create_invitation_v2():
         password = ''.join(secrets.choice(password_chars) for _ in range(8))
         
         # Crear el usuario coachee
+        logger.info(f"👤 INVITATION: Creating coachee {full_name} with username {username}")
         new_coachee = User(
             username=username,
             email=email,
@@ -1552,6 +1561,8 @@ def api_coach_create_invitation_v2():
         
         db.session.add(new_coachee)
         db.session.commit()
+        
+        logger.info(f"✅ INVITATION: Coachee {full_name} created successfully with ID {new_coachee.id}")
         
         return jsonify({
             'success': True,
@@ -1568,6 +1579,7 @@ def api_coach_create_invitation_v2():
         
     except Exception as e:
         db.session.rollback()
+        logger.error(f"❌ INVITATION: Error creating coachee: {str(e)}")
         return jsonify({'error': f'Error creando coachee: {str(e)}'}), 500
 
 @app.route('/api/coach/my-coachees', methods=['GET'])
