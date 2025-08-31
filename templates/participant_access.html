@@ -24,11 +24,24 @@
     }
 
     .evaluation-header {
-        background: linear-gradient(135deg, var(--calm-primary), var(--calm-primary-hover));
+        background: linear-gradient(135deg, var(--havelock-blue), var(--medium-blue));
         padding: 2.5rem 2rem;
         text-align: center;
         color: var(--pure-white);
         position: relative;
+        /* Mejoras del sistema de temas */
+        transition: all 0.3s ease;
+    }
+
+    /* Adaptación al sistema de temas - mismo estilo que Panel Coach */
+    [data-theme="light"] .evaluation-header {
+        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+        box-shadow: 0 8px 32px rgba(30, 64, 175, 0.3);
+    }
+
+    [data-theme="dark"] .evaluation-header {
+        background: linear-gradient(135deg, #1E3A8A 0%, #3730A3 50%, #4338CA 100%);
+        box-shadow: 0 8px 32px rgba(30, 58, 138, 0.4);
     }
 
     .evaluation-header::before {
@@ -60,6 +73,9 @@
         font-size: 2.5rem;
         color: var(--pure-white);
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        /* Mejoras de contraste - mismo estilo que Panel Coach */
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        color: rgba(255, 255, 255, 0.95);
     }
 
     .evaluation-header h2 {
@@ -68,6 +84,22 @@
         position: relative;
         z-index: 1;
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        /* Mejoras de texto - mismo estilo que Panel Coach */
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+    }
+
+    /* Adaptaciones del texto por tema - mismo estilo que Panel Coach */
+    [data-theme="light"] .evaluation-header h2,
+    [data-theme="light"] .evaluation-header i {
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+        color: #FFFFFF;
+    }
+
+    [data-theme="dark"] .evaluation-header h2,
+    [data-theme="dark"] .evaluation-header i {
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        color: rgba(255, 255, 255, 0.98);
     }
 
     .evaluation-header p {
@@ -77,10 +109,24 @@
         position: relative;
         z-index: 1;
         font-weight: 500;
+        /* Mejoras de legibilidad - mismo estilo que Panel Coach */
+        font-size: 1.1rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
 
     .evaluation-body {
         padding: 2.5rem 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        /* Mejoras del sistema de temas */
+        transition: background-color 0.3s ease;
+    }
+
+    /* Adaptación del cuerpo por tema - mismo estilo que Panel Coach */
+    [data-theme="light"] .evaluation-body {
+        background: rgba(255, 255, 255, 0.85);
+    }
+
+    [data-theme="dark"] .evaluation-body {
         background: rgba(255, 255, 255, 0.05);
     }
 
@@ -138,6 +184,17 @@
         backdrop-filter: blur(10px);
     }
 
+    /* Adaptación de las opciones por tema */
+    [data-theme="light"] .access-option {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(30, 64, 175, 0.2);
+    }
+
+    [data-theme="dark"] .access-option {
+        background: rgba(255, 255, 255, 0.08);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
     .access-option:hover {
         border-color: var(--calm-primary);
         transform: translateY(-2px);
@@ -155,12 +212,57 @@
         font-weight: 600;
         margin-bottom: 0.5rem;
         font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+
+    /* Adaptación del texto de títulos por tema */
+    [data-theme="light"] .access-option h5 {
+        color: var(--theme-text-primary);
+        text-shadow: none !important;
+    }
+
+    [data-theme="dark"] .access-option h5 {
+        color: var(--pure-white);
+        text-shadow: none !important;
     }
 
     .access-option p {
         color: var(--medium-gray);
         margin: 0;
         font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    /* Adaptación del texto descriptivo por tema */
+    [data-theme="light"] .access-option p {
+        color: var(--theme-text-secondary);
+        text-shadow: none !important;
+    }
+
+    [data-theme="dark"] .access-option p {
+        color: var(--medium-gray);
+        text-shadow: none !important;
+    }
+
+    /* === ELIMINACIÓN DE SOMBRAS GENERALES EN MODO DÍA === */
+    
+    /* Todo el texto en evaluation-body sin sombras en modo día */
+    [data-theme="light"] .evaluation-body,
+    [data-theme="light"] .evaluation-body *,
+    [data-theme="light"] .access-option *,
+    [data-theme="light"] .form-section *,
+    [data-theme="light"] h1,
+    [data-theme="light"] h2,
+    [data-theme="light"] h3,
+    [data-theme="light"] h4,
+    [data-theme="light"] h5,
+    [data-theme="light"] h6,
+    [data-theme="light"] p,
+    [data-theme="light"] span,
+    [data-theme="light"] label,
+    [data-theme="light"] input,
+    [data-theme="light"] button {
+        text-shadow: none !important;
     }
 
     .form-section {
@@ -278,35 +380,11 @@
                         <div class="icon-wrapper">
                             <i class="fas fa-clipboard-check"></i>
                         </div>
-                        <h2>Evaluación de Asertividad</h2>
+                        <h2>Panel Coachee</h2>
                         <p>Inicia tu journey de desarrollo personal y comunicativo</p>
                     </div>
                     
                     <div class="evaluation-body">
-                        <!-- Process Information -->
-                        <div class="process-info">
-                            <h4><i class="fas fa-info-circle me-2"></i>¿Qué incluye la evaluación?</h4>
-                            <ul class="process-steps">
-                                <li><i class="fas fa-check"></i>10 preguntas especializadas en asertividad</li>
-                                <li><i class="fas fa-check"></i>Análisis detallado de tus fortalezas</li>
-                                <li><i class="fas fa-check"></i>Recomendaciones personalizadas</li>
-                                <li><i class="fas fa-check"></i>Gráficos interactivos de resultados</li>
-                                <li><i class="fas fa-check"></i>Seguimiento de tu progreso</li>
-                            </ul>
-                        </div>
-
-                        <!-- Demo Credentials Info -->
-                        <div class="process-info" style="border-left-color: var(--calm-accent); background: rgba(160, 216, 204, 0.05);">
-                            <h4><i class="fas fa-play-circle me-2"></i>Credenciales de Demo</h4>
-                            <ul class="process-steps">
-                                <li><i class="fas fa-user-circle"></i><strong>Email:</strong> coachee@assessment.com</li>
-                                <li><i class="fas fa-key"></i><strong>Contraseña:</strong> coachee123</li>
-                            </ul>
-                            <button type="button" class="btn btn-sm btn-outline-success mt-2" id="fillDemoCredentials">
-                                <i class="fas fa-magic me-1"></i>Usar credenciales de demo
-                            </button>
-                        </div>
-
                         <!-- Access Options -->
                         <div class="access-options">
                             <div class="access-option" data-option="existing">
@@ -340,7 +418,7 @@
                                 
                                 <button type="submit" class="submit-btn">
                                     <i class="fas fa-sign-in-alt me-2"></i>
-                                    Iniciar Evaluación
+                                    Acceder como Coachee
                                 </button>
                             </form>
                         </div>
@@ -582,28 +660,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set default selection to existing user
     document.querySelector('.access-option[data-option="existing"]').click();
-    
-    // Handle demo credentials button
-    document.getElementById('fillDemoCredentials').addEventListener('click', function() {
-        // Make sure the existing user form is active
-        document.querySelector('.access-option[data-option="existing"]').click();
-        
-        // Fill demo credentials
-        document.getElementById('loginEmail').value = 'coachee@assessment.com';
-        document.getElementById('loginPassword').value = 'coachee123';
-        
-        // Add visual feedback
-        this.innerHTML = '<i class="fas fa-check me-1"></i>¡Credenciales listas!';
-        this.classList.add('btn-success');
-        this.classList.remove('btn-outline-success');
-        
-        // Reset button after 2 seconds
-        setTimeout(() => {
-            this.innerHTML = '<i class="fas fa-magic me-1"></i>Usar credenciales de demo';
-            this.classList.remove('btn-success');
-            this.classList.add('btn-outline-success');
-        }, 2000);
-    });
 });
 </script>
 {% endblock %}

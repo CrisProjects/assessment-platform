@@ -1,0 +1,2868 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coachee - Plataforma de Evaluación</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            /* Calm.com Official Color Palette */
+            --calm-primary: #6282E3;           /* Calm's signature blue */
+            --calm-primary-light: #4A6C85;    /* Calm's medium blue */
+            --calm-primary-dark: #4e6fc8;     /* Darker version for depth */
+            --calm-primary-ultra-light: #E8F0F5; /* Very light blue for backgrounds */
+            
+            --calm-secondary: #A0D8CC;        /* Calm's mint green */
+            --calm-secondary-light: #B8E0D6;  /* Light mint green */
+            --calm-secondary-dark: #88C4B5;   /* Darker mint green for contrast */
+            
+            --calm-accent: #6B8DA6;           /* Calm's soft blue */
+            --calm-accent-light: #8BA4BB;     /* Light soft blue */
+            --calm-accent-dark: #5A7A94;      /* Dark soft blue */
+            
+            /* Neutral tones - Calm's refined palette */
+            --calm-background: #c5c9e3;       /* New soft blue-gray background */
+            --calm-surface: #FFFFFF;          /* Pure white surfaces */
+            --calm-surface-elevated: #F7F9FA; /* Slightly elevated surface */
+            --calm-border: #A0D8CC;           /* Mint green border */
+            --calm-border-light: #B8E0D6;     /* Very light mint border */
+            
+            /* Text colors - Calm's readable palette */
+            --calm-text-primary: #243447;     /* Dark blue for primary text */
+            --calm-text-secondary: #4A6C85;   /* Medium blue for secondary text */
+            --calm-text-muted: #6B8DA6;       /* Soft blue for muted text */
+            --calm-text-subtle: #8BA4BB;      /* Very light blue for subtle text */
+            
+            /* Status colors using Calm's authentic palette */
+            --calm-success: #A0D8CC;          /* Mint green */
+            --calm-warning: #5A7A94;          /* Accent blue */
+            --calm-danger: #F56565;           /* Soft coral red (for important alerts) */
+            --calm-info: #4A6C85;             /* Medium blue */
+            
+            /* Gradients with Calm's serene feel */
+            --primary-gradient: linear-gradient(135deg, var(--calm-primary) 0%, var(--calm-primary-light) 100%);
+            --success-gradient: linear-gradient(135deg, var(--calm-secondary) 0%, var(--calm-secondary-light) 100%);
+            --warning-gradient: linear-gradient(135deg, var(--calm-accent) 0%, var(--calm-accent-light) 100%);
+            --danger-gradient: linear-gradient(135deg, var(--calm-danger) 0%, #FC8181 100%);
+            --info-gradient: linear-gradient(135deg, var(--calm-info) 0%, var(--calm-primary-light) 100%);
+            --background-gradient: linear-gradient(135deg, var(--calm-background) 0%, var(--calm-primary-ultra-light) 100%);
+            
+            /* Legacy variables for compatibility */
+            --surface: var(--calm-surface);
+            --surface-elevated: var(--calm-surface-elevated);
+            --text-primary: var(--calm-text-primary);
+            --text-secondary: var(--calm-text-secondary);
+            --border-color: var(--calm-border);
+        }
+
+        body {
+            background: var(--background-gradient);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            line-height: 1.6;
+            color: var(--calm-text-primary);
+            letter-spacing: -0.01em; /* Subtle letter spacing for elegance */
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(90, 103, 216, 0.08); /* Calm's signature blue with very low opacity */
+            border-radius: 50%;
+            animation: float 25s infinite linear; /* Slower, more peaceful animation */
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Custom header */
+        .custom-header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--calm-border);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 1px 20px rgba(90, 103, 216, 0.06); /* Softer shadow with new blue */
+        }
+
+        .custom-header .navbar-brand {
+            color: var(--calm-text-primary) !important;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+
+        .user-display {
+            color: var(--calm-text-primary);
+            font-weight: 500;
+            background: var(--calm-surface-elevated);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            border: 1px solid var(--calm-border);
+        }
+
+        /* Logout button styles */
+        .logout-btn {
+            background: var(--calm-surface-elevated);
+            border: 1px solid var(--calm-border);
+            color: var(--calm-text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin-left: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: var(--calm-primary);
+            border-color: var(--calm-primary);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(90, 103, 216, 0.25); /* Updated with new primary color */
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive styles for logout button */
+        @media (max-width: 768px) {
+            .logout-btn {
+                margin-left: 0.5rem;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .logout-btn .fa-sign-out-alt {
+                margin-right: 0.3rem;
+            }
+            
+            .user-display {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .logout-btn {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            
+            .logout-btn span {
+                display: none; /* Hide text on very small screens */
+            }
+            
+            .logout-btn {
+                margin-left: 0.3rem;
+            }
+        }
+
+        /* Main container */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            min-height: calc(100vh - 80px);
+            padding: 2rem 1rem;
+        }
+
+        /* Dashboard cards */
+        .dashboard-card {
+            background: var(--calm-surface);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(90, 103, 216, 0.06); /* Updated with new primary color */
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid var(--calm-border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(90, 103, 216, 0.10); /* Updated with new primary color */
+        }
+
+        .card-header {
+            background: var(--calm-surface-elevated);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--calm-border);
+        }
+
+        .card-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Navigation tabs */
+        .nav-tabs {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 2rem;
+            background: var(--surface-elevated);
+            border-radius: 12px 12px 0 0;
+            padding: 0.5rem;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            margin: 0 0.25rem;
+            position: relative;
+            background: transparent;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: white;
+            background: none;
+            border-bottom: none;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Evaluaciones Tab - Calm Blue */
+        .nav-tabs .nav-link#evaluations-tab {
+            background: linear-gradient(135deg, var(--calm-primary) 0%, var(--calm-primary-dark) 100%);
+        }
+
+        .nav-tabs .nav-link#evaluations-tab:hover,
+        .nav-tabs .nav-link#evaluations-tab.active {
+            background: linear-gradient(135deg, var(--calm-primary-dark) 0%, #434190 100%);
+            box-shadow: 0 6px 20px rgba(90, 103, 216, 0.4); /* Updated with new primary color */
+        }
+
+        /* Assessment Tab - Calm Green */
+        .nav-tabs .nav-link#assessment-tab {
+            background: linear-gradient(135deg, var(--calm-secondary) 0%, var(--calm-secondary-dark) 100%);
+        }
+
+        .nav-tabs .nav-link#assessment-tab:hover,
+        .nav-tabs .nav-link#assessment-tab.active {
+            background: linear-gradient(135deg, var(--calm-secondary-dark) 0%, #38A169 100%);
+            box-shadow: 0 6px 20px rgba(104, 211, 145, 0.4); /* Updated with new secondary color */
+        }
+
+        /* Tareas Tab - Calm Orange */
+        .nav-tabs .nav-link#tasks-tab {
+            background: linear-gradient(135deg, var(--calm-accent) 0%, var(--calm-accent-dark) 100%);
+        }
+
+        .nav-tabs .nav-link#tasks-tab:hover,
+        .nav-tabs .nav-link#tasks-tab.active {
+            background: linear-gradient(135deg, var(--calm-accent-dark) 0%, #C05621 100%);
+            box-shadow: 0 6px 20px rgba(237, 137, 54, 0.4); /* Updated with new accent color */
+        }
+
+        /* Progreso Tab - Calm Secondary */
+        .nav-tabs .nav-link#progress-tab {
+            background: linear-gradient(135deg, var(--calm-secondary-light) 0%, var(--calm-success) 100%);
+        }
+
+        .nav-tabs .nav-link#progress-tab:hover,
+        .nav-tabs .nav-link#progress-tab.active {
+            background: linear-gradient(135deg, var(--calm-success) 0%, #6AB91A 100%);
+            box-shadow: 0 6px 20px rgba(168, 230, 207, 0.4);
+        }
+
+        /* Iconos con animación */
+        .nav-tabs .nav-link i {
+            transition: transform 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover i,
+        .nav-tabs .nav-link.active i {
+            transform: scale(1.1);
+        }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(90, 103, 216, 0.2); /* Updated with new primary color */
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(90, 103, 216, 0.4); /* Updated with new primary color */
+            color: white;
+        }
+
+        .btn-success-custom {
+            background: var(--success-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(104, 211, 145, 0.4); /* Updated with new secondary/success color */
+            color: white;
+        }
+
+        .btn-warning-custom {
+            background: var(--warning-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-warning-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(237, 137, 54, 0.4); /* Updated with new accent/warning color */
+            color: white;
+        }
+
+        /* Botones específicos para evaluaciones */
+        .btn-evaluation {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-evaluation:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+            color: white;
+        }
+
+        /* Botones específicos para tareas */
+        .btn-task {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-task:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            color: white;
+        }
+
+        /* Botones específicos para progreso */
+        .btn-progress {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-progress:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            color: white;
+        }
+
+        /* Botones de outline para acciones secundarias */
+        .btn-outline-evaluation {
+            background: transparent;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: #3b82f6;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-evaluation:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-outline-task {
+            background: transparent;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: #f59e0b;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-task:hover {
+            background: #f59e0b;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-outline-progress {
+            background: transparent;
+            border: 2px solid #8b5cf6;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: #8b5cf6;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-progress:hover {
+            background: #8b5cf6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Summary cards */
+        .summary-card {
+            background: var(--calm-surface);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--calm-border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 20px rgba(90, 103, 216, 0.05); /* Updated with new primary color */
+        }
+
+        .summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(90, 103, 216, 0.1); /* Updated with new primary color */
+        }
+
+        .summary-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .summary-icon.primary {
+            background: var(--primary-gradient);
+        }
+
+        .summary-icon.success {
+            background: var(--success-gradient);
+        }
+
+        .summary-icon.warning {
+            background: var(--warning-gradient);
+        }
+
+        .summary-icon.danger {
+            background: var(--danger-gradient);
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Evaluation cards */
+        .evaluation-item {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .evaluation-item:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .evaluation-score {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .evaluation-level {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .evaluation-description {
+            line-height: 1.4;
+            font-style: italic;
+            background: rgba(74, 144, 226, 0.05);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--calm-primary);
+            color: var(--calm-text-secondary);
+        }
+
+        .evaluation-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Task cards */
+        .task-item {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .task-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .task-description {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .task-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .task-badge.priority-high {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .task-badge.priority-medium {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .task-badge.priority-low {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .task-badge.status-pending {
+            background: rgba(156, 163, 175, 0.1);
+            color: #6b7280;
+            border: 1px solid rgba(156, 163, 175, 0.2);
+        }
+
+        .task-badge.status-in_progress {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .task-badge.status-completed {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Progress bars */
+        .progress-container {
+            margin: 1rem 0;
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.low {
+            background: var(--danger-gradient);
+        }
+
+        .progress-fill.medium {
+            background: var(--warning-gradient);
+        }
+
+        .progress-fill.high {
+            background: var(--success-gradient);
+        }
+
+        /* Chart container */
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            height: 400px;
+            position: relative;
+        }
+
+        /* Responsive Radar Chart Container */
+        .radar-chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px; /* Base height */
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .radar-chart-container canvas {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Mobile optimizations for radar chart */
+        @media (max-width: 576px) {
+            .radar-chart-container {
+                height: 280px; /* Smaller on mobile but still prominent */
+                padding: 0 0.5rem;
+            }
+        }
+
+        @media (min-width: 577px) and (max-width: 768px) {
+            .radar-chart-container {
+                height: 320px; /* Medium size for tablets */
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 991px) {
+            .radar-chart-container {
+                height: 350px; /* Standard size for larger tablets */
+            }
+        }
+
+        @media (min-width: 992px) {
+            .radar-chart-container {
+                height: 380px; /* Largest size for desktop */
+            }
+        }
+
+        /* Loading states */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+
+        .spinner-border-custom {
+            width: 3rem;
+            height: 3rem;
+            border: 0.3em solid rgba(102, 126, 234, 0.25);
+            border-top-color: #667eea;
+        }
+
+        /* Empty states */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Assessment specific styles */
+        .question-card {
+            background: var(--surface-elevated);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .question-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .question-text {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .option-item {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--border-color) !important;
+        }
+
+        .option-item:hover {
+            border-color: #667eea !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .option-item.bg-primary {
+            border-color: #667eea !important;
+            background: var(--primary-gradient) !important;
+        }
+
+        .option-item .form-check-input {
+            margin-top: 0.125rem;
+        }
+
+        /* Evaluation Details Modal Styles */
+        #evaluationDetailsModal .modal-dialog {
+            max-width: 95%;
+        }
+
+        .recommendations ul {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            background-color: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-fill.high {
+            background: var(--success-gradient);
+        }
+
+        .progress-fill.medium {
+            background: var(--warning-gradient);
+        }
+
+        .progress-fill.low {
+            background: var(--danger-gradient);
+        }
+
+        .dimension-score-card {
+            transition: transform 0.2s ease;
+        }
+
+        .dimension-score-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .evaluation-section {
+            border-left: 4px solid var(--primary-gradient);
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .response-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Improved Assessment Results Styles */
+        .assessment-result-card {
+            background: var(--calm-surface);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(90, 103, 216, 0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid var(--calm-border);
+            transition: all 0.3s ease;
+        }
+
+        .assessment-result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(90, 103, 216, 0.12);
+        }
+
+        .assessment-result-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .assessment-result-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="60" cy="10" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="30" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="70" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="70" cy="60" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            pointer-events: none;
+        }
+
+        .assessment-score-display {
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 0.5rem 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 2;
+        }
+
+        .assessment-level-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            opacity: 0.95;
+            position: relative;
+            z-index: 2;
+        }
+
+        .assessment-completion-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .assessment-result-body {
+            padding: 2rem;
+        }
+
+        .assessment-interpretation {
+            background: var(--calm-surface-elevated);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--calm-primary);
+        }
+
+        .assessment-interpretation h5 {
+            color: var(--calm-primary);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .assessment-interpretation p {
+            color: var(--calm-text-secondary);
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .dimensions-overview {
+            background: var(--calm-surface);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--calm-border);
+        }
+
+        .dimensions-overview h6 {
+            color: var(--calm-text-primary);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .dimension-item {
+            background: var(--calm-surface-elevated);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--calm-border);
+            transition: all 0.2s ease;
+        }
+
+        .dimension-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(90, 103, 216, 0.08);
+        }
+
+        .dimension-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .dimension-label {
+            font-weight: 600;
+            color: var(--calm-text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .dimension-score {
+            font-weight: 700;
+            color: var(--calm-primary);
+        }
+
+        .dimension-progress {
+            background: var(--calm-border);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .dimension-progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.8s ease-in-out;
+            background: var(--primary-gradient);
+            position: relative;
+        }
+
+        .dimension-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .assessment-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .assessment-action-btn {
+            background: var(--calm-surface-elevated);
+            border: 2px solid var(--calm-border);
+            color: var(--calm-text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .assessment-action-btn:hover {
+            background: var(--calm-primary);
+            border-color: var(--calm-primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(90, 103, 216, 0.25);
+        }
+
+        .assessment-action-btn.primary {
+            background: var(--primary-gradient);
+            border-color: var(--calm-primary);
+            color: white;
+        }
+
+        .assessment-action-btn.primary:hover {
+            background: var(--calm-primary-dark);
+            border-color: var(--calm-primary-dark);
+            color: white;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .assessment-score-display {
+                font-size: 3rem;
+            }
+            
+            .assessment-level-display {
+                font-size: 1.2rem;
+            }
+            
+            .assessment-result-header {
+                padding: 1.5rem;
+            }
+            
+            .assessment-result-body {
+                padding: 1.5rem;
+            }
+            
+            .assessment-actions {
+                flex-direction: column;
+            }
+            
+            .assessment-action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .visible { display: block !important; }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles">
+        <!-- Particles will be generated by JavaScript -->
+    </div>
+
+    <!-- Header -->
+    <nav class="navbar custom-header">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Dashboard Coachee
+            </span>
+            <div class="d-flex align-items-center">
+                <div class="user-display">
+                    <i class="fas fa-user-circle me-2"></i>
+                    <span id="userName">Cargando...</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="container-fluid">
+            <!-- Welcome Section -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3>
+                                <i class="fas fa-home me-2"></i>
+                                <span id="welcomeMessage">Bienvenido</span>
+                            </h3>
+                            <p class="mb-0 text-muted" id="userInfo">Cargando información...</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-primary-custom" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row" id="summaryCards">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon primary">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="summary-number" id="totalEvaluations">-</div>
+                        <div class="summary-label">Evaluaciones Completadas</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon success">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="summary-number" id="latestScore">-</div>
+                        <div class="summary-label">Última Puntuación</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon warning">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="summary-number" id="pendingTasks">-</div>
+                        <div class="summary-label">Tareas Pendientes</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="summary-card">
+                        <div class="summary-icon danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="summary-number" id="overdueTasks">-</div>
+                        <div class="summary-label">Tareas Vencidas</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="evaluations-tab" data-bs-toggle="tab" data-bs-target="#evaluations" type="button" role="tab">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Evaluaciones
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation" id="assessment-tab-item" style="display: none;">
+                    <button class="nav-link" id="assessment-tab" data-bs-toggle="tab" data-bs-target="#assessment" type="button" role="tab">
+                        <i class="fas fa-play-circle me-2"></i>
+                        Evaluación Activa
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
+                        <i class="fas fa-tasks me-2"></i>
+                        Tareas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="progress-tab" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">
+                        <i class="fas fa-chart-area me-2"></i>
+                        Progreso
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="mainTabContent">
+                <!-- Evaluations Tab -->
+                <div class="tab-pane fade show active" id="evaluations" role="tabpanel">
+                    <div class="row">
+                        <!-- Available Evaluations -->
+                        <div class="col-lg-6">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-plus-circle me-2"></i>
+                                        Evaluaciones Disponibles
+                                    </h3>
+                                </div>
+                                <div class="card-body" id="availableEvaluations">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border spinner-border-custom" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Completed Evaluations -->
+                        <div class="col-lg-6">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-history me-2"></i>
+                                        Evaluaciones Completadas
+                                    </h3>
+                                </div>
+                                <div class="card-body" id="completedEvaluations">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border spinner-border-custom" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assessment Tab (Hidden by default) -->
+                <div class="tab-pane fade" id="assessment" role="tabpanel">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>
+                                <i class="fas fa-clipboard-check me-2"></i>
+                                Evaluación de Asertividad
+                            </h3>
+                            <div class="progress mt-3">
+                                <div class="progress-bar" role="progressbar" id="assessmentProgress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="card-body" id="assessmentContainer">
+                            <div id="questionContainer">
+                                <!-- Questions will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assessment Results Container -->
+                    <div class="assessment-result-card" id="assessmentResults" style="display: none;">
+                        <div class="assessment-result-header">
+                            <div class="assessment-completion-badge">
+                                <i class="fas fa-check-circle me-2"></i>
+                                ¡Evaluación Completada!
+                            </div>
+                            <div class="assessment-score-display" id="assessmentScore">0%</div>
+                            <h3 class="assessment-level-display" id="assessmentLevel">Nivel de Asertividad</h3>
+                        </div>
+                        <div class="assessment-result-body">
+                            <div id="assessmentInterpretation">
+                                <!-- Results interpretation will be loaded here -->
+                            </div>
+                            <div class="assessment-actions">
+                                <button class="assessment-action-btn primary" onclick="viewDetailedResults()">
+                                    <i class="fas fa-chart-radar"></i>
+                                    Ver Análisis Completo
+                                </button>
+                                <button class="assessment-action-btn" onclick="finishAssessment()">
+                                    <i class="fas fa-check"></i>
+                                    Finalizar y Volver
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Tab -->
+                <div class="tab-pane fade" id="tasks" role="tabpanel">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>
+                                <i class="fas fa-tasks me-2"></i>
+                                Mis Tareas Asignadas
+                            </h3>
+                        </div>
+                        <div class="card-body" id="tasksContainer">
+                            <div class="loading-spinner">
+                                <div class="spinner-border spinner-border-custom" role="status">
+                                    <span class="visually-hidden">Cargando tareas...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Tab -->
+                <div class="tab-pane fade" id="progress" role="tabpanel">
+                    <div class="row">
+                        <!-- Evaluation History Chart -->
+                        <div class="col-lg-8">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        Historial de Evaluaciones
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="progressChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics -->
+                        <div class="col-lg-4">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-calculator me-2"></i>
+                                        Estadísticas
+                                    </h3>
+                                </div>
+                                <div class="card-body" id="statisticsContainer">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border spinner-border-custom" role="status">
+                                            <span class="visually-hidden">Cargando estadísticas...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Latest Evaluation Details -->
+                    <div class="dashboard-card" id="latestEvaluationDetails">
+                        <div class="card-header">
+                            <h3>
+                                <i class="fas fa-bullseye me-2"></i>
+                                Última Evaluación - Análisis Detallado
+                            </h3>
+                        </div>
+                        <div class="card-body" id="latestEvaluationContainer">
+                            <div class="loading-spinner">
+                                <div class="spinner-border spinner-border-custom" role="status">
+                                    <span class="visually-hidden">Cargando análisis...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+        <div id="toastNotification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                <strong class="me-auto">Notificación</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <!-- Toast message will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Progress Modal -->
+    <div class="modal fade" id="taskProgressModal" tabindex="-1" aria-labelledby="taskProgressModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskProgressModalLabel">
+                        <i class="fas fa-tasks me-2"></i>
+                        Actualizar Progreso de Tarea
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskProgressForm">
+                        <input type="hidden" id="taskId" />
+                        
+                        <div class="mb-3">
+                            <label for="taskStatus" class="form-label">Estado de la Tarea</label>
+                            <select class="form-select" id="taskStatus" required>
+                                <option value="pending">Pendiente</option>
+                                <option value="in_progress">En Progreso</option>
+                                <option value="completed">Completada</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="taskProgress" class="form-label">Progreso (%)</label>
+                            <input type="range" class="form-range" id="taskProgress" min="0" max="100" value="0">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="progressValue">0%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="taskNotes" class="form-label">Notas (Opcional)</label>
+                            <textarea class="form-control" id="taskNotes" rows="3" placeholder="Añade comentarios sobre tu progreso..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-task" onclick="saveTaskProgress()">
+                        <i class="fas fa-save me-2"></i>
+                        Guardar Progreso
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Details Modal -->
+    <div class="modal fade" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                    <h5 class="modal-title" id="evaluationDetailsModalLabel">
+                        <i class="fas fa-chart-radar me-2"></i>
+                        Detalles de Evaluación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="evaluationDetailsContent">
+                    <div class="loading-spinner">
+                        <div class="spinner-border spinner-border-custom" role="status">
+                            <span class="visually-hidden">Cargando detalles...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-progress" onclick="printEvaluationReport()">
+                        <i class="fas fa-print me-2"></i>
+                        Imprimir Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const API_BASE_URL = window.location.origin;
+        
+        // Application state
+        let currentUser = null;
+        let dashboardData = null;
+        let evaluationsData = null;
+        let tasksData = null;
+        let progressChart = null;
+
+        // Assessment state
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let answers = {};
+        let isAssessmentActive = false;
+
+        // Logout function
+        async function logout() {
+            try {
+                // Show loading state
+                const logoutBtn = document.querySelector('.logout-btn');
+                const originalContent = logoutBtn.innerHTML;
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cerrando...';
+                logoutBtn.disabled = true;
+
+                // Call logout API
+                const response = await fetch(`${API_BASE_URL}/api/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // Always redirect to access page regardless of API response
+                window.location.href = '/dashboard-selection';
+                
+            } catch (error) {
+                console.error('Error during logout:', error);
+                // Even if there's an error, redirect to access page
+                window.location.href = '/dashboard-selection';
+            }
+        }
+
+        // Initialize particles animation
+        function createParticles() {
+            const particlesContainer = document.querySelector('.particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.width = particle.style.height = (Math.random() * 4 + 2) + 'px';
+                particle.style.animationDuration = (Math.random() * 10 + 20) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastElement = document.getElementById('toastNotification');
+            const toastBody = toastElement.querySelector('.toast-body');
+            const toastHeader = toastElement.querySelector('.toast-header');
+            
+            // Update icon
+            const icon = toastHeader.querySelector('i');
+            switch (type) {
+                case 'success':
+                    icon.className = 'fas fa-check-circle text-success me-2';
+                    break;
+                case 'error':
+                    icon.className = 'fas fa-exclamation-circle text-danger me-2';
+                    break;
+                case 'warning':
+                    icon.className = 'fas fa-exclamation-triangle text-warning me-2';
+                    break;
+                default:
+                    icon.className = 'fas fa-info-circle text-primary me-2';
+            }
+            
+            toastBody.textContent = message;
+            
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+        }
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentUser = data.user;
+                    document.getElementById('userName').textContent = data.user.full_name || 'Usuario';
+                    document.getElementById('welcomeMessage').textContent = `¡Hola ${data.user.full_name || 'Usuario'}!`;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando perfil:', error);
+                document.getElementById('userName').textContent = 'Usuario';
+                showToast('Error cargando perfil de usuario', 'error');
+            }
+        }
+
+        // Load dashboard summary
+        async function loadDashboardSummary() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    dashboardData = data.summary;
+                    updateSummaryCards();
+                    updateUserInfo();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando resumen:', error);
+                showToast('Error cargando resumen del dashboard', 'error');
+            }
+        }
+
+        // Update summary cards
+        function updateSummaryCards() {
+            if (!dashboardData) return;
+            
+            document.getElementById('totalEvaluations').textContent = 
+                dashboardData.evaluation_summary.total_completed || '0';
+            
+            document.getElementById('latestScore').textContent = 
+                dashboardData.latest_evaluation ? 
+                `${dashboardData.latest_evaluation.total_score}%` : '-';
+            
+            document.getElementById('pendingTasks').textContent = 
+                dashboardData.tasks_summary.pending || '0';
+            
+            document.getElementById('overdueTasks').textContent = 
+                dashboardData.tasks_summary.overdue || '0';
+        }
+
+        // Update user info
+        function updateUserInfo() {
+            if (!dashboardData) return;
+            
+            const userInfoElement = document.getElementById('userInfo');
+            const coacheeData = dashboardData.coachee;
+            
+            if (coacheeData && coacheeData.joined_at) {
+                const joinedDate = new Date(coacheeData.joined_at).toLocaleDateString('es-ES');
+                userInfoElement.textContent = `Miembro desde: ${joinedDate}`;
+            } else if (coacheeData && coacheeData.email) {
+                userInfoElement.textContent = coacheeData.email;
+            } else {
+                userInfoElement.textContent = 'Información no disponible';
+            }
+        }
+
+        // Load evaluations data
+        async function loadEvaluations() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/evaluations`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    evaluationsData = data.evaluations;
+                    renderAvailableEvaluations();
+                    renderCompletedEvaluations();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando evaluaciones:', error);
+                showToast('Error cargando evaluaciones', 'error');
+                
+                // Show error in both containers
+                document.getElementById('availableEvaluations').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando evaluaciones disponibles</p></div>';
+                document.getElementById('completedEvaluations').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando historial de evaluaciones</p></div>';
+            }
+        }
+
+        // Render available evaluations
+        function renderAvailableEvaluations() {
+            const container = document.getElementById('availableEvaluations');
+            
+            if (!evaluationsData || !evaluationsData.available) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay evaluaciones disponibles</p></div>';
+                return;
+            }
+            
+            let html = '';
+            Object.values(evaluationsData.available).forEach(evaluation => {
+                html += `
+                    <div class="evaluation-item">
+                        <h5 class="mb-3">${evaluation.title}</h5>
+                        <p class="text-muted mb-3">${evaluation.description}</p>
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Duración: ${evaluation.duration}
+                                </small>
+                            </div>
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-question-circle me-1"></i>
+                                    ${evaluation.questions_count} preguntas
+                                </small>
+                            </div>
+                        </div>
+                        <button class="btn btn-evaluation w-100" onclick="startEvaluation('${evaluation.id}')">
+                            <i class="fas fa-play me-2"></i>
+                            Comenzar Evaluación
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Render completed evaluations
+        function renderCompletedEvaluations() {
+            const container = document.getElementById('completedEvaluations');
+            
+            if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-clipboard-list"></i><p>Aún no has completado ninguna evaluación</p></div>';
+                return;
+            }
+            
+            let html = '';
+            evaluationsData.completed.forEach(evaluation => {
+                const scoreColor = evaluation.total_score >= 75 ? 'text-success' : 
+                                  evaluation.total_score >= 50 ? 'text-warning' : 'text-danger';
+                
+                html += `
+                    <div class="evaluation-item">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">${evaluation.title}</h6>
+                            <span class="evaluation-score ${scoreColor}">${evaluation.total_score}%</span>
+                        </div>
+                        <div class="evaluation-level ${scoreColor} mb-2">${evaluation.assertiveness_level}</div>
+                        <div class="evaluation-description text-muted small mb-2">${evaluation.result_description || ''}</div>
+                        <div class="evaluation-date">${formatDate(evaluation.completed_at)}</div>
+                        <button class="btn btn-sm btn-outline-evaluation mt-2" onclick="viewEvaluationDetails(${evaluation.id})">
+                            <i class="fas fa-eye me-1"></i>
+                            Ver Detalles
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Load tasks data
+        async function loadTasks() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    tasksData = data.tasks;
+                    renderTasks();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando tareas:', error);
+                showToast('Error cargando tareas', 'error');
+                
+                document.getElementById('tasksContainer').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando tareas</p></div>';
+            }
+        }
+
+        // Render tasks
+        function renderTasks() {
+            const container = document.getElementById('tasksContainer');
+            
+            if (!tasksData || tasksData.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>No tienes tareas asignadas</p></div>';
+                return;
+            }
+            
+            let html = '';
+            tasksData.forEach(task => {
+                const priorityClass = `priority-${task.priority}`;
+                const statusClass = `status-${task.current_status}`;
+                const progressClass = task.current_progress >= 75 ? 'high' : 
+                                     task.current_progress >= 25 ? 'medium' : 'low';
+                
+                html += `
+                    <div class="task-item">
+                        <div class="task-header">
+                            <div class="flex-grow-1">
+                                <h5 class="task-title">${task.title}</h5>
+                                <p class="task-description">${task.description}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="task-meta">
+                            <span class="task-badge ${priorityClass}">
+                                <i class="fas fa-flag me-1"></i>
+                                ${task.priority}
+                            </span>
+                            <span class="task-badge ${statusClass}">
+                                <i class="fas fa-circle me-1"></i>
+                                ${getStatusLabel(task.current_status)}
+                            </span>
+                            ${task.category ? `<span class="task-badge"><i class="fas fa-tag me-1"></i>${task.category}</span>` : ''}
+                            ${task.due_date ? `<span class="task-badge"><i class="fas fa-calendar me-1"></i>${formatDate(task.due_date)}</span>` : ''}
+                        </div>
+                        
+                        <div class="progress-container">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Progreso</small>
+                                <small>${task.current_progress}%</small>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill ${progressClass}" style="width: ${task.current_progress}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                Coach: ${task.coach.full_name}
+                                ${task.last_update ? `• Actualizado: ${formatDate(task.last_update)}` : ''}
+                            </small>
+                            <button class="btn btn-sm btn-task" onclick="openTaskProgressModal(${task.id})">
+                                <i class="fas fa-edit me-1"></i>
+                                Actualizar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Load evaluation history for progress chart
+        async function loadEvaluationHistory() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderProgressChart(data.history);
+                    renderStatistics(data.statistics);
+                    renderLatestEvaluationDetails(data.history);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+                showToast('Error cargando historial de evaluaciones', 'error');
+                
+                document.getElementById('statisticsContainer').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando estadísticas</p></div>';
+            }
+        }
+
+        // Render progress chart
+        function renderProgressChart(history) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            if (progressChart) {
+                progressChart.destroy();
+            }
+            
+            if (!history || history.length === 0) {
+                document.querySelector('#progressChart').parentElement.innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-chart-line"></i><p>No hay datos de evaluaciones para mostrar</p></div>';
+                return;
+            }
+            
+            const labels = history.reverse().map(eval => formatDate(eval.completed_at));
+            const scores = history.map(eval => eval.total_score);
+            
+            progressChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Puntuación de Asertividad',
+                        data: scores,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render statistics
+        function renderStatistics(statistics) {
+            const container = document.getElementById('statisticsContainer');
+            
+            if (!statistics) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-calculator"></i><p>No hay estadísticas disponibles</p></div>';
+                return;
+            }
+            
+            let trendIcon = '';
+            let trendColor = '';
+            let trendText = '';
+            
+            if (statistics.improvement_trend === 'improving') {
+                trendIcon = 'fas fa-arrow-up';
+                trendColor = 'text-success';
+                trendText = 'Mejorando';
+            } else if (statistics.improvement_trend === 'declining') {
+                trendIcon = 'fas fa-arrow-down';
+                trendColor = 'text-danger';
+                trendText = 'Descendiendo';
+            } else if (statistics.improvement_trend === 'stable') {
+                trendIcon = 'fas fa-minus';
+                trendColor = 'text-warning';
+                trendText = 'Estable';
+            } else {
+                trendIcon = 'fas fa-question';
+                trendColor = 'text-muted';
+                trendText = 'Sin datos';
+            }
+            
+            container.innerHTML = `
+                <div class="mb-4">
+                    <h6 class="mb-2">Total de Evaluaciones</h6>
+                    <div class="h4 text-primary">${statistics.total_evaluations || 0}</div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2">Puntuación Promedio</h6>
+                    <div class="h4 text-success">${statistics.average_score || '-'}${statistics.average_score ? '%' : ''}</div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2">Última Puntuación</h6>
+                    <div class="h4 text-info">${statistics.latest_score || '-'}${statistics.latest_score ? '%' : ''}</div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2">Tendencia</h6>
+                    <div class="h5 ${trendColor}">
+                        <i class="${trendIcon} me-2"></i>
+                        ${trendText}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render latest evaluation details
+        function renderLatestEvaluationDetails(history) {
+            const container = document.getElementById('latestEvaluationContainer');
+            
+            if (!history || history.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-bullseye"></i><p>No hay evaluaciones completadas</p></div>';
+                return;
+            }
+            
+            const latest = history[history.length - 1];
+            const dimensions = latest.dimensional_scores;
+            
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-4">Puntuación General</h5>
+                        <div class="text-center mb-4">
+                            <div class="h1 text-primary">${latest.total_score}%</div>
+                            <div class="h6 text-muted">${latest.assertiveness_level}</div>
+                            <div class="small text-secondary mb-2">${latest.result_description || ''}</div>
+                            <small class="text-muted">Completado el ${formatDate(latest.completed_at)}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-4">Análisis por Dimensiones</h5>
+                        ${Object.entries(dimensions).map(([key, value]) => {
+                            const progressClass = value >= 75 ? 'high' : value >= 25 ? 'medium' : 'low';
+                            const dimensionLabel = getDimensionLabel(key);
+                            
+                            return `
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>${dimensionLabel}</small>
+                                        <small>${value.toFixed(1)}%</small>
+                                    </div>
+                                    <div class="progress-bar-custom">
+                                        <div class="progress-fill ${progressClass}" style="width: ${value}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Open task progress modal
+        function openTaskProgressModal(taskId) {
+            const task = tasksData.find(t => t.id === taskId);
+            if (!task) return;
+            
+            document.getElementById('taskId').value = taskId;
+            document.getElementById('taskStatus').value = task.current_status;
+            document.getElementById('taskProgress').value = task.current_progress;
+            document.getElementById('progressValue').textContent = task.current_progress + '%';
+            document.getElementById('taskNotes').value = '';
+            
+            // Update progress display when slider changes
+            const progressSlider = document.getElementById('taskProgress');
+            progressSlider.oninput = function() {
+                document.getElementById('progressValue').textContent = this.value + '%';
+            };
+            
+            const modal = new bootstrap.Modal(document.getElementById('taskProgressModal'));
+            modal.show();
+        }
+
+        // Save task progress
+        async function saveTaskProgress() {
+            const taskId = document.getElementById('taskId').value;
+            const status = document.getElementById('taskStatus').value;
+            const progress = parseInt(document.getElementById('taskProgress').value);
+            const notes = document.getElementById('taskNotes').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/tasks/${taskId}/progress`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        progress_percentage: progress,
+                        notes: notes
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Progreso actualizado exitosamente', 'success');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('taskProgressModal'));
+                    modal.hide();
+                    
+                    // Refresh tasks
+                    await loadTasks();
+                    await loadDashboardSummary();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error actualizando progreso:', error);
+                showToast('Error actualizando progreso: ' + error.message, 'error');
+            }
+        }
+
+        // Start evaluation
+        async function startEvaluation(evaluationType) {
+            try {
+                showToast('Iniciando evaluación...', 'info');
+                
+                // Reset assessment state
+                questions = [];
+                currentQuestionIndex = 0;
+                answers = {};
+                isAssessmentActive = true;
+                
+                // Show assessment tab
+                document.getElementById('assessment-tab-item').style.display = 'block';
+                
+                // Switch to assessment tab
+                const assessmentTab = new bootstrap.Tab(document.getElementById('assessment-tab'));
+                assessmentTab.show();
+                
+                // Load questions
+                await loadAssessmentQuestions();
+                
+                showToast('¡Evaluación iniciada! Responde todas las preguntas honestamente.', 'success');
+                
+            } catch (error) {
+                console.error('Error starting assessment:', error);
+                showToast('Error iniciando evaluación: ' + error.message, 'error');
+            }
+        }
+
+        // Load assessment questions
+        async function loadAssessmentQuestions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/questions`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login?role=coachee';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.questions && data.questions.length > 0) {
+                    questions = data.questions;
+                    showAssessmentQuestion();
+                } else {
+                    throw new Error('No se encontraron preguntas válidas');
+                }
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                showToast('Error cargando preguntas: ' + error.message, 'error');
+            }
+        }
+
+        // Show current assessment question
+        function showAssessmentQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                completeAssessment();
+                return;
+            }
+            
+            const question = questions[currentQuestionIndex];
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            
+            // Update progress bar
+            document.getElementById('assessmentProgress').style.width = progress + '%';
+            
+            // Create question HTML
+            document.getElementById('questionContainer').innerHTML = `
+                <div class="question-card">
+                    <div class="question-title mb-3">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Pregunta ${currentQuestionIndex + 1} de ${questions.length}
+                    </div>
+                    <div class="question-text mb-4">${question.content}</div>
+                    <div class="options-container mb-4">
+                        ${question.options.map((option, index) => `
+                            <div class="form-check mb-3 p-3 border rounded option-item" onclick="selectAssessmentOption(${index + 1})">
+                                <input class="form-check-input" type="radio" name="question${currentQuestionIndex}" value="${index + 1}" id="option${index}">
+                                <label class="form-check-label w-100" for="option${index}">
+                                    ${option}
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-primary-custom btn-lg" onclick="nextAssessmentQuestion()">
+                            <i class="fas fa-${currentQuestionIndex === questions.length - 1 ? 'flag-checkered' : 'arrow-right'} me-2"></i>
+                            ${currentQuestionIndex === questions.length - 1 ? 'Finalizar Evaluación' : 'Siguiente Pregunta'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Select assessment option
+        function selectAssessmentOption(value) {
+            // Remove previous selections
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.classList.remove('bg-primary', 'text-white');
+                item.classList.add('bg-light');
+            });
+            
+            // Mark selected option
+            const selectedOption = document.querySelector(`input[value="${value}"]`);
+            if (selectedOption) {
+                selectedOption.checked = true;
+                const optionItem = selectedOption.closest('.option-item');
+                optionItem.classList.remove('bg-light');
+                optionItem.classList.add('bg-primary', 'text-white');
+            }
+        }
+
+        // Move to next assessment question
+        function nextAssessmentQuestion() {
+            const selected = document.querySelector(`input[name="question${currentQuestionIndex}"]:checked`);
+            
+            if (!selected) {
+                showToast('Por favor selecciona una respuesta', 'warning');
+                return;
+            }
+            
+            answers[currentQuestionIndex] = parseInt(selected.value);
+            currentQuestionIndex++;
+            showAssessmentQuestion();
+        }
+
+        // Complete assessment
+        async function completeAssessment() {
+            try {
+                showToast('Procesando evaluación...', 'info');
+                
+                if (Object.keys(answers).length === 0) {
+                    throw new Error('No hay respuestas guardadas');
+                }
+                
+                // Create user data for assessment
+                const userData = {
+                    age: 25, // Default age
+                    gender: 'no_especificado'
+                };
+                
+                // Send assessment data
+                const response = await fetch(`${API_BASE_URL}/api/save_assessment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        age: userData.age,
+                        gender: userData.gender,
+                        answers: answers
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAssessmentResults(data);
+                } else {
+                    throw new Error(data.error || 'Error guardando evaluación');
+                }
+                
+            } catch (error) {
+                console.error('Assessment completion error:', error);
+                showToast('Error completando evaluación: ' + error.message, 'error');
+            }
+        }
+
+        // Show assessment results
+        function showAssessmentResults(data) {
+            // Store the result_id for detailed view
+            window.lastEvaluationId = data.result_id;
+            
+            // Hide question container
+            document.getElementById('assessmentContainer').style.display = 'none';
+            
+            // Show results container
+            const resultsContainer = document.getElementById('assessmentResults');
+            resultsContainer.style.display = 'block';
+            
+            // Display results
+            document.getElementById('assessmentScore').textContent = data.total_score + '%';
+            document.getElementById('assessmentLevel').textContent = data.assertiveness_level;
+            
+            // Create interpretation
+            let interpretation = `
+                <div class="text-center mb-4">
+                    <h4>Tu Nivel de Asertividad: ${data.assertiveness_level}</h4>
+                    <p class="lead">Has obtenido <strong>${data.total_score}%</strong> en la evaluación.</p>
+                </div>
+            `;
+            
+            if (data.total_score >= 75) {
+                interpretation += `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-star me-2"></i>¡Excelente nivel de asertividad!</h5>
+                        <p>Demuestras una comunicación muy efectiva y sabes manejar las situaciones con confianza.</p>
+                    </div>
+                `;
+            } else if (data.total_score >= 50) {
+                interpretation += `
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-thumbs-up me-2"></i>Buen nivel de asertividad</h5>
+                        <p>Tienes una base sólida en comunicación asertiva con oportunidades de mejora.</p>
+                    </div>
+                `;
+            } else {
+                interpretation += `
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-seedling me-2"></i>Oportunidad de crecimiento</h5>
+                        <p>Tienes un gran potencial para desarrollar tu asertividad trabajando en estas habilidades.</p>
+                    </div>
+                `;
+            }
+            
+            // Add dimensional scores preview
+            if (data.dimensional_scores) {
+                interpretation += `
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Resumen por Dimensiones:</h6>
+                            <div class="row">
+                `;
+                
+                for (const [dimension, score] of Object.entries(data.dimensional_scores)) {
+                    const percentage = Math.round(score); // score ya es un porcentaje (0-100)
+                    const dimensionName = formatDimensionName(dimension);
+                    interpretation += `
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small><strong>${dimensionName}</strong></small>
+                                <small class="text-muted">${percentage}%</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-primary" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                interpretation += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add call-to-action for detailed view
+            interpretation += `
+                <div class="text-center mt-4 p-3 border rounded" style="background: rgba(102, 126, 234, 0.1);">
+                    <h6 class="text-primary mb-2">
+                        <i class="fas fa-chart-radar me-2"></i>
+                        ¿Quieres ver tu análisis completo?
+                    </h6>
+                    <p class="mb-3 text-muted">Obtén tu reporte detallado con gráfico radar, fortalezas, áreas de mejora y recomendaciones personalizadas.</p>
+                    <button class="btn btn-primary-custom me-2" onclick="viewDetailedResults()">
+                        <i class="fas fa-eye me-2"></i>
+                        Ver Análisis Completo
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('assessmentInterpretation').innerHTML = interpretation;
+            
+            showToast('¡Evaluación completada exitosamente!', 'success');
+        }
+
+        // Helper function to format dimension names
+        function formatDimensionName(dimension) {
+            const dimensionNames = {
+                'comunicacion': 'Comunicación',
+                'derechos': 'Defensa de Derechos',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza',
+                'opiniones': 'Expresión de Opiniones'
+            };
+            return dimensionNames[dimension] || dimension.charAt(0).toUpperCase() + dimension.slice(1);
+        }
+
+        // View detailed results immediately after completing assessment
+        async function viewDetailedResults() {
+            if (window.lastEvaluationId) {
+                await viewEvaluationDetails(window.lastEvaluationId);
+            } else {
+                showToast('Error: No se encontró el ID de la evaluación', 'error');
+            }
+        }
+
+        // Finish assessment and return to dashboard
+        function finishAssessment() {
+            // Reset assessment state
+            isAssessmentActive = false;
+            
+            // Hide assessment tab
+            document.getElementById('assessment-tab-item').style.display = 'none';
+            
+            // Hide results container
+            document.getElementById('assessmentResults').style.display = 'none';
+            
+            // Show assessment container
+            document.getElementById('assessmentContainer').style.display = 'block';
+            
+            // Switch back to evaluations tab
+            const evaluationsTab = new bootstrap.Tab(document.getElementById('evaluations-tab'));
+            evaluationsTab.show();
+            
+            // Refresh data
+            refreshDashboard();
+            
+            showToast('Evaluación finalizada. Los datos se han actualizado.', 'success');
+        }
+
+        // View evaluation details
+        async function viewEvaluationDetails(evaluationId) {
+            try {
+                // Mostrar el modal
+                const modal = new bootstrap.Modal(document.getElementById('evaluationDetailsModal'));
+                modal.show();
+                
+                // Cargar detalles de la evaluación
+                const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-details/${evaluationId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderEvaluationDetails(data.evaluation);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error cargando detalles de evaluación:', error);
+                document.getElementById('evaluationDetailsContent').innerHTML = 
+                    '<div class="text-center text-danger"><i class="fas fa-exclamation-triangle"></i><p>Error cargando detalles de la evaluación</p></div>';
+                showToast('Error cargando detalles de la evaluación', 'error');
+            }
+        }
+
+        function renderEvaluationDetails(evaluation) {
+            const container = document.getElementById('evaluationDetailsContent');
+            
+            const html = `
+                <!-- Resumen General -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: var(--surface-elevated);">
+                            <div class="card-body text-center">
+                                <h4 class="mb-3">${evaluation.title}</h4>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="h2 text-primary">${evaluation.total_percentage}%</div>
+                                        <div class="text-muted">Puntuación Total</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h4 text-success">${evaluation.assertiveness_level}</div>
+                                        <div class="text-muted">Nivel de Asertividad</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h6">${evaluation.completed_at}</div>
+                                        <div class="text-muted">Fecha de Completado</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h6">${evaluation.response_details.length}</div>
+                                        <div class="text-muted">Preguntas Respondidas</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Radar y Análisis Dimensional - Responsive -->
+                <div class="row mb-4">
+                    <!-- Radar Chart - Full width on mobile -->
+                    <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                        <div class="card border-0 h-100" style="background: var(--surface-elevated);">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-radar me-2"></i>Radar de Competencias</h5>
+                            </div>
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <!-- Responsive container for radar chart -->
+                                <div class="radar-chart-container w-100">
+                                    <canvas id="evaluationRadarChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Dimensional Scores -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border-0 h-100" style="background: var(--surface-elevated);">
+                            <div class="card-header">
+                                <h5><i class="fas fa-analytics me-2"></i>Puntuaciones por Dimensión</h5>
+                            </div>
+                            <div class="card-body">
+                                ${Object.entries(evaluation.dimension_analysis).map(([dimension, analysis]) => `
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong>${analysis.dimension || dimension}</strong>
+                                            <span class="badge bg-primary">${analysis.percentage}%</span>
+                                        </div>
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar" style="width: ${analysis.percentage}%"></div>
+                                        </div>
+                                        <small class="text-muted">${analysis.level} - ${analysis.interpretation}</small>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fortalezas y Áreas de Mejora -->
+                <div class="row mb-4">
+                    <div class="col-lg-6">
+                        <div class="card border-0" style="background: var(--surface-elevated);">
+                            <div class="card-header bg-success text-white">
+                                <h5><i class="fas fa-thumbs-up me-2"></i>Fortalezas Identificadas</h5>
+                            </div>
+                            <div class="card-body">
+                                ${evaluation.analysis.strengths.length > 0 ? 
+                                    evaluation.analysis.strengths.map(strength => `
+                                        <div class="mb-3 p-3 border-start border-success border-3" style="background: rgba(16, 185, 129, 0.1);">
+                                            <h6 class="text-success">${strength.dimension} (${strength.score}/5)</h6>
+                                            <p class="mb-0">${strength.description}</p>
+                                        </div>
+                                    `).join('') : 
+                                    '<p class="text-muted">Continúa desarrollando para identificar más fortalezas.</p>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card border-0" style="background: var(--surface-elevated);">
+                            <div class="card-header bg-warning text-white">
+                                <h5><i class="fas fa-chart-line me-2"></i>Áreas de Mejora</h5>
+                            </div>
+                            <div class="card-body">
+                                ${evaluation.analysis.improvements.length > 0 ? 
+                                    evaluation.analysis.improvements.map(improvement => `
+                                        <div class="mb-3 p-3 border-start border-warning border-3" style="background: rgba(245, 158, 11, 0.1);">
+                                            <h6 class="text-warning">${improvement.dimension} (${improvement.score}/5)</h6>
+                                            <p class="mb-2">${improvement.description}</p>
+                                            <div class="recommendations">
+                                                <strong>Recomendaciones:</strong>
+                                                <ul class="mt-2 mb-0">
+                                                    ${improvement.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    `).join('') : 
+                                    '<p class="text-muted">¡Excelente! No se identificaron áreas críticas de mejora.</p>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recomendaciones Generales -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: var(--surface-elevated);">
+                            <div class="card-header bg-info text-white">
+                                <h5><i class="fas fa-lightbulb me-2"></i>Recomendaciones Generales</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    ${evaluation.analysis.general_recommendations.map(recommendation => `
+                                        <li class="list-group-item border-0 bg-transparent">
+                                            <i class="fas fa-check-circle text-info me-2"></i>
+                                            ${recommendation}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Respuestas Detalladas (Colapsible) -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: var(--surface-elevated);">
+                            <div class="card-header">
+                                <h5>
+                                    <button class="btn btn-link text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#responseDetails" aria-expanded="false">
+                                        <i class="fas fa-list me-2"></i>Ver Respuestas Detalladas
+                                        <i class="fas fa-chevron-down ms-2"></i>
+                                    </button>
+                                </h5>
+                            </div>
+                            <div class="collapse" id="responseDetails">
+                                <div class="card-body">
+                                    <div class="row">
+                                        ${evaluation.response_details.map((response, index) => `
+                                            <div class="col-md-6 mb-3">
+                                                <div class="p-3 border rounded">
+                                                    <h6>Pregunta ${response.order}</h6>
+                                                    <p class="mb-2">${response.question_text}</p>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="badge bg-primary me-2">Respuesta: ${response.response_value}/5</span>
+                                                        <div class="progress flex-grow-1">
+                                                            <div class="progress-bar" style="width: ${(response.response_value / 5) * 100}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            
+            // Crear el gráfico radar después de que el HTML se haya renderizado
+            setTimeout(() => {
+                createRadarChart(evaluation.radar_data);
+            }, 100);
+        }
+
+        function createRadarChart(radarData) {
+            const ctx = document.getElementById('evaluationRadarChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.evaluationRadarChartInstance) {
+                window.evaluationRadarChartInstance.destroy();
+            }
+            
+            // Create responsive radar chart
+            window.evaluationRadarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: radarData.labels,
+                    datasets: [{
+                        label: 'Puntuación',
+                        data: radarData.scores,
+                        backgroundColor: 'rgba(90, 103, 216, 0.15)', /* Updated with Calm colors */
+                        borderColor: 'rgba(90, 103, 216, 1)',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: 'rgba(90, 103, 216, 1)',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#ffffff',
+                        pointHoverBorderColor: 'rgba(90, 103, 216, 1)',
+                        pointHoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, /* Key for mobile responsiveness */
+                    interaction: {
+                        intersect: false,
+                        mode: 'point'
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true,
+                                color: 'rgba(74, 85, 104, 0.1)',
+                                lineWidth: 1
+                            },
+                            grid: {
+                                color: 'rgba(74, 85, 104, 0.1)',
+                                lineWidth: 1
+                            },
+                            pointLabels: {
+                                color: 'var(--calm-text-primary)',
+                                font: {
+                                    size: window.innerWidth < 576 ? 10 : 
+                                          window.innerWidth < 768 ? 11 : 
+                                          window.innerWidth < 992 ? 12 : 13,
+                                    family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                    weight: '500'
+                                },
+                                padding: window.innerWidth < 576 ? 8 : 12
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100, /* Using percentage scale */
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 20,
+                                color: 'var(--calm-text-secondary)',
+                                font: {
+                                    size: window.innerWidth < 576 ? 9 : 10
+                                },
+                                backdropColor: 'transparent',
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false /* Hide legend for cleaner look */
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: 'var(--calm-text-primary)',
+                            bodyColor: 'var(--calm-text-secondary)',
+                            borderColor: 'rgba(90, 103, 216, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    return `Puntuación: ${context.parsed.r}%`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeInOutCubic'
+                    }
+                }
+            });
+            
+            // Handle window resize for responsiveness
+            window.addEventListener('resize', function() {
+                if (window.evaluationRadarChartInstance) {
+                    // Update font sizes based on screen size
+                    const newFontSize = window.innerWidth < 576 ? 10 : 
+                                       window.innerWidth < 768 ? 11 : 
+                                       window.innerWidth < 992 ? 12 : 13;
+                    
+                    window.evaluationRadarChartInstance.options.scales.r.pointLabels.font.size = newFontSize;
+                    window.evaluationRadarChartInstance.options.scales.r.pointLabels.padding = window.innerWidth < 576 ? 8 : 12;
+                    window.evaluationRadarChartInstance.options.scales.r.ticks.font.size = window.innerWidth < 576 ? 9 : 10;
+                    
+                    window.evaluationRadarChartInstance.update('none'); // Update without animation
+                }
+            });
+        }
+
+        function printEvaluationReport() {
+            // Crear una nueva ventana para imprimir
+            const printWindow = window.open('', '_blank');
+            const evaluationContent = document.getElementById('evaluationDetailsContent').innerHTML;
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Reporte de Evaluación</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        .card { border: 1px solid #dee2e6; margin-bottom: 1rem; }
+                        .badge { display: inline-block; padding: 0.25em 0.6em; }
+                        @media print { 
+                            .btn { display: none; }
+                            canvas { max-width: 400px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1 class="text-center mb-4">Reporte de Evaluación de Asertividad</h1>
+                        ${evaluationContent}
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        }
+
+        // Refresh dashboard
+        async function refreshDashboard() {
+            showToast('Actualizando dashboard...', 'info');
+            
+            try {
+                await Promise.all([
+                    loadDashboardSummary(),
+                    loadEvaluations(),
+                    loadTasks(),
+                    loadEvaluationHistory()
+                ]);
+                
+                showToast('Dashboard actualizado', 'success');
+            } catch (error) {
+                console.error('Error actualizando dashboard:', error);
+                showToast('Error actualizando dashboard', 'error');
+            }
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pending': 'Pendiente',
+                'in_progress': 'En Progreso',
+                'completed': 'Completada',
+                'cancelled': 'Cancelada'
+            };
+            return labels[status] || status;
+        }
+
+        function getDimensionLabel(key) {
+            const labels = {
+                'comunicacion': 'Comunicación Directa',
+                'derechos': 'Defensa de Derechos',
+                'opiniones': 'Expresión de Opiniones',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            return labels[key] || key;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab change events
+            document.querySelectorAll('#mainTabs button[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (event) {
+                    const target = event.target.getAttribute('data-bs-target');
+                    
+                    // Load data when tabs are activated
+                    if (target === '#evaluations' && !evaluationsData) {
+                        loadEvaluations();
+                    } else if (target === '#tasks' && !tasksData) {
+                        loadTasks();
+                    } else if (target === '#progress') {
+                        loadEvaluationHistory();
+                    }
+                });
+            });
+        }
+
+        // Initialize application
+        async function initializeApp() {
+            console.log('Inicializando dashboard de coachee...');
+            
+            // Create animated particles
+            createParticles();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load initial data
+            await loadUserProfile();
+            await loadDashboardSummary();
+            
+            // Load data for active tab
+            await loadEvaluations();
+            
+            console.log('Dashboard inicializado correctamente');
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+</body>
+</html>

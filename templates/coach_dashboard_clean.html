@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Coach - Assessment Platform{% endblock %}
+
+{% block content %}
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="text-white mb-1">Dashboard Coach</h3>
+                            <p class="text-muted mb-0">Bienvenido, <span id="coachName">Coach</span></p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                            </button>
+                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'">
+                                <i class="fas fa-home me-1"></i>Inicio
+                            </button>
+                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/logout'">
+                                <i class="fas fa-sign-out-alt me-1"></i>Salir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                    <h4 class="text-white" id="totalCoachees">0</h4>
+                    <p class="text-muted mb-0">Total Coachees</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <i class="fas fa-clipboard-check fa-2x text-success mb-3"></i>
+                    <h4 class="text-white" id="completedAssessments">0</h4>
+                    <p class="text-muted mb-0">Evaluaciones Completadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <i class="fas fa-hourglass-half fa-2x text-warning mb-3"></i>
+                    <h4 class="text-white" id="pendingAssessments">0</h4>
+                    <p class="text-muted mb-0">Evaluaciones Pendientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-bar fa-2x text-info mb-3"></i>
+                    <h4 class="text-white" id="avgScore">0%</h4>
+                    <p class="text-muted mb-0">Promedio General</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h6 class="text-white mb-0">
+                        <i class="fas fa-tachometer-alt me-2"></i>Panel de Control
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-secondary active" 
+                           onclick="showModule('mis-coachees')" data-module="mis-coachees">
+                            <i class="fas fa-users me-3"></i>Mis Coachees
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-secondary" 
+                           onclick="showModule('gestion-tareas')" data-module="gestion-tareas">
+                            <i class="fas fa-tasks me-3"></i>Gestión de Tareas
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-secondary" 
+                           onclick="showModule('invitar-coachee')" data-module="invitar-coachee">
+                            <i class="fas fa-envelope me-3"></i>Invitar Coachee
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-secondary" 
+                           onclick="showModule('seleccionar-evaluaciones')" data-module="seleccionar-evaluaciones">
+                            <i class="fas fa-clipboard-list me-3"></i>Evaluaciones
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-secondary" 
+                           onclick="showModule('agregar-contenido')" data-module="agregar-contenido">
+                            <i class="fas fa-plus-circle me-3"></i>Contenido
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="col-md-9">
+            <!-- Mis Coachees Module -->
+            <div id="mis-coachees" class="module-content">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header">
+                        <h5 class="text-white mb-0">Mis Coachees</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Estado</th>
+                                        <th>Último Acceso</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="coacheesTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Cargando coachees...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gestión de Tareas Module -->
+            <div id="gestion-tareas" class="module-content" style="display: none;">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header">
+                        <h5 class="text-white mb-0">Gestión de Tareas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control bg-dark text-white border-secondary" 
+                                       placeholder="Título de la tarea" id="taskTitle">
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select bg-dark text-white border-secondary" id="taskCoachee">
+                                    <option value="">Seleccionar coachee</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100" onclick="createTask()">
+                                    <i class="fas fa-plus me-1"></i>Crear
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Tarea</th>
+                                        <th>Coachee</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tasksTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No hay tareas creadas</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invitar Coachee Module -->
+            <div id="invitar-coachee" class="module-content" style="display: none;">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header">
+                        <h5 class="text-white mb-0">Invitar Nuevo Coachee</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="inviteForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-white">Nombre</label>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary" 
+                                           id="coacheeName" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-white">Email</label>
+                                    <input type="email" class="form-control bg-dark text-white border-secondary" 
+                                           id="coacheeEmail" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane me-1"></i>Enviar Invitación
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seleccionar Evaluaciones Module -->
+            <div id="seleccionar-evaluaciones" class="module-content" style="display: none;">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header">
+                        <h5 class="text-white mb-0">Seleccionar Evaluaciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Módulo de evaluaciones en desarrollo</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agregar Contenido Module -->
+            <div id="agregar-contenido" class="module-content" style="display: none;">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header">
+                        <h5 class="text-white mb-0">Agregar Contenido</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Módulo de contenido en desarrollo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let coacheesData = [];
+let tasksData = [];
+
+// Función para mostrar módulos
+function showModule(moduleId) {
+    // Ocultar todos los módulos
+    document.querySelectorAll('.module-content').forEach(module => {
+        module.style.display = 'none';
+    });
+    
+    // Remover clase active de todos los enlaces
+    document.querySelectorAll('[data-module]').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Mostrar módulo seleccionado
+    document.getElementById(moduleId).style.display = 'block';
+    
+    // Agregar clase active al enlace seleccionado
+    document.querySelector(`[data-module="${moduleId}"]`).classList.add('active');
+}
+
+// Función para refrescar dashboard
+function refreshDashboard() {
+    loadCoachees();
+    loadTasks();
+    loadStats();
+}
+
+// Función para cargar estadísticas
+function loadStats() {
+    fetch('/api/coach/profile')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('coachName').textContent = data.coach.name || 'Coach';
+            }
+        })
+        .catch(error => console.error('Error loading coach profile:', error));
+    
+    // Cargar estadísticas generales
+    fetch('/api/coach/my-coachees')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('totalCoachees').textContent = data.coachees.length;
+                
+                let completed = 0;
+                let pending = 0;
+                let totalScore = 0;
+                let evaluationsCount = 0;
+                
+                data.coachees.forEach(coachee => {
+                    if (coachee.evaluations) {
+                        coachee.evaluations.forEach(eval => {
+                            if (eval.completed) {
+                                completed++;
+                                if (eval.score) {
+                                    totalScore += eval.score;
+                                    evaluationsCount++;
+                                }
+                            } else {
+                                pending++;
+                            }
+                        });
+                    }
+                });
+                
+                document.getElementById('completedAssessments').textContent = completed;
+                document.getElementById('pendingAssessments').textContent = pending;
+                
+                const avgScore = evaluationsCount > 0 ? Math.round(totalScore / evaluationsCount) : 0;
+                document.getElementById('avgScore').textContent = avgScore + '%';
+            }
+        })
+        .catch(error => console.error('Error loading stats:', error));
+}
+
+// Función para cargar coachees
+function loadCoachees() {
+    fetch('/api/coach/my-coachees')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                coacheesData = data.coachees;
+                displayCoachees();
+                updateCoacheeSelect();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading coachees:', error);
+            document.getElementById('coacheesTableBody').innerHTML = 
+                '<tr><td colspan="5" class="text-center text-danger">Error al cargar coachees</td></tr>';
+        });
+}
+
+// Función para mostrar coachees en la tabla
+function displayCoachees() {
+    const tbody = document.getElementById('coacheesTableBody');
+    
+    if (coacheesData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay coachees asignados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = coacheesData.map(coachee => `
+        <tr>
+            <td>${coachee.name || 'Sin nombre'}</td>
+            <td>${coachee.email || 'Sin email'}</td>
+            <td>
+                <span class="badge ${coachee.is_active ? 'bg-success' : 'bg-secondary'}">
+                    ${coachee.is_active ? 'Activo' : 'Inactivo'}
+                </span>
+            </td>
+            <td>${coachee.last_access || 'Nunca'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewCoacheeDetails(${coachee.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="editCoachee(${coachee.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Función para actualizar select de coachees en tareas
+function updateCoacheeSelect() {
+    const select = document.getElementById('taskCoachee');
+    select.innerHTML = '<option value="">Seleccionar coachee</option>' +
+        coacheesData.map(coachee => `<option value="${coachee.id}">${coachee.name}</option>`).join('');
+}
+
+// Función para cargar tareas
+function loadTasks() {
+    fetch('/api/coach/tasks')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                tasksData = data.tasks;
+                displayTasks();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading tasks:', error);
+            document.getElementById('tasksTableBody').innerHTML = 
+                '<tr><td colspan="5" class="text-center text-danger">Error al cargar tareas</td></tr>';
+        });
+}
+
+// Función para mostrar tareas
+function displayTasks() {
+    const tbody = document.getElementById('tasksTableBody');
+    
+    if (tasksData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay tareas creadas</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = tasksData.map(task => `
+        <tr>
+            <td>${task.title}</td>
+            <td>${task.coachee_name || 'N/A'}</td>
+            <td>
+                <span class="badge ${task.completed ? 'bg-success' : 'bg-warning'}">
+                    ${task.completed ? 'Completada' : 'Pendiente'}
+                </span>
+            </td>
+            <td>${task.created_at}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Función para crear tarea
+function createTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const coacheeId = document.getElementById('taskCoachee').value;
+    
+    if (!title) {
+        alert('Por favor ingrese un título para la tarea');
+        return;
+    }
+    
+    if (!coacheeId) {
+        alert('Por favor seleccione un coachee');
+        return;
+    }
+    
+    fetch('/api/coach/tasks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            coachee_id: parseInt(coacheeId)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskCoachee').value = '';
+            loadTasks();
+            alert('Tarea creada exitosamente');
+        } else {
+            alert('Error al crear la tarea: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating task:', error);
+        alert('Error al crear la tarea');
+    });
+}
+
+// Función para eliminar tarea
+function deleteTask(taskId) {
+    if (confirm('¿Está seguro de que desea eliminar esta tarea?')) {
+        // Implementar delete de tarea
+        console.log('Delete task:', taskId);
+    }
+}
+
+// Función para ver detalles del coachee
+function viewCoacheeDetails(coacheeId) {
+    console.log('View coachee details:', coacheeId);
+    // Implementar vista de detalles
+}
+
+// Función para editar coachee
+function editCoachee(coacheeId) {
+    console.log('Edit coachee:', coacheeId);
+    // Implementar edición
+}
+
+// Manejar formulario de invitación
+document.getElementById('inviteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('coacheeName').value.trim();
+    const email = document.getElementById('coacheeEmail').value.trim();
+    
+    if (!name || !email) {
+        alert('Por favor complete todos los campos');
+        return;
+    }
+    
+    fetch('/api/coach/create-invitation-v2', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            coachee_name: name,
+            coachee_email: email
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('inviteForm').reset();
+            alert('Invitación enviada exitosamente');
+            loadCoachees();
+        } else {
+            alert('Error al enviar la invitación: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Error al enviar la invitación');
+    });
+});
+
+// Cargar datos iniciales
+document.addEventListener('DOMContentLoaded', function() {
+    refreshDashboard();
+});
+</script>
+{% endblock %}

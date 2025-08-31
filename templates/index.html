@@ -1,221 +1,1503 @@
 {% extends "base.html" %}
 
-{% block title %}Assessment Platform - Evaluación de Asertividad{% endblock %}
+{% block title %}ProCoach Assessment - Plataforma de Coaching y Desarrollo Profesional{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-10 col-xl-8">
-            {% if current_user.is_authenticated and current_user.is_coachee %}
-                <!-- Coachee Vista -->
-                <div class="glass-card p-5 text-center fade-in mb-5">
-                    <div class="mb-4">
-                        <div class="display-1 text-gradient mb-3">🌟</div>
-                        <h1 class="display-4 fw-bold text-gradient mb-3">
-                            ¡Hola {{ current_user.full_name }}!
-                        </h1>
-                        <p class="fs-4 text-white-50 mb-3">
-                            Bienvenido a tu evaluación de asertividad
-                        </p>
-                        {% if current_user.coach %}
-                            <div class="glass-card p-3 d-inline-block mb-4 calm-accent">
-                                <p class="mb-0 text-white">
-                                    <i class="fas fa-user-tie text-calm-mint me-2"></i>
-                                    Tu coach <strong class="text-gradient">{{ current_user.coach.full_name }}</strong> te ha invitado
-                                </p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="d-grid gap-3 d-md-flex justify-content-center mb-4">
-                        <a href="{{ url_for('assessment') }}" 
-                           class="btn btn-primary btn-lg pulse-animation">
-                            <i class="fas fa-play-circle me-2"></i>
-                            Comenzar Evaluación
-                        </a>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-clock me-2"></i>
-                        <strong>Duración aproximada:</strong> 10-15 minutos de reflexión consciente
-                    </div>
-                </div>
-                
-            {% elif current_user.is_authenticated %}
-                <!-- Admin/Coach Vista -->
-                <div class="glass-card p-5 text-center fade-in mb-5">
-                    <div class="mb-4">
-                        <div class="display-1 text-gradient mb-3">🎯</div>
-                        <h1 class="display-4 fw-bold text-gradient mb-3">
-                            Panel de Control
-                        </h1>
-                        <p class="fs-4 text-white-50 mb-4">
-                            Gestiona y supervisa evaluaciones de asertividad
-                        </p>
-                    </div>
-                    
-                    <div class="d-grid gap-3 d-md-flex justify-content-center">
-                        <a href="{{ url_for('dashboard') }}" 
-                           class="btn btn-primary btn-lg">
-                            <i class="fas fa-tachometer-alt me-2"></i>
-                            Ir al Panel
-                        </a>
-                    </div>
-                </div>
-                
-            {% else %}
-                <!-- Vista Pública -->
-                <div class="glass-card p-5 text-center fade-in mb-5">
-                    <div class="mb-4">
-                        <div class="display-1 text-gradient mb-3">📊</div>
-                        <h1 class="display-4 fw-bold text-gradient mb-3">
-                            Plataforma de Evaluación
-                        </h1>
-                        <p class="fs-4 text-white-50 mb-4">
-                            Evaluaciones de asertividad profesionales inspiradas en la calma
-                        </p>
-                    </div>
-                    
-                    <div class="d-grid gap-3 d-md-flex justify-content-center">
-                        <a href="{{ url_for('dashboard_selection') }}" 
-                           class="btn btn-primary btn-lg">
-                            <i class="fas fa-sign-in-alt me-2"></i>
-                            Iniciar Sesión
-                        </a>
-                        <a href="{{ url_for('participant_access') }}" 
-                           class="btn btn-outline-primary btn-lg">
-                            <i class="fas fa-user-check me-2"></i>
-                            Acceso Participante
-                        </a>
-                    </div>
-                </div>
-            {% endif %}
+<!-- Hero Section Calm-Inspired -->
+<section class="calm-hero">
+    <div class="calm-background">
+        <div class="calm-overlay"></div>
+        <div class="floating-elements">
+            <div class="element element-1"></div>
+            <div class="element element-2"></div>
+            <div class="element element-3"></div>
         </div>
     </div>
-</div>
+    
+    <div class="container">
+        <div class="row min-vh-100 align-items-center justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <div class="hero-content-calm">
+                            <!-- Landing page única de coaching profesional -->
+                            <div class="calm-badge fade-in">
+                                <div class="badge-glow"></div>
+                                <span class="badge-text">🚀 Líder en coaching profesional</span>
+                            </div>
+                            
+                            <h1 class="calm-hero-title fade-in-delay-1">
+                                Desarrollo profesional de <span class="name-highlight">alto impacto</span>
+                            </h1>
+                            
+                            <p class="calm-subtitle fade-in-delay-2">
+                                Transforme su carrera con evaluaciones psicométricas avanzadas, coaching personalizado y herramientas de desarrollo ejecutivo respaldadas por ciencia.
+                            </p>
+                            
+                            <div class="trust-indicators fade-in-delay-3">
+                                <div class="trust-item">
+                                    <div class="trust-number">95%</div>
+                                    <div class="trust-label">Mejora probada</div>
+                                </div>
+                                <div class="trust-item">
+                                    <div class="trust-number">200+</div>
+                                    <div class="trust-label">Ejecutivos</div>
+                                </div>
+                                <div class="trust-item">
+                                    <div class="trust-number">15K+</div>
+                                    <div class="trust-label">Sesiones</div>
+                                </div>
+                            </div>
+                            
+                            <div class="cta-section-calm fade-in-delay-4">
+                                <a href="{{ url_for('dashboard_selection') }}" class="btn-calm-primary">
+                                    <span class="btn-content">
+                                        <span class="btn-text">Comenzar desarrollo</span>
+                                        <span class="btn-icon">→</span>
+                                    </span>
+                                    <div class="btn-shimmer"></div>
+                                </a>
+                                <a href="{{ url_for('participant_access') }}" class="btn-calm-secondary">
+                                    <span class="btn-text">Tengo un código</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="hero-visual-calm">
+                            <div class="visual-container">
+                                <div class="floating-card card-primary">
+                                    <div class="card-glow"></div>
+                                    <div class="card-content">
+                                        <div class="card-icon">🎯</div>
+                                        <div class="card-metric">92%</div>
+                                        <div class="card-label">Liderazgo</div>
+                                    </div>
+                                </div>
+                                <div class="floating-card card-secondary">
+                                    <div class="card-glow"></div>
+                                    <div class="card-content">
+                                        <div class="card-icon">📈</div>
+                                        <div class="card-metric">A+</div>
+                                        <div class="card-label">Desarrollo</div>
+                                    </div>
+                                </div>
+                                <div class="floating-card card-tertiary">
+                                    <div class="card-glow"></div>
+                                    <div class="card-content">
+                                        <div class="card-icon">🏆</div>
+                                        <div class="card-metric">+85%</div>
+                                        <div class="card-label">Éxito</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Smooth Scroll Indicator -->
+    <div class="scroll-indicator">
+        <div class="scroll-text">Descubrir más</div>
+        <div class="scroll-arrow">↓</div>
+    </div>
+</section>
 
-<!-- Sección de Información -->
-<div class="container mt-5">
-    {% if current_user.is_authenticated and current_user.is_coachee %}
-        <!-- Información para Coachee -->
+<!-- Transition Section -->
+<section class="calm-transition">
+    <div class="transition-wave">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
+        </svg>
+    </div>
+</section>
+
+<!-- Features Section Calm Style -->
+<section class="calm-features">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="features-header text-center">
+                    <h2 class="calm-section-title">¿Por qué elegir nuestro programa de coaching?</h2>
+                    <p class="calm-section-subtitle">
+                        Metodología integral de desarrollo profesional basada en psicología organizacional y coaching ejecutivo
+                    </p>
+                </div>
+                
+                <div class="row g-5">
+                    <div class="col-12 col-md-4">
+                        <div class="calm-feature-card" data-scroll-reveal="fade-up" data-delay="100">
+                            <div class="feature-visual">
+                                <div class="feature-icon-container">
+                                    <div class="icon-glow"></div>
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                            </div>
+                            <h4 class="feature-title">Evaluación Psicométrica</h4>
+                            <p class="feature-description">
+                                Análisis profundo de competencias de liderazgo, inteligencia emocional y asertividad mediante herramientas validadas científicamente.
+                            </p>
+                            <div class="feature-badge">
+                                <span class="badge-number">98%</span>
+                                <span class="badge-label">Precisión</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-4">
+                        <div class="calm-feature-card" data-scroll-reveal="fade-up" data-delay="200">
+                            <div class="feature-visual">
+                                <div class="feature-icon-container">
+                                    <div class="icon-glow"></div>
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                            </div>
+                            <h4 class="feature-title">Coaching Ejecutivo</h4>
+                            <p class="feature-description">
+                                Acompañamiento personalizado con coaches certificados para acelerar su desarrollo profesional y maximizar su potencial de liderazgo.
+                            </p>
+                            <div class="feature-badge">
+                                <span class="badge-number">1:1</span>
+                                <span class="badge-label">Sesiones</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-4">
+                        <div class="calm-feature-card" data-scroll-reveal="fade-up" data-delay="300">
+                            <div class="feature-visual">
+                                <div class="feature-icon-container">
+                                    <div class="icon-glow"></div>
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                            </div>
+                            <h4 class="feature-title">Plan de Desarrollo</h4>
+                            <p class="feature-description">
+                                Hoja de ruta personalizada con objetivos medibles, estrategias específicas y seguimiento continuo de su progreso profesional.
+                            </p>
+                            <div class="feature-badge">
+                                <span class="badge-number">90+</span>
+                                <span class="badge-label">Días</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Journey Section - Proceso de transformación profesional -->
+<section class="calm-journey">
+    <div class="container">
         <div class="row justify-content-center">
             <div class="col-12 col-lg-8">
-                <div class="glass-card p-4 p-md-5 fade-in">
-                    <div class="text-center mb-4">
-                        <i class="fas fa-clipboard-list text-calm-mint fs-1 mb-3"></i>
-                        <h4 class="text-gradient fw-bold">Sobre tu Evaluación</h4>
+                <div class="journey-header text-center">
+                    <h3 class="journey-title">Su proceso de transformación profesional</h3>
+                    <p class="journey-subtitle">
+                        Un enfoque estructurado y personalizado para maximizar su potencial de liderazgo
+                    </p>
+                </div>
+                
+                <div class="journey-steps">
+                    <div class="step-item" data-scroll-reveal="slide-right" data-delay="100">
+                        <div class="step-visual">
+                            <div class="step-number">01</div>
+                            <div class="step-connector"></div>
+                        </div>
+                        <div class="step-content">
+                            <h5 class="step-title">Evaluación Integral</h5>
+                            <p class="step-description">
+                                Análisis profundo de sus competencias de liderazgo, asertividad e inteligencia emocional mediante herramientas psicométricas validadas.
+                            </p>
+                        </div>
                     </div>
                     
-                    <p class="text-white-50 fs-5 text-center mb-4">
-                        Esta evaluación te ayudará a conocer tu nivel de asertividad en diferentes situaciones. 
-                        Los resultados serán compartidos con tu coach para brindarte un mejor acompañamiento.
-                    </p>
+                    <div class="step-item" data-scroll-reveal="slide-right" data-delay="200">
+                        <div class="step-visual">
+                            <div class="step-number">02</div>
+                            <div class="step-connector"></div>
+                        </div>
+                        <div class="step-content">
+                            <h5 class="step-title">Plan de Desarrollo</h5>
+                            <p class="step-description">
+                                Creación de una hoja de ruta personalizada con objetivos específicos y estrategias para potenciar sus fortalezas naturales.
+                            </p>
+                        </div>
+                    </div>
                     
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="glass-card p-3 text-center h-100 calm-accent">
-                                <i class="fas fa-chart-bar text-calm-mint mb-2"></i>
-                                <h6 class="text-white">Análisis Detallado</h6>
-                                <small class="text-white-50">Evaluación completa de tu perfil</small>
+                    <div class="step-item" data-scroll-reveal="slide-right" data-delay="300">
+                        <div class="step-visual">
+                            <div class="step-number">03</div>
+                        </div>
+                        <div class="step-content">
+                            <h5 class="step-title">Coaching Ejecutivo</h5>
+                            <p class="step-description">
+                                Sesiones personalizadas con coaches certificados para acelerar su crecimiento y alcanzar sus objetivos profesionales.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Coaching Benefits Section -->
+<section class="coaching-benefits">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="benefits-header text-center">
+                    <h2 class="calm-section-title">Transforme su carrera profesional</h2>
+                    <p class="calm-section-subtitle">
+                        Resultados medibles que impulsan su éxito profesional y personal
+                    </p>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <div class="benefit-card" data-scroll-reveal="slide-left" data-delay="100">
+                            <div class="benefit-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4 class="benefit-title">Acelere su crecimiento</h4>
+                                <p class="benefit-description">
+                                    Desarrolle competencias de liderazgo 3x más rápido con coaching personalizado y feedback continuo.
+                                </p>
+                                <div class="benefit-stat">
+                                    <span class="stat-number">+250%</span>
+                                    <span class="stat-label">Velocidad de desarrollo</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="glass-card p-3 text-center h-100 calm-accent">
-                                <i class="fas fa-bullseye text-calm-mint mb-2"></i>
-                                <h6 class="text-white">Recomendaciones</h6>
-                                <small class="text-white-50">Sugerencias personalizadas</small>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <div class="benefit-card" data-scroll-reveal="slide-right" data-delay="100">
+                            <div class="benefit-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4 class="benefit-title">Maximice su potencial</h4>
+                                <p class="benefit-description">
+                                    Descubra y potencia sus fortalezas únicas para destacar en roles de liderazgo y management.
+                                </p>
+                                <div class="benefit-stat">
+                                    <span class="stat-number">92%</span>
+                                    <span class="stat-label">Mejora en confianza</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="glass-card p-3 text-center h-100 calm-accent">
-                                <i class="fas fa-chart-line text-calm-mint mb-2"></i>
-                                <h6 class="text-white">Seguimiento</h6>
-                                <small class="text-white-50">Progreso continuo</small>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <div class="benefit-card" data-scroll-reveal="slide-left" data-delay="200">
+                            <div class="benefit-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4 class="benefit-title">Lidere con impacto</h4>
+                                <p class="benefit-description">
+                                    Desarrolle habilidades de comunicación asertiva que transforman equipos y mejoran resultados.
+                                </p>
+                                <div class="benefit-stat">
+                                    <span class="stat-number">85%</span>
+                                    <span class="stat-label">Mejor comunicación</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <div class="benefit-card" data-scroll-reveal="slide-right" data-delay="200">
+                            <div class="benefit-icon">
+                                <i class="fas fa-bullseye"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4 class="benefit-title">Logre sus objetivos</h4>
+                                <p class="benefit-description">
+                                    Plan de acción personalizado con seguimiento continuo para garantizar el logro de sus metas profesionales.
+                                </p>
+                                <div class="benefit-stat">
+                                    <span class="stat-number">94%</span>
+                                    <span class="stat-label">Objetivos alcanzados</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-    {% else %}
-        <!-- Características de la Plataforma -->
-        <div class="row g-4 justify-content-center">
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="glass-card p-4 text-center h-100 fade-in float-animation calm-accent">
-                    <div class="mb-3">
-                        <i class="fas fa-plus-circle text-calm-mint fs-1"></i>
-                    </div>
-                    <h5 class="text-gradient fw-bold mb-3">Crear Evaluaciones</h5>
-                    <p class="text-white-50">
-                        Diseña evaluaciones personalizadas con distintos tipos de preguntas y análisis avanzados
+    </div>
+</section>
+
+<!-- Trust Section -->
+<section class="calm-trust">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="trust-content text-center">
+                    <h3 class="trust-title">Líderes que confían en nuestro programa</h3>
+                    <p class="trust-description">
+                        Más de 200 ejecutivos y organizaciones han transformado su liderazgo con nuestro programa de coaching y desarrollo profesional
                     </p>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="glass-card p-4 text-center h-100 fade-in float-animation calm-accent" style="animation-delay: 0.2s;">
-                    <div class="mb-3">
-                        <i class="fas fa-clipboard-check text-calm-mint fs-1"></i>
+                    
+                    <div class="trust-logos">
+                        <div class="logo-placeholder">🏢</div>
+                        <div class="logo-placeholder">🏭</div>
+                        <div class="logo-placeholder">🏦</div>
+                        <div class="logo-placeholder">🏥</div>
+                        <div class="logo-placeholder">🎓</div>
                     </div>
-                    <h5 class="text-gradient fw-bold mb-3">Realizar Evaluaciones</h5>
-                    <p class="text-white-50">
-                        Completa evaluaciones de manera intuitiva y envía tus respuestas de forma segura
-                    </p>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="glass-card p-4 text-center h-100 fade-in float-animation calm-accent" style="animation-delay: 0.4s;">
-                    <div class="mb-3">
-                        <i class="fas fa-chart-pie text-calm-mint fs-1"></i>
+                    
+                    <div class="certifications">
+                        <div class="cert-item">
+                            <div class="cert-icon">🏆</div>
+                            <span class="cert-text">Coaching Certificado</span>
+                        </div>
+                        <div class="cert-item">
+                            <div class="cert-icon">🔐</div>
+                            <span class="cert-text">GDPR</span>
+                        </div>
+                        <div class="cert-item">
+                            <div class="cert-icon">⭐</div>
+                            <span class="cert-text">Executive</span>
+                        </div>
                     </div>
-                    <h5 class="text-gradient fw-bold mb-3">Ver Resultados</h5>
-                    <p class="text-white-50">
-                        Consulta y analiza los resultados con gráficos detallados y reportes profesionales
-                    </p>
                 </div>
             </div>
         </div>
-    {% endif %}
-</div>
+    </div>
+</section>
+
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .text-calm-blue {
-        color: var(--calm-medium-blue);
+    /* Calm.com Inspired Design System - Blue Professional */
+    :root {
+        /* Color Palette Inspired by Calm.com */
+        --calm-primary: #1E3A8A;        /* Deep Blue */
+        --calm-secondary: #3B82F6;      /* Bright Blue */
+        --calm-accent: #06B6D4;         /* Cyan */
+        --calm-light: #EFF6FF;          /* Very Light Blue */
+        --calm-dark: #1E293B;           /* Dark Slate */
+        --calm-white: #FFFFFF;
+        --calm-gray-50: #F8FAFC;
+        --calm-gray-100: #F1F5F9;
+        --calm-gray-600: #475569;
+        --calm-gray-700: #334155;
+        
+        /* Gradients */
+        --calm-gradient-primary: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        --calm-gradient-light: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+        --calm-gradient-accent: linear-gradient(135deg, #06B6D4 0%, #0284C7 100%);
+        
+        /* Shadows */
+        --calm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --calm-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        --calm-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        --calm-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+        --calm-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.15);
+        
+        /* Typography */
+        --calm-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    .text-calm-mint {
-        color: var(--calm-mint-green);
+    /* Global Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
     
-    /* Efectos específicos de la página */
-    .float-animation:nth-child(2) {
-        animation-delay: 0.5s;
+    body {
+        font-family: var(--calm-font-primary);
+        line-height: 1.6;
+        color: var(--calm-gray-700);
+        scroll-behavior: smooth;
     }
     
-    .float-animation:nth-child(3) {
-        animation-delay: 1s;
+    /* Hero Section */
+    .calm-hero {
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
     }
     
-    /* Acentos con verde menta Calm */
-    .calm-accent {
-        background: linear-gradient(135deg, rgba(160, 216, 204, 0.2), rgba(160, 216, 204, 0.1));
-        border: 1px solid rgba(160, 216, 204, 0.3);
+    .calm-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--calm-gradient-primary);
+        z-index: 1;
     }
     
-    .calm-accent:hover {
-        background: linear-gradient(135deg, rgba(160, 216, 204, 0.25), rgba(160, 216, 204, 0.15));
-        border-color: rgba(160, 216, 204, 0.4);
+    .calm-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 20% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
     }
     
-    /* Desktop optimizations */
-    @media (min-width: 1200px) {
-        .container {
-            max-width: 1140px;
+    .floating-elements {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+    
+    .element {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        animation: float-gentle 20s infinite ease-in-out;
+    }
+    
+    .element-1 {
+        width: 300px;
+        height: 300px;
+        top: 10%;
+        left: 5%;
+        animation-delay: 0s;
+    }
+    
+    .element-2 {
+        width: 200px;
+        height: 200px;
+        top: 60%;
+        right: 10%;
+        animation-delay: 7s;
+    }
+    
+    .element-3 {
+        width: 150px;
+        height: 150px;
+        bottom: 20%;
+        left: 20%;
+        animation-delay: 14s;
+    }
+    
+    @keyframes float-gentle {
+        0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+        33% { transform: translateY(-30px) scale(1.1); opacity: 0.5; }
+        66% { transform: translateY(15px) scale(0.9); opacity: 0.4; }
+    }
+    
+    /* Hero Content */
+    .hero-content-calm {
+        position: relative;
+        z-index: 10;
+        padding: 2rem 0;
+    }
+    
+    .calm-badge {
+        display: inline-block;
+        position: relative;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50px;
+        padding: 0.75rem 1.5rem;
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    
+    .badge-glow {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    .badge-text {
+        color: var(--calm-white);
+        font-size: 0.9rem;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Typography */
+    .calm-hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: var(--calm-white);
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+    }
+    
+    .name-highlight {
+        background: linear-gradient(135deg, #06B6D4, #F59E0B);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .calm-subtitle {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 400;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+        max-width: 600px;
+    }
+    
+    /* Trust Indicators */
+    .trust-indicators {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 2.5rem;
+    }
+    
+    .trust-item {
+        text-align: center;
+    }
+    
+    .trust-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--calm-accent);
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .trust-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Buttons */
+    .btn-calm-primary {
+        position: relative;
+        display: inline-block;
+        background: var(--calm-accent);
+        color: var(--calm-white);
+        text-decoration: none;
+        border-radius: 12px;
+        padding: 1rem 2.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--calm-shadow-lg);
+        overflow: hidden;
+        margin-right: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-calm-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--calm-shadow-xl);
+        color: var(--calm-white);
+        text-decoration: none;
+    }
+    
+    .btn-shimmer {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .btn-calm-primary:hover .btn-shimmer {
+        left: 100%;
+    }
+    
+    .btn-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .btn-icon {
+        transition: transform 0.3s ease;
+    }
+    
+    .btn-calm-primary:hover .btn-icon {
+        transform: translateX(3px);
+    }
+    
+    .btn-calm-secondary {
+        display: inline-block;
+        background: transparent;
+        color: var(--calm-white);
+        text-decoration: none;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        padding: 0.9rem 2rem;
+        font-weight: 500;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-calm-secondary:hover {
+        background: var(--calm-white);
+        color: var(--calm-primary);
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+    
+    /* Coach Card */
+    .coach-card-calm {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .coach-avatar-calm {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        background: var(--calm-accent);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--calm-white);
+        font-size: 1.5rem;
+    }
+    
+    .avatar-glow {
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: var(--calm-gradient-accent);
+        border-radius: 50%;
+        z-index: -1;
+        animation: pulse-glow 2s infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { opacity: 0.5; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    
+    .coach-info-calm {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .coach-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .coach-name {
+        font-size: 1.2rem;
+        color: var(--calm-white);
+        font-weight: 600;
+    }
+    
+    /* Assessment Info */
+    .assessment-info {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1.5rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.95rem;
+    }
+    
+    .info-icon {
+        font-size: 1.1rem;
+    }
+    
+    /* Hero Visual */
+    .hero-visual-calm {
+        position: relative;
+        height: 500px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .visual-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .floating-card {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: var(--calm-shadow-xl);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        animation: float-cards 8s ease-in-out infinite;
+    }
+    
+    .card-primary {
+        top: 15%;
+        left: 5%;
+        animation-delay: 0s;
+    }
+    
+    .card-secondary {
+        top: 45%;
+        right: 10%;
+        animation-delay: 2.7s;
+    }
+    
+    .card-tertiary {
+        bottom: 15%;
+        left: 25%;
+        animation-delay: 5.3s;
+    }
+    
+    @keyframes float-cards {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-15px) rotate(1deg); }
+        66% { transform: translateY(8px) rotate(-1deg); }
+    }
+    
+    .card-glow {
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        background: var(--calm-gradient-primary);
+        border-radius: 20px;
+        z-index: -1;
+        opacity: 0.3;
+        animation: pulse-card 3s infinite;
+    }
+    
+    @keyframes pulse-card {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.02); }
+    }
+    
+    .card-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .card-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .card-metric {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--calm-primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .card-label {
+        font-size: 0.8rem;
+        color: var(--calm-gray-600);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Scroll Indicator */
+    .scroll-indicator {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        z-index: 10;
+        animation: bounce-gentle 2s infinite;
+    }
+    
+    .scroll-text {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .scroll-arrow {
+        font-size: 1.2rem;
+    }
+    
+    @keyframes bounce-gentle {
+        0%, 100% { transform: translateX(-50%) translateY(0); }
+        50% { transform: translateX(-50%) translateY(-10px); }
+    }
+    
+    /* Transition Section */
+    .calm-transition {
+        position: relative;
+        height: 120px;
+        background: var(--calm-white);
+        overflow: hidden;
+    }
+    
+    .transition-wave {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .transition-wave svg {
+        width: 100%;
+        height: 100%;
+        fill: var(--calm-primary);
+    }
+    
+    /* Features Section */
+    .calm-features {
+        padding: 6rem 0;
+        background: var(--calm-light);
+    }
+    
+    .features-header {
+        margin-bottom: 4rem;
+    }
+    
+    .calm-section-title {
+        font-size: 2.8rem;
+        font-weight: 700;
+        color: var(--calm-dark);
+        margin-bottom: 1rem;
+    }
+    
+    .calm-section-subtitle {
+        font-size: 1.2rem;
+        color: var(--calm-gray-600);
+        font-weight: 400;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .calm-feature-card {
+        background: var(--calm-white);
+        border-radius: 24px;
+        padding: 2.5rem;
+        text-align: center;
+        box-shadow: var(--calm-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.4s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .calm-feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--calm-shadow-2xl);
+    }
+    
+    .feature-visual {
+        margin-bottom: 2rem;
+    }
+    
+    .feature-icon-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        background: var(--calm-gradient-primary);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        color: var(--calm-white);
+        font-size: 1.8rem;
+    }
+    
+    .icon-glow {
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: var(--calm-gradient-accent);
+        border-radius: 20px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .calm-feature-card:hover .icon-glow {
+        opacity: 0.7;
+    }
+    
+    .feature-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--calm-dark);
+        margin-bottom: 1rem;
+    }
+    
+    .feature-description {
+        color: var(--calm-gray-600);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .feature-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 50px;
+        padding: 0.5rem 1.25rem;
+    }
+    
+    .badge-number {
+        font-weight: 700;
+        color: var(--calm-secondary);
+        font-size: 1rem;
+    }
+    
+    .badge-label {
+        color: var(--calm-gray-600);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    /* Journey Section */
+    .calm-journey {
+        padding: 5rem 0;
+        background: var(--calm-primary); /* Fondo azul oscuro */
+        color: var(--calm-white); /* Texto blanco por defecto */
+    }
+    
+    .journey-header {
+        margin-bottom: 3rem;
+    }
+    
+    .journey-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: var(--calm-white); /* Texto blanco para el título */
+        margin-bottom: 1rem;
+    }
+    
+    .journey-subtitle {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9); /* Texto blanco semitransparente */
+    }
+    
+    .journey-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 2rem;
+    }
+    
+    .step-visual {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: var(--calm-gradient-primary);
+        color: var(--calm-white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-weight: 700;
+        box-shadow: var(--calm-shadow-lg);
+    }
+    
+    .step-connector {
+        width: 2px;
+        height: 60px;
+        background: linear-gradient(180deg, var(--calm-secondary), transparent);
+        margin-top: 1rem;
+    }
+    
+    .step-item:last-child .step-connector {
+        display: none;
+    }
+    
+    .step-content {
+        padding-top: 0.5rem;
+    }
+    
+    .step-title {
+        color: var(--calm-white); /* Texto blanco para títulos de pasos */
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 1.3rem;
+    }
+    
+    .step-description {
+        color: rgba(255, 255, 255, 0.85); /* Texto blanco semitransparente para descripciones */
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    /* Trust Section */
+    .calm-trust {
+        padding: 4rem 0;
+        background: var(--calm-dark);
+        color: var(--calm-white);
+    }
+    
+    .trust-title {
+        font-size: 2.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .trust-description {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 3rem;
+        text-align: center;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .trust-logos {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        margin-bottom: 3rem;
+        opacity: 0.7;
+    }
+    
+    .logo-placeholder {
+        font-size: 3rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .logo-placeholder:hover {
+        transform: scale(1.1);
+    }
+    
+    .certifications {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+    }
+    
+    .cert-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50px;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .cert-icon {
+        font-size: 1.1rem;
+    }
+    
+    /* Animation Classes */
+    .fade-in {
+        animation: fadeIn 1s ease-out;
+    }
+    
+    .fade-in-delay-1 {
+        animation: fadeIn 1s ease-out 0.2s both;
+    }
+    
+    .fade-in-delay-2 {
+        animation: fadeIn 1s ease-out 0.4s both;
+    }
+    
+    .fade-in-delay-3 {
+        animation: fadeIn 1s ease-out 0.6s both;
+    }
+    
+    .fade-in-delay-4 {
+        animation: fadeIn 1s ease-out 0.8s both;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Coaching Benefits Section */
+    .coaching-benefits {
+        padding: 5rem 0;
+        background: var(--calm-gray-50);
+        position: relative;
+    }
+    
+    .benefits-header {
+        margin-bottom: 4rem;
+    }
+    
+    .benefit-card {
+        background: var(--calm-white);
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: var(--calm-shadow);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .benefit-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.05), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .benefit-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--calm-shadow-xl);
+        border-color: var(--calm-secondary);
+    }
+    
+    .benefit-card:hover::before {
+        left: 100%;
+    }
+    
+    .benefit-icon {
+        flex-shrink: 0;
+        width: 80px;
+        height: 80px;
+        background: var(--calm-gradient-primary);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--calm-white);
+        font-size: 2rem;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .benefit-content {
+        flex: 1;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .benefit-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--calm-dark);
+        margin-bottom: 0.75rem;
+        line-height: 1.3;
+    }
+    
+    .benefit-description {
+        color: var(--calm-gray-600);
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .benefit-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--calm-accent);
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--calm-gray-600);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Scroll Reveal Animations */
+    [data-scroll-reveal] {
+        opacity: 0;
+        transform: translateY(50px);
+        transition: all 0.6s ease;
+    }
+    
+    [data-scroll-reveal="slide-left"] {
+        transform: translateX(-50px);
+    }
+    
+    [data-scroll-reveal="slide-right"] {
+        transform: translateX(50px);
+    }
+    
+    [data-scroll-reveal].revealed {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 991px) {
+        .calm-hero-title {
+            font-size: 2.8rem;
+        }
+        
+        .trust-indicators {
+            justify-content: center;
+            gap: 1.5rem;
+        }
+        
+        .assessment-info {
+            justify-content: center;
+            gap: 1.5rem;
+        }
+        
+        .hero-visual-calm {
+            height: 300px;
+            margin-top: 3rem;
+        }
+        
+        .trust-logos {
+            gap: 2rem;
+        }
+        
+        .certifications {
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .calm-hero-title {
+            font-size: 2.2rem;
+        }
+        
+        .calm-subtitle {
+            font-size: 1.1rem;
+        }
+        
+        .trust-indicators {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .assessment-info {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .coach-card-calm {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .step-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .step-connector {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--calm-secondary), transparent);
+        }
+        
+        .trust-logos {
+            gap: 1.5rem;
+        }
+        
+        .logo-placeholder {
+            font-size: 2rem;
+        }
+        
+        .calm-section-title {
+            font-size: 2.2rem;
+        }
+        
+        .benefit-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem 1.5rem;
+        }
+        
+        .benefit-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 1.8rem;
+        }
+        
+        .benefit-title {
+            font-size: 1.3rem;
+        }
+        
+        .stat-number {
+            font-size: 1.6rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .calm-feature-card {
+            padding: 2rem 1.5rem;
+        }
+        
+        .btn-calm-primary {
+            padding: 0.9rem 2rem;
+            font-size: 1rem;
+            display: block;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-calm-secondary {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
+            display: block;
+            text-align: center;
+        }
+        
+        .floating-card {
+            padding: 1rem;
+        }
+        
+        .card-metric {
+            font-size: 1.5rem;
+        }
+        
+        .element-1 {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .element-2 {
+            width: 150px;
+            height: 150px;
+        }
+        
+        .element-3 {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .benefit-card {
+            padding: 1.5rem;
+        }
+        
+        .benefit-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+        
+        .benefit-title {
+            font-size: 1.2rem;
+        }
+        
+        .benefit-description {
+            font-size: 0.95rem;
+        }
+        
+        .stat-number {
+            font-size: 1.4rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
         }
     }
 </style>
-{% endblock %}
+
+<script>
+// Scroll Reveal Animation
+document.addEventListener('DOMContentLoaded', function() {
+    const observerOptions = {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const delay = entry.target.dataset.delay || 0;
+                setTimeout(() => {
+                    entry.target.classList.add('revealed');
+                }, delay);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('[data-scroll-reveal]').forEach(el => {
+        observer.observe(el);
+    });
+});
+</script>
 {% endblock %}

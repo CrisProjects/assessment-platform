@@ -939,7 +939,17 @@ def participant_access():
 def dashboard_selection():
     return render_template('dashboard_selection.html')
 
+@app.route('/test-evaluation')
+def test_evaluation():
+    """Página de prueba para mostrar la evaluación de test3"""
+    with open('test_evaluation_display.html', 'r', encoding='utf-8') as f:
+        return f.read()
 
+@app.route('/test-coach-invitation')
+def test_coach_invitation():
+    """Página de prueba para invitaciones de coach"""
+    with open('test_coach_invitation.html', 'r', encoding='utf-8') as f:
+        return f.read()
 
 # API Routes principales
 @app.route('/api/login', methods=['POST'])
@@ -1456,7 +1466,38 @@ def platform_admin_dashboard():
 def admin_dashboard():
     return redirect(url_for('platform_admin_dashboard'))
 
+# Test route for coach dashboard debugging
+@app.route('/coach-dashboard-test')
+@login_required
+def coach_dashboard_test():
+    """Dashboard de prueba para debugging"""
+    logger.info(f"Coach dashboard TEST access attempt - User: {current_user.username}, Role: {current_user.role}")
+    if current_user.role != 'coach':
+        logger.warning(f"Access denied to coach dashboard TEST - User: {current_user.username}, Role: {current_user.role}")
+        return redirect(url_for('dashboard_selection'))
+    logger.info(f"Coach dashboard TEST access granted - User: {current_user.username}")
+    return render_template('coach_dashboard_test.html')
 
+# Dashboard access test page
+@app.route('/dashboard-test')
+def dashboard_test():
+    """Página de test para verificar acceso a todos los dashboards"""
+    return render_template('dashboard_test.html')
+
+# Debug endpoint for role verification
+@app.route('/api/debug/user-info')
+@login_required
+def debug_user_info():
+    """Endpoint temporal para debuggear información del usuario"""
+    return jsonify({
+        'id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email,
+        'role': current_user.role,
+        'full_name': current_user.full_name,
+        'is_authenticated': current_user.is_authenticated,
+        'coach_id': getattr(current_user, 'coach_id', None)
+    })
 
 # Inicialización de la aplicación
 
@@ -1497,6 +1538,8 @@ def api_coach_create_invitation_v2():
             counter += 1
         
         # Generar contraseña segura
+        import secrets
+        import string
         password_chars = string.ascii_letters + string.digits
         password = ''.join(secrets.choice(password_chars) for _ in range(8))
         
@@ -2147,6 +2190,9 @@ def api_coachee_dashboard_summary():
                 latest_evaluation = evaluation_data
         
         # Obtener estadísticas de tareas
+        from sqlalchemy import func
+        from datetime import datetime, date
+        
         tasks = Task.query.filter_by(coachee_id=current_user.id, is_active=True).all()
         pending_tasks = 0
         overdue_tasks = 0

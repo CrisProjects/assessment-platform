@@ -29,6 +29,19 @@
         text-align: center;
         color: var(--pure-white);
         position: relative;
+        /* Mejoras del sistema de temas */
+        transition: all 0.3s ease;
+    }
+
+    /* Adaptación al sistema de temas */
+    [data-theme="light"] .login-header {
+        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+        box-shadow: 0 8px 32px rgba(30, 64, 175, 0.3);
+    }
+
+    [data-theme="dark"] .login-header {
+        background: linear-gradient(135deg, #1E3A8A 0%, #3730A3 50%, #4338CA 100%);
+        box-shadow: 0 8px 32px rgba(30, 58, 138, 0.4);
     }
 
     .login-header::before {
@@ -48,6 +61,9 @@
         position: relative;
         z-index: 1;
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        /* Mejoras de contraste */
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        color: rgba(255, 255, 255, 0.95);
     }
 
     .login-header h2 {
@@ -56,6 +72,22 @@
         position: relative;
         z-index: 1;
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        /* Mejoras de texto */
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+    }
+
+    /* Adaptaciones del texto por tema */
+    [data-theme="light"] .login-header h2,
+    [data-theme="light"] .login-header i {
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+        color: #FFFFFF;
+    }
+
+    [data-theme="dark"] .login-header h2,
+    [data-theme="dark"] .login-header i {
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        color: rgba(255, 255, 255, 0.98);
     }
 
     .login-header p {
@@ -64,10 +96,24 @@
         position: relative;
         z-index: 1;
         font-weight: 500;
+        /* Mejoras de legibilidad */
+        font-size: 1.1rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
 
     .login-body {
         padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        /* Mejoras del sistema de temas */
+        transition: background-color 0.3s ease;
+    }
+
+    /* Adaptación del cuerpo por tema */
+    [data-theme="light"] .login-body {
+        background: rgba(255, 255, 255, 0.85);
+    }
+
+    [data-theme="dark"] .login-body {
         background: rgba(255, 255, 255, 0.05);
     }
 
@@ -83,6 +129,20 @@
         font-size: 1rem;
         color: var(--pure-white);
         backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    /* Adaptación de campos por tema */
+    [data-theme="light"] .form-floating .form-control {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(30, 64, 175, 0.2);
+        color: var(--theme-text-primary);
+    }
+
+    [data-theme="dark"] .form-floating .form-control {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        color: var(--pure-white);
     }
 
     .form-floating .form-control:focus {
@@ -92,13 +152,29 @@
         color: var(--pure-white);
     }
 
+    [data-theme="light"] .form-floating .form-control:focus {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: var(--havelock-blue);
+        box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.15);
+        color: var(--theme-text-primary);
+    }
+
     .form-floating .form-control::placeholder {
         color: rgba(255, 255, 255, 0.6);
+    }
+
+    [data-theme="light"] .form-floating .form-control::placeholder {
+        color: rgba(30, 64, 175, 0.6);
     }
 
     .form-floating label {
         color: rgba(255, 255, 255, 0.8);
         font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    [data-theme="light"] .form-floating label {
+        color: var(--theme-text-secondary);
     }
 
     .form-floating > .form-control:focus ~ label,
@@ -154,9 +230,44 @@
         transition: var(--transition-normal);
     }
 
+    /* Mejoras para el enlace "Volver a selección" por tema */
+    [data-theme="light"] .back-link a {
+        color: var(--theme-text-primary);
+        text-shadow: none !important;
+    }
+
+    [data-theme="dark"] .back-link a {
+        color: rgba(255, 255, 255, 0.7);
+        text-shadow: none !important;
+    }
+
     .back-link a:hover {
         color: var(--havelock-blue);
         text-decoration: underline;
+    }
+
+    [data-theme="light"] .back-link a:hover {
+        color: var(--havelock-blue);
+        text-shadow: none !important;
+    }
+
+    /* === MEJORAS PARA ELIMINAR SOMBRAS EN TEXTO NEGRO - MODO DÍA === */
+    
+    /* Todo el texto en modo día sin sombras */
+    [data-theme="light"] .login-body,
+    [data-theme="light"] .login-body *,
+    [data-theme="light"] .form-floating label,
+    [data-theme="light"] .form-control,
+    [data-theme="light"] .back-link a,
+    [data-theme="light"] p,
+    [data-theme="light"] span,
+    [data-theme="light"] div {
+        text-shadow: none !important;
+    }
+    
+    /* Asegurar que el texto use los colores correctos del tema */
+    [data-theme="light"] .login-body {
+        color: var(--theme-text-primary);
     }
 
     /* Responsive */
@@ -184,7 +295,7 @@
                 <div class="login-card fade-in">
                     <div class="login-header">
                         <i class="fas fa-users"></i>
-                        <h2>Portal Coach</h2>
+                        <h2>Panel Coach</h2>
                         <p>Accede para guiar y acompañar a tus coachees</p>
                     </div>
                     

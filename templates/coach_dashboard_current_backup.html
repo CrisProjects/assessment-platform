@@ -1,0 +1,1766 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Coach - Assessment Platform{% endblock %}
+
+{% block content %}
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Header Navigation -->
+<nav class="glass-card p-3 mb-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center me-3" 
+                 style="width: 50px; height: 50px; background: var(--gradient-button);">
+                <i class="fas fa-user-tie text-white fs-4"></i>
+            </div>
+            <div>
+                <h4 class="text-gradient fw-bold mb-0">Dashboard Coach</h4>
+                <p class="text-white-50 mb-0 small">Gestiona y supervisa tus coachees</p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-1"></i>Actualizar Todo
+            </button>
+            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'">
+                <i class="fas fa-home me-1"></i>Inicio
+            </button>
+            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/logout'">
+                <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Dashboard Content -->
+<div class="container-fluid">
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--calm-dark-blue), var(--calm-medium-blue));">
+                    <i class="fas fa-users text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="totalCoachees">0</h3>
+                <p class="text-white-50 mb-0">Total Coachees</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--calm-mint-green), var(--calm-soft-blue));">
+                    <i class="fas fa-check-circle text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="completedAssessments">0</h3>
+                <p class="text-white-50 mb-0">Evaluaciones Completadas</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--calm-accent-blue), var(--calm-medium-blue));">
+                    <i class="fas fa-clock text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="pendingAssessments">0</h3>
+                <p class="text-white-50 mb-0">Evaluaciones Pendientes</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4 text-center fade-in">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--calm-soft-blue), var(--calm-dark-blue));">
+                    <i class="fas fa-chart-line text-white fs-3"></i>
+                </div>
+                <h3 class="text-gradient fw-bold mb-1" id="avgScore">0%</h3>
+                <p class="text-white-50 mb-0">Puntuación Promedio</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Mis Coachees -->
+        <div class="col-12 mb-4">
+            <div class="glass-card p-4 fade-in">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="text-gradient fw-bold mb-0">
+                        <i class="fas fa-users me-2"></i>Mis Coachees
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success interactive-element" onclick="openInvitationModal()">
+                            <i class="fas fa-envelope me-2"></i>Invitar Coachee
+                        </button>
+                        <button class="btn btn-primary interactive-element" onclick="loadCoachees()">
+                            <i class="fas fa-refresh me-2"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+                <div id="coacheesContainer" class="row">
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando coachees...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión de Tareas -->
+        <div class="col-12 mb-4">
+            <div class="glass-card p-4 fade-in">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="text-gradient fw-bold mb-0">
+                        <i class="fas fa-tasks me-2"></i>Gestión de Tareas
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success interactive-element" onclick="openTaskModal()">
+                            <i class="fas fa-plus me-2"></i>Nueva Tarea
+                        </button>
+                        <button class="btn btn-primary interactive-element" onclick="loadTasks()">
+                            <i class="fas fa-refresh me-2"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+                <div id="tasksContainer" class="row">
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando tareas...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+    <!-- Toasts will be inserted here -->
+</div>
+
+<!-- Modal de invitación de coachee -->
+<div class="modal fade" id="invitationModal" tabindex="-1" aria-labelledby="invitationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-gradient fw-bold" id="invitationModalLabel">
+                    <i class="fas fa-envelope me-2"></i>Invitar Coachee
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="invitationForm">
+                    <div class="mb-3">
+                        <label for="inviteEmail" class="form-label text-white">Correo electrónico del coachee</label>
+                        <input type="email" class="form-control glass-input" id="inviteEmail" 
+                               placeholder="coachee@email.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inviteFullName" class="form-label text-white">Nombre completo</label>
+                        <input type="text" class="form-control glass-input" id="inviteFullName" 
+                               placeholder="Nombre del coachee" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inviteMessage" class="form-label text-white">Mensaje personalizado (opcional)</label>
+                        <textarea class="form-control glass-input" id="inviteMessage" rows="3" 
+                                  placeholder="Escribe un mensaje de bienvenida para tu coachee..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 interactive-element">
+                        <i class="fas fa-paper-plane me-2"></i>Enviar Invitación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear nueva tarea -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-gradient fw-bold" id="taskModalLabel">
+                    <i class="fas fa-plus me-2"></i>Nueva Tarea
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="taskCoachee" class="form-label text-white">Asignar a Coachee</label>
+                            <select class="form-select glass-input" id="taskCoachee" required>
+                                <option value="">Selecciona un coachee...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="taskCategory" class="form-label text-white">Categoría</label>
+                            <select class="form-select glass-input" id="taskCategory" required>
+                                <option value="">Selecciona categoría...</option>
+                                <option value="comunicacion">Comunicación Asertiva</option>
+                                <option value="derechos">Defensa de Derechos</option>
+                                <option value="opiniones">Expresión de Opiniones</option>
+                                <option value="conflictos">Manejo de Conflictos</option>
+                                <option value="autoconfianza">Autoconfianza</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="taskPriority" class="form-label text-white">Prioridad</label>
+                            <select class="form-select glass-input" id="taskPriority" required>
+                                <option value="low">Baja</option>
+                                <option value="medium" selected>Media</option>
+                                <option value="high">Alta</option>
+                                <option value="urgent">Urgente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="taskDueDate" class="form-label text-white">Fecha límite (opcional)</label>
+                            <input type="date" class="form-control glass-input" id="taskDueDate">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label text-white">Título de la tarea</label>
+                        <input type="text" class="form-control glass-input" id="taskTitle" 
+                               placeholder="Ej: Practicar expresión de opiniones en reuniones" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label text-white">Descripción detallada</label>
+                        <textarea class="form-control glass-input" id="taskDescription" rows="4" 
+                                  placeholder="Describe la tarea, objetivos y pasos a seguir..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 interactive-element">
+                        <i class="fas fa-plus me-2"></i>Crear Tarea
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .glass-input {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        color: white !important;
+        transition: all 0.3s ease;
+        position: relative !important;
+        z-index: 10000 !important;
+        pointer-events: auto !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+        cursor: text !important;
+    }
+    
+    .glass-input::placeholder {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    .glass-input:focus {
+        background: rgba(255, 255, 255, 0.25) !important;
+        border-color: var(--havelock-blue) !important;
+        box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25) !important;
+        color: white !important;
+        outline: none !important;
+    }
+    
+    .glass-input:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+    }
+    
+    .form-select.glass-input {
+        cursor: pointer !important;
+    }
+    
+    .form-select.glass-input option {
+        background: var(--cloud-burst) !important;
+        color: white !important;
+        padding: 8px 12px;
+    }
+
+    /* CORRECCIONES ULTRA AGRESIVAS PARA MODAL */
+    #invitationModal input, #invitationModal textarea,
+    #taskModal input, #taskModal textarea,
+    .modal input, .modal textarea, .modal select {
+        pointer-events: auto !important;
+        user-select: text !important;
+        cursor: text !important;
+        position: relative !important;
+        z-index: 10000 !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+    }
+    
+    /* DESHABILITAR BACKDROP */
+    .modal-backdrop { 
+        pointer-events: none !important; 
+        z-index: 1040 !important;
+    }
+    
+    /* FORZAR Z-INDEX EN MODALES */
+    .modal { z-index: 1050 !important; }
+    .modal-dialog { z-index: 1051 !important; }
+    .modal-content { z-index: 1052 !important; }
+    
+    /* BOTONES DE MODAL */
+    .modal button {
+        pointer-events: auto !important;
+        z-index: 10000 !important;
+        cursor: pointer !important;
+    }
+
+    /* Asegurar que los inputs sean completamente interactivos */
+    .modal-body input,
+    .modal-body textarea,
+    .modal-body select,
+    .modal-body label {
+        position: relative !important;
+        z-index: 10000 !important;
+        pointer-events: auto !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+    }
+    
+    .modal-body input,
+    .modal-body textarea {
+        cursor: text !important;
+    }
+    
+    .modal-body .form-select {
+        cursor: pointer !important;
+    }
+    
+    .modal-content {
+        background: rgba(36, 52, 71, 0.95) !important;
+        border: 1px solid rgba(160, 216, 204, 0.2);
+        position: relative;
+        pointer-events: auto !important;
+    }
+
+    .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.7);
+        pointer-events: none !important;
+    }
+
+    /* Asegurar que el modal esté correctamente posicionado */
+    .modal {
+        pointer-events: auto !important;
+    }
+
+    .modal-dialog {
+        pointer-events: auto !important;
+    }
+
+    /* IMPORTANTE: Forzar interactividad completa en inputs del modal */
+    #invitationModal .form-control,
+    #invitationModal .form-select,
+    #invitationModal textarea,
+    #invitationModal input,
+    #taskModal .form-control,
+    #taskModal .form-select,
+    #taskModal textarea,
+    #taskModal input {
+        pointer-events: auto !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        user-select: text !important;
+        cursor: text !important;
+        position: relative !important;
+        z-index: 1 !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        color: white !important;
+    }
+
+    #invitationModal .form-select,
+    #taskModal .form-select {
+        cursor: pointer !important;
+    }
+
+    /* Eliminar cualquier overlay que pueda estar bloqueando */
+    .modal-body::before,
+    .modal-body::after {
+        display: none !important;
+    }    .spinner-border {
+        color: var(--havelock-blue) !important;
+    }
+    
+    .interactive-element {
+        transition: all 0.3s ease;
+    }
+    
+    .interactive-element:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(98, 130, 227, 0.3);
+    }
+    
+    .task-card {
+        border-left: 4px solid var(--havelock-blue);
+        transition: all 0.3s ease;
+    }
+    
+    .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(98, 130, 227, 0.2);
+    }
+    
+    .priority-low { border-left-color: var(--calm-mint-green); }
+    .priority-medium { border-left-color: var(--calm-accent-blue); }
+    .priority-high { border-left-color: var(--calm-medium-blue); }
+    .priority-urgent { border-left-color: var(--calm-dark-blue); }
+    
+    .status-pending { background: linear-gradient(90deg, var(--calm-soft-blue) 0%, var(--calm-soft-blue) 0%); }
+    .status-in_progress { background: linear-gradient(90deg, var(--calm-medium-blue) 0%, var(--calm-medium-blue) 50%); }
+    .status-completed { background: linear-gradient(90deg, var(--calm-mint-green) 0%, var(--calm-mint-green) 100%); }
+    
+    .credentials-alert {
+        background: rgba(160, 216, 204, 0.1);
+        border: 1px solid rgba(160, 216, 204, 0.3);
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+        // Variables globales
+        let coacheesData = [];
+        let tasksData = [];
+
+        // Función para mostrar notificaciones toast
+        function showToast(message, type = 'info', duration = 5000) {
+            const toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                alert(`${type.toUpperCase()}: ${message}`);
+                return;
+            }
+
+            const toastId = 'toast-' + Date.now();
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-triangle',
+                warning: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            };
+
+            const bgColorMap = {
+                success: 'bg-success',
+                error: 'bg-danger',
+                warning: 'bg-warning',
+                info: 'bg-info'
+            };
+
+            const toastHtml = `
+                <div class="toast align-items-center text-white ${bgColorMap[type]} border-0" role="alert" 
+                     aria-live="assertive" aria-atomic="true" id="${toastId}">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas ${iconMap[type]} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                                data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: duration });
+            toast.show();
+
+            toastElement.addEventListener('hidden.bs.toast', function () {
+                toastElement.remove();
+            });
+        }
+
+        // Función para abrir el modal de invitación - VERSIÓN ULTRA AGRESIVA
+        function openInvitationModal() {
+            console.log('🚀 MODAL: Abriendo modal de invitación AGRESIVO...');
+            
+            // Asegurar que el formulario esté limpio
+            const form = document.getElementById('invitationForm');
+            if (form) {
+                form.reset();
+                
+                // FORZAR INTERACTIVIDAD ULTRA AGRESIVA
+                const inputs = ['inviteEmail', 'inviteFullName', 'inviteMessage'];
+                inputs.forEach((inputId, index) => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        input.value = '';
+                        input.removeAttribute('disabled');
+                        input.style.pointerEvents = 'auto';
+                        input.style.userSelect = 'text';
+                        input.style.cursor = 'text';
+                        input.style.position = 'relative';
+                        input.style.zIndex = '10000';
+                        input.style.webkitUserSelect = 'text';
+                        input.style.mozUserSelect = 'text';
+                        input.style.msUserSelect = 'text';
+                        
+                        // Eventos de debug
+                        input.addEventListener('click', function() {
+                            console.log(`🎯 MODAL: Input ${inputId} clickeado`);
+                        });
+                        input.addEventListener('focus', function() {
+                            console.log(`🎯 MODAL: Input ${inputId} enfocado`);
+                        });
+                        input.addEventListener('input', function() {
+                            console.log(`🎯 MODAL: Input ${inputId} escribiendo:`, this.value);
+                        });
+                        
+                        console.log(`✅ MODAL: ${inputId} configurado agresivamente`);
+                    }
+                });
+            }
+            
+            // Abrir el modal
+            const modal = new bootstrap.Modal(document.getElementById('invitationModal'), {
+                backdrop: 'static',
+                keyboard: true
+            });
+            modal.show();
+            
+            // Forzar interactividad después de abrir
+            setTimeout(() => {
+                const modalElement = document.getElementById('invitationModal');
+                if (modalElement) {
+                    // Asegurar que el backdrop no bloquee
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.style.pointerEvents = 'none';
+                    }
+                    
+                    // Forzar z-index y pointer events en todos los inputs
+                    const inputs = modalElement.querySelectorAll('input, textarea, select');
+                    inputs.forEach(input => {
+                        input.style.pointerEvents = 'auto';
+                        input.style.position = 'relative';
+                        input.style.zIndex = '9999';
+                        input.style.userSelect = 'text';
+                        input.style.cursor = input.tagName === 'SELECT' ? 'pointer' : 'text';
+                    });
+                    
+                    // Enfocar el primer campo
+                    const emailInput = document.getElementById('inviteEmail');
+                    if (emailInput) {
+                        emailInput.focus();
+                        emailInput.click();
+                        console.log('Campo email enfocado y clickeado');
+                    }
+                }
+            }, 500);
+        }
+
+        // Función para enviar la invitación
+        async function sendInvitation() {
+            const email = document.getElementById('inviteEmail').value.trim();
+            const fullName = document.getElementById('inviteFullName').value.trim();
+            const message = document.getElementById('inviteMessage').value.trim();
+            const submitBtn = document.querySelector('#invitationForm button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            if (!email || !fullName) {
+                showToast('Completa todos los campos requeridos para invitar al coachee', 'error');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+                
+                const response = await fetch('/api/coach/create-invitation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        email: email, 
+                        full_name: fullName,
+                        message: message
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error al enviar invitación');
+                }
+
+                // Mostrar credenciales generadas
+                const credentialsHtml = `
+                    <div class="credentials-alert p-3 mb-3">
+                        <h6 class="text-success fw-bold mb-2">
+                            <i class="fas fa-check-circle me-2"></i>¡Coachee creado exitosamente!
+                        </h6>
+                        <p class="text-white-50 mb-2">Credenciales generadas para ${result.coachee.full_name}:</p>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong class="text-white">Usuario:</strong><br>
+                                <code class="text-info">${result.coachee.username}</code>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-white">Contraseña:</strong><br>
+                                <code class="text-warning">${result.coachee.password}</code>
+                            </div>
+                        </div>
+                        <small class="text-white-50">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Comparte estas credenciales con tu coachee de forma segura.
+                        </small>
+                    </div>
+                `;
+                
+                document.getElementById('invitationForm').innerHTML = credentialsHtml + 
+                    '<button type="button" class="btn btn-primary w-100" onclick="location.reload()">Continuar</button>';
+                
+                showToast('Coachee creado e invitación enviada exitosamente', 'success');
+                loadCoachees(); // Recargar lista de coachees
+                
+            } catch (error) {
+                console.error('Error enviando invitación:', error);
+                showToast(error.message || 'Error al enviar invitación', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Función para cargar coachees
+        async function loadCoachees() {
+            try {
+                const container = document.getElementById('coacheesContainer');
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando coachees...</span>
+                        </div>
+                    </div>
+                `;
+
+                const response = await fetch('/api/coach/my-coachees', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                // La API devuelve directamente un array, no un objeto con propiedad coachees
+                const data = await response.json();
+                
+                // Verificar que los datos sean válidos
+                if (Array.isArray(data)) {
+                    coacheesData = data;
+                    displayCoachees();
+                    updateStatistics();
+                } else {
+                    console.error('Formato de datos inesperado:', data);
+                    throw new Error('Formato de datos inesperado del servidor');
+                }
+                
+            } catch (error) {
+                console.error('Error cargando coachees:', error);
+                const container = document.getElementById('coacheesContainer');
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger glass-card">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar coachees: ${error.message}
+                            <button class="btn btn-sm btn-outline-light ms-2" onclick="loadCoachees()">
+                                <i class="fas fa-refresh me-1"></i>Reintentar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Inicializar datos vacíos para evitar errores en otras funciones
+                coacheesData = [];
+                updateStatistics();
+            }
+        }
+
+        // Función para actualizar estadísticas
+        function updateStatistics() {
+            // Verificar que coacheesData existe y es un array
+            if (!Array.isArray(coacheesData)) {
+                coacheesData = [];
+            }
+            
+            const totalCoachees = coacheesData.length;
+            const completedAssessments = coacheesData.filter(c => c && c.total_assessments > 0).length;
+            const pendingAssessments = totalCoachees - completedAssessments;
+            
+            // Calcular promedio de puntuaciones solo para quienes tienen evaluaciones
+            const assessedCoachees = coacheesData.filter(c => 
+                c && c.last_assessment && typeof c.last_assessment.score === 'number'
+            );
+            
+            const avgScore = assessedCoachees.length > 0 ? 
+                Math.round(assessedCoachees.reduce((sum, c) => sum + c.last_assessment.score, 0) / assessedCoachees.length) : 0;
+
+            // Actualizar elementos del DOM de manera segura
+            const totalElement = document.getElementById('totalCoachees');
+            const completedElement = document.getElementById('completedAssessments');
+            const pendingElement = document.getElementById('pendingAssessments');
+            const avgElement = document.getElementById('avgScore');
+            
+            if (totalElement) totalElement.textContent = totalCoachees;
+            if (completedElement) completedElement.textContent = completedAssessments;
+            if (pendingElement) pendingElement.textContent = pendingAssessments;
+            if (avgElement) avgElement.textContent = avgScore + '%';
+        }
+
+        // Función para mostrar coachees
+        function displayCoachees() {
+            const container = document.getElementById('coacheesContainer');
+            
+            if (!coacheesData || coacheesData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                                 style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1);">
+                                <i class="fas fa-users fa-2x text-white-50"></i>
+                            </div>
+                            <h4 class="text-gradient fw-bold">No hay coachees asignados</h4>
+                            <p class="text-white-50 mb-4">Los coachees que invites aparecerán aquí.</p>
+                            <button class="btn btn-success interactive-element" onclick="openInvitationModal()">
+                                <i class="fas fa-envelope me-2"></i>Invitar Primer Coachee
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = coacheesData.map(coachee => {
+                const hasAssessment = coachee.last_assessment && coachee.last_assessment.score !== null;
+                const score = hasAssessment ? coachee.last_assessment.score : 0;
+                const isActive = coachee.total_assessments > 0;
+                
+                return `
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="glass-card h-100 p-4 interactive-element">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center me-3" 
+                                 style="width: 50px; height: 50px; background: var(--gradient-button);">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="text-gradient fw-bold mb-1">${coachee.full_name || coachee.username}</h6>
+                                <p class="text-white-50 mb-0 small">${coachee.email}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span class="badge ${isActive ? 'bg-success' : 'bg-warning'} mb-2">
+                                ${isActive ? 'Activo' : 'Pendiente'}
+                            </span>
+                            ${hasAssessment ? 
+                                `<span class="badge bg-info">Evaluación Completada</span>` : 
+                                `<span class="badge bg-secondary">Sin Evaluar</span>`
+                            }
+                        </div>
+                        
+                        ${hasAssessment ? 
+                            `<div class="mb-3">
+                                <small class="text-white-50">Puntuación de Asertividad:</small>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar bg-gradient" role="progressbar" 
+                                         style="width: ${score}%; background: var(--gradient-button) !important;" 
+                                         aria-valuenow="${score}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-gradient fw-bold">${score}%</small>
+                            </div>` : 
+                            `<div class="mb-3">
+                                <small class="text-white-50">Evaluaciones realizadas: ${coachee.total_assessments}</small>
+                            </div>`
+                        }
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="viewCoacheeDetails('${coachee.id}')">
+                                <i class="fas fa-eye me-1"></i>Ver Detalles
+                            </button>
+                            ${hasAssessment ? 
+                                `<button class="btn btn-outline-success btn-sm" onclick="downloadReport('${coachee.id}')">
+                                    <i class="fas fa-download me-1"></i>Reporte
+                                </button>` : 
+                                `<button class="btn btn-outline-warning btn-sm" onclick="sendReminder('${coachee.id}')">
+                                    <i class="fas fa-bell me-1"></i>Recordar
+                                </button>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Función para ver detalles del coachee
+        async function viewCoacheeDetails(coacheeId) {
+            try {
+                showToast('Cargando detalles del coachee...', 'info');
+                
+                // Obtener evaluaciones del coachee
+                const response = await fetch(`/api/coach/coachee-evaluations/${coacheeId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showCoacheeDetailsModal(data);
+                } else {
+                    throw new Error(data.error || 'Error cargando detalles');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error cargando detalles: ' + error.message, 'error');
+            }
+        }
+
+        // Mostrar modal con detalles del coachee
+        function showCoacheeDetailsModal(data) {
+            const modal = document.getElementById('coacheeDetailsModal');
+            if (!modal) {
+                // Crear modal dinámicamente si no existe
+                createCoacheeDetailsModal();
+            }
+            
+            // Actualizar contenido del modal
+            document.getElementById('coacheeDetailsModalLabel').textContent = `Evaluaciones de ${data.coachee.name}`;
+            
+            let evaluationsHtml = '';
+            if (data.evaluations.length === 0) {
+                evaluationsHtml = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5>Sin evaluaciones</h5>
+                        <p class="text-muted">Este coachee aún no ha completado ninguna evaluación.</p>
+                    </div>
+                `;
+            } else {
+                evaluationsHtml = '<div class="row">';
+                data.evaluations.forEach((evaluation, index) => {
+                    const date = new Date(evaluation.completed_at).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    let scoreColor = 'text-danger';
+                    if (evaluation.score >= 70) scoreColor = 'text-success';
+                    else if (evaluation.score >= 50) scoreColor = 'text-warning';
+                    
+                    evaluationsHtml += `
+                        <div class="col-12 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">Evaluación #${index + 1}</h6>
+                                        <span class="badge bg-primary">${date}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold ${scoreColor}">${evaluation.score}%</span>
+                                        <small class="text-muted">${evaluation.total_questions} preguntas</small>
+                                    </div>
+                                    <p class="text-muted small mb-2">${evaluation.result_text}</p>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="showEvaluationResponses(${evaluation.id}, ${JSON.stringify(evaluation.responses).replace(/"/g, '&quot;')})">
+                                            <i class="fas fa-eye me-1"></i>Ver Respuestas
+                                        </button>
+                                        <button class="btn btn-outline-success btn-sm" onclick="showEvaluationDetailsWithRadar(${JSON.stringify(evaluation).replace(/"/g, '&quot;')})">
+                                            <i class="fas fa-chart-radar me-1"></i>Ver Radar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                evaluationsHtml += '</div>';
+            }
+            
+            document.getElementById('coacheeDetailsContent').innerHTML = evaluationsHtml;
+            
+            // Mostrar el modal
+            const bsModal = new bootstrap.Modal(document.getElementById('coacheeDetailsModal'));
+            bsModal.show();
+        }
+
+        // Crear modal de detalles del coachee
+        function createCoacheeDetailsModal() {
+            const modalHtml = `
+                <div class="modal fade" id="coacheeDetailsModal" tabindex="-1" aria-labelledby="coacheeDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="coacheeDetailsModalLabel">Detalles del Coachee</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="coacheeDetailsContent">
+                                    <!-- Contenido cargado dinámicamente -->
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Mostrar respuestas de una evaluación específica
+        function showEvaluationResponses(evaluationId, responses) {
+            let responsesHtml = '<div class="mt-3">';
+            responsesHtml += '<h6><i class="fas fa-list me-2"></i>Respuestas Detalladas:</h6>';
+            
+            const optionLabels = {
+                1: 'Totalmente en desacuerdo',
+                2: 'En desacuerdo',
+                3: 'Neutral',
+                4: 'De acuerdo',
+                5: 'Totalmente de acuerdo'
+            };
+            
+            responses.forEach((response, index) => {
+                responsesHtml += `
+                    <div class="border-start border-3 border-primary ps-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>Pregunta ${index + 1}:</strong>
+                                <p class="mb-1">${response.question_text}</p>
+                                <small class="text-primary">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    ${optionLabels[response.selected_option]}
+                                </small>
+                            </div>
+                            <span class="badge bg-secondary ms-2">${response.selected_option}/5</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            responsesHtml += '</div>';
+            
+            // Mostrar en un segundo modal o expandir el actual
+            const detailsContent = document.getElementById('coacheeDetailsContent');
+            detailsContent.innerHTML += responsesHtml;
+        }
+
+        // Variable global para almacenar el gráfico radar
+        let coachRadarChart = null;
+
+        // Mostrar detalles completos de evaluación con radar chart
+        function showEvaluationDetailsWithRadar(evaluation) {
+            // Crear modal especializado para detalles de evaluación
+            createEvaluationDetailsModal();
+            
+            const dimensionalScores = evaluation.dimensional_scores || {};
+            
+            const html = `
+                <!-- Resumen General -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa;">
+                            <div class="card-body text-center">
+                                <h4 class="mb-3">Análisis Completo de Asertividad</h4>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="h2 text-primary">${Math.round(evaluation.score)}%</div>
+                                        <div class="text-muted">Puntuación Total</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h4 text-success">${getAssertiveLevelFromScore(evaluation.score)}</div>
+                                        <div class="text-muted">Nivel de Asertividad</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h6">${formatDate(evaluation.completed_at)}</div>
+                                        <div class="text-muted">Fecha de Completado</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="h6">${evaluation.total_questions}</div>
+                                        <div class="text-muted">Preguntas Respondidas</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Radar y Análisis Dimensional -->
+                <div class="row mb-4">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: #f8f9fa;">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-radar me-2"></i>Radar de Competencias</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="radar-chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="coachRadarChart" width="300" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: #f8f9fa;">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-bar me-2"></i>Puntuaciones por Dimensión</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="dimensionalScoresContainer">
+                                    ${generateDimensionalScoresHTML(dimensionalScores)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Respuestas Detalladas -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa;">
+                            <div class="card-header">
+                                <h5><i class="fas fa-list me-2"></i>Respuestas Detalladas</h5>
+                            </div>
+                            <div class="card-body">
+                                ${generateResponsesHTML(evaluation.responses || [])}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('evaluationDetailsContent').innerHTML = html;
+            
+            // Crear el gráfico radar después de insertar el HTML
+            setTimeout(() => {
+                createCoachRadarChart(dimensionalScores);
+            }, 100);
+            
+            // Mostrar el modal
+            const modal = new bootstrap.Modal(document.getElementById('evaluationDetailsModal'));
+            modal.show();
+        }
+
+        function createCoachRadarChart(dimensionalScores) {
+            const ctx = document.getElementById('coachRadarChart');
+            if (!ctx || !dimensionalScores) {
+                console.warn('No se puede crear el radar chart: elemento canvas no encontrado o datos faltantes');
+                return;
+            }
+
+            // Destruir gráfico existente si existe
+            if (coachRadarChart) {
+                coachRadarChart.destroy();
+            }
+
+            // Preparar datos para el gráfico radar
+            const labels = [
+                'Comunicación',
+                'Derechos',
+                'Opiniones',
+                'Conflictos',
+                'Autoconfianza'
+            ];
+
+            const dataValues = [
+                dimensionalScores.comunicacion || 0,
+                dimensionalScores.derechos || 0,
+                dimensionalScores.opiniones || 0,
+                dimensionalScores.conflictos || 0,
+                dimensionalScores.autoconfianza || 0
+            ];
+
+            coachRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Nivel de Asertividad',
+                        data: dataValues,
+                        backgroundColor: 'rgba(98, 130, 227, 0.2)',
+                        borderColor: 'rgba(98, 130, 227, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(98, 130, 227, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${Math.round(context.raw)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            min: 0,
+                            ticks: {
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                },
+                                color: '#6B8DA6',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(107, 141, 166, 0.2)'
+                            },
+                            angleLines: {
+                                color: 'rgba(107, 141, 166, 0.2)'
+                            },
+                            pointLabels: {
+                                color: '#243447',
+                                font: {
+                                    size: 11,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.2
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear modal de detalles de evaluación
+        function createEvaluationDetailsModal() {
+            const existingModal = document.getElementById('evaluationDetailsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            const modalHtml = `
+                <div class="modal fade" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="evaluationDetailsModalLabel">
+                                    <i class="fas fa-chart-radar me-2"></i>
+                                    Análisis Detallado de Evaluación
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="evaluationDetailsContent">
+                                    <!-- Contenido cargado dinámicamente -->
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Funciones auxiliares
+        function generateDimensionalScoresHTML(dimensionalScores) {
+            if (!dimensionalScores) return '<p class="text-muted">No hay datos dimensionales disponibles.</p>';
+            
+            let html = '';
+            for (const [dimension, score] of Object.entries(dimensionalScores)) {
+                const dimensionName = formatDimensionName(dimension);
+                const percentage = Math.round(score);
+                let colorClass = 'danger';
+                if (percentage >= 70) colorClass = 'success';
+                else if (percentage >= 50) colorClass = 'warning';
+                
+                html += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong>${dimensionName}</strong>
+                            <span class="badge bg-${colorClass}">${percentage}%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-${colorClass}" style="width: ${percentage}%"></div>
+                        </div>
+                        <small class="text-muted">${getDimensionDescription(dimension, percentage)}</small>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function generateResponsesHTML(responses) {
+            if (!responses || responses.length === 0) {
+                return '<p class="text-muted">No hay respuestas disponibles.</p>';
+            }
+            
+            const optionLabels = {
+                1: 'Totalmente en desacuerdo',
+                2: 'En desacuerdo', 
+                3: 'Neutral',
+                4: 'De acuerdo',
+                5: 'Totalmente de acuerdo'
+            };
+            
+            let html = '';
+            responses.forEach((response, index) => {
+                html += `
+                    <div class="border-start border-3 border-primary ps-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>Pregunta ${index + 1}:</strong>
+                                <p class="mb-1">${response.question_text}</p>
+                                <small class="text-primary">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    ${optionLabels[response.selected_option]}
+                                </small>
+                            </div>
+                            <span class="badge bg-secondary ms-2">${response.selected_option}/5</span>
+                        </div>
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        function formatDimensionName(dimension) {
+            const names = {
+                'comunicacion': 'Comunicación Efectiva',
+                'derechos': 'Defensa de Derechos',
+                'opiniones': 'Expresión de Opiniones',
+                'conflictos': 'Manejo de Conflictos',
+                'autoconfianza': 'Autoconfianza'
+            };
+            return names[dimension] || dimension;
+        }
+
+        function getDimensionDescription(dimension, score) {
+            const descriptions = {
+                'comunicacion': score >= 70 ? 'Comunicación clara y efectiva' : 'Oportunidad de mejorar la comunicación',
+                'derechos': score >= 70 ? 'Defiende bien sus derechos' : 'Necesita fortalecer la defensa de derechos',
+                'opiniones': score >= 70 ? 'Expresa opiniones con confianza' : 'Puede mejorar la expresión de opiniones',
+                'conflictos': score >= 70 ? 'Maneja conflictos efectivamente' : 'Requiere mejorar manejo de conflictos',
+                'autoconfianza': score >= 70 ? 'Autoconfianza sólida' : 'Necesita fortalecer la autoconfianza'
+            };
+            return descriptions[dimension] || 'Sin descripción disponible';
+        }
+
+        function getAssertiveLevelFromScore(score) {
+            if (score >= 85) return 'Muy Asertivo';
+            if (score >= 70) return 'Asertivo';
+            if (score >= 50) return 'Moderadamente Asertivo';
+            return 'Poco Asertivo';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Función para descargar reporte
+        function downloadReport(coacheeId) {
+            showToast('Función de descarga en desarrollo', 'info');
+        }
+
+        // Función para enviar recordatorio
+        function sendReminder(coacheeId) {
+            showToast('Recordatorio enviado', 'success');
+        }
+
+        // ==========================================
+        // FUNCIONES DE GESTIÓN DE TAREAS
+        // ==========================================
+
+        // Función para abrir el modal de nueva tarea
+        function openTaskModal() {
+            console.log('Abriendo modal de nueva tarea...');
+            
+            // Resetear el formulario
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                taskForm.reset();
+            }
+            
+            // Cargar coachees en el select
+            const coacheeSelect = document.getElementById('taskCoachee');
+            coacheeSelect.innerHTML = '<option value="">Selecciona un coachee...</option>';
+            
+            coacheesData.forEach(coachee => {
+                const option = document.createElement('option');
+                option.value = coachee.id;
+                option.textContent = coachee.full_name || coachee.username;
+                coacheeSelect.appendChild(option);
+            });
+            
+            // Asegurar que todos los inputs estén habilitados
+            const inputs = document.querySelectorAll('#taskModal input, #taskModal textarea, #taskModal select');
+            inputs.forEach(input => {
+                input.removeAttribute('disabled');
+                input.style.pointerEvents = 'auto';
+                input.style.userSelect = 'text';
+                input.style.cursor = input.type === 'text' || input.tagName === 'TEXTAREA' ? 'text' : 'pointer';
+            });
+            
+            // Abrir el modal
+            const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+            modal.show();
+            
+            // Enfocar el primer select después de que se abra
+            setTimeout(() => {
+                const firstInput = document.getElementById('taskCoachee');
+                if (firstInput) {
+                    firstInput.focus();
+                    console.log('Primer campo enfocado');
+                }
+            }, 300);
+        }
+
+        // Función para crear nueva tarea
+        async function createTask() {
+            const formData = {
+                coachee_id: document.getElementById('taskCoachee').value,
+                title: document.getElementById('taskTitle').value.trim(),
+                description: document.getElementById('taskDescription').value.trim(),
+                category: document.getElementById('taskCategory').value,
+                priority: document.getElementById('taskPriority').value,
+                due_date: document.getElementById('taskDueDate').value
+            };
+
+            const submitBtn = document.querySelector('#taskForm button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Validar campos requeridos
+            if (!formData.coachee_id || !formData.title || !formData.description || !formData.category) {
+                showToast('Completa todos los campos requeridos', 'error');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando...';
+
+                const response = await fetch('/api/coach/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error al crear tarea');
+                }
+
+                showToast('Tarea creada exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+                loadTasks();
+
+            } catch (error) {
+                console.error('Error creando tarea:', error);
+                showToast(error.message || 'Error al crear tarea', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Función para cargar tareas
+        async function loadTasks() {
+            try {
+                const container = document.getElementById('tasksContainer');
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando tareas...</span>
+                        </div>
+                    </div>
+                `;
+
+                const response = await fetch('/api/coach/tasks', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Verificar que los datos sean válidos
+                if (Array.isArray(data)) {
+                    tasksData = data;
+                    displayTasks();
+                } else {
+                    console.error('Formato de datos inesperado para tareas:', data);
+                    throw new Error('Formato de datos inesperado del servidor');
+                }
+
+            } catch (error) {
+                console.error('Error cargando tareas:', error);
+                const container = document.getElementById('tasksContainer');
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger glass-card">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar tareas: ${error.message}
+                            <button class="btn btn-sm btn-outline-light ms-2" onclick="loadTasks()">
+                                <i class="fas fa-refresh me-1"></i>Reintentar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Inicializar datos vacíos para evitar errores en otras funciones
+                tasksData = [];
+            }
+        }
+
+        // Función para mostrar tareas
+        function displayTasks() {
+            const container = document.getElementById('tasksContainer');
+
+            if (!tasksData || tasksData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                                 style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1);">
+                                <i class="fas fa-tasks fa-2x text-white-50"></i>
+                            </div>
+                            <h4 class="text-gradient fw-bold">No hay tareas asignadas</h4>
+                            <p class="text-white-50 mb-4">Las tareas que crees para tus coachees aparecerán aquí.</p>
+                            <button class="btn btn-success interactive-element" onclick="openTaskModal()">
+                                <i class="fas fa-plus me-2"></i>Crear Primera Tarea
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = tasksData.map(task => {
+                const priorityColors = {
+                    low: 'success',
+                    medium: 'warning', 
+                    high: 'danger',
+                    urgent: 'danger'
+                };
+
+                const statusColors = {
+                    pending: 'secondary',
+                    in_progress: 'primary',
+                    completed: 'success',
+                    cancelled: 'dark'
+                };
+
+                const statusLabels = {
+                    pending: 'Pendiente',
+                    in_progress: 'En Progreso',
+                    completed: 'Completada',
+                    cancelled: 'Cancelada'
+                };
+
+                return `
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="glass-card task-card priority-${task.priority} h-100 p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <h6 class="text-gradient fw-bold mb-1">${task.title}</h6>
+                                <p class="text-white-50 mb-2 small">${task.coachee.name}</p>
+                            </div>
+                            <span class="badge bg-${priorityColors[task.priority]} ms-2">
+                                ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                            </span>
+                        </div>
+                        
+                        <p class="text-white-50 mb-3 small">${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-white-50">Progreso:</small>
+                                <small class="text-gradient fw-bold">${task.progress_percentage}%</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar status-${task.status}" role="progressbar" 
+                                     style="width: ${task.progress_percentage}%;" 
+                                     aria-valuenow="${task.progress_percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span class="badge bg-${statusColors[task.status]} mb-2">
+                                ${statusLabels[task.status]}
+                            </span>
+                            <span class="badge bg-info">${task.category}</span>
+                            ${task.due_date ? `<br><small class="text-warning">
+                                <i class="fas fa-calendar me-1"></i>Vence: ${new Date(task.due_date).toLocaleDateString()}
+                            </small>` : ''}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="viewTaskDetails(${task.id})">
+                                <i class="fas fa-eye me-1"></i>Ver
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="updateTaskProgress(${task.id})">
+                                <i class="fas fa-edit me-1"></i>Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Función para ver detalles de tarea
+        function viewTaskDetails(taskId) {
+            const task = tasksData.find(t => t.id === taskId);
+            if (task) {
+                showToast(`Detalles de: ${task.title}`, 'info');
+            }
+        }
+
+        // Función para actualizar progreso de tarea
+        function updateTaskProgress(taskId) {
+            showToast('Función de actualización en desarrollo', 'info');
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado, inicializando dashboard del coach...');
+            
+            // Verificar que Bootstrap esté disponible
+            if (typeof bootstrap === 'undefined') {
+                console.error('Bootstrap no está disponible');
+                showToast('Error: Bootstrap no está cargado', 'error');
+                return;
+            }
+            
+            // Verificar que el modal existe
+            const modalElement = document.getElementById('invitationModal');
+            if (!modalElement) {
+                console.error('Modal de invitación no encontrado');
+                return;
+            }
+            
+            // Configurar event listener para el formulario de invitación
+            const invitationForm = document.getElementById('invitationForm');
+            if (invitationForm) {
+                console.log('📋 FORM: Formulario de invitación encontrado, configurando event listener...');
+                
+                // Event listener para submit del formulario
+                invitationForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    console.log('📋 FORM: Formulario de invitación enviado');
+                    await sendInvitation();
+                });
+                
+                // Event listener ADICIONAL para el botón específico
+                const submitBtn = invitationForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    console.log('🔘 BTN: Botón submit encontrado, configurando...');
+                    
+                    // Forzar estilos del botón
+                    submitBtn.style.pointerEvents = 'auto';
+                    submitBtn.style.cursor = 'pointer';
+                    submitBtn.style.zIndex = '10000';
+                    submitBtn.style.position = 'relative';
+                    
+                    // Event listener adicional para click directo
+                    submitBtn.addEventListener('click', async function(e) {
+                        console.log('🔘 BTN: Botón clickeado directamente');
+                        e.preventDefault();
+                        await sendInvitation();
+                    });
+                    
+                    // Debug del botón
+                    submitBtn.addEventListener('mouseenter', function() {
+                        console.log('🔘 BTN: Mouse sobre botón');
+                    });
+                    submitBtn.addEventListener('mouseleave', function() {
+                        console.log('🔘 BTN: Mouse fuera del botón');
+                    });
+                }
+                
+                // Agregar listeners a los inputs para debugging
+                const emailInput = document.getElementById('inviteEmail');
+                const nameInput = document.getElementById('inviteFullName');
+                
+                if (emailInput) {
+                    emailInput.addEventListener('input', function(e) {
+                        console.log('Email input changed:', e.target.value);
+                    });
+                    emailInput.addEventListener('click', function(e) {
+                        console.log('Email input clicked');
+                        e.stopPropagation();
+                    });
+                }
+                
+                if (nameInput) {
+                    nameInput.addEventListener('input', function(e) {
+                        console.log('Name input changed:', e.target.value);
+                    });
+                    nameInput.addEventListener('click', function(e) {
+                        console.log('Name input clicked');
+                        e.stopPropagation();
+                    });
+                }
+            } else {
+                console.error('Formulario de invitación no encontrado');
+            }
+
+            // Agregar evento al modal para forzar interactividad cuando se muestre
+            const inviteModalEl = document.getElementById('invitationModal');
+            if (inviteModalEl) {
+                inviteModalEl.addEventListener('shown.bs.modal', function() {
+                    console.log('Modal shown event triggered');
+                    
+                    // Forzar estilos en todos los inputs
+                    const allInputs = this.querySelectorAll('input, textarea, select');
+                    allInputs.forEach((input, index) => {
+                        input.style.pointerEvents = 'auto';
+                        input.style.userSelect = 'text';
+                        input.style.position = 'relative';
+                        input.style.zIndex = '10000';
+                        input.style.cursor = input.tagName === 'SELECT' ? 'pointer' : 'text';
+                        
+                        console.log(`Input ${index} configured:`, input.id || input.name);
+                    });
+                    
+                    // Eliminar pointer-events del backdrop
+                    setTimeout(() => {
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) {
+                            backdrop.style.pointerEvents = 'none';
+                        }
+                    }, 100);
+                });
+            }
+
+            // Configurar event listener para el formulario de tareas
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                taskForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    await createTask();
+                });
+                
+                // Agregar listeners a los inputs de tareas para debugging
+                const taskInputs = [
+                    'taskCoachee', 'taskCategory', 'taskPriority', 
+                    'taskDueDate', 'taskTitle', 'taskDescription'
+                ];
+                
+                taskInputs.forEach(inputId => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        input.addEventListener('input', function(e) {
+                            console.log(`${inputId} changed:`, e.target.value);
+                        });
+                        
+                        input.addEventListener('focus', function(e) {
+                            console.log(`${inputId} focused`);
+                            e.target.style.pointerEvents = 'auto';
+                        });
+                        
+                        input.addEventListener('click', function(e) {
+                            console.log(`${inputId} clicked`);
+                        });
+                    }
+                });
+            } else {
+                console.error('Formulario de tareas no encontrado');
+            }
+
+            // Cargar datos iniciales
+            loadCoachees();
+            loadTasks();
+            
+            // Función para actualizar todo el dashboard
+            window.refreshDashboard = async function() {
+                try {
+                    showToast('Actualizando dashboard...', 'info');
+                    await Promise.all([
+                        loadCoachees(),
+                        loadTasks()
+                    ]);
+                    showToast('Dashboard actualizado', 'success');
+                } catch (error) {
+                    console.error('Error actualizando dashboard:', error);
+                    showToast('Error actualizando dashboard', 'error');
+                }
+            };
+            
+            // Agregar event listeners para when modals are shown
+            const invitationModal = document.getElementById('invitationModal');
+            const taskModal = document.getElementById('taskModal');
+            
+            if (invitationModal) {
+                invitationModal.addEventListener('shown.bs.modal', function () {
+                    console.log('Modal de invitación mostrado');
+                    // Forzar focus en el primer input
+                    const firstInput = document.getElementById('inviteEmail');
+                    if (firstInput) {
+                        firstInput.focus();
+                        firstInput.click();
+                    }
+                });
+            }
+            
+            if (taskModal) {
+                taskModal.addEventListener('shown.bs.modal', function () {
+                    console.log('Modal de tareas mostrado');
+                    // Forzar focus en el primer select
+                    const firstSelect = document.getElementById('taskCoachee');
+                    if (firstSelect) {
+                        firstSelect.focus();
+                        firstSelect.click();
+                    }
+                });
+            }
+        });
+</script>
+{% endblock %}
+{% endblock %}
