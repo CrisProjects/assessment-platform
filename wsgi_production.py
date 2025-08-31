@@ -4,7 +4,7 @@ WSGI entry point para producción en Railway
 """
 import os
 import logging
-from app import app, auto_initialize_database
+import time
 
 # Configuración de logging para producción
 logging.basicConfig(
@@ -12,9 +12,28 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s %(name)s %(message)s'
 )
 
-# Inicializar la base de datos cuando gunicorn importa la aplicación
-with app.app_context():
-    auto_initialize_database()
+# Esperar un momento adicional para PostgreSQL
+time.sleep(2)
+
+# Importar la aplicación
+from app import app, auto_initialize_database
+
+# Intentar la inicialización con reintentos para PostgreSQL
+max_retries = 3
+for attempt in range(max_retries):
+    try:
+        logging.info(f"🔄 WSGI: Intento de inicialización {attempt + 1}/{max_retries}")
+        with app.app_context():
+            auto_initialize_database()
+        logging.info("✅ WSGI: Inicialización completada exitosamente")
+        break
+    except Exception as e:
+        logging.error(f"❌ WSGI: Error en intento {attempt + 1}: {e}")
+        if attempt < max_retries - 1:
+            logging.info("⏳ WSGI: Esperando antes del siguiente intento...")
+            time.sleep(3)
+        else:
+            logging.error("💥 WSGI: Todos los intentos fallaron")
 
 # Variable requerida por gunicorn
 application = app
