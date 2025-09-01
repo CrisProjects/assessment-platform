@@ -109,6 +109,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(120), nullable=False)
+    original_password = db.Column(db.String(120), nullable=True)  # Solo para coachees recién creados
     full_name = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='coachee', index=True)
     active = db.Column(db.Boolean, default=True, index=True)
@@ -529,11 +530,205 @@ def auto_initialize_database():
             create_demo_data_for_coachee(coachee_user)
             logger.info("✅ AUTO-INIT: Usuario coachee creado")
         
+        # Crear evaluaciones adicionales
+        create_additional_assessments()
+        
         logger.info("🎉 AUTO-INIT: Inicialización completa finalizada")
         return True
         
     except Exception as e:
         logger.error(f"❌ AUTO-INIT: Error en inicialización automática: {e}")
+        return False
+
+def create_additional_assessments():
+    """Crear evaluaciones adicionales para demostrar la funcionalidad"""
+    try:
+        logger.info("🔧 ASSESSMENTS: Creando evaluaciones adicionales...")
+        
+        # Assessment 2: DISC (Personalidad)
+        if not Assessment.query.filter_by(id=2).first():
+            disc_assessment = Assessment(
+                id=2,
+                title='Evaluación DISC de Personalidad',
+                description='Identifica tu estilo de personalidad predominante: Dominante, Influyente, Estable o Concienzudo',
+                is_active=True
+            )
+            db.session.add(disc_assessment)
+            logger.info("✅ ASSESSMENTS: Assessment DISC creado")
+            
+            # Preguntas DISC
+            disc_questions = [
+                "Me gusta tomar decisiones rápidas y asumir riesgos",
+                "Prefiero trabajar en equipo y motivar a otros",
+                "Valoro la estabilidad y la armonía en el trabajo",
+                "Me enfoco en los detalles y la precisión",
+                "Soy directo al comunicar mis ideas",
+                "Disfruto conocer gente nueva y socializar",
+                "Prefiero rutinas establecidas y predecibles",
+                "Analizo cuidadosamente antes de tomar decisiones",
+                "Me siento cómodo liderando proyectos desafiantes",
+                "Soy optimista y entusiasta con nuevas ideas",
+                "Evito conflictos y busco consenso",
+                "Sigo procedimientos y normas establecidas",
+                "Actúo con determinación para alcanzar objetivos",
+                "Inspiro confianza y genero entusiasmo en otros",
+                "Soy leal y comprometido con mi equipo",
+                "Busco perfección en mi trabajo"
+            ]
+            
+            disc_dimensions = [
+                'Dominante', 'Influyente', 'Estable', 'Concienzudo',
+                'Dominante', 'Influyente', 'Estable', 'Concienzudo',
+                'Dominante', 'Influyente', 'Estable', 'Concienzudo',
+                'Dominante', 'Influyente', 'Estable', 'Concienzudo'
+            ]
+            
+            for i, text in enumerate(disc_questions, 1):
+                question = Question(
+                    assessment_id=2,
+                    text=text,
+                    question_type='likert',
+                    order=i,
+                    dimension=disc_dimensions[i-1]
+                )
+                db.session.add(question)
+        
+        # Assessment 3: Inteligencia Emocional
+        if not Assessment.query.filter_by(id=3).first():
+            eq_assessment = Assessment(
+                id=3,
+                title='Evaluación de Inteligencia Emocional',
+                description='Mide tu capacidad para reconocer, entender y manejar emociones propias y ajenas',
+                is_active=True
+            )
+            db.session.add(eq_assessment)
+            logger.info("✅ ASSESSMENTS: Assessment de Inteligencia Emocional creado")
+            
+            # Preguntas de Inteligencia Emocional
+            eq_questions = [
+                "Reconozco fácilmente mis propias emociones",
+                "Entiendo qué causa mis cambios de humor",
+                "Soy consciente de mis reacciones emocionales",
+                "Puedo controlar mis emociones en situaciones estresantes",
+                "Mantengo la calma bajo presión",
+                "Puedo motivarme a mí mismo para lograr objetivos",
+                "Reconozco las emociones de otras personas",
+                "Entiendo los sentimientos de los demás",
+                "Soy empático con las experiencias de otros",
+                "Manejo bien las relaciones interpersonales",
+                "Resuelvo conflictos de manera efectiva",
+                "Influyo positivamente en otros"
+            ]
+            
+            eq_dimensions = [
+                'Autoconciencia', 'Autoconciencia', 'Autoconciencia',
+                'Autorregulación', 'Autorregulación', 'Automotivación',
+                'Empatía', 'Empatía', 'Empatía',
+                'Habilidades Sociales', 'Habilidades Sociales', 'Habilidades Sociales'
+            ]
+            
+            for i, text in enumerate(eq_questions, 1):
+                question = Question(
+                    assessment_id=3,
+                    text=text,
+                    question_type='likert',
+                    order=i,
+                    dimension=eq_dimensions[i-1]
+                )
+                db.session.add(question)
+        
+        # Assessment 4: Liderazgo
+        if not Assessment.query.filter_by(id=4).first():
+            leadership_assessment = Assessment(
+                id=4,
+                title='Evaluación de Habilidades de Liderazgo',
+                description='Evalúa tus competencias de liderazgo y capacidad para dirigir equipos',
+                is_active=True
+            )
+            db.session.add(leadership_assessment)
+            logger.info("✅ ASSESSMENTS: Assessment de Liderazgo creado")
+            
+            # Preguntas de Liderazgo
+            leadership_questions = [
+                "Inspiro confianza en mi equipo",
+                "Comunico la visión de manera clara y convincente",
+                "Tomo decisiones difíciles cuando es necesario",
+                "Delego responsabilidades de manera efectiva",
+                "Proporciono retroalimentación constructiva",
+                "Desarrollo las habilidades de mi equipo",
+                "Me adapto rápidamente a los cambios",
+                "Innovo y busco nuevas oportunidades",
+                "Mantengo la integridad en todas mis acciones",
+                "Asumo responsabilidad por los resultados del equipo"
+            ]
+            
+            leadership_dimensions = [
+                'Inspiración', 'Comunicación', 'Toma de Decisiones',
+                'Delegación', 'Desarrollo de Talento', 'Desarrollo de Talento',
+                'Adaptabilidad', 'Innovación', 'Integridad', 'Responsabilidad'
+            ]
+            
+            for i, text in enumerate(leadership_questions, 1):
+                question = Question(
+                    assessment_id=4,
+                    text=text,
+                    question_type='likert',
+                    order=i,
+                    dimension=leadership_dimensions[i-1]
+                )
+                db.session.add(question)
+        
+        # Assessment 5: Trabajo en Equipo
+        if not Assessment.query.filter_by(title="Assessment de Trabajo en Equipo").first():
+            teamwork_assessment = Assessment(
+                title="Assessment de Trabajo en Equipo",
+                description="Evaluación de habilidades de colaboración y trabajo en equipo",
+                is_active=True
+            )
+            db.session.add(teamwork_assessment)
+            db.session.flush()
+            logger.info("✅ ASSESSMENTS: Assessment de Trabajo en Equipo creado")
+
+            # Preguntas para Trabajo en Equipo
+            teamwork_questions = [
+                "Colaboro eficazmente con personas de diferentes personalidades",
+                "Comparto información y recursos con mis compañeros de equipo", 
+                "Escucho activamente las ideas y opiniones de otros",
+                "Apoyo a mis compañeros cuando necesitan ayuda",
+                "Asumo mi responsabilidad en los resultados del equipo",
+                "Contribuyo de manera constructiva en las reuniones de equipo",
+                "Manejo los desacuerdos de manera respetuosa y productiva",
+                "Me adapto fácilmente a los cambios en la dinámica del equipo",
+                "Celebro los éxitos del equipo, no solo los individuales",
+                "Confío en las habilidades y compromiso de mis compañeros",
+                "Comunico de manera clara y oportuna con el equipo",
+                "Busco activamente formas de mejorar el desempeño del equipo"
+            ]
+
+            # Dimensiones para Trabajo en Equipo
+            teamwork_dimensions = [
+                "Colaboración", "Compartir recursos", "Escucha activa",
+                "Apoyo mutuo", "Responsabilidad compartida", "Participación constructiva",
+                "Manejo de conflictos", "Adaptabilidad", "Espíritu de equipo",
+                "Confianza", "Comunicación efectiva", "Mejora continua"
+            ]
+
+            for i, text in enumerate(teamwork_questions, 1):
+                question = Question(
+                    assessment_id=5,
+                    text=text,
+                    question_type='likert',
+                    order=i,
+                    dimension=teamwork_dimensions[i-1]
+                )
+                db.session.add(question)
+
+        db.session.commit()
+        logger.info("🎉 ASSESSMENTS: Todas las evaluaciones adicionales creadas exitosamente")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ ASSESSMENTS: Error creando evaluaciones adicionales: {e}")
         return False
 
 def create_demo_data_for_coachee(coachee_user):
@@ -1528,6 +1723,7 @@ def api_coach_create_invitation_v2():
         full_name = data.get('full_name')
         email = data.get('email')
         message = data.get('message', '')
+        assigned_assessment_id = data.get('assigned_assessment_id')  # Nueva funcionalidad
         
         if not full_name or not email:
             logger.warning("❌ INVITATION: Missing required fields")
@@ -1565,7 +1761,8 @@ def api_coach_create_invitation_v2():
             full_name=full_name,
             role='coachee',
             coach_id=current_user.id,
-            is_active=True
+            is_active=True,
+            original_password=password  # ✅ Guardar contraseña original para que el coach pueda verla
         )
         new_coachee.set_password(password)
         
@@ -1582,16 +1779,52 @@ def api_coach_create_invitation_v2():
         for v_coachee in verification_query:
             logger.info(f"🔍 INVITATION: Verification coachee: ID={v_coachee.id}, Name={v_coachee.full_name}, Coach_ID={v_coachee.coach_id}")
         
+        # Asignar evaluación si se especificó
+        assessment_assigned = False
+        assigned_assessment_title = None
+        if assigned_assessment_id:
+            try:
+                logger.info(f"📋 INVITATION: Attempting to assign assessment ID {assigned_assessment_id} to coachee {new_coachee.id}")
+                
+                # Verificar que la evaluación existe y está activa
+                assessment = Assessment.query.filter_by(id=assigned_assessment_id, is_active=True).first()
+                if assessment:
+                    # Crear una tarea de evaluación para el coachee
+                    new_task = Task(
+                        coach_id=current_user.id,
+                        coachee_id=new_coachee.id,
+                        title=f"Evaluación: {assessment.title}",
+                        description=f"Completa la evaluación '{assessment.title}' asignada por tu coach.",
+                        category='evaluation',
+                        priority='high',
+                        due_date=None,  # Sin fecha límite por defecto
+                        is_active=True
+                    )
+                    
+                    db.session.add(new_task)
+                    db.session.commit()
+                    
+                    assessment_assigned = True
+                    assigned_assessment_title = assessment.title
+                    logger.info(f"✅ INVITATION: Assessment '{assessment.title}' assigned successfully to coachee {new_coachee.full_name}")
+                else:
+                    logger.warning(f"❌ INVITATION: Assessment with ID {assigned_assessment_id} not found or inactive")
+            except Exception as e:
+                logger.error(f"❌ INVITATION: Error assigning assessment: {str(e)}")
+                # No fallar la invitación si hay error en la asignación
+        
         return jsonify({
             'success': True,
-            'message': f'Coachee {full_name} creado exitosamente',
+            'message': f'Coachee {full_name} creado exitosamente' + 
+                      (f' con evaluación "{assigned_assessment_title}" asignada' if assessment_assigned else ''),
             'coachee': {
                 'id': new_coachee.id,
                 'username': username,
                 'email': email,
                 'full_name': full_name,
                 'password': password,
-                'login_url': f"{request.url_root}login?role=coachee"
+                'login_url': f"{request.url_root}login?role=coachee",
+                'assigned_assessment': assigned_assessment_title if assessment_assigned else None
             }
         }), 201
         
@@ -1654,7 +1887,8 @@ def api_coach_my_coachees():
                 'is_active': coachee.is_active,
                 'evaluations_count': len(evaluations),
                 'last_evaluation': last_evaluation_data,
-                'avg_score': avg_score
+                'avg_score': avg_score,
+                'password': coachee.original_password  # ✅ Incluir contraseña original para que el coach pueda verla
             }
             coachees_data.append(coachee_data)
             logger.info(f"✅ MY-COACHEES: Processed coachee {coachee.full_name} with data: {coachee_data}")
@@ -1993,6 +2227,198 @@ def api_coach_delete_task(task_id):
         db.session.rollback()
         return jsonify({'error': f'Error eliminando tarea: {str(e)}'}), 500
 
+@app.route('/api/coach/coachee-assessments/<int:coachee_id>', methods=['GET'])
+@login_required
+def api_coach_coachee_assessments(coachee_id):
+    """Obtener todas las evaluaciones disponibles para un coachee específico (espejo del dashboard del coachee)"""
+    try:
+        logger.info(f"📊 COACHEE-ASSESSMENTS: Request from user {current_user.username} for coachee {coachee_id}")
+        
+        if not current_user.is_authenticated or current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver evaluaciones de coachees.'}), 403
+        
+        # Verificar que el coachee pertenece al coach actual
+        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
+        if not coachee:
+            logger.warning(f"❌ COACHEE-ASSESSMENTS: Coachee {coachee_id} not found or unauthorized")
+            return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
+        
+        logger.info(f"🔍 COACHEE-ASSESSMENTS: Getting ALL available assessments for {coachee.full_name} (mirror view)")
+        
+        # 1. Obtener todas las evaluaciones disponibles (igual que ve el coachee)
+        available_assessments = Assessment.query.filter(Assessment.is_active == True).all()
+        
+        # 2. Obtener tareas de evaluación asignadas a este coachee
+        evaluation_tasks = Task.query.filter_by(
+            coach_id=current_user.id,
+            coachee_id=coachee_id,
+            category='evaluation',
+            is_active=True
+        ).all()
+        
+        # 3. Obtener evaluaciones completadas por el coachee
+        completed_results = AssessmentResult.query.filter_by(user_id=coachee_id).all()
+        
+        # Crear mapas para facilitar búsquedas
+        assigned_tasks_map = {}
+        for task in evaluation_tasks:
+            # Extraer el título de la evaluación del título de la tarea
+            assessment_title = task.title.replace('Evaluación: ', '').strip() if task.title.startswith('Evaluación: ') else task.title.strip()
+            assigned_tasks_map[assessment_title] = task
+        
+        completed_results_map = {}
+        for result in completed_results:
+            if result.assessment_id not in completed_results_map:
+                completed_results_map[result.assessment_id] = []
+            completed_results_map[result.assessment_id].append(result)
+        
+        # 4. Construir la respuesta con todas las evaluaciones (disponibles + estado)
+        all_assessments = []
+        for assessment in available_assessments:
+            # Obtener preguntas para contar total
+            questions = Question.query.filter_by(
+                assessment_id=assessment.id, 
+                is_active=True
+            ).count()
+            
+            # Verificar si está asignada
+            is_assigned = assessment.title in assigned_tasks_map
+            assigned_task = assigned_tasks_map.get(assessment.title)
+            
+            # Verificar intentos completados
+            completed_attempts = completed_results_map.get(assessment.id, [])
+            
+            assessment_data = {
+                'assessment_id': assessment.id,
+                'assessment_title': assessment.title,
+                'description': assessment.description,
+                'total_questions': questions,
+                'is_assigned': is_assigned,
+                'task_id': assigned_task.id if assigned_task else None,
+                'assigned_date': assigned_task.created_at.isoformat() if assigned_task and assigned_task.created_at else None,
+                'due_date': assigned_task.due_date.isoformat() if assigned_task and assigned_task.due_date else None,
+                'priority': assigned_task.priority if assigned_task else None,
+                'task_description': assigned_task.description if assigned_task else None,
+                'completed_attempts': len(completed_attempts),
+                'last_attempt': {
+                    'id': completed_attempts[-1].id,
+                    'score': completed_attempts[-1].score,
+                    'completed_at': completed_attempts[-1].completed_at.isoformat(),
+                    'result_text': completed_attempts[-1].result_text
+                } if completed_attempts else None,
+                'created_at': assessment.created_at.isoformat() if assessment.created_at else None
+            }
+            
+            all_assessments.append(assessment_data)
+        
+        # Estadísticas
+        assigned_count = len([a for a in all_assessments if a['is_assigned']])
+        completed_count = len([a for a in all_assessments if a['completed_attempts'] > 0])
+        
+        logger.info(f"📊 COACHEE-ASSESSMENTS: Found {len(all_assessments)} total assessments for {coachee.full_name} ({assigned_count} assigned, {completed_count} completed)")
+        
+        return jsonify({
+            'success': True,
+            'coachee': {
+                'id': coachee.id,
+                'name': coachee.full_name,
+                'email': coachee.email
+            },
+            'assessments': all_assessments,
+            'summary': {
+                'total_available': len(all_assessments),
+                'total_assigned': assigned_count,
+                'total_completed': completed_count
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ COACHEE-ASSESSMENTS: Error getting assessments for coachee {coachee_id}: {str(e)}")
+        import traceback
+        logger.error(f"❌ COACHEE-ASSESSMENTS: Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Error obteniendo evaluaciones del coachee: {str(e)}'}), 500
+
+@app.route('/api/coach/unassign-assessment', methods=['POST'])
+@login_required
+def api_coach_unassign_assessment():
+    """Desasignar una evaluación de un coachee eliminando la tarea correspondiente"""
+    try:
+        logger.info(f"🚫 UNASSIGN-ASSESSMENT: Request from user {current_user.username} (role: {current_user.role})")
+        
+        if not current_user.is_authenticated or current_user.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden desasignar evaluaciones.'}), 403
+        
+        data = request.get_json()
+        coachee_id = data.get('coachee_id')
+        assessment_title = data.get('assessment_title')
+        
+        if not coachee_id or not assessment_title:
+            return jsonify({'error': 'coachee_id y assessment_title son requeridos.'}), 400
+        
+        logger.info(f"🔍 UNASSIGN-ASSESSMENT: Searching for coachee {coachee_id} and assessment '{assessment_title}'")
+        
+        # Verificar que el coachee pertenece al coach actual
+        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
+        if not coachee:
+            logger.warning(f"❌ UNASSIGN-ASSESSMENT: Coachee {coachee_id} not found or unauthorized")
+            return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
+        
+        # Buscar la tarea de evaluación específica
+        # Probar diferentes variaciones del título
+        possible_titles = [
+            f"Evaluación: {assessment_title}",
+            f"Evaluación: {assessment_title.strip()}",
+            assessment_title,
+            assessment_title.strip()
+        ]
+        
+        evaluation_task = None
+        for title_variant in possible_titles:
+            evaluation_task = Task.query.filter_by(
+                coach_id=current_user.id,
+                coachee_id=coachee_id,
+                title=title_variant,
+                category='evaluation',
+                is_active=True
+            ).first()
+            if evaluation_task:
+                logger.info(f"📋 UNASSIGN-ASSESSMENT: Found task with title variant: '{title_variant}'")
+                break
+        
+        if not evaluation_task:
+            logger.warning(f"❌ UNASSIGN-ASSESSMENT: Evaluation task for '{assessment_title}' not found for coachee {coachee.full_name}")
+            return jsonify({'error': f'Evaluación "{assessment_title}" no está asignada a este coachee.'}), 404
+        
+        logger.info(f"📋 UNASSIGN-ASSESSMENT: Found evaluation task ID {evaluation_task.id} for coachee {coachee.full_name}")
+        
+        # Eliminar progreso asociado a la tarea
+        TaskProgress.query.filter_by(task_id=evaluation_task.id).delete()
+        logger.info(f"🗑️ UNASSIGN-ASSESSMENT: Deleted task progress for task {evaluation_task.id}")
+        
+        # Eliminar la tarea de evaluación
+        db.session.delete(evaluation_task)
+        db.session.commit()
+        
+        logger.info(f"✅ UNASSIGN-ASSESSMENT: Successfully unassigned '{assessment_title}' from {coachee.full_name}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Evaluación "{assessment_title}" desasignada exitosamente de {coachee.full_name}',
+            'coachee': {
+                'id': coachee.id,
+                'name': coachee.full_name
+            },
+            'assessment_title': assessment_title
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ UNASSIGN-ASSESSMENT: Error unassigning assessment: {str(e)}")
+        logger.error(f"❌ UNASSIGN-ASSESSMENT: Exception details: {e.__class__.__name__}: {str(e)}")
+        import traceback
+        logger.error(f"❌ UNASSIGN-ASSESSMENT: Traceback: {traceback.format_exc()}")
+        db.session.rollback()
+        return jsonify({'error': f'Error desasignando evaluación: {str(e)}'}), 500
+
 @app.route('/api/coach/available-assessments', methods=['GET'])
 @login_required
 def api_coach_available_assessments():
@@ -2033,6 +2459,36 @@ def api_coach_available_assessments():
     except Exception as e:
         app.logger.error(f"ERROR OBTENIENDO EVALUACIONES DISPONIBLES: {str(e)}")
         return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
+
+@app.route('/api/admin/create-additional-assessments', methods=['POST'])
+@login_required
+def api_create_additional_assessments():
+    """Crear evaluaciones adicionales (solo administradores)"""
+    try:
+        # Verificar que es admin
+        if not current_user.is_authenticated or current_user.role not in ['platform_admin', 'admin']:
+            return jsonify({'error': 'Acceso denegado. Solo administradores.'}), 403
+        
+        # Crear evaluaciones adicionales
+        success = create_additional_assessments()
+        
+        if success:
+            # Contar evaluaciones totales
+            total_assessments = Assessment.query.count()
+            return jsonify({
+                'success': True,
+                'message': 'Evaluaciones adicionales creadas exitosamente',
+                'total_assessments': total_assessments
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Error al crear evaluaciones adicionales'
+            }), 500
+            
+    except Exception as e:
+        app.logger.error(f"ERROR CREANDO EVALUACIONES ADICIONALES: {str(e)}")
+        return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
 @login_required
@@ -2130,10 +2586,33 @@ def api_coachee_evaluations():
                 'coach_name': current_user.coach.full_name if current_user.coach else 'Sin asignar'
             })
         
-        # Obtener evaluaciones disponibles (TODAS las activas, permiten múltiples intentos)
-        available_assessments = Assessment.query.filter(Assessment.is_active == True).all()
+        # Obtener solo evaluaciones ASIGNADAS (a través de tareas)
+        assigned_tasks = Task.query.filter_by(
+            coachee_id=current_user.id,
+            is_active=True,
+            category='evaluation'
+        ).all()
         
-        logger.info(f"🔍 DEBUG: Evaluaciones activas encontradas: {len(available_assessments)} (disponibles para múltiples intentos)")
+        logger.info(f"🔍 DEBUG: Tareas de evaluación asignadas encontradas: {len(assigned_tasks)}")
+        
+        # Extraer IDs de evaluaciones asignadas del título de las tareas
+        assigned_assessment_ids = []
+        for task in assigned_tasks:
+            # El título de la tarea contiene el nombre de la evaluación
+            # Buscar la evaluación que coincida con el título
+            for assessment in Assessment.query.filter(Assessment.is_active == True).all():
+                if assessment.title in task.title:
+                    assigned_assessment_ids.append(assessment.id)
+                    logger.info(f"🎯 DEBUG: Found assigned assessment: {assessment.title} (ID: {assessment.id})")
+                    break
+        
+        # Obtener solo las evaluaciones asignadas
+        available_assessments = Assessment.query.filter(
+            Assessment.id.in_(assigned_assessment_ids),
+            Assessment.is_active == True
+        ).all() if assigned_assessment_ids else []
+        
+        logger.info(f"🔍 DEBUG: Evaluaciones asignadas encontradas: {len(available_assessments)}")
         
         available_evaluations = {}
         for assessment in available_assessments:

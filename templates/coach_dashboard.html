@@ -625,6 +625,27 @@
             font-size: 0.75rem !important;
             padding: 0.25rem 0.5rem !important;
         }
+        
+        /* Estilos para botón de asignar */
+        .btn-outline-success:hover {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        /* Estilos para el modal de asignación */
+        #assignModal .nav-tabs .nav-link {
+            color: #6c757d;
+        }
+        
+        #assignModal .nav-tabs .nav-link.active {
+            color: #28a745;
+            border-color: #28a745;
+        }
+        
+        #assignModal .tab-content {
+            min-height: 300px;
+        }
     }
     
     /* Estilos adicionales para tablets */
@@ -680,18 +701,35 @@
         padding: 1.5rem;
         margin-bottom: 1rem;
         transition: all 0.3s ease;
-        cursor: pointer;
     }
     
     .assessment-card:hover {
-        border-color: #4e73df;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        transform: translateY(-2px);
+        border-color: #e3e6f0;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.05);
     }
     
     .assessment-card.selected {
         border-color: #4e73df;
         background-color: #f8f9fc;
+    }
+    
+    .assessment-actions {
+        border-top: 1px solid #e9ecef;
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .assessment-actions .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .assessment-actions .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.15);
     }
     
     .assessment-header {
@@ -1299,6 +1337,7 @@
                                     <tr>
                                         <th style="color: #212529;">Nombre</th>
                                         <th style="color: #212529;">Email</th>
+                                        <th style="color: #212529;">Contraseña</th>
                                         <th style="color: #212529;">Estado</th>
                                         <th style="color: #212529;">Evaluaciones</th>
                                         <th style="color: #212529;">Último Acceso</th>
@@ -1307,7 +1346,7 @@
                                 </thead>
                                 <tbody id="coacheesTableBody">
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">Cargando coachees...</td>
+                                        <td colspan="7" class="text-center text-muted">Cargando coachees...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1431,6 +1470,7 @@
                 <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
                         <h5 class="text-dark mb-0">Invitar Nuevo Coachee</h5>
+                        <p class="text-muted small mb-0">Invita a un coachee y asigna una evaluación inicial</p>
                     </div>
                     <div class="card-body" style="background-color: white !important;">
                         <form id="inviteForm">
@@ -1446,6 +1486,31 @@
                                            id="coacheeEmail" required style="background-color: white; color: #212529;">
                                 </div>
                             </div>
+                            
+                            <!-- Sección de evaluación -->
+                            <div class="mb-3">
+                                <label class="form-label text-dark">
+                                    <i class="fas fa-clipboard-list me-1 text-primary"></i>
+                                    Evaluación a Asignar (Opcional)
+                                </label>
+                                <select class="form-select border-secondary" id="assignedAssessment" 
+                                        style="background-color: white; color: #212529;">
+                                    <option value="">Seleccionar evaluación...</option>
+                                </select>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Si seleccionas una evaluación, se asignará automáticamente al coachee
+                                </div>
+                            </div>
+                            
+                            <!-- Mensaje personalizado -->
+                            <div class="mb-3">
+                                <label class="form-label text-dark">Mensaje Personalizado (Opcional)</label>
+                                <textarea class="form-control border-secondary" id="customMessage" rows="3" 
+                                          style="background-color: white; color: #212529;" 
+                                          placeholder="Mensaje de bienvenida para tu coachee..."></textarea>
+                            </div>
+                            
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-paper-plane me-1"></i>Enviar Invitación
                             </button>
@@ -1565,6 +1630,144 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para asignar evaluación/tarea -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Asignar a <span id="assignModalCoacheeName"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Pestañas -->
+                <ul class="nav nav-tabs mb-3" id="assignTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="evaluation-tab" data-bs-toggle="tab" data-bs-target="#evaluation-pane" type="button" role="tab">
+                            <i class="fas fa-clipboard-check me-1"></i>Evaluación
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="task-tab" data-bs-toggle="tab" data-bs-target="#task-pane" type="button" role="tab">
+                            <i class="fas fa-tasks me-1"></i>Tarea
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="assignTabContent">
+                    <!-- Pestaña de Evaluación -->
+                    <div class="tab-pane fade show active" id="evaluation-pane" role="tabpanel">
+                        <form id="assignEvaluationForm">
+                            <input type="hidden" id="targetCoacheeId" value="">
+                            
+                            <div class="mb-3">
+                                <label for="assignAssessmentSelect" class="form-label">Seleccionar evaluación:</label>
+                                <select class="form-select" id="assignAssessmentSelect" required>
+                                    <option value="">Cargando evaluaciones...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="assignEvaluationMessage" class="form-label">Mensaje personalizado (opcional):</label>
+                                <textarea class="form-control" id="assignEvaluationMessage" rows="3" 
+                                    placeholder="Mensaje para el coachee..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="assignEvaluationDueDate" class="form-label">Fecha límite (opcional):</label>
+                                <input type="date" class="form-control" id="assignEvaluationDueDate">
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Pestaña de Tarea -->
+                    <div class="tab-pane fade" id="task-pane" role="tabpanel">
+                        <form id="assignTaskForm">
+                            <div class="mb-3">
+                                <label for="assignTaskTitle" class="form-label">Título de la tarea:</label>
+                                <input type="text" class="form-control" id="assignTaskTitle" required
+                                    placeholder="Ej: Completar ejercicio de reflexión">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="assignTaskDescription" class="form-label">Descripción:</label>
+                                <textarea class="form-control" id="assignTaskDescription" rows="4" required
+                                    placeholder="Describe la tarea que debe realizar el coachee..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="assignTaskCategory" class="form-label">Categoría:</label>
+                                <select class="form-select" id="assignTaskCategory" required>
+                                    <option value="">Seleccionar categoría</option>
+                                    <option value="evaluation">Evaluación</option>
+                                    <option value="coaching">Coaching</option>
+                                    <option value="development">Desarrollo</option>
+                                    <option value="feedback">Feedback</option>
+                                    <option value="reflection">Reflexión</option>
+                                    <option value="goal">Objetivo</option>
+                                    <option value="other">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="assignTaskPriority" class="form-label">Prioridad:</label>
+                                    <select class="form-select" id="assignTaskPriority">
+                                        <option value="medium">Media</option>
+                                        <option value="high">Alta</option>
+                                        <option value="low">Baja</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="assignTaskDueDate" class="form-label">Fecha límite (opcional):</label>
+                                    <input type="date" class="form-control" id="assignTaskDueDate">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" onclick="executeAssignment()">
+                    <i class="fas fa-paper-plane me-1"></i>Asignar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar evaluaciones asignadas -->
+<div class="modal fade" id="assignedAssessmentsModal" tabindex="-1" aria-labelledby="assignedAssessmentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="assignedAssessmentsModalLabel">
+                    <i class="fas fa-clipboard-list me-2"></i>Evaluaciones Asignadas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="assignedAssessmentsContent">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
+                        <p class="mt-2">Cargando evaluaciones asignadas...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1620,6 +1823,8 @@ function showModule(moduleId) {
         loadTasks();
     } else if (moduleId === 'seleccionar-evaluaciones') {
         loadAvailableAssessments();
+    } else if (moduleId === 'invitar-coachee') {
+        loadAssessmentsForInvitation();
     }
     
     return false; // Prevenir comportamiento por defecto
@@ -1733,7 +1938,6 @@ function displayAvailableAssessments(assessments) {
         const card = document.createElement('div');
         card.className = 'assessment-card';
         card.setAttribute('data-assessment-id', assessment.id);
-        card.onclick = () => selectAssessment(assessment.id);
         
         // Agregar animación de entrada escalonada
         card.style.animationDelay = `${index * 0.1}s`;
@@ -1777,10 +1981,11 @@ function displayAvailableAssessments(assessments) {
                 </div>
             </div>
             
-            <!-- Botón de acción para móvil -->
-            <div class="d-block d-sm-none mt-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="event.stopPropagation(); selectAssessment(${assessment.id})">
-                    <i class="fas fa-plus me-1"></i>Seleccionar Evaluación
+            <!-- Botones de acción -->
+            <div class="assessment-actions mt-2">
+                <!-- Botón de asignación -->
+                <button class="btn btn-outline-success btn-sm w-100" onclick="event.stopPropagation(); openAssignModalFromEvaluation(${assessment.id}, '${assessment.title}')">
+                    <i class="fas fa-user-plus me-1"></i>Asignar a Coachee
                 </button>
             </div>
         `;
@@ -1796,7 +2001,7 @@ function displayAvailableAssessments(assessments) {
             <i class="fas fa-info-circle me-2"></i>
             <div>
                 <strong>${assessments.length} ${assessments.length === 1 ? 'evaluación disponible' : 'evaluaciones disponibles'}</strong>
-                <br><small>Toca una evaluación para seleccionarla y asignarla a tus coachees.</small>
+                <br><small>Usa el botón "Asignar a Coachee" para asignar evaluaciones a tus coachees.</small>
             </div>
         </div>
     `;
@@ -1940,6 +2145,33 @@ function confirmAssignAssessment(assessmentId) {
     }, 1000);
 }
 
+// Función para cargar evaluaciones en el selector del formulario de invitación
+function loadAssessmentsForInvitation() {
+    const selector = document.getElementById('assignedAssessment');
+    if (!selector) return;
+    
+    // Limpiar opciones existentes (excepto la primera)
+    while (selector.children.length > 1) {
+        selector.removeChild(selector.lastChild);
+    }
+    
+    fetch('/api/coach/available-assessments')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.assessments && data.assessments.length > 0) {
+                data.assessments.forEach(assessment => {
+                    const option = document.createElement('option');
+                    option.value = assessment.id;
+                    option.textContent = `${assessment.title} (${assessment.questions_count} preguntas)`;
+                    selector.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading assessments for invitation:', error);
+        });
+}
+
 // Función para cargar coachees
 function loadCoachees() {
     fetch('/api/coach/my-coachees')
@@ -1954,7 +2186,7 @@ function loadCoachees() {
         .catch(error => {
             console.error('Error loading coachees:', error);
             document.getElementById('coacheesTableBody').innerHTML = 
-                '<tr><td colspan="6" class="text-center text-danger">Error al cargar coachees</td></tr>';
+                '<tr><td colspan="7" class="text-center text-danger">Error al cargar coachees</td></tr>';
             document.getElementById('coacheesCardsContainer').innerHTML = 
                 '<div class="text-center text-danger p-3">Error al cargar coachees</div>';
         });
@@ -1966,7 +2198,7 @@ function displayCoachees() {
     const cardsContainer = document.getElementById('coacheesCardsContainer');
     
     if (coacheesData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay coachees asignados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay coachees asignados</td></tr>';
         cardsContainer.innerHTML = '<div class="text-center text-muted p-3">No hay coachees asignados</div>';
         return;
     }
@@ -1977,13 +2209,31 @@ function displayCoachees() {
             <td>${coachee.name || 'Sin nombre'}</td>
             <td>${coachee.email || 'Sin email'}</td>
             <td>
+                ${coachee.password ? `
+                    <div class="d-flex align-items-center">
+                        <span class="password-text" id="pwd-${coachee.id}" style="font-family: monospace; min-width: 70px;">●●●●●●●●</span>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="togglePassword(${coachee.id}, '${coachee.password}')" title="Mostrar/Ocultar contraseña">
+                            <i class="fas fa-eye" id="eye-${coachee.id}"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary ms-1" onclick="copyPassword('${coachee.password}')" title="Copiar contraseña">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                ` : '<span class="text-muted">-</span>'}
+            </td>
+            <td>
                 <span class="badge ${coachee.is_active ? 'bg-success' : 'bg-secondary'}">
                     ${coachee.is_active ? 'Activo' : 'Inactivo'}
                 </span>
             </td>
             <td>
-                <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
-                ${coachee.avg_score ? `<br><small class="text-muted">Promedio: ${Math.round(coachee.avg_score)}%</small>` : ''}
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
+                    ${coachee.avg_score ? `<small class="text-muted">Prom: ${Math.round(coachee.avg_score)}%</small>` : ''}
+                    <button class="btn btn-sm btn-outline-info" onclick="showAssignedAssessments(${coachee.id}, '${coachee.name}')" title="Ver todas las evaluaciones">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
             </td>
             <td>${coachee.last_evaluation ? new Date(coachee.last_evaluation.completed_at).toLocaleDateString() : 'Nunca'}</td>
             <td>
@@ -1992,6 +2242,9 @@ function displayCoachees() {
                 </button>
                 <button class="btn btn-sm btn-outline-warning" onclick="editCoachee(${coachee.id})" title="Editar">
                     <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="showAssignModal(${coachee.id}, '${coachee.name}')" title="Asignar evaluación/tarea">
+                    <i class="fas fa-plus"></i>
                 </button>
             </td>
         </tr>
@@ -2011,10 +2264,31 @@ function displayCoachees() {
                     <span class="coachee-detail-label">Email:</span>
                     <span class="coachee-detail-value">${coachee.email || 'Sin email'}</span>
                 </div>
+                ${coachee.password ? `
+                <div class="coachee-detail-item">
+                    <span class="coachee-detail-label">Contraseña:</span>
+                    <span class="coachee-detail-value">
+                        <div class="d-flex align-items-center">
+                            <span class="password-text" id="pwd-mobile-${coachee.id}" style="font-family: monospace;">●●●●●●●●</span>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="togglePasswordMobile(${coachee.id}, '${coachee.password}')" title="Mostrar/Ocultar">
+                                <i class="fas fa-eye" id="eye-mobile-${coachee.id}"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary ms-1" onclick="copyPassword('${coachee.password}')" title="Copiar">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </span>
+                </div>
+                ` : ''}
                 <div class="coachee-detail-item">
                     <span class="coachee-detail-label">Evaluaciones:</span>
                     <span class="coachee-detail-value">
-                        <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
+                            <button class="btn btn-sm btn-outline-info" onclick="showAssignedAssessments(${coachee.id}, '${coachee.name}')" title="Ver todas las evaluaciones">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
                     </span>
                 </div>
                 ${coachee.avg_score ? `
@@ -2044,6 +2318,9 @@ function displayCoachees() {
                 </button>
                 <button class="btn btn-sm btn-outline-warning" onclick="editCoachee(${coachee.id})" title="Editar">
                     <i class="fas fa-edit me-1"></i>Editar
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="showAssignModal(${coachee.id}, '${coachee.name}')" title="Asignar evaluación/tarea">
+                    <i class="fas fa-plus me-1"></i>Asignar
                 </button>
             </div>
         </div>
@@ -3370,16 +3647,77 @@ function editCoachee(coacheeId) {
     // Implementar edición
 }
 
+// ✅ Función para mostrar/ocultar contraseña en tabla desktop
+function togglePassword(coacheeId, password) {
+    const passwordElement = document.getElementById(`pwd-${coacheeId}`);
+    const eyeIcon = document.getElementById(`eye-${coacheeId}`);
+    
+    if (passwordElement.textContent === '●●●●●●●●') {
+        passwordElement.textContent = password;
+        eyeIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordElement.textContent = '●●●●●●●●';
+        eyeIcon.className = 'fas fa-eye';
+    }
+}
+
+// ✅ Función para mostrar/ocultar contraseña en vista móvil
+function togglePasswordMobile(coacheeId, password) {
+    const passwordElement = document.getElementById(`pwd-mobile-${coacheeId}`);
+    const eyeIcon = document.getElementById(`eye-mobile-${coacheeId}`);
+    
+    if (passwordElement.textContent === '●●●●●●●●') {
+        passwordElement.textContent = password;
+        eyeIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordElement.textContent = '●●●●●●●●';
+        eyeIcon.className = 'fas fa-eye';
+    }
+}
+
+// ✅ Función para copiar contraseña al portapapeles
+function copyPassword(password) {
+    navigator.clipboard.writeText(password).then(function() {
+        // Mostrar mensaje de éxito temporal
+        const originalText = event.target.closest('button').innerHTML;
+        event.target.closest('button').innerHTML = '<i class="fas fa-check"></i>';
+        event.target.closest('button').classList.remove('btn-outline-primary');
+        event.target.closest('button').classList.add('btn-success');
+        
+        setTimeout(() => {
+            event.target.closest('button').innerHTML = originalText;
+            event.target.closest('button').classList.remove('btn-success');
+            event.target.closest('button').classList.add('btn-outline-primary');
+        }, 1500);
+    }).catch(function() {
+        alert('Error al copiar la contraseña');
+    });
+}
+
 // Manejar formulario de invitación
 document.getElementById('inviteForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     const name = document.getElementById('coacheeName').value.trim();
     const email = document.getElementById('coacheeEmail').value.trim();
+    const assignedAssessment = document.getElementById('assignedAssessment').value;
+    const customMessage = document.getElementById('customMessage').value.trim();
     
     if (!name || !email) {
-        alert('Por favor complete todos los campos');
+        alert('Por favor complete todos los campos obligatorios');
         return;
+    }
+    
+    // Preparar datos de la invitación
+    const invitationData = {
+        full_name: name,
+        email: email,
+        message: customMessage || 'Invitación para participar en evaluaciones de coaching'
+    };
+    
+    // Agregar evaluación asignada si se seleccionó
+    if (assignedAssessment) {
+        invitationData.assigned_assessment_id = parseInt(assignedAssessment);
     }
     
     fetch('/api/coach/create-invitation-v2', {
@@ -3387,11 +3725,7 @@ document.getElementById('inviteForm').addEventListener('submit', function(e) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            full_name: name,
-            email: email,
-            message: 'Invitación para participar en evaluación de asertividad'
-        })
+        body: JSON.stringify(invitationData)
     })
     .then(response => {
         console.log('Response status:', response.status);
@@ -3401,7 +3735,17 @@ document.getElementById('inviteForm').addEventListener('submit', function(e) {
         console.log('Response data:', data);
         if (data.success) {
             document.getElementById('inviteForm').reset();
-            alert('¡Coachee creado exitosamente!\n\nCredenciales:\nUsuario: ' + data.coachee.username + '\nContraseña: ' + data.coachee.password);
+            
+            let message = '¡Coachee creado exitosamente!\n\nCredenciales:\nUsuario: ' + data.coachee.username + '\nContraseña: ' + data.coachee.password;
+            
+            // Mostrar información sobre evaluación asignada
+            if (data.coachee.assigned_assessment) {
+                message += '\n\n✅ Evaluación "' + data.coachee.assigned_assessment + '" asignada exitosamente';
+            } else if (assignedAssessment) {
+                message += '\n\n⚠️ No se pudo asignar la evaluación seleccionada';
+            }
+            
+            alert(message);
             loadCoachees();
         } else {
             alert('Error al crear el coachee: ' + (data.error || data.message || 'Error desconocido'));
@@ -3495,7 +3839,725 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Event listeners del panel de control configurados');
 });
 
-// Cache buster - Forzar recarga: 2025-08-31-16:58
-console.log('🔄 Template actualizado: 2025-08-31-16:58 - Navegación del panel mejorada');
+// ===== FUNCIONES PARA ASIGNAR EVALUACIONES/TAREAS =====
+
+// Función para mostrar el modal de asignación
+function showAssignModal(coacheeId, coacheeName) {
+    console.log('🎯 Abriendo modal de asignación para coachee:', coacheeId, coacheeName);
+    
+    // Establecer datos del coachee
+    document.getElementById('targetCoacheeId').value = coacheeId;
+    document.getElementById('assignModalCoacheeName').textContent = coacheeName;
+    
+    // Cargar evaluaciones disponibles
+    loadAssessmentsForAssignment();
+    
+    // Resetear formularios
+    document.getElementById('assignEvaluationForm').reset();
+    document.getElementById('assignTaskForm').reset();
+    document.getElementById('targetCoacheeId').value = coacheeId; // Restaurar después del reset
+    
+    // Abrir modal
+    const modal = new bootstrap.Modal(document.getElementById('assignModal'));
+    modal.show();
+}
+
+// Función para cargar evaluaciones en el selector del modal de asignación
+function loadAssessmentsForAssignment() {
+    console.log('📋 Cargando evaluaciones para asignación...');
+    
+    const select = document.getElementById('assignAssessmentSelect');
+    select.innerHTML = '<option value="">Cargando evaluaciones...</option>';
+    
+    fetch('/api/coach/available-assessments')
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 Evaluaciones recibidas para asignación:', data);
+            
+            if (data.success && data.assessments && data.assessments.length > 0) {
+                select.innerHTML = '<option value="">Seleccionar evaluación</option>';
+                
+                data.assessments.forEach(assessment => {
+                    const option = document.createElement('option');
+                    option.value = assessment.id;
+                    option.textContent = `${assessment.title} (${assessment.questions_count} preguntas)`;
+                    select.appendChild(option);
+                });
+                
+                console.log('✅ Evaluaciones cargadas en selector de asignación');
+            } else {
+                select.innerHTML = '<option value="">No hay evaluaciones disponibles</option>';
+                console.log('❌ No se encontraron evaluaciones para asignación');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error cargando evaluaciones para asignación:', error);
+            select.innerHTML = '<option value="">Error cargando evaluaciones</option>';
+        });
+}
+
+// Función para ejecutar la asignación (evaluación o tarea)
+function executeAssignment() {
+    const activeTab = document.querySelector('#assignTabs .nav-link.active');
+    const isEvaluationTab = activeTab.id === 'evaluation-tab';
+    
+    if (isEvaluationTab) {
+        assignEvaluationFromModal();
+    } else {
+        assignTaskFromModal();
+    }
+}
+
+// Función para asignar evaluación desde el modal
+function assignEvaluationFromModal() {
+    const coacheeId = document.getElementById('targetCoacheeId').value;
+    const assessmentId = document.getElementById('assignAssessmentSelect').value;
+    const message = document.getElementById('assignEvaluationMessage').value;
+    const dueDate = document.getElementById('assignEvaluationDueDate').value;
+    
+    if (!assessmentId) {
+        alert('Por favor selecciona una evaluación');
+        return;
+    }
+    
+    console.log('📋 Asignando evaluación:', { coacheeId, assessmentId, message, dueDate });
+    
+    // Preparar datos para la API de crear tarea
+    const taskData = {
+        coachee_id: parseInt(coacheeId),
+        title: `Evaluación: ${document.getElementById('assignAssessmentSelect').selectedOptions[0].textContent}`,
+        description: message || `Completa la evaluación asignada por tu coach.`,
+        category: 'evaluation',
+        priority: 'high',
+        due_date: dueDate || null
+    };
+    
+    // Crear tarea
+    fetch('/api/coach/tasks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📊 Respuesta de asignación de evaluación:', data);
+        
+        if (data.success) {
+            alert('✅ Evaluación asignada exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignModal'));
+            modal.hide();
+            
+            // Recargar datos
+            loadTasks();
+            loadCoachees();
+        } else {
+            alert('❌ Error al asignar evaluación: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error asignando evaluación:', error);
+        alert('❌ Error al asignar evaluación');
+    });
+}
+
+// Función para asignar tarea desde el modal
+function assignTaskFromModal() {
+    const coacheeId = document.getElementById('targetCoacheeId').value;
+    const title = document.getElementById('assignTaskTitle').value;
+    const description = document.getElementById('assignTaskDescription').value;
+    const category = document.getElementById('assignTaskCategory').value;
+    const priority = document.getElementById('assignTaskPriority').value;
+    const dueDate = document.getElementById('assignTaskDueDate').value;
+    
+    if (!title || !description || !category) {
+        alert('Por favor completa todos los campos requeridos');
+        return;
+    }
+    
+    console.log('📝 Asignando tarea:', { coacheeId, title, description, category, priority, dueDate });
+    
+    const taskData = {
+        coachee_id: parseInt(coacheeId),
+        title: title,
+        description: description,
+        category: category,
+        priority: priority,
+        due_date: dueDate || null
+    };
+    
+    fetch('/api/coach/tasks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📊 Respuesta de asignación de tarea:', data);
+        
+        if (data.success) {
+            alert('✅ Tarea asignada exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignModal'));
+            modal.hide();
+            
+            // Recargar datos
+            loadTasks();
+            loadCoachees();
+        } else {
+            alert('❌ Error al asignar tarea: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error asignando tarea:', error);
+        alert('❌ Error al asignar tarea');
+    });
+}
+
+// Función para abrir modal de asignación desde el contexto de evaluación
+function openAssignModalFromEvaluation(assessmentId, assessmentTitle) {
+    console.log('🎯 Abriendo modal de asignación desde evaluación:', assessmentId, assessmentTitle);
+    
+    // Crear un modal específico para seleccionar coachee
+    const assignEvaluationModal = document.createElement('div');
+    assignEvaluationModal.className = 'modal fade';
+    assignEvaluationModal.id = 'assignEvaluationToCoacheeModal';
+    assignEvaluationModal.setAttribute('tabindex', '-1');
+    
+    assignEvaluationModal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i>Asignar Evaluación: ${assessmentTitle}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Pestañas -->
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="existing-coachee-tab" data-bs-toggle="tab" 
+                                data-bs-target="#existing-coachee-pane" type="button" role="tab">
+                                <i class="fas fa-users me-1"></i>Coachee Existente
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="new-coachee-tab" data-bs-toggle="tab" 
+                                data-bs-target="#new-coachee-pane" type="button" role="tab">
+                                <i class="fas fa-user-plus me-1"></i>Nuevo Coachee
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- Pestaña de Coachee Existente -->
+                        <div class="tab-pane fade show active" id="existing-coachee-pane" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="existingCoacheeSelect" class="form-label">Seleccionar coachee:</label>
+                                <select class="form-select" id="existingCoacheeSelect" required>
+                                    <option value="">Cargando coachees...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="existingEvaluationMessage" class="form-label">Mensaje personalizado (opcional):</label>
+                                <textarea class="form-control" id="existingEvaluationMessage" rows="3" 
+                                    placeholder="Mensaje para el coachee..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="existingEvaluationDueDate" class="form-label">Fecha límite (opcional):</label>
+                                <input type="date" class="form-control" id="existingEvaluationDueDate">
+                            </div>
+                            
+                            <button type="button" class="btn btn-success" onclick="assignEvaluationToExistingCoachee(${assessmentId})">
+                                <i class="fas fa-check me-1"></i>Asignar Evaluación
+                            </button>
+                        </div>
+
+                        <!-- Pestaña de Nuevo Coachee -->
+                        <div class="tab-pane fade" id="new-coachee-pane" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="newCoacheeName" class="form-label">Nombre completo:</label>
+                                <input type="text" class="form-control" id="newCoacheeName" required
+                                    placeholder="Ej: María González">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="newCoacheeEmail" class="form-label">Email:</label>
+                                <input type="email" class="form-control" id="newCoacheeEmail" required
+                                    placeholder="Ej: maria@empresa.com">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="newCoacheePassword" class="form-label">Contraseña temporal:</label>
+                                <input type="password" class="form-control" id="newCoacheePassword" required
+                                    placeholder="Contraseña para el coachee">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="newEvaluationMessage" class="form-label">Mensaje personalizado (opcional):</label>
+                                <textarea class="form-control" id="newEvaluationMessage" rows="3" 
+                                    placeholder="Mensaje para el coachee..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="newEvaluationDueDate" class="form-label">Fecha límite (opcional):</label>
+                                <input type="date" class="form-control" id="newEvaluationDueDate">
+                            </div>
+                            
+                            <button type="button" class="btn btn-success" onclick="createCoacheeAndAssignEvaluation(${assessmentId})">
+                                <i class="fas fa-user-plus me-1"></i>Crear Coachee y Asignar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.appendChild(assignEvaluationModal);
+    
+    // Cargar coachees existentes
+    loadCoacheesForAssignment();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(assignEvaluationModal);
+    modal.show();
+    
+    // Limpiar modal cuando se cierre
+    assignEvaluationModal.addEventListener('hidden.bs.modal', function () {
+        document.body.removeChild(assignEvaluationModal);
+    });
+}
+
+// Función para cargar coachees en el selector
+function loadCoacheesForAssignment() {
+    console.log('👥 Cargando coachees para asignación...');
+    
+    const select = document.getElementById('existingCoacheeSelect');
+    if (select) {
+        select.innerHTML = '<option value="">Cargando coachees...</option>';
+        
+        fetch('/api/coach/my-coachees')
+            .then(response => response.json())
+            .then(data => {
+                console.log('📊 Coachees cargados:', data);
+                
+                select.innerHTML = '<option value="">Seleccionar coachee...</option>';
+                
+                if (data.success && data.coachees) {
+                    data.coachees.forEach(coachee => {
+                        const option = document.createElement('option');
+                        option.value = coachee.id;
+                        option.textContent = `${coachee.name} (${coachee.email})`;
+                        select.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error cargando coachees:', error);
+                select.innerHTML = '<option value="">Error cargando coachees</option>';
+            });
+    }
+}
+
+// Función para asignar evaluación a coachee existente
+function assignEvaluationToExistingCoachee(assessmentId) {
+    const coacheeId = document.getElementById('existingCoacheeSelect').value;
+    const message = document.getElementById('existingEvaluationMessage').value;
+    const dueDate = document.getElementById('existingEvaluationDueDate').value;
+    
+    if (!coacheeId) {
+        alert('Por favor selecciona un coachee');
+        return;
+    }
+    
+    console.log('📋 Asignando evaluación a coachee existente:', { coacheeId, assessmentId, message, dueDate });
+    
+    // Obtener el título de la evaluación desde el modal
+    const modalTitle = document.querySelector('#assignEvaluationToCoacheeModal .modal-title').textContent;
+    const assessmentTitle = modalTitle.replace('Asignar Evaluación: ', '');
+    
+    const taskData = {
+        coachee_id: parseInt(coacheeId),
+        title: `Evaluación: ${assessmentTitle}`,
+        description: message || `Completa la evaluación asignada por tu coach.`,
+        category: 'evaluation',
+        priority: 'high',
+        due_date: dueDate || null
+    };
+    
+    fetch('/api/coach/tasks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📊 Respuesta de asignación:', data);
+        
+        if (data.success) {
+            alert('✅ Evaluación asignada exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignEvaluationToCoacheeModal'));
+            modal.hide();
+            
+            // Recargar datos si estamos en la vista de tareas
+            if (typeof loadTasks === 'function') {
+                loadTasks();
+            }
+        } else {
+            alert('❌ Error al asignar evaluación: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error asignando evaluación:', error);
+        alert('❌ Error al asignar evaluación');
+    });
+}
+
+// Función para crear coachee y asignar evaluación
+function createCoacheeAndAssignEvaluation(assessmentId) {
+    const name = document.getElementById('newCoacheeName').value;
+    const email = document.getElementById('newCoacheeEmail').value;
+    const password = document.getElementById('newCoacheePassword').value;
+    const message = document.getElementById('newEvaluationMessage').value;
+    const dueDate = document.getElementById('newEvaluationDueDate').value;
+    
+    if (!name || !email || !password) {
+        alert('Por favor completa todos los campos requeridos');
+        return;
+    }
+    
+    console.log('👤 Creando coachee y asignando evaluación:', { name, email, assessmentId, message, dueDate });
+    
+    // Crear coachee primero
+    const coacheeData = {
+        full_name: name,
+        email: email,
+        password: password,
+        assigned_assessment_id: assessmentId
+    };
+    
+    fetch('/api/coach/create-invitation-v2', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(coacheeData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📊 Respuesta de creación de coachee:', data);
+        
+        if (data.success) {
+            alert('✅ Coachee creado y evaluación asignada exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignEvaluationToCoacheeModal'));
+            modal.hide();
+            
+            // Recargar datos
+            if (typeof loadCoachees === 'function') {
+                loadCoachees();
+            }
+            if (typeof loadTasks === 'function') {
+                loadTasks();
+            }
+        } else {
+            alert('❌ Error al crear coachee: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error creando coachee:', error);
+        alert('❌ Error al crear coachee');
+    });
+}
+
+// Función para mostrar las evaluaciones asignadas a un coachee
+function showAssignedAssessments(coacheeId, coacheeName) {
+    console.log(`🔍 Showing assigned assessments for coachee ${coacheeId} (${coacheeName})`);
+    
+    // Actualizar el título del modal
+    document.getElementById('assignedAssessmentsModalLabel').innerHTML = 
+        `<i class="fas fa-clipboard-list me-2"></i>Evaluaciones - ${coacheeName}`;
+    
+    // Mostrar spinner de carga
+    document.getElementById('assignedAssessmentsContent').innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
+            <p class="mt-2">Cargando evaluaciones asignadas...</p>
+        </div>
+    `;
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('assignedAssessmentsModal'));
+    modal.show();
+    
+    // Obtener las evaluaciones asignadas
+    fetch(`/api/coach/coachee-assessments/${coacheeId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayAssignedAssessments(data.assessments, coacheeId, coacheeName);
+            } else {
+                document.getElementById('assignedAssessmentsContent').innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${data.error || 'Error al cargar las evaluaciones asignadas'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading assigned assessments:', error);
+            document.getElementById('assignedAssessmentsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error al cargar las evaluaciones asignadas
+                </div>
+            `;
+        });
+}
+
+// Función para mostrar las evaluaciones asignadas en el modal
+function displayAssignedAssessments(assessments, coacheeId, coacheeName) {
+    const container = document.getElementById('assignedAssessmentsContent');
+    
+    if (assessments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-clipboard fa-3x mb-3"></i>
+                <h5>No hay evaluaciones disponibles</h5>
+                <p>No se encontraron evaluaciones para este coachee.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Separar evaluaciones asignadas y disponibles
+    const assignedAssessments = assessments.filter(assessment => assessment.is_assigned);
+    const availableAssessments = assessments.filter(assessment => !assessment.is_assigned);
+    
+    container.innerHTML = `
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="alert alert-info">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    <strong>${assignedAssessments.length}</strong> evaluación${assignedAssessments.length !== 1 ? 'es asignadas' : ' asignada'}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="alert alert-secondary">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    <strong>${availableAssessments.length}</strong> evaluación${availableAssessments.length !== 1 ? 'es disponibles' : ' disponible'}
+                </div>
+            </div>
+        </div>
+        
+        ${assignedAssessments.length > 0 ? `
+            <div class="mb-4">
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    Evaluaciones Asignadas
+                </h6>
+                <div class="list-group">
+                    ${assignedAssessments.map(assessment => `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <span class="badge bg-success me-2">Asignada</span>
+                                        ${assessment.assessment_title}
+                                    </h6>
+                                    <p class="mb-1 text-muted">${assessment.description || 'Sin descripción'}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-question-circle me-1"></i>
+                                        ${assessment.total_questions} preguntas
+                                        ${assessment.assigned_date ? `<br><i class="fas fa-calendar-plus me-1"></i>Asignada: ${new Date(assessment.assigned_date).toLocaleString()}` : ''}
+                                        ${assessment.due_date ? `<br><i class="fas fa-calendar-times me-1"></i>Vence: ${new Date(assessment.due_date).toLocaleString()}` : ''}
+                                        ${assessment.completed_attempts > 0 ? `<br><i class="fas fa-check-circle text-success me-1"></i>Completada ${assessment.completed_attempts} vez${assessment.completed_attempts !== 1 ? 'es' : ''}` : ''}
+                                    </small>
+                                </div>
+                                <div class="ms-3">
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmUnassignAssessment(${coacheeId}, '${coacheeName}', '${assessment.assessment_title}')" 
+                                            title="Desasignar evaluación">
+                                        <i class="fas fa-times me-1"></i>Desasignar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${availableAssessments.length > 0 ? `
+            <div class="mb-4">
+                <h6 class="text-secondary mb-3">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    Evaluaciones Disponibles (No Asignadas)
+                </h6>
+                <div class="list-group">
+                    ${availableAssessments.map(assessment => `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <span class="badge bg-light text-dark me-2">Disponible</span>
+                                        ${assessment.assessment_title}
+                                    </h6>
+                                    <p class="mb-1 text-muted">${assessment.description || 'Sin descripción'}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-question-circle me-1"></i>
+                                        ${assessment.total_questions} preguntas
+                                        ${assessment.completed_attempts > 0 ? `<br><i class="fas fa-check-circle text-success me-1"></i>Completada ${assessment.completed_attempts} vez${assessment.completed_attempts !== 1 ? 'es' : ''} (sin asignar)` : '<br><i class="fas fa-clock text-muted me-1"></i>Sin completar'}
+                                    </small>
+                                </div>
+                                <div class="ms-3">
+                                    <span class="text-muted small">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Sin asignar
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-lightbulb me-2"></i>
+            <strong>Información:</strong> Esta vista muestra todas las evaluaciones disponibles para ${coacheeName}. 
+            Las evaluaciones marcadas como "Asignadas" aparecen en el dashboard del coachee como tareas pendientes.
+        </div>
+    `;
+}
+
+// Función para confirmar la desasignación de una evaluación
+function confirmUnassignAssessment(coacheeId, coacheeName, assessmentTitle) {
+    if (confirm(`¿Estás seguro de que deseas desasignar la evaluación "${assessmentTitle}" de ${coacheeName}?\n\nEsta acción no se puede deshacer.`)) {
+        unassignAssessment(coacheeId, coacheeName, assessmentTitle);
+    }
+}
+
+// Función para desasignar una evaluación
+function unassignAssessment(coacheeId, coacheeName, assessmentTitle) {
+    console.log(`🚫 Unassigning assessment "${assessmentTitle}" from coachee ${coacheeId} (${coacheeName})`);
+    
+    // Mostrar spinner en el botón
+    const buttons = document.querySelectorAll('button[onclick*="confirmUnassignAssessment"]');
+    buttons.forEach(btn => {
+        if (btn.onclick.toString().includes(assessmentTitle)) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Desasignando...';
+            btn.disabled = true;
+        }
+    });
+    
+    fetch('/api/coach/unassign-assessment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            coachee_id: coacheeId,
+            assessment_title: assessmentTitle
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Assessment unassigned successfully');
+            
+            // Mostrar mensaje de éxito
+            showSuccessMessage(`Evaluación "${assessmentTitle}" desasignada exitosamente de ${coacheeName}`);
+            
+            // Recargar las evaluaciones asignadas
+            showAssignedAssessments(coacheeId, coacheeName);
+            
+            // Recargar la lista de coachees para actualizar los contadores
+            if (typeof loadCoachees === 'function') {
+                loadCoachees();
+            }
+        } else {
+            console.error('❌ Error unassigning assessment:', data.error);
+            alert(`❌ Error: ${data.error}`);
+            
+            // Restaurar botones
+            buttons.forEach(btn => {
+                if (btn.onclick.toString().includes(assessmentTitle)) {
+                    btn.innerHTML = '<i class="fas fa-times me-1"></i>Desasignar';
+                    btn.disabled = false;
+                }
+            });
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error unassigning assessment:', error);
+        alert('❌ Error al desasignar la evaluación');
+        
+        // Restaurar botones
+        buttons.forEach(btn => {
+            if (btn.onclick.toString().includes(assessmentTitle)) {
+                btn.innerHTML = '<i class="fas fa-times me-1"></i>Desasignar';
+                btn.disabled = false;
+            }
+        });
+    });
+}
+
+// Función auxiliar para mostrar mensajes de éxito
+function showSuccessMessage(message) {
+    // Crear y mostrar un toast de éxito
+    const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+    
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    const toast = new bootstrap.Toast(document.getElementById(toastId));
+    toast.show();
+    
+    // Limpiar el toast después de que se oculte
+    document.getElementById(toastId).addEventListener('hidden.bs.toast', function() {
+        this.remove();
+    });
+}
+
+// Función para crear el contenedor de toasts si no existe
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '1055';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Cache buster - Forzar recarga: 2025-08-31-19:22
+console.log('🔄 Template actualizado: 2025-08-31-20:25 - Funcionalidad de desasignación de evaluaciones agregada');
 </script>
 {% endblock %}
