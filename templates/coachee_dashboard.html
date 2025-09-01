@@ -972,11 +972,6 @@
             display: none; /* Hide radio buttons for cleaner look */
         }
         
-        /* Auto-advance info styles */
-        .auto-advance-info {
-            animation: fadeInUp 0.5s ease-out;
-        }
-        
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -3908,11 +3903,6 @@
                 
                 showToast('¡Evaluación iniciada! Las preguntas avanzan automáticamente al seleccionar una respuesta.', 'success');
                 
-                // Show a brief intro modal about auto-advance
-                setTimeout(() => {
-                    showAutoAdvanceIntro();
-                }, 1000);
-                
             } catch (error) {
                 console.error('Error starting assessment:', error);
                 showToast('Error iniciando evaluación: ' + error.message, 'error');
@@ -3993,12 +3983,6 @@
                         `).join('')}
                     </div>
                     <div class="text-center">
-                        <div class="auto-advance-info mb-3" style="display: none;">
-                            <small class="text-muted">
-                                <i class="fas fa-magic me-1"></i>
-                                La evaluación avanzará automáticamente al seleccionar una respuesta
-                            </small>
-                        </div>
                         <button class="btn btn-primary-custom btn-lg manual-next-btn" onclick="nextAssessmentQuestion()" style="display: none;">
                             <i class="fas fa-${currentQuestionIndex === questions.length - 1 ? 'flag-checkered' : 'arrow-right'} me-2"></i>
                             ${currentQuestionIndex === questions.length - 1 ? 'Finalizar Evaluación' : 'Siguiente Pregunta'}
@@ -4016,19 +4000,6 @@
                     questionCard.style.opacity = '1';
                 }, 50);
             }
-            
-            // Show auto-advance info after a moment
-            setTimeout(() => {
-                const autoAdvanceInfo = document.querySelector('.auto-advance-info');
-                if (autoAdvanceInfo) {
-                    autoAdvanceInfo.style.display = 'block';
-                    autoAdvanceInfo.style.opacity = '0';
-                    autoAdvanceInfo.style.transition = 'opacity 0.3s ease-in';
-                    setTimeout(() => {
-                        autoAdvanceInfo.style.opacity = '1';
-                    }, 100);
-                }
-            }, 1000);
         }
 
         // Select assessment option
@@ -4293,79 +4264,6 @@
             showToast('Evaluación finalizada. Los datos se han actualizado.', 'success');
         }
         
-        // Show auto-advance introduction
-        function showAutoAdvanceIntro() {
-            const introHtml = `
-                <div class="modal fade" id="autoAdvanceIntroModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title">
-                                    <i class="fas fa-magic text-primary me-2"></i>
-                                    Evaluación Mejorada
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body text-center">
-                                <div class="mb-4">
-                                    <i class="fas fa-mouse-pointer" style="font-size: 3rem; color: var(--calm-primary); margin-bottom: 1rem;"></i>
-                                </div>
-                                <h6 class="mb-3">¡Nueva Experiencia Más Fluida!</h6>
-                                <p class="text-muted mb-4">
-                                    Al seleccionar una respuesta, la evaluación avanzará automáticamente a la siguiente pregunta. 
-                                    Ya no necesitas presionar "Siguiente".
-                                </p>
-                                <div class="d-flex align-items-center justify-content-center mb-3">
-                                    <div class="badge bg-light text-dark me-2">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Más rápido
-                                    </div>
-                                    <div class="badge bg-light text-dark me-2">
-                                        <i class="fas fa-hand-point-up me-1"></i>
-                                        Menos clics
-                                    </div>
-                                    <div class="badge bg-light text-dark">
-                                        <i class="fas fa-stream me-1"></i>
-                                        Más fluido
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0 pt-0">
-                                <button type="button" class="btn btn-primary-custom w-100" data-bs-dismiss="modal">
-                                    <i class="fas fa-play me-2"></i>
-                                    ¡Entendido, empezar!
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Remove existing modal if it exists
-            const existingModal = document.getElementById('autoAdvanceIntroModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-            
-            // Add new modal to body
-            document.body.insertAdjacentHTML('beforeend', introHtml);
-            
-            // Show the modal
-            const modal = new bootstrap.Modal(document.getElementById('autoAdvanceIntroModal'));
-            modal.show();
-            
-            // Auto-hide after 8 seconds if not dismissed
-            setTimeout(() => {
-                try {
-                    if (modal._isShown) {
-                        modal.hide();
-                    }
-                } catch (e) {
-                    // Modal might already be disposed
-                }
-            }, 8000);
-        }
-
         // View evaluation details
         async function viewEvaluationDetails(evaluationId) {
             try {
