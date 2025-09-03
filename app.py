@@ -3343,8 +3343,12 @@ def api_coachee_dashboard_summary():
             if latest_evaluation is None:
                 latest_evaluation = evaluation_data
         
-        # Obtener estadísticas de tareas
-        tasks = Task.query.filter_by(coachee_id=current_user.id, is_active=True).all()
+        # Obtener estadísticas de tareas (excluyendo evaluaciones)
+        tasks = Task.query.filter(
+            Task.coachee_id == current_user.id,
+            Task.is_active == True,
+            Task.category != 'evaluation'
+        ).all()
         pending_tasks = 0
         overdue_tasks = 0
         current_date = date.today()
@@ -3496,14 +3500,16 @@ def api_admin_validate_coachee_visibility(coachee_id):
 @app.route('/api/coachee/tasks', methods=['GET'])
 @coachee_session_required
 def api_coachee_tasks():
-    """Obtener tareas asignadas al coachee"""
+    """Obtener tareas asignadas al coachee (excluyendo evaluaciones)"""
     try:
         current_user = g.current_user
         
-        # Obtener tareas asignadas
-        tasks = Task.query.filter_by(
-            coachee_id=current_user.id,
-            is_active=True
+        # Obtener tareas asignadas, excluyendo las de categoría 'evaluation'
+        # Las evaluaciones se muestran en su propia sección del dashboard
+        tasks = Task.query.filter(
+            Task.coachee_id == current_user.id,
+            Task.is_active == True,
+            Task.category != 'evaluation'
         ).order_by(Task.created_at.desc()).all()
         
         tasks_data = []

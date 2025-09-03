@@ -3010,6 +3010,29 @@
         // API configuration
         const API_BASE_URL = window.location.origin;
         
+        // DEBUG: Add debugging function
+        function debugLog(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`🐛 [${timestamp}] ${message}`, data || '');
+        }
+        
+        // DEBUG: Override fetch to log all requests
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            debugLog(`🌐 FETCH REQUEST: ${args[0]}`, args[1]);
+            return originalFetch.apply(this, args)
+                .then(response => {
+                    debugLog(`📥 FETCH RESPONSE: ${args[0]} - Status: ${response.status}`);
+                    return response;
+                })
+                .catch(error => {
+                    debugLog(`❌ FETCH ERROR: ${args[0]}`, error);
+                    throw error;
+                });
+        };
+        
+        debugLog("🚀 Coachee Dashboard JavaScript loaded");
+        
         // Application state
         let currentUser = null;
         let dashboardData = null;
@@ -3022,6 +3045,7 @@
         let currentQuestionIndex = 0;
         let answers = {};
         let isAssessmentActive = false;
+        let currentAssessmentId = null;
 
         // Logout function
         async function logout() {
@@ -3242,23 +3266,30 @@
         // Load evaluations data
         async function loadEvaluations() {
             try {
+                debugLog('🔍 Iniciando carga de evaluaciones...');
                 const response = await fetch(`${API_BASE_URL}/api/coachee/evaluations`);
+                
+                debugLog(`📡 Response status: ${response.status} ${response.statusText}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
+                debugLog('📦 Datos de evaluaciones recibidos:', data);
                 
                 if (data && typeof data === 'object') {
                     evaluationsData = data; // Ahora contiene {available: {}, completed: []}
+                    debugLog('✅ Renderizando evaluaciones disponibles...');
                     renderAvailableEvaluations();
+                    debugLog('✅ Renderizando evaluaciones completadas...');
                     renderCompletedEvaluations();
                 } else {
                     console.error('Formato de datos inesperado:', data);
                     throw new Error('Formato de datos inesperado del servidor');
                 }
             } catch (error) {
+                debugLog('❌ Error cargando evaluaciones', error);
                 console.error('Error cargando evaluaciones:', error);
                 showToast('Error cargando evaluaciones: ' + error.message, 'error');
                 
@@ -3348,13 +3379,30 @@
                 const scoreColor = score >= 75 ? '#28a745' : 
                                   score >= 50 ? '#ffc107' : '#dc3545';
                 
+                // Usar el título real del assessment o un título por defecto
+                const assessmentTitle = evaluation.assessment_title || 'Evaluación completada';
+                
+                // Función para obtener el nivel basado en el tipo de evaluación
+                function getEvaluationLevel(score, title) {
+                    if (title && title.includes('DISC')) {
+                        // Para evaluaciones DISC, mostrar información de personalidad
+                        if (score >= 80) return 'Perfil Dominante';
+                        if (score >= 60) return 'Perfil Influyente';
+                        if (score >= 40) return 'Perfil Estable';
+                        return 'Perfil Concienzudo';
+                    } else {
+                        // Para evaluaciones de Asertividad, usar la función existente
+                        return getAssertativenessLevel(score);
+                    }
+                }
+                
                 html += `
                     <div class="evaluation-item">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0" style="color: #333;">Evaluación de Asertividad</h6>
+                            <h6 class="mb-0" style="color: #333;">${assessmentTitle}</h6>
                             <span class="evaluation-score" style="color: ${scoreColor};">${Math.round(score)}%</span>
                         </div>
-                        <div class="evaluation-level mb-2" style="color: ${scoreColor}; font-weight: 600;">${getAssertativenessLevel(score)}</div>
+                        <div class="evaluation-level mb-2" style="color: ${scoreColor}; font-weight: 600;">${getEvaluationLevel(score, assessmentTitle)}</div>
                         <div class="evaluation-description mb-2">${evaluation.result_text || 'Evaluación completada con éxito'}</div>
                         <div class="evaluation-date">${formatDate(evaluation.completed_at)}</div>
                         <button class="btn btn-sm btn-primary mt-2" onclick="viewEvaluationDetails(${evaluation.id})">
@@ -3469,8 +3517,13 @@
                 const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
                 const data = await response.json();
                 
+                console.log('🔍 DEBUG: loadEvaluationHistory response:', data);
+                
                 if (response.ok) {
-                    renderProgressChart(data.history);
+                    console.log('🔍 DEBUG: progress_data:', data.progress_data);
+                    console.log('🔍 DEBUG: history length:', data.history?.length);
+                    
+                    renderProgressChart(data.progress_data, data.history);
                     renderStatistics(data.statistics);
                     renderLatestEvaluationDetails(data.history);
                 } else {
@@ -3486,7 +3539,9 @@
         }
 
         // Render progress chart
-        function renderProgressChart(history) {
+        function renderProgressChart(progressData, history) {
+            console.log('🔍 DEBUG: renderProgressChart called with:', { progressData, history });
+            
             const ctx = document.getElementById('progressChart').getContext('2d');
             
             if (progressChart) {
@@ -3499,55 +3554,34 @@
                 existingProgressInfo.remove();
             }
             
-            if (!history || history.length === 0) {
+            if (!progressData || !progressData.datasets || progressData.datasets.length === 0) {
+                console.log('🔍 DEBUG: No progress data available');
                 const chartContainer = document.querySelector('#progressChart').parentElement;
                 chartContainer.innerHTML = '<div class="empty-state text-center py-5"><i class="fas fa-chart-line mb-3" style="font-size: 3rem; color: #6B8DA6;"></i><p class="h5 text-muted">No hay datos de evaluaciones para mostrar</p><p class="text-muted">Completa tu primera evaluación para ver tu progreso</p></div>';
                 return;
             }
             
-            // Preparar datos para el gráfico (ya están ordenados cronológicamente desde el backend)
-            const labels = history.map((eval, index) => {
-                const date = new Date(eval.completed_at);
-                const dateStr = date.toLocaleDateString('es-ES', { 
-                    day: '2-digit', 
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                return `Evaluación ${index + 1}\n${dateStr}`;
+            console.log('🔍 DEBUG: Datasets found:', progressData.datasets.length);
+            progressData.datasets.forEach((dataset, index) => {
+                console.log(`🔍 DEBUG: Dataset ${index}: ${dataset.label} - ${dataset.data.length} points`);
             });
             
-            const scores = history.map(eval => Math.round(eval.total_score));
-            
-            // Colores dinámicos para mostrar progreso
-            const pointColors = scores.map((score, index) => {
-                if (index === 0) return '#6B8DA6'; // Primer punto en azul suave
-                const prevScore = scores[index - 1];
-                if (score > prevScore) return '#A0D8CC'; // Mejora - verde menta
-                else if (score < prevScore) return '#F56565'; // Empeora - coral suave
-                else return '#6B8DA6'; // Sin cambio - azul
-            });
-            
-            // Configuración del gráfico con mejoras visuales
+            // Configuración del gráfico con múltiples líneas por tipo de evaluación
             progressChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Puntuación de Asertividad (%)',
-                        data: scores,
-                        borderColor: '#6282E3',
-                        backgroundColor: 'rgba(98, 130, 227, 0.1)',
+                    labels: progressData.labels,
+                    datasets: progressData.datasets.map(dataset => ({
+                        ...dataset,
                         borderWidth: 3,
-                        fill: true,
+                        fill: false,
                         tension: 0.3,
-                        pointBackgroundColor: pointColors,
                         pointBorderColor: '#ffffff',
-                        pointBorderWidth: 3,
-                        pointRadius: 8,
-                        pointHoverRadius: 12,
-                        pointHoverBorderWidth: 4
-                    }]
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointHoverBorderWidth: 3
+                    }))
                 },
                 options: {
                     responsive: true,
@@ -3573,7 +3607,7 @@
                             borderColor: '#6282E3',
                             borderWidth: 2,
                             cornerRadius: 10,
-                            displayColors: false,
+                            displayColors: true,
                             titleFont: {
                                 size: 14,
                                 weight: 'bold'
@@ -3583,39 +3617,17 @@
                             },
                             callbacks: {
                                 title: function(context) {
-                                    const index = context[0].dataIndex;
-                                    const eval_data = history[index];
-                                    const date = new Date(eval_data.completed_at);
-                                    return `Evaluación ${index + 1} - ${date.toLocaleDateString('es-ES', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}`;
+                                    return `Fecha: ${context[0].label}`;
                                 },
                                 label: function(context) {
                                     const score = context.parsed.y;
-                                    const index = context.dataIndex;
-                                    const eval_data = history[index];
+                                    const assessmentType = context.dataset.label;
                                     
-                                    let result = [`Puntuación: ${Math.round(score)}%`];
-                                    
-                                    // Mostrar nivel de asertividad
-                                    if (eval_data.assertiveness_level) {
-                                        result.push(`Nivel: ${eval_data.assertiveness_level}`);
+                                    if (score === null) {
+                                        return `${assessmentType}: Sin datos`;
                                     }
                                     
-                                    // Mostrar comparación con evaluación anterior
-                                    if (index > 0) {
-                                        const prevScore = scores[index - 1];
-                                        const difference = score - prevScore;
-                                        const arrow = difference > 0 ? '↗️' : difference < 0 ? '↘️' : '➡️';
-                                        const color = difference > 0 ? 'Mejora' : difference < 0 ? 'Retroceso' : 'Sin cambio';
-                                        result.push(`${arrow} ${color}: ${difference > 0 ? '+' : ''}${difference}%`);
-                                    }
-                                    
-                                    return result;
+                                    return `${assessmentType}: ${Math.round(score)}%`;
                                 }
                             }
                         }
@@ -3666,48 +3678,58 @@
                 }
             });
             
-            // Añadir información de progreso debajo del gráfico si hay múltiples evaluaciones
-            if (history.length >= 2) {
-                const latestScore = scores[scores.length - 1];
-                const previousScore = scores[scores.length - 2];
-                const improvement = latestScore - previousScore;
-                const improvementPercent = Math.round((improvement / previousScore) * 100);
+            // Añadir información de progreso resumida por tipo de evaluación
+            if (history && history.length >= 2) {
+                // Agrupar evaluaciones por tipo para mostrar progreso reciente
+                const evaluationsByType = {};
+                history.forEach(eval => {
+                    const type = eval.assessment.title;
+                    if (!evaluationsByType[type]) {
+                        evaluationsByType[type] = [];
+                    }
+                    evaluationsByType[type].push(eval);
+                });
                 
-                // Limpiar cualquier tarjeta de progreso anterior
-                const existingProgressInfo = document.querySelector('.progress-info-card');
-                if (existingProgressInfo) {
-                    existingProgressInfo.remove();
-                }
-                
+                // Crear tarjeta de progreso
                 const progressInfo = document.createElement('div');
                 progressInfo.className = 'progress-info-card mt-3 p-3 rounded';
-                progressInfo.style.backgroundColor = improvement >= 0 ? 'rgba(160, 216, 204, 0.15)' : 'rgba(245, 101, 101, 0.15)';
-                progressInfo.style.border = `2px solid ${improvement >= 0 ? '#A0D8CC' : '#F56565'}`;
+                progressInfo.style.backgroundColor = 'rgba(160, 216, 204, 0.1)';
+                progressInfo.style.border = '2px solid #A0D8CC';
                 
-                const icon = improvement > 0 ? '📈' : improvement < 0 ? '📉' : '📊';
-                const trend = improvement > 0 ? 'Mejora' : improvement < 0 ? 'Retroceso' : 'Sin cambio';
-                const trendColor = improvement >= 0 ? 'text-success' : 'text-danger';
+                let progressHtml = '<h6 class="mb-3"><i class="fas fa-chart-line"></i> Progreso por Tipo de Evaluación</h6>';
+                progressHtml += '<div class="row">';
                 
-                progressInfo.innerHTML = `
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h6 class="mb-2">${icon} Progreso Reciente</h6>
-                            <div class="d-flex align-items-center">
-                                <span class="h5 me-2 mb-0">${Math.round(previousScore)}%</span>
-                                <i class="fas fa-arrow-right mx-2 text-muted"></i>
-                                <span class="h4 ${trendColor} mb-0">${Math.round(latestScore)}%</span>
+                Object.entries(evaluationsByType).forEach(([type, evals]) => {
+                    if (evals.length >= 2) {
+                        const latest = evals[evals.length - 1];
+                        const previous = evals[evals.length - 2];
+                        const improvement = latest.score - previous.score;
+                        const improvementPercent = Math.round((improvement / previous.score) * 100);
+                        
+                        const icon = improvement > 0 ? '📈' : improvement < 0 ? '📉' : '📊';
+                        const trendColor = improvement >= 0 ? 'text-success' : 'text-danger';
+                        
+                        progressHtml += `
+                            <div class="col-md-6 mb-3">
+                                <div class="p-2 rounded" style="background-color: rgba(255,255,255,0.5);">
+                                    <small class="text-muted">${type}</small>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">${Math.round(previous.score)}%</span>
+                                        <i class="fas fa-arrow-right mx-1 text-muted"></i>
+                                        <span class="fw-bold ${trendColor}">${Math.round(latest.score)}%</span>
+                                        <span class="ms-2">${icon}</span>
+                                    </div>
+                                    <small class="${trendColor}">
+                                        ${improvement > 0 ? '+' : ''}${Math.round(improvement)} puntos
+                                    </small>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <div class="${trendColor}">
-                                <strong>${trend}: ${improvement > 0 ? '+' : ''}${improvement} puntos</strong>
-                            </div>
-                            <small class="text-muted">
-                                ${improvement !== 0 ? `(${improvementPercent > 0 ? '+' : ''}${improvementPercent}% relativo)` : ''}
-                            </small>
-                        </div>
-                    </div>
-                `;
+                        `;
+                    }
+                });
+                
+                progressHtml += '</div>';
+                progressInfo.innerHTML = progressHtml;
                 
                 // Insertar en el card-body después del chart-container
                 const cardBody = document.querySelector('#progressChart').closest('.card-body');
@@ -3724,52 +3746,133 @@
                 return;
             }
             
-            let trendIcon = '';
-            let trendColor = '';
-            let trendText = '';
-            
-            if (statistics.improvement_trend === 'improving') {
-                trendIcon = 'fas fa-arrow-up';
-                trendColor = 'text-success';
-                trendText = 'Mejorando';
-            } else if (statistics.improvement_trend === 'declining') {
-                trendIcon = 'fas fa-arrow-down';
-                trendColor = 'text-danger';
-                trendText = 'Descendiendo';
-            } else if (statistics.improvement_trend === 'stable') {
-                trendIcon = 'fas fa-minus';
-                trendColor = 'text-warning';
-                trendText = 'Estable';
-            } else {
-                trendIcon = 'fas fa-question';
-                trendColor = 'text-muted';
-                trendText = 'Sin datos';
-            }
-            
-            container.innerHTML = `
+            let statisticsHtml = `
                 <div class="mb-4">
                     <h6 class="mb-2">Total de Evaluaciones</h6>
                     <div class="h4 text-primary">${statistics.total_evaluations || 0}</div>
                 </div>
                 
                 <div class="mb-4">
-                    <h6 class="mb-2">Puntuación Promedio</h6>
+                    <h6 class="mb-2">Puntuación Promedio General</h6>
                     <div class="h4 text-success">${statistics.average_score ? Math.round(statistics.average_score) : '-'}${statistics.average_score ? '%' : ''}</div>
                 </div>
-                
-                <div class="mb-4">
-                    <h6 class="mb-2">Última Puntuación</h6>
-                    <div class="h4 text-info">${statistics.latest_score ? Math.round(statistics.latest_score) : '-'}${statistics.latest_score ? '%' : ''}</div>
-                </div>
-                
-                <div class="mb-4">
-                    <h6 class="mb-2">Tendencia</h6>
-                    <div class="h5 ${trendColor}">
-                        <i class="${trendIcon} me-2"></i>
-                        ${trendText}
-                    </div>
-                </div>
             `;
+            
+            // Mostrar estadísticas por tipo de evaluación si están disponibles
+            if (statistics.by_assessment_type && Object.keys(statistics.by_assessment_type).length > 0) {
+                statisticsHtml += `
+                    <div class="mb-4">
+                        <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Por Tipo de Evaluación</h6>
+                        <div class="row">
+                `;
+                
+                // Definir colores para cada tipo de evaluación (iguales a los del gráfico)
+                const typeColors = {
+                    'Asertividad': '#6282E3',
+                    'DISC': '#A0D8CC',
+                    'Inteligencia Emocional': '#F4A460',
+                    'Liderazgo': '#FFB6C1',
+                    'Trabajo en equipo': '#DDA0DD'
+                };
+                
+                Object.entries(statistics.by_assessment_type).forEach(([type, stats]) => {
+                    const color = typeColors[type] || '#6B8DA6';
+                    
+                    let trendIcon = '';
+                    let trendColor = '';
+                    let trendText = '';
+                    
+                    if (stats.improvement_trend === 'improving') {
+                        trendIcon = 'fas fa-arrow-up';
+                        trendColor = 'text-success';
+                        trendText = 'Mejorando';
+                    } else if (stats.improvement_trend === 'declining') {
+                        trendIcon = 'fas fa-arrow-down';
+                        trendColor = 'text-danger';
+                        trendText = 'Descendiendo';
+                    } else if (stats.improvement_trend === 'stable') {
+                        trendIcon = 'fas fa-minus';
+                        trendColor = 'text-warning';
+                        trendText = 'Estable';
+                    } else {
+                        trendIcon = 'fas fa-question';
+                        trendColor = 'text-muted';
+                        trendText = 'Sin datos';
+                    }
+                    
+                    statisticsHtml += `
+                        <div class="col-12 mb-3">
+                            <div class="p-3 rounded" style="background-color: rgba(255,255,255,0.5); border-left: 4px solid ${color};">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0" style="color: ${color};">${type}</h6>
+                                    <small class="text-muted">${stats.total_evaluations} evaluacion${stats.total_evaluations !== 1 ? 'es' : ''}</small>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Promedio</small>
+                                        <div class="h6 mb-0">${stats.average_score ? Math.round(stats.average_score) : '-'}${stats.average_score ? '%' : ''}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Última</small>
+                                        <div class="h6 mb-0">${stats.latest_score ? Math.round(stats.latest_score) : '-'}${stats.latest_score ? '%' : ''}</div>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="${trendColor}">
+                                        <i class="${trendIcon} me-1"></i>
+                                        ${trendText}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                statisticsHtml += `
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Si no hay estadísticas por tipo, mostrar estadísticas generales
+                let trendIcon = '';
+                let trendColor = '';
+                let trendText = '';
+                
+                if (statistics.improvement_trend === 'improving') {
+                    trendIcon = 'fas fa-arrow-up';
+                    trendColor = 'text-success';
+                    trendText = 'Mejorando';
+                } else if (statistics.improvement_trend === 'declining') {
+                    trendIcon = 'fas fa-arrow-down';
+                    trendColor = 'text-danger';
+                    trendText = 'Descendiendo';
+                } else if (statistics.improvement_trend === 'stable') {
+                    trendIcon = 'fas fa-minus';
+                    trendColor = 'text-warning';
+                    trendText = 'Estable';
+                } else {
+                    trendIcon = 'fas fa-question';
+                    trendColor = 'text-muted';
+                    trendText = 'Sin datos';
+                }
+                
+                statisticsHtml += `
+                    <div class="mb-4">
+                        <h6 class="mb-2">Última Puntuación</h6>
+                        <div class="h4 text-info">${statistics.latest_score ? Math.round(statistics.latest_score) : '-'}${statistics.latest_score ? '%' : ''}</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="mb-2">Tendencia</h6>
+                        <div class="h5 ${trendColor}">
+                            <i class="${trendIcon} me-2"></i>
+                            ${trendText}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = statisticsHtml;
         }
 
         // Render latest evaluation details
@@ -3891,6 +3994,9 @@
                 answers = {};
                 isAssessmentActive = true;
                 
+                // Store current assessment ID for later use
+                currentAssessmentId = evaluationType;
+                
                 // Show assessment tab
                 document.getElementById('assessment-tab-item').style.display = 'block';
                 
@@ -3912,7 +4018,8 @@
         // Load assessment questions
         async function loadAssessmentQuestions() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/questions`, {
+                const url = `${API_BASE_URL}/api/questions?assessment_id=${currentAssessmentId}`;
+                const response = await fetch(url, {
                     method: 'GET',
                     credentials: 'include',
                     headers: {
@@ -3932,6 +4039,20 @@
                 
                 if (data.success && data.questions && data.questions.length > 0) {
                     questions = data.questions;
+                    
+                    // Actualizar el título dinámicamente en el header de la evaluación
+                    const assessmentHeaderTitle = document.querySelector('#assessment .card-header h3');
+                    if (assessmentHeaderTitle && data.assessment_title) {
+                        assessmentHeaderTitle.innerHTML = `
+                            <i class="fas fa-clipboard-check me-2"></i>
+                            ${data.assessment_title}
+                        `;
+                        console.log('🎯 FRONTEND: Título actualizado a:', data.assessment_title);
+                    }
+                    
+                    // Guardar el título para uso posterior en resultados
+                    window.currentAssessmentTitle = data.assessment_title;
+                    
                     showAssessmentQuestion();
                 } else {
                     throw new Error('No se encontraron preguntas válidas');
@@ -4118,7 +4239,8 @@
                 const requestBody = {
                     age: userData.age,
                     gender: userData.gender,
-                    responses: responses
+                    responses: responses,
+                    assessment_id: currentAssessmentId
                 };
                 
                 console.log('Request body:', requestBody);
@@ -4316,6 +4438,13 @@
             const recommendations = evaluation.recommendations || []; // SIEMPRE usar datos del servidor para recomendaciones
             const detailedAnalysis = useCurrent ? currentData.detailed_analysis : evaluation.detailed_analysis;
             
+            // Determinar el tipo de evaluación y configurar títulos apropiados
+            const assessmentTitle = evaluation.assessment_title || data.assessment_title || 'Evaluación';
+            const isDiscAssessment = assessmentTitle.includes('DISC');
+            const analysisTitle = isDiscAssessment ? 'Análisis Completo DISC de Personalidad' : 'Análisis Completo de Asertividad';
+            const chartTitle = isDiscAssessment ? 'Radar de Dimensiones DISC' : 'Radar de Competencias';
+            
+            console.log('Assessment type detected:', { assessmentTitle, isDiscAssessment, analysisTitle });
             console.log('Final data to use:', data);
             console.log('Dimensional scores:', dimensionalScores);
             console.log('Recommendations from server:', recommendations);
@@ -4327,15 +4456,15 @@
                     <div class="col-12">
                         <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
                             <div class="card-body text-center">
-                                <h4 class="mb-3" style="color: #333;">Análisis Completo de Asertividad</h4>
+                                <h4 class="mb-3" style="color: #333;">${analysisTitle}</h4>
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="h2" style="color: #007bff;">${Math.round(data.score || evaluation.score)}%</div>
                                         <div style="color: #666;">Puntuación Total</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h4" style="color: #28a745;">${getAssertiveLevelFromScore(data.score || evaluation.score)}</div>
-                                        <div style="color: #666;">Nivel de Asertividad</div>
+                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score)}</div>
+                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : 'Nivel de Asertividad'}</div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="h6" style="color: #333;">${formatDate(data.completed_at || evaluation.completed_at)}</div>
@@ -4356,7 +4485,7 @@
                     <div class="col-lg-6 mb-4">
                         <div class="card border-0 h-100" style="background: #f8f9fa; border: 1px solid #dee2e6;">
                             <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
-                                <h5 style="color: #333;"><i class="fas fa-chart-radar me-2"></i>Radar de Competencias</h5>
+                                <h5 style="color: #333;"><i class="fas fa-chart-radar me-2"></i>${chartTitle}</h5>
                             </div>
                             <div class="card-body">
                                 <div class="radar-chart-container" style="position: relative; height: 300px;">
@@ -4386,9 +4515,9 @@
                 <!-- Respuestas Detalladas -->
                 <div class="row">
                     <div class="col-12">
-                        <div class="card border-0" style="background: var(--surface-elevated);">
-                            <div class="card-header">
-                                <h5><i class="fas fa-list me-2"></i>Respuestas Detalladas</h5>
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-list me-2"></i>Respuestas Detalladas</h5>
                             </div>
                             <div class="card-body">
                                 ${generateResponsesHTML(evaluation.responses || [])}
@@ -4402,7 +4531,7 @@
             
             // Crear el gráfico radar después de insertar el HTML
             setTimeout(() => {
-                createRadarChart(dimensionalScores);
+                createRadarChart(dimensionalScores, isDiscAssessment);
             }, 100);
         }
 
@@ -4507,61 +4636,126 @@
         }
 
         function generateRecommendationsHTML(recommendations) {
+            console.log('🔍 generateRecommendationsHTML - Recomendaciones recibidas:', recommendations);
+            
             if (!recommendations || recommendations.length === 0) return '';
             
-            // Check if recommendations is an array of strings or objects
-            const isStringArray = recommendations.length > 0 && typeof recommendations[0] === 'string';
+            // Procesar y categorizar recomendaciones
+            const categorizedRecs = categorizeRecommendations(recommendations);
+            console.log('📊 Recomendaciones categorizadas:', categorizedRecs);
             
             let html = `
-                <div class="recommendations-container mt-4">
-                    <div class="recommendations-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-lightbulb me-2"></i>
-                            Plan de Desarrollo Personalizado
-                        </h5>
-                        <small class="opacity-90 mt-1 d-block">
-                            Recomendaciones categorizadas basadas en tu evaluación de asertividad
-                        </small>
-                        <div class="recommendations-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-chart-line me-1"></i>
-                                Basado en tu puntuación
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid #17a2b8 !important;">
+                            <div class="card-header" style="background: #d1ecf1; color: #0c5460; padding: 1.5rem;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-lightbulb me-2"></i>
+                                            Plan de Desarrollo Personalizado
+                                        </h5>
+                                        <small class="d-block mt-1 opacity-90">
+                                            Recomendaciones categorizadas basadas en tu evaluación
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-primary px-3 py-2">
+                                            <i class="fas fa-chart-line me-1"></i>
+                                            ${Object.keys(categorizedRecs).length} Categorías
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="stat-item">
-                                <i class="fas fa-target me-1"></i>
-                                Objetivos específicos
+                            <div class="card-body" style="padding: 2rem;">
+                                <div class="row">
+            `;
+            
+            // Generar HTML para cada categoría
+            let categoryIndex = 0;
+            Object.values(categorizedRecs).forEach(category => {
+                const colClass = Object.keys(categorizedRecs).length > 2 ? 'col-lg-6' : 'col-12';
+                const borderColor = category.type === 'dimension' ? '#ffc107' : '#17a2b8';
+                const bgColor = category.type === 'dimension' ? '#fff3cd' : '#d1ecf1';
+                const textColor = category.type === 'dimension' ? '#856404' : '#0c5460';
+                
+                html += `
+                    <div class="${colClass} mb-4">
+                        <div class="card border-0 h-100" style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid ${borderColor} !important;">
+                            <div class="card-header" style="background: ${bgColor}; color: ${textColor};">
+                                <h6 class="mb-0">
+                                    <i class="${category.icon} me-2"></i>
+                                    ${category.title}
+                                </h6>
+                                ${category.subtitle ? `<small class="d-block mt-1">${category.subtitle}</small>` : ''}
+                                ${category.description ? `<small class="d-block mt-1">${category.description}</small>` : ''}
+                            </div>
+                            <div class="card-body">
+                `;
+                
+                // Handle both array of strings and array of objects
+                const items = category.items || [];
+                items.forEach(item => {
+                    const itemText = typeof item === 'string' ? item : (item.text || item.toString());
+                    html += `
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-primary me-2"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-0" style="color: #333; line-height: 1.6;">${itemText}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
                             </div>
                         </div>
                     </div>
-                    <div class="p-4">
-            `;
-            
-            if (isStringArray) {
-                // Parse and categorize string-based recommendations
-                const categories = parseRecommendationsIntoCategories(recommendations);
-                
-                // Render each category
-                Object.entries(categories).forEach(([categoryKey, categoryData]) => {
-                    html += renderRecommendationCategory(categoryKey, categoryData);
-                });
-                
-            } else {
-                // Handle object format with improved categorization
-                const categorizedRecs = categorizeObjectRecommendations(recommendations);
-                
-                // Render each category
-                Object.entries(categorizedRecs).forEach(([categoryKey, categoryData]) => {
-                    html += renderRecommendationCategory(categoryKey, categoryData);
-                });
-            }
+                `;
+                categoryIndex++;
+            });
             
             html += `
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
             
             return html;
         }
+
+        // Función para categorizar recomendaciones (compatible con coach dashboard)
+        function categorizeRecommendations(recommendations) {
+            console.log('🏷️ categorizeRecommendations - Entrada:', recommendations);
+            
+            // Si las recomendaciones están en formato de array de strings, usar el parser existente
+            if (Array.isArray(recommendations) && recommendations.length > 0 && typeof recommendations[0] === 'string') {
+                return parseRecommendationsIntoCategories(recommendations);
+            }
+            
+            // Si es un objeto, devolverlo tal como está
+            if (typeof recommendations === 'object' && !Array.isArray(recommendations)) {
+                return recommendations;
+            }
+            
+            // Fallback: crear una categoría general simple
+            return {
+                general: {
+                    title: 'Recomendaciones Generales',
+                    items: Array.isArray(recommendations) ? recommendations : [recommendations.toString()],
+                    type: 'general',
+                    icon: 'fas fa-lightbulb',
+                    score: null,
+                    priority: 'medium',
+                    isSubcategory: false
+                }
+            };
+        }
+
         
         function parseRecommendationsIntoCategories(recommendations) {
             const categories = {};
@@ -4905,6 +5099,15 @@
             return 'Poco Asertivo';
         }
 
+        function getDiscLevelFromScore(score) {
+            // Para DISC, el perfil se basa en las dimensiones dominantes
+            // Aquí usamos un enfoque simplificado basado en el score general
+            if (score >= 80) return 'Perfil Altamente Definido';
+            if (score >= 60) return 'Perfil Moderadamente Definido';
+            if (score >= 40) return 'Perfil Equilibrado';
+            return 'Perfil en Desarrollo';
+        }
+
         function getDimensionDescription(dimension, score) {
             const descriptions = {
                 'comunicacion': score >= 70 ? 'Excelente comunicación interpersonal' : 'Oportunidad de mejorar la comunicación',
@@ -4952,7 +5155,7 @@
         // Variable global para almacenar el gráfico radar
         let radarChart = null;
 
-        function createRadarChart(dimensionalScores) {
+        function createRadarChart(dimensionalScores, isDiscAssessment = false) {
             const ctx = document.getElementById('radarChart');
             if (!ctx || !dimensionalScores) {
                 console.warn('No se puede crear el radar chart: elemento canvas no encontrado o datos faltantes');
@@ -4964,29 +5167,53 @@
                 radarChart.destroy();
             }
 
-            // Preparar datos para el gráfico radar
-            const labels = [
-                'Comunicación',
-                'Derechos',
-                'Opiniones',
-                'Conflictos',
-                'Autoconfianza'
-            ];
+            // Configurar dimensiones y datos según el tipo de evaluación
+            let labels, dataValues, chartLabel;
+            
+            if (isDiscAssessment) {
+                // Dimensiones DISC
+                labels = [
+                    'Dominante',
+                    'Influyente', 
+                    'Estable',
+                    'Concienzudo'
+                ];
+                
+                dataValues = [
+                    dimensionalScores.Dominante || dimensionalScores.dominante || 0,
+                    dimensionalScores.Influyente || dimensionalScores.influyente || 0,
+                    dimensionalScores.Estable || dimensionalScores.estable || 0,
+                    dimensionalScores.Concienzudo || dimensionalScores.concienzudo || 0
+                ];
+                
+                chartLabel = 'Perfil DISC';
+            } else {
+                // Dimensiones Asertividad (configuración original)
+                labels = [
+                    'Comunicación',
+                    'Derechos',
+                    'Opiniones',
+                    'Conflictos',
+                    'Autoconfianza'
+                ];
 
-            const dataValues = [
-                dimensionalScores.comunicacion || 0,
-                dimensionalScores.derechos || 0,
-                dimensionalScores.opiniones || 0,
-                dimensionalScores.conflictos || 0,
-                dimensionalScores.autoconfianza || 0
-            ];
+                dataValues = [
+                    dimensionalScores.comunicacion || 0,
+                    dimensionalScores.derechos || 0,
+                    dimensionalScores.opiniones || 0,
+                    dimensionalScores.conflictos || 0,
+                    dimensionalScores.autoconfianza || 0
+                ];
+                
+                chartLabel = 'Nivel de Asertividad';
+            }
 
             radarChart = new Chart(ctx, {
                 type: 'radar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Nivel de Asertividad',
+                        label: chartLabel,
                         data: dataValues,
                         backgroundColor: 'rgba(98, 130, 227, 0.2)',
                         borderColor: 'rgba(98, 130, 227, 1)',
@@ -5151,26 +5378,37 @@
 
         // Initialize application
         async function initializeApp() {
-            console.log('Inicializando dashboard de coachee...');
+            debugLog('🚀 Inicializando dashboard de coachee...');
             
-            // Create animated particles
-            createParticles();
-            
-            // Setup event listeners
-            setupEventListeners();
-            
-            // Load initial data
-            await loadUserProfile();
-            await loadDashboardSummary();
-            
-            // Load data for active tab
-            await loadEvaluations();
-            await loadTasks();
-            
-            // Forzar actualización final del mensaje de bienvenida
-            updateWelcomeMessage();
-            
-            console.log('Dashboard inicializado correctamente');
+            try {
+                // Create animated particles
+                createParticles();
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                // Load initial data
+                debugLog('📊 Cargando perfil de usuario...');
+                await loadUserProfile();
+                
+                debugLog('📊 Cargando resumen del dashboard...');
+                await loadDashboardSummary();
+                
+                // Load data for active tab
+                debugLog('📊 Cargando evaluaciones...');
+                await loadEvaluations();
+                
+                debugLog('📊 Cargando tareas...');
+                await loadTasks();
+                
+                // Forzar actualización final del mensaje de bienvenida
+                updateWelcomeMessage();
+                
+                debugLog('✅ Dashboard inicializado correctamente');
+            } catch (error) {
+                debugLog('❌ Error durante la inicialización del dashboard', error);
+                console.error('Error en initializeApp:', error);
+            }
         }
         
         // Función para actualizar el mensaje de bienvenida
@@ -5451,6 +5689,39 @@
         } else {
             initializeApp();
         }
+        
+        // DEBUG: Global functions for browser console debugging
+        window.debugDashboard = {
+            currentUser,
+            dashboardData,
+            evaluationsData,
+            tasksData,
+            API_BASE_URL,
+            loadEvaluations,
+            loadDashboardSummary,
+            loadTasks,
+            initializeApp,
+            testConnection: async function() {
+                try {
+                    debugLog('🧪 Testing connection...');
+                    const response = await fetch(`${API_BASE_URL}/api/coachee/evaluations`);
+                    debugLog(`📡 Test response: ${response.status} ${response.statusText}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        debugLog('📦 Test data:', data);
+                        return data;
+                    } else {
+                        debugLog('❌ Test failed:', response);
+                        return null;
+                    }
+                } catch (error) {
+                    debugLog('❌ Test error:', error);
+                    return null;
+                }
+            }
+        };
+        
+        debugLog('🔧 Global debugging functions available via window.debugDashboard');
 
         // === SISTEMA DE TEMAS ===
         function initThemeSystem() {
