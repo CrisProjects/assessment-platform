@@ -638,194 +638,251 @@ def auto_initialize_database():
         return False
 
 def create_additional_assessments():
-    """Crear evaluaciones adicionales para demostrar la funcionalidad"""
+    """Crear evaluaciones adicionales para demostrar la funcionalidad - Optimizado para Railway"""
     try:
-        logger.info("🔧 ASSESSMENTS: Creando evaluaciones adicionales...")
+        logger.info("🔧 ASSESSMENTS: Creando evaluaciones adicionales (Railway optimizado)...")
         
-        # Assessment 2: DISC (Personalidad)
-        if not Assessment.query.filter_by(id=2).first():
-            disc_assessment = Assessment(
-                id=2,
-                title='Evaluación DISC de Personalidad',
-                description='Identifica tu estilo de personalidad predominante: Dominante, Influyente, Estable o Concienzudo',
-                is_active=True
-            )
-            db.session.add(disc_assessment)
-            logger.info("✅ ASSESSMENTS: Assessment DISC creado")
-            
-            # Preguntas DISC
-            disc_questions = [
-                "Me gusta tomar decisiones rápidas y asumir riesgos",
-                "Prefiero trabajar en equipo y motivar a otros",
-                "Valoro la estabilidad y la armonía en el trabajo",
-                "Me enfoco en los detalles y la precisión",
-                "Soy directo al comunicar mis ideas",
-                "Disfruto conocer gente nueva y socializar",
-                "Prefiero rutinas establecidas y predecibles",
-                "Analizo cuidadosamente antes de tomar decisiones",
-                "Me siento cómodo liderando proyectos desafiantes",
-                "Soy optimista y entusiasta con nuevas ideas",
-                "Evito conflictos y busco consenso",
-                "Sigo procedimientos y normas establecidas",
-                "Actúo con determinación para alcanzar objetivos",
-                "Inspiro confianza y genero entusiasmo en otros",
-                "Soy leal y comprometido con mi equipo",
-                "Busco perfección en mi trabajo"
-            ]
-            
-            disc_dimensions = [
-                'Dominante', 'Influyente', 'Estable', 'Concienzudo',
-                'Dominante', 'Influyente', 'Estable', 'Concienzudo',
-                'Dominante', 'Influyente', 'Estable', 'Concienzudo',
-                'Dominante', 'Influyente', 'Estable', 'Concienzudo'
-            ]
-            
-            for i, text in enumerate(disc_questions, 1):
-                question = Question(
-                    assessment_id=2,
-                    text=text,
-                    question_type='likert',
-                    order=i,
-                    dimension=disc_dimensions[i-1]
-                )
-                db.session.add(question)
+        # Verificar conexión de base de datos primero
+        try:
+            db.session.execute(text("SELECT 1"))
+            logger.info("✅ ASSESSMENTS: Conexión a base de datos verificada")
+        except Exception as db_error:
+            logger.error(f"❌ ASSESSMENTS: Error de conexión a base de datos: {db_error}")
+            return False
         
-        # Assessment 3: Inteligencia Emocional
-        if not Assessment.query.filter_by(id=3).first():
-            eq_assessment = Assessment(
-                id=3,
-                title='Evaluación de Inteligencia Emocional',
-                description='Mide tu capacidad para reconocer, entender y manejar emociones propias y ajenas',
-                is_active=True
-            )
-            db.session.add(eq_assessment)
-            logger.info("✅ ASSESSMENTS: Assessment de Inteligencia Emocional creado")
-            
-            # Preguntas de Inteligencia Emocional
-            eq_questions = [
-                "Reconozco fácilmente mis propias emociones",
-                "Entiendo qué causa mis cambios de humor",
-                "Soy consciente de mis reacciones emocionales",
-                "Puedo controlar mis emociones en situaciones estresantes",
-                "Mantengo la calma bajo presión",
-                "Puedo motivarme a mí mismo para lograr objetivos",
-                "Reconozco las emociones de otras personas",
-                "Entiendo los sentimientos de los demás",
-                "Soy empático con las experiencias de otros",
-                "Manejo bien las relaciones interpersonales",
-                "Resuelvo conflictos de manera efectiva",
-                "Influyo positivamente en otros"
-            ]
-            
-            eq_dimensions = [
-                'Autoconciencia', 'Autoconciencia', 'Autoconciencia',
-                'Autorregulación', 'Autorregulación', 'Automotivación',
-                'Empatía', 'Empatía', 'Empatía',
-                'Habilidades Sociales', 'Habilidades Sociales', 'Habilidades Sociales'
-            ]
-            
-            for i, text in enumerate(eq_questions, 1):
-                question = Question(
-                    assessment_id=3,
-                    text=text,
-                    question_type='likert',
-                    order=i,
-                    dimension=eq_dimensions[i-1]
+        # Assessment 2: DISC (Personalidad) - Con transacciones individuales
+        try:
+            if not Assessment.query.filter_by(id=2).first():
+                disc_assessment = Assessment(
+                    id=2,
+                    title='Evaluación DISC de Personalidad',
+                    description='Identifica tu estilo de personalidad predominante: Dominante, Influyente, Estable o Concienzudo',
+                    is_active=True
                 )
-                db.session.add(question)
+                db.session.add(disc_assessment)
+                db.session.flush()
+                logger.info("✅ ASSESSMENTS: Assessment DISC creado")
+                
+                # Preguntas DISC
+                disc_questions = [
+                    "Me gusta tomar decisiones rápidas y asumir riesgos",
+                    "Prefiero trabajar en equipo y motivar a otros",
+                    "Valoro la estabilidad y la armonía en el trabajo",
+                    "Me enfoco en los detalles y la precisión",
+                    "Soy directo al comunicar mis ideas",
+                    "Disfruto conocer gente nueva y socializar",
+                    "Prefiero rutinas establecidas y predecibles",
+                    "Analizo cuidadosamente antes de tomar decisiones",
+                    "Me siento cómodo liderando proyectos desafiantes",
+                    "Soy optimista y entusiasta con nuevas ideas",
+                    "Evito conflictos y busco consenso",
+                    "Sigo procedimientos y normas establecidas",
+                    "Actúo con determinación para alcanzar objetivos",
+                    "Inspiro confianza y genero entusiasmo en otros",
+                    "Soy leal y comprometido con mi equipo",
+                    "Busco perfección en mi trabajo"
+                ]
+                
+                disc_dimensions = [
+                    'Dominante', 'Influyente', 'Estable', 'Concienzudo',
+                    'Dominante', 'Influyente', 'Estable', 'Concienzudo',
+                    'Dominante', 'Influyente', 'Estable', 'Concienzudo',
+                    'Dominante', 'Influyente', 'Estable', 'Concienzudo'
+                ]
+                
+                for i, text in enumerate(disc_questions, 1):
+                    question = Question(
+                        assessment_id=2,
+                        text=text,
+                        question_type='likert',
+                        order=i,
+                        dimension=disc_dimensions[i-1]
+                    )
+                    db.session.add(question)
+                
+                db.session.commit()
+                logger.info("✅ ASSESSMENTS: Preguntas DISC creadas")
+            else:
+                logger.info("ℹ️ ASSESSMENTS: Assessment DISC ya existe")
+        except Exception as disc_error:
+            logger.error(f"❌ ASSESSMENTS: Error creando DISC: {disc_error}")
+            db.session.rollback()
         
-        # Assessment 4: Liderazgo
-        if not Assessment.query.filter_by(id=4).first():
-            leadership_assessment = Assessment(
-                id=4,
-                title='Evaluación de Habilidades de Liderazgo',
-                description='Evalúa tus competencias de liderazgo y capacidad para dirigir equipos',
-                is_active=True
-            )
-            db.session.add(leadership_assessment)
-            logger.info("✅ ASSESSMENTS: Assessment de Liderazgo creado")
-            
-            # Preguntas de Liderazgo
-            leadership_questions = [
-                "Inspiro confianza en mi equipo",
-                "Comunico la visión de manera clara y convincente",
-                "Tomo decisiones difíciles cuando es necesario",
-                "Delego responsabilidades de manera efectiva",
-                "Proporciono retroalimentación constructiva",
-                "Desarrollo las habilidades de mi equipo",
-                "Me adapto rápidamente a los cambios",
-                "Innovo y busco nuevas oportunidades",
-                "Mantengo la integridad en todas mis acciones",
-                "Asumo responsabilidad por los resultados del equipo"
-            ]
-            
-            leadership_dimensions = [
-                'Inspiración', 'Comunicación', 'Toma de Decisiones',
-                'Delegación', 'Desarrollo de Talento', 'Desarrollo de Talento',
-                'Adaptabilidad', 'Innovación', 'Integridad', 'Responsabilidad'
-            ]
-            
-            for i, text in enumerate(leadership_questions, 1):
-                question = Question(
-                    assessment_id=4,
-                    text=text,
-                    question_type='likert',
-                    order=i,
-                    dimension=leadership_dimensions[i-1]
+        # Assessment 3: Inteligencia Emocional - Con transacciones individuales
+        try:
+            if not Assessment.query.filter_by(id=3).first():
+                eq_assessment = Assessment(
+                    id=3,
+                    title='Evaluación de Inteligencia Emocional',
+                    description='Mide tu capacidad para reconocer, entender y manejar emociones propias y ajenas',
+                    is_active=True
                 )
-                db.session.add(question)
+                db.session.add(eq_assessment)
+                db.session.flush()
+                logger.info("✅ ASSESSMENTS: Assessment de Inteligencia Emocional creado")
+                
+                # Preguntas de Inteligencia Emocional
+                eq_questions = [
+                    "Reconozco fácilmente mis propias emociones",
+                    "Entiendo qué causa mis cambios de humor",
+                    "Soy consciente de mis reacciones emocionales",
+                    "Puedo controlar mis emociones en situaciones estresantes",
+                    "Mantengo la calma bajo presión",
+                    "Puedo motivarme a mí mismo para lograr objetivos",
+                    "Reconozco las emociones de otras personas",
+                    "Entiendo los sentimientos de los demás",
+                    "Soy empático con las experiencias de otros",
+                    "Manejo bien las relaciones interpersonales",
+                    "Resuelvo conflictos de manera efectiva",
+                    "Influyo positivamente en otros"
+                ]
+                
+                eq_dimensions = [
+                    'Autoconciencia', 'Autoconciencia', 'Autoconciencia',
+                    'Autorregulación', 'Autorregulación', 'Automotivación',
+                    'Empatía', 'Empatía', 'Empatía',
+                    'Habilidades Sociales', 'Habilidades Sociales', 'Habilidades Sociales'
+                ]
+                
+                for i, text in enumerate(eq_questions, 1):
+                    question = Question(
+                        assessment_id=3,
+                        text=text,
+                        question_type='likert',
+                        order=i,
+                        dimension=eq_dimensions[i-1]
+                    )
+                    db.session.add(question)
+                
+                db.session.commit()
+                logger.info("✅ ASSESSMENTS: Preguntas de Inteligencia Emocional creadas")
+            else:
+                logger.info("ℹ️ ASSESSMENTS: Assessment de Inteligencia Emocional ya existe")
+        except Exception as eq_error:
+            logger.error(f"❌ ASSESSMENTS: Error creando Inteligencia Emocional: {eq_error}")
+            db.session.rollback()
         
-        # Assessment 5: Trabajo en Equipo
-        if not Assessment.query.filter_by(title="Assessment de Trabajo en Equipo").first():
-            teamwork_assessment = Assessment(
-                title="Assessment de Trabajo en Equipo",
-                description="Evaluación de habilidades de colaboración y trabajo en equipo",
-                is_active=True
-            )
-            db.session.add(teamwork_assessment)
-            db.session.flush()
-            logger.info("✅ ASSESSMENTS: Assessment de Trabajo en Equipo creado")
-
-            # Preguntas para Trabajo en Equipo
-            teamwork_questions = [
-                "Colaboro eficazmente con personas de diferentes personalidades",
-                "Comparto información y recursos con mis compañeros de equipo", 
-                "Escucho activamente las ideas y opiniones de otros",
-                "Apoyo a mis compañeros cuando necesitan ayuda",
-                "Asumo mi responsabilidad en los resultados del equipo",
-                "Contribuyo de manera constructiva en las reuniones de equipo",
-                "Manejo los desacuerdos de manera respetuosa y productiva",
-                "Me adapto fácilmente a los cambios en la dinámica del equipo",
-                "Celebro los éxitos del equipo, no solo los individuales",
-                "Confío en las habilidades y compromiso de mis compañeros",
-                "Comunico de manera clara y oportuna con el equipo",
-                "Busco activamente formas de mejorar el desempeño del equipo"
-            ]
-
-            # Dimensiones para Trabajo en Equipo
-            teamwork_dimensions = [
-                "Colaboración", "Compartir recursos", "Escucha activa",
-                "Apoyo mutuo", "Responsabilidad compartida", "Participación constructiva",
-                "Manejo de conflictos", "Adaptabilidad", "Espíritu de equipo",
-                "Confianza", "Comunicación efectiva", "Mejora continua"
-            ]
-
-            for i, text in enumerate(teamwork_questions, 1):
-                question = Question(
-                    assessment_id=5,
-                    text=text,
-                    question_type='likert',
-                    order=i,
-                    dimension=teamwork_dimensions[i-1]
+        # Assessment 4: Liderazgo - Con transacciones individuales
+        try:
+            if not Assessment.query.filter_by(id=4).first():
+                leadership_assessment = Assessment(
+                    id=4,
+                    title='Evaluación de Habilidades de Liderazgo',
+                    description='Evalúa tus competencias de liderazgo y capacidad para dirigir equipos',
+                    is_active=True
                 )
-                db.session.add(question)
+                db.session.add(leadership_assessment)
+                db.session.flush()
+                logger.info("✅ ASSESSMENTS: Assessment de Liderazgo creado")
+                
+                # Preguntas de Liderazgo
+                leadership_questions = [
+                    "Inspiro confianza en mi equipo",
+                    "Comunico la visión de manera clara y convincente",
+                    "Tomo decisiones difíciles cuando es necesario",
+                    "Delego responsabilidades de manera efectiva",
+                    "Proporciono retroalimentación constructiva",
+                    "Desarrollo las habilidades de mi equipo",
+                    "Me adapto rápidamente a los cambios",
+                    "Innovo y busco nuevas oportunidades",
+                    "Mantengo la integridad en todas mis acciones",
+                    "Asumo responsabilidad por los resultados del equipo"
+                ]
+                
+                leadership_dimensions = [
+                    'Inspiración', 'Comunicación', 'Toma de Decisiones',
+                    'Delegación', 'Desarrollo de Talento', 'Desarrollo de Talento',
+                    'Adaptabilidad', 'Innovación', 'Integridad', 'Responsabilidad'
+                ]
+                
+                for i, text in enumerate(leadership_questions, 1):
+                    question = Question(
+                        assessment_id=4,
+                        text=text,
+                        question_type='likert',
+                        order=i,
+                        dimension=leadership_dimensions[i-1]
+                    )
+                    db.session.add(question)
+                
+                db.session.commit()
+                logger.info("✅ ASSESSMENTS: Preguntas de Liderazgo creadas")
+            else:
+                logger.info("ℹ️ ASSESSMENTS: Assessment de Liderazgo ya existe")
+        except Exception as leadership_error:
+            logger.error(f"❌ ASSESSMENTS: Error creando Liderazgo: {leadership_error}")
+            db.session.rollback()
+        
+        # Assessment 5: Trabajo en Equipo - Con transacciones individuales
+        try:
+            if not Assessment.query.filter_by(title="Assessment de Trabajo en Equipo").first():
+                teamwork_assessment = Assessment(
+                    title="Assessment de Trabajo en Equipo",
+                    description="Evaluación de habilidades de colaboración y trabajo en equipo",
+                    is_active=True
+                )
+                db.session.add(teamwork_assessment)
+                db.session.flush()
+                teamwork_id = teamwork_assessment.id
+                logger.info(f"✅ ASSESSMENTS: Assessment de Trabajo en Equipo creado con ID: {teamwork_id}")
 
-        db.session.commit()
-        logger.info("🎉 ASSESSMENTS: Todas las evaluaciones adicionales creadas exitosamente")
-        return True
+                # Preguntas para Trabajo en Equipo
+                teamwork_questions = [
+                    "Colaboro eficazmente con personas de diferentes personalidades",
+                    "Comparto información y recursos con mis compañeros de equipo", 
+                    "Escucho activamente las ideas y opiniones de otros",
+                    "Apoyo a mis compañeros cuando necesitan ayuda",
+                    "Asumo mi responsabilidad en los resultados del equipo",
+                    "Contribuyo de manera constructiva en las reuniones de equipo",
+                    "Manejo los desacuerdos de manera respetuosa y productiva",
+                    "Me adapto fácilmente a los cambios en la dinámica del equipo",
+                    "Celebro los éxitos del equipo, no solo los individuales",
+                    "Confío en las habilidades y compromiso de mis compañeros",
+                    "Comunico de manera clara y oportuna con el equipo",
+                    "Busco activamente formas de mejorar el desempeño del equipo"
+                ]
+
+                # Dimensiones para Trabajo en Equipo
+                teamwork_dimensions = [
+                    "Colaboración", "Compartir recursos", "Escucha activa",
+                    "Apoyo mutuo", "Responsabilidad compartida", "Participación constructiva",
+                    "Manejo de conflictos", "Adaptabilidad", "Espíritu de equipo",
+                    "Confianza", "Comunicación efectiva", "Mejora continua"
+                ]
+
+                for i, text in enumerate(teamwork_questions, 1):
+                    question = Question(
+                        assessment_id=teamwork_id,
+                        text=text,
+                        question_type='likert',
+                        order=i,
+                        dimension=teamwork_dimensions[i-1]
+                    )
+                    db.session.add(question)
+                
+                db.session.commit()
+                logger.info("✅ ASSESSMENTS: Preguntas de Trabajo en Equipo creadas")
+            else:
+                logger.info("ℹ️ ASSESSMENTS: Assessment de Trabajo en Equipo ya existe")
+        except Exception as teamwork_error:
+            logger.error(f"❌ ASSESSMENTS: Error creando Trabajo en Equipo: {teamwork_error}")
+            db.session.rollback()
+
+        # Verificar que todo fue creado correctamente
+        try:
+            total_assessments = Assessment.query.count()
+            logger.info(f"🎉 ASSESSMENTS: Proceso completado. Total de evaluaciones: {total_assessments}")
+            return True
+        except Exception as verify_error:
+            logger.error(f"❌ ASSESSMENTS: Error verificando creación: {verify_error}")
+            return False
         
     except Exception as e:
-        logger.error(f"❌ ASSESSMENTS: Error creando evaluaciones adicionales: {e}")
+        logger.error(f"❌ ASSESSMENTS: Error general creando evaluaciones adicionales: {e}")
+        try:
+            db.session.rollback()
+        except:
+            pass
         return False
 
 def create_demo_data_for_coachee(coachee_user):
@@ -2071,38 +2128,59 @@ def api_coach_create_invitation_v2():
         for v_coachee in verification_query:
             logger.info(f"🔍 INVITATION: Verification coachee: ID={v_coachee.id}, Name={v_coachee.full_name}, Coach_ID={v_coachee.coach_id}")
         
-        # Asignar evaluación si se especificó
+        # Asignar evaluación si se especificó - Optimizado para Railway
         assessment_assigned = False
         assigned_assessment_title = None
         if assigned_assessment_id:
             try:
                 logger.info(f"📋 INVITATION: Attempting to assign assessment ID {assigned_assessment_id} to coachee {new_coachee.id}")
                 
-                # Verificar que la evaluación existe y está activa
-                assessment = Assessment.query.filter_by(id=assigned_assessment_id, is_active=True).first()
+                # Verificar que la evaluación existe y está activa - Con verificación robusta
+                assessment = None
+                try:
+                    assessment = Assessment.query.filter_by(id=assigned_assessment_id, is_active=True).first()
+                    if assessment:
+                        logger.info(f"✅ INVITATION: Assessment found - ID: {assessment.id}, Title: {assessment.title}")
+                    else:
+                        logger.warning(f"❌ INVITATION: Assessment with ID {assigned_assessment_id} not found or inactive")
+                except Exception as query_error:
+                    logger.error(f"❌ INVITATION: Database error querying assessment: {query_error}")
+                    assessment = None
+                
                 if assessment:
-                    # Crear una tarea de evaluación para el coachee
-                    new_task = Task(
-                        coach_id=current_user.id,
-                        coachee_id=new_coachee.id,
-                        title=f"Evaluación: {assessment.title}",
-                        description=f"Completa la evaluación '{assessment.title}' asignada por tu coach.",
-                        category='evaluation',
-                        priority='high',
-                        due_date=None,  # Sin fecha límite por defecto
-                        is_active=True
-                    )
-                    
-                    db.session.add(new_task)
-                    db.session.commit()
-                    
-                    assessment_assigned = True
-                    assigned_assessment_title = assessment.title
-                    logger.info(f"✅ INVITATION: Assessment '{assessment.title}' assigned successfully to coachee {new_coachee.full_name}")
+                    try:
+                        # Crear una tarea de evaluación para el coachee con verificaciones Railway
+                        new_task = Task(
+                            coach_id=current_user.id,
+                            coachee_id=new_coachee.id,
+                            title=f"Evaluación: {assessment.title}",
+                            description=f"Completa la evaluación '{assessment.title}' asignada por tu coach.",
+                            category='evaluation',
+                            priority='high',
+                            due_date=None,  # Sin fecha límite por defecto
+                            is_active=True
+                        )
+                        
+                        db.session.add(new_task)
+                        db.session.flush()  # Verificar que se puede crear antes del commit
+                        
+                        # Verificar que el task se creó correctamente
+                        if new_task.id:
+                            db.session.commit()
+                            assessment_assigned = True
+                            assigned_assessment_title = assessment.title
+                            logger.info(f"✅ INVITATION: Assessment '{assessment.title}' assigned successfully to coachee {new_coachee.full_name} (Task ID: {new_task.id})")
+                        else:
+                            logger.error("❌ INVITATION: Task creation failed - no ID generated")
+                            db.session.rollback()
+                    except Exception as task_error:
+                        logger.error(f"❌ INVITATION: Error creating evaluation task: {task_error}")
+                        db.session.rollback()
+                        # Continuar sin fallar la invitación completa
                 else:
                     logger.warning(f"❌ INVITATION: Assessment with ID {assigned_assessment_id} not found or inactive")
             except Exception as e:
-                logger.error(f"❌ INVITATION: Error assigning assessment: {str(e)}")
+                logger.error(f"❌ INVITATION: Error in assessment assignment process: {str(e)}")
                 # No fallar la invitación si hay error en la asignación
         
         return jsonify({
@@ -2708,38 +2786,80 @@ def api_coach_available_assessments():
         app.logger.info(f"=== OBTENIENDO EVALUACIONES DISPONIBLES - Usuario: {current_user.email} ===")
         
         if not current_user.is_authenticated or current_user.role != 'coach':
+            app.logger.warning(f"❌ AVAILABLE-ASSESSMENTS: Access denied for user {current_user.username if current_user else 'None'}")
             return jsonify({'error': 'Acceso denegado.'}), 403
         
-        # Obtener todas las evaluaciones activas
-        assessments = Assessment.query.filter_by(is_active=True).all()
+        app.logger.info("🔍 AVAILABLE-ASSESSMENTS: Querying assessments from database...")
+        
+        # Verificar que las tablas existen
+        try:
+            # Obtener todas las evaluaciones activas
+            assessments = Assessment.query.filter_by(is_active=True).all()
+            app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: Found {len(assessments)} active assessments")
+        except Exception as db_error:
+            app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Database query failed: {str(db_error)}")
+            # Intentar crear evaluaciones si no existen
+            create_additional_assessments()
+            assessments = Assessment.query.filter_by(is_active=True).all()
+            app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: After creation attempt, found {len(assessments)} assessments")
         
         assessments_data = []
         for assessment in assessments:
-            # Contar preguntas de la evaluación
-            questions_count = Question.query.filter_by(assessment_id=assessment.id, is_active=True).count()
-            
-            # Contar resultados completados para esta evaluación
-            completed_count = AssessmentResult.query.filter_by(assessment_id=assessment.id).count()
-            
-            assessments_data.append({
-                'id': assessment.id,
-                'title': assessment.title,
-                'description': assessment.description,
-                'questions_count': questions_count,
-                'completed_count': completed_count,
-                'created_at': assessment.created_at.isoformat() if assessment.created_at else None
-            })
+            try:
+                # Contar preguntas de la evaluación de manera segura
+                questions_count = 0
+                try:
+                    questions_count = Question.query.filter_by(assessment_id=assessment.id, is_active=True).count()
+                except Exception as q_error:
+                    app.logger.warning(f"⚠️ AVAILABLE-ASSESSMENTS: Could not count questions for assessment {assessment.id}: {str(q_error)}")
+                
+                # Contar resultados completados para esta evaluación de manera segura
+                completed_count = 0
+                try:
+                    completed_count = AssessmentResult.query.filter_by(assessment_id=assessment.id).count()
+                except Exception as r_error:
+                    app.logger.warning(f"⚠️ AVAILABLE-ASSESSMENTS: Could not count results for assessment {assessment.id}: {str(r_error)}")
+                
+                assessment_data = {
+                    'id': assessment.id,
+                    'title': assessment.title or 'Sin título',
+                    'description': assessment.description or 'Sin descripción',
+                    'questions_count': questions_count,
+                    'completed_count': completed_count,
+                    'created_at': assessment.created_at.isoformat() if assessment.created_at else None
+                }
+                
+                assessments_data.append(assessment_data)
+                app.logger.info(f"✅ AVAILABLE-ASSESSMENTS: Processed assessment {assessment.id}: {assessment.title}")
+                
+            except Exception as process_error:
+                app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Error processing assessment {assessment.id}: {str(process_error)}")
+                # Continuar con las demás evaluaciones
+                continue
         
-        app.logger.info(f"Evaluaciones disponibles encontradas: {len(assessments_data)}")
+        app.logger.info(f"📤 AVAILABLE-ASSESSMENTS: Returning {len(assessments_data)} evaluations")
         
+        # Asegurar que siempre regresemos algo, incluso si está vacío
         return jsonify({
             'success': True,
-            'assessments': assessments_data
+            'assessments': assessments_data,
+            'total': len(assessments_data),
+            'message': f'Se encontraron {len(assessments_data)} evaluaciones disponibles'
         }), 200
         
     except Exception as e:
-        app.logger.error(f"ERROR OBTENIENDO EVALUACIONES DISPONIBLES: {str(e)}")
-        return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
+        app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Critical error: {str(e)}")
+        import traceback
+        app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Traceback: {traceback.format_exc()}")
+        
+        # Intentar regresar una respuesta mínima de emergencia
+        return jsonify({
+            'success': False,
+            'error': f'Error obteniendo evaluaciones: {str(e)}',
+            'assessments': [],
+            'total': 0,
+            'message': 'Error interno del servidor'
+        }), 500
 
 @app.route('/api/admin/create-additional-assessments', methods=['POST'])
 @login_required
