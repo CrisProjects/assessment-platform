@@ -4040,6 +4040,19 @@
                 if (data.success && data.questions && data.questions.length > 0) {
                     questions = data.questions;
                     
+                    // MEJORADO: Validación completa del correlativo al cargar
+                    console.log('🔍 DEBUG PREGUNTAS CARGADAS:', {
+                        total: questions.length,
+                        first5: questions.slice(0, 5).map(q => ({
+                            id: q.id,
+                            order: q.order,
+                            text: q.text.substring(0, 30) + '...'
+                        }))
+                    });
+                    
+                    // Validar integridad del correlativo
+                    validateQuestionSequence();
+                    
                     // Actualizar el título dinámicamente en el header de la evaluación
                     const assessmentHeaderTitle = document.querySelector('#assessment .card-header h3');
                     if (assessmentHeaderTitle && data.assessment_title) {
@@ -4063,6 +4076,72 @@
             }
         }
 
+        // NUEVA: Validar secuencia completa del correlativo
+        function validateQuestionSequence() {
+            console.log('🔍 VALIDANDO SECUENCIA DE PREGUNTAS...');
+            
+            const totalQuestions = questions.length;
+            const expectedForIE = 12;
+            const orders = questions.map(q => q.order).sort((a, b) => a - b);
+            const ids = questions.map(q => q.id).sort((a, b) => a - b);
+            
+            // Verificar cantidad esperada
+            const isCorrectCount = totalQuestions === expectedForIE;
+            
+            // Verificar secuencia consecutiva 1-12
+            const expectedOrders = Array.from({length: expectedForIE}, (_, i) => i + 1);
+            const isConsecutiveSequence = JSON.stringify(orders) === JSON.stringify(expectedOrders);
+            
+            // Verificar que cada índice del array corresponda al correlativo
+            const arrayToOrderMatch = questions.every((q, index) => q.order === (index + 1));
+            
+            const validationResult = {
+                totalQuestions: totalQuestions,
+                expectedCount: expectedForIE,
+                isCorrectCount: isCorrectCount,
+                orders: orders,
+                expectedOrders: expectedOrders,
+                isConsecutiveSequence: isConsecutiveSequence,
+                arrayToOrderMatch: arrayToOrderMatch,
+                questionDetails: questions.map((q, index) => ({
+                    arrayIndex: index,
+                    questionId: q.id,
+                    order: q.order,
+                    orderMatchesIndex: q.order === (index + 1)
+                }))
+            };
+            
+            console.log('📊 RESULTADO VALIDACIÓN CORRELATIVO:', validationResult);
+            
+            if (!isCorrectCount) {
+                console.error('❌ ERROR: Cantidad incorrecta de preguntas', {
+                    expected: expectedForIE,
+                    received: totalQuestions
+                });
+                showToast(`Error: Se esperaban ${expectedForIE} preguntas, se recibieron ${totalQuestions}`, 'error');
+            }
+            
+            if (!isConsecutiveSequence) {
+                console.error('❌ ERROR: Correlativo no consecutivo', {
+                    expected: expectedOrders,
+                    received: orders
+                });
+                showToast('Error: Las preguntas no tienen correlativo consecutivo 1-12', 'error');
+            }
+            
+            if (!arrayToOrderMatch) {
+                console.error('❌ ERROR: Índices del array no coinciden con correlativo', validationResult.questionDetails);
+                showToast('Error: La secuencia de preguntas no está ordenada correctamente', 'error');
+            }
+            
+            if (isCorrectCount && isConsecutiveSequence && arrayToOrderMatch) {
+                console.log('✅ VALIDACIÓN EXITOSA: Correlativo perfecto 1-12 consecutivo');
+                showToast('✅ Correlativo validado: 12 preguntas con orden consecutivo 1-12', 'success');
+            }
+            
+            return validationResult;
+        }
+
         // Show current assessment question
         function showAssessmentQuestion() {
             if (currentQuestionIndex >= questions.length) {
@@ -4072,6 +4151,18 @@
             
             const question = questions[currentQuestionIndex];
             const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            
+            // MEJORADO: Validación del correlativo
+            const expectedCorrelativo = currentQuestionIndex + 1;
+            if (question.order !== expectedCorrelativo) {
+                console.warn('⚠️ ADVERTENCIA: Correlativo inconsistente', {
+                    questionId: question.id,
+                    currentIndex: currentQuestionIndex,
+                    questionOrder: question.order,
+                    expectedOrder: expectedCorrelativo,
+                    difference: question.order - expectedCorrelativo
+                });
+            }
             
             // Update progress bar
             document.getElementById('assessmentProgress').style.width = progress + '%';
@@ -4085,12 +4176,26 @@
                 'Totalmente de acuerdo'
             ];
             
+            // DEBUG: Log question details mejorado
+            console.log('🔍 DEBUG PREGUNTA MOSTRADA:', {
+                currentQuestionIndex: currentQuestionIndex,
+                displayNumber: question.order, // USAR ORDEN DE LA PREGUNTA, NO ÍNDICE
+                questionId: question.id,
+                questionOrder: question.order,
+                expectedCorrelativo: expectedCorrelativo,
+                correlatioMatch: question.order === expectedCorrelativo,
+                totalQuestions: questions.length,
+                questionText: question.text.substring(0, 50) + '...',
+                progressPercentage: Math.round(progress),
+                hasStoredAnswer: answers[question.id] !== undefined
+            });
+            
             // Create question HTML
             document.getElementById('questionContainer').innerHTML = `
                 <div class="question-card">
                     <div class="question-title mb-3">
                         <i class="fas fa-question-circle me-2"></i>
-                        Pregunta ${currentQuestionIndex + 1} de ${questions.length}
+                        Pregunta ${question.order} de ${questions.length}
                     </div>
                     <div class="question-text mb-4">${question.text}</div>
                     <div class="options-container mb-4">
@@ -4152,8 +4257,18 @@
                     nextButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
                 }
                 
-                // Store the answer immediately
-                answers[currentQuestionIndex] = parseInt(value);
+                // Store the answer immediately using question ID as key
+                const currentQuestion = questions[currentQuestionIndex];
+                if (currentQuestion && currentQuestion.id) {
+                    answers[currentQuestion.id] = parseInt(value);
+                    console.log('🔍 DEBUG RESPUESTA GUARDADA:', {
+                        questionIndex: currentQuestionIndex,
+                        questionId: currentQuestion.id,
+                        questionOrder: currentQuestion.order,
+                        selectedValue: parseInt(value),
+                        totalAnswers: Object.keys(answers).length
+                    });
+                }
                 
                 // Auto-advance to next question after a brief delay
                 setTimeout(() => {
@@ -4171,11 +4286,83 @@
                 questionCard.style.opacity = '0';
                 
                 setTimeout(() => {
+                    console.log('🔍 DEBUG ANTES DEL AVANCE:', {
+                        currentIndex: currentQuestionIndex,
+                        currentQuestionId: questions[currentQuestionIndex]?.id,
+                        currentQuestionOrder: questions[currentQuestionIndex]?.order,
+                        totalQuestionsLoaded: questions.length,
+                        answersSoFar: Object.keys(answers).length,
+                        answeredQuestionIds: Object.keys(answers).map(id => parseInt(id)).sort()
+                    });
+                    
+                    // MEJORADO: Validar que no nos saltemos ninguna pregunta
+                    const currentQuestion = questions[currentQuestionIndex];
+                    if (currentQuestion && !answers[currentQuestion.id]) {
+                        console.warn('⚠️ ADVERTENCIA: Pregunta sin respuesta detectada', {
+                            questionId: currentQuestion.id,
+                            questionOrder: currentQuestion.order,
+                            index: currentQuestionIndex
+                        });
+                        // No avanzar si no hay respuesta
+                        questionCard.style.opacity = '1';
+                        showToast('Debes responder esta pregunta antes de continuar', 'warning');
+                        return;
+                    }
+                    
                     currentQuestionIndex++;
+                    
+                    console.log('🔍 DEBUG DESPUÉS DEL AVANCE:', {
+                        newIndex: currentQuestionIndex,
+                        totalQuestions: questions.length,
+                        nextQuestionId: questions[currentQuestionIndex]?.id,
+                        nextQuestionOrder: questions[currentQuestionIndex]?.order,
+                        willComplete: currentQuestionIndex >= questions.length
+                    });
+                    
+                    // MEJORADO: Validación adicional del correlativo
                     if (currentQuestionIndex < questions.length) {
+                        const nextQuestion = questions[currentQuestionIndex];
+                        console.log('🎯 NAVEGANDO A PREGUNTA:', {
+                            arrayIndex: currentQuestionIndex,
+                            questionId: nextQuestion.id,
+                            correlativo: nextQuestion.order,
+                            expectedCorrelativo: currentQuestionIndex + 1,
+                            isCorrectSequence: nextQuestion.order === (currentQuestionIndex + 1)
+                        });
                         showAssessmentQuestion();
                     } else {
-                        // Complete assessment
+                        // Complete assessment - MEJORADO: Verificación final dinámica
+                        const totalQuestionsExpected = questions.length; // Usar el número real de preguntas cargadas
+                        const totalAnswered = Object.keys(answers).length;
+                        
+                        console.log('🎯 COMPLETANDO EVALUACIÓN - Resumen final:', {
+                            assessmentType: currentAssessmentId === 2 ? 'DISC' : (currentAssessmentId === 3 ? 'IE' : 'OTRA'),
+                            totalQuestionsExpected: totalQuestionsExpected,
+                            totalAnswersCollected: totalAnswered,
+                            questionIds: questions.map(q => q.id).sort(),
+                            answeredIds: Object.keys(answers).map(id => parseInt(id)).sort(),
+                            missingIds: questions.map(q => q.id).filter(id => !answers[id]),
+                            isComplete: totalAnswered === totalQuestionsExpected,
+                            currentAssessmentId: currentAssessmentId
+                        });
+                        
+                        // Validar que tengamos todas las respuestas antes de completar
+                        if (totalAnswered < totalQuestionsExpected) {
+                            console.error('❌ ERROR: Faltan respuestas, no se puede completar', {
+                                expected: totalQuestionsExpected,
+                                received: totalAnswered,
+                                missing: questions.map(q => q.id).filter(id => !answers[id])
+                            });
+                            showToast('Error: Faltan respuestas. Reiniciando evaluación...', 'error');
+                            // Reiniciar desde la primera pregunta no respondida
+                            const firstMissing = questions.findIndex(q => !answers[q.id]);
+                            if (firstMissing >= 0) {
+                                currentQuestionIndex = firstMissing;
+                                showAssessmentQuestion();
+                                return;
+                            }
+                        }
+                        
                         completeAssessment();
                     }
                 }, 300); // Wait for fade-out animation
@@ -4191,9 +4378,16 @@
                 return;
             }
             
-            // Store answer if not already stored
-            if (answers[currentQuestionIndex] === undefined) {
-                answers[currentQuestionIndex] = parseInt(selected.value);
+            // Store answer using question ID - ALWAYS store it
+            const currentQuestion = questions[currentQuestionIndex];
+            if (currentQuestion && currentQuestion.id) {
+                answers[currentQuestion.id] = parseInt(selected.value);
+                console.log('🔍 DEBUG RESPUESTA MANUAL:', {
+                    questionIndex: currentQuestionIndex,
+                    questionId: currentQuestion.id,
+                    selectedValue: parseInt(selected.value),
+                    totalAnswersNow: Object.keys(answers).length
+                });
             }
             
             // Use the same auto-advance logic
@@ -4212,17 +4406,61 @@
                     throw new Error('No hay respuestas guardadas');
                 }
                 
+                // MEJORADO: Validación final completa antes de enviar
+                const totalAnswers = Object.keys(answers).length;
+                const expectedAnswers = questions.length;
+                
+                console.log('🔍 VALIDACIÓN FINAL ANTES DEL ENVÍO:', {
+                    assessmentType: currentAssessmentId === 2 ? 'DISC' : (currentAssessmentId === 3 ? 'IE' : 'OTRA'),
+                    currentAssessmentId: currentAssessmentId,
+                    totalAnswersProvided: totalAnswers,
+                    expectedAnswersFromQuestions: expectedAnswers,
+                    answeredQuestionIds: Object.keys(answers).map(id => parseInt(id)).sort(),
+                    expectedQuestionIds: questions.map(q => q.id).sort(),
+                    allQuestionsAnswered: questions.every(q => answers[q.id] !== undefined),
+                    missingQuestions: questions.filter(q => answers[q.id] === undefined).map(q => ({id: q.id, order: q.order}))
+                });
+                
+                // Verificar que todas las preguntas estén respondidas
+                if (totalAnswers !== expectedAnswers) {
+                    const missingQuestions = questions.filter(q => answers[q.id] === undefined);
+                    console.error('❌ ERROR VALIDACIÓN FINAL: Faltan respuestas', {
+                        expected: expectedAnswers,
+                        received: totalAnswers,
+                        missing: missingQuestions.map(q => ({id: q.id, order: q.order, text: q.text.substring(0, 30)}))
+                    });
+                    
+                    showToast(`Error: Faltan ${expectedAnswers - totalAnswers} respuestas. Evaluación incompleta.`, 'error');
+                    
+                    // Ir a la primera pregunta sin responder
+                    if (missingQuestions.length > 0) {
+                        const firstMissingIndex = questions.findIndex(q => q.id === missingQuestions[0].id);
+                        if (firstMissingIndex >= 0) {
+                            currentQuestionIndex = firstMissingIndex;
+                            showAssessmentQuestion();
+                            return;
+                        }
+                    }
+                    
+                    throw new Error(`Evaluación incompleta: ${totalAnswers}/${expectedAnswers} respuestas`);
+                }
+                
                 // Convert answers to the format expected by the API
                 const responses = [];
-                for (const [questionIndex, answer] of Object.entries(answers)) {
-                    const question = questions[parseInt(questionIndex)];
-                    if (question && question.id) {
-                        responses.push({
-                            question_id: question.id,
-                            selected_option: answer
-                        });
-                    }
+                for (const [questionId, answer] of Object.entries(answers)) {
+                    // questionId is now the actual question ID, not an index
+                    responses.push({
+                        question_id: parseInt(questionId),
+                        selected_option: answer
+                    });
                 }
+                
+                console.log('🔍 DEBUG ENVÍO:', {
+                    totalAnswers: Object.keys(answers).length,
+                    questionIds: Object.keys(answers).map(id => parseInt(id)),
+                    responses: responses,
+                    validationPassed: true
+                });
                 
                 console.log('Converted responses:', responses);
                 
@@ -4441,8 +4679,19 @@
             // Determinar el tipo de evaluación y configurar títulos apropiados
             const assessmentTitle = evaluation.assessment_title || data.assessment_title || 'Evaluación';
             const isDiscAssessment = assessmentTitle.includes('DISC');
-            const analysisTitle = isDiscAssessment ? 'Análisis Completo DISC de Personalidad' : 'Análisis Completo de Asertividad';
-            const chartTitle = isDiscAssessment ? 'Radar de Dimensiones DISC' : 'Radar de Competencias';
+            const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+            
+            let analysisTitle, chartTitle;
+            if (isDiscAssessment) {
+                analysisTitle = 'Análisis Completo DISC de Personalidad';
+                chartTitle = 'Radar de Dimensiones DISC';
+            } else if (isEmotionalIntelligenceAssessment) {
+                analysisTitle = 'Análisis Completo de Inteligencia Emocional';
+                chartTitle = 'Radar de Competencias Emocionales';
+            } else {
+                analysisTitle = 'Análisis Completo de Asertividad';
+                chartTitle = 'Radar de Competencias';
+            }
             
             console.log('Assessment type detected:', { assessmentTitle, isDiscAssessment, analysisTitle });
             console.log('Final data to use:', data);
@@ -4463,8 +4712,8 @@
                                         <div style="color: #666;">Puntuación Total</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score)}</div>
-                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : 'Nivel de Asertividad'}</div>
+                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score))}</div>
+                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : 'Nivel de Asertividad')}</div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="h6" style="color: #333;">${formatDate(data.completed_at || evaluation.completed_at)}</div>
@@ -4531,7 +4780,13 @@
             
             // Crear el gráfico radar después de insertar el HTML
             setTimeout(() => {
-                createRadarChart(dimensionalScores, isDiscAssessment);
+                console.log('🎯 CALLING RADAR: About to call createRadarChart with:', {
+                    dimensionalScores,
+                    isDiscAssessment,
+                    isEmotionalIntelligenceAssessment,
+                    assessmentTitle
+                });
+                createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment);
             }, 100);
         }
 
@@ -4660,65 +4915,32 @@
                                         </small>
                                     </div>
                                     <div class="text-end">
-                                        <span class="badge bg-primary px-3 py-2">
-                                            <i class="fas fa-chart-line me-1"></i>
-                                            ${Object.keys(categorizedRecs).length} Categorías
-                                        </span>
+                                        <div class="badge bg-info fs-6">${getTotalRecommendationsCount(categorizedRecs)} recomendaciones</div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-chart-line me-2"></i>
+                                            <small>Basado en tu puntuación</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-target me-2"></i>
+                                            <small>Objetivos específicos</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-clock me-2"></i>
+                                            <small>Plan a 90 días</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="card-body" style="padding: 2rem;">
-                                <div class="row">
-            `;
-            
-            // Generar HTML para cada categoría
-            let categoryIndex = 0;
-            Object.values(categorizedRecs).forEach(category => {
-                const colClass = Object.keys(categorizedRecs).length > 2 ? 'col-lg-6' : 'col-12';
-                const borderColor = category.type === 'dimension' ? '#ffc107' : '#17a2b8';
-                const bgColor = category.type === 'dimension' ? '#fff3cd' : '#d1ecf1';
-                const textColor = category.type === 'dimension' ? '#856404' : '#0c5460';
-                
-                html += `
-                    <div class="${colClass} mb-4">
-                        <div class="card border-0 h-100" style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid ${borderColor} !important;">
-                            <div class="card-header" style="background: ${bgColor}; color: ${textColor};">
-                                <h6 class="mb-0">
-                                    <i class="${category.icon} me-2"></i>
-                                    ${category.title}
-                                </h6>
-                                ${category.subtitle ? `<small class="d-block mt-1">${category.subtitle}</small>` : ''}
-                                ${category.description ? `<small class="d-block mt-1">${category.description}</small>` : ''}
-                            </div>
-                            <div class="card-body">
-                `;
-                
-                // Handle both array of strings and array of objects
-                const items = category.items || [];
-                items.forEach(item => {
-                    const itemText = typeof item === 'string' ? item : (item.text || item.toString());
-                    html += `
-                        <div class="d-flex align-items-start mb-3">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-check-circle text-primary me-2"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <p class="mb-0" style="color: #333; line-height: 1.6;">${itemText}</p>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += `
-                            </div>
-                        </div>
-                    </div>
-                `;
-                categoryIndex++;
-            });
-            
-            html += `
-                                </div>
+                                ${generateCategorizedRecommendationsHTML(categorizedRecs)}
                             </div>
                         </div>
                     </div>
@@ -4732,277 +4954,246 @@
         function categorizeRecommendations(recommendations) {
             console.log('🏷️ categorizeRecommendations - Entrada:', recommendations);
             
-            // Si las recomendaciones están en formato de array de strings, usar el parser existente
-            if (Array.isArray(recommendations) && recommendations.length > 0 && typeof recommendations[0] === 'string') {
-                return parseRecommendationsIntoCategories(recommendations);
-            }
-            
-            // Si es un objeto, devolverlo tal como está
-            if (typeof recommendations === 'object' && !Array.isArray(recommendations)) {
-                return recommendations;
-            }
-            
-            // Fallback: crear una categoría general simple
-            return {
+            const categories = {
+                comunicacion: {
+                    title: 'Habilidades de Comunicación',
+                    icon: 'fas fa-comments',
+                    color: 'primary',
+                    items: [],
+                    priority: 1,
+                    description: 'Mejora tu capacidad para expresarte de manera clara y efectiva'
+                },
+                liderazgo: {
+                    title: 'Desarrollo de Liderazgo',
+                    icon: 'fas fa-crown',
+                    color: 'success',
+                    items: [],
+                    priority: 2,
+                    description: 'Fortalece tus competencias de liderazgo y dirección de equipos'
+                },
+                asertividad: {
+                    title: 'Técnicas de Asertividad',
+                    icon: 'fas fa-balance-scale',
+                    color: 'warning',
+                    items: [],
+                    priority: 3,
+                    description: 'Desarrolla tu capacidad para defender tus derechos respetando a otros'
+                },
+                emocional: {
+                    title: 'Inteligencia Emocional',
+                    icon: 'fas fa-heart',
+                    color: 'danger',
+                    items: [],
+                    priority: 4,
+                    description: 'Gestiona mejor tus emociones y las de tu entorno'
+                },
+                conflictos: {
+                    title: 'Gestión de Conflictos',
+                    icon: 'fas fa-handshake',
+                    color: 'info',
+                    items: [],
+                    priority: 5,
+                    description: 'Aprende a resolver conflictos de manera constructiva'
+                },
                 general: {
-                    title: 'Recomendaciones Generales',
-                    items: Array.isArray(recommendations) ? recommendations : [recommendations.toString()],
-                    type: 'general',
-                    icon: 'fas fa-lightbulb',
-                    score: null,
-                    priority: 'medium',
-                    isSubcategory: false
+                    title: 'Desarrollo General',
+                    icon: 'fas fa-star',
+                    color: 'secondary',
+                    items: [],
+                    priority: 6,
+                    description: 'Recomendaciones adicionales para tu crecimiento profesional'
                 }
             };
+            
+            // Procesar cada recomendación
+            recommendations.forEach(rec => {
+                const recText = typeof rec === 'string' ? rec : rec.text || rec.description || '';
+                const category = categorizeRecommendation(recText);
+                
+                if (categories[category]) {
+                    categories[category].items.push({
+                        text: recText,
+                        priority: getPriorityFromText(recText),
+                        actionItems: extractActionItems(recText)
+                    });
+                }
+            });
+            
+            // Filtrar categorías vacías y ordenar por prioridad
+            const filteredCategories = Object.entries(categories)
+                .filter(([key, category]) => category.items.length > 0)
+                .sort((a, b) => a[1].priority - b[1].priority);
+            
+            return Object.fromEntries(filteredCategories);
         }
 
-        
-        function parseRecommendationsIntoCategories(recommendations) {
-            const categories = {};
-            let currentCategory = null;
-            let currentCategoryData = null;
-            let currentSubcategory = null;
+        // Función para categorizar una recomendación individual
+        function categorizeRecommendation(text) {
+            const textLower = text.toLowerCase();
             
-            recommendations.forEach((item, index) => {
-                const trimmed = item.trim();
-                if (!trimmed) return;
-                
-                // Detect subcategory patterns like "**Habilidades de Comunicación** (Puntuación: 20.0%)"
-                const subcategoryMatch = trimmed.match(/^\*\*(.*?)\*\*\s*\(Puntuación:\s*(\d+(?:\.\d+)?)%\)/);
-                if (subcategoryMatch) {
-                    // Save previous category if exists
-                    if (currentCategory && currentCategoryData) {
-                        categories[currentCategory] = currentCategoryData;
-                    }
-                    
-                    const subcategoryTitle = subcategoryMatch[1];
-                    const score = parseFloat(subcategoryMatch[2]);
-                    currentCategory = subcategoryTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                    
-                    currentCategoryData = {
-                        title: subcategoryTitle,
-                        subtitle: `Puntuación actual: ${score}%`,
-                        items: [],
-                        type: 'dimension',
-                        icon: getDimensionIconFromTitle(subcategoryTitle),
-                        score: score,
-                        priority: getScorePriority(score),
-                        isSubcategory: true
-                    };
-                    return;
-                }
-                
-                // Detect main category headers like "**Recomendaciones Generales:**"
-                if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
-                    // Save previous category
-                    if (currentCategory && currentCategoryData) {
-                        categories[currentCategory] = currentCategoryData;
-                    }
-                    
-                    const headerText = trimmed.replace(/\*\*/g, '').replace(/[:]*$/, '');
-                    currentCategory = headerText.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                    
-                    currentCategoryData = {
-                        title: headerText,
-                        items: [],
-                        type: getCategoryTypeFromTitle(headerText),
-                        icon: getCategoryIconFromTitle(headerText),
-                        score: null,
-                        priority: 'medium',
-                        isSubcategory: false
-                    };
-                } else if (trimmed.startsWith('• ') || trimmed.startsWith('- ')) {
-                    // Add item to current category
-                    if (currentCategoryData) {
-                        const itemText = trimmed.substring(2);
-                        currentCategoryData.items.push(itemText);
-                    }
-                } else {
-                    // Regular text - treat as standalone item or category description
-                    if (currentCategoryData && trimmed.length > 15) {
-                        currentCategoryData.items.push(trimmed);
-                    } else if (!currentCategory && trimmed.length > 15) {
-                        // Start a general category for orphaned recommendations
-                        currentCategory = 'general_' + index;
-                        currentCategoryData = {
-                            title: 'Recomendación General',
-                            items: [trimmed],
-                            type: 'general',
-                            icon: 'fas fa-info-circle',
-                            score: null,
-                            priority: 'medium',
-                            isSubcategory: false
-                        };
-                    }
-                }
-            });
-            
-            // Save last category
-            if (currentCategory && currentCategoryData) {
-                categories[currentCategory] = currentCategoryData;
+            if (textLower.includes('comunicación') || textLower.includes('expresar') || textLower.includes('hablar') || textLower.includes('escuchar')) {
+                return 'comunicacion';
+            } else if (textLower.includes('liderar') || textLower.includes('liderazgo') || textLower.includes('equipo') || textLower.includes('dirigir')) {
+                return 'liderazgo';
+            } else if (textLower.includes('asertiv') || textLower.includes('derechos') || textLower.includes('opinión') || textLower.includes('firme')) {
+                return 'asertividad';
+            } else if (textLower.includes('emocional') || textLower.includes('emociones') || textLower.includes('sentimientos') || textLower.includes('autocontrol')) {
+                return 'emocional';
+            } else if (textLower.includes('conflicto') || textLower.includes('negociación') || textLower.includes('mediación') || textLower.includes('resolver')) {
+                return 'conflictos';
+            } else {
+                return 'general';
             }
+        }
+
+        // Función para extraer elementos de acción del texto
+        function extractActionItems(text) {
+            const actionWords = ['práctica', 'ejercita', 'desarrolla', 'mejora', 'fortalece', 'aprende', 'implementa'];
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
             
-            return categories;
+            return sentences.filter(sentence => {
+                const sentenceLower = sentence.toLowerCase();
+                return actionWords.some(word => sentenceLower.includes(word));
+            }).slice(0, 3); // Máximo 3 elementos de acción
         }
-        
-        function getDimensionIconFromTitle(title) {
-            const titleLower = title.toLowerCase();
-            if (titleLower.includes('comunicación')) return 'fas fa-comments';
-            if (titleLower.includes('derechos')) return 'fas fa-shield-alt';
-            if (titleLower.includes('opiniones')) return 'fas fa-bullhorn';
-            if (titleLower.includes('conflictos')) return 'fas fa-handshake';
-            if (titleLower.includes('autoconfianza') || titleLower.includes('autoestima')) return 'fas fa-user-check';
-            if (titleLower.includes('asertividad')) return 'fas fa-balance-scale';
-            return 'fas fa-lightbulb';
-        }
-        
-        function getCategoryTypeFromTitle(title) {
-            const titleLower = title.toLowerCase();
-            if (titleLower.includes('fortaleza') || titleLower.includes('excelente')) return 'strength';
-            if (titleLower.includes('general') || titleLower.includes('recomendación')) return 'general';
-            if (titleLower.includes('recuerda') || titleLower.includes('final')) return 'final';
-            if (titleLower.includes('trabajo') || titleLower.includes('¡excelente')) return 'congratulations';
-            return 'dimension';
-        }
-        
-        function getCategoryIconFromTitle(title) {
-            const titleLower = title.toLowerCase();
-            if (titleLower.includes('comunicación')) return 'fas fa-comments';
-            if (titleLower.includes('derechos')) return 'fas fa-shield-alt';
-            if (titleLower.includes('opiniones')) return 'fas fa-bullhorn';
-            if (titleLower.includes('conflictos')) return 'fas fa-handshake';
-            if (titleLower.includes('autoconfianza')) return 'fas fa-user-check';
-            if (titleLower.includes('fortaleza')) return 'fas fa-star';
-            if (titleLower.includes('general')) return 'fas fa-clipboard-list';
-            if (titleLower.includes('recuerda')) return 'fas fa-heart';
-            if (titleLower.includes('trabajo') || titleLower.includes('excelente')) return 'fas fa-trophy';
-            return 'fas fa-lightbulb';
-        }
-        
-        function getScorePriority(score) {
-            if (score < 40) return 'high';
-            if (score < 60) return 'medium';
-            if (score < 80) return 'low';
-            return 'growth';
-        }
-        
-        function categorizeObjectRecommendations(recommendations) {
-            const categories = {};
-            
-            recommendations.forEach((rec, index) => {
-                const categoryKey = rec.dimension || 'general';
-                const categoryType = rec.priority || 'medium';
-                
-                if (!categories[categoryKey]) {
-                    categories[categoryKey] = {
-                        title: formatDimensionName(rec.dimension) || 'Recomendación General',
-                        items: [],
-                        type: categoryType,
-                        icon: getDimensionIcon(rec.dimension),
-                        score: rec.score
-                    };
-                }
-                
-                categories[categoryKey].items.push(rec.recommendation);
-            });
-            
-            return categories;
-        }
-        
-        function renderRecommendationCategory(categoryKey, categoryData) {
-            const { title, subtitle, items, type, icon, score, priority, isSubcategory } = categoryData;
-            
-            const categoryClass = getCategoryClassAdvanced(type, title, isSubcategory);
-            const priorityIndicator = getPriorityIndicator(priority);
-            
-            // Special styling for subcategories (dimensions with scores)
-            if (isSubcategory) {
-                return `
-                    <div class="recommendation-category dimension-subcategory ${categoryClass}">
-                        ${priorityIndicator}
-                        <div class="subcategory-header">
-                            <div class="subcategory-title-container">
-                                <div class="d-flex align-items-center">
-                                    <div class="category-icon dimension-icon">
-                                        <i class="${icon}"></i>
-                                    </div>
-                                    <div class="subcategory-info">
-                                        <h6 class="subcategory-title">${title}</h6>
-                                        <span class="subcategory-subtitle">${subtitle}</span>
-                                    </div>
-                                </div>
-                                <div class="score-container">
-                                    <div class="score-badge-large ${getScoreBadgeClass(score)}">${Math.round(score)}%</div>
-                                    <div class="score-level">${getScoreLevel(score)}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="subcategory-content">
-                            ${renderRecommendationItems(items, 'dimension')}
-                        </div>
-                    </div>
-                `;
+
+        // Función para obtener prioridad del texto
+        function getPriorityFromText(text) {
+            const textLower = text.toLowerCase();
+            if (textLower.includes('urgente') || textLower.includes('inmediato') || textLower.includes('crítico')) {
+                return 'high';
+            } else if (textLower.includes('importante') || textLower.includes('recomendado') || textLower.includes('esencial')) {
+                return 'medium';
+            } else {
+                return 'low';
             }
-            
-            // Regular category rendering
-            let html = `
-                <div class="recommendation-category ${categoryClass}">
-                    ${priorityIndicator}
-                    <div class="category-header">
-                        <div class="category-title">
-                            <div class="d-flex align-items-center">
-                                <div class="category-icon">
-                                    <i class="${icon}"></i>
-                                </div>
-                                <div>
-                                    <div>${title}</div>
-                                    ${score ? `<div class="category-subtitle">Puntuación: ${Math.round(score)}%</div>` : ''}
-                                </div>
-                            </div>
-                            ${score ? `<div class="score-badge">${Math.round(score)}%</div>` : ''}
-                        </div>
-                    </div>
-                    <div class="category-content">
-                        ${renderRecommendationItems(items, type)}
-                    </div>
-                </div>
-            `;
-            
-            return html;
         }
-        
-        function renderRecommendationItems(items, categoryType) {
+
+        // Función para contar total de recomendaciones
+        function getTotalRecommendationsCount(categories) {
+            return Object.values(categories).reduce((total, category) => total + category.items.length, 0);
+        }
+
+        // Función para generar HTML de categorías organizadas
+        function generateCategorizedRecommendationsHTML(categories) {
             let html = '';
-            items.forEach(item => {
+            
+            Object.entries(categories).forEach(([key, category], index) => {
                 html += `
-                    <div class="recommendation-item ${categoryType}-item">
-                        <div class="recommendation-text">${item}</div>
+                    <div class="recommendation-category mb-4" data-category="${key}">
+                        <div class="category-header" style="background: linear-gradient(135deg, var(--bs-${category.color}) 0%, var(--bs-${category.color}) 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; color: white;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="category-icon me-3" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="${category.icon}" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1" style="font-weight: 600; font-size: 1.2rem;">${category.title}</h6>
+                                        <small style="opacity: 0.9;">${category.description}</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge" style="background: rgba(255,255,255,0.2); font-size: 0.9rem;">
+                                        ${category.items.length} ${category.items.length === 1 ? 'recomendación' : 'recomendaciones'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="category-items">
+                            ${generateCategoryItemsHTML(category.items, category.color)}
+                        </div>
                     </div>
                 `;
             });
+            
             return html;
         }
-        
-        function getCategoryClassAdvanced(type, title, isSubcategory) {
-            if (isSubcategory) return 'dimension-category';
-            if (title.includes('Fortaleza') || type === 'strength') return 'strengths-category';
-            if (title.includes('General') || type === 'general') return 'general-recommendations';
-            if (title.includes('Recuerda') || type === 'final') return 'final-message';
-            if (title.includes('Excelente') || type === 'congratulations') return 'congratulations-category';
-            return '';
+
+        // Función para generar HTML de elementos de categoría
+        function generateCategoryItemsHTML(items, color) {
+            let html = '';
+            
+            items.forEach((item, index) => {
+                const priorityIcon = item.priority === 'high' ? 'fas fa-exclamation-circle' : 
+                                   item.priority === 'medium' ? 'fas fa-star' : 'fas fa-circle';
+                const priorityColor = item.priority === 'high' ? 'danger' : 
+                                    item.priority === 'medium' ? 'warning' : 'secondary';
+                
+                html += `
+                    <div class="recommendation-item mb-3" style="background: white; border: 1px solid #dee2e6; border-radius: 10px; padding: 1.25rem; border-left: 4px solid var(--bs-${color}); transition: all 0.3s ease;">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="item-number" style="background: var(--bs-${color}); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem;">
+                                    ${index + 1}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="${priorityIcon} me-2 text-${priorityColor}"></i>
+                                    <span class="badge bg-${priorityColor} me-2">${item.priority.toUpperCase()}</span>
+                                    <small class="text-muted">Prioridad ${item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Media' : 'Baja'}</small>
+                                </div>
+                                <p class="recommendation-text mb-2" style="color: #333; line-height: 1.6; margin-bottom: 1rem;">
+                                    ${item.text}
+                                </p>
+                                ${item.actionItems.length > 0 ? `
+                                    <div class="action-items">
+                                        <h6 class="action-title" style="color: var(--bs-${color}); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">
+                                            <i class="fas fa-tasks me-1"></i>Acciones Sugeridas:
+                                        </h6>
+                                        <ul class="action-list" style="margin: 0; padding-left: 1.5rem;">
+                                            ${item.actionItems.map(action => `
+                                                <li style="color: #666; font-size: 0.9rem; margin-bottom: 0.25rem;">${action.trim()}</li>
+                                            `).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        // Generar HTML de respuestas
+        function generateResponsesHTML(responses) {
+            if (!responses || responses.length === 0) {
+                return '<p class="text-muted">No hay respuestas detalladas disponibles.</p>';
+            }
+            
+            const optionLabels = {
+                1: 'Totalmente en desacuerdo',
+                2: 'En desacuerdo', 
+                3: 'Neutral',
+                4: 'De acuerdo',
+                5: 'Totalmente de acuerdo'
+            };
+            
+            let html = '';
+            responses.forEach((response, index) => {
+                const scoreClass = response.selected_option >= 4 ? 'success' : 
+                                  response.selected_option === 3 ? 'warning' : 'danger';
+                
+                html += `
+                    <div class="border-start border-3 border-primary ps-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>Pregunta ${index + 1}:</strong>
+                                <p class="mb-1">${response.question_text}</p>
+                                <small class="text-${scoreClass}">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    ${optionLabels[response.selected_option] || response.answer_text || 'N/A'}
+                                </small>
+                            </div>
+                            <span class="badge bg-${scoreClass} ms-2">${response.selected_option || response.points || 0}/5</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
         }
-        
-        function getScoreBadgeClass(score) {
-            if (score < 40) return 'score-critical';
-            if (score < 60) return 'score-needs-improvement';
-            if (score < 80) return 'score-good';
-            return 'score-excellent';
-        }
-        
-        function getScoreLevel(score) {
-            if (score < 40) return 'Necesita Mejora';
-            if (score < 60) return 'En Desarrollo';
-            if (score < 80) return 'Competente';
             return 'Excelente';
         }
         
@@ -5108,6 +5299,14 @@
             return 'Perfil en Desarrollo';
         }
 
+        function getEmotionalIntelligenceLevelFromScore(score) {
+            if (score >= 85) return 'Muy Alta';
+            if (score >= 70) return 'Alta';
+            if (score >= 55) return 'Moderada';
+            if (score >= 40) return 'Baja';
+            return 'Muy Baja';
+        }
+
         function getDimensionDescription(dimension, score) {
             const descriptions = {
                 'comunicacion': score >= 70 ? 'Excelente comunicación interpersonal' : 'Oportunidad de mejorar la comunicación',
@@ -5155,12 +5354,26 @@
         // Variable global para almacenar el gráfico radar
         let radarChart = null;
 
-        function createRadarChart(dimensionalScores, isDiscAssessment = false) {
+        function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotionalIntelligenceAssessment = false) {
+            console.log('🎯 RADAR DEBUG: Function called with params:', {
+                isDiscAssessment,
+                isEmotionalIntelligenceAssessment,
+                dimensionalScores,
+                hasCanvas: !!document.getElementById('radarChart')
+            });
+
             const ctx = document.getElementById('radarChart');
-            if (!ctx || !dimensionalScores) {
-                console.warn('No se puede crear el radar chart: elemento canvas no encontrado o datos faltantes');
+            if (!ctx) {
+                console.error('❌ RADAR ERROR: Canvas element with id "radarChart" not found');
                 return;
             }
+            
+            if (!dimensionalScores) {
+                console.error('❌ RADAR ERROR: dimensionalScores is null or undefined');
+                return;
+            }
+
+            console.log('✅ RADAR DEBUG: Canvas found, creating chart with scores:', dimensionalScores);
 
             // Destruir gráfico existente si existe
             if (radarChart) {
@@ -5171,6 +5384,7 @@
             let labels, dataValues, chartLabel;
             
             if (isDiscAssessment) {
+                console.log('📊 RADAR DEBUG: Using DISC configuration');
                 // Dimensiones DISC
                 labels = [
                     'Dominante',
@@ -5187,7 +5401,29 @@
                 ];
                 
                 chartLabel = 'Perfil DISC';
+            } else if (isEmotionalIntelligenceAssessment) {
+                console.log('🧠 RADAR DEBUG: Using Emotional Intelligence configuration');
+                // Dimensiones Inteligencia Emocional
+                labels = [
+                    'Autoconciencia',
+                    'Autorregulación',
+                    'Automotivación',
+                    'Empatía',
+                    'Habilidades Sociales'
+                ];
+
+                dataValues = [
+                    dimensionalScores.Autoconciencia || dimensionalScores.autoconciencia || 0,
+                    dimensionalScores.Autorregulación || dimensionalScores.autorregulacion || 0,
+                    dimensionalScores.Automotivación || dimensionalScores.automotivacion || 0,
+                    dimensionalScores.Empatía || dimensionalScores.empatia || 0,
+                    dimensionalScores['Habilidades Sociales'] || dimensionalScores.habilidades_sociales || 0
+                ];
+                
+                chartLabel = 'Perfil de Inteligencia Emocional';
+                console.log('🧠 RADAR DEBUG: IE data values:', dataValues);
             } else {
+                console.log('💬 RADAR DEBUG: Using Assertiveness configuration');
                 // Dimensiones Asertividad (configuración original)
                 labels = [
                     'Comunicación',
@@ -5207,6 +5443,12 @@
                 
                 chartLabel = 'Nivel de Asertividad';
             }
+
+            console.log('📊 RADAR DEBUG: Final chart config:', {
+                labels,
+                dataValues,
+                chartLabel
+            });
 
             radarChart = new Chart(ctx, {
                 type: 'radar',
@@ -5277,6 +5519,8 @@
                     }
                 }
             });
+            
+            console.log('✅ RADAR DEBUG: Chart created successfully!');
         }
 
         function getStatusLabel(status) {

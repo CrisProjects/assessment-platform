@@ -1,31 +1,29 @@
 #!/usr/bin/env python3
-"""
-Servidor estable para Assessment Platform
-Sin reloader problemático
-"""
-
 import os
 import sys
-from pathlib import Path
 
-# Añadir el directorio actual al path
-sys.path.insert(0, str(Path(__file__).parent))
-
-# Configurar variables de entorno
-os.environ['FLASK_DEBUG'] = '0'
+# Configurar Flask
+os.environ['FLASK_APP'] = 'app.py'
 os.environ['FLASK_ENV'] = 'development'
 
-# Importar y ejecutar la aplicación
-from app import app
-
 if __name__ == '__main__':
-    print("🚀 Assessment Platform - Servidor Estable")
-    print("📡 Ejecutándose en: http://127.0.0.1:5002")
-    print("🔧 Modo: Desarrollo sin reloader")
-    print("⚡ Presiona Ctrl+C para detener")
+    print("🚀 Iniciando servidor Flask...")
+    print("📍 Puerto: 5002")
+    print("🌐 URL: http://localhost:5002")
+    print("🔑 Dashboard Coachee: http://localhost:5002/coachee-dashboard")
+    print("⚠️  Usa Ctrl+C para detener")
     print("-" * 50)
     
+    # Importar la app después de configurar el entorno
+    from app import app, auto_initialize_database
+    
+    # Inicializar la base de datos
+    with app.app_context():
+        auto_initialize_database()
+    
+    # Ejecutar la aplicación SIN debug para evitar auto-reloads problemáticos
     try:
+        print("🚫 Modo debug DESACTIVADO para mayor estabilidad")
         app.run(
             host='0.0.0.0',
             port=5002,

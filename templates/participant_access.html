@@ -524,7 +524,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle existing user login
     document.getElementById('existingUserForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        await handleFormSubmission(this, '/api/login', 'Iniciando sesión...');
+        const formData = new FormData(this);
+        const data = {
+            email: formData.get('email'),
+            password: formData.get('password'),
+            dashboard_type: 'coachee'  // Marcar como acceso de coachee
+        };
+        await handleFormSubmission(this, '/api/login', 'Iniciando sesión...', data);
     });
     
     // Handle new user registration

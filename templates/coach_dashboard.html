@@ -1839,51 +1839,92 @@ function refreshDashboard() {
 
 // Función para cargar estadísticas
 function loadStats() {
+    console.log('🔄 STATS: Starting to load stats...');
+    
+    // Verificar que los elementos del DOM existan
+    const elements = {
+        totalCoachees: document.getElementById('totalCoachees'),
+        completedAssessments: document.getElementById('completedAssessments'),
+        pendingAssessments: document.getElementById('pendingAssessments'),
+        avgScore: document.getElementById('avgScore'),
+        coachName: document.getElementById('coachName')
+    };
+    
+    console.log('🔍 STATS: DOM elements check:', elements);
+    
+    // Verificar elementos faltantes
+    const missingElements = Object.keys(elements).filter(key => !elements[key]);
+    if (missingElements.length > 0) {
+        console.error('❌ STATS: Missing DOM elements:', missingElements);
+    }
+    
     fetch('/api/coach/profile')
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                document.getElementById('coachName').textContent = data.coach.name || 'Coach';
+            console.log('👤 PROFILE: Received profile data:', data);
+            if (data.success && elements.coachName) {
+                elements.coachName.textContent = data.coach.name || 'Coach';
             }
         })
-        .catch(error => console.error('Error loading coach profile:', error));
+        .catch(error => console.error('❌ PROFILE: Error loading coach profile:', error));
     
     // Cargar estadísticas generales
     fetch('/api/coach/my-coachees')
         .then(response => response.json())
         .then(data => {
+            console.log('📊 STATS: Received data:', data); // Debug log
+            
             if (data.success) {
-                document.getElementById('totalCoachees').textContent = data.coachees.length;
+                // Actualizar total de coachees
+                if (elements.totalCoachees) {
+                    elements.totalCoachees.textContent = data.coachees.length;
+                }
                 
-                let completed = 0;
-                let pending = 0;
+                let totalEvaluations = 0;
                 let totalScore = 0;
-                let evaluationsCount = 0;
+                let evaluationsWithScore = 0;
                 
+                // Calcular estadísticas basado en la nueva estructura
                 data.coachees.forEach(coachee => {
-                    if (coachee.evaluations) {
-                        coachee.evaluations.forEach(eval => {
-                            if (eval.completed) {
-                                completed++;
-                                if (eval.score) {
-                                    totalScore += eval.score;
-                                    evaluationsCount++;
-                                }
-                            } else {
-                                pending++;
-                            }
-                        });
+                    console.log(`👤 STATS: Processing coachee ${coachee.name}:`, coachee); // Debug log
+                    
+                    // Contar evaluaciones completadas
+                    if (coachee.evaluations_count) {
+                        totalEvaluations += coachee.evaluations_count;
+                    }
+                    
+                    // Sumar scores para promedio
+                    if (coachee.avg_score) {
+                        totalScore += coachee.avg_score * coachee.evaluations_count;
+                        evaluationsWithScore += coachee.evaluations_count;
                     }
                 });
                 
-                document.getElementById('completedAssessments').textContent = completed;
-                document.getElementById('pendingAssessments').textContent = pending;
+                // Actualizar las tarjetas de estadísticas
+                if (elements.completedAssessments) {
+                    elements.completedAssessments.textContent = totalEvaluations;
+                }
+                if (elements.pendingAssessments) {
+                    elements.pendingAssessments.textContent = 0; // TODO: Implementar lógica de pendientes
+                }
                 
-                const avgScore = evaluationsCount > 0 ? Math.round(totalScore / evaluationsCount) : 0;
-                document.getElementById('avgScore').textContent = avgScore + '%';
+                // Calcular promedio general
+                const avgScore = evaluationsWithScore > 0 ? Math.round(totalScore / evaluationsWithScore) : 0;
+                if (elements.avgScore) {
+                    elements.avgScore.textContent = avgScore + '%';
+                }
+                
+                console.log(`📊 STATS: Updated - Coachees: ${data.coachees.length}, Completed: ${totalEvaluations}, Avg: ${avgScore}%`);
             }
         })
-        .catch(error => console.error('Error loading stats:', error));
+        .catch(error => {
+            console.error('❌ STATS: Error loading stats:', error);
+            // Mostrar valores por defecto en caso de error
+            if (elements.totalCoachees) elements.totalCoachees.textContent = '0';
+            if (elements.completedAssessments) elements.completedAssessments.textContent = '0';
+            if (elements.pendingAssessments) elements.pendingAssessments.textContent = '0';
+            if (elements.avgScore) elements.avgScore.textContent = '0%';
+        });
 }
 
 // Función para cargar evaluaciones disponibles
@@ -2713,7 +2754,20 @@ function viewCoacheeDetails(coacheeId) {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.evaluations) {
-                displayCoacheeEvaluations(data.evaluations);
+                // Procesar evaluaciones para agregar campos necesarios
+                const processedEvaluations = data.evaluations.map(evaluation => {
+                    // Calcular porcentaje basado en el score
+                    const percentage = evaluation.score || 0;
+                    
+                    return {
+                        ...evaluation,
+                        percentage: percentage,
+                        level: getAssertiveLevelFromScore(percentage),
+                        interpretation: evaluation.result_text || ''
+                    };
+                });
+                
+                displayCoacheeEvaluations(processedEvaluations);
             } else {
                 document.getElementById('coacheeEvaluationsContent').innerHTML = `
                     <div class="alert alert-info">
@@ -2825,7 +2879,7 @@ function displayCoacheeEvaluations(evaluations) {
                                 </div>
                                 <div>
                                     <h6 class="evaluation-title mb-1">
-                                        ${evaluation.evaluation_name || 'Evaluación de Asertividad'}
+                                        ${evaluation.assessment_title || 'Evaluación de Asertividad'}
                                     </h6>
                                     <div class="evaluation-meta">
                                         <span class="meta-item">
@@ -3009,6 +3063,11 @@ function displayEvaluationDetails(evaluation) {
     
     const container = document.getElementById('evaluationDetailsContent');
     
+    // Detectar si es una evaluación DISC, Inteligencia Emocional o de Asertividad
+    const assessmentTitle = evaluation.assessment?.title || '';
+    const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
+    const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+    
     // Usar datos de la evaluación
     const data = evaluation;
     const dimensionalScores = evaluation.dimensional_scores;
@@ -3017,7 +3076,13 @@ function displayEvaluationDetails(evaluation) {
     
     console.log('Final data to use:', data);
     console.log('Dimensional scores:', dimensionalScores);
+    console.log('Is DISC Assessment:', isDiscAssessment);
+    console.log('Assessment Title:', assessmentTitle);
     console.log('Recommendations from server:', recommendations);
+    
+    // Título dinámico según el tipo de evaluación
+    const analysisTitle = isDiscAssessment ? 'Análisis Completo DISC de Personalidad' : 
+                         (isEmotionalIntelligenceAssessment ? 'Análisis Completo de Inteligencia Emocional' : 'Análisis Completo de Asertividad');
     
     const html = `
         <!-- Resumen General -->
@@ -3025,15 +3090,15 @@ function displayEvaluationDetails(evaluation) {
             <div class="col-12">
                 <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
                     <div class="card-body text-center">
-                        <h4 class="mb-3" style="color: #333;">Análisis Completo de Asertividad</h4>
+                        <h4 class="mb-3" style="color: #333;">${analysisTitle}</h4>
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="h2" style="color: #007bff;">${Math.round(data.score || data.percentage || 0)}%</div>
                                 <div style="color: #666;">Puntuación Total</div>
                             </div>
                             <div class="col-md-3">
-                                <div class="h4" style="color: #28a745;">${getAssertiveLevelFromScore(data.score || data.percentage || 0)}</div>
-                                <div style="color: #666;">Nivel de Asertividad</div>
+                                <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || data.percentage || 0) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || data.percentage || 0) : getAssertiveLevelFromScore(data.score || data.percentage || 0))}</div>
+                                <div style="color: #666;">${isDiscAssessment ? 'Estilo DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : 'Nivel de Asertividad')}</div>
                             </div>
                             <div class="col-md-3">
                                 <div class="h6" style="color: #333;">${formatDate(data.completed_at)}</div>
@@ -3054,7 +3119,7 @@ function displayEvaluationDetails(evaluation) {
             <div class="col-lg-6 mb-4">
                 <div class="card border-0 h-100" style="background: #f8f9fa; border: 1px solid #dee2e6;">
                     <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
-                        <h5 style="color: #333;"><i class="fas fa-chart-radar me-2"></i>Radar de Competencias</h5>
+                        <h5 style="color: #333;"><i class="fas fa-chart-radar me-2"></i>${isDiscAssessment ? 'Radar de Dimensiones DISC' : (isEmotionalIntelligenceAssessment ? 'Radar de Dimensiones IE' : 'Radar de Competencias')}</h5>
                     </div>
                     <div class="card-body">
                         <div class="radar-chart-container" style="position: relative; height: 300px;">
@@ -3100,36 +3165,81 @@ function displayEvaluationDetails(evaluation) {
     
     // Crear el gráfico radar después de insertar el HTML
     setTimeout(() => {
-        createRadarChart(dimensionalScores);
+        createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment);
     }, 100);
 }
 
 // Función para crear gráfico radar
-function createRadarChart(dimensionalScores) {
+function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotionalIntelligenceAssessment = false) {
     const ctx = document.getElementById('evaluationRadarChart');
     if (!ctx) return;
     
+    console.log('🎯 COACH RADAR DEBUG: Creating chart with params:', {
+        isDiscAssessment,
+        isEmotionalIntelligenceAssessment,
+        dimensionalScores
+    });
+    
     let labels = [];
     let data = [];
+    let chartLabel = '';
     
-    if (dimensionalScores && typeof dimensionalScores === 'object') {
-        if (Array.isArray(dimensionalScores)) {
-            // Array de objetos
-            labels = dimensionalScores.map(score => score.dimension || score.name);
-            data = dimensionalScores.map(score => Math.round((score.score / score.max_score) * 100));
-        } else {
-            // Objeto con claves de dimensiones
-            labels = Object.keys(dimensionalScores).map(key => formatDimensionName(key));
-            data = Object.values(dimensionalScores);
+    if (isDiscAssessment) {
+        // Configuración para DISC
+        labels = ['Dominante', 'Influyente', 'Estable', 'Concienzudo'];
+        data = [
+            dimensionalScores?.Dominante || dimensionalScores?.dominante || 0,
+            dimensionalScores?.Influyente || dimensionalScores?.influyente || 0,
+            dimensionalScores?.Estable || dimensionalScores?.estable || 0,
+            dimensionalScores?.Concienzudo || dimensionalScores?.concienzudo || 0
+        ];
+        chartLabel = 'Perfil DISC';
+    } else if (isEmotionalIntelligenceAssessment) {
+        // Configuración para Inteligencia Emocional
+        labels = [
+            'Autoconciencia',
+            'Autorregulación',
+            'Automotivación',
+            'Empatía',
+            'Habilidades Sociales'
+        ];
+        data = [
+            dimensionalScores?.Autoconciencia || dimensionalScores?.autoconciencia || 0,
+            dimensionalScores?.Autorregulación || dimensionalScores?.autorregulacion || 0,
+            dimensionalScores?.Automotivación || dimensionalScores?.automotivacion || 0,
+            dimensionalScores?.Empatía || dimensionalScores?.empatia || 0,
+            dimensionalScores?.['Habilidades Sociales'] || dimensionalScores?.habilidades_sociales || 0
+        ];
+        chartLabel = 'Perfil de Inteligencia Emocional';
+        console.log('🧠 COACH RADAR DEBUG: IE data values:', data);
+    } else {
+        // Configuración para Asertividad (lógica original)
+        if (dimensionalScores && typeof dimensionalScores === 'object') {
+            if (Array.isArray(dimensionalScores)) {
+                // Array de objetos
+                labels = dimensionalScores.map(score => score.dimension || score.name);
+                data = dimensionalScores.map(score => Math.round((score.score / score.max_score) * 100));
+            } else {
+                // Objeto con claves de dimensiones
+                labels = Object.keys(dimensionalScores).map(key => formatDimensionName(key));
+                data = Object.values(dimensionalScores);
+            }
         }
+        chartLabel = 'Puntuación (%)';
     }
+    
+    console.log('📊 COACH RADAR DEBUG: Final chart config:', {
+        labels,
+        data,
+        chartLabel
+    });
     
     new Chart(ctx, {
         type: 'radar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Puntuación (%)',
+                label: chartLabel,
                 data: data,
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
@@ -3158,6 +3268,8 @@ function createRadarChart(dimensionalScores) {
             }
         }
     });
+    
+    console.log('✅ COACH RADAR DEBUG: Chart created successfully!');
 }
 
 // Función para generar HTML de puntuaciones dimensionales
@@ -3602,6 +3714,22 @@ function getAssertiveLevelFromScore(score) {
     if (score >= 70) return 'Asertivo';
     if (score >= 50) return 'Moderadamente Asertivo';
     return 'Poco Asertivo';
+}
+
+function getDiscLevelFromScore(score) {
+    if (score >= 80) return 'Dominante Alto';
+    if (score >= 60) return 'Influyente Alto';
+    if (score >= 40) return 'Estable Alto';
+    if (score >= 20) return 'Concienzudo Alto';
+    return 'Perfil Equilibrado';
+}
+
+function getEmotionalIntelligenceLevelFromScore(score) {
+    if (score >= 80) return 'Muy Alta';
+    if (score >= 65) return 'Alta';
+    if (score >= 50) return 'Moderada';
+    if (score >= 35) return 'Baja';
+    return 'Muy Baja';
 }
 
 function formatDimensionName(dimension) {

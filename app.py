@@ -644,7 +644,8 @@ def create_additional_assessments():
         
         # Verificar conexión de base de datos primero
         try:
-            db.session.execute(text("SELECT 1"))
+            from sqlalchemy import text as sql_text
+            db.session.execute(sql_text("SELECT 1"))
             logger.info("✅ ASSESSMENTS: Conexión a base de datos verificada")
         except Exception as db_error:
             logger.error(f"❌ ASSESSMENTS: Error de conexión a base de datos: {db_error}")
@@ -1196,7 +1197,7 @@ def calculate_disc_score(responses):
     
     if not responses:
         return 0, "Sin respuestas disponibles", None
-    
+
     # Manejar tanto formato lista como diccionario
     if isinstance(responses, list):
         response_dict = {str(r['question_id']): r['selected_option'] for r in responses}
@@ -1204,37 +1205,60 @@ def calculate_disc_score(responses):
     else:
         response_dict = responses
         logger.info(f"🎯 CALCULATE_DISC_SCORE: Using as dict: {response_dict}")
+
+    # Crear mapeo dinámico de order -> dimensión basado en la base de datos
+    try:
+        # Obtener el mapeo desde la base de datos
+        questions = Question.query.filter_by(assessment_id=2).order_by(Question.order).all()
+        order_to_dimension = {}
+        question_id_to_order = {}
+        
+        for question in questions:
+            order_to_dimension[question.order] = question.dimension
+            question_id_to_order[question.id] = question.order
+            
+        logger.info(f"🎯 CALCULATE_DISC_SCORE: Order mapping: {order_to_dimension}")
+        logger.info(f"🎯 CALCULATE_DISC_SCORE: ID to Order mapping: {question_id_to_order}")
+        
+    except Exception as e:
+        logger.error(f"🎯 CALCULATE_DISC_SCORE: Error creating dynamic mapping: {e}")
+        # Fallback a mapeo hardcodeado si falla la consulta
+        disc_dimensions = {
+            'Dominante': [21, 25, 29, 33],     
+            'Influyente': [22, 26, 30, 34],    
+            'Estable': [23, 27, 31, 35],       
+            'Concienzudo': [24, 28, 32, 36]    
+        }
+        return calculate_disc_score_legacy(response_dict, disc_dimensions)
+
+    # Agrupar por dimensión usando el mapeo dinámico
+    dimension_responses = {}
     
-    # Definir qué preguntas corresponden a cada dimensión DISC
-    # IDs reales en la base de datos (empiezan en 21 para DISC)
-    disc_dimensions = {
-        'Dominante': [21, 25, 29, 33],     # Liderazgo, decisiones, determinación
-        'Influyente': [22, 26, 30, 34],    # Socialización, motivación, entusiasmo  
-        'Estable': [23, 27, 31, 35],       # Estabilidad, armonía, lealtad
-        'Concienzudo': [24, 28, 32, 36]    # Precisión, análisis, procedimientos
-    }
+    for question_id_str, response_value in response_dict.items():
+        try:
+            question_id = int(question_id_str)
+            if question_id in question_id_to_order:
+                order = question_id_to_order[question_id]
+                dimension = order_to_dimension[order]
+                
+                if dimension not in dimension_responses:
+                    dimension_responses[dimension] = []
+                dimension_responses[dimension].append(response_value)
+                
+                logger.info(f"🎯 CALCULATE_DISC_SCORE: Question {question_id} (order {order}) -> {dimension} = {response_value}")
+            else:
+                logger.warning(f"🎯 CALCULATE_DISC_SCORE: Question {question_id} not found in DISC assessment")
+        except ValueError:
+            logger.error(f"🎯 CALCULATE_DISC_SCORE: Invalid question_id: {question_id_str}")
     
+    # Calcular puntuaciones dimensionales
     dimensional_scores = {}
     
-    # Calcular puntuación para cada dimensión DISC
-    for dimension, question_ids in disc_dimensions.items():
-        dimension_total = 0
-        dimension_count = 0
-        
-        logger.info(f"🎯 CALCULATE_DISC_SCORE: Processing dimension {dimension} with questions {question_ids}")
-        
-        for question_id in question_ids:
-            if str(question_id) in response_dict:
-                response_value = response_dict[str(question_id)]
-                dimension_total += response_value
-                dimension_count += 1
-                logger.info(f"🎯 CALCULATE_DISC_SCORE: Question {question_id} = {response_value}")
-            else:
-                logger.info(f"🎯 CALCULATE_DISC_SCORE: Question {question_id} NOT FOUND in responses")
-        
-        if dimension_count > 0:
+    for dimension, responses_list in dimension_responses.items():
+        if responses_list:
             # Calcular porcentaje para esta dimensión
-            max_possible = dimension_count * LIKERT_SCALE_MAX
+            dimension_total = sum(responses_list)
+            max_possible = len(responses_list) * LIKERT_SCALE_MAX
             dimension_percentage = (dimension_total / max_possible) * 100
             dimensional_scores[dimension] = round(dimension_percentage, 1)
             logger.info(f"🎯 CALCULATE_DISC_SCORE: {dimension} = {dimension_total}/{max_possible} = {dimension_percentage}%")
@@ -1273,15 +1297,354 @@ def calculate_disc_score(responses):
     
     return 0, "No se pudieron calcular las puntuaciones DISC", {}
 
-def generate_recommendations(dimensional_scores, overall_score):
-    """Genera recomendaciones personalizadas basadas en las puntuaciones dimensionales"""
+
+def calculate_disc_score_legacy(response_dict, disc_dimensions):
+    """Función legacy para compatibilidad hacia atrás"""
+    dimensional_scores = {}
     
-    if not dimensional_scores:
-        return ["Se recomienda completar una evaluación completa para obtener recomendaciones personalizadas."]
+    # Calcular puntuación para cada dimensión DISC
+    for dimension, question_ids in disc_dimensions.items():
+        dimension_total = 0
+        dimension_count = 0
+        
+        logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: Processing dimension {dimension} with questions {question_ids}")
+        
+        for question_id in question_ids:
+            if str(question_id) in response_dict:
+                response_value = response_dict[str(question_id)]
+                dimension_total += response_value
+                dimension_count += 1
+                logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: Question {question_id} = {response_value}")
+            else:
+                logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: Question {question_id} NOT FOUND in responses")
+        
+        if dimension_count > 0:
+            # Calcular porcentaje para esta dimensión
+            max_possible = dimension_count * LIKERT_SCALE_MAX
+            dimension_percentage = (dimension_total / max_possible) * 100
+            dimensional_scores[dimension] = round(dimension_percentage, 1)
+            logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: {dimension} = {dimension_total}/{max_possible} = {dimension_percentage}%")
+        else:
+            dimensional_scores[dimension] = 0
+            logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: {dimension} = 0 (no responses found)")
     
+    # Determinar estilo predominante
+    if dimensional_scores:
+        predominant_style = max(dimensional_scores, key=dimensional_scores.get)
+        overall_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+        
+        style_descriptions = {
+            'Dominante': "Estilo Dominante: Orientado a resultados, directo y decidido. Te enfocas en superar desafíos y lograr objetivos.",
+            'Influyente': "Estilo Influyente: Sociable, optimista y persuasivo. Te motiva inspirar y conectar con otros.",
+            'Estable': "Estilo Estable: Cooperativo, confiable y paciente. Valoras la estabilidad y el trabajo en equipo.",
+            'Concienzudo': "Estilo Concienzudo: Analítico, preciso y sistemático. Te enfocas en la calidad y seguir procedimientos."
+        }
+        
+        result_text = style_descriptions.get(predominant_style, "Estilo de personalidad identificado")
+        
+        return round(overall_score, 1), result_text, dimensional_scores
+    
+    return 0, "No se pudieron calcular las puntuaciones DISC", {}
+
+
+def calculate_emotional_intelligence_score(responses):
+    """Calcula puntuación de Inteligencia Emocional basada en respuestas y dimensiones específicas"""
+    logger.info(f"🎯 CALCULATE_EQ_SCORE: Starting calculation with {len(responses) if responses else 0} responses")
+    logger.info(f"🎯 CALCULATE_EQ_SCORE: Raw responses: {responses}")
+    
+    if not responses:
+        return 0, "Sin respuestas disponibles", None
+
+    # Manejar tanto formato lista como diccionario
+    if isinstance(responses, list):
+        total_score = sum(int(r.get('selected_option', 0)) for r in responses)
+        num_responses = len(responses)
+        response_dict = {str(r['question_id']): r['selected_option'] for r in responses}
+        logger.info(f"🎯 CALCULATE_EQ_SCORE: Converted to dict: {response_dict}")
+    else:
+        total_score = sum(int(val) if isinstance(val, (str, int)) else 0 for val in responses.values())
+        num_responses = len(responses)
+        response_dict = responses
+        logger.info(f"🎯 CALCULATE_EQ_SCORE: Using as dict: {response_dict}")
+
+    # Definir qué preguntas corresponden a cada dimensión de Inteligencia Emocional
+    # IDs reales en la base de datos (empiezan en 37 para IE)
+    eq_dimensions = {
+        'Autoconciencia': [37, 38, 39],           # Reconocer propias emociones (3 preguntas)
+        'Autorregulación': [40, 41],              # Controlar emociones (2 preguntas)
+        'Automotivación': [42],                   # Motivarse a sí mismo (1 pregunta)
+        'Empatía': [43, 44, 45],                  # Reconocer emociones ajenas (3 preguntas)
+        'Habilidades Sociales': [46, 47, 48]     # Manejar relaciones (3 preguntas)
+    }
+    
+    dimensional_scores = {}
+    
+    # Calcular puntuación para cada dimensión de IE
+    for dimension, question_ids in eq_dimensions.items():
+        dimension_total = 0
+        dimension_count = 0
+        
+        logger.info(f"🎯 CALCULATE_EQ_SCORE: Processing dimension {dimension} with questions {question_ids}")
+        
+        for question_id in question_ids:
+            if str(question_id) in response_dict:
+                response_value = int(response_dict[str(question_id)])
+                dimension_total += response_value
+                dimension_count += 1
+                logger.info(f"🎯 CALCULATE_EQ_SCORE: Question {question_id} = {response_value}")
+            else:
+                logger.info(f"🎯 CALCULATE_EQ_SCORE: Question {question_id} NOT FOUND in responses")
+        
+        if dimension_count > 0:
+            # Calcular porcentaje para esta dimensión
+            max_possible = dimension_count * LIKERT_SCALE_MAX
+            dimension_percentage = (dimension_total / max_possible) * 100
+            dimensional_scores[dimension] = round(dimension_percentage, 1)
+            logger.info(f"🎯 CALCULATE_EQ_SCORE: {dimension} = {dimension_total}/{max_possible} = {dimension_percentage}%")
+        else:
+            dimensional_scores[dimension] = 0
+            logger.info(f"🎯 CALCULATE_EQ_SCORE: {dimension} = 0 (no responses found)")
+
+    # Calcular puntuación general como promedio de todas las dimensiones
+    if dimensional_scores:
+        overall_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+        
+        # Clasificación por nivel de inteligencia emocional
+        if overall_score >= 85:
+            level = "Muy alta"
+            text = "Inteligencia emocional muy alta. Tienes excelente capacidad para reconocer, entender y manejar emociones."
+        elif overall_score >= 70:
+            level = "Alta"
+            text = "Inteligencia emocional alta. Manejas bien las emociones con algunas oportunidades de mejora."
+        elif overall_score >= 55:
+            level = "Moderada"
+            text = "Inteligencia emocional moderada. Hay áreas importantes para desarrollar tu competencia emocional."
+        elif overall_score >= 40:
+            level = "Baja"
+            text = "Inteligencia emocional baja. Se recomienda trabajar en el desarrollo de estas habilidades fundamentales."
+        else:
+            level = "Muy baja"
+            text = "Inteligencia emocional muy baja. Es prioritario desarrollar competencias emocionales básicas."
+
+        # Identificar fortalezas y áreas de mejora
+        if dimensional_scores:
+            strongest_dimension = max(dimensional_scores, key=dimensional_scores.get)
+            weakest_dimension = min(dimensional_scores, key=dimensional_scores.get)
+            
+            result_text = f"{level}: {text}"
+            if dimensional_scores[strongest_dimension] > 70:
+                result_text += f" Tu fortaleza principal es {strongest_dimension.lower()}."
+            if dimensional_scores[weakest_dimension] < 60:
+                result_text += f" Considera desarrollar más tu {weakest_dimension.lower()}."
+
+        logger.info(f"🎯 CALCULATE_EQ_SCORE: Final result - Score: {round(overall_score, 1)}, Level: {level}")
+        logger.info(f"🎯 CALCULATE_EQ_SCORE: Dimensional scores: {dimensional_scores}")
+        
+        return round(overall_score, 1), result_text, dimensional_scores
+    
+    return 0, "No se pudieron calcular las puntuaciones de Inteligencia Emocional", {}
+
+
+def generate_disc_recommendations(disc_scores, overall_score):
+    """Genera recomendaciones específicas para evaluaciones DISC"""
     recommendations = []
     
-    # Mapeo de dimensiones a nombres más descriptivos
+    # Identificar estilo dominante
+    dominant_style = max(disc_scores, key=disc_scores.get) if disc_scores else 'balanced'
+    
+    # Recomendaciones por estilo DISC
+    style_recommendations = {
+        'D': {
+            'title': 'Desarrollo para Estilo Dominante',
+            'strengths': ['Liderazgo natural', 'Toma de decisiones rápida', 'Orientación a resultados', 'Confianza en situaciones desafiantes'],
+            'development': [
+                'Practica la paciencia y escucha activa con tu equipo',
+                'Desarrolla habilidades de colaboración y trabajo en equipo',
+                'Aprende a delegar efectivamente sin microgestionar',
+                'Mejora tu capacidad para dar feedback constructivo',
+                'Practica la empatía en situaciones interpersonales'
+            ]
+        },
+        'I': {
+            'title': 'Desarrollo para Estilo Influyente',
+            'strengths': ['Comunicación persuasiva', 'Optimismo contagioso', 'Habilidades sociales', 'Creatividad e innovación'],
+            'development': [
+                'Desarrolla mayor atención al detalle en tus proyectos',
+                'Practica el seguimiento sistemático de tareas y compromisos',
+                'Aprende técnicas de organización y gestión del tiempo',
+                'Mejora tu capacidad de análisis antes de tomar decisiones',
+                'Fortalece habilidades de escucha profunda'
+            ]
+        },
+        'S': {
+            'title': 'Desarrollo para Estilo Estable',
+            'strengths': ['Confiabilidad y consistencia', 'Trabajo en equipo', 'Paciencia y perseverancia', 'Lealtad organizacional'],
+            'development': [
+                'Desarrolla mayor confianza para expresar tus ideas',
+                'Practica la adaptabilidad ante cambios organizacionales',
+                'Fortalece habilidades de liderazgo y toma de iniciativa',
+                'Aprende a manejar múltiples prioridades simultáneamente',
+                'Mejora tu capacidad de influencia y persuasión'
+            ]
+        },
+        'C': {
+            'title': 'Desarrollo para Estilo Concienzudo',
+            'strengths': ['Análisis meticuloso', 'Alta calidad de trabajo', 'Pensamiento sistemático', 'Precisión y exactitud'],
+            'development': [
+                'Desarrolla mayor flexibilidad en procesos y procedimientos',
+                'Practica la comunicación clara y directa con otros',
+                'Aprende a tomar decisiones con información limitada',
+                'Mejora habilidades de networking y relaciones interpersonales',
+                'Fortalece tu capacidad de adaptación al cambio'
+            ]
+        }
+    }
+    
+    # Agregar recomendaciones del estilo dominante
+    if dominant_style in style_recommendations:
+        style_data = style_recommendations[dominant_style]
+        recommendations.extend([
+            f"**{style_data['title']}**",
+            "",
+            "**Tus Fortalezas Naturales:**"
+        ])
+        for strength in style_data['strengths']:
+            recommendations.append(f"• {strength}")
+        
+        recommendations.extend([
+            "",
+            "**Áreas de Desarrollo Recomendadas:**"
+        ])
+        for dev in style_data['development']:
+            recommendations.append(f"• {dev}")
+    
+    # Recomendaciones generales por nivel
+    recommendations.extend([
+        "",
+        "**Plan de Acción de 90 Días:**"
+    ])
+    
+    if overall_score >= 80:
+        recommendations.extend([
+            "• Semana 1-30: Identifica un área de desarrollo y crea un plan específico",
+            "• Semana 31-60: Practica nuevas habilidades en situaciones de bajo riesgo",
+            "• Semana 61-90: Aplica aprendizajes en desafíos más complejos",
+            "• Busca oportunidades de mentoría para otros"
+        ])
+    elif overall_score >= 60:
+        recommendations.extend([
+            "• Semana 1-30: Autoevaluación profunda de fortalezas y oportunidades",
+            "• Semana 31-60: Implementa 2-3 nuevas estrategias de comunicación",
+            "• Semana 61-90: Solicita feedback regular de colegas y supervisor",
+            "• Considera tomar un curso de desarrollo de habilidades interpersonales"
+        ])
+    else:
+        recommendations.extend([
+            "• Semana 1-30: Observa y aprende de personas con estilos complementarios",
+            "• Semana 31-60: Practica una nueva habilidad cada semana",
+            "• Semana 61-90: Busca un mentor o coach para guía personalizada",
+            "• Enfócate en desarrollar autoconciencia de tu estilo natural"
+        ])
+    
+    return recommendations
+
+def generate_emotional_intelligence_recommendations(ei_scores, overall_score):
+    """Genera recomendaciones específicas para Inteligencia Emocional"""
+    recommendations = []
+    
+    # Mapeo de dimensiones IE
+    dimension_names = {
+        'autoconciencia': 'Autoconciencia Emocional',
+        'autorregulacion': 'Autorregulación',
+        'automotivacion': 'Automotivación',
+        'empatia': 'Empatía',
+        'habilidades_sociales': 'Habilidades Sociales'
+    }
+    
+    # Identificar áreas de oportunidad (< 65%)
+    development_areas = {dim: score for dim, score in ei_scores.items() if score < 65}
+    
+    # Recomendaciones específicas por dimensión
+    dimension_recommendations = {
+        'autoconciencia': [
+            'Practica la meditación mindfulness 10 minutos diarios',
+            'Lleva un diario emocional para identificar patrones',
+            'Solicita feedback regular sobre tu estado emocional',
+            'Realiza autoevaluaciones semanales de tus reacciones emocionales'
+        ],
+        'autorregulacion': [
+            'Aprende técnicas de respiración profunda para momentos de estrés',
+            'Practica la pausa de 6 segundos antes de reaccionar',
+            'Desarrolla estrategias de manejo del estrés personalizadas',
+            'Identifica y evita disparadores emocionales negativos'
+        ],
+        'automotivacion': [
+            'Establece metas SMART claras y revisables',
+            'Crea un sistema de recompensas por logros pequeños',
+            'Desarrolla una mentalidad de crecimiento ante los desafíos',
+            'Practica la visualización positiva de tus objetivos'
+        ],
+        'empatia': [
+            'Practica la escucha activa sin juzgar ni aconsejar',
+            'Observa y aprende lenguaje corporal y señales no verbales',
+            'Pregunta más sobre los sentimientos de otros',
+            'Participa en actividades de voluntariado o servicio comunitario'
+        ],
+        'habilidades_sociales': [
+            'Practica iniciar conversaciones en diferentes contextos',
+            'Desarrolla habilidades de resolución de conflictos',
+            'Aprende técnicas de comunicación asertiva',
+            'Participa en actividades grupales y de networking'
+        ]
+    }
+    
+    # Agregar recomendaciones por área de desarrollo
+    for dimension, score in development_areas.items():
+        dimension_name = dimension_names.get(dimension, dimension)
+        recs = dimension_recommendations.get(dimension, [])
+        
+        recommendations.extend([
+            f"**{dimension_name}** (Puntuación: {score}%)",
+            "Objetivos de desarrollo:"
+        ])
+        for rec in recs[:3]:  # Top 3 recomendaciones
+            recommendations.append(f"• {rec}")
+        recommendations.append("")
+    
+    # Plan estructurado por nivel
+    recommendations.extend([
+        "**Plan de Desarrollo Estructurado:**"
+    ])
+    
+    if overall_score >= 80:
+        recommendations.extend([
+            "• **Nivel Avanzado:** Enfócate en el mentoring y desarrollo de otros",
+            "• Lidera iniciativas de bienestar emocional en tu organización",
+            "• Desarrolla programas de inteligencia emocional para equipos",
+            "• Busca certificaciones en coaching emocional"
+        ])
+    elif overall_score >= 65:
+        recommendations.extend([
+            "• **Nivel Intermedio:** Profundiza en áreas específicas de oportunidad",
+            "• Práctica diaria de técnicas de inteligencia emocional",
+            "• Busca feedback 360° sobre tus habilidades emocionales",
+            "• Considera un coach especializado en inteligencia emocional"
+        ])
+    else:
+        recommendations.extend([
+            "• **Nivel Básico:** Construye fundamentos sólidos",
+            "• Dedica 15 minutos diarios a desarrollo de autoconciencia",
+            "• Lee libros especializados en inteligencia emocional",
+            "• Practica una habilidad emocional específica cada semana"
+        ])
+    
+    return recommendations
+
+def generate_assertiveness_recommendations(assertiveness_scores, overall_score):
+    """Genera recomendaciones específicas para Asertividad"""
+    recommendations = []
+    
+    # Mapeo de dimensiones de asertividad
     dimension_names = {
         'comunicacion': 'Habilidades de Comunicación',
         'derechos': 'Defensa de Derechos Personales',
@@ -1290,107 +1653,185 @@ def generate_recommendations(dimensional_scores, overall_score):
         'autoconfianza': 'Autoconfianza y Autoestima'
     }
     
-    # Identificar las dimensiones más débiles (menos del 60%)
-    weak_dimensions = {dim: score for dim, score in dimensional_scores.items() if score < 60}
+    # Identificar dimensiones débiles
+    weak_dimensions = {dim: score for dim, score in assertiveness_scores.items() if score < 60}
     
-    # Identificar las dimensiones fuertes (80% o más)
-    strong_dimensions = {dim: score for dim, score in dimensional_scores.items() if score >= 80}
-    
-    # Recomendaciones basadas en dimensiones débiles
+    # Recomendaciones específicas
     dimension_recommendations = {
         'comunicacion': [
-            "Practica la escucha activa en tus conversaciones diarias",
-            "Utiliza un lenguaje corporal abierto y mantén contacto visual",
-            "Expresa tus ideas de manera clara y directa, sin rodeos",
-            "Aprende técnicas de comunicación no violenta"
+            'Practica el contacto visual durante conversaciones importantes',
+            'Usa un tono de voz firme pero respetuoso',
+            'Aprende técnicas de comunicación no violenta',
+            'Desarrolla habilidades de escucha empática'
         ],
         'derechos': [
-            "Identifica y reconoce tus derechos personales y profesionales",
-            "Practica decir 'no' de manera respetuosa pero firme",
-            "Establece límites claros en tus relaciones",
-            "Desarrolla confianza en tu capacidad para defenderte"
+            'Identifica y enumera tus derechos personales y profesionales',
+            'Practica decir "no" sin justificaciones excesivas',
+            'Establece límites claros en relaciones personales y laborales',
+            'Desarrolla confianza en tu valor y contribuciones'
         ],
         'opiniones': [
-            "Comparte tus ideas en reuniones y conversaciones grupales",
-            "Practica expresar tu punto de vista incluso cuando difiera de otros",
-            "Desarrolla argumentos sólidos para respaldar tus opiniones",
-            "Acepta que es normal tener perspectivas diferentes"
+            'Participa activamente en reuniones y discusiones grupales',
+            'Practica expresar desacuerdo de manera constructiva',
+            'Desarrolla argumentos sólidos antes de compartir ideas',
+            'Aprende a recibir y dar feedback de manera efectiva'
         ],
         'conflictos': [
-            "Aprende técnicas de resolución de conflictos constructiva",
-            "Practica mantener la calma durante situaciones tensas",
-            "Enfócate en los problemas, no en las personas",
-            "Busca soluciones ganar-ganar en los desacuerdos"
+            'Aprende técnicas de negociación colaborativa',
+            'Practica mantener la calma bajo presión',
+            'Enfócate en problemas específicos, no en personalidades',
+            'Desarrolla habilidades de mediación y resolución de problemas'
         ],
         'autoconfianza': [
-            "Reconoce y celebra tus logros y fortalezas",
-            "Desafía pensamientos negativos sobre ti mismo",
-            "Establece metas pequeñas y alcanzables para construir confianza",
-            "Practica la autocompasión y el autocuidado"
+            'Reconoce y celebra tus logros diarios',
+            'Practica autoafirmaciones positivas',
+            'Desafía pensamientos autolimitantes',
+            'Establece metas alcanzables para construir confianza gradualmente'
         ]
     }
     
-    # Agregar recomendaciones para dimensiones débiles
+    # Agregar recomendaciones por dimensión débil
     for dimension, score in weak_dimensions.items():
         dimension_name = dimension_names.get(dimension, dimension)
-        dimension_recs = dimension_recommendations.get(dimension, [])
+        recs = dimension_recommendations.get(dimension, [])
         
-        if dimension_recs:
-            recommendations.append(f"**{dimension_name}** (Puntuación: {score}%)")
-            recommendations.extend(dimension_recs[:2])  # Tomar las 2 primeras recomendaciones
-            recommendations.append("")  # Línea en blanco para separación
+        recommendations.extend([
+            f"**{dimension_name}** (Puntuación: {score}%)",
+            "Estrategias de mejora:"
+        ])
+        for rec in recs:
+            recommendations.append(f"• {rec}")
+        recommendations.append("")
     
-    # Recomendaciones generales basadas en el puntaje general
-    if overall_score < 40:
+    # Plan de desarrollo por nivel
+    recommendations.extend([
+        "**Programa de Desarrollo Asertivo:**"
+    ])
+    
+    if overall_score >= 80:
         recommendations.extend([
-            "**Recomendaciones Generales:**",
-            "Considera trabajar con un coach o terapeuta especializado en asertividad",
-            "Lee libros sobre comunicación asertiva y habilidades sociales",
-            "Practica técnicas de relajación para manejar la ansiedad social",
-            ""
+            "• **Nivel Experto:** Mantén y refina tus habilidades asertivas",
+            "• Mentoriza a otros en comunicación asertiva",
+            "• Lidera por ejemplo en situaciones complejas",
+            "• Busca roles que requieran alta asertividad"
         ])
-    elif overall_score < 60:
+    elif overall_score >= 60:
         recommendations.extend([
-            "**Recomendaciones Generales:**",
-            "Únete a grupos de práctica de habilidades sociales",
-            "Toma cursos de comunicación efectiva",
-            "Practica situaciones difíciles con amigos o familiares de confianza",
-            ""
-        ])
-    elif overall_score < 80:
-        recommendations.extend([
-            "**Recomendaciones Generales:**",
-            "Continúa desarrollando las áreas identificadas como oportunidades de mejora",
-            "Busca oportunidades para liderar proyectos o equipos",
-            "Mentoriza a otros en tus áreas de fortaleza",
-            ""
+            "• **Nivel Competente:** Fortalece áreas específicas",
+            "• Practica situaciones desafiantes en entorno seguro",
+            "• Solicita feedback regular sobre tu comunicación",
+            "• Toma cursos avanzados de comunicación asertiva"
         ])
     else:
         recommendations.extend([
-            "**¡Excelente trabajo!**",
-            "Mantén tus habilidades asertivas mediante la práctica regular",
-            "Considera convertirte en mentor de otros en habilidades de comunicación",
-            "Sigue desafiándote en situaciones cada vez más complejas",
-            ""
+            "• **Nivel Desarrollo:** Construye bases sólidas",
+            "• Comienza con situaciones de baja complejidad",
+            "• Practica técnicas básicas diariamente",
+            "• Considera trabajar con un coach o terapeuta"
         ])
     
-    # Destacar fortalezas
-    if strong_dimensions:
-        recommendations.append("**Tus Fortalezas:**")
-        for dimension, score in strong_dimensions.items():
-            dimension_name = dimension_names.get(dimension, dimension)
-            recommendations.append(f"• {dimension_name}: {score}% - ¡Excelente desempeño!")
-        recommendations.append("")
+    return recommendations
+
+def generate_leadership_recommendations(leadership_scores, overall_score):
+    """Genera recomendaciones específicas para Liderazgo"""
+    recommendations = []
     
-    # Recomendación final
     recommendations.extend([
-        "**Recuerda:**",
-        "La asertividad es una habilidad que se desarrolla con práctica constante",
-        "Sé paciente contigo mismo durante el proceso de mejora",
-        "Cada pequeño paso cuenta hacia una comunicación más efectiva"
+        "**Plan de Desarrollo de Liderazgo**",
+        "",
+        "**Competencias Clave a Desarrollar:**",
+        "• Visión estratégica y comunicación inspiradora",
+        "• Desarrollo y empoderamiento de equipos",
+        "• Toma de decisiones bajo incertidumbre",
+        "• Gestión del cambio y adaptabilidad",
+        "",
+        "**Acciones Específicas:**"
     ])
     
+    if overall_score >= 80:
+        recommendations.extend([
+            "• Lidera iniciativas de transformación organizacional",
+            "• Desarrolla a futuros líderes dentro de tu organización",
+            "• Busca oportunidades de liderazgo en proyectos complejos",
+            "• Comparte tu experiencia a través de mentoring"
+        ])
+    elif overall_score >= 60:
+        recommendations.extend([
+            "• Lidera proyectos multifuncionales",
+            "• Desarrolla habilidades de comunicación ejecutiva",
+            "• Practica la delegación efectiva",
+            "• Busca feedback 360° sobre tu estilo de liderazgo"
+        ])
+    else:
+        recommendations.extend([
+            "• Comienza liderando pequeños equipos o proyectos",
+            "• Desarrolla habilidades fundamentales de gestión",
+            "• Observa y aprende de líderes exitosos",
+            "• Toma cursos de desarrollo de liderazgo"
+        ])
+    
     return recommendations
+
+def generate_teamwork_recommendations(teamwork_scores, overall_score):
+    """Genera recomendaciones específicas para Trabajo en Equipo"""
+    recommendations = []
+    
+    recommendations.extend([
+        "**Plan de Desarrollo de Trabajo en Equipo**",
+        "",
+        "**Habilidades Colaborativas a Fortalecer:**",
+        "• Comunicación efectiva en grupos",
+        "• Resolución colaborativa de problemas",
+        "• Apoyo y desarrollo de compañeros",
+        "• Gestión constructiva de diferencias",
+        "",
+        "**Estrategias de Mejora:**"
+    ])
+    
+    if overall_score >= 80:
+        recommendations.extend([
+            "• Facilita dinámicas de equipo y workshops colaborativos",
+            "• Mentoriza a nuevos miembros del equipo",
+            "• Lidera iniciativas de mejora de cultura colaborativa",
+            "• Comparte mejores prácticas de trabajo en equipo"
+        ])
+    elif overall_score >= 60:
+        recommendations.extend([
+            "• Participa activamente en proyectos colaborativos",
+            "• Desarrolla habilidades de facilitación grupal",
+            "• Practica la escucha activa en reuniones de equipo",
+            "• Aprende técnicas de construcción de consenso"
+        ])
+    else:
+        recommendations.extend([
+            "• Participa más activamente en actividades grupales",
+            "• Practica habilidades básicas de comunicación en grupo",
+            "• Observa dinámicas de equipos exitosos",
+            "• Busca oportunidades de colaboración en proyectos pequeños"
+        ])
+    
+    return recommendations
+
+def generate_recommendations(dimensional_scores, overall_score, assessment_type=None):
+    """Función principal que genera recomendaciones según el tipo de evaluación"""
+    
+    if not dimensional_scores:
+        return ["Se recomienda completar una evaluación completa para obtener recomendaciones personalizadas."]
+    
+    # Generar recomendaciones específicas según el tipo de evaluación
+    if assessment_type == 'Evaluación DISC de Personalidad':
+        return generate_disc_recommendations(dimensional_scores, overall_score)
+    elif assessment_type == 'Evaluación de Inteligencia Emocional':
+        return generate_emotional_intelligence_recommendations(dimensional_scores, overall_score)
+    elif assessment_type == 'Evaluación de Asertividad':
+        return generate_assertiveness_recommendations(dimensional_scores, overall_score)
+    elif assessment_type == 'Evaluación de Habilidades de Liderazgo':
+        return generate_leadership_recommendations(dimensional_scores, overall_score)
+    elif assessment_type == 'Assessment de Trabajo en Equipo':
+        return generate_teamwork_recommendations(dimensional_scores, overall_score)
+    else:
+        # Fallback a recomendaciones de asertividad para compatibilidad
+        return generate_assertiveness_recommendations(dimensional_scores, overall_score)
 
 # Rutas del Frontend
 @app.route('/')
@@ -1928,6 +2369,9 @@ def api_save_assessment():
         if assessment_id_int == 2:  # Evaluación DISC de Personalidad
             logger.info("🎯 SAVE_ASSESSMENT: Using calculate_disc_score function")
             score, result_text, dimensional_scores = calculate_disc_score(responses)
+        elif assessment_id_int == 3:  # Evaluación de Inteligencia Emocional
+            logger.info("🎯 SAVE_ASSESSMENT: Using calculate_emotional_intelligence_score function")
+            score, result_text, dimensional_scores = calculate_emotional_intelligence_score(responses)
         else:  # Evaluación de Asertividad (ID=1) o cualquier otra
             logger.info(f"🎯 SAVE_ASSESSMENT: Using calculate_assertiveness_score function for assessment_id={assessment_id_int}")
             score, result_text, dimensional_scores = calculate_assertiveness_score(responses)
@@ -2059,11 +2503,14 @@ def admin_dashboard():
 def api_coach_create_invitation_v2():
     """Crear una invitación para un nuevo coachee (versión funcional)"""
     try:
-        logger.info(f"💌 INVITATION: Request from user {current_user.username} ({current_user.role})")
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
+        
+        logger.info(f"💌 INVITATION: Request from user {current_coach.username if current_coach else 'Unknown'} ({current_coach.role if current_coach else 'Unknown'})")
         
         # Verificar que es un coach
-        if not current_user.is_authenticated or current_user.role != 'coach':
-            logger.warning(f"❌ INVITATION: Access denied for user {current_user.username} (role: {current_user.role})")
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"❌ INVITATION: Access denied for user {current_coach.username if current_coach else 'None'} (role: {current_coach.role if current_coach else 'Unknown'})")
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden crear invitaciones.'}), 403
             
         data = request.get_json()
@@ -2103,13 +2550,13 @@ def api_coach_create_invitation_v2():
         
         # Crear el usuario coachee
         logger.info(f"👤 INVITATION: Creating coachee {full_name} with username {username}")
-        logger.info(f"👤 INVITATION: Coach ID will be set to: {current_user.id}")
+        logger.info(f"👤 INVITATION: Coach ID will be set to: {current_coach.id}")
         new_coachee = User(
             username=username,
             email=email,
             full_name=full_name,
             role='coachee',
-            coach_id=current_user.id,
+            coach_id=current_coach.id,
             is_active=True,
             original_password=password  # ✅ Guardar contraseña original para que el coach pueda verla
         )
@@ -2123,8 +2570,8 @@ def api_coach_create_invitation_v2():
         logger.info(f"✅ INVITATION: Verification - Coach ID: {new_coachee.coach_id}, Role: {new_coachee.role}")
         
         # Verificar que se puede encontrar en consulta
-        verification_query = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
-        logger.info(f"🔍 INVITATION: Post-creation verification - Found {len(verification_query)} coachees for coach {current_user.id}")
+        verification_query = User.query.filter_by(coach_id=current_coach.id, role='coachee').all()
+        logger.info(f"🔍 INVITATION: Post-creation verification - Found {len(verification_query)} coachees for coach {current_coach.id}")
         for v_coachee in verification_query:
             logger.info(f"🔍 INVITATION: Verification coachee: ID={v_coachee.id}, Name={v_coachee.full_name}, Coach_ID={v_coachee.coach_id}")
         
@@ -2151,7 +2598,7 @@ def api_coach_create_invitation_v2():
                     try:
                         # Crear una tarea de evaluación para el coachee con verificaciones Railway
                         new_task = Task(
-                            coach_id=current_user.id,
+                            coach_id=current_coach.id,
                             coachee_id=new_coachee.id,
                             title=f"Evaluación: {assessment.title}",
                             description=f"Completa la evaluación '{assessment.title}' asignada por tu coach.",
@@ -2208,16 +2655,19 @@ def api_coach_create_invitation_v2():
 def api_coach_my_coachees():
     """Obtener la lista de coachees del coach actual"""
     try:
-        logger.info(f"🔍 MY-COACHEES: Request from user {current_user.username} (ID: {current_user.id}, role: {current_user.role})")
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
+        
+        logger.info(f"🔍 MY-COACHEES: Request from user {current_coach.username if current_coach else 'Unknown'} (ID: {current_coach.id if current_coach else 'Unknown'}, role: {current_coach.role if current_coach else 'Unknown'})")
         
         # Verificar que es un coach
-        if not current_user.is_authenticated or current_user.role != 'coach':
-            logger.warning(f"❌ MY-COACHEES: Access denied for user {current_user.username} (role: {current_user.role})")
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"❌ MY-COACHEES: Access denied for user {current_coach.username if current_coach else 'None'} (role: {current_coach.role if current_coach else 'Unknown'})")
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver sus coachees.'}), 403
         
         # Obtener coachees del coach actual
-        logger.info(f"🔍 MY-COACHEES: Querying coachees for coach_id={current_user.id}")
-        coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
+        logger.info(f"🔍 MY-COACHEES: Querying coachees for coach_id={current_coach.id}")
+        coachees = User.query.filter_by(coach_id=current_coach.id, role='coachee').all()
         logger.info(f"📊 MY-COACHEES: Found {len(coachees)} coachees")
         
         # Log de cada coachee encontrado
@@ -2783,15 +3233,18 @@ def api_coach_unassign_assessment():
 def api_coach_available_assessments():
     """Obtener evaluaciones disponibles para asignar a coachees"""
     try:
-        app.logger.info(f"=== OBTENIENDO EVALUACIONES DISPONIBLES - Usuario: {current_user.email} ===")
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
         
-        if not current_user.is_authenticated or current_user.role != 'coach':
-            app.logger.warning(f"❌ AVAILABLE-ASSESSMENTS: Access denied for user {current_user.username if current_user else 'None'}")
+        app.logger.info(f"=== OBTENIENDO EVALUACIONES DISPONIBLES - Usuario: {current_coach.email if current_coach else 'Unknown'} ===")
+        
+        if not current_coach or current_coach.role != 'coach':
+            app.logger.warning(f"❌ AVAILABLE-ASSESSMENTS: Access denied for user {current_coach.username if current_coach else 'None'}")
             return jsonify({'error': 'Acceso denegado.'}), 403
         
         app.logger.info("🔍 AVAILABLE-ASSESSMENTS: Querying assessments from database...")
         
-        # Verificar que las tablas existen
+        # Verificar que las tablas existen y obtener evaluaciones
         try:
             # Obtener todas las evaluaciones activas
             assessments = Assessment.query.filter_by(is_active=True).all()
@@ -2799,9 +3252,13 @@ def api_coach_available_assessments():
         except Exception as db_error:
             app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Database query failed: {str(db_error)}")
             # Intentar crear evaluaciones si no existen
-            create_additional_assessments()
-            assessments = Assessment.query.filter_by(is_active=True).all()
-            app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: After creation attempt, found {len(assessments)} assessments")
+            try:
+                create_additional_assessments()
+                assessments = Assessment.query.filter_by(is_active=True).all()
+                app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: After creation attempt, found {len(assessments)} assessments")
+            except Exception as create_error:
+                app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Could not create assessments: {str(create_error)}")
+                assessments = []
         
         assessments_data = []
         for assessment in assessments:
@@ -2824,8 +3281,8 @@ def api_coach_available_assessments():
                     'id': assessment.id,
                     'title': assessment.title or 'Sin título',
                     'description': assessment.description or 'Sin descripción',
-                    'questions_count': questions_count,
-                    'completed_count': completed_count,
+                    'question_count': questions_count,  # Cambié de questions_count a question_count para consistencia
+                    'result_count': completed_count,    # Cambié de completed_count a result_count para consistencia
                     'created_at': assessment.created_at.isoformat() if assessment.created_at else None
                 }
                 
@@ -3274,10 +3731,10 @@ def api_coachee_evaluation_details(evaluation_id):
         # Generar recomendaciones basadas en los resultados
         recommendations = []
         if result.dimensional_scores and result.score is not None:
-            recommendations = generate_recommendations(result.dimensional_scores, result.score)
+            recommendations = generate_recommendations(result.dimensional_scores, result.score, assessment.title)
         elif result.score is not None:
             # Si no hay dimensional_scores, generar recomendaciones básicas
-            recommendations = generate_recommendations({}, result.score)
+            recommendations = generate_recommendations({}, result.score, assessment.title)
         
         return jsonify({
             'success': True,
@@ -3352,10 +3809,10 @@ def api_coach_evaluation_details(evaluation_id):
         # Generar recomendaciones basadas en los resultados (igual que para coachees)
         recommendations = []
         if result.dimensional_scores and result.score is not None:
-            recommendations = generate_recommendations(result.dimensional_scores, result.score)
+            recommendations = generate_recommendations(result.dimensional_scores, result.score, assessment.title)
         elif result.score is not None:
             # Si no hay dimensional_scores, generar recomendaciones básicas
-            recommendations = generate_recommendations({}, result.score)
+            recommendations = generate_recommendations({}, result.score, assessment.title)
         
         # Información del coachee
         coachee = User.query.get(result.user_id)
