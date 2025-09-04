@@ -3554,7 +3554,7 @@ def api_admin_fix_coach_assignments():
         app.logger.error(f"ERROR CORRIGIENDO ASIGNACIONES: {str(e)}")
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
-# Endpoint temporal público para diagnóstico (REMOVER DESPUÉS)
+# Endpoint temporal público para diagnóstico (REMOVER DESPUÉS) - FORCE DEPLOY
 @app.route('/api/public/diagnose-coach-assignments', methods=['GET'])
 def api_public_diagnose_coach_assignments():
     """Endpoint temporal público para diagnosticar problemas de coach_id"""
