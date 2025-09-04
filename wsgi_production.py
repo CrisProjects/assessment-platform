@@ -60,14 +60,14 @@ try:
             # No fallar completamente, Railway puede necesitar tiempo
     
     logger.info("✅ RAILWAY: WSGI configurado correctamente")
-    
-    # Solo para testing directo (no en gunicorn)
-    if __name__ == "__main__":
-        logger.info(f"🚀 RAILWAY: Iniciando servidor directo en puerto {PORT}")
-        app.run(host='0.0.0.0', port=PORT, debug=False)
-        
+
 except Exception as e:
     logger.error(f"❌ RAILWAY: Error crítico en WSGI: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
+
+# Ejecutar directamente cuando se llama desde Railway
+if __name__ == "__main__":
+    logger.info(f"🚀 RAILWAY: Iniciando servidor directo en puerto {PORT}")
+    app.run(host='0.0.0.0', port=PORT, debug=False)

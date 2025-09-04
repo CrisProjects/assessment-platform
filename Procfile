@@ -1,1 +1,1 @@
-web: gunicorn wsgi_production:application --bind 0.0.0.0:$PORT --workers 1 --worker-class sync --timeout 300 --keepalive 2 --max-requests 1000 --max-requests-jitter 100 --preload --log-level info
+web: python start.py
