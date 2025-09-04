@@ -1,0 +1,19 @@
+# Nixpacks configuration optimized for Railway Python deployment
+[providers.python]
+version = "3.11.9"
+
+[phases.setup]
+nixPkgs = ['python311', 'python311Packages.pip', 'python311Packages.setuptools']
+
+[phases.install]
+dependsOn = ['setup']
+cmds = [
+  'python3 -m pip install --upgrade pip setuptools wheel',
+  'python3 -m pip install -r requirements.txt'
+]
+
+[variables]
+PYTHONPATH = '/app'
+PYTHONUNBUFFERED = '1'
+
+# Railway will use Procfile for start command
