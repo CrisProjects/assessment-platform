@@ -3554,6 +3554,86 @@ def api_admin_fix_coach_assignments():
         app.logger.error(f"ERROR CORRIGIENDO ASIGNACIONES: {str(e)}")
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
+# Endpoint temporal público para diagnóstico (REMOVER DESPUÉS)
+@app.route('/api/public/diagnose-coach-assignments', methods=['GET'])
+def api_public_diagnose_coach_assignments():
+    """Endpoint temporal público para diagnosticar problemas de coach_id"""
+    try:
+        # Buscar evaluaciones sin coach_id pero con usuarios que tienen coach
+        broken_evaluations = db.session.query(AssessmentResult, User).join(
+            User, AssessmentResult.user_id == User.id
+        ).filter(
+            AssessmentResult.coach_id.is_(None),
+            User.coach_id.isnot(None)
+        ).all()
+        
+        broken_data = []
+        for result, user in broken_evaluations:
+            broken_data.append({
+                'evaluation_id': result.id,
+                'user_id': user.id,
+                'user_name': user.full_name,
+                'user_email': user.email,
+                'should_have_coach_id': user.coach_id,
+                'completed_at': result.completed_at.isoformat() if result.completed_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'broken_evaluations': broken_data,
+            'total_broken': len(broken_data),
+            'message': f'Encontradas {len(broken_data)} evaluaciones sin coach_id asignado'
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"ERROR DIAGNÓSTICO PÚBLICO: {str(e)}")
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/public/fix-coach-assignments/<secret_key>', methods=['POST'])
+def api_public_fix_coach_assignments(secret_key):
+    """Endpoint temporal público para corregir problemas de coach_id con clave secreta"""
+    try:
+        # Verificar clave secreta (simple protección)
+        if secret_key != 'fix-coach-assignments-2025':
+            return jsonify({'error': 'Clave secreta incorrecta'}), 403
+        
+        # Buscar y corregir evaluaciones sin coach_id
+        broken_evaluations = db.session.query(AssessmentResult, User).join(
+            User, AssessmentResult.user_id == User.id
+        ).filter(
+            AssessmentResult.coach_id.is_(None),
+            User.coach_id.isnot(None)
+        ).all()
+        
+        corrected_count = 0
+        corrected_details = []
+        
+        for result, user in broken_evaluations:
+            # Asignar el coach_id correcto
+            result.coach_id = user.coach_id
+            corrected_count += 1
+            
+            corrected_details.append({
+                'evaluation_id': result.id,
+                'user_name': user.full_name,
+                'assigned_coach_id': user.coach_id
+            })
+        
+        # Guardar cambios
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'corrected_count': corrected_count,
+            'corrected_details': corrected_details,
+            'message': f'Se corrigieron {corrected_count} evaluaciones'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"ERROR CORRECCIÓN PÚBLICA: {str(e)}")
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
 @app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
 @login_required
 def api_coach_coachee_evaluations(coachee_id):

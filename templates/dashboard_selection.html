@@ -20,7 +20,7 @@
             <!-- Dashboard Cards -->
             <div class="row g-4 justify-content-center">
                 <!-- Coach Dashboard -->
-                <div class="col-12 col-md-6 col-lg-4">
+                <div class="col-12 col-md-6 col-lg-6">
                     <div class="glass-card h-100 text-center p-4 fade-in interactive-element">
                         <div class="mb-4">
                             <div class="rounded-circle bg-gradient d-inline-flex align-items-center justify-content-center" 
@@ -60,49 +60,8 @@
                     </div>
                 </div>
 
-                <!-- Admin Dashboard -->
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="glass-card h-100 text-center p-4 fade-in interactive-element">
-                        <div class="mb-4">
-                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
-                                 style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--calm-dark-blue), var(--calm-medium-blue));">
-                                <i class="fas fa-crown text-white fs-1"></i>
-                            </div>
-                        </div>
-                        
-                        <h4 class="text-gradient fw-bold mb-3">Panel Administrador</h4>
-                        <p class="text-white-50 mb-4">
-                            Control total de la plataforma, gestión de usuarios y configuración del sistema
-                        </p>
-                        
-                        <ul class="list-unstyled text-start mb-4">
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle text-info me-2"></i>
-                                <span class="text-white-50">Gestión completa de usuarios</span>
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle text-info me-2"></i>
-                                <span class="text-white-50">Configuración del sistema</span>
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle text-info me-2"></i>
-                                <span class="text-white-50">Estadísticas globales</span>
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle text-info me-2"></i>
-                                <span class="text-white-50">Respaldos y mantenimiento</span>
-                            </li>
-                        </ul>
-                        
-                        <a href="{{ url_for('admin_login_page') }}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-shield-alt me-2"></i>
-                            Acceder como Admin
-                        </a>
-                    </div>
-                </div>
-
                 <!-- Participant Access -->
-                <div class="col-12 col-md-6 col-lg-4">
+                <div class="col-12 col-md-6 col-lg-6">
                     <div class="glass-card h-100 text-center p-4 fade-in interactive-element">
                         <div class="mb-4">
                             <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
@@ -111,7 +70,7 @@
                             </div>
                         </div>
                         
-                        <h4 class="text-gradient fw-bold mb-3">Acceso Participante</h4>
+                        <h4 class="text-gradient fw-bold mb-3">Panel Coachee</h4>
                         <p class="text-white-50 mb-4">
                             Completa tu evaluación de asertividad de forma rápida y sencilla
                         </p>
@@ -171,6 +130,18 @@
                             <i class="fas fa-headset me-2"></i>
                             Contactar Soporte
                         </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Access - Discreto -->
+            <div class="row justify-content-center mt-4">
+                <div class="col-12 text-center">
+                    <div class="admin-access-container">
+                        <a href="{{ url_for('admin_login_page') }}" class="admin-access-link">
+                            <i class="fas fa-cog me-1"></i>
+                            Configuración
+                        </a>
                     </div>
                 </div>
         </div>
@@ -384,6 +355,7 @@
         /* Modo día - forzar fondo y textos legibles en hover - ESPECIFICIDAD MÁXIMA */
         [data-theme="light"] .container .row .col-12 .glass-card.interactive-element:hover,
         [data-theme="light"] .container .row .col-md-6 .glass-card.interactive-element:hover,
+        [data-theme="light"] .container .row .col-lg-6 .glass-card.interactive-element:hover,
         [data-theme="light"] .container .row .col-lg-4 .glass-card.interactive-element:hover {
             background: rgba(255, 255, 255, 0.98) !important;
             border: 1px solid var(--calm-primary) !important;
@@ -393,6 +365,7 @@
         /* Modo noche - forzar fondo y textos legibles en hover - ESPECIFICIDAD MÁXIMA */
         [data-theme="dark"] .container .row .col-12 .glass-card.interactive-element:hover,
         [data-theme="dark"] .container .row .col-md-6 .glass-card.interactive-element:hover,
+        [data-theme="dark"] .container .row .col-lg-6 .glass-card.interactive-element:hover,
         [data-theme="dark"] .container .row .col-lg-4 .glass-card.interactive-element:hover {
             background: rgba(51, 65, 85, 0.95) !important;
             border: 1px solid #60A5FA !important;
@@ -614,6 +587,66 @@
         .glass-card .btn:focus {
             outline: none !important;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5) !important;
+        }
+        
+        /* === ESTILOS PARA ACCESO DISCRETO DE ADMINISTRADOR === */
+        
+        .admin-access-container {
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+        
+        .admin-access-link {
+            display: inline-block;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+        }
+        
+        .admin-access-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+        
+        .admin-access-link i {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        
+        .admin-access-link:hover i {
+            opacity: 1;
+        }
+        
+        /* Modo día - adaptaciones para el enlace de admin */
+        [data-theme="light"] .admin-access-link {
+            color: rgba(30, 58, 138, 0.5);
+            background: rgba(30, 58, 138, 0.05);
+        }
+        
+        [data-theme="light"] .admin-access-link:hover {
+            color: rgba(30, 58, 138, 0.8);
+            background: rgba(30, 58, 138, 0.1);
+            border-color: rgba(30, 58, 138, 0.2);
+        }
+        
+        /* Modo noche - mantener estilos originales */
+        [data-theme="dark"] .admin-access-link {
+            color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        [data-theme="dark"] .admin-access-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
         }    [data-theme="dark"] .text-gradient {
         background: linear-gradient(135deg, #60A5FA 0%, #93C5FD 100%) !important;
         -webkit-background-clip: text !important;
