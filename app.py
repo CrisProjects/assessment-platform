@@ -3726,23 +3726,31 @@ def api_public_fix_coach_assignments(secret_key):
 def api_coach_coachee_evaluations(coachee_id):
     """Obtener evaluaciones de un coachee específico"""
     try:
+        logger.info(f"🔍 COACHEE-EVALUATIONS: Request for coachee_id={coachee_id} from coach {current_user.username} (ID: {current_user.id})")
+        
         # Verificar que es un coach
         if not current_user.is_authenticated or current_user.role != 'coach':
+            logger.warning(f"❌ COACHEE-EVALUATIONS: Access denied - user {current_user.username} not authenticated coach")
             return jsonify({'error': 'Acceso denegado.'}), 403
         
         # Verificar que el coachee pertenece al coach
         coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
         if not coachee:
+            logger.warning(f"❌ COACHEE-EVALUATIONS: Coachee {coachee_id} not found or not assigned to coach {current_user.id}")
             return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
+        
+        logger.info(f"✅ COACHEE-EVALUATIONS: Coachee {coachee.full_name} found and authorized")
         
         # Obtener evaluaciones del coachee con información de la evaluación
         evaluations = db.session.query(AssessmentResult, Assessment).join(
             Assessment, AssessmentResult.assessment_id == Assessment.id
         ).filter(AssessmentResult.user_id == coachee_id).all()
         
+        logger.info(f"📊 COACHEE-EVALUATIONS: Found {len(evaluations)} total evaluations for coachee {coachee_id}")
+        
         evaluations_data = []
         for result, assessment in evaluations:
-            evaluations_data.append({
+            eval_data = {
                 'id': result.id,
                 'assessment_id': result.assessment_id,
                 'assessment_title': assessment.title,
@@ -3751,9 +3759,11 @@ def api_coach_coachee_evaluations(coachee_id):
                 'completed_at': result.completed_at.isoformat() if result.completed_at else None,
                 'result_text': result.result_text,
                 'dimensional_scores': result.dimensional_scores
-            })
+            }
+            evaluations_data.append(eval_data)
+            logger.info(f"📋 COACHEE-EVALUATIONS: Evaluation {result.id} - {assessment.title} - Score: {result.score} - Completed: {result.completed_at}")
         
-        return jsonify({
+        response_data = {
             'success': True,
             'coachee': {
                 'id': coachee.id,
@@ -3762,7 +3772,10 @@ def api_coach_coachee_evaluations(coachee_id):
             },
             'evaluations': evaluations_data,
             'total': len(evaluations_data)
-        }), 200
+        }
+        
+        logger.info(f"✅ COACHEE-EVALUATIONS: Returning {len(evaluations_data)} evaluations for coachee {coachee.full_name}")
+        return jsonify(response_data), 200
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
