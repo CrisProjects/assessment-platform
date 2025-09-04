@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "./start.sh"
+startCommand = "gunicorn wsgi_production:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --log-level info"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

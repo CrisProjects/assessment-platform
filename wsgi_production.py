@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-WSGI entry point para producción en Railway
+WSGI entry point para producción en Railway - Versión Simplificada
 """
 import os
 import logging
@@ -12,31 +12,30 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s %(name)s %(message)s'
 )
 
-# Esperar un momento adicional para PostgreSQL
-time.sleep(2)
+logger = logging.getLogger(__name__)
 
-# Importar la aplicación
-from app import app, auto_initialize_database
+# Importar la aplicación primero
+try:
+    logger.info("🔄 WSGI: Importando aplicación...")
+    from app import app
+    logger.info("✅ WSGI: Aplicación importada exitosamente")
+except Exception as e:
+    logger.error(f"❌ WSGI: Error importando aplicación: {e}")
+    raise
 
-# Intentar la inicialización con reintentos para PostgreSQL
-max_retries = 3
-for attempt in range(max_retries):
-    try:
-        logging.info(f"🔄 WSGI: Intento de inicialización {attempt + 1}/{max_retries}")
-        with app.app_context():
-            auto_initialize_database()
-        logging.info("✅ WSGI: Inicialización completada exitosamente")
-        break
-    except Exception as e:
-        logging.error(f"❌ WSGI: Error en intento {attempt + 1}: {e}")
-        if attempt < max_retries - 1:
-            logging.info("⏳ WSGI: Esperando antes del siguiente intento...")
-            time.sleep(3)
-        else:
-            logging.error("💥 WSGI: Todos los intentos fallaron")
-
-# Variable requerida por gunicorn
+# Variable requerida por gunicorn (debe estar antes de cualquier inicialización)
 application = app
+
+# Intentar la inicialización después de definir application
+try:
+    logger.info("🔄 WSGI: Iniciando inicialización de base de datos...")
+    with app.app_context():
+        from app import auto_initialize_database
+        auto_initialize_database()
+    logger.info("✅ WSGI: Inicialización de base de datos completada")
+except Exception as e:
+    logger.error(f"⚠️ WSGI: Error en inicialización de BD (continuando): {e}")
+    # No fallar el deployment por problemas de inicialización
 
 # Configuración específica para Railway
 if __name__ == "__main__":

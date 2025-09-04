@@ -1,10 +1,20 @@
 #!/bin/bash
 echo "🚀 Iniciando aplicación en Railway..."
 
-# Esperar un momento para que PostgreSQL esté listo
-echo "⏳ Esperando que la base de datos esté lista..."
-sleep 5
+# Configurar variables de entorno por defecto
+export FLASK_ENV=production
+export PYTHONPATH="${PYTHONPATH}:."
 
-# NO ejecutar create_admin.py - la inicialización se hace en wsgi_production.py
-echo "🔥 Iniciando servidor con gunicorn (inicialización incluida)..."
-exec gunicorn wsgi_production:application --bind 0.0.0.0:$PORT --log-level info --timeout 120
+# Ejecutar con gunicorn directamente
+echo "🔥 Iniciando servidor con gunicorn..."
+exec gunicorn wsgi_production:application \
+  --bind 0.0.0.0:$PORT \
+  --workers 1 \
+  --worker-class sync \
+  --timeout 120 \
+  --keepalive 2 \
+  --max-requests 1000 \
+  --max-requests-jitter 100 \
+  --log-level info \
+  --access-logfile - \
+  --error-logfile -
