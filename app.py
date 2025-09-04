@@ -2222,6 +2222,127 @@ def api_admin_platform_stats():
     except Exception as e:
         return jsonify({'error': f'Error obteniendo estadísticas: {str(e)}'}), 500
 
+@app.route('/api/admin/fix-coach-ids', methods=['POST'])
+@admin_required
+def api_admin_fix_coach_ids():
+    """
+    Migración para corregir evaluaciones sin coach_id asignado
+    """
+    try:
+        logger.info("🔧 ADMIN: Iniciando migración para corregir coach_ids faltantes")
+        
+        # Buscar evaluaciones sin coach_id
+        evaluations_without_coach = AssessmentResult.query.filter_by(coach_id=None).all()
+        logger.info(f"📊 ADMIN: Encontradas {len(evaluations_without_coach)} evaluaciones sin coach_id")
+        
+        fixed_count = 0
+        skipped_count = 0
+        errors = []
+        
+        for evaluation in evaluations_without_coach:
+            try:
+                # Obtener el usuario que completó la evaluación
+                user = User.query.get(evaluation.user_id)
+                
+                if user and user.coach_id:
+                    # El usuario tiene un coach asignado, actualizar la evaluación
+                    old_coach_id = evaluation.coach_id
+                    evaluation.coach_id = user.coach_id
+                    
+                    logger.info(f"✅ ADMIN: Corrigiendo evaluación ID {evaluation.id} - Usuario: {user.full_name}, Coach: {user.coach_id}")
+                    fixed_count += 1
+                else:
+                    logger.warning(f"⚠️  ADMIN: Omitida evaluación ID {evaluation.id} - Usuario sin coach o no encontrado")
+                    skipped_count += 1
+                    
+            except Exception as eval_error:
+                error_msg = f"Error procesando evaluación ID {evaluation.id}: {str(eval_error)}"
+                logger.error(f"❌ ADMIN: {error_msg}")
+                errors.append(error_msg)
+                skipped_count += 1
+        
+        if fixed_count > 0:
+            try:
+                db.session.commit()
+                logger.info(f"🎉 ADMIN: Migración completada - {fixed_count} evaluaciones corregidas")
+                
+                # Verificar resultados
+                remaining_null = AssessmentResult.query.filter_by(coach_id=None).count()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Migración completada exitosamente',
+                    'fixed_count': fixed_count,
+                    'skipped_count': skipped_count,
+                    'remaining_null': remaining_null,
+                    'errors': errors
+                }), 200
+                
+            except Exception as commit_error:
+                db.session.rollback()
+                error_msg = f"Error guardando cambios: {str(commit_error)}"
+                logger.error(f"❌ ADMIN: {error_msg}")
+                return jsonify({
+                    'success': False,
+                    'error': error_msg,
+                    'fixed_count': 0,
+                    'skipped_count': len(evaluations_without_coach)
+                }), 500
+        else:
+            logger.info("ℹ️  ADMIN: No hay evaluaciones que necesiten corrección")
+            return jsonify({
+                'success': True,
+                'message': 'No hay evaluaciones que necesiten corrección',
+                'fixed_count': 0,
+                'skipped_count': skipped_count,
+                'remaining_null': len(evaluations_without_coach),
+                'errors': errors
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"❌ ADMIN: Error en migración de coach_ids: {str(e)}")
+        return jsonify({'error': f'Error en migración: {str(e)}'}), 500
+
+@app.route('/api/admin/check-coach-ids', methods=['GET'])
+@admin_required
+def api_admin_check_coach_ids():
+    """
+    Verificar el estado de los coach_ids en las evaluaciones
+    """
+    try:
+        # Contar evaluaciones sin coach_id
+        evaluations_without_coach = AssessmentResult.query.filter_by(coach_id=None).count()
+        total_evaluations = AssessmentResult.query.count()
+        evaluations_with_coach = total_evaluations - evaluations_without_coach
+        
+        # Obtener detalles de evaluaciones problemáticas
+        problematic_evaluations = []
+        if evaluations_without_coach > 0:
+            problem_evals = AssessmentResult.query.filter_by(coach_id=None).limit(10).all()
+            for eval in problem_evals:
+                user = User.query.get(eval.user_id)
+                assessment = Assessment.query.get(eval.assessment_id)
+                problematic_evaluations.append({
+                    'evaluation_id': eval.id,
+                    'user_name': user.full_name if user else 'Unknown',
+                    'user_coach_id': user.coach_id if user else None,
+                    'assessment_title': assessment.title if assessment else f'Assessment {eval.assessment_id}',
+                    'completed_at': eval.completed_at.isoformat() if eval.completed_at else None
+                })
+        
+        return jsonify({
+            'success': True,
+            'total_evaluations': total_evaluations,
+            'evaluations_with_coach': evaluations_with_coach,
+            'evaluations_without_coach': evaluations_without_coach,
+            'needs_migration': evaluations_without_coach > 0,
+            'percentage_with_coach': round((evaluations_with_coach / total_evaluations * 100), 1) if total_evaluations > 0 else 0,
+            'problematic_evaluations': problematic_evaluations
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error verificando coach_ids: {str(e)}'}), 500
+
 # Rutas de coach
 @app.route('/coach-login')
 def coach_login_page():
@@ -3346,6 +3467,91 @@ def api_create_additional_assessments():
             
     except Exception as e:
         app.logger.error(f"ERROR CREANDO EVALUACIONES ADICIONALES: {str(e)}")
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/admin/check-coach-assignments', methods=['GET'])
+@login_required
+def api_admin_check_coach_assignments():
+    """Verificar evaluaciones sin coach_id asignado"""
+    try:
+        # Verificar que es admin
+        if not current_user.is_authenticated or current_user.role not in ['platform_admin', 'admin']:
+            return jsonify({'error': 'Acceso denegado. Solo administradores.'}), 403
+        
+        # Buscar evaluaciones sin coach_id pero con usuarios que tienen coach
+        broken_evaluations = db.session.query(AssessmentResult, User).join(
+            User, AssessmentResult.user_id == User.id
+        ).filter(
+            AssessmentResult.coach_id.is_(None),
+            User.coach_id.isnot(None)
+        ).all()
+        
+        broken_data = []
+        for result, user in broken_evaluations:
+            broken_data.append({
+                'evaluation_id': result.id,
+                'user_id': user.id,
+                'user_name': user.full_name,
+                'user_email': user.email,
+                'should_have_coach_id': user.coach_id,
+                'completed_at': result.completed_at.isoformat() if result.completed_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'broken_evaluations': broken_data,
+            'total_broken': len(broken_data),
+            'message': f'Encontradas {len(broken_data)} evaluaciones sin coach_id asignado'
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"ERROR VERIFICANDO ASIGNACIONES: {str(e)}")
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/admin/fix-coach-assignments', methods=['POST'])
+@login_required
+def api_admin_fix_coach_assignments():
+    """Corregir evaluaciones sin coach_id asignado"""
+    try:
+        # Verificar que es admin
+        if not current_user.is_authenticated or current_user.role not in ['platform_admin', 'admin']:
+            return jsonify({'error': 'Acceso denegado. Solo administradores.'}), 403
+        
+        # Buscar y corregir evaluaciones sin coach_id
+        broken_evaluations = db.session.query(AssessmentResult, User).join(
+            User, AssessmentResult.user_id == User.id
+        ).filter(
+            AssessmentResult.coach_id.is_(None),
+            User.coach_id.isnot(None)
+        ).all()
+        
+        corrected_count = 0
+        corrected_details = []
+        
+        for result, user in broken_evaluations:
+            # Asignar el coach_id correcto
+            result.coach_id = user.coach_id
+            corrected_count += 1
+            
+            corrected_details.append({
+                'evaluation_id': result.id,
+                'user_name': user.full_name,
+                'assigned_coach_id': user.coach_id
+            })
+        
+        # Guardar cambios
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'corrected_count': corrected_count,
+            'corrected_details': corrected_details,
+            'message': f'Se corrigieron {corrected_count} evaluaciones'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"ERROR CORRIGIENDO ASIGNACIONES: {str(e)}")
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
