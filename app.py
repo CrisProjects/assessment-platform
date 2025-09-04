@@ -3554,6 +3554,93 @@ def api_admin_fix_coach_assignments():
         app.logger.error(f"ERROR CORRIGIENDO ASIGNACIONES: {str(e)}")
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
+# 🔧 ENDPOINT DEBUG TEMPORAL - Railway Coach Dashboard Issue
+@app.route('/api/debug/coach-coachee-problem', methods=['GET'])
+def debug_coach_coachee_problem():
+    """Endpoint temporal para debuggear problema específico: coachee completa evaluación pero no aparece en dashboard coach"""
+    try:
+        # Obtener información básica
+        total_users = User.query.count()
+        total_coaches = User.query.filter_by(role='coach').count()
+        total_coachees = User.query.filter_by(role='coachee').count()
+        total_evaluations = AssessmentResult.query.count()
+        
+        # Buscar evaluaciones recientes (últimas 24 horas)
+        from datetime import datetime, timedelta
+        yesterday = datetime.now() - timedelta(days=1)
+        recent_evaluations = AssessmentResult.query.filter(
+            AssessmentResult.completed_at >= yesterday
+        ).all()
+        
+        # Analizar cada evaluación reciente
+        recent_eval_details = []
+        for eval_result in recent_evaluations:
+            user = User.query.get(eval_result.user_id)
+            coach = User.query.get(user.coach_id) if user and user.coach_id else None
+            assessment = Assessment.query.get(eval_result.assessment_id)
+            
+            recent_eval_details.append({
+                'evaluation_id': eval_result.id,
+                'user_id': eval_result.user_id,
+                'user_name': user.full_name if user else 'Unknown',
+                'user_role': user.role if user else 'Unknown',
+                'coach_id_in_user': user.coach_id if user else None,
+                'coach_name': coach.full_name if coach else 'No Coach',
+                'coach_id_in_evaluation': eval_result.coach_id,
+                'assessment_title': assessment.title if assessment else 'Unknown',
+                'score': eval_result.score,
+                'completed_at': eval_result.completed_at.isoformat() if eval_result.completed_at else None,
+                'has_coach_id_mismatch': (user.coach_id != eval_result.coach_id) if user else False
+            })
+        
+        # Buscar casos problemáticos específicos
+        problematic_cases = []
+        coachees_with_evaluations = db.session.query(User).join(
+            AssessmentResult, User.id == AssessmentResult.user_id
+        ).filter(User.role == 'coachee').distinct().all()
+        
+        for coachee in coachees_with_evaluations:
+            evaluations = AssessmentResult.query.filter_by(user_id=coachee.id).all()
+            coach = User.query.get(coachee.coach_id) if coachee.coach_id else None
+            
+            # Verificar si las evaluaciones aparecerían en dashboard del coach
+            evaluations_with_coach_id = [e for e in evaluations if e.coach_id == coachee.coach_id]
+            evaluations_without_coach_id = [e for e in evaluations if e.coach_id is None]
+            
+            if evaluations and coachee.coach_id:
+                problematic_cases.append({
+                    'coachee_id': coachee.id,
+                    'coachee_name': coachee.full_name,
+                    'coach_id': coachee.coach_id,
+                    'coach_name': coach.full_name if coach else 'Coach not found',
+                    'total_evaluations': len(evaluations),
+                    'evaluations_with_correct_coach_id': len(evaluations_with_coach_id),
+                    'evaluations_with_null_coach_id': len(evaluations_without_coach_id),
+                    'latest_evaluation_coach_id': evaluations[-1].coach_id if evaluations else None,
+                    'problem_detected': len(evaluations_without_coach_id) > 0
+                })
+        
+        return jsonify({
+            'success': True,
+            'timestamp': datetime.now().isoformat(),
+            'summary': {
+                'total_users': total_users,
+                'total_coaches': total_coaches,
+                'total_coachees': total_coachees,
+                'total_evaluations': total_evaluations,
+                'recent_evaluations_count': len(recent_evaluations)
+            },
+            'recent_evaluations': recent_eval_details,
+            'problematic_cases': problematic_cases,
+            'diagnosis': f"Found {len([p for p in problematic_cases if p['problem_detected']])} coachees with evaluation visibility issues"
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'Debug error: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 # Endpoint temporal público para diagnóstico (REMOVER DESPUÉS) - FORCE DEPLOY
 @app.route('/api/public/diagnose-coach-assignments', methods=['GET'])
 def api_public_diagnose_coach_assignments():
