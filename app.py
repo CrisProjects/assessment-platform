@@ -3554,6 +3554,74 @@ def api_admin_fix_coach_assignments():
         app.logger.error(f"ERROR CORRIGIENDO ASIGNACIONES: {str(e)}")
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
+# 🔧 ENDPOINT TEMPORAL - Debug directo de evaluaciones coachee (REMOVER DESPUÉS)
+@app.route('/api/debug/direct-coachee-evaluations/<int:coachee_id>', methods=['GET'])
+def debug_direct_coachee_evaluations(coachee_id):
+    """Endpoint temporal para ver evaluaciones directamente sin filtros de autorización"""
+    try:
+        # Obtener información del coachee
+        coachee = User.query.get(coachee_id)
+        if not coachee:
+            return jsonify({'error': f'Coachee {coachee_id} no encontrado'}), 404
+        
+        # Obtener TODAS las evaluaciones del coachee (sin filtros)
+        all_evaluations = AssessmentResult.query.filter_by(user_id=coachee_id).all()
+        
+        # Obtener evaluaciones con JOIN para información completa
+        evaluations_with_assessment = db.session.query(AssessmentResult, Assessment).join(
+            Assessment, AssessmentResult.assessment_id == Assessment.id
+        ).filter(AssessmentResult.user_id == coachee_id).all()
+        
+        # Información del coach
+        coach = User.query.get(coachee.coach_id) if coachee.coach_id else None
+        
+        # Preparar datos detallados
+        evaluations_detail = []
+        for result in all_evaluations:
+            assessment = Assessment.query.get(result.assessment_id)
+            evaluations_detail.append({
+                'id': result.id,
+                'user_id': result.user_id,
+                'assessment_id': result.assessment_id,
+                'assessment_title': assessment.title if assessment else 'Assessment not found',
+                'coach_id_in_evaluation': result.coach_id,
+                'score': result.score,
+                'completed_at': result.completed_at.isoformat() if result.completed_at else None,
+                'result_text': result.result_text,
+                'created_at': result.created_at.isoformat() if result.created_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'timestamp': datetime.now().isoformat(),
+            'coachee_info': {
+                'id': coachee.id,
+                'full_name': coachee.full_name,
+                'email': coachee.email,
+                'role': coachee.role,
+                'coach_id': coachee.coach_id,
+                'is_active': coachee.is_active
+            },
+            'coach_info': {
+                'id': coach.id if coach else None,
+                'full_name': coach.full_name if coach else 'No coach assigned',
+                'email': coach.email if coach else None
+            },
+            'evaluations_summary': {
+                'total_found': len(all_evaluations),
+                'with_coach_id': len([e for e in all_evaluations if e.coach_id is not None]),
+                'without_coach_id': len([e for e in all_evaluations if e.coach_id is None]),
+                'coach_id_matches': len([e for e in all_evaluations if e.coach_id == coachee.coach_id])
+            },
+            'evaluations_detail': evaluations_detail
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'Debug error: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 # 🔧 ENDPOINT DEBUG TEMPORAL - Railway Coach Dashboard Issue
 @app.route('/api/debug/coach-coachee-problem', methods=['GET'])
 def debug_coach_coachee_problem():
