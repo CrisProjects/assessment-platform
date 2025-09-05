@@ -4498,6 +4498,11 @@
                 
                 if (response.ok && data.success) {
                     showAssessmentResults(data);
+                } else if (response.status === 409) {
+                    // Evaluación ya completada previamente
+                    showToast(data.error || 'Ya has completado esta evaluación previamente', 'warning');
+                    // Recargar evaluaciones para mostrar el estado actual
+                    loadEvaluations();
                 } else {
                     throw new Error(data.error || 'Error guardando evaluación');
                 }

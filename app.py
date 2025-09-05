@@ -2486,6 +2486,20 @@ def api_save_assessment():
         # Determinar número de respuestas
         num_responses = len(responses) if isinstance(responses, list) else len(responses)
         
+        # Verificar si ya existe un resultado para este usuario y evaluación
+        existing_result = AssessmentResult.query.filter_by(
+            user_id=current_coachee.id,
+            assessment_id=assessment_id_int
+        ).first()
+        
+        if existing_result:
+            logger.warning(f"SAVE_ASSESSMENT: Ya existe resultado para usuario {current_coachee.id} y evaluación {assessment_id_int}")
+            return jsonify({
+                'error': 'Ya has completado esta evaluación previamente',
+                'existing_result_id': existing_result.id,
+                'completed_at': existing_result.completed_at.isoformat() if existing_result.completed_at else None
+            }), 409  # Conflict status code
+        
         # Crear resultado de evaluación
         assessment_result = AssessmentResult(
             user_id=current_coachee.id,
