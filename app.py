@@ -15,7 +15,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func, desc, inspect, text
 from logging.handlers import RotatingFileHandler
-import os, secrets, re, logging, string
+import os, secrets, re, logging, string, traceback
 
 # Configuración global
 IS_PRODUCTION = os.environ.get('FLASK_ENV') == 'production'
@@ -2452,40 +2452,26 @@ def api_save_assessment():
         # Obtener assessment_id de la solicitud o usar default
         assessment_id = data.get('assessment_id', DEFAULT_ASSESSMENT_ID)
         
-        # Debug logging
-        logger.info(f"🎯 SAVE_ASSESSMENT: Received assessment_id = {assessment_id}")
-        logger.info(f"🎯 SAVE_ASSESSMENT: Data keys = {list(data.keys())}")
-        logger.info(f"🎯 SAVE_ASSESSMENT: About to check session details")
-        
-        # Debug de sesión
-        logger.info(f"🔍 SAVE_ASSESSMENT: Session keys = {list(session.keys())}")
-        logger.info(f"🔍 SAVE_ASSESSMENT: coachee_user_id in session = {session.get('coachee_user_id')}")
-        logger.info(f"🔍 SAVE_ASSESSMENT: temp_coachee_id in session = {session.get('temp_coachee_id')}")
+        logger.info(f"SAVE_ASSESSMENT: Processing assessment_id = {assessment_id}")
         
         # Verificar current_user de forma segura
         try:
-            logger.info(f"🔍 SAVE_ASSESSMENT: current_user.is_authenticated = {current_user.is_authenticated}")
             if current_user.is_authenticated:
-                logger.info(f"🔍 SAVE_ASSESSMENT: current_user.role = {current_user.role}")
-                logger.info(f"🔍 SAVE_ASSESSMENT: current_user.id = {current_user.id}")
+                logger.debug(f"SAVE_ASSESSMENT: Authenticated user: {current_user.role} (ID: {current_user.id})")
         except Exception as e:
-            logger.info(f"🔍 SAVE_ASSESSMENT: Cannot access current_user: {e}")
-        
-        logger.info(f"🎯 SAVE_ASSESSMENT: About to call get_current_coachee()")
+            logger.debug(f"SAVE_ASSESSMENT: Cannot access current_user: {e}")
         
         # Obtener usuario actual (regular o temporal)
         current_coachee = get_current_coachee()
-        logger.info(f"🎯 SAVE_ASSESSMENT: get_current_coachee() returned: {current_coachee}")
         if not current_coachee:
-            logger.error(f"❌ SAVE_ASSESSMENT: Usuario no encontrado en sesión")
+            logger.error(f"SAVE_ASSESSMENT: Usuario no encontrado en sesión")
             return jsonify({'error': 'Usuario no encontrado'}), 401
         
-        logger.info(f"✅ SAVE_ASSESSMENT: Found coachee = {current_coachee.username} (ID: {current_coachee.id})")
+        logger.info(f"SAVE_ASSESSMENT: Processing for coachee {current_coachee.username} (ID: {current_coachee.id})")
         
         # Detectar tipo de evaluación y usar función de cálculo apropiada
         # Convertir a entero para asegurar comparación correcta
         assessment_id_int = int(assessment_id) if assessment_id else DEFAULT_ASSESSMENT_ID
-        logger.info(f"🎯 SAVE_ASSESSMENT: Converted assessment_id to int = {assessment_id_int}")
         
         if assessment_id_int == 2:  # Evaluación DISC de Personalidad
             logger.info("🎯 SAVE_ASSESSMENT: Using calculate_disc_score function")
@@ -2845,7 +2831,6 @@ def api_coach_my_coachees():
     except Exception as e:
         logger.error(f"❌ MY-COACHEES: Error getting coachees for coach {current_user.username} (ID: {current_user.id}): {str(e)}")
         logger.error(f"❌ MY-COACHEES: Exception details: {e.__class__.__name__}: {str(e)}")
-        import traceback
         logger.error(f"❌ MY-COACHEES: Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error obteniendo coachees: {str(e)}'}), 500
 
@@ -2965,7 +2950,6 @@ def api_coach_tasks_get():
         
     except Exception as e:
         app.logger.error(f"ERROR OBTENIENDO TAREAS: {str(e)}")
-        import traceback
         app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
@@ -3060,7 +3044,6 @@ def api_coach_tasks_post():
     except Exception as e:
         app.logger.error(f"ERROR CREANDO TAREA: {str(e)}")
         app.logger.error(f"Tipo de error: {type(e).__name__}")
-        import traceback
         app.logger.error(f"Traceback: {traceback.format_exc()}")
         db.session.rollback()
         return jsonify({'error': f'Error creando tarea: {str(e)}'}), 500
@@ -3264,7 +3247,6 @@ def api_coach_coachee_assessments(coachee_id):
         
     except Exception as e:
         logger.error(f"❌ COACHEE-ASSESSMENTS: Error getting assessments for coachee {coachee_id}: {str(e)}")
-        import traceback
         logger.error(f"❌ COACHEE-ASSESSMENTS: Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error obteniendo evaluaciones del coachee: {str(e)}'}), 500
 
@@ -3344,7 +3326,6 @@ def api_coach_unassign_assessment():
     except Exception as e:
         logger.error(f"❌ UNASSIGN-ASSESSMENT: Error unassigning assessment: {str(e)}")
         logger.error(f"❌ UNASSIGN-ASSESSMENT: Exception details: {e.__class__.__name__}: {str(e)}")
-        import traceback
         logger.error(f"❌ UNASSIGN-ASSESSMENT: Traceback: {traceback.format_exc()}")
         db.session.rollback()
         return jsonify({'error': f'Error desasignando evaluación: {str(e)}'}), 500
@@ -3427,7 +3408,6 @@ def api_coach_available_assessments():
         
     except Exception as e:
         app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Critical error: {str(e)}")
-        import traceback
         app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Traceback: {traceback.format_exc()}")
         
         # Intentar regresar una respuesta mínima de emergencia
@@ -3554,161 +3534,6 @@ def api_admin_fix_coach_assignments():
         app.logger.error(f"ERROR CORRIGIENDO ASIGNACIONES: {str(e)}")
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
-# 🔧 ENDPOINT TEMPORAL - Debug directo de evaluaciones coachee (REMOVER DESPUÉS)
-@app.route('/api/debug/direct-coachee-evaluations/<int:coachee_id>', methods=['GET'])
-def debug_direct_coachee_evaluations(coachee_id):
-    """Endpoint temporal para ver evaluaciones directamente sin filtros de autorización"""
-    try:
-        # Obtener información del coachee
-        coachee = User.query.get(coachee_id)
-        if not coachee:
-            return jsonify({'error': f'Coachee {coachee_id} no encontrado'}), 404
-        
-        # Obtener TODAS las evaluaciones del coachee (sin filtros)
-        all_evaluations = AssessmentResult.query.filter_by(user_id=coachee_id).all()
-        
-        # Obtener evaluaciones con JOIN para información completa
-        evaluations_with_assessment = db.session.query(AssessmentResult, Assessment).join(
-            Assessment, AssessmentResult.assessment_id == Assessment.id
-        ).filter(AssessmentResult.user_id == coachee_id).all()
-        
-        # Información del coach
-        coach = User.query.get(coachee.coach_id) if coachee.coach_id else None
-        
-        # Preparar datos detallados
-        evaluations_detail = []
-        for result in all_evaluations:
-            assessment = Assessment.query.get(result.assessment_id)
-            evaluations_detail.append({
-                'id': result.id,
-                'user_id': result.user_id,
-                'assessment_id': result.assessment_id,
-                'assessment_title': assessment.title if assessment else 'Assessment not found',
-                'coach_id_in_evaluation': result.coach_id,
-                'score': result.score,
-                'completed_at': result.completed_at.isoformat() if result.completed_at else None,
-                'result_text': result.result_text,
-                'created_at': result.created_at.isoformat() if result.created_at else None
-            })
-        
-        return jsonify({
-            'success': True,
-            'timestamp': datetime.now().isoformat(),
-            'coachee_info': {
-                'id': coachee.id,
-                'full_name': coachee.full_name,
-                'email': coachee.email,
-                'role': coachee.role,
-                'coach_id': coachee.coach_id,
-                'is_active': coachee.is_active
-            },
-            'coach_info': {
-                'id': coach.id if coach else None,
-                'full_name': coach.full_name if coach else 'No coach assigned',
-                'email': coach.email if coach else None
-            },
-            'evaluations_summary': {
-                'total_found': len(all_evaluations),
-                'with_coach_id': len([e for e in all_evaluations if e.coach_id is not None]),
-                'without_coach_id': len([e for e in all_evaluations if e.coach_id is None]),
-                'coach_id_matches': len([e for e in all_evaluations if e.coach_id == coachee.coach_id])
-            },
-            'evaluations_detail': evaluations_detail
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'error': f'Debug error: {str(e)}',
-            'timestamp': datetime.now().isoformat()
-        }), 500
-
-# 🔧 ENDPOINT DEBUG TEMPORAL - Railway Coach Dashboard Issue
-@app.route('/api/debug/coach-coachee-problem', methods=['GET'])
-def debug_coach_coachee_problem():
-    """Endpoint temporal para debuggear problema específico: coachee completa evaluación pero no aparece en dashboard coach"""
-    try:
-        # Obtener información básica
-        total_users = User.query.count()
-        total_coaches = User.query.filter_by(role='coach').count()
-        total_coachees = User.query.filter_by(role='coachee').count()
-        total_evaluations = AssessmentResult.query.count()
-        
-        # Buscar evaluaciones recientes (últimas 24 horas)
-        from datetime import datetime, timedelta
-        yesterday = datetime.now() - timedelta(days=1)
-        recent_evaluations = AssessmentResult.query.filter(
-            AssessmentResult.completed_at >= yesterday
-        ).all()
-        
-        # Analizar cada evaluación reciente
-        recent_eval_details = []
-        for eval_result in recent_evaluations:
-            user = User.query.get(eval_result.user_id)
-            coach = User.query.get(user.coach_id) if user and user.coach_id else None
-            assessment = Assessment.query.get(eval_result.assessment_id)
-            
-            recent_eval_details.append({
-                'evaluation_id': eval_result.id,
-                'user_id': eval_result.user_id,
-                'user_name': user.full_name if user else 'Unknown',
-                'user_role': user.role if user else 'Unknown',
-                'coach_id_in_user': user.coach_id if user else None,
-                'coach_name': coach.full_name if coach else 'No Coach',
-                'coach_id_in_evaluation': eval_result.coach_id,
-                'assessment_title': assessment.title if assessment else 'Unknown',
-                'score': eval_result.score,
-                'completed_at': eval_result.completed_at.isoformat() if eval_result.completed_at else None,
-                'has_coach_id_mismatch': (user.coach_id != eval_result.coach_id) if user else False
-            })
-        
-        # Buscar casos problemáticos específicos
-        problematic_cases = []
-        coachees_with_evaluations = db.session.query(User).join(
-            AssessmentResult, User.id == AssessmentResult.user_id
-        ).filter(User.role == 'coachee').distinct().all()
-        
-        for coachee in coachees_with_evaluations:
-            evaluations = AssessmentResult.query.filter_by(user_id=coachee.id).all()
-            coach = User.query.get(coachee.coach_id) if coachee.coach_id else None
-            
-            # Verificar si las evaluaciones aparecerían en dashboard del coach
-            evaluations_with_coach_id = [e for e in evaluations if e.coach_id == coachee.coach_id]
-            evaluations_without_coach_id = [e for e in evaluations if e.coach_id is None]
-            
-            if evaluations and coachee.coach_id:
-                problematic_cases.append({
-                    'coachee_id': coachee.id,
-                    'coachee_name': coachee.full_name,
-                    'coach_id': coachee.coach_id,
-                    'coach_name': coach.full_name if coach else 'Coach not found',
-                    'total_evaluations': len(evaluations),
-                    'evaluations_with_correct_coach_id': len(evaluations_with_coach_id),
-                    'evaluations_with_null_coach_id': len(evaluations_without_coach_id),
-                    'latest_evaluation_coach_id': evaluations[-1].coach_id if evaluations else None,
-                    'problem_detected': len(evaluations_without_coach_id) > 0
-                })
-        
-        return jsonify({
-            'success': True,
-            'timestamp': datetime.now().isoformat(),
-            'summary': {
-                'total_users': total_users,
-                'total_coaches': total_coaches,
-                'total_coachees': total_coachees,
-                'total_evaluations': total_evaluations,
-                'recent_evaluations_count': len(recent_evaluations)
-            },
-            'recent_evaluations': recent_eval_details,
-            'problematic_cases': problematic_cases,
-            'diagnosis': f"Found {len([p for p in problematic_cases if p['problem_detected']])} coachees with evaluation visibility issues"
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'error': f'Debug error: {str(e)}',
-            'timestamp': datetime.now().isoformat()
-        }), 500
-
 # Endpoint temporal público para diagnóstico (REMOVER DESPUÉS) - FORCE DEPLOY
 @app.route('/api/public/diagnose-coach-assignments', methods=['GET'])
 def api_public_diagnose_coach_assignments():
@@ -3790,31 +3615,50 @@ def api_public_fix_coach_assignments(secret_key):
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
-@login_required
+@coach_session_required
 def api_coach_coachee_evaluations(coachee_id):
     """Obtener evaluaciones de un coachee específico"""
     try:
-        logger.info(f"🔍 COACHEE-EVALUATIONS: Request for coachee_id={coachee_id} from coach {current_user.username} (ID: {current_user.id})")
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
         
-        # Verificar que es un coach
-        if not current_user.is_authenticated or current_user.role != 'coach':
-            logger.warning(f"❌ COACHEE-EVALUATIONS: Access denied - user {current_user.username} not authenticated coach")
-            return jsonify({'error': 'Acceso denegado.'}), 403
+        logger.info(f"🔍 COACHEE-EVALUATIONS: Request for coachee_id={coachee_id} from user {current_coach.username if current_coach else 'Unknown'} (ID: {current_coach.id if current_coach else 'Unknown'}, Role: {current_coach.role if current_coach else 'Unknown'})")
         
-        # Verificar que el coachee pertenece al coach
-        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
+        # Verificar que es un coach autenticado
+        if not current_coach:
+            logger.warning(f"❌ COACHEE-EVALUATIONS: User not authenticated")
+            return jsonify({'error': 'Usuario no autenticado.'}), 401
+            
+        if current_coach.role != 'coach':
+            logger.warning(f"❌ COACHEE-EVALUATIONS: Access denied - user {current_coach.username} (role: {current_coach.role}) is not a coach")
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden acceder.'}), 403
+        
+        # Verificar que el coachee existe y pertenece al coach
+        coachee = User.query.filter_by(id=coachee_id, role='coachee').first()
         if not coachee:
-            logger.warning(f"❌ COACHEE-EVALUATIONS: Coachee {coachee_id} not found or not assigned to coach {current_user.id}")
-            return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
+            logger.warning(f"❌ COACHEE-EVALUATIONS: Coachee {coachee_id} not found")
+            return jsonify({'error': 'Coachee no encontrado.'}), 404
+            
+        # Verificar que el coachee está asignado al coach
+        if coachee.coach_id != current_coach.id:
+            logger.warning(f"❌ COACHEE-EVALUATIONS: Coachee {coachee_id} (coach_id: {coachee.coach_id}) not assigned to coach {current_coach.id}")
+            return jsonify({'error': 'Este coachee no está asignado a tu cuenta.'}), 403
         
-        logger.info(f"✅ COACHEE-EVALUATIONS: Coachee {coachee.full_name} found and authorized")
+        logger.info(f"✅ COACHEE-EVALUATIONS: Coachee {coachee.full_name} found and authorized for coach {current_coach.full_name}")
         
-        # Obtener evaluaciones del coachee con información de la evaluación
+        # Obtener evaluaciones del coachee que pertenecen al coach
+        # Incluir tanto evaluaciones con coach_id correcto como NULL (para compatibilidad)
         evaluations = db.session.query(AssessmentResult, Assessment).join(
             Assessment, AssessmentResult.assessment_id == Assessment.id
-        ).filter(AssessmentResult.user_id == coachee_id).all()
+        ).filter(
+            AssessmentResult.user_id == coachee_id,
+            db.or_(
+                AssessmentResult.coach_id == current_coach.id,
+                AssessmentResult.coach_id.is_(None)
+            )
+        ).order_by(AssessmentResult.completed_at.desc()).all()
         
-        logger.info(f"📊 COACHEE-EVALUATIONS: Found {len(evaluations)} total evaluations for coachee {coachee_id}")
+        logger.info(f"📊 COACHEE-EVALUATIONS: Found {len(evaluations)} evaluations for coachee {coachee_id}")
         
         evaluations_data = []
         for result, assessment in evaluations:
@@ -3826,10 +3670,11 @@ def api_coach_coachee_evaluations(coachee_id):
                 'total_questions': result.total_questions,
                 'completed_at': result.completed_at.isoformat() if result.completed_at else None,
                 'result_text': result.result_text,
-                'dimensional_scores': result.dimensional_scores
+                'dimensional_scores': result.dimensional_scores,
+                'coach_id_in_evaluation': result.coach_id
             }
             evaluations_data.append(eval_data)
-            logger.info(f"📋 COACHEE-EVALUATIONS: Evaluation {result.id} - {assessment.title} - Score: {result.score} - Completed: {result.completed_at}")
+            logger.info(f"📋 COACHEE-EVALUATIONS: Evaluation {result.id} - {assessment.title} - Score: {result.score} - Coach ID: {result.coach_id}")
         
         response_data = {
             'success': True,
@@ -3846,6 +3691,7 @@ def api_coach_coachee_evaluations(coachee_id):
         return jsonify(response_data), 200
         
     except Exception as e:
+        logger.error(f"❌ COACHEE-EVALUATIONS: Error - {str(e)}")
         return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
 
 # ============================================================================
@@ -4128,12 +3974,7 @@ def api_coachee_evaluation_history():
             else:
                 statistics['improvement_trend'] = 'insufficient_data'
         
-        # Debug logging para revisar los datos
-        logger.info(f"🔍 EVALUATION-HISTORY: Returning {len(history)} evaluations")
-        logger.info(f"🔍 EVALUATION-HISTORY: Progress data has {len(progress_data.get('datasets', []))} datasets")
-        for dataset in progress_data.get('datasets', []):
-            logger.info(f"🔍 EVALUATION-HISTORY: Dataset '{dataset.get('label')}' has {len(dataset.get('data', []))} data points: {dataset.get('data', [])[:5]}...")
-        logger.info(f"🔍 EVALUATION-HISTORY: Total labels: {len(progress_data.get('labels', []))}")
+        logger.debug(f"EVALUATION-HISTORY: Returning {len(history)} evaluations")
         
         return jsonify({
             'success': True,
@@ -4220,12 +4061,15 @@ def api_coachee_evaluation_details(evaluation_id):
         return jsonify({'error': f'Error obteniendo detalles: {str(e)}'}), 500
 
 @app.route('/api/coach/evaluation-details/<int:evaluation_id>', methods=['GET'])
-@login_required
+@coach_session_required
 def api_coach_evaluation_details(evaluation_id):
     """Obtener detalles específicos de una evaluación para coaches"""
     try:
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
+        
         # Verificar que es un coach
-        if not current_user.is_authenticated or current_user.role != 'coach':
+        if not current_coach or current_coach.role != 'coach':
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden acceder.'}), 403
         
         # Obtener la evaluación específica
@@ -4235,7 +4079,7 @@ def api_coach_evaluation_details(evaluation_id):
             return jsonify({'error': 'Evaluación no encontrada.'}), 404
         
         # Verificar que el coachee pertenece al coach actual
-        coachee = User.query.filter_by(id=result.user_id, coach_id=current_user.id).first()
+        coachee = User.query.filter_by(id=result.user_id, coach_id=current_coach.id).first()
         
         if not coachee:
             return jsonify({'error': 'Evaluación no autorizada.'}), 403

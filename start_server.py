@@ -64,10 +64,3 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"❌ Error inesperado: {e}")
         sys.exit(1)
-            use_reloader=False,
-            threaded=True
-        )
-    except KeyboardInterrupt:
-        print("\n👋 Servidor detenido por el usuario")
-    except Exception as e:
-        print(f"❌ Error: {e}")
