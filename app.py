@@ -1875,6 +1875,117 @@ def api_status():
         'available_endpoints': ['/coachee-dashboard', '/coach-dashboard', '/admin-dashboard']
     })
 
+@app.route('/api/railway-debug')
+def api_railway_debug():
+    """Endpoint de debug específico para Railway - Verificar resultados de evaluaciones"""
+    try:
+        # Información del entorno
+        is_railway = bool(os.environ.get('RAILWAY_ENVIRONMENT'))
+        database_url = os.environ.get('DATABASE_URL', 'No configurada')
+        
+        # Contar registros principales
+        users_count = User.query.count()
+        assessments_count = Assessment.query.count()
+        results_count = AssessmentResult.query.count()
+        questions_count = Question.query.count()
+        responses_count = Response.query.count()
+        
+        # Verificar coachees y sus evaluaciones
+        coachees_data = []
+        coachees = User.query.filter_by(role='coachee').all()
+        
+        for coachee in coachees:
+            completed = AssessmentResult.query.filter_by(user_id=coachee.id).all()
+            coachee_results = []
+            
+            for result in completed:
+                assessment = Assessment.query.get(result.assessment_id)
+                responses = Response.query.filter_by(assessment_result_id=result.id).count()
+                
+                coachee_results.append({
+                    'result_id': result.id,
+                    'assessment_name': assessment.title if assessment else "Evaluación eliminada",
+                    'score': result.score,
+                    'completed_at': result.completed_at.isoformat() if result.completed_at else None,
+                    'responses_count': responses,
+                    'has_result_text': bool(result.result_text),
+                    'has_dimensional_scores': bool(result.dimensional_scores)
+                })
+            
+            coachees_data.append({
+                'id': coachee.id,
+                'username': coachee.username,
+                'email': coachee.email,
+                'coach_id': coachee.coach_id,
+                'completed_evaluations': len(completed),
+                'evaluations': coachee_results
+            })
+        
+        # Verificar evaluaciones activas
+        active_assessments = []
+        for assessment in Assessment.query.filter_by(is_active=True).all():
+            questions = Question.query.filter_by(assessment_id=assessment.id, is_active=True).count()
+            results = AssessmentResult.query.filter_by(assessment_id=assessment.id).count()
+            
+            active_assessments.append({
+                'id': assessment.id,
+                'title': assessment.title,
+                'questions_count': questions,
+                'results_count': results
+            })
+        
+        # Detectar problemas específicos
+        issues = []
+        
+        if results_count == 0:
+            issues.append("No hay resultados de evaluaciones en la base de datos")
+        
+        # Verificar resultados sin respuestas
+        results_without_responses = []
+        for result in AssessmentResult.query.all():
+            responses = Response.query.filter_by(assessment_result_id=result.id).count()
+            if responses == 0:
+                results_without_responses.append(result.id)
+        
+        if results_without_responses:
+            issues.append(f"Hay {len(results_without_responses)} resultados sin respuestas asociadas")
+        
+        # Verificar configuración
+        config_issues = []
+        if not app.config.get('SECRET_KEY'):
+            config_issues.append("SECRET_KEY no configurado")
+        
+        return jsonify({
+            'success': True,
+            'timestamp': datetime.utcnow().isoformat(),
+            'environment': {
+                'is_railway': is_railway,
+                'database_type': 'PostgreSQL' if 'postgresql' in database_url else 'SQLite' if 'sqlite' in database_url else 'Unknown',
+                'flask_env': os.environ.get('FLASK_ENV'),
+                'is_production': os.environ.get('FLASK_ENV') == 'production'
+            },
+            'database_counts': {
+                'users': users_count,
+                'assessments': assessments_count,
+                'results': results_count,
+                'questions': questions_count,
+                'responses': responses_count
+            },
+            'coachees': coachees_data,
+            'active_assessments': active_assessments,
+            'issues': issues,
+            'config_issues': config_issues,
+            'results_without_responses': results_without_responses
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en railway debug: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
 @app.route('/favicon.ico')
 def favicon():
     return '', 204
