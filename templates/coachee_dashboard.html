@@ -11,13 +11,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
+    <link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
-        /* CONTRASTE ULTRA ALTO VERSION - VERSION 1756492600 - AZUL LANDING PAGE HEADER */
+        /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACH */
         :root {
-            /* Color Palette Inspired by Calm.com - Same as Landing */
             --calm-primary: #1E3A8A;        /* Deep Blue */
             --calm-secondary: #3B82F6;      /* Bright Blue */
             --calm-accent: #06B6D4;         /* Cyan */
@@ -26,68 +27,296 @@
             --calm-white: #FFFFFF;
             --calm-gray-50: #F8FAFC;
             --calm-gray-100: #F1F5F9;
-            --calm-gray-600: #475569;
-            --calm-gray-700: #334155;
-            
-            /* Extended color system for dashboard components */
-            --calm-dark-blue: #1E3A8A;      /* Same as primary */
-            --calm-medium-blue: #3B82F6;    /* Same as secondary */
-            --calm-soft-blue: #93C5FD;      /* Light blue */
-            --calm-accent-blue: #06B6D4;    /* Same as accent */
-            --calm-mint-green: #10B981;     /* Success green */
-            
-            /* Background and surface colors */
-            --calm-background: #F8FAFC;      /* Light gray background */
-            --calm-surface: #FFFFFF;         /* Pure white surfaces */
-            --calm-surface-elevated: #F1F5F9; /* Slightly elevated surface */
-            --calm-border: rgba(59, 130, 246, 0.3); /* Blue border */
-            --calm-border-light: rgba(59, 130, 246, 0.1); /* Light blue border */
-            
-            /* ULTRA HIGH CONTRAST Text Colors - MÁXIMA LEGIBILIDAD */
-            --calm-text-primary: #000000;    /* Negro puro para máximo contraste */
-            --calm-text-secondary: #0F172A;  /* Casi negro para secundario */
-            --calm-text-muted: #1E293B;      /* Azul muy oscuro para muted */
-            --calm-text-subtle: #334155;     /* Gris oscuro para subtle */
-            
-            /* Status colors using new palette */
-            --calm-success: #10B981;         /* Success green */
-            --calm-warning: #F59E0B;         /* Warning orange */
-            --calm-danger: #EF4444;          /* Danger red */
-            --calm-info: #3B82F6;            /* Info blue */
-            
-            /* Gradients */
-            --calm-gradient-primary: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
-            --calm-gradient-light: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-            --calm-gradient-accent: linear-gradient(135deg, #06B6D4 0%, #0284C7 100%);
-            
-            /* Dashboard specific enhancements */
-            --calm-glass-bg: rgba(30, 58, 138, 0.15);
-            --calm-glass-border: rgba(59, 130, 246, 0.3);
-            --calm-card-bg: rgba(255, 255, 255, 0.95);
-            
-            /* Gradients with Calm's serene feel */
-            --primary-gradient: linear-gradient(135deg, var(--calm-primary) 0%, var(--calm-primary-light) 100%);
-            --success-gradient: linear-gradient(135deg, var(--calm-secondary) 0%, var(--calm-secondary-light) 100%);
-            --warning-gradient: linear-gradient(135deg, var(--calm-accent) 0%, var(--calm-accent-light) 100%);
-            --danger-gradient: linear-gradient(135deg, var(--calm-danger) 0%, #FC8181 100%);
-            --info-gradient: linear-gradient(135deg, var(--calm-info) 0%, var(--calm-primary-light) 100%);
-            --background-gradient: linear-gradient(135deg, var(--calm-background) 0%, var(--calm-primary-ultra-light) 100%);
-            
-            /* Legacy variables for compatibility - SIMPLIFICADO */
-            --surface: #ffffff;
-            --surface-elevated: #f8f9fa;
-            --text-primary: #333333;
-            --text-secondary: #666666;
-            --border-color: #dee2e6;
         }
-
+        
+        /* COLORES DE PRIORIDADES Y CATEGORÍAS - COPIADOS DEL COACH DASHBOARD */
+        .priority-high {
+            border-top-color: #ef4444;
+        }
+        
+        .priority-medium {
+            border-top-color: #f59e0b;
+        }
+        
+        .priority-low {
+            border-top-color: #06b6d4;
+        }
+        
+        .priority-growth {
+            border-top-color: #10b981;
+        }
+        
+        /* CATEGORÍAS DE RECOMENDACIONES */
+        .general-recommendations {
+            border: 2px solid var(--calm-primary);
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+        
+        .general-recommendations .category-header {
+            background: linear-gradient(135deg, var(--calm-primary) 0%, #1D4ED8 100%);
+            color: white;
+            border-bottom-color: var(--calm-primary);
+        }
+        
+        .general-recommendations .category-title {
+            color: white;
+        }
+        
+        .strengths-category {
+            border: 2px solid #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+        
+        .strengths-category .category-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-bottom-color: #10b981;
+        }
+        
+        .strengths-category .category-title {
+            color: white;
+        }
+        
+        .strengths-category .recommendation-item {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-left-color: #10b981;
+        }
+        
+        .strengths-category .recommendation-item:before {
+            background: #10b981;
+            content: "★";
+        }
+        
+        .final-message {
+            border: 2px solid #8b5cf6;
+            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+        }
+        
+        .final-message .category-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border-bottom-color: #8b5cf6;
+        }
+        
+        .final-message .category-title {
+            color: white;
+        }
+        
+        .final-message .recommendation-item {
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border-left-color: #8b5cf6;
+        }
+        
+        /* ESTILOS DE CONTRASTE ALTO - SIN TRANSPARENCIAS - v2.3 - UNIFICADO CON COACH */
         body {
             background: #f8f9fa !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            min-height: 100vh;
-            line-height: 1.6;
             color: #333 !important;
-            letter-spacing: -0.01em;
+        }
+        
+        /* Cards con fondo blanco sólido */
+        .card,
+        .glass-card,
+        .modal-content {
+            background: white !important;
+            border: 1px solid #dee2e6 !important;
+            color: #333 !important;
+            backdrop-filter: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .card.bg-dark {
+            background: white !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        
+        .card.bg-dark .card-body {
+            background: white !important;
+        }
+        
+        /* Textos con contraste */
+        .text-white,
+        .text-muted,
+        .card.bg-dark .text-white,
+        .card.bg-dark .text-muted {
+            color: #333 !important;
+        }
+        
+        .text-primary {
+            color: #0066cc !important;
+        }
+        
+        /* Botones con colores sólidos */
+        .btn-outline-light {
+            border-color: #dee2e6 !important;
+            color: #333 !important;
+            background: white !important;
+        }
+        
+        .btn-outline-light:hover {
+            background: #f8f9fa !important;
+            border-color: #adb5bd !important;
+            color: #333 !important;
+        }
+        
+        .btn-primary {
+            background: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+        }
+        
+        .btn-success {
+            background: #28a745 !important;
+            border-color: #28a745 !important;
+            color: white !important;
+        }
+        
+        .btn-info {
+            background: #17a2b8 !important;
+            border-color: #17a2b8 !important;
+            color: white !important;
+        }
+        
+        /* Modal con fondo sólido */
+        .modal-content {
+            background: white !important;
+            color: #333 !important;
+        }
+        
+        .modal-header {
+            background: #f8f9fa !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .modal-title {
+            color: #333 !important;
+        }
+        
+        /* Progress bars */
+        .progress {
+            background: #e9ecef !important;
+        }
+        
+        .progress-bar {
+            background: #007bff !important;
+        }
+        
+        /* DASHBOARD HEADER - UNIFICADO CON COACH */
+        .dashboard-header {
+            padding: 1.5rem;
+        }
+        
+        .dashboard-header h3 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .dashboard-header p {
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+        
+        .btn-group-mobile .btn {
+            min-width: 44px;
+            font-weight: 500;
+        }
+        
+        /* Responsive adjustments para header */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 1rem !important;
+            }
+            
+            .dashboard-header .d-flex {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 1rem !important;
+            }
+            
+            .dashboard-header .btn-group-mobile {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+                width: 100% !important;
+            }
+            
+            .dashboard-header .btn-group-mobile .btn {
+                flex: 1 !important;
+                min-width: 0 !important;
+                font-size: 0.75rem !important;
+                padding: 0.375rem 0.5rem !important;
+            }
+        }
+        
+        /* STATISTICS CARDS - UNIFICADO CON COACH - MÁRGENES EXACTOS */
+        .stats-card-mobile {
+            margin-bottom: 1rem !important;
+            min-height: 140px !important;
+        }
+        
+        .stats-card-mobile .card {
+            height: 100% !important;
+            min-height: 140px !important;
+        }
+        
+        .stats-card-mobile .card-body {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center !important;
+            padding: 1.5rem 1rem !important;
+            height: 100% !important;
+        }
+        
+        .stats-card-mobile .fa-2x {
+            font-size: 1.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .stats-card-mobile h4 {
+            font-size: 2rem !important;
+            margin-bottom: 0.5rem !important;
+            line-height: 1.2 !important;
+        }
+        
+        .stats-card-mobile .text-muted {
+            font-size: 0.875rem !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* Responsive para estadísticas en móvil - COPIADO DEL COACH */
+        @media (max-width: 768px) {
+            .stats-card-mobile {
+                margin-bottom: 1rem !important;
+                height: 100% !important;
+            }
+            
+            .stats-card-mobile .card {
+                height: 100% !important;
+                min-height: 140px !important;
+            }
+            
+            .stats-card-mobile .card-body {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                text-align: center !important;
+                padding: 1.5rem 1rem !important;
+                height: 100% !important;
+            }
+            
+            .stats-card-mobile h4 {
+                font-size: 2rem !important;
+                margin-bottom: 0.5rem !important;
+                line-height: 1.2 !important;
+            }
+            
+            .stats-card-mobile .text-muted {
+                font-size: 0.875rem !important;
+                margin-bottom: 0 !important;
+            }
         }
 
         /* Animated background particles */
@@ -528,6 +757,123 @@
             box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
 
+        /* ESTILOS DE RECOMENDACIONES - COPIADOS DEL COACH DASHBOARD */
+        .category-content {
+            padding: 1.25rem;
+        }
+        
+        .recommendation-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--calm-accent);
+            position: relative;
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        
+        .recommendation-item:hover {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            border-left-color: var(--calm-primary);
+            transform: translateX(5px) translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-color: var(--bs-primary) !important;
+        }
+        
+        .recommendation-item:before {
+            content: "✓";
+            position: absolute;
+            left: -2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: var(--calm-accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .recommendation-text {
+            margin-left: 1.5rem;
+            line-height: 1.6;
+            color: #334155;
+            font-weight: 500;
+        }
+        
+        /* Estilos especiales para subcategorías de dimensiones */
+        .dimension-subcategory {
+            border: 2px solid var(--calm-primary);
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            margin-bottom: 2rem;
+        }
+        
+        .subcategory-header {
+            background: linear-gradient(135deg, var(--calm-primary) 0%, #1D4ED8 100%);
+            color: white;
+            padding: 1.25rem;
+            border-bottom: 3px solid var(--calm-accent);
+        }
+        
+        .subcategory-title-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .subcategory-info {
+            flex: 1;
+        }
+        
+        .subcategory-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* ANIMACIONES - COPIADAS DEL COACH DASHBOARD */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .action-list li {
+            position: relative;
+            padding-left: 0.5rem;
+        }
+        
+        .action-list li:before {
+            content: "→";
+            position: absolute;
+            left: -0.5rem;
+            color: var(--bs-primary);
+            font-weight: bold;
+        }
+        
+        .item-number {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
         /* Summary cards */
         .summary-card {
             background: var(--calm-surface);
@@ -640,6 +986,13 @@
         .text-white-50,
         .text-gradient {
             color: #333 !important;
+        }
+        
+        /* ANULAR REGLA PROBLEMÁTICA ESPECÍFICAMENTE PARA GENERAL-RECOMMENDATIONS */
+        .general-recommendations .text-white,
+        .general-recommendations .text-white-50,
+        .general-recommendations .text-gradient {
+            color: white !important;
         }
         
         .text-muted {
@@ -1006,6 +1359,46 @@
             color: #333 !important;
         }
         
+        /* Header dark para evaluation details modal */
+        #evaluationDetailsModal .modal-header.modal-header-dark {
+            background: var(--calm-primary) !important;
+            background-color: var(--calm-primary) !important;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+            color: #ffffff !important;
+        }
+        
+        #evaluationDetailsModal .modal-header.modal-header-dark .modal-title,
+        #evaluationDetailsModal .modal-header.modal-header-dark h5 {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+        
+        #evaluationDetailsModal .modal-header.modal-header-dark i {
+            color: #ffffff !important;
+        }
+        
+        /* Botones en el header */
+        #evaluationDetailsModal .modal-header .btn {
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            font-size: 0.875rem !important;
+        }
+        
+        #evaluationDetailsModal .modal-header .btn-light {
+            background: rgba(255, 255, 255, 0.9) !important;
+            color: var(--calm-primary) !important;
+        }
+        
+        #evaluationDetailsModal .modal-header .btn-outline-light {
+            background: transparent !important;
+            color: #ffffff !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+        }
+        
+        #evaluationDetailsModal .modal-header .btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+        
         #evaluationDetailsModal .modal-header .modal-title,
         #evaluationDetailsModal .modal-header h5 {
             color: #333 !important;
@@ -1031,6 +1424,11 @@
         #evaluationDetailsModal h5,
         #evaluationDetailsModal h6 {
             color: #333 !important;
+        }
+        
+        /* SOLUCIÓN FINAL: MÁS ESPECÍFICO QUE LA REGLA ANTERIOR */
+        #evaluationDetailsModal .general-recommendations h6.category-title {
+            color: white !important;
         }
         
         /* ESTILOS PARA EL MODAL DE RESULTADOS DE EVALUACIÓN - MISMOS QUE EVALUATIONDETAILSMODAL */
@@ -1201,16 +1599,6 @@
             position: relative;
         }
         
-        .category-title {
-            font-weight: 700;
-            color: var(--calm-primary);
-            font-size: 1.1rem;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
         .category-icon {
             width: 40px;
             height: 40px;
@@ -1305,20 +1693,7 @@
             font-weight: 500;
         }
         
-        .general-recommendations {
-            border: 2px solid var(--calm-primary);
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        }
-        
-        .general-recommendations .category-header {
-            background: linear-gradient(135deg, var(--calm-primary) 0%, #1D4ED8 100%);
-            color: white;
-            border-bottom-color: var(--calm-primary);
-        }
-        
-        .general-recommendations .category-title {
-            color: white;
-        }
+
         
         .strengths-category {
             border: 2px solid #10b981;
@@ -2593,86 +2968,74 @@
         <!-- Particles will be generated by JavaScript -->
     </div>
 
-    <!-- Header -->
-    <nav class="navbar custom-header">
-        <div class="container-fluid">
-            <span class="navbar-brand">
-                <i class="fas fa-tachometer-alt me-2"></i>
-                Dashboard Coachee
-            </span>
-            <div class="d-flex align-items-center">
-                <!-- Botones de navegación eliminados del navbar -->
+    <!-- Header - UNIFICADO CON COACH -->
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body dashboard-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="header-info">
+                                <h3 class="text-white mb-1">Dashboard Coachee</h3>
+                                <p class="text-muted mb-0"><span id="welcomeMessage">Bienvenido, Usuario</span></p>
+                            </div>
+                            <div class="btn-group-mobile d-flex gap-2">
+                                <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()" title="Actualizar">
+                                    <i class="fas fa-sync-alt me-1"></i><span class="d-none d-sm-inline">Actualizar</span>
+                                </button>
+                                <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'" title="Inicio">
+                                    <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Inicio</span>
+                                </button>
+                                <button class="btn btn-outline-light btn-sm logout-btn" onclick="logout()" title="Salir">
+                                    <i class="fas fa-sign-out-alt me-1"></i><span class="d-none d-sm-inline">Salir</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
-
-    <!-- Main Container -->
-    <div class="main-container">
-        <div class="container-fluid">
-            <!-- Welcome Section -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h3>
-                                <i class="fas fa-home me-2"></i>
-                                <span id="welcomeMessage">¡Bienvenido!</span>
-                            </h3>
-                            <p class="mb-0 text-muted" id="userInfo">Cargando información...</p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <button class="btn btn-primary-custom me-2" onclick="refreshDashboard()">
-                                <i class="fas fa-sync-alt me-2"></i>
-                                Actualizar
-                            </button>
-                            <button class="btn btn-primary-custom" onclick="logout()" title="Cerrar Sesión">
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                Cerrar Sesión
-                            </button>
-                        </div>
+        
+        <!-- Statistics Cards - UNIFICADO CON COACH -->
+        <div class="row mb-4">
+            <div class="col-6 col-md-3 stats-card-mobile">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <i class="fas fa-clipboard-check fa-2x text-success mb-3"></i>
+                        <h4 class="text-white" id="totalEvaluations">0</h4>
+                        <p class="text-muted mb-0">Evaluaciones Completadas</p>
                     </div>
                 </div>
             </div>
-
-            <!-- Summary Cards -->
-            <div class="row" id="summaryCards">
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <div class="summary-card">
-                        <div class="summary-icon primary">
-                            <i class="fas fa-clipboard-check"></i>
-                        </div>
-                        <div class="summary-number" id="totalEvaluations">-</div>
-                        <div class="summary-label">Evaluaciones Completadas</div>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <div class="summary-card">
-                        <div class="summary-icon success">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="summary-number" id="latestScore">-</div>
-                        <div class="summary-label">Última Puntuación</div>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <div class="summary-card">
-                        <div class="summary-icon warning">
-                            <i class="fas fa-tasks"></i>
-                        </div>
-                        <div class="summary-number" id="pendingTasks">-</div>
-                        <div class="summary-label">Tareas Pendientes</div>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <div class="summary-card">
-                        <div class="summary-icon danger">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="summary-number" id="overdueTasks">-</div>
-                        <div class="summary-label">Tareas Vencidas</div>
+            <div class="col-6 col-md-3 stats-card-mobile">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-2x text-info mb-3"></i>
+                        <h4 class="text-white" id="latestScore">0</h4>
+                        <p class="text-muted mb-0">Última Puntuación</p>
                     </div>
                 </div>
             </div>
+            <div class="col-6 col-md-3 stats-card-mobile">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <i class="fas fa-tasks fa-2x text-warning mb-3"></i>
+                        <h4 class="text-white" id="pendingTasks">0</h4>
+                        <p class="text-muted mb-0">Tareas Pendientes</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 stats-card-mobile">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
+                        <h4 class="text-white" id="overdueTasks">0</h4>
+                        <p class="text-muted mb-0">Tareas Vencidas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
             <!-- Navigation Tabs -->
             <ul class="nav nav-tabs" id="mainTabs" role="tablist">
@@ -2837,28 +3200,12 @@
                 <!-- Progress Tab -->
                 <div class="tab-pane fade" id="progress" role="tabpanel">
                     <div class="row">
-                        <!-- Evaluation History Chart -->
-                        <div class="col-lg-8">
-                            <div class="progress-chart-wrapper">
-                                <div class="dashboard-card">
-                                    <div class="card-header">
-                                        <h3>
-                                            <i class="fas fa-chart-line me-2"></i>
-                                            Historial de Evaluaciones
-                                        </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="chart-container">
-                                            <canvas id="progressChart"></canvas>
-                                        </div>
-                                        <!-- La tarjeta de progreso se insertará aquí dinámicamente -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Sección de historial eliminada -->
+                    </div>
 
-                        <!-- Statistics -->
-                        <div class="col-lg-4">
+                    <!-- Statistics Row -->
+                    <div class="row">
+                        <div class="col-lg-12">
                             <div class="dashboard-card">
                                 <div class="card-header">
                                     <h3>
@@ -3038,7 +3385,8 @@
         let dashboardData = null;
         let evaluationsData = null;
         let tasksData = null;
-        let progressChart = null;
+        // let progressChart = null; // ELIMINADO
+        // let testProgressChart = null; // ELIMINADO
 
         // Assessment state
         let questions = [];
@@ -3056,8 +3404,8 @@
                 logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cerrando...';
                 logoutBtn.disabled = true;
 
-                // Call logout API
-                const response = await fetch(`${API_BASE_URL}/api/logout`, {
+                // Call logout API específico para coachee
+                const response = await fetch(`${API_BASE_URL}/api/coachee/logout`, {
                     method: 'POST',
                     credentials: 'include',
                     headers: {
@@ -3125,51 +3473,87 @@
             try {
                 console.log('🔍 Cargando perfil de usuario...');
                 
-                // Verificar que los elementos existen antes de continuar
-                const userNameElement = document.getElementById('userName');
-                const welcomeMessageElement = document.getElementById('welcomeMessage');
-                
-                if (!userNameElement || !welcomeMessageElement) {
-                    console.error('❌ Elementos userName o welcomeMessage no encontrados en el DOM');
-                    return;
+                // Esperar a que el DOM esté completamente cargado
+                if (document.readyState === 'loading') {
+                    await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
                 }
                 
-                const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
-                const data = await response.json();
+                // SOLUCIÓN: Obtener nombre real del usuario automáticamente
+                console.log('🔧 MODO AUTOMÁTICO: Obteniendo nombre del usuario...');
                 
-                console.log('📡 Respuesta de API:', { status: response.status, data });
-                
-                if (response.ok && data.success) {
-                    currentUser = data.profile;
-                    console.log('✅ Perfil cargado:', data.profile);
+                // Intentar cargar perfil real desde API
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
+                    console.log('🌐 Response status:', response.status);
                     
-                    const fullName = data.profile.full_name || 'Usuario';
-                    userNameElement.textContent = fullName;
-                    welcomeMessageElement.textContent = `¡Bienvenido, ${fullName}!`;
-                    
-                    console.log('✅ Mensaje de bienvenida actualizado:', `¡Bienvenido, ${fullName}!`);
-                    console.log('✅ userName actualizado:', fullName);
-                    
-                    // Verificar que se aplicaron los cambios
-                    setTimeout(() => {
-                        console.log('🔍 Verificación post-actualización:');
-                        console.log('  - userName.textContent:', userNameElement.textContent);
-                        console.log('  - welcomeMessage.textContent:', welcomeMessageElement.textContent);
-                    }, 100);
-                } else {
-                    throw new Error(data.error || 'Error obteniendo perfil');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.profile?.full_name) {
+                            const realName = data.profile.full_name;
+                            const realWelcomeText = `¡Bienvenido, ${realName}!`;
+                            updateAllWelcomeMessages(realWelcomeText);
+                            console.log('✅ Actualizado con nombre real:', realWelcomeText);
+                            currentUser = data.profile;
+                            return; // Salir si se obtuvo el nombre real
+                        }
+                    }
+                } catch (apiError) {
+                    console.log('⚠️ API error:', apiError.message);
                 }
+                
+                // Fallback: Intentar obtener nombre del dashboard summary
+                console.log('🔄 Intentando dashboard summary como fallback...');
+                try {
+                    const summaryResponse = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
+                    console.log('🌐 Dashboard summary response status:', summaryResponse.status);
+                    
+                    if (summaryResponse.ok) {
+                        const summaryData = await summaryResponse.json();
+                        console.log('📊 Dashboard summary data:', summaryData);
+                        
+                        if (summaryData.success && summaryData.summary?.coachee?.name) {
+                            const userName = summaryData.summary.coachee.name;
+                            const welcomeText = `¡Bienvenido, ${userName}!`;
+                            updateAllWelcomeMessages(welcomeText);
+                            console.log('✅ Actualizado con nombre del dashboard summary:', welcomeText);
+                            return;
+                        } else {
+                            console.log('❌ Dashboard summary no tiene nombre de usuario');
+                        }
+                    } else {
+                        console.log('❌ Dashboard summary response not ok:', summaryResponse.status);
+                    }
+                } catch (summaryError) {
+                    console.log('⚠️ Dashboard summary error:', summaryError.message);
+                }
+                
+                // Último fallback: mantener el HTML original
+                console.log('🔄 Manteniendo texto HTML original como fallback');
+                
+                // Intentar cargar perfil real desde API (opcional)
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
+                    console.log('🌐 Response status:', response.status);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.profile?.full_name) {
+                            const realName = data.profile.full_name;
+                            const realWelcomeText = `¡Bienvenido, ${realName}!`;
+                            updateAllWelcomeMessages(realWelcomeText);
+                            console.log('✅ Actualizado con nombre real:', realWelcomeText);
+                            currentUser = data.profile;
+                        }
+                    }
+                } catch (apiError) {
+                    console.log('⚠️ API no disponible, usando nombre de test:', testName);
+                }
+                
             } catch (error) {
                 console.error('❌ Error cargando perfil:', error);
                 
-                // Manejo seguro de errores
-                const userNameElement = document.getElementById('userName');
-                const welcomeMessageElement = document.getElementById('welcomeMessage');
-                
-                if (userNameElement) userNameElement.textContent = 'Usuario';
-                if (welcomeMessageElement) welcomeMessageElement.textContent = '¡Bienvenido!';
-                
-                showToast('Error cargando perfil de usuario', 'error');
+                // Fallback: mantener mensaje genérico si hay error total
+                console.log('🔄 Error total - manteniendo mensaje genérico de bienvenida');
             }
         }
 
@@ -3321,45 +3705,60 @@
             if (evaluationsData && evaluationsData.message) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-user-tie"></i>
-                        <p>${evaluationsData.message}</p>
+                        <div class="empty-state-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="empty-state-title">Información</div>
+                        <div class="empty-state-description">${evaluationsData.message}</div>
                     </div>
                 `;
                 return;
             }
             
             if (!evaluationsData || !evaluationsData.available || Object.keys(evaluationsData.available).length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay evaluaciones disponibles</p></div>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <div class="empty-state-title">Sin evaluaciones disponibles</div>
+                        <div class="empty-state-description">No hay evaluaciones disponibles en este momento</div>
+                    </div>
+                `;
                 return;
             }
             
-            let html = '';
+            let html = '<ul class="results-list">';
             Object.values(evaluationsData.available).forEach(evaluation => {
                 html += `
-                    <div class="evaluation-item">
-                        <h5 class="mb-3">${evaluation.title}</h5>
-                        <p class="text-muted mb-3">${evaluation.description}</p>
-                        <div class="row mb-3">
-                            <div class="col-sm-6">
+                    <li class="results-list-item fade-in">
+                        <div class="evaluation-status evaluation-status-not-started">
+                            <i class="fas fa-play-circle unified-icon-lg"></i>
+                        </div>
+                        <div class="results-list-item-content">
+                            <div class="results-list-item-title">${evaluation.title}</div>
+                            <div class="results-list-item-subtitle">${evaluation.description}</div>
+                            <div class="d-flex align-items-center gap-3 mt-2">
                                 <small class="text-muted">
-                                    <i class="fas fa-question-circle me-1"></i>
+                                    <i class="fas fa-question-circle unified-icon-sm me-1"></i>
                                     ${evaluation.total_questions} preguntas
                                 </small>
-                            </div>
-                            <div class="col-sm-6">
                                 <small class="text-muted">
-                                    <i class="fas fa-user-tie me-1"></i>
+                                    <i class="fas fa-user-tie unified-icon-sm me-1"></i>
                                     Coach: ${evaluation.coach_name || 'No asignado'}
                                 </small>
                             </div>
                         </div>
-                        <button class="btn btn-evaluation w-100" onclick="startEvaluation('${evaluation.id}')">
-                            <i class="fas fa-play me-2"></i>
-                            Comenzar Evaluación
-                        </button>
-                    </div>
+                        <div class="results-list-item-meta">
+                            <button class="unified-btn unified-btn-primary" onclick="startEvaluation('${evaluation.id}')">
+                                <i class="fas fa-play unified-icon-sm"></i>
+                                Comenzar
+                            </button>
+                        </div>
+                    </li>
                 `;
             });
+            html += '</ul>';
             
             container.innerHTML = html;
         }
@@ -3369,15 +3768,13 @@
             const container = document.getElementById('completedEvaluations');
             
             if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-clipboard-list"></i><p>Aún no has completado ninguna evaluación</p></div>';
+                container.innerHTML = '<div class="unified-empty-state"><i class="fas fa-clipboard-list"></i><p>Aún no has completado ninguna evaluación</p></div>';
                 return;
             }
             
-            let html = '';
+            let html = '<div class="results-list">';
             evaluationsData.completed.forEach(evaluation => {
                 const score = evaluation.score || 0;
-                const scoreColor = score >= 75 ? '#28a745' : 
-                                  score >= 50 ? '#ffc107' : '#dc3545';
                 
                 // Usar el título real del assessment o un título por defecto
                 const assessmentTitle = evaluation.assessment_title || 'Evaluación completada';
@@ -3397,21 +3794,33 @@
                 }
                 
                 html += `
-                    <div class="evaluation-item">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0" style="color: #333;">${assessmentTitle}</h6>
-                            <span class="evaluation-score" style="color: ${scoreColor};">${Math.round(score)}%</span>
+                    <div class="unified-card">
+                        <div class="unified-card-header">
+                            <h5 class="unified-card-title">${assessmentTitle}</h5>
+                            <div class="score-display">
+                                <span class="score-value">${Math.round(score)}%</span>
+                            </div>
                         </div>
-                        <div class="evaluation-level mb-2" style="color: ${scoreColor}; font-weight: 600;">${getEvaluationLevel(score, assessmentTitle)}</div>
-                        <div class="evaluation-description mb-2">${evaluation.result_text || 'Evaluación completada con éxito'}</div>
-                        <div class="evaluation-date">${formatDate(evaluation.completed_at)}</div>
-                        <button class="btn btn-sm btn-primary mt-2" onclick="viewEvaluationDetails(${evaluation.id})">
-                            <i class="fas fa-eye me-1"></i>
-                            Ver Detalles
-                        </button>
+                        <div class="unified-card-body">
+                            <div class="evaluation-level">${getEvaluationLevel(score, assessmentTitle)}</div>
+                            <div class="evaluation-description">${evaluation.result_text || 'Evaluación completada con éxito'}</div>
+                            <div class="evaluation-meta">
+                                <span class="meta-date">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    ${formatDate(evaluation.completed_at)}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="unified-card-footer">
+                            <button class="unified-btn unified-btn-primary" onclick="viewEvaluationDetails(${evaluation.id})">
+                                <i class="fas fa-eye"></i>
+                                Ver Detalles
+                            </button>
+                        </div>
                     </div>
                 `;
             });
+            html += '</div>';
             
             container.innerHTML = html;
         }
@@ -3419,7 +3828,9 @@
         // Load tasks data
         async function loadTasks() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`);
+                const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`, {
+                    credentials: 'include'
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -3496,7 +3907,7 @@
                         
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <small class="text-muted">
-                                Coach: ${task.coach.full_name}
+                                Coach: ${task.coach.name}
                                 ${task.last_update ? `• Actualizado: ${formatDate(task.last_update)}` : ''}
                             </small>
                             <button class="btn btn-sm btn-task" onclick="openTaskProgressModal(${task.id})">
@@ -3513,6 +3924,7 @@
 
         // Load evaluation history for progress chart
         async function loadEvaluationHistory() {
+            console.log('🔍 LOAD-EVALUATION-HISTORY: Function called');
             try {
                 const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
                 const data = await response.json();
@@ -3523,7 +3935,13 @@
                     console.log('🔍 DEBUG: progress_data:', data.progress_data);
                     console.log('🔍 DEBUG: history length:', data.history?.length);
                     
-                    renderProgressChart(data.progress_data, data.history);
+                    // renderProgressChart(data.progress_data, data.history); // ELIMINADO
+                    // renderTestProgressChart(); // TEST: ELIMINADO
+                    
+                    console.log('🔥 CALLING createSecondChart()...');
+                    createSecondChart(); // NUEVO: Crear segundo gráfico visible
+                    console.log('🔥 createSecondChart() called!');
+                    
                     renderStatistics(data.statistics);
                     renderLatestEvaluationDetails(data.history);
                 } else {
@@ -3538,202 +3956,80 @@
             }
         }
 
-        // Render progress chart
-        function renderProgressChart(progressData, history) {
-            console.log('🔍 DEBUG: renderProgressChart called with:', { progressData, history });
+        // FUNCIÓN renderProgressChart ELIMINADA POR PETICIÓN DEL USUARIO
+        
+
+        // FUNCIÓN createBasicTestChart ELIMINADA POR PETICIÓN DEL USUARIO
+
+        // TEST CHART FUNCTION - Para probar visualización
+        // FUNCIÓN renderTestProgressChart ELIMINADA POR PETICIÓN DEL USUARIO
+
+        // NUEVO: Crear segundo gráfico visible
+        function createSecondChart() {
+            console.log('🔥 CREATING SECOND CHART: Starting...');
             
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            
-            if (progressChart) {
-                progressChart.destroy();
-            }
-            
-            // Limpiar cualquier tarjeta de progreso anterior
-            const existingProgressInfo = document.querySelector('.progress-info-card');
-            if (existingProgressInfo) {
-                existingProgressInfo.remove();
-            }
-            
-            if (!progressData || !progressData.datasets || progressData.datasets.length === 0) {
-                console.log('🔍 DEBUG: No progress data available');
-                const chartContainer = document.querySelector('#progressChart').parentElement;
-                chartContainer.innerHTML = '<div class="empty-state text-center py-5"><i class="fas fa-chart-line mb-3" style="font-size: 3rem; color: #6B8DA6;"></i><p class="h5 text-muted">No hay datos de evaluaciones para mostrar</p><p class="text-muted">Completa tu primera evaluación para ver tu progreso</p></div>';
-                return;
-            }
-            
-            console.log('🔍 DEBUG: Datasets found:', progressData.datasets.length);
-            progressData.datasets.forEach((dataset, index) => {
-                console.log(`🔍 DEBUG: Dataset ${index}: ${dataset.label} - ${dataset.data.length} points`);
-            });
-            
-            // Configuración del gráfico con múltiples líneas por tipo de evaluación
-            progressChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: progressData.labels,
-                    datasets: progressData.datasets.map(dataset => ({
-                        ...dataset,
-                        borderWidth: 3,
-                        fill: false,
-                        tension: 0.3,
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 10,
-                        pointHoverBorderWidth: 3
-                    }))
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                color: '#243447'
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(36, 52, 71, 0.95)',
-                            titleColor: '#ffffff',
-                            bodyColor: '#ffffff',
-                            borderColor: '#6282E3',
-                            borderWidth: 2,
-                            cornerRadius: 10,
-                            displayColors: true,
-                            titleFont: {
-                                size: 14,
-                                weight: 'bold'
-                            },
-                            bodyFont: {
-                                size: 13
-                            },
-                            callbacks: {
-                                title: function(context) {
-                                    return `Fecha: ${context[0].label}`;
-                                },
-                                label: function(context) {
-                                    const score = context.parsed.y;
-                                    const assessmentType = context.dataset.label;
-                                    
-                                    if (score === null) {
-                                        return `${assessmentType}: Sin datos`;
-                                    }
-                                    
-                                    return `${assessmentType}: ${Math.round(score)}%`;
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: 'rgba(160, 216, 204, 0.3)',
-                                lineWidth: 1
-                            },
-                            ticks: {
-                                color: '#4A6C85',
-                                font: {
-                                    size: 11,
-                                    weight: 'bold'
-                                },
-                                maxRotation: 45
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: {
-                                color: 'rgba(160, 216, 204, 0.2)',
-                                lineWidth: 1
-                            },
-                            ticks: {
-                                color: '#4A6C85',
-                                font: {
-                                    size: 12,
-                                    weight: 'bold'
-                                },
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    },
-                    elements: {
-                        line: {
-                            borderJoinStyle: 'round'
-                        }
-                    }
+            try {
+                // Verificar que exista el canvas
+                const canvas = document.getElementById('secondProgressChart');
+                console.log('🔥 Canvas found:', !!canvas);
+                
+                if (!canvas) {
+                    console.error('❌ Canvas secondProgressChart no encontrado');
+                    return;
                 }
-            });
-            
-            // Añadir información de progreso resumida por tipo de evaluación
-            if (history && history.length >= 2) {
-                // Agrupar evaluaciones por tipo para mostrar progreso reciente
-                const evaluationsByType = {};
-                history.forEach(eval => {
-                    const type = eval.assessment.title;
-                    if (!evaluationsByType[type]) {
-                        evaluationsByType[type] = [];
-                    }
-                    evaluationsByType[type].push(eval);
-                });
                 
-                // Crear tarjeta de progreso
-                const progressInfo = document.createElement('div');
-                progressInfo.className = 'progress-info-card mt-3 p-3 rounded';
-                progressInfo.style.backgroundColor = 'rgba(160, 216, 204, 0.1)';
-                progressInfo.style.border = '2px solid #A0D8CC';
+                // Verificar Chart.js
+                if (typeof Chart === 'undefined') {
+                    console.error('❌ Chart.js no está disponible');
+                    return;
+                }
                 
-                let progressHtml = '<h6 class="mb-3"><i class="fas fa-chart-line"></i> Progreso por Tipo de Evaluación</h6>';
-                progressHtml += '<div class="row">';
+                console.log('✅ Chart.js disponible, versión:', Chart.version);
                 
-                Object.entries(evaluationsByType).forEach(([type, evals]) => {
-                    if (evals.length >= 2) {
-                        const latest = evals[evals.length - 1];
-                        const previous = evals[evals.length - 2];
-                        const improvement = latest.score - previous.score;
-                        const improvementPercent = Math.round((improvement / previous.score) * 100);
-                        
-                        const icon = improvement > 0 ? '📈' : improvement < 0 ? '📉' : '📊';
-                        const trendColor = improvement >= 0 ? 'text-success' : 'text-danger';
-                        
-                        progressHtml += `
-                            <div class="col-md-6 mb-3">
-                                <div class="p-2 rounded" style="background-color: rgba(255,255,255,0.5);">
-                                    <small class="text-muted">${type}</small>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-2">${Math.round(previous.score)}%</span>
-                                        <i class="fas fa-arrow-right mx-1 text-muted"></i>
-                                        <span class="fw-bold ${trendColor}">${Math.round(latest.score)}%</span>
-                                        <span class="ms-2">${icon}</span>
-                                    </div>
-                                    <small class="${trendColor}">
-                                        ${improvement > 0 ? '+' : ''}${Math.round(improvement)} puntos
-                                    </small>
-                                </div>
-                            </div>
-                        `;
+                const ctx = canvas.getContext('2d');
+                
+                // Datos simples de ejemplo
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
+                        datasets: [{
+                            label: 'Progreso Ejemplo',
+                            data: [20, 35, 50, 65, 80],
+                            borderColor: '#ff6b6b',
+                            backgroundColor: '#ff6b6b33',
+                            borderWidth: 3,
+                            pointRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
                     }
                 });
                 
-                progressHtml += '</div>';
-                progressInfo.innerHTML = progressHtml;
+                console.log('✅ SECOND CHART: Creado exitosamente!');
                 
-                // Insertar en el card-body después del chart-container
-                const cardBody = document.querySelector('#progressChart').closest('.card-body');
-                cardBody.appendChild(progressInfo);
+                // Actualizar estado
+                const statusDiv = document.getElementById('secondChartStatus');
+                if (statusDiv) {
+                    statusDiv.textContent = '✅ Segundo gráfico creado exitosamente!';
+                    statusDiv.style.color = 'green';
+                }
+                
+            } catch (error) {
+                console.error('❌ SECOND CHART ERROR:', error);
+                const statusDiv = document.getElementById('secondChartStatus');
+                if (statusDiv) {
+                    statusDiv.textContent = `❌ Error: ${error.message}`;
+                    statusDiv.style.color = 'red';
+                }
             }
         }
 
@@ -3955,6 +4251,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         status: status,
                         progress_percentage: progress,
@@ -4725,7 +5022,7 @@
                                         <div style="color: #666;">Fecha de Completado</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h6" style="color: #333;">${data.total_questions || evaluation.total_questions}</div>
+                                        <div class="h6" style="color: #333;">${data.total_questions || evaluation.total_questions || (evaluation.responses ? evaluation.responses.length : 'N/A')}</div>
                                         <div style="color: #666;">Preguntas Respondidas</div>
                                     </div>
                                 </div>
@@ -4763,7 +5060,7 @@
                     </div>
                 </div>
 
-                ${detailedAnalysis ? generateDetailedAnalysisHTML(detailedAnalysis) : ''}
+                ${generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores))}
                 ${recommendations && recommendations.length > 0 ? generateRecommendationsHTML(recommendations) : ''}
                 
                 <!-- Respuestas Detalladas -->
@@ -4820,6 +5117,42 @@
                 `;
             }
             return html;
+        }
+
+        function generateAnalysisFromScores(dimensionalScores) {
+            if (!dimensionalScores) return null;
+            
+            const strengths = [];
+            const improvementAreas = [];
+            
+            // Analizar cada dimensión
+            for (const [dimension, score] of Object.entries(dimensionalScores)) {
+                const percentage = Math.round(score);
+                const dimensionName = formatDimensionName(dimension);
+                
+                if (percentage >= 70) {
+                    // Es una fortaleza
+                    strengths.push({
+                        name: dimensionName,
+                        score: percentage,
+                        description: getDimensionDescription(dimension, percentage)
+                    });
+                } else if (percentage < 60) {
+                    // Es un área de mejora
+                    const priority = percentage < 40 ? 'high' : 'medium';
+                    improvementAreas.push({
+                        name: dimensionName,
+                        score: percentage,
+                        description: getDimensionDescription(dimension, percentage),
+                        priority: priority
+                    });
+                }
+            }
+            
+            return {
+                strengths: strengths,
+                improvement_areas: improvementAreas
+            };
         }
 
         function generateDetailedAnalysisHTML(analysis) {
@@ -4895,272 +5228,21 @@
             return html;
         }
 
-        function generateRecommendationsHTML(recommendations) {
-            console.log('🔍 generateRecommendationsHTML - Recomendaciones recibidas:', recommendations);
-            
-            if (!recommendations || recommendations.length === 0) return '';
-            
-            // Procesar y categorizar recomendaciones
-            const categorizedRecs = categorizeRecommendations(recommendations);
-            console.log('📊 Recomendaciones categorizadas:', categorizedRecs);
-            
-            let html = `
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid #17a2b8 !important;">
-                            <div class="card-header" style="background: #d1ecf1; color: #0c5460; padding: 1.5rem;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-lightbulb me-2"></i>
-                                            Plan de Desarrollo Personalizado
-                                        </h5>
-                                        <small class="d-block mt-1 opacity-90">
-                                            Recomendaciones categorizadas basadas en tu evaluación
-                                        </small>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="badge bg-info fs-6">${getTotalRecommendationsCount(categorizedRecs)} recomendaciones</div>
-                                    </div>
-                                </div>
-                                <div class="row mt-3">
-                                    <div class="col-md-4">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-chart-line me-2"></i>
-                                            <small>Basado en tu puntuación</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-target me-2"></i>
-                                            <small>Objetivos específicos</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-clock me-2"></i>
-                                            <small>Plan a 90 días</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body" style="padding: 2rem;">
-                                ${generateCategorizedRecommendationsHTML(categorizedRecs)}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            return html;
-        }
 
-        // Función para categorizar recomendaciones (compatible con coach dashboard)
-        function categorizeRecommendations(recommendations) {
-            console.log('🏷️ categorizeRecommendations - Entrada:', recommendations);
-            
-            const categories = {
-                comunicacion: {
-                    title: 'Habilidades de Comunicación',
-                    icon: 'fas fa-comments',
-                    color: 'primary',
-                    items: [],
-                    priority: 1,
-                    description: 'Mejora tu capacidad para expresarte de manera clara y efectiva'
-                },
-                liderazgo: {
-                    title: 'Desarrollo de Liderazgo',
-                    icon: 'fas fa-crown',
-                    color: 'success',
-                    items: [],
-                    priority: 2,
-                    description: 'Fortalece tus competencias de liderazgo y dirección de equipos'
-                },
-                asertividad: {
-                    title: 'Técnicas de Asertividad',
-                    icon: 'fas fa-balance-scale',
-                    color: 'warning',
-                    items: [],
-                    priority: 3,
-                    description: 'Desarrolla tu capacidad para defender tus derechos respetando a otros'
-                },
-                emocional: {
-                    title: 'Inteligencia Emocional',
-                    icon: 'fas fa-heart',
-                    color: 'danger',
-                    items: [],
-                    priority: 4,
-                    description: 'Gestiona mejor tus emociones y las de tu entorno'
-                },
-                conflictos: {
-                    title: 'Gestión de Conflictos',
-                    icon: 'fas fa-handshake',
-                    color: 'info',
-                    items: [],
-                    priority: 5,
-                    description: 'Aprende a resolver conflictos de manera constructiva'
-                },
-                general: {
-                    title: 'Desarrollo General',
-                    icon: 'fas fa-star',
-                    color: 'secondary',
-                    items: [],
-                    priority: 6,
-                    description: 'Recomendaciones adicionales para tu crecimiento profesional'
-                }
-            };
-            
-            // Procesar cada recomendación
-            recommendations.forEach(rec => {
-                const recText = typeof rec === 'string' ? rec : rec.text || rec.description || '';
-                const category = categorizeRecommendation(recText);
-                
-                if (categories[category]) {
-                    categories[category].items.push({
-                        text: recText,
-                        priority: getPriorityFromText(recText),
-                        actionItems: extractActionItems(recText)
-                    });
-                }
-            });
-            
-            // Filtrar categorías vacías y ordenar por prioridad
-            const filteredCategories = Object.entries(categories)
-                .filter(([key, category]) => category.items.length > 0)
-                .sort((a, b) => a[1].priority - b[1].priority);
-            
-            return Object.fromEntries(filteredCategories);
-        }
 
-        // Función para categorizar una recomendación individual
-        function categorizeRecommendation(text) {
-            const textLower = text.toLowerCase();
-            
-            if (textLower.includes('comunicación') || textLower.includes('expresar') || textLower.includes('hablar') || textLower.includes('escuchar')) {
-                return 'comunicacion';
-            } else if (textLower.includes('liderar') || textLower.includes('liderazgo') || textLower.includes('equipo') || textLower.includes('dirigir')) {
-                return 'liderazgo';
-            } else if (textLower.includes('asertiv') || textLower.includes('derechos') || textLower.includes('opinión') || textLower.includes('firme')) {
-                return 'asertividad';
-            } else if (textLower.includes('emocional') || textLower.includes('emociones') || textLower.includes('sentimientos') || textLower.includes('autocontrol')) {
-                return 'emocional';
-            } else if (textLower.includes('conflicto') || textLower.includes('negociación') || textLower.includes('mediación') || textLower.includes('resolver')) {
-                return 'conflictos';
-            } else {
-                return 'general';
-            }
-        }
 
-        // Función para extraer elementos de acción del texto
-        function extractActionItems(text) {
-            const actionWords = ['práctica', 'ejercita', 'desarrolla', 'mejora', 'fortalece', 'aprende', 'implementa'];
-            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-            
-            return sentences.filter(sentence => {
-                const sentenceLower = sentence.toLowerCase();
-                return actionWords.some(word => sentenceLower.includes(word));
-            }).slice(0, 3); // Máximo 3 elementos de acción
-        }
 
-        // Función para obtener prioridad del texto
-        function getPriorityFromText(text) {
-            const textLower = text.toLowerCase();
-            if (textLower.includes('urgente') || textLower.includes('inmediato') || textLower.includes('crítico')) {
-                return 'high';
-            } else if (textLower.includes('importante') || textLower.includes('recomendado') || textLower.includes('esencial')) {
-                return 'medium';
-            } else {
-                return 'low';
-            }
-        }
 
-        // Función para contar total de recomendaciones
-        function getTotalRecommendationsCount(categories) {
-            return Object.values(categories).reduce((total, category) => total + category.items.length, 0);
-        }
 
-        // Función para generar HTML de categorías organizadas
-        function generateCategorizedRecommendationsHTML(categories) {
-            let html = '';
-            
-            Object.entries(categories).forEach(([key, category], index) => {
-                html += `
-                    <div class="recommendation-category mb-4" data-category="${key}">
-                        <div class="category-header" style="background: linear-gradient(135deg, var(--bs-${category.color}) 0%, var(--bs-${category.color}) 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; color: white;">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div class="category-icon me-3" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="${category.icon}" style="font-size: 1.5rem;"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1" style="font-weight: 600; font-size: 1.2rem;">${category.title}</h6>
-                                        <small style="opacity: 0.9;">${category.description}</small>
-                                    </div>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge" style="background: rgba(255,255,255,0.2); font-size: 0.9rem;">
-                                        ${category.items.length} ${category.items.length === 1 ? 'recomendación' : 'recomendaciones'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="category-items">
-                            ${generateCategoryItemsHTML(category.items, category.color)}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            return html;
-        }
 
-        // Función para generar HTML de elementos de categoría
-        function generateCategoryItemsHTML(items, color) {
-            let html = '';
-            
-            items.forEach((item, index) => {
-                const priorityIcon = item.priority === 'high' ? 'fas fa-exclamation-circle' : 
-                                   item.priority === 'medium' ? 'fas fa-star' : 'fas fa-circle';
-                const priorityColor = item.priority === 'high' ? 'danger' : 
-                                    item.priority === 'medium' ? 'warning' : 'secondary';
-                
-                html += `
-                    <div class="recommendation-item mb-3" style="background: white; border: 1px solid #dee2e6; border-radius: 10px; padding: 1.25rem; border-left: 4px solid var(--bs-${color}); transition: all 0.3s ease;">
-                        <div class="d-flex align-items-start">
-                            <div class="flex-shrink-0 me-3">
-                                <div class="item-number" style="background: var(--bs-${color}); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem;">
-                                    ${index + 1}
-                                </div>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="${priorityIcon} me-2 text-${priorityColor}"></i>
-                                    <span class="badge bg-${priorityColor} me-2">${item.priority.toUpperCase()}</span>
-                                    <small class="text-muted">Prioridad ${item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Media' : 'Baja'}</small>
-                                </div>
-                                <p class="recommendation-text mb-2" style="color: #333; line-height: 1.6; margin-bottom: 1rem;">
-                                    ${item.text}
-                                </p>
-                                ${item.actionItems.length > 0 ? `
-                                    <div class="action-items">
-                                        <h6 class="action-title" style="color: var(--bs-${color}); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">
-                                            <i class="fas fa-tasks me-1"></i>Acciones Sugeridas:
-                                        </h6>
-                                        <ul class="action-list" style="margin: 0; padding-left: 1.5rem;">
-                                            ${item.actionItems.map(action => `
-                                                <li style="color: #666; font-size: 0.9rem; margin-bottom: 0.25rem;">${action.trim()}</li>
-                                            `).join('')}
-                                        </ul>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            return html;
+
+
+
+
+
+
+
+
         // Generar HTML de respuestas
         function generateResponsesHTML(responses) {
             if (!responses || responses.length === 0) {
@@ -5198,8 +5280,6 @@
             });
             
             return html;
-        }
-            return 'Excelente';
         }
         
         function getCategoryType(title) {
@@ -5629,6 +5709,10 @@
         async function initializeApp() {
             debugLog('🚀 Inicializando dashboard de coachee...');
             
+            // TEST BÁSICO DE CHART.JS ELIMINADO POR PETICIÓN DEL USUARIO
+            // debugLog('🔵 Ejecutando test básico de Chart.js...');
+            // setTimeout(createBasicTestChart, 100); // ELIMINADO
+            
             try {
                 // Create animated particles
                 createParticles();
@@ -5650,6 +5734,15 @@
                 debugLog('📊 Cargando tareas...');
                 await loadTasks();
                 
+                debugLog('📊 Cargando historial de evaluaciones...');
+                await loadEvaluationHistory();
+                
+                // GRÁFICO DE PRUEBA ELIMINADO POR PETICIÓN DEL USUARIO
+                // debugLog('🔥 Creando gráfico de prueba...');
+                // setTimeout(() => {
+                //     renderTestProgressChart();
+                // }, 1000); // Esperar 1 segundo para asegurar que todo esté cargado
+                
                 // Forzar actualización final del mensaje de bienvenida
                 updateWelcomeMessage();
                 
@@ -5660,21 +5753,152 @@
             }
         }
         
+        // FUNCIÓN DE DEBUG TEMPORAL - Para ejecutar desde consola
+        window.debugWelcomeMessage = function() {
+            console.log('🔍 DEBUG Document ready state:', document.readyState);
+            console.log('🔍 DEBUG All elements with id="welcomeMessage":', document.querySelectorAll('#welcomeMessage'));
+            console.log('🔍 DEBUG All spans:', document.querySelectorAll('span').length);
+            
+            const welcomeEl = document.getElementById('welcomeMessage');
+            console.log('🔍 DEBUG Element welcomeMessage:', welcomeEl);
+            console.log('🔍 DEBUG Current text:', welcomeEl?.textContent);
+            console.log('🔍 DEBUG Current user:', currentUser);
+            
+            // Buscar elementos similares
+            const allSpans = document.querySelectorAll('span');
+            console.log('🔍 DEBUG All spans content:');
+            allSpans.forEach((span, i) => {
+                if (span.textContent?.includes('Bienvenido')) {
+                    console.log(`  Span ${i}:`, span.id, span.textContent, span);
+                }
+            });
+            
+            // Forzar actualización
+            if (welcomeEl && currentUser?.full_name) {
+                welcomeEl.textContent = `¡Bienvenido, ${currentUser.full_name}!`;
+                console.log('🔄 FORCED update to:', `¡Bienvenido, ${currentUser.full_name}!`);
+            } else {
+                console.log('❌ Cannot update: element or user missing');
+            }
+        };
+
+        // FUNCIÓN PARA FORZAR ACTUALIZACIÓN MANUAL DEL NOMBRE
+        window.forceUpdateUserName = async function() {
+            console.log('🔧 FORZANDO actualización del nombre de usuario...');
+            
+            try {
+                // Intentar dashboard summary primero
+                const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Data received:', data);
+                    
+                    if (data.success && data.summary?.coachee?.name) {
+                        const userName = data.summary.coachee.name;
+                        const welcomeText = `¡Bienvenido, ${userName}!`;
+                        const count = updateAllWelcomeMessages(welcomeText);
+                        console.log(`✅ Actualizado ${count} elementos con: ${welcomeText}`);
+                        return true;
+                    }
+                }
+                
+                console.log('❌ No se pudo obtener el nombre del usuario');
+                return false;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                return false;
+            }
+        };
+
+        // FUNCIÓN DE EMERGENCIA: Limpiar duplicados y actualizar
+        window.fixWelcomeMessage = function() {
+            // Obtener todos los elementos con id="welcomeMessage"
+            const allElements = document.querySelectorAll('#welcomeMessage');
+            console.log('🔍 Found', allElements.length, 'elements with id="welcomeMessage"');
+            
+            if (allElements.length > 1) {
+                console.log('⚠️ Removing duplicates, keeping only the first one');
+                // Mantener solo el primer elemento, eliminar el resto
+                for (let i = 1; i < allElements.length; i++) {
+                    allElements[i].remove();
+                    console.log('🗑️ Removed duplicate element', i + 1);
+                }
+            }
+            
+            // Actualizar el elemento restante
+            const finalElement = document.getElementById('welcomeMessage');
+            if (finalElement) {
+                finalElement.textContent = '¡Bienvenido, test15!';
+                console.log('✅ Updated final element:', finalElement.textContent);
+                return true;
+            }
+            
+            return false;
+        };
+
+        // FUNCIÓN PARA ACTUALIZAR TODOS LOS ELEMENTOS WELCOMEMESSAGE
+        window.updateAllWelcomeMessages = function(message) {
+            // Usar querySelectorAll para obtener TODOS los elementos
+            const allWelcomeElements = document.querySelectorAll('#welcomeMessage');
+            console.log('🔍 Found', allWelcomeElements.length, 'elements with id="welcomeMessage"');
+            
+            allWelcomeElements.forEach((element, index) => {
+                element.textContent = message;
+                console.log(`🔄 Updated element ${index + 1}:`, element);
+            });
+            
+            return allWelcomeElements.length;
+        };
+
+        // FUNCIÓN PARA FORZAR ACTUALIZACIÓN CON DELAY
+        window.forceUpdateWelcome = function() {
+            setTimeout(() => {
+                // Método 1: Por ID
+                let welcomeEl = document.getElementById('welcomeMessage');
+                
+                // Método 2: Por selector CSS si no funciona ID
+                if (!welcomeEl) {
+                    welcomeEl = document.querySelector('#welcomeMessage');
+                }
+                
+                // Método 3: Buscar en todos los spans que contengan "Bienvenido"
+                if (!welcomeEl) {
+                    const spans = document.querySelectorAll('span');
+                    for (let span of spans) {
+                        if (span.textContent && span.textContent.includes('Bienvenido')) {
+                            welcomeEl = span;
+                            console.log('🔍 Found welcome element via content search');
+                            break;
+                        }
+                    }
+                }
+                
+                if (welcomeEl) {
+                    welcomeEl.textContent = '¡Bienvenido, test15!';
+                    console.log('🔄 FORCED update with delay successful');
+                    console.log('🔄 Updated element:', welcomeEl);
+                } else {
+                    console.log('❌ Element still not found after delay and multiple methods');
+                    
+                    // Método 4: Crear el elemento si no existe
+                    const h3 = document.querySelector('h3');
+                    if (h3) {
+                        h3.innerHTML = '<i class="fas fa-home me-2"></i><span id="welcomeMessage">¡Bienvenido, test15!</span>';
+                        console.log('🔧 Created welcome element manually');
+                    }
+                }
+            }, 2000); // Aumentar delay a 2 segundos
+        };
+
         // Función para actualizar el mensaje de bienvenida
         function updateWelcomeMessage() {
             if (currentUser && currentUser.full_name) {
-                const userNameElement = document.getElementById('userName');
-                const welcomeMessageElement = document.getElementById('welcomeMessage');
-                
-                if (userNameElement) {
-                    userNameElement.textContent = currentUser.full_name;
-                    console.log('🔄 userName forzado a:', currentUser.full_name);
-                }
-                
-                if (welcomeMessageElement) {
-                    welcomeMessageElement.textContent = `¡Bienvenido, ${currentUser.full_name}!`;
-                    console.log('🔄 welcomeMessage forzado a:', `¡Bienvenido, ${currentUser.full_name}!`);
-                }
+                const welcomeText = `¡Bienvenido, ${currentUser.full_name}!`;
+                const updatedCount = updateAllWelcomeMessages(welcomeText);
+                console.log('🔄 Actualizados', updatedCount, 'elementos con mensaje forzado:', welcomeText);
             }
         }
 
@@ -5932,10 +6156,38 @@
             return html;
         }
 
+        // Verificar Chart.js availability inmediatamente
+        function testChartJSAvailability() {
+            console.log('🔍 TESTING Chart.js availability...');
+            
+            if (typeof Chart === 'undefined') {
+                console.error('❌ Chart.js NOT LOADED!');
+                document.body.insertAdjacentHTML('beforeend', 
+                    '<div style="position: fixed; top: 10px; right: 10px; background: red; color: white; padding: 20px; z-index: 9999; border-radius: 5px;">' +
+                    'ERROR: Chart.js no está disponible' +
+                    '</div>'
+                );
+                return false;
+            } else {
+                console.log('✅ Chart.js is available, version:', Chart.version);
+                // DIV VERDE DE "Chart.js loaded" ELIMINADO POR PETICIÓN DEL USUARIO
+                // document.body.insertAdjacentHTML('beforeend', 
+                //     '<div style="position: fixed; top: 10px; right: 10px; background: green; color: white; padding: 20px; z-index: 9999; border-radius: 5px;">' +
+                //     'Chart.js loaded: ' + Chart.version +
+                //     '</div>'
+                // );
+                return true;
+            }
+        }
+
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
+            document.addEventListener('DOMContentLoaded', function() {
+                testChartJSAvailability();
+                initializeApp();
+            });
         } else {
+            testChartJSAvailability();
             initializeApp();
         }
         
@@ -6023,10 +6275,69 @@
         setTimeout(initThemeSystem, 100);
     </script>
     
+    <!-- Script común para presentación de recomendaciones -->
+    <script src="{{ url_for('static', filename='js/recommendations.js') }}"></script>
+    
     <!-- Botón de cambio de tema -->
     <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
         <i class="fas fa-sun icon sun-icon"></i>
         <i class="fas fa-moon icon moon-icon"></i>
     </button>
+
+    <!-- TEST DIRECTO DEL SEGUNDO GRÁFICO -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔥 DOM READY - Buscando segundo gráfico...');
+            
+            setTimeout(function() {
+                const secondCanvas = document.getElementById('secondProgressChart');
+                console.log('🔥 Segundo canvas encontrado:', !!secondCanvas);
+                
+                if (secondCanvas) {
+                    console.log('✅ Canvas existe, creando gráfico inmediatamente...');
+                    
+                    if (typeof Chart !== 'undefined') {
+                        try {
+                            const ctx = secondCanvas.getContext('2d');
+                            new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: ['A', 'B', 'C', 'D', 'E'],
+                                    datasets: [{
+                                        label: 'TEST DIRECTO',
+                                        data: [10, 30, 50, 70, 90],
+                                        borderColor: '#ff0000',
+                                        backgroundColor: '#ff000033',
+                                        borderWidth: 4,
+                                        pointRadius: 8
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false
+                                }
+                            });
+                            console.log('✅ GRÁFICO DIRECTO CREADO!');
+                            
+                            const statusDiv = document.getElementById('secondChartStatus');
+                            if (statusDiv) {
+                                statusDiv.textContent = '✅ Test directo exitoso!';
+                                statusDiv.style.color = 'green';
+                                statusDiv.style.fontSize = '16px';
+                                statusDiv.style.fontWeight = 'bold';
+                            }
+                        } catch (error) {
+                            console.error('❌ Error test directo:', error);
+                        }
+                    } else {
+                        console.error('❌ Chart.js no disponible');
+                    }
+                } else {
+                    console.error('❌ Canvas secondProgressChart NO ENCONTRADO');
+                }
+            }, 2000); // Esperar 2 segundos para asegurar que todo esté cargado
+        });
+    </script>
+    </div> <!-- Close container-fluid -->
 </body>
 </html>

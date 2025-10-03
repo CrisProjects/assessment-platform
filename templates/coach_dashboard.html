@@ -9,6 +9,18 @@
 <meta http-equiv="Expires" content="0">
 
 <style>
+    /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACHEE */
+    :root {
+        --calm-primary: #1E3A8A;        /* Deep Blue */
+        --calm-secondary: #3B82F6;      /* Bright Blue */
+        --calm-accent: #06B6D4;         /* Cyan */
+        --calm-light: #EFF6FF;          /* Very Light Blue */
+        --calm-dark: #1E293B;           /* Dark Slate */
+        --calm-white: #FFFFFF;
+        --calm-gray-50: #F8FAFC;
+        --calm-gray-100: #F1F5F9;
+    }
+    
     /* ANULAR SISTEMA DE TEMAS PARA SIDEBAR - PROBLEMA ENCONTRADO! */
     .sidebar,
     .sidebar * {
@@ -288,31 +300,259 @@
         border: 1px solid #dee2e6;
     }
     
-    /* Estilos para categorización de recomendaciones */
+    /* Estilos profesionales para recomendaciones categorizadas - UNIFICADOS */
+    .recommendations-container {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 16px;
+        border: 2px solid var(--calm-accent);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    
+    .recommendations-header {
+        background: linear-gradient(135deg, var(--calm-primary) 0%, #1D4ED8 100%);
+        color: white !important;
+        padding: 1.5rem;
+        border-bottom: 3px solid var(--calm-accent);
+        position: relative;
+    }
+    
+    .recommendations-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--calm-accent) 0%, #0ea5e9 50%, var(--calm-accent) 100%);
+    }
+    
     .recommendation-category {
-        margin-bottom: 2rem;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        transition: all 0.3s ease;
         animation: fadeInUp 0.6s ease-out;
     }
     
+    .recommendation-category:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        border-color: var(--calm-accent);
+    }
+    
+    .category-header {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        border-bottom: 2px solid #e2e8f0;
+        padding: 1rem 1.25rem;
+        position: relative;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .category-title {
+        font-weight: 700;
+        color: var(--calm-primary);
+        font-size: 1.1rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .category-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--calm-accent) 0%, #0ea5e9 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-right: 0.75rem;
+        animation: pulse 2s infinite;
+    }
+    
+    .score-badge {
+        background: linear-gradient(135deg, var(--calm-secondary) 0%, var(--calm-accent) 100%);
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .priority-indicator {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-top: 15px solid;
+    }
+    
+    .priority-high {
+        border-top-color: #ef4444;
+    }
+    
+    .priority-medium {
+        border-top-color: #f59e0b;
+    }
+    
+    .priority-low {
+        border-top-color: #06b6d4;
+    }
+    
+    .priority-growth {
+        border-top-color: #10b981;
+    }
+    
+    .category-content {
+        padding: 1.25rem;
+    }
+    
     .recommendation-item {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+        border-left: 4px solid var(--calm-accent);
+        position: relative;
         transition: all 0.3s ease;
         transform: translateY(0);
     }
     
     .recommendation-item:hover {
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+        border-left-color: var(--calm-primary);
+        transform: translateX(5px) translateY(-2px);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         border-color: var(--bs-primary) !important;
     }
     
-    .category-header {
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    .recommendation-item:before {
+        content: "✓";
+        position: absolute;
+        left: -2px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        background: var(--calm-accent);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
     }
     
-    .category-icon {
-        animation: pulse 2s infinite;
+    .recommendation-text {
+        margin-left: 1.5rem;
+        line-height: 1.6;
+        color: #334155;
+        font-weight: 500;
     }
     
+    .general-recommendations {
+        border: 2px solid var(--calm-primary);
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    }
+    
+    .general-recommendations .category-header {
+        background: linear-gradient(135deg, var(--calm-primary) 0%, #1D4ED8 100%);
+        color: white;
+        border-bottom-color: var(--calm-primary);
+    }
+    
+    .general-recommendations .category-title {
+        color: white;
+    }
+    
+    .strengths-category {
+        border: 2px solid #10b981;
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    }
+    
+    .strengths-category .category-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-bottom-color: #10b981;
+    }
+    
+    .strengths-category .category-title {
+        color: white;
+    }
+    
+    .strengths-category .recommendation-item {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        border-left-color: #10b981;
+    }
+    
+    .strengths-category .recommendation-item:before {
+        background: #10b981;
+        content: "★";
+    }
+    
+    .final-message {
+        border: 2px solid #8b5cf6;
+        background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    }
+    
+    .final-message .category-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border-bottom-color: #8b5cf6;
+    }
+    
+    .final-message .category-title {
+        color: white;
+    }
+    
+    .final-message .recommendation-item {
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        border-left-color: #8b5cf6;
+    }
+    
+    /* Estilos especiales para subcategorías de dimensiones */
+    .dimension-subcategory {
+        border: 2px solid var(--calm-primary);
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        margin-bottom: 2rem;
+    }
+    
+    .subcategory-header {
+        background: linear-gradient(135deg, var(--calm-primary) 0%, #1D4ED8 100%);
+        color: white;
+        padding: 1.25rem;
+        border-bottom: 3px solid var(--calm-accent);
+    }
+    
+    .subcategory-title-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .subcategory-info {
+        flex: 1;
+    }
+    
+    .subcategory-title {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: white;
+    }
+
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
@@ -1120,10 +1360,9 @@
         margin-bottom: 0.5rem;
     }
     
-    .score-display.score-excellent { color: #28a745; }
-    .score-display.score-good { color: #ffc107; }
-    .score-display.score-fair { color: #fd7e14; }
-    .score-display.score-poor { color: #dc3545; }
+    .score-display.score-low { color: #dc3545; }      /* Rojo - Bajo 40% */
+    .score-display.score-medium { color: #007bff; }   /* Azul - 40-79% */
+    .score-display.score-high { color: #28a745; }     /* Verde - 80%+ */
     
     .score-number {
         font-size: 1.5rem;
@@ -1215,6 +1454,8 @@
 {% block content %}
 <!-- Chart.js para gráficos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
+<link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
 
 <div class="container-fluid py-4">
     <!-- Header -->
@@ -1234,7 +1475,7 @@
                             <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/dashboard-selection'" title="Inicio">
                                 <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Inicio</span>
                             </button>
-                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/logout'" title="Salir">
+                            <button class="btn btn-outline-light btn-sm" onclick="logoutCoach()" title="Salir">
                                 <i class="fas fa-sign-out-alt me-1"></i><span class="d-none d-sm-inline">Salir</span>
                             </button>
                         </div>
@@ -1611,21 +1852,39 @@
 </div>
 
 <!-- Modal para ver detalles de evaluación -->
-<div class="modal fade" id="evaluationDetailsModal" tabindex="-1">
+<div class="modal fade" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Detalles de Evaluación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header modal-header-dark">
+                <h5 class="modal-title" id="evaluationDetailsModalLabel">
+                    <i class="fas fa-chart-radar me-2"></i>
+                    Detalles de Evaluación
+                </h5>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
+                        <i class="fas fa-print me-1"></i>
+                        Imprimir
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal" title="Cerrar">
+                        <i class="fas fa-times me-1"></i>
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
-            <div class="modal-body">
-                <div id="evaluationDetailsContent">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
+            <div class="modal-body" id="evaluationDetailsContent">
+                <div class="loading-spinner">
+                    <div class="spinner-border spinner-border-custom" role="status">
+                        <span class="visually-hidden">Cargando detalles...</span>
                     </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-progress" onclick="printEvaluationReport()">
+                    <i class="fas fa-print me-2"></i>
+                    Imprimir Reporte
+                </button>
             </div>
         </div>
     </div>
@@ -1835,6 +2094,33 @@ function refreshDashboard() {
     loadCoachees();
     loadTasks();
     loadStats();
+}
+
+// Función de logout específica para coach
+async function logoutCoach() {
+    try {
+        const response = await fetch('/api/coach/logout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            console.log('Coach logout successful');
+        } else {
+            console.error('Coach logout failed');
+        }
+        
+        // Redirigir a la página de selección independientemente del resultado
+        window.location.href = '/dashboard-selection';
+        
+    } catch (error) {
+        console.error('Error during coach logout:', error);
+        // Aún así redirigir en caso de error
+        window.location.href = '/dashboard-selection';
+    }
 }
 
 // Función para cargar estadísticas
@@ -2240,7 +2526,7 @@ function displayCoachees() {
     
     if (coacheesData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay coachees asignados</td></tr>';
-        cardsContainer.innerHTML = '<div class="text-center text-muted p-3">No hay coachees asignados</div>';
+        cardsContainer.innerHTML = '<div class="unified-empty-state"><i class="fas fa-users"></i><p>No hay coachees asignados</p></div>';
         return;
     }
     
@@ -2263,13 +2549,13 @@ function displayCoachees() {
                 ` : '<span class="text-muted">-</span>'}
             </td>
             <td>
-                <span class="badge ${coachee.is_active ? 'bg-success' : 'bg-secondary'}">
+                <span class="unified-badge ${coachee.is_active ? 'unified-badge-success' : 'unified-badge-secondary'}">
                     ${coachee.is_active ? 'Activo' : 'Inactivo'}
                 </span>
             </td>
             <td>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
+                    <span class="unified-badge unified-badge-info">${coachee.evaluations_count || 0}</span>
                     ${coachee.avg_score ? `<small class="text-muted">Prom: ${Math.round(coachee.avg_score)}%</small>` : ''}
                     <button class="btn btn-sm btn-outline-info" onclick="showAssignedAssessments(${coachee.id}, '${coachee.name}')" title="Ver todas las evaluaciones">
                         <i class="fas fa-list"></i>
@@ -2291,81 +2577,76 @@ function displayCoachees() {
         </tr>
     `).join('');
     
-    // Vista cards para móvil
-    cardsContainer.innerHTML = coacheesData.map(coachee => `
-        <div class="coachee-card-mobile">
-            <div class="coachee-header">
-                <h6 class="coachee-name">${coachee.name || 'Sin nombre'}</h6>
-                <span class="badge coachee-status ${coachee.is_active ? 'bg-success' : 'bg-secondary'}">
-                    ${coachee.is_active ? 'Activo' : 'Inactivo'}
-                </span>
-            </div>
-            <div class="coachee-details">
-                <div class="coachee-detail-item">
-                    <span class="coachee-detail-label">Email:</span>
-                    <span class="coachee-detail-value">${coachee.email || 'Sin email'}</span>
-                </div>
-                ${coachee.password ? `
-                <div class="coachee-detail-item">
-                    <span class="coachee-detail-label">Contraseña:</span>
-                    <span class="coachee-detail-value">
-                        <div class="d-flex align-items-center">
-                            <span class="password-text" id="pwd-mobile-${coachee.id}" style="font-family: monospace;">●●●●●●●●</span>
-                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="togglePasswordMobile(${coachee.id}, '${coachee.password}')" title="Mostrar/Ocultar">
-                                <i class="fas fa-eye" id="eye-mobile-${coachee.id}"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-primary ms-1" onclick="copyPassword('${coachee.password}')" title="Copiar">
-                                <i class="fas fa-copy"></i>
-                            </button>
+    // Vista cards para móvil - mejorada con estilos unificados
+    cardsContainer.innerHTML = `
+        <div class="results-list">
+            ${coacheesData.map(coachee => `
+                <div class="unified-card">
+                    <div class="unified-card-header">
+                        <div class="d-flex justify-content-between align-items-start w-100">
+                            <h5 class="unified-card-title">${coachee.name || 'Sin nombre'}</h5>
+                            <span class="unified-badge ${coachee.is_active ? 'unified-badge-success' : 'unified-badge-secondary'}">
+                                ${coachee.is_active ? 'Activo' : 'Inactivo'}
+                            </span>
                         </div>
-                    </span>
-                </div>
-                ` : ''}
-                <div class="coachee-detail-item">
-                    <span class="coachee-detail-label">Evaluaciones:</span>
-                    <span class="coachee-detail-value">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-info">${coachee.evaluations_count || 0}</span>
-                            <button class="btn btn-sm btn-outline-info" onclick="showAssignedAssessments(${coachee.id}, '${coachee.name}')" title="Ver todas las evaluaciones">
+                    </div>
+                    <div class="unified-card-body">
+                        <div class="coachee-details">
+                            <div class="meta-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>${coachee.email || 'Sin email'}</span>
+                            </div>
+                            ${coachee.password ? `
+                            <div class="meta-item">
+                                <i class="fas fa-key"></i>
+                                <div class="d-flex align-items-center">
+                                    <span class="password-text" id="pwd-mobile-${coachee.id}" style="font-family: monospace;">●●●●●●●●</span>
+                                    <button class="unified-btn unified-btn-sm unified-btn-secondary ms-2" onclick="togglePasswordMobile(${coachee.id}, '${coachee.password}')" title="Mostrar/Ocultar">
+                                        <i class="fas fa-eye" id="eye-mobile-${coachee.id}"></i>
+                                    </button>
+                                    <button class="unified-btn unified-btn-sm unified-btn-primary ms-1" onclick="copyPassword('${coachee.password}')" title="Copiar">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            ` : ''}
+                            <div class="meta-item">
+                                <i class="fas fa-chart-line"></i>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="unified-badge unified-badge-info">${coachee.evaluations_count || 0} evaluaciones</span>
+                                    ${coachee.avg_score ? `<span class="text-muted">Promedio: ${Math.round(coachee.avg_score)}%</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Última evaluación: ${coachee.last_evaluation ? new Date(coachee.last_evaluation.completed_at).toLocaleDateString() : 'Nunca'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="unified-card-footer">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="unified-btn unified-btn-primary unified-btn-sm" onclick="viewCoacheeDetails(${coachee.id})" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                                Detalles
+                            </button>
+                            <button class="unified-btn unified-btn-secondary unified-btn-sm" onclick="editCoachee(${coachee.id})" title="Editar">
+                                <i class="fas fa-edit"></i>
+                                Editar
+                            </button>
+                            <button class="unified-btn unified-btn-success unified-btn-sm" onclick="showAssignModal(${coachee.id}, '${coachee.name}')" title="Asignar">
+                                <i class="fas fa-plus"></i>
+                                Asignar
+                            </button>
+                            <button class="unified-btn unified-btn-info unified-btn-sm" onclick="showAssignedAssessments(${coachee.id}, '${coachee.name}')" title="Ver evaluaciones">
                                 <i class="fas fa-list"></i>
+                                Evaluaciones
                             </button>
                         </div>
-                    </span>
+                    </div>
                 </div>
-                ${coachee.avg_score ? `
-                <div class="coachee-detail-item">
-                    <span class="coachee-detail-label">Promedio:</span>
-                    <span class="coachee-detail-value">
-                        <span class="badge bg-success">${Math.round(coachee.avg_score)}%</span>
-                    </span>
-                </div>
-                ` : ''}
-                <div class="coachee-detail-item">
-                    <span class="coachee-detail-label">Última evaluación:</span>
-                    <span class="coachee-detail-value">
-                        ${coachee.last_evaluation ? new Date(coachee.last_evaluation.completed_at).toLocaleDateString() : 'Nunca'}
-                    </span>
-                </div>
-                <div class="coachee-detail-item">
-                    <span class="coachee-detail-label">Registrado:</span>
-                    <span class="coachee-detail-value">
-                        ${new Date(coachee.created_at).toLocaleDateString()}
-                    </span>
-                </div>
-            </div>
-            <div class="coachee-actions">
-                <button class="btn btn-sm btn-outline-primary" onclick="viewCoacheeDetails(${coachee.id})" title="Ver detalles">
-                    <i class="fas fa-eye me-1"></i>Ver
-                </button>
-                <button class="btn btn-sm btn-outline-warning" onclick="editCoachee(${coachee.id})" title="Editar">
-                    <i class="fas fa-edit me-1"></i>Editar
-                </button>
-                <button class="btn btn-sm btn-outline-success" onclick="showAssignModal(${coachee.id}, '${coachee.name}')" title="Asignar evaluación/tarea">
-                    <i class="fas fa-plus me-1"></i>Asignar
-                </button>
-            </div>
+            `).join('')}
         </div>
-    `).join('');
+    `;
 }
 
 // Función para actualizar select de coachees en tareas
@@ -2900,7 +3181,6 @@ function displayCoacheeEvaluations(evaluations) {
                                 <div class="score-number">${evaluation.percentage || 0}%</div>
                                 <div class="score-label">Puntuación</div>
                             </div>
-                            ${levelBadge}
                         </div>
                     </div>
                 </div>
@@ -2995,10 +3275,9 @@ function getTimeAgo(dateString) {
 }
 
 function getScoreColor(percentage) {
-    if (percentage >= 80) return 'score-excellent';
-    if (percentage >= 60) return 'score-good';
-    if (percentage >= 40) return 'score-fair';
-    return 'score-poor';
+    if (percentage >= 80) return 'score-high';     // Verde - 80%+
+    if (percentage >= 40) return 'score-medium';   // Azul - 40-79%
+    return 'score-low';                             // Rojo - Bajo 40%
 }
 
 function getLevelBadge(level, percentage) {
@@ -3105,7 +3384,13 @@ function displayEvaluationDetails(evaluation) {
                                 <div style="color: #666;">Fecha de Completado</div>
                             </div>
                             <div class="col-md-3">
-                                <div class="h6" style="color: #333;">${data.participant_name || 'N/A'}</div>
+                                <div class="h6" style="color: #333;">${data.total_questions || evaluation.total_questions || (evaluation.responses ? evaluation.responses.length : 'N/A')}</div>
+                                <div style="color: #666;">Preguntas Respondidas</div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12 text-center">
+                                <div class="h5" style="color: #333;">${evaluation.coachee ? evaluation.coachee.name : (data.participant_name || evaluation.participant_name || 'N/A')}</div>
                                 <div style="color: #666;">Participante</div>
                             </div>
                         </div>
@@ -3143,7 +3428,7 @@ function displayEvaluationDetails(evaluation) {
             </div>
         </div>
 
-        ${detailedAnalysis ? generateDetailedAnalysisHTML(detailedAnalysis) : ''}
+        ${generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores))}
         ${recommendations && recommendations.length > 0 ? generateRecommendationsHTML(recommendations) : ''}
         
         <!-- Respuestas Detalladas -->
@@ -3326,6 +3611,43 @@ function generateDimensionalScoresHTML(dimensionalScores) {
     return html;
 }
 
+// Función para generar análisis desde puntuaciones dimensionales
+function generateAnalysisFromScores(dimensionalScores) {
+    if (!dimensionalScores) return null;
+    
+    const strengths = [];
+    const improvementAreas = [];
+    
+    // Analizar cada dimensión
+    for (const [dimension, score] of Object.entries(dimensionalScores)) {
+        const percentage = Math.round(score);
+        const dimensionName = formatDimensionName(dimension);
+        
+        if (percentage >= 70) {
+            // Es una fortaleza
+            strengths.push({
+                name: dimensionName,
+                score: percentage,
+                description: getDimensionDescription(dimension, percentage)
+            });
+        } else if (percentage < 60) {
+            // Es un área de mejora
+            const priority = percentage < 40 ? 'high' : 'medium';
+            improvementAreas.push({
+                name: dimensionName,
+                score: percentage,
+                description: getDimensionDescription(dimension, percentage),
+                priority: priority
+            });
+        }
+    }
+    
+    return {
+        strengths: strengths,
+        improvement_areas: improvementAreas
+    };
+}
+
 // Función para generar HTML de análisis detallado
 function generateDetailedAnalysisHTML(analysis) {
     let html = '<div class="row mb-4">';
@@ -3345,7 +3667,7 @@ function generateDetailedAnalysisHTML(analysis) {
             html += `
                 <div class="d-flex align-items-start mb-3">
                     <div class="flex-shrink-0">
-                        <span class="badge bg-success rounded-pill">${Math.round(strength.score)}%</span>
+                        <span class="fw-bold text-success">${Math.round(strength.score)}%</span>
                     </div>
                     <div class="flex-grow-1 ms-2">
                         <strong style="color: #333;">${strength.name}</strong>
@@ -3375,10 +3697,11 @@ function generateDetailedAnalysisHTML(analysis) {
         
         analysis.improvement_areas.forEach(area => {
             const priorityClass = area.priority === 'high' ? 'danger' : 'warning';
+            const scoreColor = Math.round(area.score) >= 40 ? 'text-warning' : 'text-danger';
             html += `
                 <div class="d-flex align-items-start mb-3">
                     <div class="flex-shrink-0">
-                        <span class="badge bg-${priorityClass} rounded-pill">${Math.round(area.score)}%</span>
+                        <span class="fw-bold ${scoreColor}">${Math.round(area.score)}%</span>
                     </div>
                     <div class="flex-grow-1 ms-2">
                         <strong style="color: #333;">${area.name}</strong> 
@@ -3400,274 +3723,21 @@ function generateDetailedAnalysisHTML(analysis) {
     return html;
 }
 
-// Función para generar HTML de recomendaciones
-function generateRecommendationsHTML(recommendations) {
-    console.log('🔍 generateRecommendationsHTML - Recomendaciones recibidas:', recommendations);
-    
-    if (!recommendations || recommendations.length === 0) return '';
-    
-    // Procesar y categorizar recomendaciones
-    const categorizedRecs = categorizeRecommendations(recommendations);
-    console.log('📊 Recomendaciones categorizadas:', categorizedRecs);
-    
-    let html = `
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid #17a2b8 !important;">
-                    <div class="card-header" style="background: #d1ecf1; color: #0c5460; padding: 1.5rem;">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <h5 class="mb-0">
-                                    <i class="fas fa-lightbulb me-2"></i>
-                                    Plan de Desarrollo Personalizado
-                                </h5>
-                                <small class="d-block mt-1 opacity-90">
-                                    Recomendaciones categorizadas basadas en tu evaluación de asertividad
-                                </small>
-                            </div>
-                            <div class="text-end">
-                                <div class="badge bg-info fs-6">${getTotalRecommendationsCount(categorizedRecs)} recomendaciones</div>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-chart-line me-2"></i>
-                                    <small>Basado en tu puntuación</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-target me-2"></i>
-                                    <small>Objetivos específicos</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-clock me-2"></i>
-                                    <small>Plan a 90 días</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body" style="padding: 2rem;">
-                        ${generateCategorizedRecommendationsHTML(categorizedRecs)}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
 
-// Función para categorizar recomendaciones
-function categorizeRecommendations(recommendations) {
-    console.log('🏷️ categorizeRecommendations - Entrada:', recommendations);
-    
-    const categories = {
-        comunicacion: {
-            title: 'Habilidades de Comunicación',
-            icon: 'fas fa-comments',
-            color: 'primary',
-            items: [],
-            priority: 1,
-            description: 'Mejora tu capacidad para expresarte de manera clara y efectiva'
-        },
-        liderazgo: {
-            title: 'Desarrollo de Liderazgo',
-            icon: 'fas fa-crown',
-            color: 'success',
-            items: [],
-            priority: 2,
-            description: 'Fortalece tus competencias de liderazgo y dirección de equipos'
-        },
-        asertividad: {
-            title: 'Técnicas de Asertividad',
-            icon: 'fas fa-balance-scale',
-            color: 'warning',
-            items: [],
-            priority: 3,
-            description: 'Desarrolla tu capacidad para defender tus derechos respetando a otros'
-        },
-        emocional: {
-            title: 'Inteligencia Emocional',
-            icon: 'fas fa-heart',
-            color: 'danger',
-            items: [],
-            priority: 4,
-            description: 'Gestiona mejor tus emociones y las de tu entorno'
-        },
-        conflictos: {
-            title: 'Gestión de Conflictos',
-            icon: 'fas fa-handshake',
-            color: 'info',
-            items: [],
-            priority: 5,
-            description: 'Aprende a resolver conflictos de manera constructiva'
-        },
-        general: {
-            title: 'Desarrollo General',
-            icon: 'fas fa-star',
-            color: 'secondary',
-            items: [],
-            priority: 6,
-            description: 'Recomendaciones adicionales para tu crecimiento profesional'
-        }
-    };
-    
-    // Procesar cada recomendación
-    recommendations.forEach(rec => {
-        const recText = typeof rec === 'string' ? rec : rec.text || rec.description || '';
-        const category = categorizeRecommendation(recText);
-        
-        if (categories[category]) {
-            categories[category].items.push({
-                text: recText,
-                priority: getPriorityFromText(recText),
-                actionItems: extractActionItems(recText)
-            });
-        }
-    });
-    
-    // Filtrar categorías vacías y ordenar por prioridad
-    const filteredCategories = Object.entries(categories)
-        .filter(([key, category]) => category.items.length > 0)
-        .sort((a, b) => a[1].priority - b[1].priority);
-    
-    return Object.fromEntries(filteredCategories);
-}
 
-// Función para categorizar una recomendación individual
-function categorizeRecommendation(text) {
-    const textLower = text.toLowerCase();
-    
-    if (textLower.includes('comunicación') || textLower.includes('expresar') || textLower.includes('hablar') || textLower.includes('escuchar')) {
-        return 'comunicacion';
-    } else if (textLower.includes('liderar') || textLower.includes('liderazgo') || textLower.includes('equipo') || textLower.includes('dirigir')) {
-        return 'liderazgo';
-    } else if (textLower.includes('asertiv') || textLower.includes('derechos') || textLower.includes('opinión') || textLower.includes('firme')) {
-        return 'asertividad';
-    } else if (textLower.includes('emocional') || textLower.includes('emociones') || textLower.includes('sentimientos') || textLower.includes('autocontrol')) {
-        return 'emocional';
-    } else if (textLower.includes('conflicto') || textLower.includes('negociación') || textLower.includes('mediación') || textLower.includes('resolver')) {
-        return 'conflictos';
-    } else {
-        return 'general';
-    }
-}
 
-// Función para extraer elementos de acción del texto
-function extractActionItems(text) {
-    const actionWords = ['práctica', 'ejercita', 'desarrolla', 'mejora', 'fortalece', 'aprende', 'implementa'];
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    
-    return sentences.filter(sentence => {
-        const sentenceLower = sentence.toLowerCase();
-        return actionWords.some(word => sentenceLower.includes(word));
-    }).slice(0, 3); // Máximo 3 elementos de acción
-}
 
-// Función para obtener prioridad del texto
-function getPriorityFromText(text) {
-    const textLower = text.toLowerCase();
-    if (textLower.includes('urgente') || textLower.includes('inmediato') || textLower.includes('crítico')) {
-        return 'high';
-    } else if (textLower.includes('importante') || textLower.includes('recomendado') || textLower.includes('esencial')) {
-        return 'medium';
-    } else {
-        return 'low';
-    }
-}
 
-// Función para contar total de recomendaciones
-function getTotalRecommendationsCount(categories) {
-    return Object.values(categories).reduce((total, category) => total + category.items.length, 0);
-}
 
-// Función para generar HTML de categorías organizadas
-function generateCategorizedRecommendationsHTML(categories) {
-    let html = '';
-    
-    Object.entries(categories).forEach(([key, category], index) => {
-        html += `
-            <div class="recommendation-category mb-4" data-category="${key}">
-                <div class="category-header" style="background: linear-gradient(135deg, var(--bs-${category.color}) 0%, var(--bs-${category.color}) 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; color: white;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <div class="category-icon me-3" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                                <i class="${category.icon}" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1" style="font-weight: 600; font-size: 1.2rem;">${category.title}</h6>
-                                <small style="opacity: 0.9;">${category.description}</small>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge" style="background: rgba(255,255,255,0.2); font-size: 0.9rem;">
-                                ${category.items.length} ${category.items.length === 1 ? 'recomendación' : 'recomendaciones'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="category-items">
-                    ${generateCategoryItemsHTML(category.items, category.color)}
-                </div>
-            </div>
-        `;
-    });
-    
-    return html;
-}
 
-// Función para generar HTML de elementos de categoría
-function generateCategoryItemsHTML(items, color) {
-    let html = '';
-    
-    items.forEach((item, index) => {
-        const priorityIcon = item.priority === 'high' ? 'fas fa-exclamation-circle' : 
-                           item.priority === 'medium' ? 'fas fa-star' : 'fas fa-circle';
-        const priorityColor = item.priority === 'high' ? 'danger' : 
-                            item.priority === 'medium' ? 'warning' : 'secondary';
-        
-        html += `
-            <div class="recommendation-item mb-3" style="background: white; border: 1px solid #dee2e6; border-radius: 10px; padding: 1.25rem; border-left: 4px solid var(--bs-${color}); transition: all 0.3s ease;">
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0 me-3">
-                        <div class="item-number" style="background: var(--bs-${color}); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem;">
-                            ${index + 1}
-                        </div>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="${priorityIcon} me-2 text-${priorityColor}"></i>
-                            <span class="badge bg-${priorityColor} me-2">${item.priority.toUpperCase()}</span>
-                            <small class="text-muted">Prioridad ${item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Media' : 'Baja'}</small>
-                        </div>
-                        <p class="recommendation-text mb-2" style="color: #333; line-height: 1.6; margin-bottom: 1rem;">
-                            ${item.text}
-                        </p>
-                        ${item.actionItems.length > 0 ? `
-                            <div class="action-items">
-                                <h6 class="action-title" style="color: var(--bs-${color}); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">
-                                    <i class="fas fa-tasks me-1"></i>Acciones Sugeridas:
-                                </h6>
-                                <ul class="action-list" style="margin: 0; padding-left: 1.5rem;">
-                                    ${item.actionItems.map(action => `
-                                        <li style="color: #666; font-size: 0.9rem; margin-bottom: 0.25rem;">${action.trim()}</li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    return html;
-}
+
+
+
+
+
+
+
+
 
 // Función para generar HTML de respuestas
 function generateResponsesHTML(responses) {
@@ -4466,8 +4536,8 @@ function displayAssignedAssessments(assessments, coacheeId, coacheeName) {
     
     if (assessments.length === 0) {
         container.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <i class="fas fa-clipboard fa-3x mb-3"></i>
+            <div class="unified-empty-state">
+                <i class="fas fa-clipboard fa-3x"></i>
                 <h5>No hay evaluaciones disponibles</h5>
                 <p>No se encontraron evaluaciones para este coachee.</p>
             </div>
@@ -4501,30 +4571,50 @@ function displayAssignedAssessments(assessments, coacheeId, coacheeName) {
                     <i class="fas fa-clipboard-check me-2"></i>
                     Evaluaciones Asignadas
                 </h6>
-                <div class="list-group">
+                <div class="results-list">
                     ${assignedAssessments.map(assessment => `
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1">
-                                        <span class="badge bg-success me-2">Asignada</span>
-                                        ${assessment.assessment_title}
-                                    </h6>
-                                    <p class="mb-1 text-muted">${assessment.description || 'Sin descripción'}</p>
-                                    <small class="text-muted">
-                                        <i class="fas fa-question-circle me-1"></i>
-                                        ${assessment.total_questions} preguntas
-                                        ${assessment.assigned_date ? `<br><i class="fas fa-calendar-plus me-1"></i>Asignada: ${new Date(assessment.assigned_date).toLocaleString()}` : ''}
-                                        ${assessment.due_date ? `<br><i class="fas fa-calendar-times me-1"></i>Vence: ${new Date(assessment.due_date).toLocaleString()}` : ''}
-                                        ${assessment.completed_attempts > 0 ? `<br><i class="fas fa-check-circle text-success me-1"></i>Completada ${assessment.completed_attempts} vez${assessment.completed_attempts !== 1 ? 'es' : ''}` : ''}
-                                    </small>
-                                </div>
-                                <div class="ms-3">
-                                    <button class="btn btn-sm btn-outline-danger" 
+                        <div class="unified-card">
+                            <div class="unified-card-header">
+                                <div class="d-flex justify-content-between align-items-start w-100">
+                                    <div>
+                                        <div class="mb-2">
+                                            <span class="unified-badge unified-badge-success">Asignada</span>
+                                        </div>
+                                        <h5 class="unified-card-title">${assessment.assessment_title}</h5>
+                                    </div>
+                                    <button class="unified-btn unified-btn-danger unified-btn-sm" 
                                             onclick="confirmUnassignAssessment(${coacheeId}, '${coacheeName}', '${assessment.assessment_title}')" 
                                             title="Desasignar evaluación">
-                                        <i class="fas fa-times me-1"></i>Desasignar
+                                        <i class="fas fa-times"></i>
+                                        Desasignar
                                     </button>
+                                </div>
+                            </div>
+                            <div class="unified-card-body">
+                                <p class="text-muted mb-2">${assessment.description || 'Sin descripción'}</p>
+                                <div class="assessment-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-question-circle"></i>
+                                        <span>${assessment.total_questions} preguntas</span>
+                                    </div>
+                                    ${assessment.assigned_date ? `
+                                    <div class="meta-item">
+                                        <i class="fas fa-calendar-plus"></i>
+                                        <span>Asignada: ${new Date(assessment.assigned_date).toLocaleString()}</span>
+                                    </div>
+                                    ` : ''}
+                                    ${assessment.due_date ? `
+                                    <div class="meta-item">
+                                        <i class="fas fa-calendar-times"></i>
+                                        <span>Vence: ${new Date(assessment.due_date).toLocaleString()}</span>
+                                    </div>
+                                    ` : ''}
+                                    ${assessment.completed_attempts > 0 ? `
+                                    <div class="meta-item">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <span>Completada ${assessment.completed_attempts} vez${assessment.completed_attempts !== 1 ? 'es' : ''}</span>
+                                    </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -4539,27 +4629,35 @@ function displayAssignedAssessments(assessments, coacheeId, coacheeName) {
                     <i class="fas fa-clipboard-list me-2"></i>
                     Evaluaciones Disponibles (No Asignadas)
                 </h6>
-                <div class="list-group">
+                <div class="results-list">
                     ${availableAssessments.map(assessment => `
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1">
-                                        <span class="badge bg-light text-dark me-2">Disponible</span>
-                                        ${assessment.assessment_title}
-                                    </h6>
-                                    <p class="mb-1 text-muted">${assessment.description || 'Sin descripción'}</p>
-                                    <small class="text-muted">
-                                        <i class="fas fa-question-circle me-1"></i>
-                                        ${assessment.total_questions} preguntas
-                                        ${assessment.completed_attempts > 0 ? `<br><i class="fas fa-check-circle text-success me-1"></i>Completada ${assessment.completed_attempts} vez${assessment.completed_attempts !== 1 ? 'es' : ''} (sin asignar)` : '<br><i class="fas fa-clock text-muted me-1"></i>Sin completar'}
-                                    </small>
+                        <div class="unified-card">
+                            <div class="unified-card-header">
+                                <div>
+                                    <div class="mb-2">
+                                        <span class="unified-badge unified-badge-secondary">Disponible</span>
+                                    </div>
+                                    <h5 class="unified-card-title">${assessment.assessment_title}</h5>
                                 </div>
-                                <div class="ms-3">
-                                    <span class="text-muted small">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Sin asignar
-                                    </span>
+                            </div>
+                            <div class="unified-card-body">
+                                <p class="text-muted mb-2">${assessment.description || 'Sin descripción'}</p>
+                                <div class="assessment-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-question-circle"></i>
+                                        <span>${assessment.total_questions} preguntas</span>
+                                    </div>
+                                    ${assessment.completed_attempts > 0 ? `
+                                    <div class="meta-item">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <span>Completada ${assessment.completed_attempts} vez${assessment.completed_attempts !== 1 ? 'es' : ''} (sin asignar)</span>
+                                    </div>
+                                    ` : `
+                                    <div class="meta-item">
+                                        <i class="fas fa-clock text-muted"></i>
+                                        <span>Sin completar</span>
+                                    </div>
+                                    `}
                                 </div>
                             </div>
                         </div>
@@ -4683,6 +4781,42 @@ function createToastContainer() {
     container.style.zIndex = '1055';
     document.body.appendChild(container);
     return container;
+}
+
+// Función para imprimir reporte de evaluación
+function printEvaluationReport() {
+    // Crear una nueva ventana para imprimir
+    const printWindow = window.open('', '_blank');
+    const evaluationContent = document.getElementById('evaluationDetailsContent').innerHTML;
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Reporte de Evaluación de Asertividad</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                body { font-family: Arial, sans-serif; }
+                .card { border: 1px solid #dee2e6; margin-bottom: 1rem; }
+                .badge { display: inline-block; padding: 0.25em 0.6em; }
+                @media print { 
+                    .btn { display: none; }
+                    canvas { max-width: 400px; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1 class="text-center mb-4">Reporte de Evaluación de Asertividad</h1>
+                ${evaluationContent}
+            </div>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
 }
 
 // Cache buster - Forzar recarga: 2025-08-31-19:22

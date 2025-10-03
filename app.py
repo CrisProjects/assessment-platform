@@ -90,6 +90,33 @@ login_manager.login_view = 'dashboard_selection'  # type: ignore
 login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
 login_manager.login_message_category = 'info'
 
+# Función para versioning automático de archivos estáticos
+def get_file_version(filename):
+    """
+    Genera automáticamente un número de versión basado en la fecha de modificación del archivo.
+    Esto asegura que el navegador cargue siempre la versión más reciente.
+    """
+    try:
+        file_path = os.path.join(app.static_folder, filename)
+        if os.path.exists(file_path):
+            # Obtener timestamp de modificación del archivo
+            mtime = os.path.getmtime(file_path)
+            # Convertir a formato legible (YYYYMMDDHHMMSS)
+            return datetime.fromtimestamp(mtime).strftime('%Y%m%d%H%M%S')
+        else:
+            # Si el archivo no existe, usar timestamp actual
+            return datetime.now().strftime('%Y%m%d%H%M%S')
+    except Exception as e:
+        logger.error(f"Error generando versión para {filename}: {str(e)}")
+        # Fallback: usar timestamp actual
+        return datetime.now().strftime('%Y%m%d%H%M%S')
+
+# Hacer la función disponible en todos los templates
+@app.context_processor
+def utility_processor():
+    """Inyecta funciones útiles en todos los templates"""
+    return dict(get_file_version=get_file_version)
+
 @login_manager.unauthorized_handler
 def unauthorized():
     if request.path.startswith('/api/'):
@@ -198,6 +225,7 @@ class AssessmentResult(db.Model):
     participant_name = db.Column(db.String(200), nullable=True)
     participant_email = db.Column(db.String(120), nullable=True)
     dimensional_scores = db.Column(db.JSON, nullable=True)
+    score_history = db.Column(db.JSON, nullable=True, default=list)  # Historial de intentos
     
     coach = db.relationship('User', foreign_keys=[coach_id], backref='supervised_assessments')
     invitation = db.relationship('Invitation', backref='assessment_results')
@@ -1921,31 +1949,141 @@ def api_login():
 
 @app.route('/logout')
 def logout_page():
-    user_info = f"user {current_user.username} (ID: {current_user.id})" if current_user.is_authenticated else "anonymous user"
-    logger.info(f"Logout for {user_info}")
+    user_info = "unknown user"
+    user_type = None
     
-    logout_user()
-    # Limpiar sesiones específicas de dashboards
-    session.pop('_user_id', None)
-    session.pop('_fresh', None)
-    session.pop('temp_coachee_id', None)
-    session.pop('coach_user_id', None)
-    session.pop('coachee_user_id', None)
+    # Detectar qué tipo de usuario está haciendo logout
+    if 'coach_user_id' in session:
+        user_type = 'coach'
+        coach_id = session['coach_user_id']
+        user_info = f"coach (ID: {coach_id})"
+        logger.info(f"Logout for {user_info} - preserving coachee session")
+        
+        # Solo cerrar sesión de coach
+        session.pop('coach_user_id', None)
+        
+        # Solo usar logout_user() si no hay sesión de coachee
+        if 'coachee_user_id' not in session:
+            logout_user()
+            session.pop('_user_id', None)
+            session.pop('_fresh', None)
+            
+    elif 'coachee_user_id' in session:
+        user_type = 'coachee'
+        coachee_id = session['coachee_user_id']
+        user_info = f"coachee (ID: {coachee_id})"
+        logger.info(f"Logout for {user_info} - preserving coach session")
+        
+        # Solo cerrar sesión de coachee
+        session.pop('coachee_user_id', None)
+        session.pop('temp_coachee_id', None)
+        
+        # Solo usar logout_user() si no hay sesión de coach
+        if 'coach_user_id' not in session:
+            logout_user()
+            session.pop('_user_id', None)
+            session.pop('_fresh', None)
+    else:
+        # Si no hay sesiones específicas, hacer logout completo
+        if current_user.is_authenticated:
+            user_info = f"user {current_user.username} (ID: {current_user.id})"
+        logger.info(f"General logout for {user_info}")
+        logout_user()
+        session.clear()
+    
     return redirect('/')
 
 @app.route('/api/logout', methods=['POST'])
-@either_session_required
 def api_logout():
-    logger.info(f"API logout for user {current_user.username} (ID: {current_user.id})")
+    user_info = "unknown user"
+    user_type = None
     
-    logout_user()
-    # Limpiar sesiones específicas de dashboards
-    session.pop('_user_id', None)
-    session.pop('_fresh', None)
-    session.pop('temp_coachee_id', None)
-    session.pop('coach_user_id', None)
+    # Detectar qué tipo de usuario está haciendo logout
+    if 'coach_user_id' in session:
+        user_type = 'coach'
+        coach_id = session['coach_user_id']
+        user_info = f"coach (ID: {coach_id})"
+        logger.info(f"API logout for {user_info} - preserving coachee session")
+        
+        # Solo cerrar sesión de coach
+        session.pop('coach_user_id', None)
+        
+        # Solo usar logout_user() si no hay sesión de coachee
+        if 'coachee_user_id' not in session:
+            logout_user()
+            session.pop('_user_id', None)
+            session.pop('_fresh', None)
+            
+        return jsonify({'success': True, 'message': 'Sesión de coach cerrada exitosamente', 'type': 'coach'}), 200
+        
+    elif 'coachee_user_id' in session:
+        user_type = 'coachee'
+        coachee_id = session['coachee_user_id']
+        user_info = f"coachee (ID: {coachee_id})"
+        logger.info(f"API logout for {user_info} - preserving coach session")
+        
+        # Solo cerrar sesión de coachee
+        session.pop('coachee_user_id', None)
+        session.pop('temp_coachee_id', None)
+        
+        # Solo usar logout_user() si no hay sesión de coach
+        if 'coach_user_id' not in session:
+            logout_user()
+            session.pop('_user_id', None)
+            session.pop('_fresh', None)
+            
+        return jsonify({'success': True, 'message': 'Sesión de coachee cerrada exitosamente', 'type': 'coachee'}), 200
+    else:
+        # Si no hay sesiones específicas, hacer logout completo
+        logger.info(f"General API logout for {user_info}")
+        logout_user()
+        # Limpiar sesiones específicas de dashboards
+        session.pop('_user_id', None)
+        session.pop('_fresh', None)
+        session.pop('temp_coachee_id', None)
     session.pop('coachee_user_id', None)
     return jsonify({'success': True, 'message': 'Sesión cerrada exitosamente'}), 200
+
+@app.route('/api/coach/logout', methods=['POST'])
+def api_coach_logout():
+    """Logout específico para coaches - solo cierra sesión de coach"""
+    if 'coach_user_id' not in session:
+        return jsonify({'error': 'No hay sesión de coach activa'}), 400
+    
+    coach_id = session['coach_user_id']
+    logger.info(f"Coach logout (ID: {coach_id}) - preserving coachee session")
+    
+    # Solo cerrar sesión de coach, preservar coachee
+    session.pop('coach_user_id', None)
+    
+    # Solo usar logout_user() si no hay sesión de coachee activa
+    if 'coachee_user_id' not in session:
+        logout_user()
+        session.pop('_user_id', None)
+        session.pop('_fresh', None)
+    
+    return jsonify({'success': True, 'message': 'Sesión de coach cerrada exitosamente', 'type': 'coach'}), 200
+
+@app.route('/api/coachee/logout', methods=['POST'])
+def api_coachee_logout():
+    """Logout específico para coachees - solo cierra sesión de coachee"""
+    if 'coachee_user_id' not in session:
+        return jsonify({'error': 'No hay sesión de coachee activa'}), 400
+    
+    coachee_id = session['coachee_user_id']
+    logger.info(f"Coachee logout (ID: {coachee_id}) - preserving coach session")
+    
+    # Solo cerrar sesión de coachee, preservar coach
+    session.pop('coachee_user_id', None)
+    session.pop('temp_coachee_id', None)
+    
+    # Solo usar logout_user() si no hay sesión de coach activa
+    if 'coach_user_id' not in session:
+        logout_user()
+        session.pop('_user_id', None)
+        session.pop('_fresh', None)
+    
+    return jsonify({'success': True, 'message': 'Sesión de coachee cerrada exitosamente', 'type': 'coachee'}), 200
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
@@ -2389,17 +2527,17 @@ def api_coach_login():
 @coach_session_required
 def api_coach_get_profile():
     try:
-        coachees_count = User.query.filter_by(coach_id=current_user.id, role='coachee').count()
-        assessments_count = AssessmentResult.query.filter_by(coach_id=current_user.id).count()
+        coachees_count = User.query.filter_by(coach_id=g.current_user.id, role='coachee').count()
+        assessments_count = AssessmentResult.query.filter_by(coach_id=g.current_user.id).count()
         
         return jsonify({
             'success': True,
             'profile': {
-                **create_user_response(current_user),
+                **create_user_response(g.current_user),
                 'coachees_count': coachees_count,
                 'assessments_count': assessments_count,
-                'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
-                'last_login': current_user.last_login.isoformat() if current_user.last_login else None
+                'created_at': g.current_user.created_at.isoformat() if g.current_user.created_at else None,
+                'last_login': g.current_user.last_login.isoformat() if g.current_user.last_login else None
             }
         }), 200
         
@@ -2437,6 +2575,34 @@ def api_get_questions():
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo preguntas: {str(e)}'}), 500
+
+def update_score_history(assessment_result, new_score, max_history=10):
+    """
+    Actualiza el historial de puntajes manteniendo un límite máximo de intentos
+    """
+    # Inicializar score_history si no existe
+    if assessment_result.score_history is None:
+        assessment_result.score_history = []
+    
+    # Crear nuevo registro de intento
+    new_attempt = {
+        'score': new_score,
+        'completed_at': datetime.utcnow().isoformat(),
+        'attempt_number': len(assessment_result.score_history) + 1
+    }
+    
+    # Agregar nuevo intento
+    assessment_result.score_history.append(new_attempt)
+    
+    # Mantener solo los últimos max_history intentos
+    if len(assessment_result.score_history) > max_history:
+        assessment_result.score_history = assessment_result.score_history[-max_history:]
+        
+    # Actualizar números de intento después del recorte
+    for i, attempt in enumerate(assessment_result.score_history, 1):
+        attempt['attempt_number'] = i
+    
+    return len(assessment_result.score_history)
 
 @app.route('/api/save_assessment', methods=['POST'])
 def api_save_assessment():
@@ -2493,29 +2659,52 @@ def api_save_assessment():
         ).first()
         
         if existing_result:
-            logger.warning(f"SAVE_ASSESSMENT: Ya existe resultado para usuario {current_coachee.id} y evaluación {assessment_id_int}")
-            return jsonify({
-                'error': 'Ya has completado esta evaluación previamente',
-                'existing_result_id': existing_result.id,
-                'completed_at': existing_result.completed_at.isoformat() if existing_result.completed_at else None
-            }), 409  # Conflict status code
+            logger.info(f"SAVE_ASSESSMENT: Actualizando resultado existente para usuario {current_coachee.id} y evaluación {assessment_id_int}")
+            
+            # Actualizar historial de puntajes ANTES de actualizar el puntaje principal
+            total_attempts = update_score_history(existing_result, score)
+            logger.info(f"SAVE_ASSESSMENT: Intento #{total_attempts} registrado en historial")
+            
+            # Actualizar el resultado existente
+            existing_result.score = score
+            existing_result.total_questions = num_responses
+            existing_result.result_text = result_text
+            existing_result.dimensional_scores = dimensional_scores
+            existing_result.completed_at = datetime.utcnow()
+            
+            # Actualizar coach si es necesario
+            if current_coachee.coach_id:
+                existing_result.coach_id = current_coachee.coach_id
+                
+            assessment_result = existing_result  # Para usar en el resto del código
+        else:
+            # Crear resultado de evaluación nuevo
+            assessment_result = AssessmentResult(
+                user_id=current_coachee.id,
+                assessment_id=assessment_id_int,  # Usar el assessment_id_int correcto
+                score=score,
+                total_questions=num_responses,
+                result_text=result_text,
+                dimensional_scores=dimensional_scores,
+                score_history=[]  # Inicializar historial vacío
+            )
+            
+            # Agregar el primer intento al historial
+            update_score_history(assessment_result, score)
+            logger.info(f"SAVE_ASSESSMENT: Primer intento registrado en historial para nueva evaluación")
+            
+            # Si hay coach asignado
+            if current_coachee.coach_id:
+                assessment_result.coach_id = current_coachee.coach_id
+            
+            db.session.add(assessment_result)
+            db.session.flush()  # Para obtener el ID
         
-        # Crear resultado de evaluación
-        assessment_result = AssessmentResult(
-            user_id=current_coachee.id,
-            assessment_id=assessment_id_int,  # Usar el assessment_id_int correcto
-            score=score,
-            total_questions=num_responses,
-            result_text=result_text,
-            dimensional_scores=dimensional_scores
-        )
-        
-        # Si hay coach asignado
-        if current_coachee.coach_id:
-            assessment_result.coach_id = current_coachee.coach_id
-        
-        db.session.add(assessment_result)
-        db.session.flush()  # Para obtener el ID
+        # Si estamos actualizando un resultado existente, eliminar respuestas anteriores
+        if existing_result:
+            # Eliminar respuestas anteriores
+            Response.query.filter_by(assessment_result_id=assessment_result.id).delete()
+            logger.info(f"SAVE_ASSESSMENT: Eliminadas respuestas anteriores para resultado {assessment_result.id}")
         
         # Guardar respuestas individuales
         if isinstance(responses, list):
@@ -2853,10 +3042,10 @@ def api_coach_my_coachees():
 def api_coach_debug_users():
     """Endpoint de debug para verificar usuarios en Railway"""
     try:
-        if not current_user.is_authenticated or current_user.role != 'coach':
+        if not g.current_user or g.current_user.role != 'coach':
             return jsonify({'error': 'Access denied'}), 403
             
-        logger.info(f"🐛 DEBUG: Coach {current_user.username} (ID: {current_user.id}) requesting user debug info")
+        logger.info(f"🐛 DEBUG: Coach {g.current_user.username} (ID: {g.current_user.id}) requesting user debug info")
         
         # Obtener todos los usuarios
         all_users = User.query.all()
@@ -2868,14 +3057,14 @@ def api_coach_debug_users():
         coachees = User.query.filter_by(role='coachee').all()
         
         # Obtener coachees específicos del coach actual
-        my_coachees = User.query.filter_by(coach_id=current_user.id, role='coachee').all()
+        my_coachees = User.query.filter_by(coach_id=g.current_user.id, role='coachee').all()
         
         debug_info = {
             'current_coach': {
-                'id': current_user.id,
-                'username': current_user.username,
-                'email': current_user.email,
-                'role': current_user.role
+                'id': g.current_user.id,
+                'username': g.current_user.username,
+                'email': g.current_user.email,
+                'role': g.current_user.role
             },
             'database_stats': {
                 'total_users': len(all_users),
@@ -2901,7 +3090,7 @@ def api_coach_debug_users():
                     'username': c.username,
                     'email': c.email,
                     'coach_id': c.coach_id,
-                    'belongs_to_current_coach': c.coach_id == current_user.id
+                    'belongs_to_current_coach': c.coach_id == g.current_user.id
                 } for c in coachees
             ]
         }
@@ -2918,15 +3107,15 @@ def api_coach_debug_users():
 def api_coach_tasks_get():
     """Obtener tareas del coach"""
     try:
-        app.logger.info(f"=== OBTENER TAREAS - Usuario: {current_user.email} ===")
+        app.logger.info(f"=== OBTENER TAREAS - Usuario: {g.current_user.email} ===")
         
         # Verificar que es un coach
-        if not current_user.is_authenticated or current_user.role != 'coach':
-            app.logger.error(f"Acceso denegado - Usuario: {current_user.email}, Role: {current_user.role}")
+        if not g.current_user or g.current_user.role != 'coach':
+            app.logger.error(f"Acceso denegado - Usuario: {g.current_user.email}, Role: {g.current_user.role}")
             return jsonify({'error': 'Acceso denegado.'}), 403
         
         # Obtener todas las tareas asignadas por el coach
-        tasks = Task.query.filter_by(coach_id=current_user.id, is_active=True).all()
+        tasks = Task.query.filter_by(coach_id=g.current_user.id, is_active=True).all()
         app.logger.info(f"Tareas encontradas: {len(tasks)}")
         
         tasks_data = []
@@ -2975,7 +3164,7 @@ def api_coach_tasks_get():
 def api_coach_tasks_post():
     """Crear nueva tarea del coach"""
     try:
-        app.logger.info(f"=== INICIO CREACIÓN TAREA - Usuario: {current_user.email} ===")
+        app.logger.info(f"=== INICIO CREACIÓN TAREA - Usuario: {g.current_user.email} ===")
         
         data = request.get_json()
         app.logger.info(f"Datos recibidos: {data}")
@@ -2992,12 +3181,12 @@ def api_coach_tasks_post():
         # Verificar que el coachee pertenece al coach
         coachee = User.query.filter_by(
             id=data['coachee_id'],
-            coach_id=current_user.id,
+            coach_id=g.current_user.id,
             role='coachee'
         ).first()
         
         if not coachee:
-            app.logger.error(f"Coachee no encontrado - ID: {data['coachee_id']}, Coach ID: {current_user.id}")
+            app.logger.error(f"Coachee no encontrado - ID: {data['coachee_id']}, Coach ID: {g.current_user.id}")
             return jsonify({'error': 'Coachee no encontrado o no asignado a este coach'}), 404
         
         app.logger.info(f"Coachee encontrado: {coachee.email}")
@@ -3013,7 +3202,7 @@ def api_coach_tasks_post():
         
         app.logger.info(f"Creando nueva tarea...")
         new_task = Task(
-            coach_id=current_user.id,
+            coach_id=g.current_user.id,
             coachee_id=data['coachee_id'],
             title=data['title'],
             description=data['description'],
@@ -3035,7 +3224,7 @@ def api_coach_tasks_post():
             status='pending',
             progress_percentage=0,
             notes='Tarea creada',
-            updated_by=current_user.id
+            updated_by=g.current_user.id
         )
         
         db.session.add(initial_progress)
@@ -3067,10 +3256,10 @@ def api_coach_tasks_post():
 def api_coach_update_task(task_id):
     """Actualizar una tarea existente"""
     try:
-        app.logger.info(f"=== INICIO ACTUALIZACIÓN TAREA {task_id} - Usuario: {current_user.email} ===")
+        app.logger.info(f"=== INICIO ACTUALIZACIÓN TAREA {task_id} - Usuario: {g.current_user.email} ===")
         
         # Buscar la tarea
-        task = Task.query.filter_by(id=task_id, coach_id=current_user.id).first()
+        task = Task.query.filter_by(id=task_id, coach_id=g.current_user.id).first()
         if not task:
             return jsonify({'error': 'Tarea no encontrada.'}), 404
         
@@ -3830,20 +4019,23 @@ def api_coachee_evaluations():
 @app.route('/api/coachee/evaluation-history', methods=['GET'])
 @coachee_session_required
 def api_coachee_evaluation_history():
-    """Obtener historial detallado de evaluaciones del coachee"""
+    """Obtener historial detallado de evaluaciones del coachee incluyendo intentos múltiples"""
     try:
         logger.info(f"🔍 EVALUATION-HISTORY: User {g.current_user.username} (ID: {g.current_user.id}) requesting evaluation history")
-        # Obtener todas las evaluaciones completadas con más detalle, ordenadas cronológicamente
+        # Obtener todas las evaluaciones completadas
         results = AssessmentResult.query.filter_by(user_id=g.current_user.id).order_by(
             AssessmentResult.completed_at.asc()
         ).all()
         
         history = []
+        expanded_history = []  # Historial expandido con todos los intentos
+        
         for result in results:
             assessment = Assessment.query.get(result.assessment_id)
             invitation = result.invitation
             
-            history.append({
+            # Información básica del resultado actual
+            basic_info = {
                 'id': result.id,
                 'assessment': {
                     'id': result.assessment_id,
@@ -3851,11 +4043,11 @@ def api_coachee_evaluation_history():
                     'description': assessment.description if assessment else None
                 },
                 'score': result.score,
-                'total_score': result.score,  # Para compatibilidad con frontend
+                'total_score': result.score,
                 'total_questions': result.total_questions,
                 'completed_at': result.completed_at.isoformat() if result.completed_at else None,
                 'result_text': result.result_text,
-                'assertiveness_level': result.result_text,  # Para compatibilidad 
+                'assertiveness_level': result.result_text,
                 'result_description': result.result_text,
                 'dimensional_scores': result.dimensional_scores,
                 'coach': {
@@ -3867,17 +4059,40 @@ def api_coachee_evaluation_history():
                     'id': invitation.id if invitation else None,
                     'message': invitation.message if invitation else None,
                     'created_at': invitation.created_at.isoformat() if invitation and invitation.created_at else None
-                } if invitation else None
-            })
+                } if invitation else None,
+                'total_attempts': len(result.score_history) if result.score_history else 1
+            }
+            
+            history.append(basic_info)
+            
+            # Expandir historial con todos los intentos si existe score_history
+            if result.score_history:
+                for attempt in result.score_history:
+                    expanded_info = basic_info.copy()
+                    expanded_info.update({
+                        'score': attempt['score'],
+                        'total_score': attempt['score'],
+                        'completed_at': attempt['completed_at'],
+                        'attempt_number': attempt['attempt_number']
+                    })
+                    expanded_history.append(expanded_info)
+            else:
+                # Si no hay historial, agregar el resultado actual como primer intento
+                expanded_info = basic_info.copy()
+                expanded_info['attempt_number'] = 1
+                expanded_history.append(expanded_info)
         
-        # Calcular estadísticas y datos de progreso por tipo de evaluación
+        # Ordenar historial expandido por fecha
+        expanded_history.sort(key=lambda x: x['completed_at'])
+        
+        # Calcular estadísticas y datos de progreso basados en historial expandido
         statistics = {}
         progress_data = {}
         
-        if history:
+        if expanded_history:
             # Agrupar evaluaciones por tipo de assessment
             evaluations_by_type = {}
-            for h in history:
+            for h in expanded_history:
                 assessment_title = h['assessment']['title']
                 if assessment_title not in evaluations_by_type:
                     evaluations_by_type[assessment_title] = []
@@ -3885,17 +4100,17 @@ def api_coachee_evaluation_history():
             
             # Generar datos de progreso para el gráfico
             progress_data = {
-                'labels': [],  # Fechas/números de evaluación
-                'datasets': []  # Una línea por cada tipo de evaluación
+                'labels': [],
+                'datasets': []
             }
             
-            # Crear labels generales basadas en TODAS las evaluaciones cronológicamente
-            all_evaluations_chronological = sorted(history, key=lambda x: x['completed_at'])
-            progress_data['labels'] = []
-            for i, eval_data in enumerate(all_evaluations_chronological, 1):
+            # Crear labels basadas en cronología de intentos
+            for i, eval_data in enumerate(expanded_history, 1):
                 if eval_data['completed_at']:
                     date_obj = eval_data['completed_at'].split('T')[0]
-                    progress_data['labels'].append(f"#{i} ({date_obj})")
+                    attempt_num = eval_data.get('attempt_number', 1)
+                    assessment_short = eval_data['assessment']['title'][:15] + "..." if len(eval_data['assessment']['title']) > 15 else eval_data['assessment']['title']
+                    progress_data['labels'].append(f"{assessment_short} #{attempt_num}")
             
             # Crear dataset para cada tipo de evaluación
             type_colors = {
@@ -3911,40 +4126,36 @@ def api_coachee_evaluation_history():
                 sorted_evaluations = sorted(evaluations, key=lambda x: x['completed_at'])
                 
                 # Crear datos para este tipo de evaluación
-                # Para cada posición en el timeline general, verificar si hay una evaluación de este tipo
                 data_points = []
                 eval_type_index = 0
                 
-                for eval_general in all_evaluations_chronological:
+                for eval_general in expanded_history:
                     if eval_general['assessment']['title'] == assessment_type:
-                        # Hay una evaluación de este tipo en esta posición
-                        if eval_type_index < len(sorted_evaluations):
-                            data_points.append(sorted_evaluations[eval_type_index]['score'])
-                            eval_type_index += 1
-                        else:
-                            data_points.append(None)
+                        data_points.append(eval_general['score'])
                     else:
-                        # No hay evaluación de este tipo en esta posición
                         data_points.append(None)
                 
                 # Obtener color para este tipo de evaluación
-                color = type_colors.get(assessment_type, '#6B8DA6')  # Color por defecto
+                color = type_colors.get(assessment_type, '#6B8DA6')
                 
                 dataset = {
                     'label': assessment_type,
                     'data': data_points,
                     'borderColor': color,
-                    'backgroundColor': f"{color}20",  # Transparencia
+                    'backgroundColor': f"{color}20",
                     'fill': False,
                     'tension': 0.1,
-                    'spanGaps': False  # No conectar puntos cuando hay gaps (None)
+                    'spanGaps': False
                 }
                 progress_data['datasets'].append(dataset)
             
-            # Estadísticas generales
-            scores = [h['score'] for h in history]
+            # Estadísticas generales usando solo resultados únicos (no todos los intentos)
+            scores = [h['score'] for h in history]  # Usar history original, no expanded
+            total_attempts = sum([h['total_attempts'] for h in history])
+            
             statistics = {
                 'total_evaluations': len(history),
+                'total_attempts': total_attempts,
                 'average_score': round(sum(scores) / len(scores), 1),
                 'latest_score': scores[-1] if scores else None,
                 'improvement_trend': 'stable',
@@ -3956,19 +4167,23 @@ def api_coachee_evaluation_history():
                 type_scores = [e['score'] for e in evaluations]
                 latest_eval = max(evaluations, key=lambda x: x['completed_at']) if evaluations else None
                 
+                # Contar evaluaciones únicas de este tipo (no intentos)
+                unique_evaluations = [h for h in history if h['assessment']['title'] == assessment_type]
+                
                 type_stats = {
-                    'count': len(evaluations),
+                    'count': len(unique_evaluations),
+                    'total_attempts': len(evaluations),
                     'average_score': round(sum(type_scores) / len(type_scores), 1),
                     'latest_score': latest_eval['score'] if latest_eval else None,
                     'latest_date': latest_eval['completed_at'] if latest_eval else None,
                     'improvement_trend': 'stable'
                 }
                 
-                # Calcular tendencia para este tipo
+                # Calcular tendencia para este tipo basado en intentos cronológicos
                 if len(type_scores) >= 2:
-                    if type_scores[-1] > type_scores[-2]:
+                    if type_scores[-1] > type_scores[0]:
                         type_stats['improvement_trend'] = 'improving'
-                    elif type_scores[-1] < type_scores[-2]:
+                    elif type_scores[-1] < type_scores[0]:
                         type_stats['improvement_trend'] = 'declining'
                     else:
                         type_stats['improvement_trend'] = 'stable'
@@ -3976,23 +4191,13 @@ def api_coachee_evaluation_history():
                     type_stats['improvement_trend'] = 'insufficient_data'
                 
                 statistics['by_assessment_type'][assessment_type] = type_stats
-            
-            # Calcular tendencia general
-            if len(scores) >= 2:
-                if scores[-1] > scores[-2]:
-                    statistics['improvement_trend'] = 'improving'
-                elif scores[-1] < scores[-2]:
-                    statistics['improvement_trend'] = 'declining'
-                else:
-                    statistics['improvement_trend'] = 'stable'
-            else:
-                statistics['improvement_trend'] = 'insufficient_data'
         
-        logger.debug(f"EVALUATION-HISTORY: Returning {len(history)} evaluations")
+        logger.debug(f"EVALUATION-HISTORY: Returning {len(history)} evaluations with {len(expanded_history)} total attempts")
         
         return jsonify({
             'success': True,
             'history': history,
+            'expanded_history': expanded_history,  # Historial completo con todos los intentos
             'statistics': statistics,
             'progress_data': progress_data,
             'total': len(history)
@@ -4438,6 +4643,7 @@ def api_coachee_tasks():
 def api_coachee_update_task_progress(task_id):
     """Actualizar progreso de tarea desde el lado del coachee"""
     try:
+        current_user = g.current_user
         
         # Verificar que la tarea pertenece al coachee
         task = Task.query.filter_by(
