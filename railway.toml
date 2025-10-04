@@ -1,13 +1,16 @@
 [build]
 builder = "nixpacks"
+nixpacksConfigPath = "nixpacks.toml"
 
 [deploy]
 healthcheckPath = "/api/status"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+startCommand = "python wsgi_production.py"
 
 [env]
 PYTHONUNBUFFERED = "1"
 FLASK_ENV = "production"
 FLASK_DEBUG = "False"
+NIXPACKS_PYTHON_VERSION = "3.11"
