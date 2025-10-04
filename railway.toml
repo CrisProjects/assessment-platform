@@ -1,14 +1,9 @@
-[build]
-builder = "nixpacks"
-
 [deploy]
+startCommand = "python wsgi_production.py"
 healthcheckPath = "/api/status"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
-startCommand = "python wsgi_production.py"
 
 [env]
 PYTHONUNBUFFERED = "1"
 FLASK_ENV = "production"
-FLASK_DEBUG = "False"
