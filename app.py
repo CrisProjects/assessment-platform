@@ -1986,6 +1986,99 @@ def api_railway_debug():
             'timestamp': datetime.utcnow().isoformat()
         }), 500
 
+@app.route('/api/debug/evaluation-results')
+def debug_evaluation_results():
+    """Debug específico para el problema de visualización de resultados"""
+    try:
+        # Información básica
+        results_total = AssessmentResult.query.count()
+        users_total = User.query.count()
+        coachees_total = User.query.filter_by(role='coachee').count()
+        
+        # Obtener resultados con detalles
+        results_data = []
+        for result in AssessmentResult.query.all():
+            assessment = Assessment.query.get(result.assessment_id)
+            user = User.query.get(result.user_id)
+            responses = Response.query.filter_by(assessment_result_id=result.id).count()
+            
+            results_data.append({
+                'result_id': result.id,
+                'user_id': result.user_id,
+                'username': user.username if user else 'Usuario eliminado',
+                'user_role': user.role if user else 'N/A',
+                'assessment_id': result.assessment_id,
+                'assessment_title': assessment.title if assessment else 'Evaluación eliminada',
+                'score': result.score,
+                'total_questions': result.total_questions,
+                'completed_at': result.completed_at.isoformat() if result.completed_at else None,
+                'has_result_text': bool(result.result_text),
+                'result_text_length': len(result.result_text) if result.result_text else 0,
+                'has_dimensional_scores': bool(result.dimensional_scores),
+                'responses_count': responses,
+                'coach_id': result.coach_id,
+                'invitation_id': result.invitation_id
+            })
+        
+        # Verificar problemas específicos de visualización
+        visualization_issues = []
+        
+        # Problema 1: Resultados sin respuestas
+        results_no_responses = [r for r in results_data if r['responses_count'] == 0]
+        if results_no_responses:
+            visualization_issues.append(f"Hay {len(results_no_responses)} resultados sin respuestas asociadas")
+        
+        # Problema 2: Resultados sin texto de resultado
+        results_no_text = [r for r in results_data if not r['has_result_text']]
+        if results_no_text:
+            visualization_issues.append(f"Hay {len(results_no_text)} resultados sin texto de resultado")
+        
+        # Problema 3: Resultados sin scores dimensionales
+        results_no_dimensional = [r for r in results_data if not r['has_dimensional_scores']]
+        if results_no_dimensional:
+            visualization_issues.append(f"Hay {len(results_no_dimensional)} resultados sin scores dimensionales")
+        
+        # Verificar configuración del frontend
+        frontend_config = {
+            'coachee_dashboard_exists': os.path.exists('templates/coachee_dashboard.html'),
+            'coach_dashboard_exists': os.path.exists('templates/coach_dashboard.html'),
+            'static_files_exist': os.path.exists('static'),
+            'api_endpoints_available': [
+                '/api/coachee/evaluations',
+                '/api/coachee/evaluation-details/<id>',
+                '/api/coach/coachee-evaluations/<id>',
+                '/api/coach/evaluation-details/<id>'
+            ]
+        }
+        
+        return jsonify({
+            'success': True,
+            'timestamp': datetime.utcnow().isoformat(),
+            'summary': {
+                'total_results': results_total,
+                'total_users': users_total,
+                'total_coachees': coachees_total,
+                'visualization_issues_count': len(visualization_issues)
+            },
+            'results_details': results_data,
+            'visualization_issues': visualization_issues,
+            'frontend_config': frontend_config,
+            'database_type': 'PostgreSQL' if 'postgresql' in app.config['SQLALCHEMY_DATABASE_URI'] else 'SQLite',
+            'environment': {
+                'is_railway': bool(os.environ.get('RAILWAY_ENVIRONMENT')),
+                'flask_env': os.environ.get('FLASK_ENV'),
+                'debug_mode': app.debug
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en debug evaluation results: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
 @app.route('/favicon.ico')
 def favicon():
     return '', 204
