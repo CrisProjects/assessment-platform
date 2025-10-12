@@ -6618,8 +6618,6 @@
                 } else if (response.status === 409) {
                     // Evaluación ya completada previamente
                     showToast(data.error || 'Ya has completado esta evaluación previamente', 'warning');
-                    // Recargar evaluaciones para mostrar el estado actual
-                    loadEvaluations();
                 } else {
                     throw new Error(data.error || 'Error guardando evaluación');
                 }
@@ -6700,22 +6698,6 @@
             } else {
                 console.error('No evaluation ID available');
                 showToast('Error: No se encontró el ID de la evaluación. Intenta refrescar la página.', 'error');
-                
-                // Try to find the most recent evaluation as fallback
-                try {
-                    await loadEvaluations();
-                    const completedEvals = evaluationsData?.completed || [];
-                    if (completedEvals.length > 0) {
-                        const latestEval = completedEvals[0];
-                        console.log('Using latest evaluation as fallback:', latestEval.id);
-                        await viewEvaluationDetails(latestEval.id);
-                    } else {
-                        showToast('No se encontraron evaluaciones completadas', 'warning');
-                    }
-                } catch (fallbackError) {
-                    console.error('Fallback failed:', fallbackError);
-                    showToast('No se pudieron cargar las evaluaciones', 'error');
-                }
             }
         }
 
@@ -7508,9 +7490,7 @@
                     const target = event.target.getAttribute('data-bs-target');
                     
                     // Load data when tabs are activated
-                    if (target === '#evaluations' && !evaluationsData) {
-                        loadEvaluations();
-                    } else if (target === '#tasks') {
+                    if (target === '#tasks') {
                         loadTasks(); // Siempre cargar tareas para mantener datos actualizados
                     } else if (target === '#progress') {
                         loadEvaluationHistory();
