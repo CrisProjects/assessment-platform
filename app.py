@@ -1478,52 +1478,61 @@ def generate_disc_recommendations(disc_scores, overall_score):
     recommendations = []
     
     # Identificar estilo dominante
-    dominant_style = max(disc_scores, key=disc_scores.get) if disc_scores else 'balanced'
+    if disc_scores:
+        # Verificar si hay empate en el estilo dominante
+        max_score = max(disc_scores.values())
+        dominant_styles = [style for style, score in disc_scores.items() if score == max_score]
+        
+        if len(dominant_styles) == 1:
+            dominant_style = dominant_styles[0]
+        else:
+            # En caso de empate, usar el orden de preferencia: D, I, S, C
+            style_priority = ['D', 'I', 'S', 'C']
+            for style in style_priority:
+                if style in dominant_styles:
+                    dominant_style = style
+                    break
+            else:
+                dominant_style = 'D'  # Fallback por defecto
+    else:
+        dominant_style = 'D'  # Fallback si no hay scores
     
-    # Recomendaciones por estilo DISC
+    # Recomendaciones simplificadas por estilo DISC
     style_recommendations = {
         'D': {
-            'title': 'Desarrollo para Estilo Dominante',
-            'strengths': ['Liderazgo natural', 'Toma de decisiones rápida', 'Orientación a resultados', 'Confianza en situaciones desafiantes'],
-            'development': [
-                'Practica la paciencia y escucha activa con tu equipo',
-                'Desarrolla habilidades de colaboración y trabajo en equipo',
-                'Aprende a delegar efectivamente sin microgestionar',
-                'Mejora tu capacidad para dar feedback constructivo',
-                'Practica la empatía en situaciones interpersonales'
+            'title': '🎯 Plan de Desarrollo - Estilo Dominante',
+            'focus': 'Fortalece tu liderazgo desarrollando paciencia y colaboración',
+            'actions': [
+                'Practica escucha activa en reuniones (15 min diarios)',
+                'Delega una tarea importante cada semana',
+                'Da feedback constructivo sin ser autoritario'
             ]
         },
         'I': {
-            'title': 'Desarrollo para Estilo Influyente',
-            'strengths': ['Comunicación persuasiva', 'Optimismo contagioso', 'Habilidades sociales', 'Creatividad e innovación'],
-            'development': [
-                'Desarrolla mayor atención al detalle en tus proyectos',
-                'Practica el seguimiento sistemático de tareas y compromisos',
-                'Aprende técnicas de organización y gestión del tiempo',
-                'Mejora tu capacidad de análisis antes de tomar decisiones',
-                'Fortalece habilidades de escucha profunda'
+            'title': '🎯 Plan de Desarrollo - Estilo Influyente',
+            'focus': 'Canaliza tu energía social hacia resultados concretos',
+            'actions': [
+                'Usa un planificador digital para seguir tareas',
+                'Dedica 30 min diarios a trabajo detallado',
+                'Confirma compromisos por escrito'
             ]
         },
         'S': {
-            'title': 'Desarrollo para Estilo Estable',
-            'strengths': ['Confiabilidad y consistencia', 'Trabajo en equipo', 'Paciencia y perseverancia', 'Lealtad organizacional'],
-            'development': [
-                'Desarrolla mayor confianza para expresar tus ideas',
-                'Practica la adaptabilidad ante cambios organizacionales',
-                'Fortalece habilidades de liderazgo y toma de iniciativa',
-                'Aprende a manejar múltiples prioridades simultáneamente',
-                'Mejora tu capacidad de influencia y persuasión'
+            'title': '🎯 Plan de Desarrollo - Estilo Estable',
+            'focus': 'Aumenta tu confianza para liderar el cambio',
+            'actions': [
+                'Comparte una idea nueva cada semana',
+                'Lidera un proyecto pequeño este mes',
+                'Practica hablar primero en reuniones'
             ]
         },
         'C': {
-            'title': 'Desarrollo para Estilo Concienzudo',
-            'strengths': ['Análisis meticuloso', 'Alta calidad de trabajo', 'Pensamiento sistemático', 'Precisión y exactitud'],
-            'development': [
-                'Desarrolla mayor flexibilidad en procesos y procedimientos',
-                'Practica la comunicación clara y directa con otros',
-                'Aprende a tomar decisiones con información limitada',
-                'Mejora habilidades de networking y relaciones interpersonales',
-                'Fortalece tu capacidad de adaptación al cambio'
+            'title': '🎯 Plan de Desarrollo - Estilo Concienzudo',
+            'focus': 'Equilibra tu precisión con flexibilidad y velocidad',
+            'actions': [
+                'Toma decisiones rápidas en asuntos menores',
+                'Limita el tiempo de análisis a 80% de lo usual',
+                'Inicia conversaciones informales con colegas'
             ]
         }
     }
@@ -1534,44 +1543,36 @@ def generate_disc_recommendations(disc_scores, overall_score):
         recommendations.extend([
             f"**{style_data['title']}**",
             "",
-            "**Tus Fortalezas Naturales:**"
-        ])
-        for strength in style_data['strengths']:
-            recommendations.append(f"• {strength}")
-        
-        recommendations.extend([
+            f"🎯 **Enfoque Principal:** {style_data['focus']}",
             "",
-            "**Áreas de Desarrollo Recomendadas:**"
+            "**Acciones Específicas (próximos 30 días):**"
         ])
-        for dev in style_data['development']:
-            recommendations.append(f"• {dev}")
+        for action in style_data['actions']:
+            recommendations.append(f"✓ {action}")
     
-    # Recomendaciones generales por nivel
+    # Plan de acción simplificado por nivel
     recommendations.extend([
         "",
-        "**Plan de Acción de 90 Días:**"
+        "**🚀 Próximos Pasos:**"
     ])
     
     if overall_score >= 80:
         recommendations.extend([
-            "• Semana 1-30: Identifica un área de desarrollo y crea un plan específico",
-            "• Semana 31-60: Practica nuevas habilidades en situaciones de bajo riesgo",
-            "• Semana 61-90: Aplica aprendizajes en desafíos más complejos",
-            "• Busca oportunidades de mentoría para otros"
+            "• **Semana 1-2:** Elige 1 acción específica y practícala diariamente",
+            "• **Semana 3-4:** Solicita feedback de un colega de confianza",
+            "• **Meta:** Mentorear a alguien con estilo diferente al tuyo"
         ])
     elif overall_score >= 60:
         recommendations.extend([
-            "• Semana 1-30: Autoevaluación profunda de fortalezas y oportunidades",
-            "• Semana 31-60: Implementa 2-3 nuevas estrategias de comunicación",
-            "• Semana 61-90: Solicita feedback regular de colegas y supervisor",
-            "• Considera tomar un curso de desarrollo de habilidades interpersonales"
+            "• **Semana 1-2:** Identifica tu mayor debilidad del estilo",
+            "• **Semana 3-4:** Practica 2 acciones específicas",
+            "• **Meta:** Mejora una interacción difícil que tengas"
         ])
     else:
         recommendations.extend([
-            "• Semana 1-30: Observa y aprende de personas con estilos complementarios",
-            "• Semana 31-60: Practica una nueva habilidad cada semana",
-            "• Semana 61-90: Busca un mentor o coach para guía personalizada",
-            "• Enfócate en desarrollar autoconciencia de tu estilo natural"
+            "• **Semana 1-2:** Observa cómo otros manejan situaciones similares",
+            "• **Semana 3-4:** Practica 1 nueva habilidad de comunicación",
+            "• **Meta:** Busca un mentor o coach para desarrollo personalizado"
         ])
     
     return recommendations
@@ -1580,90 +1581,92 @@ def generate_emotional_intelligence_recommendations(ei_scores, overall_score):
     """Genera recomendaciones específicas para Inteligencia Emocional"""
     recommendations = []
     
-    # Mapeo de dimensiones IE
+    # Mapeo de dimensiones IE simplificado
     dimension_names = {
-        'autoconciencia': 'Autoconciencia Emocional',
-        'autorregulacion': 'Autorregulación',
-        'automotivacion': 'Automotivación',
-        'empatia': 'Empatía',
-        'habilidades_sociales': 'Habilidades Sociales'
+        'autoconciencia': '🧠 Autoconciencia',
+        'autorregulacion': '⚖️ Autorregulación',
+        'automotivacion': '🎯 Automotivación',
+        'empatia': '❤️ Empatía',
+        'habilidades_sociales': '🤝 Habilidades Sociales'
     }
     
-    # Identificar áreas de oportunidad (< 65%)
-    development_areas = {dim: score for dim, score in ei_scores.items() if score < 65}
+    # Identificar las 2 áreas más débiles (< 65%)
+    development_areas = sorted(
+        [(dim, score) for dim, score in ei_scores.items() if score < 65],
+        key=lambda x: x[1]
+    )[:2]
     
-    # Recomendaciones específicas por dimensión
-    dimension_recommendations = {
+    # Recomendaciones específicas y concisas por dimensión
+    dimension_actions = {
         'autoconciencia': [
-            'Practica la meditación mindfulness 10 minutos diarios',
-            'Lleva un diario emocional para identificar patrones',
-            'Solicita feedback regular sobre tu estado emocional',
-            'Realiza autoevaluaciones semanales de tus reacciones emocionales'
+            'Mindfulness 5 min al día',
+            'Diario emocional semanal',
+            'Pausa antes de reaccionar'
         ],
         'autorregulacion': [
-            'Aprende técnicas de respiración profunda para momentos de estrés',
-            'Practica la pausa de 6 segundos antes de reaccionar',
-            'Desarrolla estrategias de manejo del estrés personalizadas',
-            'Identifica y evita disparadores emocionales negativos'
+            'Respiración profunda (técnica 4-7-8)',
+            'Identifica tus disparadores',
+            'Pausa de 6 segundos antes de responder'
         ],
         'automotivacion': [
-            'Establece metas SMART claras y revisables',
-            'Crea un sistema de recompensas por logros pequeños',
-            'Desarrolla una mentalidad de crecimiento ante los desafíos',
-            'Practica la visualización positiva de tus objetivos'
+            'Metas SMART semanales',
+            'Celebra pequeños logros',
+            'Visualización positiva diaria'
         ],
         'empatia': [
-            'Practica la escucha activa sin juzgar ni aconsejar',
-            'Observa y aprende lenguaje corporal y señales no verbales',
-            'Pregunta más sobre los sentimientos de otros',
-            'Participa en actividades de voluntariado o servicio comunitario'
+            'Escucha sin juzgar ni aconsejar',
+            'Observa lenguaje corporal',
+            'Pregunta "¿cómo te sientes?"'
         ],
         'habilidades_sociales': [
-            'Practica iniciar conversaciones en diferentes contextos',
-            'Desarrolla habilidades de resolución de conflictos',
-            'Aprende técnicas de comunicación asertiva',
-            'Participa en actividades grupales y de networking'
+            'Inicia 1 conversación nueva al día',
+            'Practica comunicación asertiva',
+            'Resuelve conflictos con calma'
         ]
     }
     
-    # Agregar recomendaciones por área de desarrollo
-    for dimension, score in development_areas.items():
+    # Plan de desarrollo enfocado
+    recommendations.extend([
+        "**🎯 Plan de Desarrollo en Inteligencia Emocional**",
+        "",
+        "**Áreas Prioritarias de Desarrollo:**"
+    ])
+    
+    # Agregar las 2 áreas más débiles
+    for dimension, score in development_areas:
         dimension_name = dimension_names.get(dimension, dimension)
-        recs = dimension_recommendations.get(dimension, [])
+        actions = dimension_actions.get(dimension, [])
         
         recommendations.extend([
             f"**{dimension_name}** (Puntuación: {score}%)",
-            "Objetivos de desarrollo:"
+            "Acciones inmediatas:"
         ])
-        for rec in recs[:3]:  # Top 3 recomendaciones
-            recommendations.append(f"• {rec}")
+        for action in actions:
+            recommendations.append(f"✓ {action}")
         recommendations.append("")
     
-    # Plan estructurado por nivel
+    # Plan estructurado simplificado por nivel
     recommendations.extend([
-        "**Plan de Desarrollo Estructurado:**"
+        "**🚀 Plan de Acción (próximas 4 semanas):**"
     ])
     
     if overall_score >= 80:
         recommendations.extend([
-            "• **Nivel Avanzado:** Enfócate en el mentoring y desarrollo de otros",
-            "• Lidera iniciativas de bienestar emocional en tu organización",
-            "• Desarrolla programas de inteligencia emocional para equipos",
-            "• Busca certificaciones en coaching emocional"
+            "• **Semana 1-2:** Enfócate en mentorear a otros",
+            "• **Semana 3-4:** Lidera una iniciativa de bienestar emocional",
+            "• **Meta:** Certificación en coaching emocional"
         ])
     elif overall_score >= 65:
         recommendations.extend([
-            "• **Nivel Intermedio:** Profundiza en áreas específicas de oportunidad",
-            "• Práctica diaria de técnicas de inteligencia emocional",
-            "• Busca feedback 360° sobre tus habilidades emocionales",
-            "• Considera un coach especializado en inteligencia emocional"
+            "• **Semana 1-2:** Practica diariamente 1 habilidad específica",
+            "• **Semana 3-4:** Solicita feedback 360° sobre tu IE",
+            "• **Meta:** Considera un coach especializado"
         ])
     else:
         recommendations.extend([
-            "• **Nivel Básico:** Construye fundamentos sólidos",
-            "• Dedica 15 minutos diarios a desarrollo de autoconciencia",
-            "• Lee libros especializados en inteligencia emocional",
-            "• Practica una habilidad emocional específica cada semana"
+            "• **Semana 1-2:** 15 min diarios de autoconciencia",
+            "• **Semana 3-4:** Lee 1 libro de inteligencia emocional",
+            "• **Meta:** Practica 1 habilidad nueva cada semana"
         ])
     
     return recommendations
@@ -1672,90 +1675,92 @@ def generate_assertiveness_recommendations(assertiveness_scores, overall_score):
     """Genera recomendaciones específicas para Asertividad"""
     recommendations = []
     
-    # Mapeo de dimensiones de asertividad
+    # Mapeo de dimensiones de asertividad simplificado
     dimension_names = {
-        'comunicacion': 'Habilidades de Comunicación',
-        'derechos': 'Defensa de Derechos Personales',
-        'opiniones': 'Expresión de Opiniones',
-        'conflictos': 'Manejo de Conflictos',
-        'autoconfianza': 'Autoconfianza y Autoestima'
+        'comunicacion': '💬 Comunicación',
+        'derechos': '🛡️ Defensa de Derechos',
+        'opiniones': '💭 Expresión de Opiniones',
+        'conflictos': '⚡ Manejo de Conflictos',
+        'autoconfianza': '💪 Autoconfianza'
     }
     
-    # Identificar dimensiones débiles
-    weak_dimensions = {dim: score for dim, score in assertiveness_scores.items() if score < 60}
+    # Identificar las 2 dimensiones más débiles
+    weak_dimensions = sorted(
+        [(dim, score) for dim, score in assertiveness_scores.items() if score < 60],
+        key=lambda x: x[1]
+    )[:2]
     
-    # Recomendaciones específicas
-    dimension_recommendations = {
+    # Recomendaciones específicas y concisas
+    dimension_actions = {
         'comunicacion': [
-            'Practica el contacto visual durante conversaciones importantes',
-            'Usa un tono de voz firme pero respetuoso',
-            'Aprende técnicas de comunicación no violenta',
-            'Desarrolla habilidades de escucha empática'
+            'Mantén contacto visual al hablar',
+            'Usa tono firme pero respetuoso',
+            'Practica comunicación no violenta'
         ],
         'derechos': [
-            'Identifica y enumera tus derechos personales y profesionales',
-            'Practica decir "no" sin justificaciones excesivas',
-            'Establece límites claros en relaciones personales y laborales',
-            'Desarrolla confianza en tu valor y contribuciones'
+            'Practica decir "no" sin excusas',
+            'Establece límites claros',
+            'Reconoce tu valor personal'
         ],
         'opiniones': [
-            'Participa activamente en reuniones y discusiones grupales',
-            'Practica expresar desacuerdo de manera constructiva',
-            'Desarrolla argumentos sólidos antes de compartir ideas',
-            'Aprende a recibir y dar feedback de manera efectiva'
+            'Participa activamente en reuniones',
+            'Expresa desacuerdo constructivamente',
+            'Prepara argumentos antes de hablar'
         ],
         'conflictos': [
-            'Aprende técnicas de negociación colaborativa',
-            'Practica mantener la calma bajo presión',
-            'Enfócate en problemas específicos, no en personalidades',
-            'Desarrolla habilidades de mediación y resolución de problemas'
+            'Mantén la calma bajo presión',
+            'Enfócate en problemas, no personas',
+            'Usa técnicas de negociación ganar-ganar'
         ],
         'autoconfianza': [
-            'Reconoce y celebra tus logros diarios',
-            'Practica autoafirmaciones positivas',
-            'Desafía pensamientos autolimitantes',
-            'Establece metas alcanzables para construir confianza gradualmente'
+            'Celebra logros diarios',
+            'Usa autoafirmaciones positivas',
+            'Desafía pensamientos negativos'
         ]
     }
     
-    # Agregar recomendaciones por dimensión débil
-    for dimension, score in weak_dimensions.items():
+    # Plan de desarrollo enfocado
+    recommendations.extend([
+        "**🎯 Plan de Desarrollo en Asertividad**",
+        "",
+        "**Áreas Prioritarias:**"
+    ])
+    
+    # Agregar las 2 dimensiones más débiles
+    for dimension, score in weak_dimensions:
         dimension_name = dimension_names.get(dimension, dimension)
-        recs = dimension_recommendations.get(dimension, [])
+        actions = dimension_actions.get(dimension, [])
         
         recommendations.extend([
             f"**{dimension_name}** (Puntuación: {score}%)",
-            "Estrategias de mejora:"
+            "Acciones específicas:"
         ])
-        for rec in recs:
-            recommendations.append(f"• {rec}")
+        for action in actions:
+            recommendations.append(f"✓ {action}")
         recommendations.append("")
     
-    # Plan de desarrollo por nivel
+    # Plan de desarrollo simplificado por nivel
     recommendations.extend([
-        "**Programa de Desarrollo Asertivo:**"
+        "**🚀 Plan de Acción (próximas 4 semanas):**"
     ])
     
     if overall_score >= 80:
         recommendations.extend([
-            "• **Nivel Experto:** Mantén y refina tus habilidades asertivas",
-            "• Mentoriza a otros en comunicación asertiva",
-            "• Lidera por ejemplo en situaciones complejas",
-            "• Busca roles que requieran alta asertividad"
+            "• **Semana 1-2:** Mentoriza a otros en comunicación asertiva",
+            "• **Semana 3-4:** Lidera situaciones complejas como ejemplo",
+            "• **Meta:** Busca roles que requieran alta asertividad"
         ])
     elif overall_score >= 60:
         recommendations.extend([
-            "• **Nivel Competente:** Fortalece áreas específicas",
-            "• Practica situaciones desafiantes en entorno seguro",
-            "• Solicita feedback regular sobre tu comunicación",
-            "• Toma cursos avanzados de comunicación asertiva"
+            "• **Semana 1-2:** Practica en situaciones desafiantes",
+            "• **Semana 3-4:** Solicita feedback sobre tu comunicación",
+            "• **Meta:** Toma un curso avanzado de asertividad"
         ])
     else:
         recommendations.extend([
-            "• **Nivel Desarrollo:** Construye bases sólidas",
-            "• Comienza con situaciones de baja complejidad",
-            "• Practica técnicas básicas diariamente",
-            "• Considera trabajar con un coach o terapeuta"
+            "• **Semana 1-2:** Comienza con situaciones simples",
+            "• **Semana 3-4:** Practica técnicas básicas diariamente",
+            "• **Meta:** Considera trabajar con un coach"
         ])
     
     return recommendations
@@ -1764,38 +1769,35 @@ def generate_leadership_recommendations(leadership_scores, overall_score):
     """Genera recomendaciones específicas para Liderazgo"""
     recommendations = []
     
+    # Plan de desarrollo simplificado para liderazgo
     recommendations.extend([
-        "**Plan de Desarrollo de Liderazgo**",
+        "**🎯 Plan de Desarrollo de Liderazgo**",
         "",
-        "**Competencias Clave a Desarrollar:**",
-        "• Visión estratégica y comunicación inspiradora",
-        "• Desarrollo y empoderamiento de equipos",
-        "• Toma de decisiones bajo incertidumbre",
-        "• Gestión del cambio y adaptabilidad",
+        "**Competencias Prioritarias:**",
+        "✓ Comunicación inspiradora y visión clara",
+        "✓ Desarrollo y empoderamiento de equipos",
+        "✓ Toma de decisiones efectiva",
         "",
-        "**Acciones Específicas:**"
+        "**🚀 Plan de Acción (próximas 4 semanas):**"
     ])
     
     if overall_score >= 80:
         recommendations.extend([
-            "• Lidera iniciativas de transformación organizacional",
-            "• Desarrolla a futuros líderes dentro de tu organización",
-            "• Busca oportunidades de liderazgo en proyectos complejos",
-            "• Comparte tu experiencia a través de mentoring"
+            "• **Semana 1-2:** Lidera una iniciativa de transformación",
+            "• **Semana 3-4:** Mentoriza a un futuro líder",
+            "• **Meta:** Busca proyectos complejos para liderar"
         ])
     elif overall_score >= 60:
         recommendations.extend([
-            "• Lidera proyectos multifuncionales",
-            "• Desarrolla habilidades de comunicación ejecutiva",
-            "• Practica la delegación efectiva",
-            "• Busca feedback 360° sobre tu estilo de liderazgo"
+            "• **Semana 1-2:** Lidera un proyecto multifuncional",
+            "• **Semana 3-4:** Practica delegación efectiva",
+            "• **Meta:** Solicita feedback 360° sobre tu liderazgo"
         ])
     else:
         recommendations.extend([
-            "• Comienza liderando pequeños equipos o proyectos",
-            "• Desarrolla habilidades fundamentales de gestión",
-            "• Observa y aprende de líderes exitosos",
-            "• Toma cursos de desarrollo de liderazgo"
+            "• **Semana 1-2:** Lidera un equipo pequeño",
+            "• **Semana 3-4:** Observa y aprende de líderes exitosos",
+            "• **Meta:** Toma un curso de desarrollo de liderazgo"
         ])
     
     return recommendations
@@ -1804,38 +1806,35 @@ def generate_teamwork_recommendations(teamwork_scores, overall_score):
     """Genera recomendaciones específicas para Trabajo en Equipo"""
     recommendations = []
     
+    # Plan de desarrollo simplificado para trabajo en equipo
     recommendations.extend([
-        "**Plan de Desarrollo de Trabajo en Equipo**",
+        "**🎯 Plan de Desarrollo de Trabajo en Equipo**",
         "",
-        "**Habilidades Colaborativas a Fortalecer:**",
-        "• Comunicación efectiva en grupos",
-        "• Resolución colaborativa de problemas",
-        "• Apoyo y desarrollo de compañeros",
-        "• Gestión constructiva de diferencias",
+        "**Habilidades Colaborativas Clave:**",
+        "✓ Comunicación efectiva en grupos",
+        "✓ Resolución colaborativa de problemas",
+        "✓ Apoyo y desarrollo de compañeros",
         "",
-        "**Estrategias de Mejora:**"
+        "**🚀 Plan de Acción (próximas 4 semanas):**"
     ])
     
     if overall_score >= 80:
         recommendations.extend([
-            "• Facilita dinámicas de equipo y workshops colaborativos",
-            "• Mentoriza a nuevos miembros del equipo",
-            "• Lidera iniciativas de mejora de cultura colaborativa",
-            "• Comparte mejores prácticas de trabajo en equipo"
+            "• **Semana 1-2:** Facilita un workshop colaborativo",
+            "• **Semana 3-4:** Mentoriza a nuevos miembros del equipo",
+            "• **Meta:** Lidera iniciativas de cultura colaborativa"
         ])
     elif overall_score >= 60:
         recommendations.extend([
-            "• Participa activamente en proyectos colaborativos",
-            "• Desarrolla habilidades de facilitación grupal",
-            "• Practica la escucha activa en reuniones de equipo",
-            "• Aprende técnicas de construcción de consenso"
+            "• **Semana 1-2:** Participa activamente en proyectos grupales",
+            "• **Semana 3-4:** Practica facilitación en reuniones",
+            "• **Meta:** Aprende técnicas de construcción de consenso"
         ])
     else:
         recommendations.extend([
-            "• Participa más activamente en actividades grupales",
-            "• Practica habilidades básicas de comunicación en grupo",
-            "• Observa dinámicas de equipos exitosos",
-            "• Busca oportunidades de colaboración en proyectos pequeños"
+            "• **Semana 1-2:** Participa más en actividades grupales",
+            "• **Semana 3-4:** Observa dinámicas de equipos exitosos",
+            "• **Meta:** Busca oportunidades de colaboración en proyectos pequeños"
         ])
     
     return recommendations
@@ -3318,8 +3317,12 @@ def api_coach_tasks_get():
             app.logger.error(f"Acceso denegado - Usuario: {g.current_user.email}, Role: {g.current_user.role}")
             return jsonify({'error': 'Acceso denegado.'}), 403
         
-        # Obtener todas las tareas asignadas por el coach
-        tasks = Task.query.filter_by(coach_id=g.current_user.id, is_active=True).all()
+        # Obtener todas las tareas asignadas por el coach, excluyendo evaluaciones
+        tasks = Task.query.filter(
+            Task.coach_id == g.current_user.id,
+            Task.is_active == True,
+            Task.category != 'evaluation'
+        ).all()
         app.logger.info(f"Tareas encontradas: {len(tasks)}")
         
         tasks_data = []
@@ -4449,9 +4452,12 @@ def api_coachee_evaluation_details(evaluation_id):
         # Generar recomendaciones basadas en los resultados
         recommendations = []
         if result.dimensional_scores and result.score is not None:
+            logger.info(f"🔍 GENERATING RECOMMENDATIONS: assessment_title='{assessment.title}', score={result.score}, dimensional_scores={result.dimensional_scores}")
             recommendations = generate_recommendations(result.dimensional_scores, result.score, assessment.title)
+            logger.info(f"📝 RECOMMENDATIONS GENERATED: {len(recommendations)} items - First 3: {recommendations[:3] if recommendations else 'None'}")
         elif result.score is not None:
             # Si no hay dimensional_scores, generar recomendaciones básicas
+            logger.info(f"🔍 GENERATING BASIC RECOMMENDATIONS: assessment_title='{assessment.title}', score={result.score}")
             recommendations = generate_recommendations({}, result.score, assessment.title)
         
         return jsonify({

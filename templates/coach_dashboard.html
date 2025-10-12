@@ -1683,6 +1683,7 @@
                                                 <th style="color: #212529;">Coachee</th>
                                                 <th style="color: #212529;">Categoría</th>
                                                 <th style="color: #212529;">Estado</th>
+                                                <th style="color: #212529;">Progreso</th>
                                                 <th style="color: #212529;">Vencimiento</th>
                                                 <th style="color: #212529;">Creada</th>
                                                 <th style="color: #212529;">Acciones</th>
@@ -1690,7 +1691,7 @@
                                         </thead>
                                         <tbody id="tasksTableBody">
                                             <tr>
-                                                <td colspan="7" class="text-center text-muted">No hay tareas creadas</td>
+                                                <td colspan="8" class="text-center text-muted">No hay tareas creadas</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -2669,7 +2670,7 @@ function loadTasks() {
         .catch(error => {
             console.error('Error loading tasks:', error);
             document.getElementById('tasksTableBody').innerHTML = 
-                '<tr><td colspan="5" class="text-center text-danger">Error al cargar tareas</td></tr>';
+                '<tr><td colspan="8" class="text-center text-danger">Error al cargar tareas</td></tr>';
         });
 }
 
@@ -2680,7 +2681,7 @@ function displayTasks() {
     
     if (tasksData.length === 0) {
         // Vista tabla vacia
-        tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay tareas creadas</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay tareas creadas</td></tr>';
         // Vista cards vacia
         cardsContainer.innerHTML = '<div class="text-center text-muted">No hay tareas creadas</div>';
         return;
@@ -2736,6 +2737,14 @@ function displayTasks() {
                 <span class="badge bg-light text-dark border">${task.category || 'Sin categoría'}</span>
             </td>
             <td>${estadoBadge}</td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="progress me-2" style="width: 60px; height: 20px;">
+                        <div class="progress-bar bg-primary" style="width: ${task.progress_percentage || 0}%"></div>
+                    </div>
+                    <small class="text-muted">${task.progress_percentage || 0}%</small>
+                </div>
+            </td>
             <td class="${vencimientoClass}">${fechaVencimiento}</td>
             <td class="text-dark">${fechaCreated}</td>
             <td>
@@ -2779,6 +2788,20 @@ function displayTasks() {
                             <div>
                                 <div class="small text-muted">Categoría</div>
                                 <div class="fw-medium text-dark small">${task.category || 'Sin categoría'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-chart-line text-success me-2"></i>
+                            <div style="flex: 1;">
+                                <div class="small text-muted">Progreso</div>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="flex: 1; height: 16px;">
+                                        <div class="progress-bar bg-success" style="width: ${task.progress_percentage || 0}%"></div>
+                                    </div>
+                                    <small class="fw-medium text-dark">${task.progress_percentage || 0}%</small>
+                                </div>
                             </div>
                         </div>
                     </div>
