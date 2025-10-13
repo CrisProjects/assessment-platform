@@ -2732,6 +2732,172 @@
             }
         }
 
+        /* CONTENT CARDS STYLES */
+        .content-card {
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 12px;
+            height: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 12px;
+        }
+
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+            z-index: 1;
+        }
+
+        .content-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .content-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .content-card.viewed {
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        .content-card.viewed::before {
+            background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+        }
+
+        /* Preview styles */
+        .content-preview {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .content-preview .ratio iframe {
+            border-radius: 8px;
+        }
+
+        .duration-badge {
+            position: relative;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .content-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .content-type-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .content-card.viewed .content-type-icon {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        }
+
+        .content-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .content-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .content-description {
+            margin: 0.75rem 0;
+            padding: 0.75rem;
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .content-description p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .content-meta {
+            margin: 0.75rem 0;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .content-actions .btn {
+            border-radius: 8px;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .content-actions .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Content responsive */
+        @media (max-width: 768px) {
+            .content-card {
+                padding: 1rem;
+            }
+            
+            .content-header {
+                gap: 0.5rem;
+            }
+            
+            .content-type-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+            
+            .content-title {
+                font-size: 0.95rem;
+            }
+            
+            .content-actions {
+                gap: 0.25rem;
+            }
+            
+            .content-actions .btn {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+
         /* Progress bars */
         .progress-container {
             margin: 1rem 0;
@@ -4771,6 +4937,12 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">
+                        <i class="fas fa-play-circle me-2"></i>
+                        Contenido
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="progress-tab" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">
                         <i class="fas fa-chart-area me-2"></i>
                         Progreso
@@ -4904,6 +5076,25 @@
                             <div class="loading-spinner">
                                 <div class="spinner-border spinner-border-custom" role="status">
                                     <span class="visually-hidden">Cargando tareas...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Tab -->
+                <div class="tab-pane fade" id="content" role="tabpanel">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>
+                                <i class="fas fa-video me-2"></i>
+                                Contenido Asignado
+                            </h3>
+                        </div>
+                        <div class="card-body" id="contentContainer">
+                            <div class="loading-spinner">
+                                <div class="spinner-border spinner-border-custom" role="status">
+                                    <span class="visually-hidden">Cargando contenido...</span>
                                 </div>
                             </div>
                         </div>
@@ -5076,6 +5267,14 @@
             console.log(`🐛 [${timestamp}] ${message}`, data || '');
         }
         
+        // Helper function to escape HTML entities
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         // DEBUG: Override fetch to log all requests
         const originalFetch = window.fetch;
         window.fetch = function(...args) {
@@ -5098,6 +5297,7 @@
         let dashboardData = null;
         let evaluationsData = null;
         let tasksData = null;
+        let contentData = null;
         // let progressChart = null; // ELIMINADO
         // let testProgressChart = null; // ELIMINADO
 
@@ -5107,6 +5307,10 @@
         let answers = {};
         let isAssessmentActive = false;
         let currentAssessmentId = null;
+        
+        // CACHE BUSTER: Verificar que JavaScript se cargó correctamente
+        console.log('🔄 COACHEE DASHBOARD LOADED - TIMESTAMP: 2025-10-12-17:35:00');
+        console.log('✅ Funciones de Preparación para crecer 2026 disponibles');
 
         // Logout function
         async function logout() {
@@ -5174,9 +5378,6 @@
                         completedSection.style.border = '';
                         completedSection.style.borderRadius = '';
                     }, 2000);
-                    
-                    // Mostrar toast de confirmación
-                    showToast('Mostrando evaluaciones completadas', 'success');
                 }
             }, 100);
         }
@@ -5205,9 +5406,6 @@
                         tasksSection.style.border = '';
                         tasksSection.style.borderRadius = '';
                     }, 2000);
-                    
-                    // Mostrar toast de confirmación
-                    showToast('Mostrando tareas pendientes', 'warning');
                 }
             }, 100);
         }
@@ -5257,9 +5455,6 @@
                             });
                         }
                     }, 500);
-                    
-                    // Mostrar toast de confirmación
-                    showToast('Mostrando tareas vencidas', 'danger');
                 }
             }, 100);
         }
@@ -5614,6 +5809,11 @@
                         if (score >= 60) return 'Perfil Influyente';
                         if (score >= 40) return 'Perfil Estable';
                         return 'Perfil Concienzudo';
+                    } else if (title && title.includes('Preparación para crecer 2026')) {
+                        // Para evaluaciones de Preparación para crecer 2026
+                        if (score >= 85) return 'Preparado';      // Verde
+                        if (score >= 60) return 'En progreso';    // Amarillo
+                        return 'Alta dependencia';                // Rojo
                     } else {
                         // Para evaluaciones de Asertividad, usar la función existente
                         return getAssertativenessLevel(score);
@@ -5860,6 +6060,274 @@
             }
         }
 
+        // Load content assigned to coachee
+        let isLoadingContent = false;
+        async function loadContent() {
+            // Evitar llamadas concurrentes
+            if (isLoadingContent) {
+                debugLog('⏳ LoadContent ya en progreso, omitiendo llamada duplicada');
+                return;
+            }
+            
+            isLoadingContent = true;
+            try {
+                debugLog('🎥 Cargando contenido asignado...');
+                
+                const response = await fetch('/api/coachee/content', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                debugLog('✅ Contenido cargado:', data);
+                
+                if (data.success) {
+                    contentData = data.content || [];
+                    renderContent();
+                } else {
+                    throw new Error(data.error || 'Error desconocido cargando contenido');
+                }
+                
+            } catch (error) {
+                console.error('Error cargando contenido:', error);
+                showToast('Error cargando contenido: ' + error.message, 'error');
+                
+                // Inicializar con datos vacíos
+                contentData = [];
+                
+                document.getElementById('contentContainer').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando contenido</p></div>';
+            } finally {
+                isLoadingContent = false;
+            }
+        }
+
+        // Render content
+        function renderContent() {
+            const container = document.getElementById('contentContainer');
+            
+            if (!contentData || contentData.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-video"></i><p>No tienes contenido asignado</p></div>';
+                return;
+            }
+
+            let html = '<div class="row">';
+            
+            contentData.forEach(content => {
+                const formattedDate = content.assigned_at ? 
+                    new Date(content.assigned_at).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    }) : 'Sin fecha';
+                
+                const duration = content.duration ? 
+                    Math.ceil(content.duration / 60) + ' min' : '';
+                
+                const viewedBadge = content.is_viewed ? 
+                    '<span class="badge bg-success ms-2"><i class="fas fa-check"></i> Visto</span>' : 
+                    '<span class="badge bg-secondary ms-2"><i class="fas fa-eye"></i> Pendiente</span>';
+                
+                // Extraer video ID para embebido si es YouTube
+                let embedContent = '';
+                const isVideo = content.content_type === 'video';
+                
+                if (isVideo && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be'))) {
+                    let videoId = '';
+                    if (content.content_url.includes('youtube.com/watch?v=')) {
+                        videoId = content.content_url.split('v=')[1].split('&')[0];
+                    } else if (content.content_url.includes('youtu.be/')) {
+                        videoId = content.content_url.split('youtu.be/')[1].split('?')[0];
+                    }
+                    
+                    if (videoId) {
+                        embedContent = `
+                            <div class="ratio ratio-16x9">
+                                <iframe src="https://www.youtube.com/embed/${videoId}" 
+                                    title="${escapeHtml(content.title)}" 
+                                    frameborder="0" 
+                                    allowfullscreen
+                                    style="border-radius: 8px;">
+                                </iframe>
+                            </div>
+                        `;
+                    }
+                }
+                
+                // Si no es un video de YouTube, usar imagen thumbnail o placeholder
+                if (!embedContent) {
+                    const thumbnailUrl = content.thumbnail_url || 'https://via.placeholder.com/320x180/e9ecef/6c757d?text=Contenido';
+                    embedContent = `
+                        <div class="ratio ratio-16x9">
+                            <div style="background-image: url('${thumbnailUrl}'); background-size: cover; background-position: center; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <div style="background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 6px;">
+                                    <i class="fas fa-${isVideo ? 'play' : 'file-alt'} me-2"></i>
+                                    ${isVideo ? 'Ver Contenido' : 'Abrir Documento'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="col-lg-6 col-xl-4 mb-3">
+                        <div class="content-card ${content.is_viewed ? 'viewed' : ''}">
+                            <!-- Vista previa del contenido (estilo coach dashboard) -->
+                            <div class="content-preview mb-3">
+                                ${embedContent}
+                            </div>
+                            
+                            <div class="content-header" style="padding: 0;">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="content-info flex-grow-1">
+                                        <h6 class="content-title mb-1" style="font-weight: 600; line-height: 1.3;">${escapeHtml(content.title)}</h6>
+                                        <small class="text-muted">Por ${escapeHtml(content.coach_name)}</small>
+                                        ${duration ? `<div class="mt-1"><span class="badge bg-light text-dark"><i class="fas fa-clock me-1"></i>${duration}</span></div>` : ''}
+                                    </div>
+                                    ${viewedBadge}
+                                </div>
+                            </div>
+                            
+                            ${content.description ? `
+                                <div class="content-description" style="padding: 0; margin-top: 8px;">
+                                    <p class="text-muted small mb-2" style="line-height: 1.4;">${escapeHtml(content.description)}</p>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="content-meta" style="padding: 0; margin-top: 8px;">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Asignado: ${formattedDate}
+                                </small>
+                            </div>
+                            
+                            <div class="content-actions" style="padding: 0; margin-top: 12px; border-top: 1px solid #e9ecef; padding-top: 12px;">
+                                <button class="btn btn-primary btn-sm" onclick="openContent(${content.id}, '${content.content_url}', '${content.title}')">
+                                    <i class="fas fa-play me-1"></i>
+                                    ${content.content_type === 'video' ? 'Ver Video' : 'Abrir Contenido'}
+                                </button>
+                                ${!content.is_viewed ? `
+                                    <button class="btn btn-outline-success btn-sm ms-2" onclick="markContentAsViewed(${content.id})">
+                                        <i class="fas fa-check me-1"></i>
+                                        Marcar como Visto
+                                    </button>
+                                ` : ''}
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Open content (video or document)
+        function openContent(contentId, contentUrl, title) {
+            // Si es un video de YouTube, usar modal con iframe
+            if (contentUrl.includes('youtube.com') || contentUrl.includes('youtu.be')) {
+                openVideoModal(contentUrl, title);
+            } else {
+                // Para otros tipos de contenido, abrir en nueva pestaña
+                window.open(contentUrl, '_blank');
+            }
+            
+            // Marcar como visto automáticamente al abrir
+            markContentAsViewed(contentId);
+        }
+
+        // Open video in modal
+        function openVideoModal(videoUrl, title) {
+            // Convertir URL de YouTube a embed
+            let embedUrl = videoUrl;
+            if (videoUrl.includes('youtube.com/watch?v=')) {
+                const videoId = videoUrl.split('v=')[1].split('&')[0];
+                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else if (videoUrl.includes('youtu.be/')) {
+                const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
+                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            }
+            
+            const modalHtml = `
+                <div class="modal fade" id="videoModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${escapeHtml(title)}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <div class="ratio ratio-16x9">
+                                    <iframe src="${embedUrl}" allowfullscreen></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Eliminar modal anterior si existe
+            const existingModal = document.getElementById('videoModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Agregar nuevo modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('videoModal'));
+            modal.show();
+            
+            // Limpiar cuando se cierre
+            document.getElementById('videoModal').addEventListener('hidden.bs.modal', function () {
+                this.remove();
+            });
+        }
+
+        // Mark content as viewed
+        async function markContentAsViewed(contentId) {
+            try {
+                const response = await fetch(`/api/coachee/content/${contentId}/mark-viewed`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Contenido marcado como visto', 'success');
+                    // Actualizar solo el contenido específico en lugar de recargar todo
+                    const contentItem = contentData.find(c => c.id === contentId);
+                    if (contentItem) {
+                        contentItem.is_viewed = true;
+                        contentItem.viewed_at = new Date().toISOString();
+                        renderContent(); // Re-renderizar con datos actualizados
+                    }
+                } else {
+                    throw new Error(data.error || 'Error marcando contenido como visto');
+                }
+                
+            } catch (error) {
+                console.error('Error marcando contenido como visto:', error);
+                showToast('Error marcando contenido como visto: ' + error.message, 'error');
+            }
+        }
+
         // Render statistics
         function renderStatistics(statistics) {
             const container = document.getElementById('statisticsContainer');
@@ -6089,8 +6557,6 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showToast('Progreso actualizado exitosamente', 'success');
-                    
                     // Close modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('taskProgressModal'));
                     modal.hide();
@@ -6285,14 +6751,32 @@
             // Update progress bar
             document.getElementById('assessmentProgress').style.width = progress + '%';
             
-            // Opciones estándar para escala Likert de asertividad
-            const likertOptions = [
-                'Totalmente en desacuerdo',
-                'En desacuerdo',
-                'Neutral',
-                'De acuerdo',
-                'Totalmente de acuerdo'
-            ];
+            // Determinar opciones según el tipo de evaluación
+            let likertOptions;
+            
+            // DEBUG: Verificar qué assessment ID se está usando
+            console.log('🔍 DEBUG OPCIONES:', {
+                currentAssessmentId: currentAssessmentId,
+                assessmentIdType: typeof currentAssessmentId,
+                isEvaluacion6: currentAssessmentId === 6,
+                questionDimension: questions[currentQuestionIndex]?.dimension,
+                questionText: questions[currentQuestionIndex]?.text
+            });
+            
+            if (currentAssessmentId === 6 || currentAssessmentId === "6") {  // Preparación para crecer 2026
+                console.log('✅ Usando opciones específicas para Preparación para crecer 2026');
+                likertOptions = getGrowthPreparationOptions(questions[currentQuestionIndex]);
+            } else {
+                console.log('➡️ Usando opciones estándar de Likert');
+                // Opciones estándar para escala Likert de 5 puntos (otras evaluaciones)
+                likertOptions = [
+                    'Totalmente en desacuerdo',
+                    'En desacuerdo',
+                    'Neutral',
+                    'De acuerdo',
+                    'Totalmente de acuerdo'
+                ];
+            }
             
             // DEBUG: Log question details mejorado
             console.log('🔍 DEBUG PREGUNTA MOSTRADA:', {
@@ -6514,8 +6998,6 @@
         // Complete assessment
         async function completeAssessment() {
             try {
-                showToast('Procesando evaluación...', 'info');
-                
                 console.log('Answers object:', answers);
                 console.log('Questions array:', questions);
                 
@@ -6655,8 +7137,6 @@
             document.getElementById('assessmentContainer').style.display = 'none';
             isAssessmentActive = false; // Reset assessment state
             
-            showToast('¡Evaluación completada exitosamente!', 'success');
-            
             // Mostrar directamente el modal de detalles de evaluación con los datos recién completados
             setTimeout(() => {
                 viewEvaluationDetails(evaluationId);
@@ -6784,6 +7264,7 @@
             const assessmentTitle = evaluation.assessment_title || data.assessment_title || 'Evaluación';
             const isDiscAssessment = assessmentTitle.includes('DISC');
             const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+            const isGrowthPreparationAssessment = assessmentTitle.includes('Preparación para crecer 2026');
             
             let analysisTitle, chartTitle;
             if (isDiscAssessment) {
@@ -6792,6 +7273,9 @@
             } else if (isEmotionalIntelligenceAssessment) {
                 analysisTitle = 'Análisis Completo de Inteligencia Emocional';
                 chartTitle = 'Radar de Competencias Emocionales';
+            } else if (isGrowthPreparationAssessment) {
+                analysisTitle = 'Análisis de Preparación para Crecer 2026';
+                chartTitle = 'Radar de Dimensiones Empresariales';
             } else {
                 analysisTitle = 'Análisis Completo de Asertividad';
                 chartTitle = 'Radar de Competencias';
@@ -6802,6 +7286,19 @@
             console.log('Dimensional scores:', dimensionalScores);
             console.log('Recommendations from server:', recommendations);
             console.log('Recommendations count:', recommendations ? recommendations.length : 0);
+            
+            // Layout completamente diferente para "Preparación para crecer 2026"
+            if (isGrowthPreparationAssessment) {
+                const html = generateGrowthPreparationLayout(data, evaluation, dimensionalScores);
+                container.innerHTML = html;
+                
+                // Crear el gráfico radar específico para crecimiento
+                setTimeout(() => {
+                    createGrowthRadarChart(dimensionalScores);
+                }, 100);
+                
+                return;
+            }
             
             const html = `
                 <!-- Resumen General -->
@@ -6816,8 +7313,8 @@
                                         <div style="color: #666;">Puntuación Total</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score))}</div>
-                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : 'Nivel de Asertividad')}</div>
+                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || evaluation.score) : (isGrowthPreparationAssessment ? getGrowthPreparationLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score)))}</div>
+                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : (isGrowthPreparationAssessment ? 'Nivel de Preparación' : 'Nivel de Asertividad'))}</div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="h6" style="color: #333;">${formatDate(data.completed_at || evaluation.completed_at)}</div>
@@ -6873,7 +7370,7 @@
                                 <h5 style="color: #333;"><i class="fas fa-list me-2"></i>Respuestas Detalladas</h5>
                             </div>
                             <div class="card-body">
-                                ${generateResponsesHTML(evaluation.responses || [])}
+                                ${generateResponsesHTML(evaluation.responses || [], evaluation.assessment_id || data.assessment_id)}
                             </div>
                         </div>
                     </div>
@@ -7097,23 +7594,34 @@
 
 
         // Generar HTML de respuestas
-        function generateResponsesHTML(responses) {
+        function generateResponsesHTML(responses, assessmentId = null) {
             if (!responses || responses.length === 0) {
                 return '<p class="text-muted">No hay respuestas detalladas disponibles.</p>';
             }
             
-            const optionLabels = {
+            // Usar función específica para evaluación "Preparación para crecer 2026"
+            if (assessmentId === 6) {
+                return generateGrowthPreparationResponsesHTML(responses);
+            }
+            
+            // Lógica original para otras evaluaciones (sin modificar)
+            let optionLabels, maxScore;
+            
+            // Etiquetas estándar para escala Likert de 5 puntos (evaluaciones originales)
+            optionLabels = {
                 1: 'Totalmente en desacuerdo',
                 2: 'En desacuerdo', 
                 3: 'Neutral',
                 4: 'De acuerdo',
                 5: 'Totalmente de acuerdo'
             };
+            maxScore = 5;
             
             let html = '';
             responses.forEach((response, index) => {
-                const scoreClass = response.selected_option >= 4 ? 'success' : 
-                                  response.selected_option === 3 ? 'warning' : 'danger';
+                const selectedOption = response.selected_option || response.points || 0;
+                const scoreClass = selectedOption >= 4 ? 'success' : 
+                                  selectedOption === 3 ? 'warning' : 'danger';
                 
                 html += `
                     <div class="border-start border-3 border-primary ps-3 mb-3">
@@ -7123,15 +7631,14 @@
                                 <p class="mb-1">${response.question_text}</p>
                                 <small class="text-${scoreClass}">
                                     <i class="fas fa-check-circle me-1"></i>
-                                    ${optionLabels[response.selected_option] || response.answer_text || 'N/A'}
+                                    ${optionLabels[selectedOption] || response.answer_text || 'N/A'}
                                 </small>
                             </div>
-                            <span class="badge bg-${scoreClass} ms-2">${response.selected_option || response.points || 0}/5</span>
+                            <span class="badge bg-${scoreClass} ms-2">${selectedOption}/${maxScore}</span>
                         </div>
                     </div>
                 `;
             });
-            
             return html;
         }
         
@@ -7183,36 +7690,79 @@
             return scoreMatch ? parseFloat(scoreMatch[1]) : null;
         }
 
-        function generateResponsesHTML(responses) {
+        // ========== FUNCIONES ESPECÍFICAS PARA EVALUACIÓN "PREPARACIÓN PARA CRECER 2026" ==========
+        // CACHE BUSTER: 2025-10-12-17:35:00
+        
+        function getGrowthPreparationOptions(question) {
+            console.log('🎯 === INICIO getGrowthPreparationOptions ===');
+            console.log('🎯 Full question object:', JSON.stringify(question, null, 2));
+            console.log('🔍 Question dimension EXACT:', `"${question?.dimension}"`);
+            console.log('🔍 Question dimension length:', question?.dimension?.length);
+            console.log('🔍 Question dimension type:', typeof question?.dimension);
+            
+            // Opciones específicas por dimensión para la evaluación de crecimiento
+            const growthOptionsByDimension = {
+                'Delegación': ['Todo depende de mí', 'Delego algo, pero sigo resolviendo mucho', 'Mi equipo opera sin mí'],
+                'Estructura organizacional': ['Todo es improvisado', 'Algunas áreas tienen estructura', 'Todo está formalizado'],
+                'Gestión del tiempo del dueño': ['> 8 h', '4–7 h', '< 4 h (más foco en estrategia)'],
+                'Finanzas': ['No confío / errores frecuentes', 'Parcialmente actualizada', 'Confiable y oportuna'],
+                'Crecimiento estratégico': ['Miedo de perder control', 'Quiero crecer pero no sé cómo', 'Preparado con estrategia'],
+                'Bienestar personal': ['Agotado', 'Cansado pero motivado', 'Con energía y foco'],
+                'Visión a futuro': ['Frustrado', 'Inquieto pero optimista', 'Orgulloso']
+            };
+            
+            console.log('🔍 Available dimensions in code:', Object.keys(growthOptionsByDimension));
+            console.log('🔍 Exact match test:', growthOptionsByDimension.hasOwnProperty(question?.dimension));
+            
+            // Probar también con trim por si hay espacios
+            const cleanDimension = question?.dimension?.trim();
+            console.log('🔍 Clean dimension:', `"${cleanDimension}"`);
+            console.log('🔍 Clean match test:', growthOptionsByDimension.hasOwnProperty(cleanDimension));
+            
+            const options = growthOptionsByDimension[question?.dimension] || growthOptionsByDimension[cleanDimension] || ['Opción 1', 'Opción 2', 'Opción 3'];
+            console.log('🎯 Final options returned:', options);
+            console.log('🎯 === FIN getGrowthPreparationOptions ===');
+            return options;
+        }
+        
+        function generateGrowthPreparationResponsesHTML(responses) {
             if (!responses || responses.length === 0) {
                 return '<p class="text-muted">No hay respuestas detalladas disponibles.</p>';
             }
             
-            const optionLabels = {
-                1: 'Totalmente en desacuerdo',
-                2: 'En desacuerdo', 
-                3: 'Neutral',
-                4: 'De acuerdo',
-                5: 'Totalmente de acuerdo'
+            // Opciones específicas por dimensión
+            const growthLabelsByDimension = {
+                'Delegación': {1: 'Todo depende de mí', 2: 'Delego algo, pero sigo resolviendo mucho', 3: 'Mi equipo opera sin mí'},
+                'Estructura organizacional': {1: 'Todo es improvisado', 2: 'Algunas áreas tienen estructura', 3: 'Todo está formalizado'},
+                'Gestión del tiempo del dueño': {1: '> 8 h', 2: '4–7 h', 3: '< 4 h (más foco en estrategia)'},
+                'Finanzas': {1: 'No confío / errores frecuentes', 2: 'Parcialmente actualizada', 3: 'Confiable y oportuna'},
+                'Crecimiento estratégico': {1: 'Miedo de perder control', 2: 'Quiero crecer pero no sé cómo', 3: 'Preparado con estrategia'},
+                'Bienestar personal': {1: 'Agotado', 2: 'Cansado pero motivado', 3: 'Con energía y foco'},
+                'Visión a futuro': {1: 'Frustrado', 2: 'Inquieto pero optimista', 3: 'Orgulloso'}
             };
             
             let html = '';
             responses.forEach((response, index) => {
-                const scoreClass = response.selected_option >= 4 ? 'success' : 
-                                  response.selected_option === 3 ? 'warning' : 'danger';
+                const dimension = response.dimension || 'Dimensión desconocida';
+                const dimensionLabels = growthLabelsByDimension[dimension] || {1: 'Opción 1', 2: 'Opción 2', 3: 'Opción 3'};
+                const selectedOption = response.selected_option || response.points || 1;
+                const optionText = dimensionLabels[selectedOption] || 'N/A';
+                
+                const scoreClass = selectedOption === 3 ? 'success' : 
+                                  selectedOption === 2 ? 'warning' : 'danger';
                 
                 html += `
                     <div class="border-start border-3 border-primary ps-3 mb-3">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
-                                <strong>Pregunta ${index + 1}:</strong>
+                                <strong>${dimension}:</strong>
                                 <p class="mb-1">${response.question_text}</p>
                                 <small class="text-${scoreClass}">
                                     <i class="fas fa-check-circle me-1"></i>
-                                    ${optionLabels[response.selected_option]}
+                                    ${optionText}
                                 </small>
                             </div>
-                            <span class="badge bg-${scoreClass} ms-2">${response.selected_option}/5</span>
+                            <span class="badge bg-${scoreClass} ms-2">${selectedOption}/3</span>
                         </div>
                     </div>
                 `;
@@ -7220,6 +7770,279 @@
             
             return html;
         }
+        
+        function getGrowthPreparationLevelFromScore(score) {
+            // Sistema de semáforo basado en porcentajes específicos
+            if (score <= 30) {
+                return "Alta dependencia (Rojo)";
+            } else if (score <= 70) {
+                return "En progreso (Amarillo)";
+            } else {
+                return "Preparado (Verde)";
+            }
+        }
+        
+        function generateGrowthPreparationLayout(data, evaluation, dimensionalScores) {
+            const score = Math.round(data.score || evaluation.score);
+            const resultText = data.result_text || evaluation.result_text || '';
+            
+            // Determinar el resultado basado en el puntaje
+            let resultLevel, resultColor, resultIcon, respuestasC;
+            if (score <= 30) {
+                resultLevel = "Rojo";
+                resultColor = "#dc3545";
+                resultIcon = "fas fa-exclamation-triangle";
+                respuestasC = "0-2";
+            } else if (score <= 70) {
+                resultLevel = "Amarillo";
+                resultColor = "#ffc107";
+                resultIcon = "fas fa-clock";
+                respuestasC = "3-4";
+            } else {
+                resultLevel = "Verde";
+                resultColor = "#28a745";
+                resultIcon = "fas fa-check-circle";
+                respuestasC = "5-7";
+            }
+            
+            return `
+                <!-- Tu resultado destacado -->
+                <div class="tu-resultado mb-4 p-4" style="background: ${resultColor} !important; color: white !important; border-radius: 15px; text-align: center; box-shadow: 0 6px 12px rgba(0,0,0,0.1);">
+                    <h4 style="color: white !important; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5) !important;">
+                        <i class="${resultIcon} me-2" style="color: white !important;"></i>
+                        Tu Resultado: <span style="color: white !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.5) !important;">${resultLevel}</span>
+                    </h4>
+                    <p style="margin: 0; font-size: 1.2em; line-height: 1.5; font-weight: 500; color: white !important;">
+                        ${resultText.split('\\n\\n')[0]}
+                    </p>
+                </div>
+
+                <!-- CTA Momento Clave -->
+                <div class="cta-final mb-4">
+                    <div class="card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border: none; border-radius: 15px;">
+                        <div class="card-body text-center" style="padding: 30px;">
+                            <h4 style="color: white; margin-bottom: 20px;">
+                                <i class="fas fa-gift me-2"></i>
+                                Momento Clave para Tu Crecimiento
+                            </h4>
+                            <p style="color: white; font-size: 1.1em; line-height: 1.6; margin-bottom: 25px;">
+                                ✨ "Tu resultado muestra que este es el momento clave para ti. Por eso quiero regalarte una sesión gratuita de 30 min, donde veremos cómo preparar tu negocio en este último trimestre y que el 2026 sea el año en que veas realizados tus sueños de crecimiento."
+                            </p>
+                            
+                            <!-- Dropdown para opciones de contacto -->
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-lg dropdown-toggle" type="button" id="contactDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 12px 30px; border-radius: 25px; font-weight: bold; color: #333;">
+                                    <i class="fas fa-calendar-plus me-2"></i>
+                                    Agendar Sesión Gratuita
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-center" aria-labelledby="contactDropdown" style="border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); min-width: 280px;">
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center py-3" href="https://wa.me/56994896670?text=Hola%2C%20me%20gustar%C3%ADa%20agendar%20una%20sesi%C3%B3n%20gratuita%20de%2030%20min%20para%20preparar%20mi%20negocio%20para%20el%202026" target="_blank" style="border-radius: 10px; margin: 5px;">
+                                            <i class="fab fa-whatsapp me-3" style="color: #25D366; font-size: 1.2em;"></i>
+                                            <div>
+                                                <strong>WhatsApp</strong>
+                                                <br><small class="text-muted">+56 9 94896670</small>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center py-3" href="mailto:contacto@ejemplo.com?subject=Sesión%20Gratuita%20-%20Preparación%202026&body=Hola%2C%0A%0AMe%20gustar%C3%ADa%20agendar%20una%20sesi%C3%B3n%20gratuita%20de%2030%20minutos%20para%20preparar%20mi%20negocio%20para%20el%202026.%0A%0AGracias." style="border-radius: 10px; margin: 5px;">
+                                            <i class="fas fa-envelope me-3" style="color: #0ea5e9; font-size: 1.2em;"></i>
+                                            <div>
+                                                <strong>Email</strong>
+                                                <br><small class="text-muted">Enviar correo</small>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center py-3" href="tel:+56994896670" style="border-radius: 10px; margin: 5px;">
+                                            <i class="fas fa-phone me-3" style="color: #10b981; font-size: 1.2em;"></i>
+                                            <div>
+                                                <strong>Llamada</strong>
+                                                <br><small class="text-muted">+56 9 94896670</small>
+                                            </div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis por Dimensiones -->
+                <div class="row mb-4">
+                    <div class="col-lg-6">
+                        <div class="card h-100" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div class="card-header" style="background: #667eea; color: white;">
+                                <h5 style="margin: 0; color: white;">
+                                    <i class="fas fa-chart-radar me-2"></i>
+                                    Radar de Dimensiones Empresariales
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="radar-chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="growthRadarChart" width="300" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card h-100" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div class="card-header" style="background: #764ba2; color: white;">
+                                <h5 style="margin: 0; color: white;">
+                                    <i class="fas fa-tasks me-2"></i>
+                                    Puntuación por Dimensión
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                ${generateGrowthDimensionalScores(dimensionalScores)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Respuestas Detalladas -->
+                <div class="card" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div class="card-header" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <h5 style="margin: 0; color: #333;">
+                            <i class="fas fa-list-check me-2"></i>
+                            Tus Respuestas Detalladas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        ${generateGrowthPreparationResponsesHTML(evaluation.responses || [])}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateGrowthDimensionalScores(dimensionalScores) {
+            if (!dimensionalScores) return '<p class="text-muted">No hay puntuaciones dimensionales disponibles.</p>';
+            
+            let html = '';
+            Object.entries(dimensionalScores).forEach(([dimension, score]) => {
+                // Calcular porcentaje correcto: (score - 1) / (3 - 1) * 100 = (score - 1) / 2 * 100
+                const percentage = Math.round(((score - 1) / 2) * 100);
+                let scoreColor, scoreIcon, scoreBadge;
+                
+                if (score >= 2.5) {
+                    scoreColor = '#28a745';
+                    scoreIcon = 'fas fa-check-circle';
+                    scoreBadge = 'Verde';
+                } else if (score >= 1.5) {
+                    scoreColor = '#ffc107';
+                    scoreIcon = 'fas fa-clock';
+                    scoreBadge = 'Amarillo';
+                } else {
+                    scoreColor = '#dc3545';
+                    scoreIcon = 'fas fa-exclamation-triangle';
+                    scoreBadge = 'Rojo';
+                }
+                
+                html += `
+                    <div class="dimension-score mb-4" style="padding: 15px; border-left: 4px solid ${scoreColor}; background: #f8f9fa; border-radius: 0 8px 8px 0;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong style="color: #333; font-size: 1.05em;">${dimension}</strong>
+                            <div class="d-flex align-items-center">
+                                <span class="badge me-2" style="background: ${scoreColor}; color: white; padding: 4px 8px; border-radius: 12px;">
+                                    ${scoreBadge}
+                                </span>
+                                <span style="color: ${scoreColor}; font-weight: bold;">
+                                    <i class="${scoreIcon} me-1"></i>
+                                    ${score}/3
+                                </span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1 me-3" style="height: 15px; background: #e9ecef; border-radius: 8px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                                <div class="progress-bar" style="background: linear-gradient(90deg, ${scoreColor}, ${scoreColor}cc) !important; width: ${percentage}%; border-radius: 8px; transition: width 0.8s ease;">
+                                </div>
+                            </div>
+                            <small style="color: #666; font-weight: 600; min-width: 40px; font-size: 0.9em;">${percentage}%</small>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+        
+        function createGrowthRadarChart(dimensionalScores) {
+            if (!dimensionalScores) return;
+            
+            const canvas = document.getElementById('growthRadarChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Usar la misma lógica que createRadarChart pero con canvas específico
+            const labels = Object.keys(dimensionalScores);
+            const values = Object.values(dimensionalScores);
+            
+            if (window.growthRadarChartInstance) {
+                window.growthRadarChartInstance.destroy();
+            }
+            
+            window.growthRadarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Preparación para Crecer',
+                        data: values,
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 3,
+                            min: 0,
+                            ticks: {
+                                stepSize: 1,
+                                color: '#666'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            angleLines: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Agregar estilos CSS básicos para barras de progreso (sin animaciones)
+            if (!document.getElementById('growth-progress-styles')) {
+                const style = document.createElement('style');
+                style.id = 'growth-progress-styles';
+                style.innerHTML = `
+                    .dimension-score .progress-bar {
+                        border-radius: 8px;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // ========== FIN FUNCIONES ESPECÍFICAS PREPARACIÓN PARA CRECER 2026 ==========
 
         function getAssertiveLevelFromScore(score) {
             if (score >= 85) return 'Muy Asertivo';
@@ -7273,16 +8096,14 @@
 
         // Refresh dashboard
         async function refreshDashboard() {
-            showToast('Actualizando dashboard...', 'info');
-            
             try {
                 await Promise.all([
                     loadDashboardSummary(),
                     loadEvaluations(),
-                    loadTasks()
+                    loadTasks(),
+                    loadContent()
                 ]);
                 
-                showToast('Dashboard actualizado', 'success');
             } catch (error) {
                 console.error('Error actualizando dashboard:', error);
                 showToast('Error actualizando dashboard', 'error');
@@ -7492,6 +8313,11 @@
                     // Load data when tabs are activated
                     if (target === '#tasks') {
                         loadTasks(); // Siempre cargar tareas para mantener datos actualizados
+                    } else if (target === '#content') {
+                        // Solo cargar contenido si no se ha cargado ya o si está vacío
+                        if (!contentData || contentData.length === 0) {
+                            loadContent();
+                        }
                     } else if (target === '#progress') {
                         loadEvaluationHistory();
                     }
@@ -8054,10 +8880,14 @@
             dashboardData,
             evaluationsData,
             tasksData,
+            contentData,
             API_BASE_URL,
             loadEvaluations,
             loadDashboardSummary,
             loadTasks,
+            loadContent,
+            openContent,
+            markContentAsViewed,
             initializeApp,
             testConnection: async function() {
                 try {

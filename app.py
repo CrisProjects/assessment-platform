@@ -233,6 +233,7 @@ class AssessmentResult(db.Model):
     __table_args__ = (
         db.Index('idx_user_assessment', 'user_id', 'assessment_id'),
         db.Index('idx_coach_completed', 'coach_id', 'completed_at'),
+        db.UniqueConstraint('user_id', 'assessment_id', name='uq_user_assessment'),
     )
 
     def __init__(self, **kwargs):
@@ -325,6 +326,35 @@ class TaskProgress(db.Model):
         for key, value in kwargs.items():
             setattr(self, key, value)
         self.created_at = kwargs.get('created_at', datetime.utcnow())
+
+class Content(db.Model):
+    __tablename__ = 'content'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    content_type = db.Column(db.String(50), default='video')  # video, document, link
+    content_url = db.Column(db.String(500), nullable=False)  # URL del video o archivo
+    thumbnail_url = db.Column(db.String(500), nullable=True)
+    duration = db.Column(db.Integer, nullable=True)  # duración en segundos
+    is_viewed = db.Column(db.Boolean, default=False)
+    viewed_at = db.Column(db.DateTime, nullable=True)
+    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='assigned_content')
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_content')
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.assigned_at = kwargs.get('assigned_at', datetime.utcnow())
+    
+    def mark_as_viewed(self):
+        self.is_viewed = True
+        self.viewed_at = datetime.utcnow()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -895,6 +925,54 @@ def create_additional_assessments():
                 logger.info("ℹ️ ASSESSMENTS: Assessment de Trabajo en Equipo ya existe")
         except Exception as teamwork_error:
             logger.error(f"❌ ASSESSMENTS: Error creando Trabajo en Equipo: {teamwork_error}")
+            db.session.rollback()
+
+        # Assessment 6: Preparación para crecer 2026 - Con transacciones individuales
+        try:
+            if not Assessment.query.filter_by(title="Preparación para crecer 2026").first():
+                growth_assessment = Assessment(
+                    title="Preparación para crecer 2026",
+                    description="Evaluación para determinar qué tan preparado está tu negocio para crecer de manera sostenible en 2026",
+                    is_active=True
+                )
+                db.session.add(growth_assessment)
+                db.session.flush()
+                growth_id = growth_assessment.id
+                logger.info(f"✅ ASSESSMENTS: Assessment Preparación para crecer 2026 creado con ID: {growth_id}")
+
+                # Preguntas para Preparación para crecer 2026 (escala 1-3)
+                growth_questions = [
+                    "¿Qué tanto depende tu negocio de ti para funcionar día a día?",
+                    "¿Tu empresa tiene roles y procesos definidos?",
+                    "¿Cuántas horas al día dedicas a la operación?",
+                    "¿Qué tan confiable y actualizada es tu información financiera?",
+                    "¿Cómo te sientes respecto al crecimiento en 2026?",
+                    "¿Cómo te sientes en tu rol actual?",
+                    "Si sigues igual un año más, ¿cómo te sentirías?"
+                ]
+
+                # Dimensiones para Preparación para crecer 2026
+                growth_dimensions = [
+                    "Delegación", "Estructura organizacional", "Gestión del tiempo del dueño",
+                    "Finanzas", "Crecimiento estratégico", "Bienestar personal", "Visión a futuro"
+                ]
+
+                for i, text in enumerate(growth_questions, 1):
+                    question = Question(
+                        assessment_id=growth_id,
+                        text=text,
+                        question_type='likert_3_scale',  # Nueva escala de 3 puntos
+                        order=i,
+                        dimension=growth_dimensions[i-1]
+                    )
+                    db.session.add(question)
+                
+                db.session.commit()
+                logger.info("✅ ASSESSMENTS: Preguntas de Preparación para crecer 2026 creadas")
+            else:
+                logger.info("ℹ️ ASSESSMENTS: Assessment Preparación para crecer 2026 ya existe")
+        except Exception as growth_error:
+            logger.error(f"❌ ASSESSMENTS: Error creando Preparación para crecer 2026: {growth_error}")
             db.session.rollback()
 
         # Verificar que todo fue creado correctamente
@@ -1471,6 +1549,83 @@ def calculate_emotional_intelligence_score(responses):
         return round(overall_score, 1), result_text, dimensional_scores
     
     return 0, "No se pudieron calcular las puntuaciones de Inteligencia Emocional", {}
+
+
+def calculate_growth_preparation_score(responses):
+    """Calcula puntuación de Preparación para crecer 2026 basada en respuestas con escala 1-3"""
+    if not responses:
+        return 0, "Sin respuestas disponibles", None
+    
+    # Manejar tanto formato lista como diccionario
+    if isinstance(responses, list):
+        # Si es una lista de objetos con question_id y selected_option
+        response_dict = {str(r['question_id']): int(r['selected_option']) for r in responses}
+    else:
+        # Si es un diccionario, convertir valores a int
+        response_dict = {str(k): int(v) for k, v in responses.items()}
+    
+    # Definir dimensiones y preguntas (IDs reales de BD: 71-77)
+    dimensions_config = {
+        'Delegación': {'questions': [71]},
+        'Estructura organizacional': {'questions': [72]},
+        'Gestión del tiempo del dueño': {'questions': [73]},
+        'Finanzas': {'questions': [74]},
+        'Crecimiento estratégico': {'questions': [75]},
+        'Bienestar personal': {'questions': [76]},
+        'Visión a futuro': {'questions': [77]}
+    }
+    
+    dimensional_scores = {}
+    respuestas_c_count = 0  # Contador de respuestas C (opción 3)
+    
+    # Calcular puntuación para cada dimensión y contar respuestas C
+    for dimension, config in dimensions_config.items():
+        dimension_total = 0
+        dimension_count = 0
+        
+        for question_id in config['questions']:
+            if str(question_id) in response_dict:
+                response_value = response_dict[str(question_id)]
+                dimension_total += response_value
+                dimension_count += 1
+                
+                # Contar respuestas C (opción 3)
+                if response_value == 3:
+                    respuestas_c_count += 1
+        
+        if dimension_count > 0:
+            # Promedio de la dimensión (escala 1-3)
+            dimension_avg = dimension_total / dimension_count
+            dimensional_scores[dimension] = round(dimension_avg, 2)
+        else:
+            dimensional_scores[dimension] = 1.0  # Valor mínimo por defecto
+    
+    # Sistema de semáforo basado en cantidad de respuestas C (opción 3)
+    if respuestas_c_count <= 2:  # 0-2 respuestas C
+        color = "Rojo"
+        level = "Alta dependencia"
+        text = "Tu negocio depende demasiado de ti y el desorden te está frenando. Urge tomar acción para evitar estancarte o retroceder."
+        percentage_score = 25.0  # Rojo = 25%
+    elif respuestas_c_count <= 4:  # 3-4 respuestas C
+        color = "Amarillo"
+        level = "En progreso"
+        text = "Ya diste pasos, pero sigues atrapado en la operación. Este es el momento de ordenar procesos y finanzas para crecer sin agotarte."
+        percentage_score = 65.0  # Amarillo = 65%
+    else:  # 5-7 respuestas C
+        color = "Verde"
+        level = "Preparado"
+        text = "Tienes buena base, ahora necesitas un plan estratégico para escalar con solidez y aprovechar al máximo el 2026."
+        percentage_score = 90.0  # Verde = 90%
+    
+    # CTA final automático
+    cta_text = '✨ "Tu resultado muestra que este es el momento clave para ti. Por eso quiero regalarte una sesión gratuita de 30 min, donde veremos cómo preparar tu negocio en este último trimestre y que el 2026 sea el año en que veas realizados tus sueños de crecimiento."'
+    
+    result_text = f"{level} ({color}): {text}\n\n{cta_text}"
+    
+    logger.info(f"🎯 CALCULATE_GROWTH_SCORE: Respuestas C: {respuestas_c_count}/7, Percentage: {percentage_score}%, Level: {level}")
+    logger.info(f"🎯 CALCULATE_GROWTH_SCORE: Dimensional scores: {dimensional_scores}")
+    
+    return round(percentage_score, 1), result_text, dimensional_scores
 
 
 def generate_disc_recommendations(disc_scores, overall_score):
@@ -2764,7 +2919,8 @@ def api_get_questions():
             'id': q.id,
             'text': q.text,
             'question_type': q.question_type,
-            'order': q.order
+            'order': q.order,
+            'dimension': q.dimension
         } for q in questions]
         
         return jsonify({
@@ -2848,6 +3004,9 @@ def api_save_assessment():
         elif assessment_id_int == 3:  # Evaluación de Inteligencia Emocional
             logger.info("🎯 SAVE_ASSESSMENT: Using calculate_emotional_intelligence_score function")
             score, result_text, dimensional_scores = calculate_emotional_intelligence_score(responses)
+        elif assessment_id_int == 6:  # Evaluación Preparación para crecer 2026
+            logger.info("🎯 SAVE_ASSESSMENT: Using calculate_growth_preparation_score function")
+            score, result_text, dimensional_scores = calculate_growth_preparation_score(responses)
         else:  # Evaluación de Asertividad (ID=1) o cualquier otra
             logger.info(f"🎯 SAVE_ASSESSMENT: Using calculate_assertiveness_score function for assessment_id={assessment_id_int}")
             score, result_text, dimensional_scores = calculate_assertiveness_score(responses)
@@ -2931,9 +3090,71 @@ def api_save_assessment():
                 )
                 db.session.add(response)
         
-        db.session.commit()
-        
-        logger.info(f"✅ SAVE_ASSESSMENT: Successfully saved assessment result ID {assessment_result.id} for user {current_coachee.username}")
+        try:
+            db.session.commit()
+            logger.info(f"✅ SAVE_ASSESSMENT: Successfully saved assessment result ID {assessment_result.id} for user {current_coachee.username}")
+        except Exception as commit_error:
+            db.session.rollback()
+            # Si hay error de UNIQUE constraint, intentar buscar y actualizar el resultado existente
+            if "UNIQUE constraint failed" in str(commit_error):
+                logger.warning(f"⚠️ SAVE_ASSESSMENT: UNIQUE constraint error, searching for existing result")
+                existing_result = AssessmentResult.query.filter_by(
+                    user_id=current_coachee.id,
+                    assessment_id=assessment_id_int
+                ).first()
+                
+                if existing_result:
+                    logger.info(f"SAVE_ASSESSMENT: Found existing result, updating it")
+                    
+                    # Actualizar historial de puntajes
+                    total_attempts = update_score_history(existing_result, score)
+                    logger.info(f"SAVE_ASSESSMENT: Intento #{total_attempts} registrado en historial")
+                    
+                    # Actualizar el resultado existente
+                    existing_result.score = score
+                    existing_result.total_questions = num_responses
+                    existing_result.result_text = result_text
+                    existing_result.dimensional_scores = dimensional_scores
+                    existing_result.completed_at = datetime.utcnow()
+                    
+                    # Eliminar respuestas anteriores
+                    Response.query.filter_by(assessment_result_id=existing_result.id).delete()
+                    logger.info(f"SAVE_ASSESSMENT: Eliminadas respuestas anteriores para resultado {existing_result.id}")
+                    
+                    # Guardar respuestas nuevas
+                    if isinstance(responses, list):
+                        for response_data in responses:
+                            response = Response(
+                                user_id=current_coachee.id,
+                                question_id=int(response_data['question_id']),
+                                selected_option=int(response_data['selected_option']),
+                                assessment_result_id=existing_result.id
+                            )
+                            db.session.add(response)
+                    else:
+                        for question_id, selected_option in responses.items():
+                            response = Response(
+                                user_id=current_coachee.id,
+                                question_id=int(question_id),
+                                selected_option=int(selected_option),
+                                assessment_result_id=existing_result.id
+                            )
+                            db.session.add(response)
+                    
+                    try:
+                        db.session.commit()
+                        assessment_result = existing_result
+                        logger.info(f"✅ SAVE_ASSESSMENT: Successfully updated existing assessment result ID {assessment_result.id}")
+                    except Exception as retry_error:
+                        db.session.rollback()
+                        logger.error(f"❌ SAVE_ASSESSMENT: Error en retry: {str(retry_error)}")
+                        raise retry_error
+                else:
+                    logger.error(f"❌ SAVE_ASSESSMENT: UNIQUE constraint error but no existing result found")
+                    raise commit_error
+            else:
+                logger.error(f"❌ SAVE_ASSESSMENT: Error en commit: {str(commit_error)}")
+                raise commit_error
         
         return jsonify({
             'success': True,
@@ -4940,6 +5161,316 @@ def api_user_my_profile():
     except Exception as e:
         logger.error(f"Error en api_user_my_profile: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
+
+# API endpoints para contenido/videos
+@app.route('/api/coachee/content', methods=['GET'])
+@either_session_required
+def api_coachee_get_content():
+    """Obtener contenido asignado al coachee actual"""
+    try:
+        coachee = get_current_coachee()
+        if not coachee:
+            return jsonify({'error': 'Usuario coachee no encontrado'}), 404
+        
+        # Obtener contenido asignado a este coachee
+        content_items = Content.query.filter_by(
+            coachee_id=coachee.id,
+            is_active=True
+        ).order_by(Content.assigned_at.desc()).all()
+        
+        content_list = []
+        for content in content_items:
+            coach = User.query.get(content.coach_id)
+            content_data = {
+                'id': content.id,
+                'title': content.title,
+                'description': content.description,
+                'content_type': content.content_type,
+                'content_url': content.content_url,
+                'thumbnail_url': content.thumbnail_url,
+                'duration': content.duration,
+                'is_viewed': content.is_viewed,
+                'viewed_at': content.viewed_at.isoformat() if content.viewed_at else None,
+                'assigned_at': content.assigned_at.isoformat() if content.assigned_at else None,
+                'coach_name': coach.full_name if coach else 'Coach no encontrado'
+            }
+            content_list.append(content_data)
+        
+        return jsonify({
+            'success': True,
+            'content': content_list
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coachee_get_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo contenido: {str(e)}'}), 500
+
+@app.route('/api/coachee/content/<int:content_id>/mark-viewed', methods=['POST'])
+@either_session_required
+def api_coachee_mark_content_viewed(content_id):
+    """Marcar contenido como visto"""
+    try:
+        coachee = get_current_coachee()
+        if not coachee:
+            return jsonify({'error': 'Usuario coachee no encontrado'}), 404
+        
+        # Verificar que el contenido pertenece al coachee
+        content = Content.query.filter_by(
+            id=content_id,
+            coachee_id=coachee.id,
+            is_active=True
+        ).first()
+        
+        if not content:
+            return jsonify({'error': 'Contenido no encontrado'}), 404
+        
+        # Marcar como visto
+        content.mark_as_viewed()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contenido marcado como visto'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en api_coachee_mark_content_viewed: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error marcando contenido como visto: {str(e)}'}), 500
+
+@app.route('/api/coach/content', methods=['POST'])
+@coach_session_required
+def api_coach_assign_content():
+    """Asignar contenido a un coachee (para coaches)"""
+    try:
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden asignar contenido.'}), 403
+        
+        data = request.get_json()
+        
+        required_fields = ['coachee_id', 'title', 'content_url']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Campo requerido: {field}'}), 400
+        
+        # Verificar que el coachee pertenece al coach
+        coachee = User.query.filter_by(
+            id=data['coachee_id'],
+            coach_id=current_coach.id,
+            role='coachee'
+        ).first()
+        
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+        
+        # Verificar si ya existe contenido similar para evitar duplicados
+        existing_content = Content.query.filter_by(
+            coach_id=current_coach.id,
+            coachee_id=data['coachee_id'],
+            title=data['title'],
+            content_url=data['content_url'],
+            is_active=True
+        ).first()
+        
+        if existing_content:
+            return jsonify({
+                'error': 'Ya existe contenido con este título y URL para este coachee',
+                'existing_content_id': existing_content.id
+            }), 409
+        
+        # Crear nuevo contenido
+        content = Content(
+            coach_id=current_coach.id,
+            coachee_id=data['coachee_id'],
+            title=data['title'],
+            description=data.get('description', ''),
+            content_type=data.get('content_type', 'video'),
+            content_url=data['content_url'],
+            thumbnail_url=data.get('thumbnail_url'),
+            duration=data.get('duration')
+        )
+        
+        db.session.add(content)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contenido asignado exitosamente',
+            'content_id': content.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en api_coach_assign_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error asignando contenido: {str(e)}'}), 500
+
+@app.route('/api/coach/content', methods=['GET'])
+@coach_session_required
+def api_coach_get_assigned_content():
+    """Obtener contenido asignado por el coach con filtros"""
+    try:
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver contenido asignado.'}), 403
+        
+        # Obtener parámetros de filtro
+        coachee_filter = request.args.get('coachee_id', type=int)
+        view_mode = request.args.get('view_mode', 'all')  # 'all', 'unique'
+        
+        # Query base
+        query = Content.query.filter_by(coach_id=current_coach.id, is_active=True)
+        
+        # Aplicar filtro de coachee si se especifica
+        if coachee_filter:
+            query = query.filter_by(coachee_id=coachee_filter)
+        
+        # Obtener contenido ordenado por fecha de asignación
+        content_items = query.order_by(Content.assigned_at.desc()).all()
+        
+        if view_mode == 'unique':
+            # Agrupar contenido único por título y URL
+            unique_content = {}
+            for content in content_items:
+                key = f"{content.title}_{content.content_url}"
+                if key not in unique_content:
+                    unique_content[key] = {
+                        'content': content,
+                        'assignments': [],
+                        'total_viewed': 0,
+                        'total_assigned': 0
+                    }
+                
+                coachee = User.query.get(content.coachee_id)
+                assignment_data = {
+                    'id': content.id,
+                    'coachee_name': coachee.full_name if coachee else 'Coachee no encontrado',
+                    'coachee_email': coachee.email if coachee else 'Email no disponible',
+                    'is_viewed': content.is_viewed,
+                    'viewed_at': content.viewed_at.isoformat() if content.viewed_at else None,
+                    'assigned_at': content.assigned_at.isoformat() if content.assigned_at else None
+                }
+                
+                unique_content[key]['assignments'].append(assignment_data)
+                unique_content[key]['total_assigned'] += 1
+                if content.is_viewed:
+                    unique_content[key]['total_viewed'] += 1
+            
+            # Convertir a lista para respuesta
+            content_list = []
+            for key, data in unique_content.items():
+                content = data['content']
+                content_data = {
+                    'id': content.id,
+                    'title': content.title,
+                    'description': content.description,
+                    'content_type': content.content_type,
+                    'content_url': content.content_url,
+                    'thumbnail_url': content.thumbnail_url,
+                    'duration': content.duration,
+                    'assignments': data['assignments'],
+                    'total_assigned': data['total_assigned'],
+                    'total_viewed': data['total_viewed'],
+                    'total_pending': data['total_assigned'] - data['total_viewed'],
+                    'view_mode': 'unique'
+                }
+                content_list.append(content_data)
+        
+        else:
+            # Vista normal - mostrar todas las asignaciones
+            content_list = []
+            for content in content_items:
+                coachee = User.query.get(content.coachee_id)
+                content_data = {
+                    'id': content.id,
+                    'title': content.title,
+                    'description': content.description,
+                    'content_type': content.content_type,
+                    'content_url': content.content_url,
+                    'thumbnail_url': content.thumbnail_url,
+                    'duration': content.duration,
+                    'is_viewed': content.is_viewed,
+                    'viewed_at': content.viewed_at.isoformat() if content.viewed_at else None,
+                    'assigned_at': content.assigned_at.isoformat() if content.assigned_at else None,
+                    'coachee_name': coachee.full_name if coachee else 'Coachee no encontrado',
+                    'coachee_email': coachee.email if coachee else 'Email no disponible',
+                    'coachee_id': content.coachee_id,
+                    'view_mode': 'all'
+                }
+                content_list.append(content_data)
+        
+        # Obtener lista de coachees para filtros
+        coachees_query = db.session.query(User.id, User.full_name).join(
+            Content, User.id == Content.coachee_id
+        ).filter(
+            Content.coach_id == current_coach.id,
+            Content.is_active == True
+        ).distinct().order_by(User.full_name)
+        
+        coachees_list = [{'id': row.id, 'name': row.full_name} for row in coachees_query.all()]
+        
+        # Calcular estadísticas totales
+        total_assigned = len(content_items)
+        total_viewed = sum(1 for c in content_items if c.is_viewed)
+        total_pending = total_assigned - total_viewed
+        
+        return jsonify({
+            'success': True,
+            'content': content_list,
+            'statistics': {
+                'total_assigned': total_assigned,
+                'total_viewed': total_viewed,
+                'total_pending': total_pending
+            },
+            'coachees': coachees_list,
+            'current_filter': {
+                'coachee_id': coachee_filter,
+                'view_mode': view_mode
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_get_assigned_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo contenido asignado: {str(e)}'}), 500
+
+@app.route('/api/coach/content/<int:content_id>', methods=['DELETE'])
+@coach_session_required
+def api_coach_delete_content(content_id):
+    """Eliminar contenido asignado (solo el coach que lo asignó)"""
+    try:
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden eliminar contenido.'}), 403
+        
+        # Buscar el contenido y verificar que pertenece a este coach
+        content = Content.query.filter_by(
+            id=content_id,
+            coach_id=current_coach.id,
+            is_active=True
+        ).first()
+        
+        if not content:
+            return jsonify({'error': 'Contenido no encontrado o no pertenece a este coach'}), 404
+        
+        # Marcar como inactivo en lugar de eliminar
+        content.is_active = False
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contenido eliminado exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en api_coach_delete_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error eliminando contenido: {str(e)}'}), 500
 
 if __name__ == '__main__':
     with app.app_context():
