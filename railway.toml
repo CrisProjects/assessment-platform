@@ -1,5 +1,8 @@
+[build]
+builder = "nixpacks"
+
 [deploy]
-startCommand = "python wsgi_production.py"
+startCommand = "gunicorn --bind 0.0.0.0:$PORT wsgi_production:application"
 healthcheckPath = "/api/status"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
