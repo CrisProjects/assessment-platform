@@ -46,6 +46,68 @@
             border-top-color: #10b981;
         }
         
+        /* ESTILOS PARA SIDEBAR PANEL DE CONTROL - IGUAL QUE COACH */
+        .sidebar {
+            background: white !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        
+        .sidebar-white {
+            background: white !important;
+            background-color: white !important;
+        }
+        
+        .sidebar-force-white {
+            background: white !important;
+            background-color: white !important;
+        }
+        
+        .sidebar-header-white {
+            background: #f8f9fa !important;
+            background-color: #f8f9fa !important;
+            color: #333 !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .sidebar-header-force {
+            background: #f8f9fa !important;
+            background-color: #f8f9fa !important;
+            color: #333 !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .sidebar-title-white {
+            color: #333 !important;
+            font-weight: 600 !important;
+        }
+        
+        .sidebar-title-force {
+            color: #333 !important;
+            font-weight: 600 !important;
+        }
+        
+        .list-group-item {
+            background-color: white !important;
+            color: #333 !important;
+            border-color: #dee2e6 !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .list-group-item:hover {
+            background-color: #f8f9fa !important;
+            color: #333 !important;
+        }
+        
+        .list-group-item.active {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+        }
+        
+        .list-group-item i {
+            color: inherit !important;
+        }
+        
         /* CATEGORÍAS DE RECOMENDACIONES */
         .general-recommendations {
             border: 2px solid var(--calm-primary);
@@ -252,24 +314,17 @@
             }
             
             .dashboard-header .btn-group-mobile {
-                display: grid !important;
-                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
                 gap: 0.5rem !important;
                 width: 100% !important;
             }
             
             .dashboard-header .btn-group-mobile .btn {
-                padding: 0.5rem 0.75rem !important;
-                font-size: 0.8rem !important;
-                font-weight: 600 !important;
-                border-radius: 0.375rem !important;
-                white-space: nowrap !important;
-                text-align: center !important;
-                transition: all 0.2s ease !important;
-                min-height: 36px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
+                flex: 1 !important;
+                min-width: 0 !important;
+                font-size: 0.75rem !important;
+                padding: 0.375rem 0.5rem !important;
             }
             
             .dashboard-header .btn-group-mobile .btn:hover {
@@ -4916,42 +4971,47 @@
             </div>
         </div>
 
-            <!-- Navigation Tabs -->
-            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="evaluations-tab" data-bs-toggle="tab" data-bs-target="#evaluations" type="button" role="tab">
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        Evaluaciones
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation" id="assessment-tab-item" style="display: none;">
-                    <button class="nav-link" id="assessment-tab" data-bs-toggle="tab" data-bs-target="#assessment" type="button" role="tab">
-                        <i class="fas fa-play-circle me-2"></i>
-                        Evaluación Activa
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
-                        <i class="fas fa-tasks me-2"></i>
-                        Tareas
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">
-                        <i class="fas fa-play-circle me-2"></i>
-                        Contenido
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="progress-tab" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">
-                        <i class="fas fa-chart-area me-2"></i>
-                        Progreso
-                    </button>
-                </li>
-            </ul>
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Sidebar Navigation - Panel de Control -->
+            <div class="col-md-3">
+                <div class="card sidebar sidebar-white sidebar-force-white" style="background: white !important; background-color: white !important; border: 1px solid #dee2e6 !important;">
+                    <div class="card-header sidebar-header-white sidebar-header-force" style="background: #f8f9fa !important; background-color: #f8f9fa !important; color: #333 !important; border-bottom: 1px solid #dee2e6 !important;">
+                        <h6 class="mb-0 sidebar-title-white sidebar-title-force" style="color: #333 !important; font-weight: 600 !important;">
+                            <i class="fas fa-tachometer-alt me-2" style="color: #333 !important;"></i>Panel de Control
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary active" 
+                               onclick="showTab('evaluations'); return false;" data-tab="evaluations">
+                                <i class="fas fa-clipboard-list me-3"></i>Evaluaciones
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" id="assessment-sidebar-item" style="display: none;"
+                               onclick="showTab('assessment'); return false;" data-tab="assessment">
+                                <i class="fas fa-play-circle me-3"></i>Evaluación Activa
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                               onclick="showTab('tasks'); return false;" data-tab="tasks">
+                                <i class="fas fa-tasks me-3"></i>Tareas
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                               onclick="showTab('content'); return false;" data-tab="content">
+                                <i class="fas fa-play-circle me-3"></i>Contenido
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                               onclick="showTab('progress'); return false;" data-tab="progress">
+                                <i class="fas fa-chart-area me-3"></i>Progreso
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Tab Content -->
-            <div class="tab-content" id="mainTabContent">
+            <!-- Content Area -->
+            <div class="col-md-9">
+                <!-- Tab Content -->
+                <div class="tab-content" id="mainTabContent">
                 <!-- Evaluations Tab -->
                 <div class="tab-pane fade show active" id="evaluations" role="tabpanel">
                     <div class="row">
@@ -5356,11 +5416,8 @@
 
         // Función para navegar a evaluaciones completadas
         function navigateToCompletedEvaluations() {
-            // Primero activar la pestaña de evaluaciones si no está activa
-            const evaluationsTab = document.getElementById('evaluations-tab');
-            if (evaluationsTab && !evaluationsTab.classList.contains('active')) {
-                evaluationsTab.click();
-            }
+            // Primero activar la pestaña de evaluaciones con el nuevo sistema
+            showTab('evaluations');
             
             // Hacer scroll hacia la sección de evaluaciones completadas
             setTimeout(() => {
@@ -5384,11 +5441,8 @@
 
         // Función para navegar a la sección de tareas
         function navigateToTasks() {
-            // Primero activar la pestaña de tareas si no está activa
-            const tasksTab = document.getElementById('tasks-tab');
-            if (tasksTab && !tasksTab.classList.contains('active')) {
-                tasksTab.click();
-            }
+            // Primero activar la pestaña de tareas con el nuevo sistema
+            showTab('tasks');
             
             // Hacer scroll hacia la sección de tareas
             setTimeout(() => {
@@ -5412,11 +5466,8 @@
 
         // Función para navegar a las tareas vencidas
         function navigateToOverdueTasks() {
-            // Primero activar la pestaña de tareas si no está activa
-            const tasksTab = document.getElementById('tasks-tab');
-            if (tasksTab && !tasksTab.classList.contains('active')) {
-                tasksTab.click();
-            }
+            // Primero activar la pestaña de tareas con el nuevo sistema
+            showTab('tasks');
             
             // Hacer scroll hacia la sección de tareas
             setTimeout(() => {
@@ -5457,6 +5508,41 @@
                     }, 500);
                 }
             }, 100);
+        }
+
+        // Función para cambiar de tab con el sistema de sidebar
+        function showTab(tabId) {
+            // Ocultar todos los tab-panes
+            const allTabPanes = document.querySelectorAll('.tab-pane');
+            allTabPanes.forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+            
+            // Mostrar el tab-pane seleccionado
+            const targetPane = document.getElementById(tabId);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+            
+            // Actualizar el estado activo en el sidebar
+            const allSidebarItems = document.querySelectorAll('.list-group-item');
+            allSidebarItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Activar el item del sidebar correspondiente
+            const activeItem = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
+            
+            // Manejar el item especial de evaluación activa
+            if (tabId === 'assessment') {
+                const assessmentSidebarItem = document.getElementById('assessment-sidebar-item');
+                if (assessmentSidebarItem) {
+                    assessmentSidebarItem.style.display = 'block';
+                }
+            }
         }
 
         // Toast notification system
@@ -6587,11 +6673,10 @@
                 currentAssessmentId = evaluationType;
                 
                 // Show assessment tab
-                document.getElementById('assessment-tab-item').style.display = 'block';
+                document.getElementById('assessment-sidebar-item').style.display = 'block';
                 
                 // Switch to assessment tab
-                const assessmentTab = new bootstrap.Tab(document.getElementById('assessment-tab'));
-                assessmentTab.show();
+                showTab('assessment');
                 
                 // Load questions
                 await loadAssessmentQuestions();
@@ -7137,6 +7222,12 @@
             document.getElementById('assessmentContainer').style.display = 'none';
             isAssessmentActive = false; // Reset assessment state
             
+            // Hide assessment tab automatically when evaluation is completed
+            document.getElementById('assessment-sidebar-item').style.display = 'none';
+            
+            // Switch back to evaluations tab
+            showTab('evaluations');
+            
             // Mostrar directamente el modal de detalles de evaluación con los datos recién completados
             setTimeout(() => {
                 viewEvaluationDetails(evaluationId);
@@ -7187,7 +7278,7 @@
             isAssessmentActive = false;
             
             // Hide assessment tab
-            document.getElementById('assessment-tab-item').style.display = 'none';
+            document.getElementById('assessment-sidebar-item').style.display = 'none';
             
             // Cerrar el modal de detalles de evaluación si está abierto
             const evaluationDetailsModal = bootstrap.Modal.getInstance(document.getElementById('evaluationDetailsModal'));
@@ -7199,8 +7290,7 @@
             document.getElementById('assessmentContainer').style.display = 'block';
             
             // Switch back to evaluations tab
-            const evaluationsTab = new bootstrap.Tab(document.getElementById('evaluations-tab'));
-            evaluationsTab.show();
+            showTab('evaluations');
             
             // Refresh data
             refreshDashboard();
@@ -8305,20 +8395,20 @@
 
         // Setup event listeners
         function setupEventListeners() {
-            // Tab change events
-            document.querySelectorAll('#mainTabs button[data-bs-toggle="tab"]').forEach(tab => {
-                tab.addEventListener('shown.bs.tab', function (event) {
-                    const target = event.target.getAttribute('data-bs-target');
+            // Sidebar click events
+            document.querySelectorAll('.list-group-item[data-tab]').forEach(item => {
+                item.addEventListener('click', function (event) {
+                    const target = this.getAttribute('data-tab');
                     
                     // Load data when tabs are activated
-                    if (target === '#tasks') {
+                    if (target === 'tasks') {
                         loadTasks(); // Siempre cargar tareas para mantener datos actualizados
-                    } else if (target === '#content') {
+                    } else if (target === 'content') {
                         // Solo cargar contenido si no se ha cargado ya o si está vacío
                         if (!contentData || contentData.length === 0) {
                             loadContent();
                         }
-                    } else if (target === '#progress') {
+                    } else if (target === 'progress') {
                         loadEvaluationHistory();
                     }
                 });
@@ -8346,11 +8436,7 @@
                     }
                     
                     // Switch to evaluations tab to ensure proper state
-                    const evaluationsTab = document.getElementById('evaluations-tab');
-                    if (evaluationsTab) {
-                        const tabInstance = new bootstrap.Tab(evaluationsTab);
-                        tabInstance.show();
-                    }
+                    showTab('evaluations');
                     
                     // Clear cached data
                     window.lastEvaluationId = null;
@@ -8629,11 +8715,7 @@
             window.lastAssessmentData = null;
             
             // Switch to evaluations tab
-            const evaluationsTab = document.getElementById('evaluations-tab');
-            if (evaluationsTab) {
-                const tabInstance = new bootstrap.Tab(evaluationsTab);
-                tabInstance.show();
-            }
+            showTab('evaluations');
             
             // Force refresh
             refreshDashboard();
