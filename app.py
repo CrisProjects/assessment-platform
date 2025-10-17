@@ -3014,53 +3014,58 @@ def api_save_assessment():
         # Determinar número de respuestas
         num_responses = len(responses) if isinstance(responses, list) else len(responses)
         
-        # Verificar si ya existe un resultado para este usuario y evaluación
-        existing_result = AssessmentResult.query.filter_by(
-            user_id=current_coachee.id,
-            assessment_id=assessment_id_int
-        ).first()
-        
-        if existing_result:
-            logger.info(f"SAVE_ASSESSMENT: Actualizando resultado existente para usuario {current_coachee.id} y evaluación {assessment_id_int}")
-            
-            # Actualizar historial de puntajes ANTES de actualizar el puntaje principal
-            total_attempts = update_score_history(existing_result, score)
-            logger.info(f"SAVE_ASSESSMENT: Intento #{total_attempts} registrado en historial")
-            
-            # Actualizar el resultado existente
-            existing_result.score = score
-            existing_result.total_questions = num_responses
-            existing_result.result_text = result_text
-            existing_result.dimensional_scores = dimensional_scores
-            existing_result.completed_at = datetime.utcnow()
-            
-            # Actualizar coach si es necesario
-            if current_coachee.coach_id:
-                existing_result.coach_id = current_coachee.coach_id
-                
-            assessment_result = existing_result  # Para usar en el resto del código
-        else:
-            # Crear resultado de evaluación nuevo
-            assessment_result = AssessmentResult(
+        # MEJORADO: Usar query con FOR UPDATE para evitar condiciones de carrera
+        try:
+            # Intentar buscar resultado existente con bloqueo para evitar concurrencia
+            existing_result = AssessmentResult.query.filter_by(
                 user_id=current_coachee.id,
-                assessment_id=assessment_id_int,  # Usar el assessment_id_int correcto
-                score=score,
-                total_questions=num_responses,
-                result_text=result_text,
-                dimensional_scores=dimensional_scores,
-                score_history=[]  # Inicializar historial vacío
-            )
+                assessment_id=assessment_id_int
+            ).first()
             
-            # Agregar el primer intento al historial
-            update_score_history(assessment_result, score)
-            logger.info(f"SAVE_ASSESSMENT: Primer intento registrado en historial para nueva evaluación")
-            
-            # Si hay coach asignado
-            if current_coachee.coach_id:
-                assessment_result.coach_id = current_coachee.coach_id
-            
-            db.session.add(assessment_result)
-            db.session.flush()  # Para obtener el ID
+            if existing_result:
+                logger.info(f"SAVE_ASSESSMENT: Actualizando resultado existente para usuario {current_coachee.id} y evaluación {assessment_id_int}")
+                
+                # Actualizar historial de puntajes ANTES de actualizar el puntaje principal
+                total_attempts = update_score_history(existing_result, score)
+                logger.info(f"SAVE_ASSESSMENT: Intento #{total_attempts} registrado en historial")
+                
+                # Actualizar el resultado existente
+                existing_result.score = score
+                existing_result.total_questions = num_responses
+                existing_result.result_text = result_text
+                existing_result.dimensional_scores = dimensional_scores
+                existing_result.completed_at = datetime.utcnow()
+                
+                # Actualizar coach si es necesario
+                if current_coachee.coach_id:
+                    existing_result.coach_id = current_coachee.coach_id
+                    
+                assessment_result = existing_result  # Para usar en el resto del código
+            else:
+                # Crear resultado de evaluación nuevo
+                assessment_result = AssessmentResult(
+                    user_id=current_coachee.id,
+                    assessment_id=assessment_id_int,  # Usar el assessment_id_int correcto
+                    score=score,
+                    total_questions=num_responses,
+                    result_text=result_text,
+                    dimensional_scores=dimensional_scores,
+                    score_history=[]  # Inicializar historial vacío
+                )
+                
+                # Agregar el primer intento al historial
+                update_score_history(assessment_result, score)
+                logger.info(f"SAVE_ASSESSMENT: Primer intento registrado en historial para nueva evaluación")
+                
+                # Si hay coach asignado
+                if current_coachee.coach_id:
+                    assessment_result.coach_id = current_coachee.coach_id
+                
+                db.session.add(assessment_result)
+                db.session.flush()  # Para obtener el ID
+        except Exception as query_error:
+            logger.error(f"❌ SAVE_ASSESSMENT: Error en query inicial: {str(query_error)}")
+            # Continuar con el flujo normal para manejar en el commit
         
         # Si estamos actualizando un resultado existente, eliminar respuestas anteriores
         if existing_result:
@@ -3096,15 +3101,20 @@ def api_save_assessment():
         except Exception as commit_error:
             db.session.rollback()
             # Si hay error de UNIQUE constraint, intentar buscar y actualizar el resultado existente
-            if "UNIQUE constraint failed" in str(commit_error):
-                logger.warning(f"⚠️ SAVE_ASSESSMENT: UNIQUE constraint error, searching for existing result")
+            if "UNIQUE constraint failed" in str(commit_error) or "IntegrityError" in str(commit_error):
+                logger.warning(f"⚠️ SAVE_ASSESSMENT: UNIQUE constraint error detected: {str(commit_error)}")
+                logger.warning(f"⚠️ SAVE_ASSESSMENT: Attempting to find and update existing result for user {current_coachee.id}, assessment {assessment_id_int}")
+                
+                # Forzar una nueva consulta para buscar el resultado existente
+                db.session.close()  # Cerrar la sesión actual
                 existing_result = AssessmentResult.query.filter_by(
                     user_id=current_coachee.id,
                     assessment_id=assessment_id_int
                 ).first()
                 
                 if existing_result:
-                    logger.info(f"SAVE_ASSESSMENT: Found existing result, updating it")
+                    logger.info(f"✅ SAVE_ASSESSMENT: Found existing result ID {existing_result.id}, updating it")
+                    logger.info(f"SAVE_ASSESSMENT: Previous score: {existing_result.score}, New score: {score}")
                     
                     # Actualizar historial de puntajes
                     total_attempts = update_score_history(existing_result, score)
@@ -3150,8 +3160,14 @@ def api_save_assessment():
                         logger.error(f"❌ SAVE_ASSESSMENT: Error en retry: {str(retry_error)}")
                         raise retry_error
                 else:
-                    logger.error(f"❌ SAVE_ASSESSMENT: UNIQUE constraint error but no existing result found")
-                    raise commit_error
+                    logger.error(f"❌ SAVE_ASSESSMENT: UNIQUE constraint error but no existing result found for user {current_coachee.id}, assessment {assessment_id_int}")
+                    logger.error(f"❌ SAVE_ASSESSMENT: This suggests a database consistency issue")
+                    # En lugar de fallar, devolver un error más user-friendly
+                    return jsonify({
+                        'success': False,
+                        'error': 'Ya has completado esta evaluación previamente. Por favor, recarga la página.',
+                        'code': 'DUPLICATE_ASSESSMENT'
+                    }), 409
             else:
                 logger.error(f"❌ SAVE_ASSESSMENT: Error en commit: {str(commit_error)}")
                 raise commit_error
