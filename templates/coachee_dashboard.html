@@ -13,6 +13,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
     <link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -44,6 +46,97 @@
         
         .priority-growth {
             border-top-color: #10b981;
+        }
+        
+        /* Estilos para dropdowns de tiempo en formato 24 horas */
+        .time-select-24h {
+            font-family: 'Courier New', monospace !important;
+            font-weight: bold !important;
+            font-size: 1.1em !important;
+            text-align: center !important;
+            color: #1E3A8A !important;
+            background-color: #f8f9fa !important;
+            border: 2px solid #e9ecef !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+        }
+        
+        .time-select-24h:focus {
+            border-color: #1E3A8A !important;
+            box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25) !important;
+            background-color: white !important;
+        }
+        
+        .time-select-24h option {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #1E3A8A;
+            background-color: white;
+            padding: 8px;
+        }
+        
+        .time-select-24h option:hover {
+            background-color: #f8f9fa !important;
+        }
+        
+        .time-select-24h option:checked,
+        .time-select-24h option:selected {
+            background-color: #1E3A8A !important;
+            color: white !important;
+        }
+        
+        .time-input-24h {
+            font-family: 'Courier New', monospace !important;
+            font-weight: bold !important;
+            font-size: 1.1em !important;
+            letter-spacing: 1px !important;
+            text-align: center !important;
+            color: #1E3A8A !important;
+            background-color: #f8f9fa !important;
+            border: 2px solid #e9ecef !important;
+        }
+        
+        .time-input-24h:focus {
+            border-color: #1E3A8A !important;
+            box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25) !important;
+            background-color: white !important;
+        }
+        
+        .time-input-24h.is-valid {
+            border-color: #28a745 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73 1.42 1.42 3.47-3.47'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right calc(0.375em + 0.1875rem) center !important;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+        }
+        
+        .time-input-24h.is-invalid {
+            border-color: #dc3545 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.2.4-.4.4.4-.4.4.4.4-.4.4-.4-.4-.4.4-.4-.4.4-.4-.4-.4.4-.4Z'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right calc(0.375em + 0.1875rem) center !important;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+        }
+        
+        input[type="time"][data-format="24h"] {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.1em;
+            letter-spacing: 1px;
+        }
+        
+        input[type="time"][data-format="24h"]::-webkit-calendar-picker-indicator {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="%23666" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-6V7h2v4h4v2z"/></svg>') no-repeat;
+        }
+        
+        /* Asegurar que el formato sea siempre 24h */
+        input[type="time"][data-format="24h"]::-webkit-datetime-edit-hour-field {
+            color: #1E3A8A;
+            font-weight: bold;
+        }
+        
+        input[type="time"][data-format="24h"]::-webkit-datetime-edit-minute-field {
+            color: #1E3A8A;
+            font-weight: bold;
         }
         
         /* ESTILOS PARA SIDEBAR PANEL DE CONTROL - IGUAL QUE COACH */
@@ -543,6 +636,14 @@
                 border-color: #007bff !important;
                 font-weight: 600 !important;
                 box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
+            }
+            
+            /* Asegurar texto blanco en botones activos */
+            .nav-tabs .nav-link.active,
+            .nav-tabs .nav-link.active:hover,
+            .nav-tabs .nav-link.active:focus,
+            .nav-tabs .nav-link.active:active {
+                color: #ffffff !important;
             }
             
             .nav-tabs .nav-link i {
@@ -1088,10 +1189,44 @@
             }
             
             .nav-tabs .nav-link.active {
-                background: #ffffff !important;
-                color: #007bff !important;
-                border-color: #e9ecef #e9ecef #ffffff !important;
+                background: #007bff !important;
+                color: #ffffff !important;
+                border-color: #007bff !important;
                 font-weight: 600 !important;
+                box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
+            }
+            
+            /* ========== ANULAR BOOTSTRAP EN TABLET TAMBIÉN ========== */
+            
+            /* MÁXIMA ESPECIFICIDAD - Tablet nav-link effects */
+            ul.nav.nav-tabs li.nav-item button.nav-link:active,
+            ul.nav.nav-tabs li.nav-item button.nav-link.active:active,
+            .nav-tabs .nav-item .nav-link:active,
+            .nav-tabs .nav-item .nav-link.active:active,
+            button.nav-link:active,
+            button.nav-link.active:active {
+                transform: none !important;
+                box-shadow: inherit !important;
+                opacity: 1 !important;
+                filter: none !important;
+                background: #007bff !important;
+                color: #ffffff !important;
+                transition: none !important;
+                border-color: #007bff !important;
+            }
+            
+            /* Asegurar texto blanco en botones activos - tablet */
+            .nav-tabs .nav-link.active,
+            .nav-tabs .nav-link.active:hover,
+            .nav-tabs .nav-link.active:focus,
+            .nav-tabs .nav-link.active:active {
+                color: #ffffff !important;
+                background: #007bff !important;
+                transform: none !important;
+                opacity: 1 !important;
+                filter: none !important;
+                border-color: #007bff !important;
+                box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
             }
             
             .nav-tabs .nav-link i {
@@ -1258,9 +1393,171 @@
         }
         
         /* Animación de click/active para botones */
-        .btn:active, .nav-link:active {
+        .btn:active {
             transform: scale(0.98) !important;
             transition: transform 0.1s ease !important;
+        }
+        
+        /* Eliminar TODOS los efectos en nav-links para evitar oscurecimiento */
+        .nav-link:active,
+        .nav-tabs .nav-link:active,
+        .nav-tabs .nav-link.active:active {
+            transform: none !important;
+            box-shadow: inherit !important;
+            opacity: 1 !important;
+            filter: none !important;
+            background: inherit !important;
+            color: inherit !important;
+            transition: none !important;
+        }
+        
+        /* Forzar color blanco en botones activos específicamente */
+        .nav-tabs .nav-link.active:active {
+            color: #ffffff !important;
+            background: #007bff !important;
+        }
+        
+        /* ============ ANULAR BOOTSTRAP 5.3.3 COMPLETAMENTE ============ */
+        
+        /* MÁXIMA ESPECIFICIDAD - Anular Bootstrap nav-link effects */
+        ul.nav.nav-tabs li.nav-item button.nav-link:active,
+        ul.nav.nav-tabs li.nav-item button.nav-link.active:active,
+        .nav-tabs .nav-item .nav-link:active,
+        .nav-tabs .nav-item .nav-link.active:active,
+        button.nav-link:active,
+        button.nav-link.active:active {
+            transform: none !important;
+            box-shadow: inherit !important;
+            opacity: 1 !important;
+            filter: none !important;
+            background: #007bff !important;
+            color: #ffffff !important;
+            transition: none !important;
+            border-color: #007bff !important;
+            text-decoration: none !important;
+        }
+        
+        /* Anular TODOS los efectos de Bootstrap en nav-links */
+        .nav-link:active,
+        .nav-link:focus,
+        .nav-link:hover:active,
+        .nav-tabs .nav-link:active,
+        .nav-tabs .nav-link:focus,
+        .nav-tabs .nav-link:hover:active {
+            background-color: inherit !important;
+            border-color: inherit !important;
+            color: inherit !important;
+            transform: none !important;
+            box-shadow: none !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+        
+        /* FORZAR estilos en botones activos específicamente */
+        .nav-tabs .nav-link.active:active,
+        .nav-tabs .nav-link.active:focus,
+        .nav-tabs .nav-link.active:hover:active {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: #ffffff !important;
+            transform: none !important;
+            box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+        
+        /* Eliminar highlight táctil en dispositivos móviles */
+        .nav-link {
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-touch-callout: none !important;
+            -webkit-user-select: none !important;
+            -khtml-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            outline: none !important;
+        }
+        
+        .nav-link:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* ========== FUERZA BRUTA: TEXTO BLANCO SIEMPRE ========== */
+        
+        /* NIVEL 1: Especificidad máxima con IDs */
+        #scheduleCoachTabs.nav.nav-tabs .nav-item .nav-link:active,
+        #scheduleCoachTabs.nav.nav-tabs .nav-item .nav-link.active:active,
+        #scheduleCoachTabs .nav-link:active,
+        #scheduleCoachTabs .nav-link.active:active {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: #ffffff !important;
+            transform: none !important;
+            box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
+            opacity: 1 !important;
+            filter: none !important;
+            transition: none !important;
+            outline: none !important;
+        }
+        
+        /* NIVEL 2: Fuerza bruta - TODOS los selectores posibles */
+        #scheduleCoachTabs button:active,
+        #scheduleCoachTabs button.active:active,
+        #scheduleCoachTabs .nav-link:active,
+        #scheduleCoachTabs .nav-link.active:active,
+        #scheduleCoachTabs .nav-tabs .nav-link:active,
+        #scheduleCoachTabs .nav-tabs .nav-link.active:active,
+        ul#scheduleCoachTabs.nav.nav-tabs li.nav-item button.nav-link:active,
+        ul#scheduleCoachTabs.nav.nav-tabs li.nav-item button.nav-link.active:active {
+            color: #ffffff !important;
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+        }
+        
+        /* NIVEL 3: Fuerza bruta - Selectores de atributo */
+        button[id="schedule-request-tab"]:active,
+        button[id="my-sessions-tab"]:active,
+        button[id="schedule-request-tab"].active:active,
+        button[id="my-sessions-tab"].active:active {
+            color: #ffffff !important;
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+        }
+        
+        /* NIVEL 4: JavaScript override backup */
+        .force-white-text:active,
+        .force-white-text.active:active {
+            color: #ffffff !important;
+            background-color: #007bff !important;
+        }
+        
+        /* NIVEL 5: NUCLEAR OPTION - Aplicar DESPUÉS de Bootstrap */
+        @media screen {
+            #schedule-request-tab,
+            #my-sessions-tab {
+                transition: none !important;
+            }
+            
+            #schedule-request-tab.active,
+            #my-sessions-tab.active {
+                color: #ffffff !important;
+                background-color: #007bff !important;
+                border-color: #007bff !important;
+            }
+            
+            #schedule-request-tab:active,
+            #schedule-request-tab.active:active,
+            #my-sessions-tab:active,
+            #my-sessions-tab.active:active {
+                color: #ffffff !important;
+                background-color: #007bff !important;
+                border-color: #007bff !important;
+                transform: none !important;
+                opacity: 1 !important;
+                filter: none !important;
+                box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
+            }
         }
         
         /* Animación de entrada para cards */
@@ -4943,6 +5240,206 @@
                 font-size: 13px;
             }
         }
+
+        /* ========== MEJORAS RESPONSIVAS PARA SCHEDULE COACH MODULE ========== */
+        @media (max-width: 768px) {
+            /* Schedule Coach - Pestañas responsivas */
+            #scheduleCoachTabs {
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                border-bottom: 1px solid #dee2e6 !important;
+                scrollbar-width: none !important; /* Firefox */
+                -ms-overflow-style: none !important; /* IE/Edge */
+            }
+            
+            #scheduleCoachTabs::-webkit-scrollbar {
+                display: none !important; /* Chrome/Safari */
+            }
+            
+            #scheduleCoachTabs .nav-item {
+                flex-shrink: 0 !important;
+            }
+            
+            #scheduleCoachTabs .nav-link {
+                white-space: nowrap !important;
+                padding: 8px 12px !important;
+                font-size: 0.85rem !important;
+            }
+            
+            /* Schedule Coach - Layout responsivo */
+            #schedule-coach .col-lg-8,
+            #schedule-coach .col-lg-4 {
+                margin-bottom: 1rem !important;
+            }
+            
+            /* Formulario de solicitud - Stack vertical en mobile */
+            #sessionRequestForm .row.g-3 .col-md-6 {
+                margin-bottom: 1rem !important;
+            }
+            
+            #sessionRequestForm .form-label {
+                font-size: 0.9rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+            
+            #sessionRequestForm .form-control,
+            #sessionRequestForm .form-select {
+                font-size: 0.9rem !important;
+                padding: 0.5rem !important;
+            }
+            
+            #sessionRequestForm .form-text {
+                font-size: 0.75rem !important;
+            }
+            
+            /* Información del coach más compacta */
+            #coachAvailabilityInfo {
+                padding: 0.75rem !important;
+            }
+            
+            #coachAvailabilityInfo .list-group-item {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.85rem !important;
+            }
+            
+            /* Tips para agendar más compactos */
+            #schedule-coach .card .list-unstyled li {
+                margin-bottom: 0.75rem !important;
+                font-size: 0.85rem !important;
+            }
+            
+            /* Lista de sesiones responsiva */
+            #mySessionsList .card {
+                margin-bottom: 0.75rem !important;
+            }
+            
+            #mySessionsList .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            #mySessionsList .card-title {
+                font-size: 1rem !important;
+            }
+            
+            #mySessionsList .card-text {
+                font-size: 0.85rem !important;
+            }
+            
+            /* Botones de sesión más compactos */
+            #mySessionsList .btn-group {
+                flex-direction: column !important;
+                width: 100% !important;
+            }
+            
+            #mySessionsList .btn-group .btn {
+                border-radius: 0.375rem !important;
+                margin-bottom: 0.25rem !important;
+                font-size: 0.8rem !important;
+                padding: 0.375rem 0.75rem !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            /* Mobile específico para schedule coach */
+            #scheduleCoachTabs .nav-link {
+                padding: 6px 8px !important;
+                font-size: 0.8rem !important;
+            }
+            
+            #scheduleCoachTabs .nav-link i {
+                margin-right: 4px !important;
+            }
+            
+            /* Ocultar texto en iconos en pantallas muy pequeñas */
+            #scheduleCoachTabs .nav-link .d-none {
+                display: none !important;
+            }
+            
+            /* Formulario más compacto */
+            #sessionRequestForm .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            #sessionRequestForm .btn {
+                width: 100% !important;
+                padding: 0.75rem !important;
+                font-size: 0.9rem !important;
+            }
+            
+            /* Cards de información más pequeñas */
+            #schedule-coach .card-header h6 {
+                font-size: 0.9rem !important;
+            }
+            
+            #schedule-coach .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            /* Lista de sesiones en mobile */
+            #mySessionsList .card-body {
+                padding: 0.5rem !important;
+            }
+            
+            #mySessionsList .badge {
+                font-size: 0.7rem !important;
+            }
+            
+            /* Botones de acción stack vertical */
+            #my-sessions-pane .d-flex {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+            }
+            
+            #my-sessions-pane .d-flex .btn {
+                width: 100% !important;
+            }
+        }
+
+        /* Tablet específico para schedule coach */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            #schedule-coach .col-lg-4 {
+                margin-top: 1rem !important;
+            }
+            
+            #scheduleCoachTabs .nav-link {
+                padding: 10px 16px !important;
+            }
+            
+            /* Formulario en 2 columnas en tablet */
+            #sessionRequestForm .row.g-3 {
+                margin: 0 -0.5rem !important;
+            }
+            
+            #sessionRequestForm .col-md-6 {
+                padding: 0 0.5rem !important;
+            }
+            
+            /* Cards de información lado a lado en tablet */
+            #schedule-coach .col-lg-4 .card {
+                margin-bottom: 1rem !important;
+            }
+        }
+
+        /* Mejoras adicionales para mejor UX en todos los dispositivos */
+        #schedule-coach .nav-tabs .nav-link.active {
+            background-color: var(--theme-card-bg, #fff) !important;
+            border-color: var(--theme-border, #dee2e6) !important;
+            color: var(--theme-text, #495057) !important;
+        }
+        
+        #schedule-coach .tab-content {
+            border: 1px solid var(--theme-border, #dee2e6) !important;
+            border-top: none !important;
+            border-radius: 0 0 0.375rem 0.375rem !important;
+            background-color: var(--theme-card-bg, #fff) !important;
+            padding: 1rem !important;
+        }
+        
+        @media (max-width: 768px) {
+            #schedule-coach .tab-content {
+                padding: 0.75rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -5065,6 +5562,10 @@
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                                onclick="showTab('progress'); return false;" data-tab="progress">
                                 <i class="fas fa-chart-area me-3"></i>Progreso
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                               onclick="showTab('schedule-coach'); return false;" data-tab="schedule-coach">
+                                <i class="fas fa-calendar-plus me-3"></i>Agendar Coach
                             </a>
                         </div>
                     </div>
@@ -5261,6 +5762,244 @@
                                     <div class="loading-spinner">
                                         <div class="spinner-border spinner-border-custom" role="status">
                                             <span class="visually-hidden">Cargando análisis...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Coach Tab -->
+                <div class="tab-pane fade" id="schedule-coach" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3>
+                                        <i class="fas fa-calendar-plus me-2"></i>
+                                        Agendar Sesión con mi Coach
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Pestañas para organizar el contenido -->
+                                    <ul class="nav nav-tabs mb-4" id="scheduleCoachTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active force-white-text" id="schedule-request-tab" data-bs-toggle="tab" 
+                                                data-bs-target="#schedule-request-pane" type="button" role="tab" 
+                                                aria-controls="schedule-request-pane" aria-selected="true"
+                                                style="color: #ffffff !important; background-color: #007bff !important; border-color: #007bff !important;">
+                                                <i class="fas fa-plus me-1"></i>Solicitar Sesión
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link position-relative force-white-text" id="my-sessions-tab" data-bs-toggle="tab" 
+                                                data-bs-target="#my-sessions-pane" type="button" role="tab"
+                                                aria-controls="my-sessions-pane" aria-selected="false">
+                                                <i class="fas fa-calendar me-1"></i>Mis Sesiones
+                                                <span class="badge bg-info rounded-pill ms-1" id="mySessionsCount" style="display: none;">0</span>
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <!-- Contenido de las pestañas -->
+                                    <div class="tab-content" id="scheduleCoachTabContent">
+                                        
+                                        <!-- Pestaña: Solicitar Sesión -->
+                                        <div class="tab-pane fade show active" id="schedule-request-pane" role="tabpanel" 
+                                             aria-labelledby="schedule-request-tab" tabindex="0">
+                                            <div class="row">
+                                                <div class="col-lg-8">
+                                                    <div class="card">
+                                                        <div class="card-header">
+                                                            <h6 class="mb-0">
+                                                                <i class="fas fa-calendar-plus me-2"></i>
+                                                                Nueva Solicitud de Sesión
+                                                            </h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <form id="sessionRequestForm">
+                                                                <div class="row g-3">
+                                                                    <div class="col-12">
+                                                                        <label for="sessionDate" class="form-label">Fecha Preferida</label>
+                                                                        <input type="date" class="form-control" id="sessionDate" required>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label for="sessionStartTime" class="form-label">Hora de Inicio</label>
+                                                                        <select class="form-select time-select-24h" id="sessionStartTime" required>
+                                                                            <option value="">Seleccionar hora</option>
+                                                                            <option value="08:00">08:00</option>
+                                                                            <option value="08:30">08:30</option>
+                                                                            <option value="09:00">09:00</option>
+                                                                            <option value="09:30">09:30</option>
+                                                                            <option value="10:00" selected>10:00</option>
+                                                                            <option value="10:30">10:30</option>
+                                                                            <option value="11:00">11:00</option>
+                                                                            <option value="11:30">11:30</option>
+                                                                            <option value="12:00">12:00</option>
+                                                                            <option value="12:30">12:30</option>
+                                                                            <option value="13:00">13:00</option>
+                                                                            <option value="13:30">13:30</option>
+                                                                            <option value="14:00">14:00</option>
+                                                                            <option value="14:30">14:30</option>
+                                                                            <option value="15:00">15:00</option>
+                                                                            <option value="15:30">15:30</option>
+                                                                            <option value="16:00">16:00</option>
+                                                                            <option value="16:30">16:30</option>
+                                                                            <option value="17:00">17:00</option>
+                                                                            <option value="17:30">17:30</option>
+                                                                            <option value="18:00">18:00</option>
+                                                                            <option value="18:30">18:30</option>
+                                                                            <option value="19:00">19:00</option>
+                                                                            <option value="19:30">19:30</option>
+                                                                            <option value="20:00">20:00</option>
+                                                                        </select>
+                                                                        <div class="form-text">Horario disponible: 08:00 - 20:00</div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label for="sessionEndTime" class="form-label">Hora de Fin</label>
+                                                                        <select class="form-select time-select-24h" id="sessionEndTime" required>
+                                                                            <option value="">Seleccionar hora</option>
+                                                                            <option value="08:30">08:30</option>
+                                                                            <option value="09:00">09:00</option>
+                                                                            <option value="09:30">09:30</option>
+                                                                            <option value="10:00">10:00</option>
+                                                                            <option value="10:30">10:30</option>
+                                                                            <option value="11:00" selected>11:00</option>
+                                                                            <option value="11:30">11:30</option>
+                                                                            <option value="12:00">12:00</option>
+                                                                            <option value="12:30">12:30</option>
+                                                                            <option value="13:00">13:00</option>
+                                                                            <option value="13:30">13:30</option>
+                                                                            <option value="14:00">14:00</option>
+                                                                            <option value="14:30">14:30</option>
+                                                                            <option value="15:00">15:00</option>
+                                                                            <option value="15:30">15:30</option>
+                                                                            <option value="16:00">16:00</option>
+                                                                            <option value="16:30">16:30</option>
+                                                                            <option value="17:00">17:00</option>
+                                                                            <option value="17:30">17:30</option>
+                                                                            <option value="18:00">18:00</option>
+                                                                            <option value="18:30">18:30</option>
+                                                                            <option value="19:00">19:00</option>
+                                                                            <option value="19:30">19:30</option>
+                                                                            <option value="20:00">20:00</option>
+                                                                            <option value="20:30">20:30</option>
+                                                                        </select>
+                                                                        <div class="form-text">Horario disponible: 08:30 - 20:30</div>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label for="sessionTitle" class="form-label">Título de la Sesión</label>
+                                                                        <input type="text" class="form-control" id="sessionTitle" 
+                                                                            placeholder="Ej: Sesión de desarrollo personal" value="Sesión de Coaching">
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label for="sessionDescription" class="form-label">Descripción (opcional)</label>
+                                                                        <textarea class="form-control" id="sessionDescription" rows="3" 
+                                                                            placeholder="Describe brevemente el tema que te gustaría trabajar..."></textarea>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label for="sessionLocation" class="form-label">Modalidad Preferida</label>
+                                                                        <select class="form-select" id="sessionLocation">
+                                                                            <option value="Virtual - Zoom">Virtual - Zoom</option>
+                                                                            <option value="Virtual - Teams">Virtual - Teams</option>
+                                                                            <option value="Virtual - Meet">Virtual - Google Meet</option>
+                                                                            <option value="Presencial">Presencial</option>
+                                                                            <option value="Por definir">Por definir</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <button type="submit" class="btn btn-primary">
+                                                                            <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
+                                                                        </button>
+                                                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetSessionForm()">
+                                                                            <i class="fas fa-undo me-2"></i>Limpiar
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-lg-4">
+                                                    <div class="card">
+                                                        <div class="card-header">
+                                                            <h6 class="mb-0">
+                                                                <i class="fas fa-info-circle me-2"></i>
+                                                                Disponibilidad del Coach
+                                                            </h6>
+                                                        </div>
+                                                        <div class="card-body" id="coachAvailabilityInfo">
+                                                            <div class="text-center py-3">
+                                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                                    <span class="visually-hidden">Cargando disponibilidad...</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="card mt-3">
+                                                        <div class="card-header">
+                                                            <h6 class="mb-0">
+                                                                <i class="fas fa-lightbulb me-2"></i>
+                                                                Tips para Agendar
+                                                            </h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <ul class="list-unstyled mb-0">
+                                                                <li class="mb-2">
+                                                                    <i class="fas fa-check text-success me-2"></i>
+                                                                    Planifica con al menos 24 horas de anticipación
+                                                                </li>
+                                                                <li class="mb-2">
+                                                                    <i class="fas fa-check text-success me-2"></i>
+                                                                    Describe el tema que quieres trabajar
+                                                                </li>
+                                                                <li class="mb-2">
+                                                                    <i class="fas fa-check text-success me-2"></i>
+                                                                    Verifica tu disponibilidad antes de solicitar
+                                                                </li>
+                                                                <li class="mb-0">
+                                                                    <i class="fas fa-check text-success me-2"></i>
+                                                                    Tu coach responderá en máximo 24 horas
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Pestaña: Mis Sesiones -->
+                                        <div class="tab-pane fade" id="my-sessions-pane" role="tabpanel" 
+                                             aria-labelledby="my-sessions-tab" tabindex="0">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                                        <h6 class="mb-0">
+                                                            <i class="fas fa-calendar me-2"></i>
+                                                            Mis Sesiones Programadas
+                                                        </h6>
+                                                        <div>
+                                                            <button class="btn btn-primary btn-sm me-2" onclick="switchToRequestTab()">
+                                                                <i class="fas fa-plus me-1"></i>Solicitar Sesión
+                                                            </button>
+                                                            <button class="btn btn-outline-primary btn-sm" onclick="refreshMySessions()">
+                                                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div id="mySessionsList">
+                                                        <div class="text-center py-4">
+                                                            <div class="spinner-border text-primary" role="status">
+                                                                <span class="visually-hidden">Cargando sesiones...</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -9212,6 +9951,768 @@
         
         // Inicializar sistema de temas después de que se cargue todo
         setTimeout(initThemeSystem, 100);
+
+        // ========== FORZAR TEXTO BLANCO CON JAVASCRIPT ========== 
+        function forceWhiteTextOnButtons() {
+            const buttons = document.querySelectorAll('#scheduleCoachTabs .nav-link');
+            
+            buttons.forEach(button => {
+                // Agregar clase para CSS
+                button.classList.add('force-white-text');
+                
+                // Event listeners para forzar estilos
+                button.addEventListener('mousedown', function() {
+                    if (this.classList.contains('active')) {
+                        this.style.setProperty('color', '#ffffff', 'important');
+                        this.style.setProperty('background-color', '#007bff', 'important');
+                        this.style.setProperty('border-color', '#007bff', 'important');
+                        this.style.setProperty('transform', 'none', 'important');
+                        this.style.setProperty('opacity', '1', 'important');
+                        this.style.setProperty('filter', 'none', 'important');
+                    }
+                });
+                
+                button.addEventListener('mouseup', function() {
+                    if (this.classList.contains('active')) {
+                        this.style.setProperty('color', '#ffffff', 'important');
+                        this.style.setProperty('background-color', '#007bff', 'important');
+                        this.style.setProperty('border-color', '#007bff', 'important');
+                    }
+                });
+                
+                button.addEventListener('click', function() {
+                    setTimeout(() => {
+                        if (this.classList.contains('active')) {
+                            this.style.setProperty('color', '#ffffff', 'important');
+                            this.style.setProperty('background-color', '#007bff', 'important');
+                            this.style.setProperty('border-color', '#007bff', 'important');
+                        }
+                    }, 10);
+                });
+                
+                // Verificación continua para botones activos
+                setInterval(() => {
+                    if (this.classList.contains('active')) {
+                        this.style.setProperty('color', '#ffffff', 'important');
+                        this.style.setProperty('background-color', '#007bff', 'important');
+                        this.style.setProperty('border-color', '#007bff', 'important');
+                    }
+                }, 100);
+            });
+        }
+        
+        // Ejecutar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(forceWhiteTextOnButtons, 500);
+        });
+
+        // ================================
+        // COACHEE CALENDAR FUNCIONES
+        // ================================
+
+        // FullCalendar JS
+        const calendarScript = document.createElement('script');
+        calendarScript.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js';
+        calendarScript.onload = function() {
+            console.log('✅ FullCalendar cargado para coachee');
+            initializeCoacheeScheduling();
+        };
+        document.head.appendChild(calendarScript);
+
+        function initializeCoacheeScheduling() {
+            console.log('🗓️ Inicializando sistema de agendamiento para coachee');
+            loadCoachAvailability();
+            loadMySessions();
+            setupSessionRequestForm();
+        }
+
+        function loadCoachAvailability() {
+            fetch('/api/coachee/coach-availability')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayCoachAvailability(data.availability, data.occupied_slots, data.coach_name);
+                    } else {
+                        document.getElementById('coachAvailabilityInfo').innerHTML = 
+                            '<p class="text-muted">No se pudo cargar la disponibilidad del coach</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando disponibilidad del coach:', error);
+                    document.getElementById('coachAvailabilityInfo').innerHTML = 
+                        '<p class="text-danger">Error cargando disponibilidad</p>';
+                });
+        }
+
+        function displayCoachAvailability(availability, occupiedSlots, coachName) {
+            const container = document.getElementById('coachAvailabilityInfo');
+            if (!container) return;
+            
+            if (availability.length === 0) {
+                container.innerHTML = '<p class="text-muted">El coach no ha configurado su disponibilidad</p>';
+                return;
+            }
+            
+            const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            
+            let html = `<div class="mb-2"><strong>${coachName}</strong></div>`;
+            html += '<div class="mb-3"><small class="text-muted">Horarios disponibles esta semana:</small></div>';
+            
+            // Calcular disponibilidad real para los próximos 7 días
+            const realAvailability = calculateRealAvailability(availability, occupiedSlots);
+            
+            if (realAvailability.length === 0) {
+                html += '<div class="alert alert-info py-2"><small>No hay horarios disponibles en los próximos 7 días.</small></div>';
+            } else {
+                realAvailability.forEach(slot => {
+                    const date = new Date(slot.date + 'T12:00:00');
+                    const dayName = dayNames[date.getDay()];
+                    const dateStr = date.toLocaleDateString('es-ES', { 
+                        day: '2-digit', 
+                        month: '2-digit' 
+                    });
+                    
+                    html += `
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-success bg-opacity-10 border border-success border-opacity-25 rounded">
+                            <div>
+                                <span class="fw-medium">${dayName}</span>
+                                <small class="text-muted ms-1">${dateStr}</small>
+                            </div>
+                            <span class="text-success fw-medium">${slot.start_time} - ${slot.end_time}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Mostrar próximas sesiones ocupadas como referencia
+            if (occupiedSlots.length > 0) {
+                html += '<div class="mt-3 mb-2"><small class="text-muted">Próximas sesiones ocupadas:</small></div>';
+                occupiedSlots.slice(0, 3).forEach(slot => {
+                    const date = new Date(slot.date + 'T12:00:00');
+                    const dateStr = date.toLocaleDateString('es-ES', { 
+                        day: '2-digit', 
+                        month: '2-digit' 
+                    });
+                    html += `
+                        <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-warning bg-opacity-10 rounded">
+                            <span class="small">${dateStr}</span>
+                            <span class="small text-warning">${slot.start_time} - ${slot.end_time}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function calculateRealAvailability(generalAvailability, occupiedSlots) {
+            const realSlots = [];
+            const today = new Date();
+            
+            // Analizar los próximos 7 días
+            for (let i = 1; i <= 7; i++) {
+                const targetDate = new Date(today);
+                targetDate.setDate(today.getDate() + i);
+                const dayOfWeek = targetDate.getDay();
+                const dateStr = targetDate.toISOString().split('T')[0];
+                
+                // Buscar disponibilidad general para este día de la semana
+                const dayAvailability = generalAvailability.filter(slot => slot.day_of_week === dayOfWeek);
+                
+                dayAvailability.forEach(generalSlot => {
+                    // Buscar sesiones ocupadas en esta fecha específica
+                    const dayOccupied = occupiedSlots.filter(occupied => occupied.date === dateStr);
+                    
+                    // Calcular horarios libres
+                    const freeSlots = calculateFreeTimeSlots(
+                        generalSlot.start_time,
+                        generalSlot.end_time,
+                        dayOccupied
+                    );
+                    
+                    // Agregar slots libres que sean de al menos 1 hora
+                    freeSlots.forEach(freeSlot => {
+                        if (getMinutesDifference(freeSlot.start, freeSlot.end) >= 60) {
+                            realSlots.push({
+                                date: dateStr,
+                                start_time: freeSlot.start,
+                                end_time: freeSlot.end,
+                                day_of_week: dayOfWeek
+                            });
+                        }
+                    });
+                });
+            }
+            
+            return realSlots;
+        }
+
+        function calculateFreeTimeSlots(startTime, endTime, occupiedSlots) {
+            if (occupiedSlots.length === 0) {
+                return [{ start: startTime, end: endTime }];
+            }
+            
+            const freeSlots = [];
+            let currentStart = startTime;
+            
+            // Ordenar slots ocupados por hora de inicio
+            const sortedOccupied = occupiedSlots.sort((a, b) => 
+                a.start_time.localeCompare(b.start_time)
+            );
+            
+            sortedOccupied.forEach(occupied => {
+                // Si hay espacio antes de esta sesión ocupada
+                if (currentStart < occupied.start_time) {
+                    freeSlots.push({
+                        start: currentStart,
+                        end: occupied.start_time
+                    });
+                }
+                
+                // Actualizar el siguiente inicio disponible
+                currentStart = occupied.end_time > currentStart ? occupied.end_time : currentStart;
+            });
+            
+            // Si queda tiempo después de la última sesión ocupada
+            if (currentStart < endTime) {
+                freeSlots.push({
+                    start: currentStart,
+                    end: endTime
+                });
+            }
+            
+            return freeSlots;
+        }
+
+        function getMinutesDifference(startTime, endTime) {
+            const [startHour, startMin] = startTime.split(':').map(Number);
+            const [endHour, endMin] = endTime.split(':').map(Number);
+            
+            const startMinutes = startHour * 60 + startMin;
+            const endMinutes = endHour * 60 + endMin;
+            
+            return endMinutes - startMinutes;
+        }
+
+        // Variable global para controlar que el formulario solo se configure una vez
+        let sessionFormConfigured = false;
+
+        function setupSessionRequestForm() {
+            console.log('🔧 Configurando formulario de solicitud de sesión con dropdowns...');
+            
+            const form = document.getElementById('sessionRequestForm');
+            if (!form) {
+                console.warn('⚠️ Formulario sessionRequestForm no encontrado');
+                return;
+            }
+            
+            // ⚠️ IMPORTANTE: Solo configurar una vez para evitar event listeners duplicados
+            if (sessionFormConfigured) {
+                console.log('ℹ️ Formulario ya configurado, omitiendo configuración duplicada');
+                return;
+            }
+            
+            // Verificar que todos los elementos existan
+            const sessionDate = document.getElementById('sessionDate');
+            const sessionStartTime = document.getElementById('sessionStartTime');
+            const sessionEndTime = document.getElementById('sessionEndTime');
+            
+            if (!sessionDate || !sessionStartTime || !sessionEndTime) {
+                console.warn('⚠️ Algunos campos del formulario no fueron encontrados');
+                return;
+            }
+            
+            console.log('✅ Todos los campos del formulario encontrados');
+            
+            // Configurar fecha mínima (mañana en zona horaria de Santiago)
+            sessionDate.min = getSantiagoTomorrow();
+            console.log('📅 Fecha mínima configurada (Santiago):', getSantiagoTomorrow());
+            
+            // Configurar dropdowns de tiempo para auto-completar
+            function setupTimeDropdowns() {
+                console.log('🕐 Configurando dropdowns de tiempo...');
+                
+                // Auto-completar hora de fin cuando se selecciona hora de inicio
+                sessionStartTime.addEventListener('change', function() {
+                    const startTime = this.value;
+                    console.log('🕐 Hora de inicio seleccionada:', startTime);
+                    
+                    if (startTime) {
+                        const [hours, minutes] = startTime.split(':').map(Number);
+                        let endHours = hours + 1;
+                        
+                        // Asegurar que no exceda las 20:30
+                        if (endHours > 20 || (endHours === 20 && minutes > 0)) {
+                            endHours = 20;
+                            sessionEndTime.value = '20:30';
+                        } else {
+                            const endTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                            sessionEndTime.value = endTime;
+                        }
+                        
+                        console.log('🕐 Hora de fin auto-completada:', sessionEndTime.value);
+                    }
+                });
+                
+                // Validar que la hora de fin sea posterior a la de inicio
+                sessionEndTime.addEventListener('change', function() {
+                    const startTime = sessionStartTime.value;
+                    const endTime = this.value;
+                    
+                    if (startTime && endTime) {
+                        const [startHours, startMinutes] = startTime.split(':').map(Number);
+                        const [endHours, endMinutes] = endTime.split(':').map(Number);
+                        
+                        const startTotalMinutes = startHours * 60 + startMinutes;
+                        const endTotalMinutes = endHours * 60 + endMinutes;
+                        
+                        if (endTotalMinutes <= startTotalMinutes) {
+                            showNotification('La hora de fin debe ser posterior a la hora de inicio', 'error');
+                            // Resetear a una hora válida
+                            const validEndHours = startHours + 1;
+                            if (validEndHours <= 20) {
+                                this.value = `${String(validEndHours).padStart(2, '0')}:${String(startMinutes).padStart(2, '0')}`;
+                            } else {
+                                this.value = '20:30';
+                            }
+                        }
+                    }
+                });
+                
+                console.log('✅ Dropdowns de tiempo configurados');
+            }
+            
+            // Configurar dropdowns
+            setupTimeDropdowns();
+            
+            // Agregar event listener al formulario (UNA SOLA VEZ)
+            form.addEventListener('submit', function(e) {
+                console.log('📝 Formulario enviado - procesando solicitud');
+                e.preventDefault();
+                
+                // Validar que todos los campos estén completos
+                const startTime = sessionStartTime.value;
+                const endTime = sessionEndTime.value;
+                const date = sessionDate.value;
+                const title = document.getElementById('sessionTitle').value;
+                
+                if (!date || !startTime || !endTime || !title.trim()) {
+                    showNotification('Por favor, complete todos los campos obligatorios', 'error');
+                    return;
+                }
+                
+                // Validar fecha (no en el pasado)
+                const selectedDate = new Date(date + 'T00:00:00');
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate < today) {
+                    showNotification('No se puede solicitar una sesión en una fecha pasada', 'error');
+                    return;
+                }
+                
+                // Los dropdowns ya garantizan horarios válidos, proceder con la solicitud
+                submitSessionRequest();
+            });
+            
+            // Marcar como configurado para evitar configuraciones duplicadas
+            sessionFormConfigured = true;
+            console.log('✅ Formulario de solicitud con dropdowns configurado correctamente');
+        }
+
+        function submitSessionRequest() {
+            const formData = {
+                session_date: document.getElementById('sessionDate').value,
+                start_time: document.getElementById('sessionStartTime').value,
+                end_time: document.getElementById('sessionEndTime').value,
+                title: document.getElementById('sessionTitle').value,
+                description: document.getElementById('sessionDescription').value,
+                location: document.getElementById('sessionLocation').value
+            };
+            
+            if (!formData.session_date || !formData.start_time || !formData.end_time) {
+                showNotification('Completa todos los campos requeridos', 'error');
+                return;
+            }
+            
+            // Validación básica: los dropdowns ya garantizan formato y rango válidos
+            // Solo validar que la hora de fin sea posterior a la de inicio
+            const startTime = new Date(`2000-01-01T${formData.start_time}:00`);
+            const endTime = new Date(`2000-01-01T${formData.end_time}:00`);
+            
+            if (endTime <= startTime) {
+                showNotification('La hora de fin debe ser posterior a la de inicio', 'error');
+                return;
+            }
+            
+            // Validar duración mínima (30 minutos) y máxima (3 horas)
+            const durationMs = endTime - startTime;
+            const durationMinutes = durationMs / (1000 * 60);
+            
+            if (durationMinutes < 30) {
+                showNotification('La sesión debe durar al menos 30 minutos', 'error');
+                return;
+            }
+            
+            if (durationMinutes > 180) {
+                showNotification('La sesión no puede durar más de 3 horas', 'error');
+                return;
+            }
+            
+            const submitBtn = document.querySelector('#sessionRequestForm button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+            submitBtn.disabled = true;
+            
+            fetch('/api/coachee/request-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Solicitud enviada correctamente. Tu coach te responderá pronto.', 'success');
+                    resetSessionForm();
+                    loadMySessions(); // Refrescar las sesiones
+                } else {
+                    showNotification(data.error || 'Error enviando solicitud', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error enviando solicitud', 'error');
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        function resetSessionForm() {
+            document.getElementById('sessionRequestForm').reset();
+            document.getElementById('sessionTitle').value = 'Sesión de Coaching';
+            document.getElementById('sessionLocation').value = 'Virtual - Zoom';
+        }
+
+        function loadMySessions() {
+            fetch('/api/coachee/my-sessions')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayMySessions(data.sessions);
+                        updateMySessionsCount(data.sessions.length);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando mis sesiones:', error);
+                    document.getElementById('mySessionsList').innerHTML = 
+                        '<p class="text-danger">Error cargando sesiones</p>';
+                });
+        }
+
+        function displayMySessions(sessions) {
+            const container = document.getElementById('mySessionsList');
+            if (!container) return;
+            
+            if (sessions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No tienes sesiones programadas</p>
+                        <button class="btn btn-primary" onclick="showTab('schedule-coach'); document.getElementById('schedule-request-tab').click();">
+                            <i class="fas fa-plus me-2"></i>Solicitar Primera Sesión
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar sesiones por fecha descendente (más reciente primero)
+            sessions.sort((a, b) => new Date(b.session_date + 'T12:00:00') - new Date(a.session_date + 'T12:00:00'));
+            
+            const html = sessions.map(session => {
+                const statusColors = {
+                    'pending': 'warning',
+                    'confirmed': 'success',
+                    'proposed': 'info',
+                    'cancelled': 'danger',
+                    'completed': 'secondary'
+                };
+                
+                const statusTexts = {
+                    'pending': 'Pendiente de confirmación',
+                    'confirmed': 'Confirmada',
+                    'proposed': 'Propuesta pendiente',
+                    'cancelled': 'Cancelada',
+                    'completed': 'Completada'
+                };
+                
+                const sessionDate = new Date(session.session_date + 'T12:00:00');
+                const isProposal = session.status === 'proposed' && session.original_session_id;
+                
+                return `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-1">${session.title}</h6>
+                                    <p class="mb-1">
+                                        <i class="fas fa-user me-1"></i>
+                                        Coach: ${session.coach_name}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        ${sessionDate.toLocaleDateString('es-ES', { 
+                                            weekday: 'long', 
+                                            year: 'numeric', 
+                                            month: 'long', 
+                                            day: 'numeric' 
+                                        })} a las ${session.start_time}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        ${session.location || 'Por definir'}
+                                    </p>
+                                    ${session.description ? `<p class="mb-1 text-muted small">${session.description}</p>` : ''}
+                                    ${isProposal && session.proposal_message ? 
+                                        `<div class="alert alert-info alert-sm mt-2 mb-0">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>Mensaje del coach:</strong> ${session.proposal_message}
+                                        </div>` : ''
+                                    }
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <span class="badge bg-${statusColors[session.status]} mb-2 d-block">
+                                        ${statusTexts[session.status]}
+                                    </span>
+                                    ${isProposal ? `
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button class="btn btn-success btn-sm" onclick="respondToProposal(${session.id}, 'accept_proposal')">
+                                                <i class="fas fa-check me-1"></i>Aceptar
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="respondToProposal(${session.id}, 'reject_proposal')">
+                                                <i class="fas fa-times me-1"></i>Rechazar
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function updateMySessionsCount(count) {
+            const badge = document.getElementById('mySessionsCount');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        function respondToProposal(sessionId, action) {
+            const actionText = action === 'accept_proposal' ? 'aceptar' : 'rechazar';
+            
+            if (!confirm(`¿Estás seguro de que quieres ${actionText} esta propuesta?`)) {
+                return;
+            }
+            
+            fetch(`/api/coachee/session/${sessionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    loadMySessions();
+                } else {
+                    showNotification(data.error || 'Error procesando respuesta', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error procesando respuesta', 'error');
+            });
+        }
+
+        function refreshMySessions() {
+            loadMySessions();
+            showNotification('Sesiones actualizadas', 'info');
+        }
+
+        function activateRequestTab() {
+            console.log('🔄 Activando pestaña de solicitud de sesión manualmente');
+            
+            const requestTab = document.getElementById('schedule-request-tab');
+            const requestPane = document.getElementById('schedule-request-pane');
+            const mySessionsTab = document.getElementById('my-sessions-tab');
+            const mySessionsPane = document.getElementById('my-sessions-pane');
+            
+            if (requestTab && requestPane && mySessionsTab && mySessionsPane) {
+                // Desactivar pestaña de sesiones
+                mySessionsTab.classList.remove('active');
+                mySessionsTab.setAttribute('aria-selected', 'false');
+                mySessionsPane.classList.remove('show', 'active');
+                
+                // Activar pestaña de solicitud
+                requestTab.classList.add('active');
+                requestTab.setAttribute('aria-selected', 'true');
+                requestPane.classList.add('show', 'active');
+                
+                // Configurar formulario
+                setTimeout(() => {
+                    setupSessionRequestForm();
+                    console.log('✅ Pestaña de solicitud activada y formulario configurado');
+                }, 200);
+            } else {
+                console.error('❌ No se pudieron encontrar las pestañas para activar');
+            }
+        }
+
+        function activateMySessionsTab() {
+            console.log('🔄 Activando pestaña de mis sesiones manualmente');
+            
+            const requestTab = document.getElementById('schedule-request-tab');
+            const requestPane = document.getElementById('schedule-request-pane');
+            const mySessionsTab = document.getElementById('my-sessions-tab');
+            const mySessionsPane = document.getElementById('my-sessions-pane');
+            
+            if (requestTab && requestPane && mySessionsTab && mySessionsPane) {
+                // Desactivar pestaña de solicitud
+                requestTab.classList.remove('active');
+                requestTab.setAttribute('aria-selected', 'false');
+                requestPane.classList.remove('show', 'active');
+                
+                // Activar pestaña de sesiones
+                mySessionsTab.classList.add('active');
+                mySessionsTab.setAttribute('aria-selected', 'true');
+                mySessionsPane.classList.add('show', 'active');
+                
+                // Cargar sesiones
+                setTimeout(() => {
+                    loadMySessions();
+                    console.log('✅ Pestaña de mis sesiones activada y datos cargados');
+                }, 200);
+            } else {
+                console.error('❌ No se pudieron encontrar las pestañas para activar');
+            }
+        }
+
+        function switchToRequestTab() {
+            console.log('🔄 Cambiando a pestaña de solicitud de sesión');
+            activateRequestTab();
+            showNotification('Completa el formulario para solicitar una nueva sesión', 'info');
+        }
+
+        function showNotification(message, type = 'info') {
+            // Crear notificación temporal
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 15000; min-width: 300px;';
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-1"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Modificar showTab para incluir inicialización de agendamiento
+        const originalShowTab = window.showTab;
+        window.showTab = function(tabId) {
+            originalShowTab(tabId);
+            
+            if (tabId === 'schedule-coach') {
+                setTimeout(initializeCoacheeScheduling, 100); // Pequeño delay para asegurar que el DOM esté listo
+            }
+        };
+
+        // Agregar event listeners para las sub-pestañas del calendario
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Inicializando sistema de pestañas del calendario');
+            
+            // Event listener para cuando se activa la pestaña "Solicitar Sesión"
+            const scheduleRequestTab = document.getElementById('schedule-request-tab');
+            if (scheduleRequestTab) {
+                console.log('✅ Pestaña "Solicitar Sesión" encontrada');
+                
+                // Event listener para Bootstrap tab
+                scheduleRequestTab.addEventListener('shown.bs.tab', function (e) {
+                    console.log('🎯 Pestaña "Solicitar Sesión" activada - Reinicializando formulario');
+                    setTimeout(setupSessionRequestForm, 100);
+                });
+                
+                // Event listener manual para click
+                scheduleRequestTab.addEventListener('click', function (e) {
+                    console.log('👆 Click en pestaña "Solicitar Sesión"');
+                    e.preventDefault();
+                    activateRequestTab();
+                });
+            } else {
+                console.error('❌ Pestaña "Solicitar Sesión" no encontrada');
+            }
+
+            // Event listener para cuando se activa la pestaña "Mis Sesiones"
+            const mySessionsTab = document.getElementById('my-sessions-tab');
+            if (mySessionsTab) {
+                console.log('✅ Pestaña "Mis Sesiones" encontrada');
+                
+                mySessionsTab.addEventListener('shown.bs.tab', function (e) {
+                    console.log('🎯 Pestaña "Mis Sesiones" activada - Refrescando sesiones');
+                    setTimeout(loadMySessions, 100);
+                });
+                
+                // Event listener manual para click
+                mySessionsTab.addEventListener('click', function (e) {
+                    console.log('👆 Click en pestaña "Mis Sesiones"');
+                    e.preventDefault();
+                    activateMySessionsTab();
+                });
+            } else {
+                console.error('❌ Pestaña "Mis Sesiones" no encontrada');
+            }
+        });
+
+        // Función para obtener fecha/hora en zona horaria de Santiago
+        function getSantiagoDateTime() {
+            const now = new Date();
+            // Santiago de Chile: GMT-3 (horario de verano) o GMT-4 (horario estándar)
+            // Usar Intl.DateTimeFormat para obtener la hora local correcta
+            const santiagoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Santiago"}));
+            return santiagoTime;
+        }
+
+        function getSantiagoDate() {
+            const santiagoTime = getSantiagoDateTime();
+            return santiagoTime.toISOString().split('T')[0];
+        }
+
+        function getSantiagoTomorrow() {
+            const santiagoTime = getSantiagoDateTime();
+            santiagoTime.setDate(santiagoTime.getDate() + 1);
+            return santiagoTime.toISOString().split('T')[0];
+        }
+
+        console.log('🔄 Coachee Calendar System: 2025-10-18-16:44 - Sistema de agendamiento con zona horaria Santiago');
+        console.log('🇨🇱 Hora actual Santiago:', getSantiagoDateTime().toLocaleString('es-CL'));
     </script>
     
     <!-- Script común para presentación de recomendaciones -->

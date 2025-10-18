@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Button Styles</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Copiar EXACTAMENTE los estilos del dashboard */
+        .nav-tabs {
+            border-bottom: 1px solid #e9ecef !important;
+            margin-bottom: 1rem !important;
+            flex-wrap: wrap !important;
+            gap: 0.25rem !important;
+        }
+        
+        .nav-tabs .nav-link {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.9rem !important;
+            font-weight: 500 !important;
+            color: #6c757d !important;
+            background: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.5rem !important;
+            margin-bottom: 0.25rem !important;
+            transition: all 0.2s ease !important;
+            white-space: nowrap !important;
+            text-align: center !important;
+            min-height: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.5rem !important;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            background: #e9ecef !important;
+            color: #495057 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: #007bff !important;
+            color: #ffffff !important;
+            border-color: #007bff !important;
+            font-weight: 600 !important;
+            box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
+        }
+        
+        /* Asegurar texto blanco en botones activos */
+        .nav-tabs .nav-link.active,
+        .nav-tabs .nav-link.active:hover,
+        .nav-tabs .nav-link.active:focus,
+        .nav-tabs .nav-link.active:active {
+            color: #ffffff !important;
+        }
+        
+        .nav-tabs .nav-link i {
+            font-size: 1rem !important;
+            flex-shrink: 0 !important;
+        }
+        
+        /* ============ ANULAR BOOTSTRAP 5.3.3 COMPLETAMENTE ============ */
+        
+        /* MÁXIMA ESPECIFICIDAD - Anular Bootstrap nav-link effects */
+        ul.nav.nav-tabs li.nav-item button.nav-link:active,
+        ul.nav.nav-tabs li.nav-item button.nav-link.active:active,
+        .nav-tabs .nav-item .nav-link:active,
+        .nav-tabs .nav-item .nav-link.active:active,
+        button.nav-link:active,
+        button.nav-link.active:active {
+            transform: none !important;
+            box-shadow: inherit !important;
+            opacity: 1 !important;
+            filter: none !important;
+            background: #007bff !important;
+            color: #ffffff !important;
+            transition: none !important;
+            border-color: #007bff !important;
+            text-decoration: none !important;
+        }
+        
+        /* Anular TODOS los efectos de Bootstrap en nav-links */
+        .nav-link:active,
+        .nav-link:focus,
+        .nav-link:hover:active,
+        .nav-tabs .nav-link:active,
+        .nav-tabs .nav-link:focus,
+        .nav-tabs .nav-link:hover:active {
+            background-color: inherit !important;
+            border-color: inherit !important;
+            color: inherit !important;
+            transform: none !important;
+            box-shadow: none !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+        
+        /* FORZAR estilos en botones activos específicamente */
+        .nav-tabs .nav-link.active:active,
+        .nav-tabs .nav-link.active:focus,
+        .nav-tabs .nav-link.active:hover:active {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: #ffffff !important;
+            transform: none !important;
+            box-shadow: 0 2px 6px rgba(0,123,255,0.3) !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+        
+        /* Eliminar highlight táctil en dispositivos móviles */
+        .nav-link {
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-touch-callout: none !important;
+            -webkit-user-select: none !important;
+            -khtml-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            outline: none !important;
+        }
+        
+        .nav-link:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* DEBUG: Forzar estilos para identificar problemas */
+        .debug-button {
+            background: red !important;
+            color: white !important;
+        }
+        
+        .debug-button:active {
+            background: green !important;
+            color: yellow !important;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1>Debug: Estilos de Botones</h1>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Botones Originales del Dashboard</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-4" id="scheduleCoachTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="schedule-request-tab" data-bs-toggle="tab" 
+                            data-bs-target="#schedule-request-pane" type="button" role="tab" 
+                            aria-controls="schedule-request-pane" aria-selected="true">
+                            <i class="fas fa-plus me-1"></i>Solicitar Sesión
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link position-relative" id="my-sessions-tab" data-bs-toggle="tab" 
+                            data-bs-target="#my-sessions-pane" type="button" role="tab"
+                            aria-controls="my-sessions-pane" aria-selected="false">
+                            <i class="fas fa-calendar me-1"></i>Mis Sesiones
+                            <span class="badge bg-info rounded-pill ms-1" style="display: none;">0</span>
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <strong>Instrucciones:</strong> Haz clic en los botones y mantén presionado para ver los efectos. 
+                    Abre las herramientas de desarrollador (F12) y ve a la pestaña "Elements" para inspeccionar los estilos aplicados.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Botones de Prueba con Debug</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary debug-button me-2">Botón Debug Normal</button>
+                <button class="nav-link debug-button">Nav-Link Debug</button>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Los botones debug deberían cambiar de rojo a verde al hacer clic.
+                        Si no cambian, hay un problema con los estilos :active.
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Inspector de Estilos en Tiempo Real</h5>
+            </div>
+            <div class="card-body">
+                <div id="style-info">
+                    <p>Haz clic en cualquier botón para ver sus estilos aplicados...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función para inspeccionar estilos
+        function inspectStyles(element) {
+            const computedStyle = window.getComputedStyle(element);
+            const styleInfo = document.getElementById('style-info');
+            
+            const relevantProperties = [
+                'background-color',
+                'background',
+                'color',
+                'opacity',
+                'filter',
+                'transform',
+                'box-shadow',
+                'transition',
+                '-webkit-tap-highlight-color'
+            ];
+            
+            let html = `<h6>Estilos aplicados a: ${element.textContent.trim()}</h6>`;
+            html += '<table class="table table-sm">';
+            html += '<tr><th>Propiedad</th><th>Valor</th></tr>';
+            
+            relevantProperties.forEach(prop => {
+                const value = computedStyle.getPropertyValue(prop);
+                html += `<tr><td><code>${prop}</code></td><td><code>${value}</code></td></tr>`;
+            });
+            
+            html += '</table>';
+            styleInfo.innerHTML = html;
+        }
+        
+        // Agregar listeners a todos los botones
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => inspectStyles(btn));
+            btn.addEventListener('mousedown', () => {
+                setTimeout(() => inspectStyles(btn), 10);
+            });
+        });
+        
+        // Log de eventos para debugging
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                console.log('Click en botón:', e.target.textContent.trim());
+                console.log('Clases:', e.target.className);
+                console.log('Estilos computados:', window.getComputedStyle(e.target));
+            }
+        });
+        
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                console.log('MouseDown en botón:', e.target.textContent.trim());
+                setTimeout(() => {
+                    console.log('Estilos durante :active:', window.getComputedStyle(e.target));
+                }, 10);
+            }
+        });
+    </script>
+</body>
+</html>

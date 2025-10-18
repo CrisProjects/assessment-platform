@@ -8,6 +8,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+
 <style>
     /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACHEE */
     :root {
@@ -1954,6 +1957,279 @@
         z-index: 10002 !important;
         position: relative !important;
     }
+    
+    /* ========== ESTILOS PARA CALENDARIO MEJORADO ========== */
+    
+    /* Estilo general del calendario */
+    #calendar {
+        border-radius: 10px !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+        overflow: hidden !important;
+    }
+    
+    /* Botones de navegación de vista */
+    .fc-button-group {
+        border-radius: 6px !important;
+        overflow: hidden !important;
+    }
+    
+    .fc-button {
+        border: none !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        font-weight: 500 !important;
+        padding: 8px 12px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .fc-button:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    .fc-button-active {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+    }
+    
+    /* Header del calendario */
+    .fc-header-toolbar {
+        padding: 1rem !important;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        color: #495057 !important;
+    }
+    
+    /* Vista de mes */
+    .fc-daygrid-day {
+        transition: background-color 0.2s ease !important;
+    }
+    
+    .fc-daygrid-day:hover {
+        background-color: rgba(102, 126, 234, 0.05) !important;
+    }
+    
+    .fc-daygrid-day-number {
+        color: #495057 !important;
+        font-weight: 500 !important;
+        padding: 4px 8px !important;
+        text-decoration: none !important;
+    }
+    
+    .fc-daygrid-day-number:hover {
+        background-color: rgba(102, 126, 234, 0.1) !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+    }
+    
+    /* Vista de semana */
+    .fc-timegrid-slot {
+        height: 2em !important;
+    }
+    
+    .fc-timegrid-slot-label {
+        color: #6c757d !important;
+        font-size: 0.85rem !important;
+    }
+    
+    /* Vista de día */
+    .fc-timegrid-day {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    }
+    
+    /* Eventos del calendario */
+    .fc-event {
+        border-radius: 6px !important;
+        border: none !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        margin: 1px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
+    }
+    
+    .fc-event:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    }
+    
+    .fc-event-title {
+        padding: 2px 6px !important;
+    }
+    
+    /* Responsivo para calendario */
+    @media (max-width: 768px) {
+        .fc-header-toolbar {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+        }
+        
+        .fc-toolbar-chunk {
+            display: flex !important;
+            justify-content: center !important;
+        }
+        
+        .fc-button {
+            font-size: 0.8rem !important;
+            padding: 6px 8px !important;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1.2rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+    }
+
+    /* ========== MEJORAS RESPONSIVAS PARA AGENDA MODULE ========== */
+    @media (max-width: 768px) {
+        /* Agenda Module - Pestañas responsivas */
+        #agendaTabs {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            border-bottom: 1px solid #dee2e6 !important;
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE/Edge */
+        }
+        
+        #agendaTabs::-webkit-scrollbar {
+            display: none !important; /* Chrome/Safari */
+        }
+        
+        #agendaTabs .nav-item {
+            flex-shrink: 0 !important;
+        }
+        
+        #agendaTabs .nav-link {
+            white-space: nowrap !important;
+            padding: 8px 12px !important;
+            font-size: 0.85rem !important;
+        }
+        
+        /* Disponibilidad Form - Layout vertical en mobile */
+        #availability-pane .row .col-md-6 {
+            margin-bottom: 1rem !important;
+        }
+        
+        #availability-pane .d-flex.flex-wrap {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+        }
+        
+        #availability-pane .form-check {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        /* Selector de días responsivo */
+        .days-selector .form-check {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .days-selector .form-check-label {
+            font-size: 0.9rem !important;
+            cursor: pointer !important;
+        }
+        
+        .days-selector .form-check-input {
+            margin-top: 0.25rem !important;
+        }
+        
+        /* Botones de disponibilidad más espaciados */
+        #availability-pane .btn-group {
+            flex-direction: column !important;
+            width: 100% !important;
+        }
+        
+        #availability-pane .btn-group .btn {
+            border-radius: 0.375rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        /* Agenda Cards - Stack vertical en mobile */
+        #agenda .card-body {
+            padding: 0.75rem !important;
+        }
+        
+        /* Calendar container padding */
+        #calendar {
+            font-size: 0.85rem !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        /* Mobile específico para agenda */
+        #agendaTabs .nav-link {
+            padding: 6px 8px !important;
+            font-size: 0.8rem !important;
+        }
+        
+        #agendaTabs .nav-link i {
+            margin-right: 4px !important;
+        }
+        
+        /* Ocultar texto en iconos en pantallas muy pequeñas */
+        #agendaTabs .nav-link span {
+            display: none !important;
+        }
+        
+        /* Formulario de disponibilidad más compacto */
+        #availability-pane .form-label {
+            font-size: 0.9rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+        
+        #availability-pane .form-select,
+        #availability-pane .form-control {
+            font-size: 0.9rem !important;
+            padding: 0.5rem !important;
+        }
+        
+        /* Calendar más compacto */
+        .fc-button {
+            font-size: 0.7rem !important;
+            padding: 4px 6px !important;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1rem !important;
+        }
+    }
+
+    /* Tablet específico para agenda */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        #agenda .col-lg-8 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        #agendaTabs .nav-link {
+            padding: 10px 16px !important;
+        }
+        
+        /* Formulario de disponibilidad en 2 columnas en tablet */
+        #availability-pane .row.g-3 {
+            margin: 0 !important;
+        }
+        
+        #availability-pane .col-md-6 {
+            padding: 0 0.5rem !important;
+        }
+    }
+    
+    /* Animaciones para cambios de vista */
+    .fc-view {
+        animation: fadeIn 0.3s ease !important;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 {% endblock %}
 
@@ -2062,6 +2338,10 @@
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                            onclick="showModule('agregar-contenido'); return false;" data-module="agregar-contenido">
                             <i class="fas fa-plus-circle me-3"></i>Contenido
+                        </a>
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                           onclick="showModule('agenda'); return false;" data-module="agenda">
+                            <i class="fas fa-calendar-alt me-3"></i>Agenda
                         </a>
                     </div>
                 </div>
@@ -2568,6 +2848,328 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+            <!-- Agenda Module -->
+            <div id="agenda" class="module-content" style="display: none;">
+                <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
+                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                        <h5 class="text-dark mb-0">
+                            <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                            Mi Agenda
+                        </h5>
+                    </div>
+                    <div class="card-body" style="background-color: white !important; padding: 1rem;">
+                        
+                        <!-- Pestañas de la Agenda -->
+                        <ul class="nav nav-tabs mb-4" id="agendaTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#calendar-pane" type="button" role="tab">
+                                    <i class="fas fa-calendar me-1"></i>Calendario
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="availability-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#availability-pane" type="button" role="tab">
+                                    <i class="fas fa-clock me-1"></i>Disponibilidad
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link position-relative" id="requests-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#requests-pane" type="button" role="tab">
+                                    <i class="fas fa-inbox me-1"></i>Solicitudes
+                                    <span class="badge bg-danger rounded-pill ms-1" id="requestsCount" style="display: none;">0</span>
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Contenido de las pestañas -->
+                        <div class="tab-content" id="agendaTabContent">
+                            
+                            <!-- Pestaña: Calendario -->
+                            <div class="tab-pane fade show active" id="calendar-pane" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div id="calendar"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pestaña: Disponibilidad -->
+                            <div class="tab-pane fade" id="availability-pane" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-lg-8">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-clock me-2"></i>Configurar Horarios Disponibles
+                                        </h6>
+                                        
+                                        <form id="availabilityForm">
+                                            <div class="row g-3">
+                                                <!-- Días de la semana -->
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold">Días Disponibles</label>
+                                                    <div class="row g-2 days-selector">
+                                                        <div class="col-6 col-sm-4 col-lg-3">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="day1" value="1">
+                                                                <label class="form-check-label" for="day1">Lunes</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4 col-lg-3">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="day2" value="2">
+                                                                <label class="form-check-label" for="day2">Martes</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4 col-lg-3">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="day3" value="3">
+                                                                <label class="form-check-label" for="day3">Miércoles</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4 col-lg-3">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="day4" value="4">
+                                                                <label class="form-check-label" for="day4">Jueves</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4 col-lg-3">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="day5" value="5">
+                                                                <label class="form-check-label" for="day5">Viernes</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4 col-lg-3">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="day6" value="6">
+                                                                <label class="form-check-label" for="day6">Sábado</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4 col-lg-3">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="day0" value="0">
+                                                                <label class="form-check-label" for="day0">Domingo</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Horarios -->
+                                                <div class="col-md-6">
+                                                    <label for="startTime" class="form-label">Hora de Inicio</label>
+                                                    <select class="form-select time-select-24h" id="startTime">
+                                                        <option value="00:00">00:00</option>
+                                                        <option value="01:00">01:00</option>
+                                                        <option value="02:00">02:00</option>
+                                                        <option value="03:00">03:00</option>
+                                                        <option value="04:00">04:00</option>
+                                                        <option value="05:00">05:00</option>
+                                                        <option value="06:00">06:00</option>
+                                                        <option value="07:00">07:00</option>
+                                                        <option value="08:00">08:00</option>
+                                                        <option value="09:00" selected>09:00</option>
+                                                        <option value="10:00">10:00</option>
+                                                        <option value="11:00">11:00</option>
+                                                        <option value="12:00">12:00</option>
+                                                        <option value="13:00">13:00</option>
+                                                        <option value="14:00">14:00</option>
+                                                        <option value="15:00">15:00</option>
+                                                        <option value="16:00">16:00</option>
+                                                        <option value="17:00">17:00</option>
+                                                        <option value="18:00">18:00</option>
+                                                        <option value="19:00">19:00</option>
+                                                        <option value="20:00">20:00</option>
+                                                        <option value="21:00">21:00</option>
+                                                        <option value="22:00">22:00</option>
+                                                        <option value="23:00">23:00</option>
+                                                        <option value="24:00">24:00</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="endTime" class="form-label">Hora de Fin</label>
+                                                    <select class="form-select time-select-24h" id="endTime">
+                                                        <option value="00:00">00:00</option>
+                                                        <option value="01:00">01:00</option>
+                                                        <option value="02:00">02:00</option>
+                                                        <option value="03:00">03:00</option>
+                                                        <option value="04:00">04:00</option>
+                                                        <option value="05:00">05:00</option>
+                                                        <option value="06:00">06:00</option>
+                                                        <option value="07:00">07:00</option>
+                                                        <option value="08:00">08:00</option>
+                                                        <option value="09:00">09:00</option>
+                                                        <option value="10:00">10:00</option>
+                                                        <option value="11:00">11:00</option>
+                                                        <option value="12:00">12:00</option>
+                                                        <option value="13:00">13:00</option>
+                                                        <option value="14:00">14:00</option>
+                                                        <option value="15:00">15:00</option>
+                                                        <option value="16:00">16:00</option>
+                                                        <option value="17:00" selected>17:00</option>
+                                                        <option value="18:00">18:00</option>
+                                                        <option value="19:00">19:00</option>
+                                                        <option value="20:00">20:00</option>
+                                                        <option value="21:00">21:00</option>
+                                                        <option value="22:00">22:00</option>
+                                                        <option value="23:00">23:00</option>
+                                                        <option value="24:00">24:00</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-save me-2"></i>Guardar Disponibilidad
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    
+                                    <div class="col-lg-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-info-circle me-2"></i>Disponibilidad Actual
+                                                </h6>
+                                            </div>
+                                            <div class="card-body" id="currentAvailability">
+                                                <div class="text-center py-3">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Cargando...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pestaña: Solicitudes -->
+                            <div class="tab-pane fade" id="requests-pane" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-inbox me-2"></i>Solicitudes Pendientes
+                                        </h6>
+                                        
+                                        <div id="sessionRequests">
+                                            <div class="text-center py-4">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando solicitudes...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para proponer nuevo horario -->
+<div class="modal fade" id="proposeTimeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-clock me-2"></i>Proponer Nuevo Horario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="proposeTimeForm">
+                    <input type="hidden" id="originalSessionId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Coachee:</label>
+                        <p class="fw-bold text-primary" id="proposeCoacheeName">-</p>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="proposedDate" class="form-label">Nueva Fecha</label>
+                            <input type="date" class="form-control" id="proposedDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="proposedStartTime" class="form-label">Hora de Inicio</label>
+                            <select class="form-select time-select-24h" id="proposedStartTime" required>
+                                <option value="00:00">00:00</option>
+                                <option value="01:00">01:00</option>
+                                <option value="02:00">02:00</option>
+                                <option value="03:00">03:00</option>
+                                <option value="04:00">04:00</option>
+                                <option value="05:00">05:00</option>
+                                <option value="06:00">06:00</option>
+                                <option value="07:00">07:00</option>
+                                <option value="08:00">08:00</option>
+                                <option value="09:00">09:00</option>
+                                <option value="10:00" selected>10:00</option>
+                                <option value="11:00">11:00</option>
+                                <option value="12:00">12:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00">18:00</option>
+                                <option value="19:00">19:00</option>
+                                <option value="20:00">20:00</option>
+                                <option value="21:00">21:00</option>
+                                <option value="22:00">22:00</option>
+                                <option value="23:00">23:00</option>
+                                <option value="24:00">24:00</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="proposedEndTime" class="form-label">Hora de Fin</label>
+                            <select class="form-select time-select-24h" id="proposedEndTime" required>
+                                <option value="00:00">00:00</option>
+                                <option value="01:00">01:00</option>
+                                <option value="02:00">02:00</option>
+                                <option value="03:00">03:00</option>
+                                <option value="04:00">04:00</option>
+                                <option value="05:00">05:00</option>
+                                <option value="06:00">06:00</option>
+                                <option value="07:00">07:00</option>
+                                <option value="08:00">08:00</option>
+                                <option value="09:00">09:00</option>
+                                <option value="10:00">10:00</option>
+                                <option value="11:00" selected>11:00</option>
+                                <option value="12:00">12:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00">18:00</option>
+                                <option value="19:00">19:00</option>
+                                <option value="20:00">20:00</option>
+                                <option value="21:00">21:00</option>
+                                <option value="22:00">22:00</option>
+                                <option value="23:00">23:00</option>
+                                <option value="24:00">24:00</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="proposalMessage" class="form-label">Mensaje (opcional)</label>
+                            <textarea class="form-control" id="proposalMessage" rows="3" 
+                                placeholder="Explica el motivo del cambio de horario..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitTimeProposal()">
+                    <i class="fas fa-paper-plane me-2"></i>Enviar Propuesta
+                </button>
             </div>
         </div>
     </div>
@@ -3507,12 +4109,12 @@ function displayTasks() {
         const fechaCreated = new Date(task.created_at).toLocaleDateString('es-ES');
         const coacheeName = task.coachee_name || 'No asignado';
         
-        // Formatear fecha de vencimiento
+        // Formatear fecha de vencimiento (zona horaria Santiago)
         let fechaVencimiento = 'Sin fecha';
         let vencimientoClass = '';
         if (task.due_date) {
             const dueDate = new Date(task.due_date);
-            const today = new Date();
+            const today = getSantiagoDateTime();
             const diffTime = dueDate.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
@@ -4098,7 +4700,7 @@ function formatDateLong(dateString) {
 }
 
 function getTimeAgo(dateString) {
-    const now = new Date();
+    const now = getSantiagoDateTime();
     const date = new Date(dateString);
     const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
     
@@ -7256,7 +7858,580 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// Cache buster - Forzar recarga: 2025-10-18-13:10
-console.log('🔄 Template actualizado: 2025-10-18-13:10 - Invitaciones WhatsApp implementadas con modal y compartir');
+// ================================
+// AGENDA Y CALENDARIO FUNCIONES
+// ================================
+
+// FullCalendar JS
+const calendarScript = document.createElement('script');
+calendarScript.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js';
+calendarScript.onload = function() {
+    console.log('✅ FullCalendar cargado');
+    initializeCalendar();
+    setupTimeDropdowns();
+};
+document.head.appendChild(calendarScript);
+
+let calendar = null;
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        height: 'auto',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día'
+        },
+        events: function(fetchInfo, successCallback, failureCallback) {
+            loadCalendarEvents(fetchInfo.startStr, fetchInfo.endStr, successCallback, failureCallback);
+        },
+        eventClick: function(info) {
+            showSessionDetails(info.event);
+        },
+        selectable: true,
+        selectMirror: true,
+        select: function(selectionInfo) {
+            // Cambiar a vista de día cuando se seleccione una fecha específica
+            console.log('Selección de fecha:', selectionInfo);
+            calendar.changeView('timeGridDay', selectionInfo.start);
+            console.log('📅 Cambiando a vista de día para la fecha seleccionada');
+        },
+        // Callback cuando se cambia de vista
+        viewDidMount: function(info) {
+            console.log('📅 Vista del calendario montada:', info.view.type);
+        },
+        // Callback cuando los eventos se han renderizado
+        eventsSet: function(events) {
+            console.log('📅 Eventos renderizados en vista:', calendar.view.type);
+        },
+        // Permitir navegación con teclado
+        navLinks: true,
+        // Al hacer clic en un día en vista de mes, cambiar a vista de día
+        dateClick: function(info) {
+            console.log('📅 Clic en fecha:', info.dateStr);
+            calendar.changeView('timeGridDay', info.date);
+        },
+        // Mejorar la experiencia visual
+        dayMaxEvents: 3,
+        moreLinkClick: function(info) {
+            calendar.changeView('timeGridDay', info.date);
+        }
+    });
+    
+    calendar.render();
+    console.log('📅 Calendario inicializado con navegación flexible de vistas');
+}
+
+function loadCalendarEvents(startDate, endDate, successCallback, failureCallback) {
+    fetch(`/api/coach/sessions?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const events = data.sessions.map(session => ({
+                    id: session.id,
+                    title: `${session.coachee_name} - ${session.title || 'Sesión'}`,
+                    start: session.start,
+                    end: session.end,
+                    backgroundColor: getSessionColor(session.status),
+                    borderColor: getSessionColor(session.status),
+                    extendedProps: {
+                        coachee_name: session.coachee_name,
+                        status: session.status,
+                        description: session.description,
+                        location: session.location,
+                        session_id: session.id
+                    }
+                }));
+                successCallback(events);
+                console.log('📅 Eventos cargados exitosamente:', events.length);
+            } else {
+                failureCallback(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando eventos del calendario:', error);
+            failureCallback(error);
+        });
+}
+
+// Función para permitir navegación libre entre vistas del calendario
+function enableCalendarNavigation() {
+    console.log('� Navegación libre de vistas habilitada');
+    // Esta función reemplaza la restricción anterior de vista fija
+    // Ahora el usuario puede navegar libremente entre mes, semana y día
+}
+
+// Agregar listener para cuando se cambia a la pestaña del calendario
+function setupCalendarTabListener() {
+    const calendarTab = document.getElementById('calendar-tab');
+    if (calendarTab) {
+        calendarTab.addEventListener('shown.bs.tab', function (e) {
+            console.log('📅 Pestaña de calendario activada');
+            setTimeout(() => {
+                if (calendar) {
+                    calendar.render();
+                    console.log('📅 Calendario re-renderizado al activar pestaña');
+                }
+            }, 100);
+        });
+    }
+}
+
+function getSessionColor(status) {
+    const colors = {
+        'pending': '#ffc107',      // Amarillo - pendiente
+        'confirmed': '#28a745',    // Verde - confirmada
+        'proposed': '#17a2b8',     // Azul - propuesta
+        'cancelled': '#dc3545',    // Rojo - cancelada
+        'completed': '#6c757d'     // Gris - completada
+    };
+    return colors[status] || '#6c757d';
+}
+
+function showSessionDetails(event) {
+    const props = event.extendedProps;
+    
+    const detailsHtml = `
+        <div class="row g-3">
+            <div class="col-12">
+                <h6 class="text-primary">${props.coachee_name}</h6>
+                <p class="mb-1"><strong>Fecha:</strong> ${event.startStr}</p>
+                <p class="mb-1"><strong>Estado:</strong> 
+                    <span class="badge" style="background-color: ${event.backgroundColor}">
+                        ${getStatusText(props.status)}
+                    </span>
+                </p>
+                ${props.description ? `<p class="mb-1"><strong>Descripción:</strong> ${props.description}</p>` : ''}
+                ${props.location ? `<p class="mb-1"><strong>Ubicación:</strong> ${props.location}</p>` : ''}
+            </div>
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm" onclick="proposeReschedule(${props.session_id}, '${props.coachee_name}')">
+                        <i class="fas fa-clock me-1"></i>Reagendar
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="cancelSession(${props.session_id})">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar en un modal o alert (simplificado)
+    if (confirm(`Sesión con ${props.coachee_name}\n¿Deseas reagendar esta sesión?`)) {
+        proposeReschedule(props.session_id, props.coachee_name);
+    }
+}
+
+function getStatusText(status) {
+    const statusTexts = {
+        'pending': 'Pendiente',
+        'confirmed': 'Confirmada',
+        'proposed': 'Propuesta',
+        'cancelled': 'Cancelada',
+        'completed': 'Completada'
+    };
+    return statusTexts[status] || status;
+}
+
+// Gestión de disponibilidad
+function loadAvailability() {
+    fetch('/api/coach/availability')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayCurrentAvailability(data.availability);
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando disponibilidad:', error);
+        });
+}
+
+function displayCurrentAvailability(availability) {
+    const container = document.getElementById('currentAvailability');
+    if (!container) return;
+    
+    if (availability.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay disponibilidad configurada</p>';
+        return;
+    }
+    
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    
+    const html = availability.map(slot => `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-medium">${dayNames[slot.day_of_week]}</span>
+            <span class="text-muted">${slot.start_time} - ${slot.end_time}</span>
+        </div>
+    `).join('');
+    
+    container.innerHTML = html;
+}
+
+// Formulario de disponibilidad
+document.getElementById('availabilityForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const selectedDays = [];
+    const checkboxes = document.querySelectorAll('#availabilityForm input[type="checkbox"]:checked');
+    checkboxes.forEach(cb => selectedDays.push(parseInt(cb.value)));
+    
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    
+    if (selectedDays.length === 0) {
+        showNotification('Selecciona al menos un día', 'error');
+        return;
+    }
+    
+    const availability = selectedDays.map(day => ({
+        day_of_week: day,
+        start_time: startTime,
+        end_time: endTime
+    }));
+    
+    fetch('/api/coach/availability', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ availability })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Disponibilidad actualizada correctamente', 'success');
+            loadAvailability();
+        } else {
+            showNotification(data.error || 'Error actualizando disponibilidad', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error actualizando disponibilidad', 'error');
+    });
+});
+
+// Función para configurar los dropdowns de tiempo con auto-completado
+function setupTimeDropdowns() {
+    console.log('🕐 Configurando dropdowns de tiempo para coach...');
+    
+    // Auto-completar en formulario de disponibilidad
+    const startTimeAvailability = document.getElementById('startTime');
+    const endTimeAvailability = document.getElementById('endTime');
+    
+    if (startTimeAvailability && endTimeAvailability) {
+        startTimeAvailability.addEventListener('change', function() {
+            const startTime = this.value;
+            console.log('🕐 Hora de inicio de disponibilidad seleccionada:', startTime);
+            
+            if (startTime) {
+                const [hours, minutes] = startTime.split(':').map(Number);
+                let endHours = hours + 8; // 8 horas de trabajo por defecto
+                
+                // Asegurar que no exceda las 24:00
+                if (endHours > 24) {
+                    endHours = 24;
+                }
+                
+                const endTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                endTimeAvailability.value = endTime;
+                console.log('🕐 Hora de fin de disponibilidad auto-completada:', endTime);
+            }
+        });
+    }
+    
+    // Auto-completar en modal de propuesta
+    const startTimeProposal = document.getElementById('proposedStartTime');
+    const endTimeProposal = document.getElementById('proposedEndTime');
+    
+    if (startTimeProposal && endTimeProposal) {
+        startTimeProposal.addEventListener('change', function() {
+            const startTime = this.value;
+            console.log('🕐 Hora de inicio de propuesta seleccionada:', startTime);
+            
+            if (startTime) {
+                const [hours, minutes] = startTime.split(':').map(Number);
+                let endHours = hours + 1; // 1 hora por defecto para sesiones
+                
+                // Asegurar que no exceda las 24:00
+                if (endHours > 24) {
+                    endHours = 24;
+                }
+                
+                const endTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                endTimeProposal.value = endTime;
+                console.log('🕐 Hora de fin de propuesta auto-completada:', endTime);
+            }
+        });
+    }
+    
+    console.log('✅ Dropdowns de tiempo del coach configurados');
+}
+
+// Cargar solicitudes pendientes
+function loadSessionRequests() {
+    fetch('/api/coach/session-requests')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySessionRequests(data.requests);
+                updateRequestsCount(data.requests.length);
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando solicitudes:', error);
+        });
+}
+
+function displaySessionRequests(requests) {
+    const container = document.getElementById('sessionRequests');
+    if (!container) return;
+    
+    if (requests.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No hay solicitudes pendientes</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const html = requests.map(request => `
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h6 class="mb-1">${request.coachee_name}</h6>
+                        <p class="mb-1">
+                            <i class="fas fa-calendar me-1"></i>
+                            ${new Date(request.session_date + 'T12:00:00').toLocaleDateString('es-ES')} 
+                            a las ${request.start_time}
+                        </p>
+                        ${request.description ? `<p class="mb-0 text-muted">${request.description}</p>` : ''}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-success btn-sm me-1" onclick="respondToRequest(${request.id}, 'confirm')">
+                            <i class="fas fa-check me-1"></i>Confirmar
+                        </button>
+                        <button class="btn btn-warning btn-sm me-1" onclick="proposeAlternative(${request.id}, '${request.coachee_name}')">
+                            <i class="fas fa-clock me-1"></i>Proponer
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="respondToRequest(${request.id}, 'reject')">
+                            <i class="fas fa-times me-1"></i>Rechazar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = html;
+}
+
+function updateRequestsCount(count) {
+    const badge = document.getElementById('requestsCount');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function respondToRequest(sessionId, action) {
+    const actionText = action === 'confirm' ? 'confirmada' : 'rechazada';
+    
+    if (!confirm(`¿Estás seguro de que quieres ${actionText === 'confirmada' ? 'confirmar' : 'rechazar'} esta solicitud?`)) {
+        return;
+    }
+    
+    fetch('/api/coach/session-requests', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Solicitud ${actionText} correctamente`, 'success');
+            loadSessionRequests();
+            if (calendar) {
+                // Actualizar eventos manteniendo la vista actual
+                calendar.refetchEvents();
+                console.log('📅 Eventos actualizados después de confirmar solicitud');
+            }
+        } else {
+            showNotification(data.error || 'Error procesando solicitud', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error procesando solicitud', 'error');
+    });
+}
+
+function proposeAlternative(sessionId, coacheeName) {
+    document.getElementById('originalSessionId').value = sessionId;
+    document.getElementById('proposeCoacheeName').textContent = coacheeName;
+    
+    // Configurar fecha mínima (mañana en zona horaria de Santiago)
+    document.getElementById('proposedDate').min = getSantiagoTomorrow();
+    console.log('📅 Fecha mínima propuesta configurada (Santiago):', getSantiagoTomorrow());
+    
+    const modal = new bootstrap.Modal(document.getElementById('proposeTimeModal'));
+    modal.show();
+}
+
+function proposeReschedule(sessionId, coacheeName) {
+    proposeAlternative(sessionId, coacheeName);
+}
+
+function cancelSession(sessionId) {
+    if (!confirm('¿Estás seguro de que quieres cancelar esta sesión?')) {
+        return;
+    }
+    
+    fetch(`/api/coach/session/${sessionId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Sesión cancelada correctamente', 'success');
+            if (calendar) {
+                // Actualizar eventos manteniendo la vista actual
+                calendar.refetchEvents();
+            }
+        } else {
+            showNotification(data.error || 'Error cancelando sesión', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error cancelando sesión', 'error');
+    });
+}
+
+function submitTimeProposal() {
+    const sessionId = document.getElementById('originalSessionId').value;
+    const proposedDate = document.getElementById('proposedDate').value;
+    const proposedStartTime = document.getElementById('proposedStartTime').value;
+    const proposedEndTime = document.getElementById('proposedEndTime').value;
+    const message = document.getElementById('proposalMessage').value;
+    
+    if (!proposedDate || !proposedStartTime || !proposedEndTime) {
+        showNotification('Completa todos los campos requeridos', 'error');
+        return;
+    }
+    
+    fetch('/api/coach/session-requests', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            action: 'propose',
+            proposed_date: proposedDate,
+            proposed_start_time: proposedStartTime,
+            proposed_end_time: proposedEndTime,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Propuesta enviada correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('proposeTimeModal')).hide();
+            loadSessionRequests();
+            if (calendar) {
+                // Actualizar eventos manteniendo la vista actual
+                calendar.refetchEvents();
+            }
+        } else {
+            showNotification(data.error || 'Error enviando propuesta', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error enviando propuesta', 'error');
+    });
+}
+
+// Inicializar agenda cuando se muestra el módulo
+function initializeAgenda() {
+    console.log('🗓️ Inicializando agenda del coach');
+    loadAvailability();
+    loadSessionRequests();
+    
+    // Configurar listener para cambios de pestaña
+    setupCalendarTabListener();
+    
+    if (calendar) {
+        // Re-renderizar manteniendo la vista actual
+        calendar.render();
+        calendar.refetchEvents();
+        console.log('📅 Calendario re-renderizado con navegación libre');
+    } else if (typeof FullCalendar !== 'undefined') {
+        initializeCalendar();
+        // Configurar listener después de inicializar
+        setTimeout(setupCalendarTabListener, 500);
+    }
+}
+
+// Modificar showModule para incluir inicialización de agenda
+const originalShowModule = window.showModule;
+window.showModule = function(moduleId) {
+    originalShowModule(moduleId);
+    
+    if (moduleId === 'agenda') {
+        setTimeout(initializeAgenda, 100); // Pequeño delay para asegurar que el DOM esté listo
+    }
+};
+
+// Función para obtener fecha/hora en zona horaria de Santiago
+function getSantiagoDateTime() {
+    const now = new Date();
+    // Santiago de Chile: GMT-3 (horario de verano) o GMT-4 (horario estándar)
+    // Usar Intl.DateTimeFormat para obtener la hora local correcta
+    const santiagoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Santiago"}));
+    return santiagoTime;
+}
+
+function getSantiagoDate() {
+    const santiagoTime = getSantiagoDateTime();
+    return santiagoTime.toISOString().split('T')[0];
+}
+
+function getSantiagoTomorrow() {
+    const santiagoTime = getSantiagoDateTime();
+    santiagoTime.setDate(santiagoTime.getDate() + 1);
+    return santiagoTime.toISOString().split('T')[0];
+}
+
+// Cache buster - Forzar recarga: 2025-10-18-16:44
+console.log('🔄 Coach Dashboard: 2025-10-18-16:44 - Sistema con zona horaria Santiago implementado');
+console.log('🇨🇱 Hora actual Santiago:', getSantiagoDateTime().toLocaleString('es-CL'));
 </script>
 {% endblock %}
