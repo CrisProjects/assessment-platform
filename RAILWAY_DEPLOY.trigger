@@ -1,13 +1,15 @@
 # RAILWAY DEPLOYMENT TRIGGER
 # This file forces Railway to redeploy with latest changes
 
-DEPLOYMENT_DATE=2025-10-04T12:55:00
-COMMIT_HASH=7b35b8b
+DEPLOYMENT_DATE=2025-10-18T11:45:00
+COMMIT_HASH=d8217e5
 FORCE_REBUILD=true
 
 # Latest changes include:
-# - Railway debug endpoints
-# - Logout fix for dual dashboards  
+# - Funcionalidad completa de edición de coachees (botón editar funcional)
+# - Modal de edición responsivo con validaciones
+# - Endpoint PUT /api/coach/update-coachee/<id>
+# - Mejoras en estilos de modal de video coachee dashboard  
 # - Evaluation results debugging
 # - Status endpoint
 
