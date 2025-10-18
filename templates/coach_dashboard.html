@@ -1871,6 +1871,89 @@
             text-align: center !important;
         }
     }
+    
+    /* ESTILOS ESPECÍFICOS PARA MODAL DE INVITACIÓN */
+    #invitationSuccessModal {
+        z-index: 10000 !important;
+    }
+    
+    #invitationSuccessModal .modal-backdrop {
+        z-index: 9999 !important;
+    }
+    
+    #invitationSuccessModal .modal-dialog {
+        z-index: 10001 !important;
+    }
+    
+    #invitationSuccessModal .modal-content {
+        border-radius: 12px !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+    }
+    
+    #invitationSuccessModal .modal-header {
+        border-top-left-radius: 12px !important;
+        border-top-right-radius: 12px !important;
+    }
+    
+    #invitationMessage {
+        max-height: 300px !important;
+        overflow-y: auto !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px !important;
+        background: #ffffff !important;
+    }
+    
+    .invitation-message-container {
+        position: relative !important;
+    }
+    
+    .invitation-message-container:hover {
+        border-color: #0d6efd !important;
+    }
+    
+    /* FORZAR ACCESIBILIDAD DEL MODAL - SIN BACKDROP */
+    .modal-backdrop {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    body.modal-open {
+        overflow: auto !important;
+    }
+    
+    /* Asegurar que todos los elementos del modal sean clickeables */
+    #invitationSuccessModal * {
+        pointer-events: auto !important;
+    }
+    
+    #invitationSuccessModal .modal-content {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 10002 !important;
+    }
+    
+    /* Asegurar que los botones del modal siempre sean clickeables */
+    #invitationSuccessModal .btn {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 10003 !important;
+    }
+    
+    /* Modal sin backdrop - más prominente */
+    #invitationSuccessModal .modal-dialog {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+        border: 2px solid #28a745 !important;
+        border-radius: 10px !important;
+    }
+    }
+    
+    /* Botones del modal siempre accesibles */
+    #invitationSuccessModal button {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        z-index: 10002 !important;
+        position: relative !important;
+    }
 </style>
 {% endblock %}
 
@@ -2172,9 +2255,77 @@
                             </div>
                             
                             <button type="submit" class="btn btn-success">
-                                <i class="fas fa-paper-plane me-1"></i>Enviar Invitación
+                                <i class="fas fa-paper-plane me-1"></i>Crear Coachee
                             </button>
                         </form>
+                        
+                        <!-- Modal para mostrar invitación creada -->
+                        <div class="modal fade" id="invitationSuccessModal" tabindex="-1" aria-labelledby="invitationSuccessModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-success text-white">
+                                        <h5 class="modal-title" id="invitationSuccessModalLabel">
+                                            <i class="fas fa-check-circle me-2"></i>¡Coachee Creado Exitosamente!
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closeInvitationModal()"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary">
+                                                    <i class="fas fa-user me-1"></i>Información del Coachee
+                                                </h6>
+                                                <div class="bg-light p-3 rounded mb-3">
+                                                    <p class="mb-1"><strong>Nombre:</strong> <span id="modalCoacheeName"></span></p>
+                                                    <p class="mb-1"><strong>Email:</strong> <span id="modalCoacheeEmail"></span></p>
+                                                    <p class="mb-1"><strong>Usuario:</strong> <span id="modalCoacheeUsername" class="text-primary"></span></p>
+                                                    <p class="mb-0"><strong>Contraseña:</strong> <span id="modalCoacheePassword" class="text-danger fw-bold"></span></p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary">
+                                                    <i class="fas fa-share-alt me-1"></i>Compartir Invitación
+                                                </h6>
+                                                <div class="d-grid gap-2">
+                                                    <button class="btn btn-outline-primary" onclick="copyInvitationToClipboard()">
+                                                        <i class="fas fa-copy me-1"></i>Copiar al Portapapeles
+                                                    </button>
+                                                    <button class="btn btn-success" onclick="shareViaWhatsApp()">
+                                                        <i class="fab fa-whatsapp me-1"></i>Enviar por WhatsApp
+                                                    </button>
+                                                    <button class="btn btn-info" onclick="shareViaEmail()">
+                                                        <i class="fas fa-envelope me-1"></i>Enviar por Email
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                        <h6 class="text-primary">
+                            <i class="fas fa-comment-dots me-1"></i>Mensaje de Invitación
+                        </h6>
+                        <div class="invitation-message-container bg-light p-3 rounded border" style="cursor: text;">
+                            <div id="invitationMessage" style="white-space: pre-line; font-family: monospace; font-size: 0.9rem; user-select: text; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; cursor: text; line-height: 1.4;"></div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>Puedes seleccionar y copiar el texto directamente desde aquí
+                        </small>                                        <div id="assessmentAssignedInfo" class="alert alert-info mt-3" style="display: none;">
+                                            <i class="fas fa-clipboard-check me-1"></i>
+                                            <strong>Evaluación Asignada:</strong> <span id="assignedAssessmentName"></span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" onclick="closeInvitationModal()">
+                                            <i class="fas fa-times me-1"></i>Cerrar Modal
+                                        </button>
+                                        <button type="button" class="btn btn-primary" onclick="copyInvitationToClipboard()">
+                                            <i class="fas fa-copy me-1"></i>Copiar Mensaje
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -4647,16 +4798,77 @@ document.getElementById('inviteForm').addEventListener('submit', function(e) {
         if (data.success) {
             document.getElementById('inviteForm').reset();
             
-            let message = '¡Coachee creado exitosamente!\n\nCredenciales:\nUsuario: ' + data.coachee.username + '\nContraseña: ' + data.coachee.password;
+            // Guardar datos del coachee para el modal
+            window.currentCoacheeData = {
+                name: data.coachee.full_name,
+                email: data.coachee.email,
+                username: data.coachee.username,
+                password: data.coachee.password,
+                loginUrl: `${window.location.origin}/participant-access`,
+                assignedAssessment: data.coachee.assigned_assessment
+            };
             
-            // Mostrar información sobre evaluación asignada
+            // Llenar datos en el modal
+            document.getElementById('modalCoacheeName').textContent = data.coachee.full_name;
+            document.getElementById('modalCoacheeEmail').textContent = data.coachee.email;
+            document.getElementById('modalCoacheeUsername').textContent = data.coachee.username;
+            document.getElementById('modalCoacheePassword').textContent = data.coachee.password;
+            
+            // Mostrar información de evaluación asignada si existe
             if (data.coachee.assigned_assessment) {
-                message += '\n\n✅ Evaluación "' + data.coachee.assigned_assessment + '" asignada exitosamente';
-            } else if (assignedAssessment) {
-                message += '\n\n⚠️ No se pudo asignar la evaluación seleccionada';
+                document.getElementById('assignedAssessmentName').textContent = data.coachee.assigned_assessment;
+                document.getElementById('assessmentAssignedInfo').style.display = 'block';
+            } else {
+                document.getElementById('assessmentAssignedInfo').style.display = 'none';
             }
             
-            alert(message);
+            // Generar mensaje de invitación
+            generateInvitationMessage();
+            
+            // Mostrar modal con configuración mejorada
+            setTimeout(() => {
+                const modalElement = document.getElementById('invitationSuccessModal');
+                if (modalElement) {
+                    // Limpiar cualquier instancia anterior y backdrops residuales
+                    const existingModal = bootstrap.Modal.getInstance(modalElement);
+                    if (existingModal) {
+                        existingModal.dispose();
+                    }
+                    
+                    // Limpiar backdrops residuales y asegurar que no se creen nuevos
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = 'auto';
+                    document.body.style.paddingRight = '';
+                    
+                    // Crear nueva instancia con configuración específica
+                    const modal = new bootstrap.Modal(modalElement, {
+                        backdrop: false,    // Sin fondo oscuro
+                        keyboard: true,     // Permitir cerrar con ESC
+                        focus: true,
+                        show: false
+                    });
+                    
+                    // Mostrar el modal
+                    modal.show();
+                    
+                    // Asegurar que los eventos funcionen correctamente
+                    modalElement.addEventListener('hidden.bs.modal', function () {
+                        modal.dispose();
+                        // Limpieza adicional al cerrar
+                        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style.overflow = '';
+                        document.body.style.paddingRight = '';
+                    }, { once: true });
+                    
+                    console.log('✅ Modal de invitación mostrado correctamente');
+                } else {
+                    console.error('❌ Modal element not found');
+                }
+            }, 100);
+            
+            // Recargar lista de coachees
             loadCoachees();
         } else {
             alert('Error al crear el coachee: ' + (data.error || data.message || 'Error desconocido'));
@@ -4735,15 +4947,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Agregar event listeners a todos los enlaces del menú
     document.querySelectorAll('[data-module]').forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault(); // Prevenir comportamiento por defecto
-            e.stopPropagation(); // Prevenir propagación del evento
-            
-            const moduleId = this.getAttribute('data-module');
-            if (moduleId) {
-                showModule(moduleId);
+            // Solo prevenir para elementos del menú, no para modales
+            if (!e.target.closest('.modal')) {
+                e.preventDefault(); // Prevenir comportamiento por defecto
+                e.stopPropagation(); // Prevenir propagación del evento
+                
+                const moduleId = this.getAttribute('data-module');
+                if (moduleId) {
+                    showModule(moduleId);
+                }
+                
+                return false;
             }
-            
-            return false;
         });
     });
     
@@ -6886,7 +7101,162 @@ function showEditAlert(type, message) {
     alertDiv.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'} me-1"></i>${message}`;
 }
 
-// Cache buster - Forzar recarga: 2025-10-18-12:50
-console.log('🔄 Template actualizado: 2025-10-18-12:50 - Statistics cards móvil optimizadas en grilla 2x2 igual que coachee dashboard');
+// Funciones para manejo de invitaciones de WhatsApp
+function generateInvitationMessage() {
+    const data = window.currentCoacheeData;
+    if (!data) return;
+    
+    let message = `🎯 *Invitación a Evaluación de Coaching*\n\n`;
+    message += `¡Hola ${data.name}! 👋\n\n`;
+    message += `Has sido invitado/a a participar en una evaluación de coaching. `;
+    message += `A continuación encontrarás tus credenciales de acceso:\n\n`;
+    
+    message += `📋 *DATOS DE ACCESO:*\n`;
+    message += `• *Usuario:* ${data.username}\n`;
+    message += `• *Contraseña:* ${data.password}\n`;
+    message += `• *Link de acceso:* ${data.loginUrl}\n\n`;
+    
+    if (data.assignedAssessment) {
+        message += `✅ *EVALUACIÓN ASIGNADA:*\n`;
+        message += `"${data.assignedAssessment}"\n\n`;
+    }
+    
+    message += `📱 *INSTRUCCIONES:*\n`;
+    message += `1. Haz clic en el link de acceso\n`;
+    message += `2. Ingresa tu usuario y contraseña\n`;
+    message += `3. Completa la evaluación asignada\n`;
+    message += `4. ¡Listo! Tu coach revisará los resultados\n\n`;
+    
+    message += `💡 *Tip:* Responde con honestidad para obtener los mejores insights para tu desarrollo.\n\n`;
+    message += `¿Tienes dudas? ¡Contáctame! 😊`;
+    
+    document.getElementById('invitationMessage').textContent = message;
+    return message;
+}
+
+function copyInvitationToClipboard() {
+    const message = document.getElementById('invitationMessage').textContent;
+    
+    // Usar la API moderna del portapapeles si está disponible
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(message).then(() => {
+            showNotification('¡Mensaje copiado al portapapeles!', 'success');
+        }).catch(err => {
+            console.error('Error al copiar al portapapeles:', err);
+            fallbackCopyToClipboard(message);
+        });
+    } else {
+        fallbackCopyToClipboard(message);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showNotification('¡Mensaje copiado al portapapeles!', 'success');
+    } catch (err) {
+        console.error('Error al copiar:', err);
+        showNotification('Error al copiar. Por favor, selecciona y copia manualmente.', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function shareViaWhatsApp() {
+    const message = document.getElementById('invitationMessage').textContent;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    
+    // Abrir WhatsApp en una nueva ventana
+    window.open(whatsappUrl, '_blank');
+    
+    showNotification('Abriendo WhatsApp...', 'info');
+}
+
+function shareViaEmail() {
+    const data = window.currentCoacheeData;
+    if (!data) return;
+    
+    const subject = `Invitación a Evaluación de Coaching - ${data.name}`;
+    const body = document.getElementById('invitationMessage').textContent;
+    
+    const emailUrl = `mailto:${data.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Abrir cliente de email
+    window.location.href = emailUrl;
+    
+    showNotification('Abriendo cliente de email...', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    // Crear notificación temporal
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 15000; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-1"></i>
+        ${message}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
+
+function closeInvitationModal() {
+    const modalElement = document.getElementById('invitationSuccessModal');
+    if (modalElement) {
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+            // Limpiar backdrop si queda colgado
+            setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 300);
+        } else {
+            // Método alternativo si no hay instancia
+            modalElement.style.display = 'none';
+            modalElement.classList.remove('show');
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
+        console.log('✅ Modal cerrado manualmente');
+    }
+}
+
+// Agregar listener para ESC global como fallback
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('invitationSuccessModal');
+        if (modal && modal.classList.contains('show')) {
+            closeInvitationModal();
+            console.log('✅ Modal cerrado con ESC');
+        }
+    }
+});
+
+// Cache buster - Forzar recarga: 2025-10-18-13:10
+console.log('🔄 Template actualizado: 2025-10-18-13:10 - Invitaciones WhatsApp implementadas con modal y compartir');
 </script>
 {% endblock %}
