@@ -3014,9 +3014,12 @@ def api_save_assessment():
         # Determinar número de respuestas
         num_responses = len(responses) if isinstance(responses, list) else len(responses)
         
-        # MEJORADO: Usar query con FOR UPDATE para evitar condiciones de carrera
+        # MEJORADO: Implementar upsert logic para evitar race conditions
+        assessment_result = None
+        existing_result = None
+        
         try:
-            # Intentar buscar resultado existente con bloqueo para evitar concurrencia
+            # Buscar resultado existente
             existing_result = AssessmentResult.query.filter_by(
                 user_id=current_coachee.id,
                 assessment_id=assessment_id_int
@@ -3041,11 +3044,16 @@ def api_save_assessment():
                     existing_result.coach_id = current_coachee.coach_id
                     
                 assessment_result = existing_result  # Para usar en el resto del código
+                
+                # Eliminar respuestas anteriores para este resultado
+                Response.query.filter_by(assessment_result_id=assessment_result.id).delete()
+                logger.info(f"SAVE_ASSESSMENT: Eliminadas respuestas anteriores para resultado {assessment_result.id}")
+                
             else:
                 # Crear resultado de evaluación nuevo
                 assessment_result = AssessmentResult(
                     user_id=current_coachee.id,
-                    assessment_id=assessment_id_int,  # Usar el assessment_id_int correcto
+                    assessment_id=assessment_id_int,
                     score=score,
                     total_questions=num_responses,
                     result_text=result_text,
@@ -3062,16 +3070,15 @@ def api_save_assessment():
                     assessment_result.coach_id = current_coachee.coach_id
                 
                 db.session.add(assessment_result)
-                db.session.flush()  # Para obtener el ID
+                
         except Exception as query_error:
             logger.error(f"❌ SAVE_ASSESSMENT: Error en query inicial: {str(query_error)}")
-            # Continuar con el flujo normal para manejar en el commit
-        
-        # Si estamos actualizando un resultado existente, eliminar respuestas anteriores
-        if existing_result:
-            # Eliminar respuestas anteriores
-            Response.query.filter_by(assessment_result_id=assessment_result.id).delete()
-            logger.info(f"SAVE_ASSESSMENT: Eliminadas respuestas anteriores para resultado {assessment_result.id}")
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'error': 'Error en consulta de base de datos. Por favor, intenta nuevamente.',
+                'code': 'DATABASE_QUERY_ERROR'
+            }), 500
         
         # Guardar respuestas individuales
         if isinstance(responses, list):
@@ -3095,82 +3102,97 @@ def api_save_assessment():
                 )
                 db.session.add(response)
         
+        # Intentar commit con manejo robusto de errores UNIQUE constraint
         try:
             db.session.commit()
             logger.info(f"✅ SAVE_ASSESSMENT: Successfully saved assessment result ID {assessment_result.id} for user {current_coachee.username}")
+            
         except Exception as commit_error:
             db.session.rollback()
-            # Si hay error de UNIQUE constraint, intentar buscar y actualizar el resultado existente
-            if "UNIQUE constraint failed" in str(commit_error) or "IntegrityError" in str(commit_error):
-                logger.warning(f"⚠️ SAVE_ASSESSMENT: UNIQUE constraint error detected: {str(commit_error)}")
-                logger.warning(f"⚠️ SAVE_ASSESSMENT: Attempting to find and update existing result for user {current_coachee.id}, assessment {assessment_id_int}")
+            error_str = str(commit_error)
+            
+            # Manejar específicamente errores de UNIQUE constraint
+            if "UNIQUE constraint failed" in error_str or "IntegrityError" in error_str:
+                logger.warning(f"⚠️ SAVE_ASSESSMENT: UNIQUE constraint detected - attempting recovery")
+                logger.warning(f"⚠️ SAVE_ASSESSMENT: Error details: {error_str}")
                 
-                # Forzar una nueva consulta para buscar el resultado existente
-                db.session.close()  # Cerrar la sesión actual
-                existing_result = AssessmentResult.query.filter_by(
-                    user_id=current_coachee.id,
-                    assessment_id=assessment_id_int
-                ).first()
-                
-                if existing_result:
-                    logger.info(f"✅ SAVE_ASSESSMENT: Found existing result ID {existing_result.id}, updating it")
-                    logger.info(f"SAVE_ASSESSMENT: Previous score: {existing_result.score}, New score: {score}")
+                try:
+                    # Intentar recovery: buscar el resultado existente y actualizarlo
+                    recovery_result = AssessmentResult.query.filter_by(
+                        user_id=current_coachee.id,
+                        assessment_id=assessment_id_int
+                    ).first()
                     
-                    # Actualizar historial de puntajes
-                    total_attempts = update_score_history(existing_result, score)
-                    logger.info(f"SAVE_ASSESSMENT: Intento #{total_attempts} registrado en historial")
-                    
-                    # Actualizar el resultado existente
-                    existing_result.score = score
-                    existing_result.total_questions = num_responses
-                    existing_result.result_text = result_text
-                    existing_result.dimensional_scores = dimensional_scores
-                    existing_result.completed_at = datetime.utcnow()
-                    
-                    # Eliminar respuestas anteriores
-                    Response.query.filter_by(assessment_result_id=existing_result.id).delete()
-                    logger.info(f"SAVE_ASSESSMENT: Eliminadas respuestas anteriores para resultado {existing_result.id}")
-                    
-                    # Guardar respuestas nuevas
-                    if isinstance(responses, list):
-                        for response_data in responses:
-                            response = Response(
-                                user_id=current_coachee.id,
-                                question_id=int(response_data['question_id']),
-                                selected_option=int(response_data['selected_option']),
-                                assessment_result_id=existing_result.id
-                            )
-                            db.session.add(response)
-                    else:
-                        for question_id, selected_option in responses.items():
-                            response = Response(
-                                user_id=current_coachee.id,
-                                question_id=int(question_id),
-                                selected_option=int(selected_option),
-                                assessment_result_id=existing_result.id
-                            )
-                            db.session.add(response)
-                    
-                    try:
+                    if recovery_result:
+                        logger.info(f"✅ SAVE_ASSESSMENT: Found existing result during recovery - updating it")
+                        
+                        # Actualizar historial de puntajes
+                        total_attempts = update_score_history(recovery_result, score)
+                        logger.info(f"SAVE_ASSESSMENT: Recovery - Intento #{total_attempts} registrado")
+                        
+                        # Actualizar todos los campos
+                        recovery_result.score = score
+                        recovery_result.total_questions = num_responses
+                        recovery_result.result_text = result_text
+                        recovery_result.dimensional_scores = dimensional_scores
+                        recovery_result.completed_at = datetime.utcnow()
+                        
+                        if current_coachee.coach_id:
+                            recovery_result.coach_id = current_coachee.coach_id
+                        
+                        # Eliminar respuestas anteriores y agregar las nuevas
+                        Response.query.filter_by(assessment_result_id=recovery_result.id).delete()
+                        
+                        # Agregar respuestas nuevas
+                        if isinstance(responses, list):
+                            for response_data in responses:
+                                response = Response(
+                                    user_id=current_coachee.id,
+                                    question_id=int(response_data['question_id']),
+                                    selected_option=int(response_data['selected_option']),
+                                    assessment_result_id=recovery_result.id
+                                )
+                                db.session.add(response)
+                        else:
+                            for question_id, selected_option in responses.items():
+                                response = Response(
+                                    user_id=current_coachee.id,
+                                    question_id=int(question_id),
+                                    selected_option=int(selected_option),
+                                    assessment_result_id=recovery_result.id
+                                )
+                                db.session.add(response)
+                        
+                        # Intentar commit de recovery
                         db.session.commit()
-                        assessment_result = existing_result
-                        logger.info(f"✅ SAVE_ASSESSMENT: Successfully updated existing assessment result ID {assessment_result.id}")
-                    except Exception as retry_error:
-                        db.session.rollback()
-                        logger.error(f"❌ SAVE_ASSESSMENT: Error en retry: {str(retry_error)}")
-                        raise retry_error
-                else:
-                    logger.error(f"❌ SAVE_ASSESSMENT: UNIQUE constraint error but no existing result found for user {current_coachee.id}, assessment {assessment_id_int}")
-                    logger.error(f"❌ SAVE_ASSESSMENT: This suggests a database consistency issue")
-                    # En lugar de fallar, devolver un error más user-friendly
+                        assessment_result = recovery_result
+                        logger.info(f"✅ SAVE_ASSESSMENT: Recovery successful - result ID {assessment_result.id}")
+                        
+                    else:
+                        logger.error(f"❌ SAVE_ASSESSMENT: Recovery failed - no existing result found")
+                        return jsonify({
+                            'success': False,
+                            'error': 'Error de concurrencia al guardar evaluación. Por favor, recarga la página e intenta nuevamente.',
+                            'code': 'CONCURRENCY_ERROR'
+                        }), 409
+                        
+                except Exception as recovery_error:
+                    db.session.rollback()
+                    logger.error(f"❌ SAVE_ASSESSMENT: Recovery failed: {str(recovery_error)}")
                     return jsonify({
                         'success': False,
                         'error': 'Ya has completado esta evaluación previamente. Por favor, recarga la página.',
                         'code': 'DUPLICATE_ASSESSMENT'
                     }), 409
+                    
             else:
-                logger.error(f"❌ SAVE_ASSESSMENT: Error en commit: {str(commit_error)}")
-                raise commit_error
+                # Error diferente a UNIQUE constraint
+                logger.error(f"❌ SAVE_ASSESSMENT: Unexpected commit error: {error_str}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Error guardando evaluación: {error_str}',
+                    'code': 'COMMIT_ERROR'
+                }), 500
         
         return jsonify({
             'success': True,
