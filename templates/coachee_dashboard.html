@@ -7947,9 +7947,23 @@
         }
         
         function generateGrowthPreparationResponsesHTML(responses) {
+            console.log('🔍 generateGrowthPreparationResponsesHTML - responses count:', responses ? responses.length : 0);
+            
             if (!responses || responses.length === 0) {
-                return '<p class="text-muted">No hay respuestas detalladas disponibles.</p>';
+                console.log('⚠️ No responses available');
+                return '<div class="alert alert-warning">No hay respuestas detalladas disponibles.</div>';
             }
+
+            // Mapeo de question_id a dimensión para "Preparación para crecer 2026"
+            const questionIdToDimension = {
+                71: "Delegación",
+                72: "Estructura organizacional", 
+                73: "Gestión del tiempo del dueño",
+                74: "Finanzas",
+                75: "Crecimiento estratégico",
+                76: "Bienestar personal",
+                77: "Visión a futuro"
+            };
             
             // Opciones específicas por dimensión
             const growthLabelsByDimension = {
@@ -7964,7 +7978,8 @@
             
             let html = '';
             responses.forEach((response, index) => {
-                const dimension = response.dimension || 'Dimensión desconocida';
+                // Obtener la dimensión desde el mapeo usando question_id
+                const dimension = questionIdToDimension[response.question_id] || response.dimension || 'Dimensión desconocida';
                 const dimensionLabels = growthLabelsByDimension[dimension] || {1: 'Opción 1', 2: 'Opción 2', 3: 'Opción 3'};
                 const selectedOption = response.selected_option || response.points || 1;
                 const optionText = dimensionLabels[selectedOption] || 'N/A';
@@ -7989,6 +8004,7 @@
                 `;
             });
             
+            console.log('✅ Generated responses HTML for', responses.length, 'items');
             return html;
         }
         
