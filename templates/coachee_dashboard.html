@@ -2807,7 +2807,6 @@
             padding: 0.75rem;
             background: rgba(248, 250, 252, 0.8);
             border-radius: 8px;
-            border-left: 3px solid var(--primary-color);
         }
 
         .content-description p {
@@ -5254,6 +5253,34 @@
             return div.innerHTML;
         }
         
+        // Helper function to clean video titles from problematic prefixes
+        function cleanVideoTitle(title) {
+            if (!title) return title;
+            
+            // Si el título empieza con "(Video de", limpiar esa parte
+            if (title.startsWith('(Video de')) {
+                const closeParenIndex = title.indexOf(')');
+                if (closeParenIndex !== -1) {
+                    const cleanedTitle = title.substring(closeParenIndex + 1).trim();
+                    return cleanedTitle || 'Video educativo';
+                }
+            }
+            
+            return title;
+        }
+        
+        // Helper function to clean video descriptions from problematic prefixes
+        function cleanVideoDescription(description) {
+            if (!description) return description;
+            
+            // Si la descripción empieza con "Video de", limpiar esa parte
+            if (description.startsWith('Video de ')) {
+                return description.substring(9).trim() || 'Contenido educativo asignado por el coach';
+            }
+            
+            return description;
+        }
+        
         // DEBUG: Override fetch to log all requests
         const originalFetch = window.fetch;
         window.fetch = function(...args) {
@@ -6066,6 +6093,8 @@
         }
 
         // Load content assigned to coachee
+        // Variables globales para debugging
+        let renderContentCallCount = 0;
         let isLoadingContent = false;
         async function loadContent() {
             // Evitar llamadas concurrentes
@@ -6075,6 +6104,8 @@
             }
             
             isLoadingContent = true;
+            debugLog('🎥 LOAD-CONTENT: Iniciando carga de contenido...');
+            
             try {
                 debugLog('🎥 Cargando contenido asignado...');
                 
@@ -6094,6 +6125,28 @@
                 
                 if (data.success) {
                     contentData = data.content || [];
+                    
+                    // FILTRAR DUPLICADOS POR ID
+                    const uniqueContent = [];
+                    const seenIds = new Set();
+                    
+                    contentData.forEach(item => {
+                        if (!seenIds.has(item.id)) {
+                            seenIds.add(item.id);
+                            uniqueContent.push(item);
+                        } else {
+                            debugLog('⚠️ DUPLICADO DETECTADO Y REMOVIDO:', item);
+                        }
+                    });
+                    
+                    contentData = uniqueContent;
+                    
+                    debugLog('🎥 LOAD-CONTENT: Datos procesados', {
+                        originalCount: (data.content || []).length,
+                        uniqueCount: contentData.length,
+                        titles: contentData.map(c => c.title),
+                        ids: contentData.map(c => c.id)
+                    });
                     renderContent();
                 } else {
                     throw new Error(data.error || 'Error desconocido cargando contenido');
@@ -6115,16 +6168,40 @@
 
         // Render content
         function renderContent() {
+            renderContentCallCount++;
             const container = document.getElementById('contentContainer');
+            
+            debugLog(`🎥 RENDER-CONTENT: Iniciando renderizado #${renderContentCallCount}`, {
+                contentData: contentData,
+                itemCount: contentData?.length || 0,
+                containerExists: !!container,
+                containerCurrentHTML: container?.innerHTML?.substring(0, 100) + '...'
+            });
             
             if (!contentData || contentData.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-video"></i><p>No tienes contenido asignado</p></div>';
                 return;
             }
 
+            // LIMPIAR COMPLETAMENTE EL CONTENEDOR ANTES DE RENDERIZAR
+            container.innerHTML = '';
+            debugLog('🧹 RENDER-CONTENT: Contenedor limpiado');
+
             let html = '<div class="row">';
             
-            contentData.forEach(content => {
+            debugLog('🎥 RENDER-CONTENT: Procesando items', {
+                count: contentData.length,
+                items: contentData.map(c => ({id: c.id, title: c.title, description: c.description}))
+            });
+            
+            contentData.forEach((content, index) => {
+                debugLog(`🎥 RENDER-ITEM ${index}:`, {
+                    id: content.id,
+                    title: content.title,
+                    description: content.description,
+                    cleanTitle: cleanVideoTitle(content.title),
+                    cleanDescription: cleanVideoDescription(content.description)
+                });
                 const formattedDate = content.assigned_at ? 
                     new Date(content.assigned_at).toLocaleDateString('es-ES', {
                         year: 'numeric',
@@ -6155,7 +6232,7 @@
                         embedContent = `
                             <div class="ratio ratio-16x9">
                                 <iframe src="https://www.youtube.com/embed/${videoId}" 
-                                    title="${escapeHtml(content.title)}" 
+                                    title="${escapeHtml(cleanVideoTitle(content.title))}" 
                                     frameborder="0" 
                                     allowfullscreen
                                     style="border-radius: 8px;">
@@ -6191,7 +6268,7 @@
                             <div class="content-header" style="padding: 0;">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="content-info flex-grow-1">
-                                        <h6 class="content-title mb-1" style="font-weight: 600; line-height: 1.3;">${escapeHtml(content.title)}</h6>
+                                        <h6 class="content-title mb-1" style="font-weight: 600; line-height: 1.3;">${escapeHtml(cleanVideoTitle(content.title))}</h6>
                                         <small class="text-muted">Por ${escapeHtml(content.coach_name)}</small>
                                         ${duration ? `<div class="mt-1"><span class="badge bg-light text-dark"><i class="fas fa-clock me-1"></i>${duration}</span></div>` : ''}
                                     </div>
@@ -6201,7 +6278,7 @@
                             
                             ${content.description ? `
                                 <div class="content-description" style="padding: 0; margin-top: 8px;">
-                                    <p class="text-muted small mb-2" style="line-height: 1.4;">${escapeHtml(content.description)}</p>
+                                    <p class="text-muted small mb-2" style="line-height: 1.4;">${escapeHtml(cleanVideoDescription(content.description))}</p>
                                 </div>
                             ` : ''}
                             
@@ -6224,15 +6301,33 @@
                                     </button>
                                 ` : ''}
                             </div>
-                            </div>
-                            </div>
                         </div>
                     </div>
                 `;
             });
             
             html += '</div>';
+            
+            debugLog('🎥 RENDER-CONTENT: HTML generado', {
+                htmlLength: html.length,
+                finalHTML: html.substring(0, 200) + '...',
+                aboutToSetInnerHTML: true
+            });
+            
+            // Verificar estado antes de setear innerHTML
+            debugLog('🔍 PRE-SET: Container state', {
+                currentHTML: container.innerHTML.substring(0, 100) + '...',
+                currentHTMLLength: container.innerHTML.length
+            });
+            
             container.innerHTML = html;
+            
+            // Verificar estado después de setear innerHTML  
+            debugLog('✅ POST-SET: Container updated', {
+                newHTML: container.innerHTML.substring(0, 100) + '...',
+                newHTMLLength: container.innerHTML.length,
+                childCount: container.children.length
+            });
         }
 
         // Open content (video or document)
@@ -6266,7 +6361,7 @@
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">${escapeHtml(title)}</h5>
+                                <h5 class="modal-title">${escapeHtml(cleanVideoTitle(title))}</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body p-0">
@@ -7798,17 +7893,17 @@
             // Determinar el resultado basado en el puntaje
             let resultLevel, resultColor, resultIcon, respuestasC;
             if (score <= 30) {
-                resultLevel = "Rojo";
+                resultLevel = "Alta dependencia (Rojo)";
                 resultColor = "#dc3545";
                 resultIcon = "fas fa-exclamation-triangle";
                 respuestasC = "0-2";
             } else if (score <= 70) {
-                resultLevel = "Amarillo";
+                resultLevel = "En progreso (Amarillo)";
                 resultColor = "#ffc107";
                 resultIcon = "fas fa-clock";
                 respuestasC = "3-4";
             } else {
-                resultLevel = "Verde";
+                resultLevel = "Preparado (Verde)";
                 resultColor = "#28a745";
                 resultIcon = "fas fa-check-circle";
                 respuestasC = "5-7";
@@ -7819,22 +7914,22 @@
                 <div class="tu-resultado mb-4 p-4" style="background: ${resultColor} !important; color: white !important; border-radius: 15px; text-align: center; box-shadow: 0 6px 12px rgba(0,0,0,0.1);">
                     <h4 style="color: white !important; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5) !important;">
                         <i class="${resultIcon} me-2" style="color: white !important;"></i>
-                        Tu Resultado: <span style="color: white !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.5) !important;">${resultLevel}</span>
+                        <span style="color: white !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.5) !important;">${resultLevel}</span>
                     </h4>
                     <p style="margin: 0; font-size: 1.2em; line-height: 1.5; font-weight: 500; color: white !important;">
-                        ${resultText.split('\\n\\n')[0]}
+                        ${resultText.split(':')[1] ? resultText.split(':')[1].trim().split('\\n\\n')[0] : resultText.split('\\n\\n')[0]}
                     </p>
                 </div>
 
                 <!-- CTA Momento Clave -->
                 <div class="cta-final mb-4">
-                    <div class="card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border: none; border-radius: 15px;">
+                    <div class="card" style="background: #f8f9fa; border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                         <div class="card-body text-center" style="padding: 30px;">
-                            <h4 style="color: white; margin-bottom: 20px;">
-                                <i class="fas fa-gift me-2"></i>
+                            <h4 style="color: #333; margin-bottom: 20px;">
+                                <i class="fas fa-gift me-2" style="color: #4facfe;"></i>
                                 Momento Clave para Tu Crecimiento
                             </h4>
-                            <p style="color: white; font-size: 1.1em; line-height: 1.6; margin-bottom: 25px;">
+                            <p style="color: #333; font-size: 1.1em; line-height: 1.6; margin-bottom: 25px; font-weight: 500;">
                                 ✨ "Tu resultado muestra que este es el momento clave para ti. Por eso quiero regalarte una sesión gratuita de 30 min, donde veremos cómo preparar tu negocio en este último trimestre y que el 2026 sea el año en que veas realizados tus sueños de crecimiento."
                             </p>
                             
@@ -7850,17 +7945,17 @@
                                             <i class="fab fa-whatsapp me-3" style="color: #25D366; font-size: 1.2em;"></i>
                                             <div>
                                                 <strong>WhatsApp</strong>
-                                                <br><small class="text-muted">+56 9 94896670</small>
+                                                <br><small class="text-muted">+56 9 9489 6670</small>
                                             </div>
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item d-flex align-items-center py-3" href="mailto:contacto@ejemplo.com?subject=Sesión%20Gratuita%20-%20Preparación%202026&body=Hola%2C%0A%0AMe%20gustar%C3%ADa%20agendar%20una%20sesi%C3%B3n%20gratuita%20de%2030%20minutos%20para%20preparar%20mi%20negocio%20para%20el%202026.%0A%0AGracias." style="border-radius: 10px; margin: 5px;">
+                                        <a class="dropdown-item d-flex align-items-center py-3" href="mailto:coach@assessment.com?subject=Sesión%20Gratuita%20-%20Preparación%202026&body=Hola%2C%0A%0AMe%20gustar%C3%ADa%20agendar%20una%20sesi%C3%B3n%20gratuita%20de%2030%20minutos%20para%20preparar%20mi%20negocio%20para%20el%202026.%0A%0AGracias." style="border-radius: 10px; margin: 5px;">
                                             <i class="fas fa-envelope me-3" style="color: #0ea5e9; font-size: 1.2em;"></i>
                                             <div>
                                                 <strong>Email</strong>
-                                                <br><small class="text-muted">Enviar correo</small>
+                                                <br><small class="text-muted">Enviar correo al coach</small>
                                             </div>
                                         </a>
                                     </li>
@@ -7870,7 +7965,7 @@
                                             <i class="fas fa-phone me-3" style="color: #10b981; font-size: 1.2em;"></i>
                                             <div>
                                                 <strong>Llamada</strong>
-                                                <br><small class="text-muted">+56 9 94896670</small>
+                                                <br><small class="text-muted">+56 9 9489 6670</small>
                                             </div>
                                         </a>
                                     </li>
@@ -8109,8 +8204,8 @@
                 await Promise.all([
                     loadDashboardSummary(),
                     loadEvaluations(),
-                    loadTasks(),
-                    loadContent()
+                    loadTasks()
+                    // Nota: loadContent() se carga solo cuando se activa la pestaña de contenido
                 ]);
                 
             } catch (error) {

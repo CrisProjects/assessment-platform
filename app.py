@@ -1617,10 +1617,8 @@ def calculate_growth_preparation_score(responses):
         text = "Tienes buena base, ahora necesitas un plan estratégico para escalar con solidez y aprovechar al máximo el 2026."
         percentage_score = 90.0  # Verde = 90%
     
-    # CTA final automático
-    cta_text = '✨ "Tu resultado muestra que este es el momento clave para ti. Por eso quiero regalarte una sesión gratuita de 30 min, donde veremos cómo preparar tu negocio en este último trimestre y que el 2026 sea el año en que veas realizados tus sueños de crecimiento."'
-    
-    result_text = f"{level} ({color}): {text}\n\n{cta_text}"
+    # Formato del resultado sin CTA
+    result_text = f"{level} ({color}): {text}"
     
     logger.info(f"🎯 CALCULATE_GROWTH_SCORE: Respuestas C: {respuestas_c_count}/7, Percentage: {percentage_score}%, Level: {level}")
     logger.info(f"🎯 CALCULATE_GROWTH_SCORE: Dimensional scores: {dimensional_scores}")
@@ -5305,6 +5303,8 @@ def api_coach_assign_content():
             return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
         
         # Verificar si ya existe contenido similar para evitar duplicados
+        logger.info(f"🔍 DUPLICATE-CHECK: Verificando duplicados para coach_id={current_coach.id}, coachee_id={data['coachee_id']}, title='{data['title']}', url='{data['content_url']}'")
+        
         existing_content = Content.query.filter_by(
             coach_id=current_coach.id,
             coachee_id=data['coachee_id'],
@@ -5314,10 +5314,13 @@ def api_coach_assign_content():
         ).first()
         
         if existing_content:
+            logger.warning(f"⚠️ DUPLICATE-FOUND: Content ID {existing_content.id} ya existe para este coachee")
             return jsonify({
                 'error': 'Ya existe contenido con este título y URL para este coachee',
                 'existing_content_id': existing_content.id
             }), 409
+        
+        logger.info(f"✅ NO-DUPLICATE: Creando nuevo contenido para coachee {data['coachee_id']}")
         
         # Crear nuevo contenido
         content = Content(
@@ -5369,6 +5372,16 @@ def api_coach_get_assigned_content():
         
         # Obtener contenido ordenado por fecha de asignación
         content_items = query.order_by(Content.assigned_at.desc()).all()
+        
+        logger.info(f"🔍 COACH-CONTENT: Coach {current_coach.id} solicitando contenido - view_mode: {view_mode}, coachee_filter: {coachee_filter}")
+        logger.info(f"📊 RAW-DATA: Encontrados {len(content_items)} items de contenido")
+        
+        # Log detalles de los primeros items para debug
+        for i, item in enumerate(content_items[:3]):
+            logger.info(f"📝 ITEM-{i}: ID={item.id}, Title='{item.title}', Coachee={item.coachee_id}, URL='{item.content_url}'")
+        
+        if len(content_items) > 3:
+            logger.info(f"... y {len(content_items) - 3} items adicionales")
         
         if view_mode == 'unique':
             # Agrupar contenido único por título y URL
@@ -5455,6 +5468,13 @@ def api_coach_get_assigned_content():
         total_assigned = len(content_items)
         total_viewed = sum(1 for c in content_items if c.is_viewed)
         total_pending = total_assigned - total_viewed
+        
+        logger.info(f"📤 RESPONSE: Enviando {len(content_list)} items en content_list")
+        logger.info(f"📈 STATS: total_assigned={total_assigned}, total_viewed={total_viewed}, total_pending={total_pending}")
+        
+        # Log detalles de los primeros items de la respuesta
+        for i, item in enumerate(content_list[:3]):
+            logger.info(f"📋 RESPONSE-ITEM-{i}: ID={item['id']}, Title='{item['title']}', View_Mode='{item.get('view_mode', 'N/A')}'")
         
         return jsonify({
             'success': True,

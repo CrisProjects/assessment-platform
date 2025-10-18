@@ -2269,6 +2269,7 @@ function showModule(moduleId) {
     } else if (moduleId === 'seleccionar-evaluaciones') {
         loadAvailableAssessments();
     } else if (moduleId === 'invitar-coachee') {
+        console.log('📋 MODULE-SWITCH: Activando módulo invitar-coachee - cargando evaluaciones');
         loadAssessmentsForInvitation();
     }
     
@@ -2660,28 +2661,60 @@ function confirmAssignAssessment(assessmentId) {
 
 // Función para cargar evaluaciones en el selector del formulario de invitación
 function loadAssessmentsForInvitation() {
+    console.log('🔄 LOAD-ASSESSMENTS: Iniciando carga de evaluaciones para invitación');
+    
     const selector = document.getElementById('assignedAssessment');
-    if (!selector) return;
+    if (!selector) {
+        console.warn('⚠️ LOAD-ASSESSMENTS: Selector assignedAssessment no encontrado');
+        return;
+    }
+    
+    console.log('🧹 LOAD-ASSESSMENTS: Limpiando selector - opciones actuales:', selector.children.length);
     
     // Limpiar opciones existentes (excepto la primera)
     while (selector.children.length > 1) {
         selector.removeChild(selector.lastChild);
     }
     
+    console.log('📡 LOAD-ASSESSMENTS: Solicitando evaluaciones del backend');
+    
     fetch('/api/coach/available-assessments')
         .then(response => response.json())
         .then(data => {
+            console.log('📥 LOAD-ASSESSMENTS: Respuesta recibida', {
+                success: data.success,
+                assessmentCount: data.assessments ? data.assessments.length : 0,
+                assessments: data.assessments ? data.assessments.map(a => ({id: a.id, title: a.title})) : []
+            });
+            
             if (data.success && data.assessments && data.assessments.length > 0) {
-                data.assessments.forEach(assessment => {
+                data.assessments.forEach((assessment, index) => {
+                    console.log(`➕ LOAD-ASSESSMENTS: Agregando evaluación ${index + 1}:`, {
+                        id: assessment.id, 
+                        title: assessment.title, 
+                        questions: assessment.questions_count
+                    });
+                    
+                    // Verificar si ya existe una opción con este valor
+                    const existingOption = Array.from(selector.options).find(option => option.value === assessment.id.toString());
+                    if (existingOption) {
+                        console.warn(`⚠️ DUPLICATE-PREVENTION: Evaluación ${assessment.id} ya existe en el selector, omitiendo`);
+                        return;
+                    }
+                    
                     const option = document.createElement('option');
                     option.value = assessment.id;
                     option.textContent = `${assessment.title} (${assessment.questions_count} preguntas)`;
                     selector.appendChild(option);
                 });
+                
+                console.log(`✅ LOAD-ASSESSMENTS: ${data.assessments.length} evaluaciones procesadas. Total opciones en selector:`, selector.children.length);
+            } else {
+                console.warn('⚠️ LOAD-ASSESSMENTS: No se encontraron evaluaciones o respuesta inválida');
             }
         })
         .catch(error => {
-            console.error('Error loading assessments for invitation:', error);
+            console.error('❌ LOAD-ASSESSMENTS: Error cargando evaluaciones:', error);
         });
 }
 
@@ -5320,7 +5353,7 @@ async function getYouTubeVideoInfo(url) {
         
         return {
             title: oEmbedData.title || '',
-            description: `Video de ${oEmbedData.author_name || 'YouTube'}`,
+            description: oEmbedData.author_name || 'Contenido educativo asignado por el coach',
             duration: null, // oEmbed no proporciona duración
             thumbnail: oEmbedData.thumbnail_url || ''
         };
@@ -5405,7 +5438,24 @@ async function showVideoPreview(url) {
             if (videoInfo) {
                 // Llenar campos automáticamente solo si están vacíos
                 if (!titleInput.value.trim()) {
-                    titleInput.value = videoInfo.title;
+                    // Limpiar el título de paréntesis inicial problemático
+                    let cleanTitle = videoInfo.title;
+                    
+                    // Si el título empieza con "(Video de", limpiar esa parte
+                    if (cleanTitle.startsWith('(Video de')) {
+                        // Buscar el cierre del paréntesis y tomar el texto después
+                        const closeParenIndex = cleanTitle.indexOf(')');
+                        if (closeParenIndex !== -1) {
+                            cleanTitle = cleanTitle.substring(closeParenIndex + 1).trim();
+                        }
+                    }
+                    
+                    // Si el título aún está vacío o muy corto, usar un fallback
+                    if (!cleanTitle || cleanTitle.length < 3) {
+                        cleanTitle = 'Video educativo';
+                    }
+                    
+                    titleInput.value = cleanTitle;
                     titleInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
                 
@@ -5536,6 +5586,13 @@ function setupContentAssignmentForm() {
 
 // Asignar contenido a coachee
 async function assignContentToCoachee() {
+    // Prevenir múltiples envíos concurrentes
+    const submitButton = document.querySelector('#assignContentForm button[type="submit"]');
+    if (submitButton.disabled) {
+        console.log('⚠️ Submit ya en progreso, ignorando envío duplicado');
+        return;
+    }
+    
     const coacheeId = document.getElementById('coacheeSelect').value;
     const videoUrl = document.getElementById('videoUrl').value;
     const title = document.getElementById('contentTitle').value;
@@ -5564,6 +5621,17 @@ async function assignContentToCoachee() {
     }
     
     try {
+        // Deshabilitar botón durante envío
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Asignando...';
+        
+        console.log('📤 Enviando asignación de contenido:', {
+            coacheeId,
+            videoUrl,
+            title: title.trim(),
+            description: description.trim()
+        });
+        
         const response = await fetch('/api/coach/content', {
             method: 'POST',
             headers: {
@@ -5595,6 +5663,10 @@ async function assignContentToCoachee() {
     } catch (error) {
         console.error('Error asignando contenido:', error);
         showAlert('Error asignando contenido: ' + error.message, 'danger');
+    } finally {
+        // Restaurar botón
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-plus me-1"></i>Asignar Video';
     }
 }
 
@@ -5642,6 +5714,18 @@ async function loadAssignedContent() {
         const data = await response.json();
         
         if (data.success) {
+            console.log('🔍 COACH-CONTENT: Datos recibidos del backend', {
+                totalItems: data.content.length,
+                statistics: data.statistics,
+                currentFilter: data.current_filter,
+                firstThreeItems: data.content.slice(0, 3).map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    view_mode: item.view_mode,
+                    coachee_id: item.coachee_id
+                }))
+            });
+            
             // Actualizar lista de coachees en el filtro si no está poblada
             updateCoacheeFilter(data.coachees);
             // Guardar datos para filtrado local
@@ -5711,6 +5795,17 @@ function renderAssignedContent(contentList, data) {
     const statusFilter = document.getElementById('statusFilter').value;
     const searchTerm = document.getElementById('contentSearch').value.toLowerCase();
     
+    console.log('🎨 RENDER-ASSIGNED: Iniciando renderizado', {
+        originalCount: contentList.length,
+        statusFilter,
+        searchTerm,
+        firstThreeItems: contentList.slice(0, 3).map(item => ({
+            id: item.id,
+            title: item.title,
+            view_mode: item.view_mode
+        }))
+    });
+    
     if (!contentList || contentList.length === 0) {
         listContainer.innerHTML = `
             <div class="text-center py-5">
@@ -5744,6 +5839,16 @@ function renderAssignedContent(contentList, data) {
         return true;
     });
     
+    console.log('📊 FILTER-RESULT: Después de filtros', {
+        originalCount: contentList.length,
+        filteredCount: filteredContent.length,
+        filteredItems: filteredContent.map(item => ({
+            id: item.id,
+            title: item.title,
+            view_mode: item.view_mode
+        }))
+    });
+
     // Estadísticas
     const stats = data.statistics;
     const statsHtml = `
