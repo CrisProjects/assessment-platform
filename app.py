@@ -5530,6 +5530,89 @@ def api_coach_delete_content(content_id):
         logger.error(f"Error en api_coach_delete_content: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error eliminando contenido: {str(e)}'}), 500
 
+@app.route('/api/coach/update-coachee/<int:coachee_id>', methods=['PUT'])
+@coach_session_required
+def api_coach_update_coachee(coachee_id):
+    """Actualizar información de un coachee"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        logger.info(f"✏️ UPDATE_COACHEE: Request from coach {current_coach.username if current_coach else 'Unknown'} for coachee {coachee_id}")
+        
+        # Verificar que es un coach
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"❌ UPDATE_COACHEE: Access denied for user {current_coach.username if current_coach else 'None'}")
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden actualizar coachees.'}), 403
+        
+        # Buscar el coachee y verificar que pertenece al coach actual
+        coachee = User.query.filter_by(
+            id=coachee_id, 
+            coach_id=current_coach.id, 
+            role='coachee'
+        ).first()
+        
+        if not coachee:
+            logger.warning(f"❌ UPDATE_COACHEE: Coachee {coachee_id} not found or doesn't belong to coach {current_coach.id}")
+            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+        
+        data = request.get_json()
+        logger.info(f"📝 UPDATE_COACHEE: Received data: {data}")
+        
+        # Campos que se pueden actualizar
+        full_name = data.get('full_name')
+        email = data.get('email')
+        new_password = data.get('password')
+        
+        # Validaciones
+        if full_name is not None:
+            if not full_name.strip():
+                return jsonify({'error': 'El nombre no puede estar vacío'}), 400
+            coachee.full_name = full_name.strip()
+        
+        if email is not None:
+            if not email.strip():
+                return jsonify({'error': 'El email no puede estar vacío'}), 400
+            if '@' not in email:
+                return jsonify({'error': 'Formato de email inválido'}), 400
+            
+            # Verificar que el email no esté en uso por otro usuario
+            existing_email = User.query.filter(
+                User.email == email,
+                User.id != coachee_id
+            ).first()
+            
+            if existing_email:
+                return jsonify({'error': 'Este email ya está en uso por otro usuario'}), 400
+            
+            coachee.email = email.strip()
+        
+        if new_password is not None:
+            if len(new_password) < 4:
+                return jsonify({'error': 'La contraseña debe tener al menos 4 caracteres'}), 400
+            coachee.set_password(new_password)
+            coachee.original_password = new_password  # Actualizar también la contraseña original visible
+        
+        # Guardar cambios
+        db.session.commit()
+        
+        logger.info(f"✅ UPDATE_COACHEE: Coachee {coachee_id} updated successfully")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Coachee actualizado exitosamente',
+            'coachee': {
+                'id': coachee.id,
+                'full_name': coachee.full_name,
+                'email': coachee.email,
+                'password': coachee.original_password  # Para que se actualice en la tabla
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_update_coachee: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error actualizando coachee: {str(e)}'}), 500
+
 if __name__ == '__main__':
     with app.app_context():
         auto_initialize_database()
