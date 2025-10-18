@@ -3317,6 +3317,47 @@
             background-color: #1E3A8A !important;
             color: #ffffff !important;
         }
+
+        /* Estilos específicos para el modal de video */
+        #videoModal .modal-header {
+            background: #1E3A8A !important;
+            color: white !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        #videoModal .modal-header .modal-title {
+            color: white !important;
+            font-weight: 600 !important;
+            flex-grow: 1 !important;
+            margin-right: 1rem !important;
+        }
+
+        #videoModal .modal-header .btn-close {
+            background: rgba(0, 0, 0, 0.6) !important;
+            opacity: 1 !important;
+            border-radius: 0.375rem !important;
+            padding: 0.375rem !important;
+            margin: 0 !important;
+            margin-left: auto !important;
+            border: none !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        #videoModal .modal-header .btn-close:hover {
+            background: rgba(0, 0, 0, 0.8) !important;
+            transform: scale(1.05) !important;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        #videoModal .modal-header .btn-close span {
+            color: white !important;
+            font-size: 1.2rem !important;
+            font-weight: bold !important;
+            line-height: 1 !important;
+        }
         
         /* Estilos específicos para la sección de completado */
         #assessmentResultsModal .assessment-completion-section {
@@ -4796,6 +4837,89 @@
             font-size: 0.7rem;
             padding: 0.25rem 0.5rem;
         }
+        
+        /* ========== OPTIMIZACIÓN MÓVIL PARA MODAL DE EVALUACIÓN ========== */
+        @media (max-width: 768px) {
+            /* Modal de evaluación a pantalla completa en móvil */
+            #evaluationDetailsModal .modal-dialog {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                height: 100vh !important;
+                max-height: 100vh !important;
+            }
+            
+            #evaluationDetailsModal .modal-content {
+                height: 100vh !important;
+                max-height: 100vh !important;
+                border-radius: 0;
+                border: none;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            #evaluationDetailsModal .modal-header {
+                padding: 15px;
+                border-bottom: 1px solid #dee2e6;
+                flex-shrink: 0;
+            }
+            
+            #evaluationDetailsModal .modal-body {
+                padding: 15px;
+                overflow-y: auto;
+                flex: 1;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            #evaluationDetailsModal .modal-footer {
+                padding: 15px;
+                border-top: 1px solid #dee2e6;
+                flex-shrink: 0;
+            }
+            
+            /* Ajustar elementos internos del modal para móvil */
+            #evaluationDetailsModal .modal-title {
+                font-size: 1.1rem;
+                line-height: 1.3;
+            }
+            
+            #evaluationDetailsModal .btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            #evaluationDetailsModal .table-responsive {
+                font-size: 13px;
+            }
+            
+            #evaluationDetailsModal .chart-container {
+                height: 250px !important;
+            }
+        }
+        
+        /* Para pantallas muy pequeñas (móviles en horizontal o muy pequeños) */
+        @media (max-width: 576px) {
+            #evaluationDetailsModal .modal-header {
+                padding: 10px;
+            }
+            
+            #evaluationDetailsModal .modal-body {
+                padding: 10px;
+            }
+            
+            #evaluationDetailsModal .modal-footer {
+                padding: 10px;
+            }
+            
+            #evaluationDetailsModal .modal-title {
+                font-size: 1rem;
+            }
+            
+            #evaluationDetailsModal .btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -4999,14 +5123,10 @@
                                         <i class="fas fa-check-circle me-2"></i>
                                         ¡Evaluación Completada!
                                     </h5>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <button type="button" class="btn btn-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
+                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                        <button type="button" class="btn btn-outline-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
                                             <i class="fas fa-print me-1"></i>
                                             Imprimir
-                                        </button>
-                                        <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal" title="Cerrar">
-                                            <i class="fas fa-times me-1"></i>
-                                            Cerrar
                                         </button>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
@@ -5203,14 +5323,10 @@
                         <i class="fas fa-chart-radar me-2"></i>
                         Detalles de Evaluación
                     </h5>
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
+                    <div class="d-flex align-items-center justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
                             <i class="fas fa-print me-1"></i>
                             Imprimir
-                        </button>
-                        <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal" title="Cerrar">
-                            <i class="fas fa-times me-1"></i>
-                            Cerrar
                         </button>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -6362,7 +6478,9 @@
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title">${escapeHtml(cleanVideoTitle(title))}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal">
+                                    <span style="color: white; font-size: 1.2rem; font-weight: bold;">×</span>
+                                </button>
                             </div>
                             <div class="modal-body p-0">
                                 <div class="ratio ratio-16x9">
@@ -6410,7 +6528,6 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast('Contenido marcado como visto', 'success');
                     // Actualizar solo el contenido específico en lugar de recargar todo
                     const contentItem = contentData.find(c => c.id === contentId);
                     if (contentItem) {
