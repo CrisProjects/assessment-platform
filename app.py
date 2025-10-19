@@ -13,7 +13,7 @@ from flask_cors import CORS
 from datetime import datetime, timedelta, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from sqlalchemy import func, desc, inspect, text
+from sqlalchemy import func, desc, inspect, text, and_, or_
 from logging.handlers import RotatingFileHandler
 import os, secrets, re, logging, string, traceback
 import pytz
@@ -417,7 +417,7 @@ class CoachingSession(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)  # Nullable para actividades del coach
     session_date = db.Column(db.Date, nullable=False, index=True)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
@@ -425,11 +425,21 @@ class CoachingSession(db.Model):
     title = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=True)
     location = db.Column(db.String(200), nullable=True)  # Zoom, presencial, etc.
+    notes = db.Column(db.Text, nullable=True)  # Notas adicionales
     
     # Para propuestas de horario alternativo
     original_session_id = db.Column(db.Integer, db.ForeignKey('coaching_session.id'), nullable=True)
     proposed_by = db.Column(db.String(20), nullable=True)  # 'coach' o 'coachee'
     proposal_message = db.Column(db.Text, nullable=True)
+    
+    # Nuevos campos para gestión de citas
+    session_type = db.Column(db.String(50), default='coaching', index=True)  # coaching, self_activity, direct_appointment
+    activity_type = db.Column(db.String(50), nullable=True)  # preparation, admin, break, training, meeting, personal, other
+    activity_title = db.Column(db.String(200), nullable=True)  # Título de la actividad para autoagenda
+    activity_description = db.Column(db.Text, nullable=True)  # Descripción de la actividad
+    is_recurring = db.Column(db.Boolean, default=False)  # Si es una actividad recurrente
+    created_by_coach = db.Column(db.Boolean, default=False)  # Si fue creada directamente por el coach
+    notification_message = db.Column(db.Text, nullable=True)  # Mensaje personalizado de notificación
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -4931,6 +4941,363 @@ def api_coach_evaluation_details(evaluation_id):
     except Exception as e:
         logger.error(f"Error en api_coach_evaluation_details: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo detalles: {str(e)}'}), 500
+
+# ========== NUEVOS ENDPOINTS PARA GESTIÓN DE CITAS ==========
+
+@app.route('/api/coach/self-schedule', methods=['POST'])
+@coach_session_required
+def api_coach_self_schedule():
+    """Crear una actividad autoagendada para el coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        required_fields = ['title', 'type', 'date', 'start_time', 'end_time']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Campo requerido: {field}'}), 400
+        
+        # Validar que la hora de fin sea después de la de inicio
+        if data['start_time'] >= data['end_time']:
+            return jsonify({'error': 'La hora de fin debe ser posterior a la hora de inicio'}), 400
+        
+        # Convertir strings a objetos date/time
+        try:
+            from datetime import datetime, date, time
+            session_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+            end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+        except ValueError as e:
+            return jsonify({'error': f'Formato de fecha/hora inválido: {str(e)}'}), 400
+        
+        # Buscar conflictos con sesiones existentes
+        existing_sessions = CoachingSession.query.filter(
+            and_(
+                CoachingSession.coach_id == current_coach.id,
+                CoachingSession.session_date == session_date,
+                or_(
+                    and_(CoachingSession.start_time < end_time, CoachingSession.end_time > start_time)
+                )
+            )
+        ).first()
+        
+        if existing_sessions:
+            return jsonify({'error': 'Hay un conflicto de horario con una sesión existente'}), 400
+        
+        # Crear la actividad autoagendada como una sesión especial
+        self_activity = CoachingSession(
+            coach_id=current_coach.id,
+            coachee_id=None,  # None indica que es una actividad del coach
+            session_date=session_date,
+            start_time=start_time,
+            end_time=end_time,
+            status='confirmed',
+            session_type='self_activity',
+            notes=f"[ACTIVIDAD] {data['title']} - {data.get('description', '')}",
+            activity_type=data['type'],
+            activity_title=data['title'],
+            activity_description=data.get('description', ''),
+            is_recurring=data.get('recurring', False),
+            created_at=get_santiago_now()
+        )
+        
+        db.session.add(self_activity)
+        
+        # Si es recurrente, crear las próximas 4 semanas
+        if data.get('recurring', False):
+            from datetime import datetime, timedelta
+            base_date = datetime.strptime(session_date, '%Y-%m-%d')
+            
+            for week in range(1, 5):  # Próximas 4 semanas
+                future_date = base_date + timedelta(weeks=week)
+                future_date_str = future_date.strftime('%Y-%m-%d')
+                
+                # Verificar que no hay conflictos futuros
+                future_conflict = CoachingSession.query.filter(
+                    and_(
+                        CoachingSession.coach_id == current_coach.id,
+                        CoachingSession.session_date == future_date_str,
+                        or_(
+                            and_(CoachingSession.start_time < end_time, CoachingSession.end_time > start_time)
+                        )
+                    )
+                ).first()
+                
+                if not future_conflict:
+                    future_activity = CoachingSession(
+                        coach_id=current_coach.id,
+                        coachee_id=None,
+                        session_date=future_date_str,
+                        start_time=start_time,
+                        end_time=end_time,
+                        status='confirmed',
+                        session_type='self_activity',
+                        notes=f"[ACTIVIDAD RECURRENTE] {data['title']} - {data.get('description', '')}",
+                        activity_type=data['type'],
+                        activity_title=data['title'],
+                        activity_description=data.get('description', ''),
+                        is_recurring=True,
+                        created_at=get_santiago_now()
+                    )
+                    db.session.add(future_activity)
+        
+        db.session.commit()
+        logger.info(f"Coach {current_coach.id} creó actividad autoagendada: {data['title']}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tiempo bloqueado exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en self-schedule: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al bloquear tiempo: {str(e)}'}), 500
+
+@app.route('/api/coach/create-direct-appointment', methods=['POST'])
+@coach_session_required
+def api_coach_create_direct_appointment():
+    """Crear una cita directa para un coachee"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        required_fields = ['coachee_id', 'session_type', 'date', 'start_time', 'end_time']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Campo requerido: {field}'}), 400
+        
+        # Validar que el coachee pertenece al coach
+        coachee = User.query.filter_by(
+            id=data['coachee_id'],
+            coach_id=current_coach.id,
+            role='coachee'
+        ).first()
+        
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no asignado a ti'}), 404
+        
+        # Validar que la hora de fin sea después de la de inicio
+        if data['start_time'] >= data['end_time']:
+            return jsonify({'error': 'La hora de fin debe ser posterior a la hora de inicio'}), 400
+        
+        # Convertir strings a objetos date/time
+        try:
+            from datetime import datetime, date, time
+            session_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+            end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+        except ValueError as e:
+            return jsonify({'error': f'Formato de fecha/hora inválido: {str(e)}'}), 400
+        
+        # Buscar conflictos con sesiones del coach
+        coach_conflicts = CoachingSession.query.filter(
+            and_(
+                CoachingSession.coach_id == current_coach.id,
+                CoachingSession.session_date == session_date,
+                or_(
+                    and_(CoachingSession.start_time < end_time, CoachingSession.end_time > start_time)
+                )
+            )
+        ).first()
+        
+        if coach_conflicts:
+            return jsonify({'error': 'Tienes un conflicto de horario en esa fecha y hora'}), 400
+        
+        # Buscar conflictos con sesiones del coachee
+        coachee_conflicts = CoachingSession.query.filter(
+            and_(
+                CoachingSession.coachee_id == coachee.id,
+                CoachingSession.session_date == session_date,
+                or_(
+                    and_(CoachingSession.start_time < end_time, CoachingSession.end_time > start_time)
+                )
+            )
+        ).first()
+        
+        if coachee_conflicts:
+            return jsonify({'error': f'{coachee.full_name} ya tiene una sesión en esa fecha y hora'}), 400
+        
+        # Crear la cita directa
+        direct_appointment = CoachingSession(
+            coach_id=current_coach.id,
+            coachee_id=coachee.id,
+            session_date=session_date,
+            start_time=start_time,
+            end_time=end_time,
+            status='confirmed',
+            session_type='direct_appointment',
+            notes=data.get('session_notes', ''),
+            created_by_coach=True,
+            notification_message=data.get('notification_message', ''),
+            created_at=get_santiago_now()
+        )
+        
+        db.session.add(direct_appointment)
+        db.session.commit()
+        
+        logger.info(f"Coach {current_coach.id} creó cita directa para coachee {coachee.id}")
+        
+        # TODO: Aquí se podría agregar lógica para enviar notificación al coachee
+        # if data.get('send_notification', True):
+        #     send_appointment_notification(coachee, direct_appointment, data.get('notification_message', ''))
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cita directa creada para {coachee.full_name}'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en create-direct-appointment: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al crear cita directa: {str(e)}'}), 500
+
+@app.route('/api/coach/self-scheduled-activities', methods=['GET'])
+@coach_session_required
+def api_coach_self_scheduled_activities():
+    """Obtener actividades autoagendadas del coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Obtener actividades autoagendadas futuras (próximos 30 días)
+        from datetime import datetime, timedelta
+        today = get_santiago_today()
+        future_limit = today + timedelta(days=30)
+        
+        activities = CoachingSession.query.filter(
+            and_(
+                CoachingSession.coach_id == current_coach.id,
+                CoachingSession.coachee_id.is_(None),  # Sin coachee = actividad propia
+                CoachingSession.session_type == 'self_activity',
+                CoachingSession.session_date >= today.strftime('%Y-%m-%d'),
+                CoachingSession.session_date <= future_limit.strftime('%Y-%m-%d')
+            )
+        ).order_by(CoachingSession.session_date, CoachingSession.start_time).all()
+        
+        activities_data = []
+        for activity in activities:
+            activities_data.append({
+                'id': activity.id,
+                'title': activity.activity_title or 'Actividad',
+                'type': activity.activity_type or 'other',
+                'date': activity.session_date,
+                'start_time': activity.start_time,
+                'end_time': activity.end_time,
+                'description': activity.activity_description,
+                'recurring': activity.is_recurring or False,
+                'created_at': activity.created_at.isoformat() if activity.created_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'activities': activities_data
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en self-scheduled-activities: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al obtener actividades: {str(e)}'}), 500
+
+@app.route('/api/coach/direct-appointments', methods=['GET'])
+@coach_session_required
+def api_coach_direct_appointments():
+    """Obtener citas directas creadas por el coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Obtener citas directas recientes (últimos 30 días y próximos 30 días)
+        from datetime import datetime, timedelta
+        today = get_santiago_today()
+        past_limit = today - timedelta(days=30)
+        future_limit = today + timedelta(days=30)
+        
+        appointments = CoachingSession.query.filter(
+            and_(
+                CoachingSession.coach_id == current_coach.id,
+                CoachingSession.session_type == 'direct_appointment',
+                CoachingSession.session_date >= past_limit.strftime('%Y-%m-%d'),
+                CoachingSession.session_date <= future_limit.strftime('%Y-%m-%d')
+            )
+        ).order_by(CoachingSession.session_date.desc(), CoachingSession.start_time.desc()).all()
+        
+        appointments_data = []
+        for appointment in appointments:
+            coachee = User.query.get(appointment.coachee_id)
+            appointments_data.append({
+                'id': appointment.id,
+                'coachee_id': appointment.coachee_id,
+                'coachee_name': coachee.full_name if coachee else 'Coachee eliminado',
+                'session_type': appointment.session_type,
+                'date': appointment.session_date,
+                'start_time': appointment.start_time,
+                'end_time': appointment.end_time,
+                'session_notes': appointment.notes,
+                'status': appointment.status,
+                'created_at': appointment.created_at.isoformat() if appointment.created_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'appointments': appointments_data
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en direct-appointments: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al obtener citas directas: {str(e)}'}), 500
+
+@app.route('/api/coach/self-scheduled-activity/<int:activity_id>', methods=['DELETE'])
+@coach_session_required
+def api_coach_delete_self_scheduled_activity(activity_id):
+    """Eliminar una actividad autoagendada"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Buscar la actividad
+        activity = CoachingSession.query.filter(
+            and_(
+                CoachingSession.id == activity_id,
+                CoachingSession.coach_id == current_coach.id,
+                CoachingSession.coachee_id.is_(None),
+                CoachingSession.session_type == 'self_activity'
+            )
+        ).first()
+        
+        if not activity:
+            return jsonify({'error': 'Actividad no encontrada'}), 404
+        
+        # Si es recurrente, preguntar si eliminar todas las futuras también
+        if activity.is_recurring:
+            # Por ahora eliminamos solo la seleccionada
+            # TODO: En el futuro se puede agregar lógica para eliminar todas las recurrentes
+            pass
+        
+        db.session.delete(activity)
+        db.session.commit()
+        
+        logger.info(f"Coach {current_coach.id} eliminó actividad autoagendada {activity_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Actividad eliminada exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error eliminando actividad: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al eliminar actividad: {str(e)}'}), 500
 
 @app.route('/api/coachee/profile', methods=['GET'])
 @login_required
