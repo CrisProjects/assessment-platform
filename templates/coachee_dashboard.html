@@ -11,6 +11,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PDF.js para previsualización de documentos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configurar PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
     <script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
     <link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
     <!-- FullCalendar CSS -->
@@ -3064,6 +3072,16 @@
             cursor: pointer;
         }
 
+        .content-preview.has-embedded-video {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .content-preview.has-embedded-video .ratio iframe {
+            pointer-events: all;
+            cursor: default;
+        }
+
         .content-preview .ratio iframe {
             border-radius: 8px;
         }
@@ -5440,6 +5458,387 @@
                 padding: 0.75rem !important;
             }
         }
+        /* Document card styles */
+        .document-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            height: 100%;
+        }
+        
+        .document-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15) !important;
+            border-color: #007bff;
+        }
+        
+        .document-card .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.75rem;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .document-card .card-body {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            height: calc(100% - 60px);
+        }
+        
+        .document-files .border {
+            transition: all 0.2s ease;
+            background-color: #f8f9fa;
+        }
+        
+        .document-files .border:hover {
+            background-color: #e3f2fd;
+            border-color: #007bff !important;
+        }
+        
+        /* Utility classes for better text handling */
+        .min-width-0 {
+            min-width: 0;
+        }
+        
+        .flex-shrink-0 {
+            flex-shrink: 0;
+        }
+        
+        .text-truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Document filters */
+        #documentFilters {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Content tabs styling */
+        #contentTabs .nav-link {
+            color: #6c757d;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        #contentTabs .nav-link:hover {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+        
+        #contentTabs .nav-link.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+            background: none;
+            font-weight: 600;
+        }
+        
+        /* Dark theme support for document cards */
+        [data-theme="dark"] .document-card {
+            background: #2d3748;
+            border-color: #4a5568;
+        }
+        
+        [data-theme="dark"] .document-card:hover {
+            border-color: #63b3ed;
+            box-shadow: 0 4px 12px rgba(99, 179, 237, 0.15) !important;
+        }
+        
+        [data-theme="dark"] .document-card .card-header {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            border-bottom-color: #4a5568;
+        }
+        
+        [data-theme="dark"] .document-files .border {
+            background-color: #374151;
+            border-color: #4a5568;
+        }
+        
+        [data-theme="dark"] .document-files .border:hover {
+            background-color: #1e3a8a;
+            border-color: #63b3ed !important;
+        }
+        
+        [data-theme="dark"] .document-card .card-header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            border-bottom-color: #4a5568;
+            color: #e2e8f0;
+        }
+        
+        [data-theme="dark"] #documentFilters {
+            background: #2d3748;
+            border-color: #4a5568;
+        }
+        
+        [data-theme="dark"] .document-files .border:hover {
+            background-color: #4a5568;
+            border-color: #63b3ed !important;
+        }
+        
+        [data-theme="dark"] #contentTabs .nav-link {
+            color: #a0aec0;
+        }
+        
+        [data-theme="dark"] #contentTabs .nav-link:hover {
+            color: #63b3ed;
+            border-bottom-color: #63b3ed;
+        }
+        
+        [data-theme="dark"] #contentTabs .nav-link.active {
+            color: #63b3ed;
+            border-bottom-color: #63b3ed;
+        }
+        
+        /* Empty state styling for documents */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        [data-theme="dark"] .empty-state {
+            color: #a0aec0;
+        }
+        
+        /* ========== INSTAGRAM STYLE FEEDS ========== */
+        .feeds-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .instagram-post {
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .post-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .post-author {
+            display: flex;
+            align-items: center;
+        }
+        
+        .author-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        
+        .author-info h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .author-info small {
+            font-size: 12px;
+            color: #8e8e8e;
+        }
+        
+        .post-options {
+            background: none;
+            border: none;
+            color: #8e8e8e;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .post-media {
+            position: relative;
+            width: 100%;
+            background: #000;
+        }
+
+        .post-media .ratio {
+            background: #000;
+            border-radius: 0;
+            max-height: 280px; /* Limitar altura máxima para que se vean los iconos */
+        }
+
+        .post-media .ratio-4x3 {
+            max-height: 280px;
+            overflow: hidden;
+        }
+
+        .post-media .ratio iframe {
+            border-radius: 0;
+            height: 280px;
+            width: 100%;
+            object-fit: cover;
+        }
+        
+        .post-image {
+            width: 100%;
+            height: 280px; /* Misma altura que los videos */
+            object-fit: cover;
+            display: block;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .video-overlay:hover {
+            background: rgba(0,0,0,0.9);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        .video-overlay i {
+            color: white;
+            font-size: 24px;
+            margin-left: 3px;
+        }
+        
+        .post-actions {
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #262626;
+            transition: color 0.2s ease;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        .action-btn i {
+            font-size: 24px !important;
+            line-height: 1;
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 400 !important;
+            display: inline-block;
+        }
+
+        .action-btn i.fas {
+            font-weight: 900 !important;
+        }
+
+        .action-btn small {
+            margin-left: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        /* Asegurar que los iconos FontAwesome se vean */
+        .post-actions .action-btn i:before {
+            font-family: "Font Awesome 6 Free" !important;
+        }
+        
+        .action-btn:hover {
+            color: #8e8e8e;
+        }
+        
+        .action-btn.liked {
+            color: #ed4956;
+        }
+        
+        .post-info {
+            padding: 0 16px 16px;
+        }
+        
+        .post-likes {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .post-caption {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .post-caption .username {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .post-time {
+            color: #8e8e8e;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        
+        /* Dark theme for Instagram posts */
+        [data-theme="dark"] .instagram-post {
+            background: #1a1a1a;
+            border-color: #333;
+        }
+        
+        [data-theme="dark"] .author-info h6,
+        [data-theme="dark"] .action-btn,
+        [data-theme="dark"] .post-likes,
+        [data-theme="dark"] .post-caption {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .author-info small,
+        [data-theme="dark"] .post-time {
+            color: #8e8e8e;
+        }
+        
+        [data-theme="dark"] .action-btn:hover {
+            color: #dbdbdb;
+        }
     </style>
 </head>
 <body>
@@ -5558,6 +5957,10 @@
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                                onclick="showTab('content'); return false;" data-tab="content">
                                 <i class="fas fa-play-circle me-3"></i>Contenido
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                               onclick="showTab('feeds'); return false;" data-tab="feeds">
+                                <i class="fas fa-stream me-3"></i>Feeds
                             </a>
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                                onclick="showTab('progress'); return false;" data-tab="progress">
@@ -5707,14 +6110,81 @@
                     <div class="dashboard-card">
                         <div class="card-header">
                             <h3>
-                                <i class="fas fa-video me-2"></i>
-                                Contenido Asignado
+                                <i class="fas fa-folder-open me-2"></i>
+                                Mi Contenido
                             </h3>
                         </div>
-                        <div class="card-body" id="contentContainer">
-                            <div class="loading-spinner">
-                                <div class="spinner-border spinner-border-custom" role="status">
-                                    <span class="visually-hidden">Cargando contenido...</span>
+                        <div class="card-body">
+                            <!-- Pestañas para organizar el contenido -->
+                            <ul class="nav nav-tabs mb-4" id="contentTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="videos-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#videos-pane" type="button" role="tab">
+                                        <i class="fas fa-play-circle me-1"></i>Videos
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="documents-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#documents-pane" type="button" role="tab">
+                                        <i class="fas fa-file-alt me-1"></i>Documentos
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Contenido de las pestañas -->
+                            <div class="tab-content" id="contentTabContent">
+                                <!-- Pestaña: Videos -->
+                                <div class="tab-pane fade show active" id="videos-pane" role="tabpanel">
+                                    <div id="contentContainer">
+                                        <div class="loading-spinner">
+                                            <div class="spinner-border spinner-border-custom" role="status">
+                                                <span class="visually-hidden">Cargando videos...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pestaña: Documentos -->
+                                <div class="tab-pane fade" id="documents-pane" role="tabpanel">
+                                    <div id="documentsContainer">
+                                        <div class="loading-spinner">
+                                            <div class="spinner-border spinner-border-custom" role="status">
+                                                <span class="visually-hidden">Cargando documentos...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Filtros y búsqueda para documentos -->
+                                    <div class="row mb-3" style="display: none;" id="documentFilters">
+                                        <div class="col-md-4">
+                                            <select class="form-select" id="categoryFilter">
+                                                <option value="">Todas las categorías</option>
+                                                <option value="ejercicios">Ejercicios y Actividades</option>
+                                                <option value="teoria">Material Teórico</option>
+                                                <option value="evaluacion">Evaluaciones Complementarias</option>
+                                                <option value="recurso">Recursos de Apoyo</option>
+                                                <option value="tarea">Tareas y Asignaciones</option>
+                                                <option value="referencias">Referencias y Bibliografía</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <select class="form-select" id="priorityFilter">
+                                                <option value="">Todas las prioridades</option>
+                                                <option value="urgente">Urgente</option>
+                                                <option value="alta">Alta</option>
+                                                <option value="normal">Normal</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control" id="searchDocuments" 
+                                                   placeholder="Buscar documentos...">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Grid de documentos -->
+                                    <div id="documentsGrid" class="row">
+                                        <!-- Los documentos se cargarán aquí dinámicamente -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -5765,6 +6235,39 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feeds Tab - Instagram Style -->
+                <div class="tab-pane fade" id="feeds" role="tabpanel">
+                    <div class="container-fluid px-0">
+                        <!-- Header del feed -->
+                        <div class="feeds-header mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h3 class="mb-1">
+                                        <i class="fas fa-stream me-2"></i>
+                                        Feeds
+                                    </h3>
+                                    <p class="text-muted mb-0">Contenido compartido por tu coach</p>
+                                </div>
+                                <div>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="refreshFeeds()">
+                                        <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Feed Container -->
+                        <div class="feeds-container" id="feedsContainer">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary mb-3" role="status">
+                                    <span class="visually-hidden">Cargando feeds...</span>
+                                </div>
+                                <p class="text-muted">Cargando contenido...</p>
                             </div>
                         </div>
                     </div>
@@ -6102,6 +6605,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success" onclick="requestDevelopmentPlan()" id="requestPlanBtn">
+                        <i class="fas fa-user-tie me-2"></i>
+                        Solicitar Plan de Desarrollo
+                    </button>
                     <button type="button" class="btn btn-progress" onclick="printEvaluationReport()">
                         <i class="fas fa-print me-2"></i>
                         Imprimir Reporte
@@ -6358,6 +6865,22 @@
             const activeItem = document.querySelector(`[data-tab="${tabId}"]`);
             if (activeItem) {
                 activeItem.classList.add('active');
+            }
+            
+            // Cargar contenido específico según la pestaña
+            if (tabId === 'content') {
+                // Cuando se muestra Mi Contenido, activar la pestaña de documentos y cargar datos
+                setTimeout(() => {
+                    const documentsTab = document.getElementById('documents-tab');
+                    if (documentsTab && !documentsTab.classList.contains('active')) {
+                        documentsTab.click();
+                    }
+                    // Cargar documentos si no están cargados o si han pasado más de 5 minutos
+                    if (!documentsData || documentsData.length === 0 || 
+                        !window.lastDocumentLoad || (Date.now() - window.lastDocumentLoad > 300000)) {
+                        loadDocuments();
+                    }
+                }, 100);
             }
             
             // Manejar el item especial de evaluación activa
@@ -7096,6 +7619,7 @@
                 
                 // Extraer video ID para embebido si es YouTube
                 let embedContent = '';
+                let hasEmbeddedPlayer = false;
                 const isVideo = content.content_type === 'video';
                 
                 if (isVideo && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be'))) {
@@ -7107,16 +7631,22 @@
                     }
                     
                     if (videoId) {
+                        hasEmbeddedPlayer = true;
+                        console.log(`🎬 RENDER: Creating embedded iframe for content ${content.id} with videoId=${videoId}`);
                         embedContent = `
                             <div class="ratio ratio-16x9">
-                                <iframe src="https://www.youtube.com/embed/${videoId}" 
+                                <iframe id="youtube-${content.id}" 
+                                    src="https://www.youtube.com/embed/${videoId}?enablejsapi=1" 
                                     title="${escapeHtml(cleanVideoTitle(content.title))}" 
                                     frameborder="0" 
                                     allowfullscreen
-                                    style="border-radius: 8px;">
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    style="border-radius: 8px;"
+                                    onload="setupVideoTracking(${content.id})">
                                 </iframe>
                             </div>
                         `;
+                        console.log(`✅ RENDER: Embedded iframe created for content ${content.id}`);
                     }
                 }
                 
@@ -7139,7 +7669,7 @@
                     <div class="col-lg-6 col-xl-4 mb-3">
                         <div class="content-card ${content.is_viewed ? 'viewed' : ''}">
                             <!-- Vista previa del contenido (estilo coach dashboard) -->
-                            <div class="content-preview mb-3">
+                            <div class="content-preview mb-3 ${hasEmbeddedPlayer ? 'has-embedded-video' : ''}">
                                 ${embedContent}
                             </div>
                             
@@ -7168,16 +7698,29 @@
                             </div>
                             
                             <div class="content-actions" style="padding: 0; margin-top: 12px; border-top: 1px solid #e9ecef; padding-top: 12px;">
-                                <button class="btn btn-primary btn-sm" onclick="openContent(${content.id}, '${content.content_url}', '${content.title}')">
-                                    <i class="fas fa-play me-1"></i>
-                                    ${content.content_type === 'video' ? 'Ver Video' : 'Abrir Contenido'}
-                                </button>
-                                ${!content.is_viewed ? `
-                                    <button class="btn btn-outline-success btn-sm ms-2" onclick="markContentAsViewed(${content.id})">
-                                        <i class="fas fa-check me-1"></i>
-                                        Marcar como Visto
+                                ${hasEmbeddedPlayer ? `
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-success">
+                                            <i class="fas fa-play-circle me-1"></i>
+                                            Video listo para reproducir
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-eye me-1"></i>
+                                            ${content.view_count || 0} vistas
+                                        </small>
+                                    </div>
+                                ` : `
+                                    <button class="btn btn-primary btn-sm" onclick="openContent(${content.id}, '${content.content_url}', '${content.title}')">
+                                        <i class="fas fa-play me-1"></i>
+                                        ${content.content_type === 'video' ? 'Ver Video' : 'Abrir Contenido'}
                                     </button>
-                                ` : ''}
+                                    ${!content.is_viewed ? `
+                                        <button class="btn btn-outline-success btn-sm ms-2" onclick="markContentAsViewed(${content.id})">
+                                            <i class="fas fa-check me-1"></i>
+                                            Marcar como Visto
+                                        </button>
+                                    ` : ''}
+                                `}
                             </div>
                         </div>
                     </div>
@@ -7210,10 +7753,35 @@
 
         // Open content (video or document)
         function openContent(contentId, contentUrl, title) {
+            console.log(`🎬 OPEN-CONTENT: Called for contentId=${contentId}, contentUrl=${contentUrl}`);
+            
+            // Verificar si este contenido tiene un video embebido activo
+            const embeddedVideoIframe = document.getElementById(`youtube-${contentId}`);
+            console.log(`🔍 OPEN-CONTENT: Looking for iframe with ID youtube-${contentId}`, {
+                found: !!embeddedVideoIframe,
+                iframe: embeddedVideoIframe
+            });
+            
+            if (embeddedVideoIframe) {
+                console.log(`🚫 OPEN-CONTENT: Ignorando openContent para video embebido ${contentId} - iframe existe`);
+                return; // No hacer nada si hay un iframe embebido
+            }
+            
+            // Verificar también si el contenedor padre tiene la clase has-embedded-video
+            const embeddedContainer = document.querySelector(`#youtube-${contentId}`);
+            if (embeddedContainer || document.querySelector(`.content-preview.has-embedded-video iframe[id="youtube-${contentId}"]`)) {
+                console.log(`🚫 OPEN-CONTENT: Ignorando openContent para video embebido ${contentId} - contenedor embebido detectado`);
+                return;
+            }
+            
+            console.log(`✅ OPEN-CONTENT: Procediendo con apertura normal para ${contentId}`);
+            
             // Si es un video de YouTube, usar modal con iframe
             if (contentUrl.includes('youtube.com') || contentUrl.includes('youtu.be')) {
+                console.log(`🎥 OPEN-CONTENT: Abriendo modal para video ${contentId}`);
                 openVideoModal(contentUrl, title);
             } else {
+                console.log(`📄 OPEN-CONTENT: Abriendo en nueva pestaña para ${contentId}`);
                 // Para otros tipos de contenido, abrir en nueva pestaña
                 window.open(contentUrl, '_blank');
             }
@@ -7305,6 +7873,30 @@
                 console.error('Error marcando contenido como visto:', error);
                 showToast('Error marcando contenido como visto: ' + error.message, 'error');
             }
+        }
+
+        // Setup video tracking for embedded YouTube videos
+        function setupVideoTracking(contentId) {
+            console.log(`🎯 SETUP-VIDEO-TRACKING: Called for contentId=${contentId}`);
+            
+            const iframe = document.getElementById(`youtube-${contentId}`);
+            if (!iframe) {
+                console.log(`❌ SETUP-VIDEO-TRACKING: No iframe found for youtube-${contentId}`);
+                return;
+            }
+            
+            console.log(`✅ SETUP-VIDEO-TRACKING: Iframe found for youtube-${contentId}`, iframe);
+            
+            // Mark as viewed when iframe loads (auto-mark since video is now immediately accessible)
+            setTimeout(() => {
+                const contentItem = contentData.find(c => c.id === contentId);
+                if (contentItem && !contentItem.is_viewed) {
+                    console.log(`📺 SETUP-VIDEO-TRACKING: Auto-marking video ${contentId} as viewed (embedded and accessible)`);
+                    markContentAsViewed(contentId);
+                } else {
+                    console.log(`ℹ️ SETUP-VIDEO-TRACKING: Video ${contentId} already viewed or not found in contentData`);
+                }
+            }, 1000);
         }
 
         // Render statistics
@@ -8229,6 +8821,9 @@
             console.log('Current cached data:', window.lastAssessmentData);
             console.log('Last evaluation ID:', window.lastEvaluationId);
             
+            // Guardar el ID de la evaluación actual para uso en solicitudes
+            window.currentEvaluationId = evaluation.id;
+            
             const container = document.getElementById('evaluationDetailsContent');
             
             // Si tenemos datos de la evaluación más reciente (cuando se acaba de completar)
@@ -8247,6 +8842,7 @@
             const assessmentTitle = evaluation.assessment_title || data.assessment_title || 'Evaluación';
             const isDiscAssessment = assessmentTitle.includes('DISC');
             const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+            const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
             const isGrowthPreparationAssessment = assessmentTitle.includes('Preparación para crecer 2026');
             
             let analysisTitle, chartTitle;
@@ -8256,6 +8852,9 @@
             } else if (isEmotionalIntelligenceAssessment) {
                 analysisTitle = 'Análisis Completo de Inteligencia Emocional';
                 chartTitle = 'Radar de Competencias Emocionales';
+            } else if (isTeamworkAssessment) {
+                analysisTitle = 'Análisis Completo de Trabajo en Equipo';
+                chartTitle = 'Radar de Competencias de Colaboración';
             } else if (isGrowthPreparationAssessment) {
                 analysisTitle = 'Análisis de Preparación para Crecer 2026';
                 chartTitle = 'Radar de Dimensiones Empresariales';
@@ -8296,8 +8895,8 @@
                                         <div style="color: #666;">Puntuación Total</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || evaluation.score) : (isGrowthPreparationAssessment ? getGrowthPreparationLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score)))}</div>
-                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : (isGrowthPreparationAssessment ? 'Nivel de Preparación' : 'Nivel de Asertividad'))}</div>
+                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || evaluation.score) : (isTeamworkAssessment ? getTeamworkLevelFromScore(data.score || evaluation.score) : (isGrowthPreparationAssessment ? getGrowthPreparationLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score))))}</div>
+                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : (isTeamworkAssessment ? 'Nivel de Trabajo en Equipo' : (isGrowthPreparationAssessment ? 'Nivel de Preparación' : 'Nivel de Asertividad')))}</div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="h6" style="color: #333;">${formatDate(data.completed_at || evaluation.completed_at)}</div>
@@ -8312,6 +8911,53 @@
                         </div>
                     </div>
                 </div>
+                
+                ${generateAssertivenessSummarySection(data.score || evaluation.score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment)}
+                ${generateDiscSummarySection(data.score || evaluation.score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment)}
+                ${generateEmotionalIntelligenceSummarySection(data.score || evaluation.score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment)}
+                ${generateTeamworkSummarySection(data.score || evaluation.score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment)}
+
+                ${(isDiscAssessment || isEmotionalIntelligenceAssessment || isTeamworkAssessment || (!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && !isGrowthPreparationAssessment)) ? `
+                <!-- Sección de Contacto con Coach -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: 1px solid #dee2e6;">
+                            <div class="card-body text-white text-center">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-8">
+                                        <h4 class="mb-3"><i class="fas fa-user-graduate me-2"></i>¡Desarrolla tu Potencial!</h4>
+                                        <p class="mb-3" style="font-size: 1.1em; line-height: 1.6;">
+                                            ${isDiscAssessment ? 
+                                                'Descubre cómo potenciar tu perfil de personalidad DISC con el apoyo de un coach especializado en desarrollo personal y profesional.' :
+                                                isEmotionalIntelligenceAssessment ?
+                                                'Potencia tu inteligencia emocional con el acompañamiento de un coach especializado en competencias emocionales y liderazgo.' :
+                                                isTeamworkAssessment ?
+                                                'Fortalece tus habilidades de trabajo en equipo con el apoyo de un coach especializado en colaboración y liderazgo de equipos.' :
+                                                'Puedes desarrollar y fortalecer tus habilidades de asertividad con el apoyo personalizado de un coach profesional.'
+                                            }
+                                            Nuestros expertos te ayudarán a crear un plan de desarrollo específico para tus necesidades.
+                                        </p>
+                                        <p class="mb-0" style="font-size: 1em;">
+                                            <i class="fas fa-gift me-2"></i><strong>¡Sesión gratuita de 30 minutos disponible!</strong>
+                                        </p>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <button class="btn btn-light btn-lg" onclick="contactCoachForSession()" style="color: #28a745; font-weight: bold;">
+                                            <i class="fas fa-calendar-plus me-2"></i>
+                                            Contactar Coach
+                                        </button>
+                                        <div class="mt-2">
+                                            <small style="opacity: 0.9;">
+                                                <i class="fas fa-clock me-1"></i>30 min • <i class="fas fa-gift me-1"></i>Gratis
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
 
                 <!-- Gráfico Radar y Análisis Dimensional -->
                 <div class="row mb-4">
@@ -8342,9 +8988,12 @@
                     </div>
                 </div>
 
-                ${generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores))}
-                ${recommendations && recommendations.length > 0 ? generateCompactRecommendationsHTML(recommendations) : ''}
+                ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && isGrowthPreparationAssessment) ? 
+                    generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores)) : ''}
+                ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && isGrowthPreparationAssessment) && recommendations && recommendations.length > 0 ? 
+                    generateCompactRecommendationsHTML(recommendations) : ''}
                 
+                ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && isGrowthPreparationAssessment) ? `
                 <!-- Respuestas Detalladas -->
                 <div class="row">
                     <div class="col-12">
@@ -8358,6 +9007,7 @@
                         </div>
                     </div>
                 </div>
+                ` : ''}
             `;
             
             container.innerHTML = html;
@@ -8882,7 +9532,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="radar-chart-container" style="position: relative; height: 300px;">
-                                    <canvas id="growthRadarChart" width="300" height="300"></canvas>
+                                    <canvas id="growthRadarChart" style="max-width: 100%; height: auto;"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -8899,19 +9549,6 @@
                                 ${generateGrowthDimensionalScores(dimensionalScores)}
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Respuestas Detalladas -->
-                <div class="card" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <div class="card-header" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                        <h5 style="margin: 0; color: #333;">
-                            <i class="fas fa-list-check me-2"></i>
-                            Tus Respuestas Detalladas
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        ${generateGrowthPreparationResponsesHTML(evaluation.responses || [])}
                     </div>
                 </div>
             `;
@@ -8976,8 +9613,24 @@
             
             const ctx = canvas.getContext('2d');
             
-            // Usar la misma lógica que createRadarChart pero con canvas específico
-            const labels = Object.keys(dimensionalScores);
+            // Obtener dimensiones de la pantalla para optimizar visualización
+            const isMobile = window.innerWidth <= 768;
+            const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
+            
+            // Mapear nombres largos a versiones más cortas para móviles
+            const dimensionLabels = Object.keys(dimensionalScores).map(key => {
+                const shortLabels = {
+                    'Delegación': isMobile ? 'Delegación' : 'Delegación',
+                    'Estructura organizacional': isMobile ? 'Estructura' : isTablet ? 'Estructura Org.' : 'Estructura organizacional',
+                    'Gestión del tiempo del dueño': isMobile ? 'Tiempo' : isTablet ? 'Gestión Tiempo' : 'Gestión del tiempo del dueño',
+                    'Finanzas': 'Finanzas',
+                    'Crecimiento estratégico': isMobile ? 'Estrategia' : isTablet ? 'Crecimiento' : 'Crecimiento estratégico',
+                    'Bienestar personal': isMobile ? 'Bienestar' : 'Bienestar personal',
+                    'Visión a futuro': isMobile ? 'Visión' : 'Visión a futuro'
+                };
+                return shortLabels[key] || key;
+            });
+            
             const values = Object.values(dimensionalScores);
             
             if (window.growthRadarChartInstance) {
@@ -8987,7 +9640,7 @@
             window.growthRadarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: labels,
+                    labels: dimensionLabels,
                     datasets: [{
                         label: 'Preparación para Crecer',
                         data: values,
@@ -9003,6 +9656,14 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: isMobile ? 20 : 10,
+                            bottom: isMobile ? 20 : 10,
+                            left: isMobile ? 10 : 5,
+                            right: isMobile ? 10 : 5
+                        }
+                    },
                     scales: {
                         r: {
                             beginAtZero: true,
@@ -9010,25 +9671,46 @@
                             min: 0,
                             ticks: {
                                 stepSize: 1,
-                                color: '#666'
+                                color: '#666',
+                                font: {
+                                    size: isMobile ? 10 : 12
+                                }
                             },
                             grid: {
                                 color: 'rgba(0,0,0,0.1)'
                             },
                             angleLines: {
                                 color: 'rgba(0,0,0,0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: isMobile ? 11 : isTablet ? 12 : 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333',
+                                padding: isMobile ? 15 : 10
                             }
                         }
                     },
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    // Mostrar el nombre completo en el tooltip
+                                    const index = tooltipItems[0].dataIndex;
+                                    const fullNames = Object.keys(dimensionalScores);
+                                    return fullNames[index];
+                                }
+                            }
                         }
                     }
                 }
             });
             
-            // Agregar estilos CSS básicos para barras de progreso (sin animaciones)
+            // Agregar estilos CSS básicos para barras de progreso y radar responsive
             if (!document.getElementById('growth-progress-styles')) {
                 const style = document.createElement('style');
                 style.id = 'growth-progress-styles';
@@ -9036,8 +9718,48 @@
                     .dimension-score .progress-bar {
                         border-radius: 8px;
                     }
+                    
+                    /* Estilos responsive para el radar de crecimiento */
+                    .radar-chart-container {
+                        overflow: hidden;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .radar-chart-container {
+                            height: 280px !important;
+                            padding: 10px;
+                        }
+                        
+                        #growthRadarChart {
+                            max-height: 260px;
+                        }
+                    }
+                    
+                    @media (max-width: 480px) {
+                        .radar-chart-container {
+                            height: 250px !important;
+                            padding: 5px;
+                        }
+                        
+                        #growthRadarChart {
+                            max-height: 230px;
+                        }
+                    }
                 `;
                 document.head.appendChild(style);
+            }
+            
+            // Agregar listener para redimensionamiento de pantalla
+            if (!window.growthRadarResizeListener) {
+                window.growthRadarResizeListener = function() {
+                    if (window.growthRadarChartInstance && dimensionalScores) {
+                        // Recrear el gráfico con las nuevas dimensiones
+                        setTimeout(() => {
+                            createGrowthRadarChart(dimensionalScores);
+                        }, 100);
+                    }
+                };
+                window.addEventListener('resize', window.growthRadarResizeListener);
             }
         }
         
@@ -9067,6 +9789,14 @@
             return 'Muy Baja';
         }
 
+        function getTeamworkLevelFromScore(score) {
+            if (score >= 85) return 'Colaborador Excepcional';
+            if (score >= 70) return 'Colaborador Efectivo';
+            if (score >= 55) return 'Colaborador Competente';
+            if (score >= 40) return 'Colaborador en Desarrollo';
+            return 'Necesita Desarrollar Habilidades';
+        }
+
         function getDimensionDescription(dimension, score) {
             const descriptions = {
                 'comunicacion': score >= 70 ? 'Excelente comunicación interpersonal' : 'Oportunidad de mejorar la comunicación',
@@ -9080,13 +9810,18 @@
 
         function formatDate(dateString) {
             try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('es-ES', {
+                // Crear fecha asumiendo que viene en UTC desde el backend
+                const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+                
+                // Convertir a zona horaria de Santiago de Chile con formato 24 horas
+                return date.toLocaleDateString('es-CL', {
+                    timeZone: 'America/Santiago',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    hour12: false
                 });
             } catch (e) {
                 return dateString;
@@ -9375,6 +10110,391 @@
                     console.log('Estado del dashboard restablecido completamente');
                 });
             }
+
+            // Setup content tab listeners
+            setupContentTabListeners();
+            
+            // Setup document filters
+            setupDocumentFilters();
+        }
+
+        // Setup content tab event listeners
+        function setupContentTabListeners() {
+            // Event listeners para las pestañas internas de contenido
+            const documentsTab = document.getElementById('documents-tab');
+            if (documentsTab) {
+                documentsTab.addEventListener('shown.bs.tab', function() {
+                    debugLog('📄 Pestaña de documentos activada');
+                    // Cargar documentos si no están cargados recientemente
+                    if (!documentsData || documentsData.length === 0 || 
+                        !window.lastDocumentLoad || (Date.now() - window.lastDocumentLoad > 300000)) {
+                        loadDocuments();
+                    } else {
+                        // Si ya están cargados, solo renderizar de nuevo
+                        renderDocuments();
+                    }
+                });
+                
+                // También cargar en click para compatibilidad
+                documentsTab.addEventListener('click', function() {
+                    setTimeout(() => {
+                        if (!documentsData || documentsData.length === 0 || 
+                            !window.lastDocumentLoad || (Date.now() - window.lastDocumentLoad > 300000)) {
+                            loadDocuments();
+                        }
+                    }, 100);
+                });
+            }
+        }
+
+        // ===== DOCUMENT MANAGEMENT FUNCTIONS =====
+        
+        let documentsData = [];
+        let isLoadingDocuments = false;
+        let filteredDocuments = [];
+
+        // Load documents from server
+        async function loadDocuments() {
+            if (isLoadingDocuments) {
+                debugLog('⏳ LoadDocuments ya en progreso, omitiendo llamada duplicada');
+                return;
+            }
+            
+            isLoadingDocuments = true;
+            debugLog('📄 Cargando documentos...');
+            
+            // Mostrar spinner de carga
+            const documentsContainer = document.getElementById('documentsContainer');
+            if (documentsContainer) {
+                documentsContainer.innerHTML = `
+                    <div class="loading-spinner text-center py-4">
+                        <div class="spinner-border spinner-border-custom" role="status">
+                            <span class="visually-hidden">Cargando documentos...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Cargando documentos...</p>
+                    </div>
+                `;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/documents`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                documentsData = data.documents || [];
+                filteredDocuments = [...documentsData];
+                window.lastDocumentLoad = Date.now();
+                
+                debugLog('📄 Documentos cargados:', {
+                    total: documentsData.length,
+                    documents: documentsData.map(d => ({
+                        id: d.id,
+                        title: d.title,
+                        category: d.category,
+                        priority: d.priority
+                    }))
+                });
+                
+                renderDocuments();
+                
+            } catch (error) {
+                debugLog('❌ Error cargando documentos:', error);
+                const documentsContainer = document.getElementById('documentsContainer');
+                if (documentsContainer) {
+                    documentsContainer.innerHTML = 
+                        '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error cargando documentos. Inténtalo de nuevo.</div>';
+                }
+            } finally {
+                isLoadingDocuments = false;
+            }
+        }
+
+        // Render documents grid
+        function renderDocuments() {
+            const container = document.getElementById('documentsGrid');
+            const filtersContainer = document.getElementById('documentFilters');
+            const documentsContainer = document.getElementById('documentsContainer');
+            
+            if (!documentsData || documentsData.length === 0) {
+                if (documentsContainer) {
+                    documentsContainer.innerHTML = 
+                        '<div class="empty-state text-center py-5"><i class="fas fa-folder-open fa-3x text-muted mb-3"></i><h5 class="text-muted">No tienes documentos asignados</h5><p class="text-muted">Tu coach aún no te ha enviado documentos.</p></div>';
+                }
+                if (filtersContainer) {
+                    filtersContainer.style.display = 'none';
+                }
+                return;
+            }
+            
+            // Ocultar el contenedor de loading y mostrar el grid
+            if (documentsContainer) {
+                documentsContainer.innerHTML = '';
+            }
+            
+            // Mostrar filtros si hay documentos
+            if (filtersContainer) {
+                filtersContainer.style.display = 'block';
+            }
+            
+            let html = '';
+            
+            filteredDocuments.forEach(doc => {
+                const formatDate = (dateString) => {
+                    if (!dateString) return 'Sin fecha';
+                    return new Date(dateString).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                };
+                
+                const getPriorityBadge = (priority) => {
+                    const badges = {
+                        'urgente': 'bg-danger',
+                        'alta': 'bg-warning text-dark',
+                        'normal': 'bg-secondary'
+                    };
+                    return badges[priority] || 'bg-secondary';
+                };
+                
+                const getCategoryIcon = (category) => {
+                    const icons = {
+                        'ejercicios': 'fas fa-dumbbell',
+                        'teoria': 'fas fa-book',
+                        'evaluacion': 'fas fa-clipboard-check',
+                        'recursos': 'fas fa-tools',
+                        'tarea': 'fas fa-tasks',
+                        'referencias': 'fas fa-bookmark'
+                    };
+                    return icons[category] || 'fas fa-file';
+                };
+                
+                const getFileTypeIcon = (filename) => {
+                    if (!filename) return 'fas fa-file';
+                    const ext = filename.split('.').pop().toLowerCase();
+                    const icons = {
+                        'pdf': 'fas fa-file-pdf text-danger',
+                        'doc': 'fas fa-file-word text-primary',
+                        'docx': 'fas fa-file-word text-primary',
+                        'jpg': 'fas fa-image text-success',
+                        'jpeg': 'fas fa-image text-success',
+                        'png': 'fas fa-image text-success',
+                        'gif': 'fas fa-image text-success',
+                        'mp4': 'fas fa-file-video text-warning',
+                        'mp3': 'fas fa-file-audio text-info',
+                        'xlsx': 'fas fa-file-excel text-success',
+                        'pptx': 'fas fa-file-powerpoint text-warning'
+                    };
+                    return icons[ext] || 'fas fa-file';
+                };
+                
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card document-card h-100 shadow-sm">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="d-flex align-items-center flex-grow-1 me-2">
+                                        <i class="${getCategoryIcon(doc.category)} me-2 text-primary flex-shrink-0"></i>
+                                        <span class="fw-bold text-truncate" title="${escapeHtml(doc.title)}">${escapeHtml(doc.title)}</span>
+                                    </div>
+                                    <span class="badge ${getPriorityBadge(doc.priority)} flex-shrink-0">${doc.priority}</span>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                ${doc.description ? `<p class="card-text text-muted small mb-3">${escapeHtml(doc.description)}</p>` : ''}
+                                
+                                <div class="document-files mb-3 flex-grow-1">
+                                    ${doc.files && doc.files.length > 0 ? doc.files.map(file => `
+                                        <div class="d-flex align-items-center justify-content-between p-2 border rounded mb-2 bg-light">
+                                            <div class="d-flex align-items-center flex-grow-1 me-2 min-width-0">
+                                                <i class="${getFileTypeIcon(file.filename)} me-2 flex-shrink-0"></i>
+                                                <span class="text-truncate small" title="${escapeHtml(file.filename)}">${escapeHtml(file.filename)}</span>
+                                            </div>
+                                            <div class="btn-group btn-group-sm flex-shrink-0">
+                                                <button class="btn btn-outline-primary btn-sm" 
+                                                        onclick="previewDocument('${doc.id}', '${file.id}', '${escapeHtml(file.filename)}')"
+                                                        title="Vista previa">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success btn-sm" 
+                                                        onclick="downloadDocument('${doc.id}', '${file.id}', '${escapeHtml(file.filename)}')"
+                                                        title="Descargar">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p class="text-muted small text-center py-3"><i class="fas fa-folder-open me-1"></i>No hay archivos adjuntos</p>'}
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            <span>${formatDate(doc.uploaded_at)}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user me-1"></i>
+                                            <span class="text-truncate" title="${escapeHtml(doc.uploaded_by || 'Coach')}">${escapeHtml(doc.uploaded_by || 'Coach')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (container) {
+                container.innerHTML = html;
+            }
+        }
+
+        // Preview document
+        function previewDocument(documentId, fileId, filename) {
+            debugLog('🔍 Vista previa de documento:', {documentId, fileId, filename});
+            
+            const fileExtension = filename.split('.').pop().toLowerCase();
+            const previewUrl = `${API_BASE_URL}/api/coachee/documents/${documentId}/files/${fileId}/preview`;
+            
+            let modalContent = '';
+            
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                // Preview para imágenes
+                modalContent = `
+                    <div class="text-center">
+                        <img src="${previewUrl}" class="img-fluid" alt="${escapeHtml(filename)}" 
+                             style="max-height: 70vh; object-fit: contain;">
+                    </div>
+                `;
+            } else if (fileExtension === 'pdf') {
+                // Preview para PDFs
+                modalContent = `
+                    <div style="height: 70vh;">
+                        <iframe src="${previewUrl}" width="100%" height="100%" frameborder="0">
+                            <p>No se puede mostrar el PDF. <a href="${previewUrl}" target="_blank">Abrir en nueva ventana</a></p>
+                        </iframe>
+                    </div>
+                `;
+            } else {
+                // Preview genérico para otros tipos de archivo
+                modalContent = `
+                    <div class="text-center p-4">
+                        <i class="fas fa-file fa-5x text-muted mb-3"></i>
+                        <h5>${escapeHtml(filename)}</h5>
+                        <p class="text-muted">Vista previa no disponible para este tipo de archivo</p>
+                        <button class="btn btn-primary" onclick="downloadDocument('${documentId}', '${fileId}', '${filename}')">
+                            <i class="fas fa-download me-2"></i>Descargar archivo
+                        </button>
+                    </div>
+                `;
+            }
+            
+            const modalHtml = `
+                <div class="modal fade" id="documentPreviewModal" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-eye me-2"></i>
+                                    Vista previa: ${escapeHtml(filename)}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${modalContent}
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-success" onclick="downloadDocument('${documentId}', '${fileId}', '${filename}')">
+                                    <i class="fas fa-download me-2"></i>Descargar
+                                </button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Eliminar modal anterior si existe
+            const existingModal = document.getElementById('documentPreviewModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Agregar nuevo modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('documentPreviewModal'));
+            modal.show();
+            
+            // Limpiar cuando se cierre
+            document.getElementById('documentPreviewModal').addEventListener('hidden.bs.modal', function () {
+                this.remove();
+            });
+        }
+
+        // Download document
+        function downloadDocument(documentId, fileId, filename) {
+            debugLog('⬇️ Descargando documento:', {documentId, fileId, filename});
+            
+            const downloadUrl = `${API_BASE_URL}/api/coachee/documents/${documentId}/files/${fileId}/download`;
+            
+            // Crear elemento de descarga temporal
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            link.style.display = 'none';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Filter documents
+        function filterDocuments() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const searchTerm = document.getElementById('searchDocuments').value.toLowerCase();
+            
+            filteredDocuments = documentsData.filter(doc => {
+                const matchesCategory = !categoryFilter || doc.category === categoryFilter;
+                const matchesPriority = !priorityFilter || doc.priority === priorityFilter;
+                const matchesSearch = !searchTerm || 
+                    doc.title.toLowerCase().includes(searchTerm) ||
+                    (doc.description && doc.description.toLowerCase().includes(searchTerm));
+                
+                return matchesCategory && matchesPriority && matchesSearch;
+            });
+            
+            renderDocuments();
+        }
+
+        // Setup document filters
+        function setupDocumentFilters() {
+            const categoryFilter = document.getElementById('categoryFilter');
+            const priorityFilter = document.getElementById('priorityFilter');
+            const searchInput = document.getElementById('searchDocuments');
+            
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', filterDocuments);
+            }
+            
+            if (priorityFilter) {
+                priorityFilter.addEventListener('change', filterDocuments);
+            }
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', filterDocuments);
+            }
         }
 
         // Initialize application
@@ -9391,6 +10511,9 @@
                 
                 // Setup event listeners
                 setupEventListeners();
+                
+                // Setup content tab listeners
+                setupContentTabListeners();
                 
                 // Load initial data
                 debugLog('📊 Cargando perfil de usuario...');
@@ -10711,8 +11834,1127 @@
             return santiagoTime.toISOString().split('T')[0];
         }
 
+        // Función para solicitar plan de desarrollo al coach
+        async function requestDevelopmentPlan() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/request-development-plan`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        evaluation_id: window.currentEvaluationId,
+                        message: 'Solicito un plan de desarrollo personalizado basado en los resultados de mi evaluación.'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Solicitud enviada exitosamente. Tu coach te contactará pronto.', 'success');
+                    
+                    // Deshabilitar el botón temporalmente
+                    const btn = document.getElementById('requestPlanBtn');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-check me-2"></i>Solicitud Enviada';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-success');
+                } else {
+                    throw new Error(data.error || 'Error enviando solicitud');
+                }
+            } catch (error) {
+                console.error('Error requesting development plan:', error);
+                showToast('Error enviando solicitud: ' + error.message, 'error');
+            }
+        }
+
+        // Función para contactar coach para sesión gratuita
+        async function contactCoachForSession() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/contact-coach-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        evaluation_id: window.currentEvaluationId,
+                        session_type: 'free_consultation',
+                        message: 'Solicito una sesión gratuita de 30 minutos para desarrollar mis habilidades de asertividad.'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('¡Solicitud enviada! Un coach se contactará contigo pronto para coordinar tu sesión gratuita.', 'success');
+                    
+                    // Actualizar el botón para mostrar que la solicitud fue enviada
+                    const button = event.target.closest('button');
+                    if (button) {
+                        button.disabled = true;
+                        button.innerHTML = '<i class="fas fa-check me-2"></i>Solicitud Enviada';
+                        button.classList.add('btn-outline-light');
+                        button.style.color = '#28a745';
+                    }
+                } else {
+                    throw new Error(data.error || 'Error enviando solicitud');
+                }
+            } catch (error) {
+                console.error('Error contacting coach for session:', error);
+                showToast('Error enviando solicitud: ' + error.message, 'error');
+            }
+        }
+
+        // Generar resumen específico para evaluación de Asertividad
+        function generateAssertivenessSummary(score, dimensionalScores) {
+            let summary = '';
+            let generalRecommendation = '';
+            
+            if (score >= 80) {
+                summary = 'Excelente nivel de asertividad. Mantienes un equilibrio perfecto entre expresar tus necesidades y respetar a otros.';
+                generalRecommendation = 'Continúa desarrollando tus habilidades de liderazgo y considera ser mentor de otros en el desarrollo de asertividad.';
+            } else if (score >= 60) {
+                summary = 'Buen nivel de asertividad. Tienes habilidades sólidas con algunas áreas de mejora específicas.';
+                generalRecommendation = 'Enfócate en fortalecer las dimensiones con puntuaciones más bajas. Practica técnicas de comunicación asertiva en situaciones desafiantes.';
+            } else if (score >= 40) {
+                summary = 'Nivel moderado de asertividad. Hay oportunidades significativas de desarrollo en varias áreas.';
+                generalRecommendation = 'Considera tomar un curso de comunicación asertiva y practica técnicas de autoconfianza. Trabaja en expresar tus opiniones de manera clara y respetuosa.';
+            } else {
+                summary = 'Nivel bajo de asertividad. Es prioritario desarrollar estas habilidades fundamentales.';
+                generalRecommendation = 'Recomendamos trabajar con un coach o tomar capacitación especializada en asertividad. Comienza con ejercicios de autoconfianza y expresión de necesidades básicas.';
+            }
+            
+            return { summary, generalRecommendation };
+        }
+
+        // Generar sección HTML de fortalezas y debilidades para Asertividad
+        function generateAssertivenessSummarySection(score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment) {
+            // Solo mostrar para evaluación de Asertividad
+            if (isDiscAssessment || isEmotionalIntelligenceAssessment || isTeamworkAssessment || isGrowthPreparationAssessment) {
+                return '';
+            }
+            
+            // Analizar fortalezas y debilidades basado en puntuaciones dimensionales
+            let fortalezas = [];
+            let debilidades = [];
+            
+            if (dimensionalScores) {
+                for (const [dimension, dimensionScore] of Object.entries(dimensionalScores)) {
+                    const dimensionName = formatDimensionName(dimension);
+                    
+                    if (dimensionScore >= 70) {
+                        let fortalezaMsg = '';
+                        switch(dimension) {
+                            case 'comunicacion':
+                                fortalezaMsg = 'Te comunicas de manera clara y directa, expresando tus ideas con confianza.';
+                                break;
+                            case 'derechos':
+                                fortalezaMsg = 'Sabes defender tus derechos personales de manera equilibrada y respetuosa.';
+                                break;
+                            case 'opiniones':
+                                fortalezaMsg = 'Expresas tus opiniones con seguridad y autenticidad.';
+                                break;
+                            case 'conflictos':
+                                fortalezaMsg = 'Manejas los conflictos de manera constructiva y efectiva.';
+                                break;
+                            case 'autoconfianza':
+                                fortalezaMsg = 'Tienes una sólida confianza en ti mismo/a y en tus capacidades.';
+                                break;
+                        }
+                        fortalezas.push({ dimension: dimensionName, mensaje: fortalezaMsg, score: Math.round(dimensionScore) });
+                    } else if (dimensionScore < 60) {
+                        let debilidadMsg = '';
+                        switch(dimension) {
+                            case 'comunicacion':
+                                debilidadMsg = 'Puedes mejorar la claridad y efectividad en tu comunicación.';
+                                break;
+                            case 'derechos':
+                                debilidadMsg = 'Te resulta difícil defender tus derechos o establecer límites claros.';
+                                break;
+                            case 'opiniones':
+                                debilidadMsg = 'Necesitas más confianza para expresar tus opiniones en diferentes situaciones.';
+                                break;
+                            case 'conflictos':
+                                debilidadMsg = 'Los conflictos te generan incomodidad y podrías manejarlos de manera más efectiva.';
+                                break;
+                            case 'autoconfianza':
+                                debilidadMsg = 'Tu autoconfianza necesita fortalecerse para actuar con mayor seguridad.';
+                                break;
+                        }
+                        debilidades.push({ dimension: dimensionName, mensaje: debilidadMsg, score: Math.round(dimensionScore) });
+                    }
+                }
+            }
+            
+            // Generar HTML para fortalezas
+            let fortalezasHTML = '';
+            if (fortalezas.length > 0) {
+                fortalezasHTML = fortalezas.map(f => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-success rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-check" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #28a745;">${f.dimension} (${f.score}%)</strong><br>
+                            <span style="color: #333;">${f.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                fortalezasHTML = '<p style="color: #666; font-style: italic;">Todas las áreas tienen potencial de mejora significativo.</p>';
+            }
+            
+            // Generar HTML para debilidades
+            let debilidadesHTML = '';
+            if (debilidades.length > 0) {
+                debilidadesHTML = debilidades.map(d => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-warning rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-arrow-up" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #f39c12;">${d.dimension} (${d.score}%)</strong><br>
+                            <span style="color: #333;">${d.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                debilidadesHTML = '<p style="color: #666; font-style: italic;">¡Excelente! Todas las áreas muestran un buen desarrollo.</p>';
+            }
+            
+            return `
+                <!-- Fortalezas y Debilidades Detectadas -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-chart-line me-2"></i>Análisis de tu Perfil de Asertividad</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #28a745;">
+                                            <i class="fas fa-thumbs-up me-2"></i>Tus Fortalezas
+                                        </h6>
+                                        ${fortalezasHTML}
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #f39c12;">
+                                            <i class="fas fa-target me-2"></i>Áreas de Oportunidad
+                                        </h6>
+                                        ${debilidadesHTML}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateDiscSummarySection(score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment) {
+            // Solo mostrar para evaluación DISC
+            if (!isDiscAssessment || isEmotionalIntelligenceAssessment || isTeamworkAssessment || isGrowthPreparationAssessment) {
+                return '';
+            }
+            
+            // Analizar fortalezas y debilidades basado en puntuaciones dimensionales DISC
+            let fortalezas = [];
+            let debilidades = [];
+            
+            if (dimensionalScores) {
+                for (const [dimension, dimensionScore] of Object.entries(dimensionalScores)) {
+                    const dimensionName = formatDimensionName(dimension);
+                    
+                    if (dimensionScore >= 70) {
+                        let fortalezaMsg = '';
+                        switch(dimension.toLowerCase()) {
+                            case 'dominance':
+                            case 'dominancia':
+                                fortalezaMsg = 'Tienes una personalidad decidida y orientada a resultados, excelente para liderar y tomar decisiones difíciles.';
+                                break;
+                            case 'influence':
+                            case 'influencia':
+                                fortalezaMsg = 'Posees habilidades naturales para comunicar, motivar e influir positivamente en otros.';
+                                break;
+                            case 'steadiness':
+                            case 'estabilidad':
+                                fortalezaMsg = 'Eres una persona confiable, paciente y colaborativa, creando un ambiente de trabajo estable.';
+                                break;
+                            case 'conscientiousness':
+                            case 'cumplimiento':
+                                fortalezaMsg = 'Te destacas por tu atención al detalle, calidad en el trabajo y cumplimiento de estándares.';
+                                break;
+                        }
+                        fortalezas.push({ dimension: dimensionName, mensaje: fortalezaMsg, score: Math.round(dimensionScore) });
+                    } else if (dimensionScore < 60) {
+                        let debilidadMsg = '';
+                        switch(dimension.toLowerCase()) {
+                            case 'dominance':
+                            case 'dominancia':
+                                debilidadMsg = 'Puedes desarrollar mayor asertividad y capacidad de liderazgo en situaciones desafiantes.';
+                                break;
+                            case 'influence':
+                            case 'influencia':
+                                debilidadMsg = 'Podrías fortalecer tus habilidades de comunicación e influencia interpersonal.';
+                                break;
+                            case 'steadiness':
+                            case 'estabilidad':
+                                debilidadMsg = 'Desarrollar mayor paciencia y habilidades de colaboración te beneficiaría en el trabajo en equipo.';
+                                break;
+                            case 'conscientiousness':
+                            case 'cumplimiento':
+                                debilidadMsg = 'Mejorar la atención al detalle y sistematización te ayudará a alcanzar mayor calidad en tu trabajo.';
+                                break;
+                        }
+                        debilidades.push({ dimension: dimensionName, mensaje: debilidadMsg, score: Math.round(dimensionScore) });
+                    }
+                }
+            }
+            
+            // Generar HTML para fortalezas
+            let fortalezasHTML = '';
+            if (fortalezas.length > 0) {
+                fortalezasHTML = fortalezas.map(f => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-success rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-check" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #28a745;">${f.dimension} (${f.score}%)</strong><br>
+                            <span style="color: #333;">${f.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                fortalezasHTML = '<p style="color: #666; font-style: italic;">Todas las dimensiones tienen potencial de desarrollo significativo.</p>';
+            }
+            
+            // Generar HTML para debilidades
+            let debilidadesHTML = '';
+            if (debilidades.length > 0) {
+                debilidadesHTML = debilidades.map(d => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-warning rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-arrow-up" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #f39c12;">${d.dimension} (${d.score}%)</strong><br>
+                            <span style="color: #333;">${d.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                debilidadesHTML = '<p style="color: #666; font-style: italic;">¡Excelente! Todas las dimensiones muestran un buen desarrollo.</p>';
+            }
+            
+            return `
+                <!-- Fortalezas y Debilidades Detectadas (DISC) -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-user-circle me-2"></i>Análisis de tu Perfil DISC de Personalidad</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #28a745;">
+                                            <i class="fas fa-star me-2"></i>Tus Fortalezas Naturales
+                                        </h6>
+                                        ${fortalezasHTML}
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #f39c12;">
+                                            <i class="fas fa-chart-line me-2"></i>Áreas de Desarrollo
+                                        </h6>
+                                        ${debilidadesHTML}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateEmotionalIntelligenceSummarySection(score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment) {
+            // Solo mostrar para evaluación de Inteligencia Emocional
+            if (isDiscAssessment || !isEmotionalIntelligenceAssessment || isTeamworkAssessment || isGrowthPreparationAssessment) {
+                return '';
+            }
+            
+            // Analizar fortalezas y debilidades basado en puntuaciones dimensionales de IE
+            let fortalezas = [];
+            let debilidades = [];
+            
+            if (dimensionalScores) {
+                for (const [dimension, dimensionScore] of Object.entries(dimensionalScores)) {
+                    const dimensionName = formatDimensionName(dimension);
+                    
+                    if (dimensionScore >= 70) {
+                        let fortalezaMsg = '';
+                        switch(dimension.toLowerCase()) {
+                            case 'autoconciencia':
+                            case 'self_awareness':
+                                fortalezaMsg = 'Tienes un excelente conocimiento de tus emociones y cómo estas afectan tu comportamiento.';
+                                break;
+                            case 'autoregulacion':
+                            case 'self_regulation':
+                                fortalezaMsg = 'Posees gran habilidad para manejar y controlar tus emociones de manera constructiva.';
+                                break;
+                            case 'motivacion':
+                            case 'motivation':
+                                fortalezaMsg = 'Demuestras una fuerte motivación interna y capacidad para mantener el enfoque en tus objetivos.';
+                                break;
+                            case 'empatia':
+                            case 'empathy':
+                                fortalezaMsg = 'Tienes una capacidad natural para entender y conectar con las emociones de otros.';
+                                break;
+                            case 'habilidades_sociales':
+                            case 'social_skills':
+                                fortalezaMsg = 'Destacas en el manejo de relaciones interpersonales y comunicación emocional efectiva.';
+                                break;
+                        }
+                        fortalezas.push({ dimension: dimensionName, mensaje: fortalezaMsg, score: Math.round(dimensionScore) });
+                    } else if (dimensionScore < 60) {
+                        let debilidadMsg = '';
+                        switch(dimension.toLowerCase()) {
+                            case 'autoconciencia':
+                            case 'self_awareness':
+                                debilidadMsg = 'Desarrollar mayor autoconciencia emocional te ayudará a entender mejor tus reacciones.';
+                                break;
+                            case 'autoregulacion':
+                            case 'self_regulation':
+                                debilidadMsg = 'Fortalecer la autoregulación te permitirá manejar mejor situaciones emocionales desafiantes.';
+                                break;
+                            case 'motivacion':
+                            case 'motivation':
+                                debilidadMsg = 'Trabajar en tu motivación interna te dará mayor resistencia ante los obstáculos.';
+                                break;
+                            case 'empatia':
+                            case 'empathy':
+                                debilidadMsg = 'Desarrollar mayor empatía mejorará significativamente tus relaciones interpersonales.';
+                                break;
+                            case 'habilidades_sociales':
+                            case 'social_skills':
+                                debilidadMsg = 'Mejorar tus habilidades sociales te permitirá comunicarte más efectivamente con otros.';
+                                break;
+                        }
+                        debilidades.push({ dimension: dimensionName, mensaje: debilidadMsg, score: Math.round(dimensionScore) });
+                    }
+                }
+            }
+            
+            // Generar HTML para fortalezas
+            let fortalezasHTML = '';
+            if (fortalezas.length > 0) {
+                fortalezasHTML = fortalezas.map(f => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-success rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-check" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #28a745;">${f.dimension} (${f.score}%)</strong><br>
+                            <span style="color: #333;">${f.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                fortalezasHTML = '<p style="color: #666; font-style: italic;">Todas las competencias emocionales tienen potencial de desarrollo significativo.</p>';
+            }
+            
+            // Generar HTML para debilidades
+            let debilidadesHTML = '';
+            if (debilidades.length > 0) {
+                debilidadesHTML = debilidades.map(d => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-warning rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-arrow-up" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #f39c12;">${d.dimension} (${d.score}%)</strong><br>
+                            <span style="color: #333;">${d.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                debilidadesHTML = '<p style="color: #666; font-style: italic;">¡Excelente! Todas las competencias muestran un buen desarrollo.</p>';
+            }
+            
+            return `
+                <!-- Fortalezas y Debilidades Detectadas (IE) -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-brain me-2"></i>Análisis de tu Inteligencia Emocional</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #28a745;">
+                                            <i class="fas fa-heart me-2"></i>Tus Competencias Desarrolladas
+                                        </h6>
+                                        ${fortalezasHTML}
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #f39c12;">
+                                            <i class="fas fa-seedling me-2"></i>Competencias en Desarrollo
+                                        </h6>
+                                        ${debilidadesHTML}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateTeamworkSummarySection(score, dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isTeamworkAssessment, isGrowthPreparationAssessment) {
+            // Solo mostrar para evaluación de Trabajo en Equipo
+            if (isDiscAssessment || isEmotionalIntelligenceAssessment || !isTeamworkAssessment || isGrowthPreparationAssessment) {
+                return '';
+            }
+            
+            // Analizar fortalezas y debilidades basado en puntuaciones dimensionales de Trabajo en Equipo
+            let fortalezas = [];
+            let debilidades = [];
+            
+            if (dimensionalScores) {
+                for (const [dimension, dimensionScore] of Object.entries(dimensionalScores)) {
+                    const dimensionName = formatDimensionName(dimension);
+                    
+                    if (dimensionScore >= 70) {
+                        let fortalezaMsg = '';
+                        switch(dimension.toLowerCase()) {
+                            case 'comunicacion':
+                            case 'communication':
+                                fortalezaMsg = 'Excelentes habilidades de comunicación en equipo, facilitando la colaboración efectiva.';
+                                break;
+                            case 'colaboracion':
+                            case 'collaboration':
+                                fortalezaMsg = 'Demuestras una gran capacidad para trabajar de manera colaborativa y constructiva con otros.';
+                                break;
+                            case 'liderazgo':
+                            case 'leadership':
+                                fortalezaMsg = 'Posees habilidades naturales de liderazgo que inspiran y guían al equipo hacia el éxito.';
+                                break;
+                            case 'resolucion_conflictos':
+                            case 'conflict_resolution':
+                                fortalezaMsg = 'Tienes una excelente capacidad para resolver conflictos y mantener la armonía del equipo.';
+                                break;
+                            case 'adaptabilidad':
+                            case 'adaptability':
+                                fortalezaMsg = 'Tu flexibilidad y adaptabilidad son fortalezas clave para el trabajo en equipos dinámicos.';
+                                break;
+                        }
+                        fortalezas.push({ dimension: dimensionName, mensaje: fortalezaMsg, score: Math.round(dimensionScore) });
+                    } else if (dimensionScore < 60) {
+                        let debilidadMsg = '';
+                        switch(dimension.toLowerCase()) {
+                            case 'comunicacion':
+                            case 'communication':
+                                debilidadMsg = 'Mejorar tu comunicación en equipo facilitará una colaboración más efectiva.';
+                                break;
+                            case 'colaboracion':
+                            case 'collaboration':
+                                debilidadMsg = 'Desarrollar mejores habilidades colaborativas te ayudará a contribuir más al equipo.';
+                                break;
+                            case 'liderazgo':
+                            case 'leadership':
+                                debilidadMsg = 'Fortalecer tus habilidades de liderazgo te permitirá guiar mejor a tu equipo.';
+                                break;
+                            case 'resolucion_conflictos':
+                            case 'conflict_resolution':
+                                debilidadMsg = 'Mejorar en resolución de conflictos creará un ambiente de trabajo más armonioso.';
+                                break;
+                            case 'adaptabilidad':
+                            case 'adaptability':
+                                debilidadMsg = 'Desarrollar mayor adaptabilidad te ayudará a responder mejor a los cambios del equipo.';
+                                break;
+                        }
+                        debilidades.push({ dimension: dimensionName, mensaje: debilidadMsg, score: Math.round(dimensionScore) });
+                    }
+                }
+            }
+            
+            // Generar HTML para fortalezas
+            let fortalezasHTML = '';
+            if (fortalezas.length > 0) {
+                fortalezasHTML = fortalezas.map(f => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-success rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-check" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #28a745;">${f.dimension} (${f.score}%)</strong><br>
+                            <span style="color: #333;">${f.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                fortalezasHTML = '<p style="color: #666; font-style: italic;">Todas las competencias de equipo tienen potencial de desarrollo significativo.</p>';
+            }
+            
+            // Generar HTML para debilidades
+            let debilidadesHTML = '';
+            if (debilidades.length > 0) {
+                debilidadesHTML = debilidades.map(d => `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="me-3">
+                            <div class="badge bg-warning rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-arrow-up" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="color: #f39c12;">${d.dimension} (${d.score}%)</strong><br>
+                            <span style="color: #333;">${d.mensaje}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                debilidadesHTML = '<p style="color: #666; font-style: italic;">¡Excelente! Todas las competencias muestran un buen desarrollo.</p>';
+            }
+            
+            return `
+                <!-- Fortalezas y Debilidades Detectadas (Trabajo en Equipo) -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-users me-2"></i>Análisis de tus Competencias de Trabajo en Equipo</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #28a745;">
+                                            <i class="fas fa-trophy me-2"></i>Tus Fortalezas Colaborativas
+                                        </h6>
+                                        ${fortalezasHTML}
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #f39c12;">
+                                            <i class="fas fa-hand-holding-up me-2"></i>Competencias en Desarrollo
+                                        </h6>
+                                        ${debilidadesHTML}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         console.log('🔄 Coachee Calendar System: 2025-10-18-16:44 - Sistema de agendamiento con zona horaria Santiago');
         console.log('🇨🇱 Hora actual Santiago:', getSantiagoDateTime().toLocaleString('es-CL'));
+        
+        // ========== INSTAGRAM STYLE FEEDS FUNCTIONALITY ==========
+        
+        // Extender showTab para cargar feeds cuando se active la pestaña
+        const existingShowTab = window.showTab;
+        window.showTab = function(tabId) {
+            existingShowTab(tabId);
+            
+            if (tabId === 'feeds') {
+                console.log('📺 Feeds tab activated - loading Instagram style feeds');
+                setTimeout(loadInstagramFeeds, 100);
+            }
+        };
+        
+        // Función para cargar feeds desde la API
+        async function loadInstagramFeeds() {
+            console.log('🎬 Loading Instagram style feeds...');
+            
+            const container = document.getElementById('feedsContainer');
+            if (!container) {
+                console.log('❌ Feeds container not found');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coachee/content');
+                const data = await response.json();
+                
+                console.log('📊 API Response for feeds:', data);
+                
+                if (data.success && data.content && data.content.length > 0) {
+                    displayInstagramFeeds(data.content);
+                } else {
+                    displayNoFeeds();
+                }
+            } catch (error) {
+                console.error('❌ Error loading feeds:', error);
+                displayFeedsError();
+            }
+        }
+        
+        // Función para mostrar feeds en formato Instagram
+        function displayInstagramFeeds(content) {
+            const container = document.getElementById('feedsContainer');
+            if (!container) return;
+            
+            let feedsHTML = '';
+            
+            content.forEach((item, index) => {
+                const videoId = extractYouTubeVideoId(item.content_url);
+                const isYouTubeVideo = videoId && item.content_type === 'video';
+                const isDocument = item.content_type === 'document';
+                
+                console.log('🔍 Processing content item:', {
+                    id: item.id,
+                    type: item.content_type,
+                    title: item.title,
+                    url: item.content_url,
+                    isDocument: isDocument,
+                    isYouTubeVideo: isYouTubeVideo
+                });
+                
+                // Determinar el thumbnail/preview
+                let thumbnail;
+                if (isYouTubeVideo) {
+                    thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                } else if (isDocument) {
+                    // Para documentos, generaremos un preview
+                    thumbnail = null; // Se generará dinámicamente
+                } else {
+                    // Fallback para otros tipos de video
+                    thumbnail = 'data:image/svg+xml;base64,' + btoa(`
+                        <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="600" height="400" fill="#f8f9fa"/>
+                            <circle cx="300" cy="200" r="60" fill="#6c757d"/>
+                            <polygon points="270,170 270,230 330,200" fill="white"/>
+                        </svg>
+                    `);
+                }
+                
+                // Calcular tiempo relativo
+                const timeAgo = getRelativeTime(item.assigned_at);
+                
+                feedsHTML += `
+                    <div class="instagram-post">
+                        <!-- Header del post -->
+                        <div class="post-header">
+                            <div class="post-author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div class="author-info">
+                                    <h6>${item.coach_name}</h6>
+                                    <small>${timeAgo}</small>
+                                </div>
+                            </div>
+                            <button class="post-options">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Media del post -->
+                        <div class="post-media">
+                            ${isYouTubeVideo ? `
+                                <div class="ratio ratio-4x3">
+                                    <iframe id="youtube-feed-${item.id}" 
+                                        src="https://www.youtube.com/embed/${videoId}?enablejsapi=1" 
+                                        title="${item.title}" 
+                                        frameborder="0" 
+                                        allowfullscreen
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        style="border-radius: 8px;">
+                                    </iframe>
+                                </div>
+                            ` : isDocument ? `
+                                <div class="document-preview-container" style="position: relative; height: 280px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                     onclick="openDocumentFeed('${item.content_url}', '${item.title}')">
+                                    <div style="width: 100%; height: 280px; overflow-y: auto;">
+                                        <canvas id="doc-preview-${item.id}"
+                                                width="1200"
+                                                height="1000"
+                                                style="width: 100%; height: auto; border-radius: 8px; pointer-events: none; display: block;">
+                                        </canvas>
+                                    </div>
+                                    <div class="document-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                                        <i class="fas fa-file-alt" style="color: white; font-size: 16px;"></i>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div onclick="openVideoFeed('${item.content_url}')">
+                                    <img src="${thumbnail}" 
+                                         alt="${item.title}" 
+                                         class="post-image"
+                                         onerror="this.src='data:image/svg+xml;base64,${btoa(`
+                                             <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+                                                 <rect width="600" height="400" fill="#f8f9fa"/>
+                                                 <circle cx="300" cy="200" r="60" fill="#6c757d"/>
+                                                 <polygon points="270,170 270,230 330,200" fill="white"/>
+                                                 <text x="300" y="280" font-family="Arial" font-size="18" text-anchor="middle" fill="#6c757d">Video</text>
+                                             </svg>
+                                         `)}'">
+                                    <div class="video-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                        
+                        <!-- Acciones del post -->
+                        <div class="post-actions">
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick="toggleLikeFeed(${item.id}, this)" title="Me gusta">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                ${isYouTubeVideo ? `
+                                    <button class="action-btn" disabled style="color: #28a745; opacity: 0.7;" title="Video embebido">
+                                        <i class="fas fa-play-circle"></i>
+                                    </button>
+                                ` : isDocument ? `
+                                    <button class="action-btn" onclick="openDocumentFeed('${item.content_url}', '${item.title}')" title="Abrir documento">
+                                        <i class="far fa-file-alt"></i>
+                                    </button>
+                                ` : `
+                                    <button class="action-btn" onclick="openVideoFeed('${item.content_url}')" title="Reproducir video">
+                                        <i class="far fa-play-circle"></i>
+                                    </button>
+                                `}
+                                <button class="action-btn" onclick="shareFeed(${item.id})" title="Compartir">
+                                    <i class="far fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <button class="action-btn" title="Guardar">
+                                <i class="far fa-bookmark"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Información del post -->
+                        <div class="post-info">
+                            <div class="post-likes">
+                                <strong>${Math.floor(Math.random() * 50) + 10} me gusta</strong>
+                            </div>
+                            <div class="post-caption">
+                                <span class="username">${item.coach_name}</span>
+                                ${item.title}
+                                ${item.description ? '<br><small class="text-muted">' + item.description + '</small>' : ''}
+                            </div>
+                            <div class="post-time">
+                                ${timeAgo}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = feedsHTML;
+            console.log(`✅ Displayed ${content.length} Instagram-style feeds`);
+            
+            // Generar previews de documentos después de insertar el HTML
+            content.forEach(item => {
+                console.log(`🔍 Processing item ${item.id}: type=${item.content_type}, url=${item.content_url}`);
+                if (item.content_type === 'document') {
+                    const canvasId = `doc-preview-${item.id}`;
+                    console.log(`📄 [DOCUMENT PREVIEW] Generating preview for document ${item.id}, canvas: ${canvasId}`);
+                    console.log(`📄 [DOCUMENT PREVIEW] URL: ${item.content_url}`);
+                    // Delay para asegurar que el canvas esté en el DOM
+                    setTimeout(() => {
+                        const canvas = document.getElementById(canvasId);
+                        console.log(`📄 [DOCUMENT PREVIEW] Canvas found:`, canvas);
+                        if (canvas) {
+                            generateDocumentPreview(item.content_url, canvasId);
+                        } else {
+                            console.error(`❌ [DOCUMENT PREVIEW] Canvas not found: ${canvasId}`);
+                        }
+                    }, 500);
+                }
+            });
+        }
+        
+        // Función para calcular tiempo relativo
+        function getRelativeTime(dateString) {
+            if (!dateString) return 'Hace un momento';
+            
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffMs = now - date;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 0) {
+                return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+            } else if (diffHours > 0) {
+                return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+            } else {
+                return 'Hace un momento';
+            }
+        }
+        
+        // Función para extraer ID de YouTube
+        function extractYouTubeVideoId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+        
+        // Función para abrir video en nueva pestaña
+        function openVideoFeed(url) {
+            console.log('🚀 Opening video from feed:', url);
+            window.open(url, '_blank');
+        }
+        
+        // Función para toggle like
+        function toggleLikeFeed(contentId, button) {
+            const icon = button.querySelector('i');
+            if (icon.classList.contains('far')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                button.classList.add('liked');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                button.classList.remove('liked');
+            }
+            console.log('❤️ Toggled like for content:', contentId);
+        }
+        
+        // Función para compartir
+        function shareFeed(contentId) {
+            console.log('🔗 Sharing content:', contentId);
+            showToast('¡Funcionalidad de compartir próximamente!', 'info');
+        }
+        
+        // Función para abrir documento
+        function openDocumentFeed(url, title) {
+            console.log('📄 Opening document from feed:', url);
+            // Crear enlace temporal para descarga
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = title || 'documento.pdf';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Funciones de PDF.js para preview de documentos
+    async function generatePDFPreview(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
+            console.log('📄 [PDF PREVIEW] Starting PDF preview generation for:', url);
+            console.log('📄 [PDF PREVIEW] PDF.js available:', typeof pdfjsLib !== 'undefined');
+            
+            if (typeof pdfjsLib === 'undefined') {
+                console.error('❌ [PDF PREVIEW] PDF.js not loaded');
+                return;
+            }
+            
+            try {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) {
+                    console.error('❌ [PDF PREVIEW] Canvas element not found:', canvasId);
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Configurar canvas con fondo blanco
+                canvas.width = maxWidth;
+                canvas.height = maxHeight;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, maxWidth, maxHeight);
+                
+                console.log('📄 [PDF PREVIEW] Loading PDF document...');
+                
+                // Cargar PDF con configuración para CORS
+                const loadingTask = pdfjsLib.getDocument({
+                    url: url,
+                    disableWorker: false,
+                    disableAutoFetch: false,
+                    disableStream: false
+                });
+                
+                const pdf = await loadingTask.promise;
+                console.log('📄 [PDF PREVIEW] PDF loaded successfully, pages:', pdf.numPages);
+                
+                // Obtener primera página
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+                
+                // Calcular escala para ajustar al canvas manteniendo aspect ratio
+                const scaleX = maxWidth / viewport.width;
+                const scaleY = maxHeight / viewport.height;
+                const scale = Math.min(scaleX, scaleY);
+                
+                const scaledViewport = page.getViewport({ scale });
+                
+                // Centrar la página en el canvas
+                const offsetX = (maxWidth - scaledViewport.width) / 2;
+                const offsetY = (maxHeight - scaledViewport.height) / 2;
+                
+                // Crear canvas temporal para renderizar la página
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = scaledViewport.width;
+                tempCanvas.height = scaledViewport.height;
+                
+                // Renderizar página en canvas temporal
+                const renderContext = {
+                    canvasContext: tempCtx,
+                    viewport: scaledViewport
+                };
+                
+                await page.render(renderContext).promise;
+                
+                // Limpiar canvas principal con fondo blanco
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, maxWidth, maxHeight);
+                
+                // Dibujar página centrada en canvas principal
+                ctx.drawImage(tempCanvas, offsetX, offsetY);
+                
+                console.log('✅ PDF preview generated successfully for:', url);
+                
+            } catch (error) {
+                console.error('❌ Error generating PDF preview:', error);
+                // Mostrar icono de error en el canvas
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = maxWidth;
+                    canvas.height = maxHeight;
+                    
+                    // Fondo gris claro
+                    ctx.fillStyle = '#f8f9fa';
+                    ctx.fillRect(0, 0, maxWidth, maxHeight);
+                    
+                    // Dibujar texto de error
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Vista previa no disponible', maxWidth/2, maxHeight/2 - 10);
+                    ctx.fillText('📄 Documento PDF', maxWidth/2, maxHeight/2 + 10);
+                }
+            }
+        }
+        
+        // Función para generar preview de documento (unified)
+        async function generateDocumentPreview(url, canvasId) {
+            console.log('📄 [DOC PREVIEW] Starting preview generation for:', url);
+            console.log('📄 [DOC PREVIEW] Canvas ID:', canvasId);
+            
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.error('❌ [DOC PREVIEW] Canvas not found:', canvasId);
+                return;
+            }
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1200;
+            canvas.height = 1000;
+            
+            // Mostrar indicador de carga inicial
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, 1200, 1000);
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Cargando documento...', 600, 500);
+            
+            // Verificar si es PDF
+            if (url.toLowerCase().includes('.pdf') || url.includes('content_type=document') || url.includes('/download')) {
+                console.log('📄 [DOC PREVIEW] Detected as PDF, generating PDF preview');
+                try {
+                    await generatePDFPreview(url, canvasId, 1200, 1000);
+                } catch (error) {
+                    console.error('❌ [DOC PREVIEW] PDF preview failed:', error);
+                    // Mostrar icono de error
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, 1200, 1000);
+                    ctx.fillStyle = '#dc3545';
+                    ctx.font = '32px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Error al cargar PDF', 600, 400);
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '96px Arial';
+                    ctx.fillText('📄', 600, 700);
+                }
+            } else {
+                console.log('📄 [DOC PREVIEW] Non-PDF document, showing generic icon');
+                // Para otros tipos de documento, mostrar icono genérico
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 1200, 1000);
+                // Dibujar icono de documento
+                ctx.fillStyle = '#495057';
+                ctx.font = '96px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('📄', 600, 500);
+                // Texto descriptivo
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '32px Arial';
+                ctx.fillText('Documento', 600, 700);
+            }
+        }
+        
+        // Función para refrescar feeds
+        function refreshFeeds() {
+            console.log('🔄 Refreshing Instagram feeds...');
+            const container = document.getElementById('feedsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Actualizando feeds...</span>
+                        </div>
+                        <p class="text-muted">Actualizando contenido...</p>
+                    </div>
+                `;
+            }
+            setTimeout(loadInstagramFeeds, 1000);
+        }
+        
+        // Función para mostrar cuando no hay feeds
+        function displayNoFeeds() {
+            const container = document.getElementById('feedsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-stream fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay feeds disponibles</h5>
+                        <p class="text-muted">Tu coach aún no ha compartido contenido contigo.</p>
+                        <button class="btn btn-outline-primary" onclick="refreshFeeds()">
+                            <i class="fas fa-sync-alt me-1"></i>Verificar nuevamente
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Función para mostrar error
+        function displayFeedsError() {
+            const container = document.getElementById('feedsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error al cargar los feeds. 
+                        <button class="btn btn-sm btn-outline-warning ms-2" onclick="refreshFeeds()">
+                            Reintentar
+                        </button>
+                    </div>
+                `;
+            }
+        }
     </script>
     
     <!-- Script común para presentación de recomendaciones -->
