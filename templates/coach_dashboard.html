@@ -1,94 +1,146 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coach - Plataforma de Evaluación</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
+    <link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- PDF.js para vista previa de documentos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configurar worker de PDF.js
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
 
-{% block title %}Dashboard Coach - Assessment Platform{% endblock %}
+    
+    <style>
+        /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACHEE */
+        :root {
+            --calm-primary: #1E3A8A;        /* Deep Blue */
+            --calm-secondary: #3B82F6;      /* Bright Blue */
+            --calm-accent: #06B6D4;         /* Cyan */
+            --calm-light: #EFF6FF;          /* Very Light Blue */
+            --calm-dark: #1E293B;           /* Dark Slate */
+            --calm-white: #FFFFFF;
+            --calm-gray-50: #F8FAFC;
+            --calm-gray-100: #F1F5F9;
+        }
 
-{% block extra_css %}
-<!-- Anti-cache meta tags -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+        /* Estilos principales del body */
+        body {
+            background: #f8fafc !important;
+            color: #1e293b !important;
+            transition: all 0.3s ease;
+        }
 
-<!-- FullCalendar CSS -->
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+        /* Container principal con z-index para aparecer sobre partículas */
+        .container-fluid {
+            position: relative;
+            z-index: 2;
+        }
 
-<style>
-    /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACHEE */
-    :root {
-        --calm-primary: #1E3A8A;        /* Deep Blue */
-        --calm-secondary: #3B82F6;      /* Bright Blue */
-        --calm-accent: #06B6D4;         /* Cyan */
-        --calm-light: #EFF6FF;          /* Very Light Blue */
-        --calm-dark: #1E293B;           /* Dark Slate */
-        --calm-white: #FFFFFF;
-        --calm-gray-50: #F8FAFC;
-        --calm-gray-100: #F1F5F9;
-    }
+        /* Animated background particles - IGUAL QUE COACHEE */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(90, 103, 216, 0.08); /* Calm's signature blue with very low opacity */
+            border-radius: 50%;
+            animation: float 25s infinite linear; /* Slower, more peaceful animation */
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Cards y contenedores - Con z-index para aparecer sobre partículas */
+        .card,
+        .glass-card,
+        .modal-content {
+            background: white !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #1e293b !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .card.bg-dark {
+            background: white !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+        
+        .card.bg-dark .card-body {
+            background: white !important;
+        }
     
-    /* ANULAR SISTEMA DE TEMAS PARA SIDEBAR - PROBLEMA ENCONTRADO! */
-    .sidebar,
-    .sidebar * {
-        --theme-card-bg: white !important;
-        --theme-card-border: #dee2e6 !important;
-        --theme-text-primary: #333 !important;
-        --theme-text-secondary: #333 !important;
-        --theme-hover-bg: #f8f9fa !important;
-    }
-    
-    /* ESTILOS DE CONTRASTE ALTO - SIN TRANSPARENCIAS - v2.3 */
-    body {
-        background: #f8f9fa !important;
-        color: #333 !important;
-    }
-    
-    /* Cards con fondo blanco sólido */
-    .card,
-    .glass-card,
-    .modal-content {
-        background: white !important;
-        border: 1px solid #dee2e6 !important;
-        color: #333 !important;
-        backdrop-filter: none !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        border-radius: 0.5rem !important;
-    }
-    
-    .card.bg-dark {
-        background: white !important;
-        border: 1px solid #dee2e6 !important;
-    }
-    
-    .card.bg-dark .card-body {
-        background: white !important;
-    }
-    
-    /* Textos con contraste */
-    .text-white,
-    .text-muted,
-    .card.bg-dark .text-white,
-    .card.bg-dark .text-muted {
-        color: #333 !important;
-    }
-    
-    .text-primary {
-        color: #0066cc !important;
-    }
-    
-    /* Botones con colores sólidos */
-    .btn-outline-light {
-        border-color: #dee2e6 !important;
-        color: #333 !important;
-        background: white !important;
-    }
-    
-    .btn-outline-light:hover {
-        background: #f8f9fa !important;
-        border-color: #adb5bd !important;
-        color: #333 !important;
-    }
+        /* Textos */
+        .text-white,
+        .text-muted,
+        .card.bg-dark .text-white,
+        .card.bg-dark .text-muted {
+            color: #1e293b !important;
+        }
+        
+        .text-primary {
+            color: var(--calm-secondary) !important;
+        }
+        
+        .text-muted {
+            color: #64748b !important;
+        }
+        
+        /* Botones */
+        .btn-outline-light {
+            border-color: #e2e8f0 !important;
+            color: #1e293b !important;
+            background: white !important;
+        }
+        
+        .btn-outline-light:hover {
+            background: #f1f5f9 !important;
+            border-color: #e2e8f0 !important;
+            color: #1e293b !important;
+        }
     
     .btn-primary {
-        background: #007bff !important;
-        border-color: #007bff !important;
+        background: var(--calm-secondary) !important;
+        border-color: var(--calm-secondary) !important;
         color: white !important;
     }
     
@@ -103,20 +155,145 @@
         border-color: #17a2b8 !important;
         color: white !important;
     }
+        
+        /* ESTILOS PARA SIDEBAR PANEL DE CONTROL - IGUAL QUE COACHEE */
+        .sidebar {
+            background: white !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        
+        .sidebar-white {
+            background: white !important;
+            background-color: white !important;
+        }
+        
+        .sidebar-force-white {
+            background: white !important;
+            background-color: white !important;
+        }
+        
+        .sidebar-header-white {
+            background: #f8f9fa !important;
+            background-color: #f8f9fa !important;
+            color: #333 !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .sidebar-header-force {
+            background: #f8f9fa !important;
+            background-color: #f8f9fa !important;
+            color: #333 !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .sidebar-title-white {
+            color: #333 !important;
+            font-weight: 600 !important;
+        }
+        
+        .sidebar-title-force {
+            color: #333 !important;
+            font-weight: 600 !important;
+        }
+        
+        .list-group-item {
+            background-color: white !important;
+            color: #333 !important;
+            border-color: #dee2e6 !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .list-group-item:hover {
+            background-color: #f8f9fa !important;
+            color: #333 !important;
+        }
+        
+        .list-group-item.active {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+        }
+        
+        .list-group-item i {
+            color: inherit !important;
+        }
+        
+        /* Formularios y inputs */
+        .form-control,
+        .form-select {
+            background: white !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #1e293b !important;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            background: white !important;
+            border-color: var(--calm-secondary) !important;
+            color: #1e293b !important;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+        }
+        
+        /* Modales */
+        .modal-content {
+            background: white !important;
+            color: #1e293b !important;
+        }
+        
+        .modal-header {
+            background: white !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        
+        .modal-title {
+            color: #1e293b !important;
+        }
+        
+        .modal-footer {
+            background: white !important;
+            border-top: 1px solid #e2e8f0 !important;
+        }
+        
+        /* Tablas */
+        .table {
+            color: #1e293b !important;
+        }
+        
+        .table thead th {
+            background: #f1f5f9 !important;
+            border-color: #e2e8f0 !important;
+            color: #1e293b !important;
+        }
+        
+        .table td,
+        .table th {
+            border-color: #e2e8f0 !important;
+        }
+        
+        .table-striped tbody tr:nth-of-type(odd) {
+            background: #f1f5f9 !important;
+        }
     
-    /* Modal con fondo sólido */
-    .modal-content {
+    /* Navegación y pestañas */
+    .nav-tabs .nav-link {
         background: white !important;
-        color: #333 !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #64748b !important;
     }
     
-    .modal-header {
-        background: #f8f9fa !important;
-        border-bottom: 1px solid #dee2e6 !important;
+    .nav-tabs .nav-link.active {
+        background: white !important;
+        border-color: var(--calm-secondary) !important;
+        color: #1e293b !important;
     }
     
-    .modal-title {
-        color: #333 !important;
+    .nav-pills .nav-link {
+        color: #64748b !important;
+    }
+    
+    .nav-pills .nav-link.active {
+        background: var(--calm-secondary) !important;
+        color: white !important;
     }
     
     /* Elementos de evaluación */
@@ -143,141 +320,58 @@
         background: #007bff !important;
     }
     
-    /* Tables */
+    /* Tables con soporte de temas */
     .table-dark {
         background: white !important;
-        color: #333 !important;
+        color: #1e293b !important;
     }
     
     .table-dark th,
     .table-dark td {
         background: white !important;
-        color: #333 !important;
-        border-color: #dee2e6 !important;
+        color: #1e293b !important;
+        border-color: #e2e8f0 !important;
     }
     
     .table-hover tbody tr:hover {
-        background: #f8f9fa !important;
-        color: #333 !important;
+        background: #f1f5f9 !important;
+        color: #1e293b !important;
     }
     
-    /* Sidebar limpio - FORZAR CACHE REFRESH v2.1 */
-    .sidebar,
-    .sidebar .card,
-    .sidebar .card.bg-dark,
-    .sidebar .card.bg-dark.border-secondary {
-        background: white !important;
-        background-color: white !important;
-        border-right: 1px solid #dee2e6 !important;
-        border: 1px solid #dee2e6 !important;
-    }
-    
-    .sidebar .card-header,
-    .sidebar .card-header.bg-dark,
-    .sidebar .card-header.bg-dark.border-secondary {
-        background: #f8f9fa !important;
-        background-color: #f8f9fa !important;
-        border-bottom: 1px solid #dee2e6 !important;
-        color: #333 !important;
-    }
-    
-    .sidebar .card-header h6,
-    .sidebar .card-header .text-white,
-    .sidebar .card-header h6.mb-0 {
-        color: #333 !important;
-        font-weight: 600 !important;
-    }
-    
-    .sidebar .nav-link,
-    .sidebar .list-group-item,
-    .sidebar .list-group-item.bg-dark {
-        background: white !important;
-        color: #333 !important;
-        border-color: #dee2e6 !important;
-    }
+    /* Estilos específicos del dashboard coach */
     
     .sidebar .nav-link:hover,
     .sidebar .list-group-item:hover {
-        background: #f8f9fa !important;
-        color: #333 !important;
+        background: #f1f5f9 !important;
+        color: #1e293b !important;
     }
     
     .sidebar .nav-link.active,
     .sidebar .list-group-item.active {
-        background: #007bff !important;
+        background: var(--calm-secondary) !important;
         color: white !important;
-        border-color: #007bff !important;
+        border-color: var(--calm-secondary) !important;
     }
     
-    /* FUERZA ANTI-CACHE ESPECÍFICO PANEL DE CONTROL */
+    /* Estilos forzados para elementos específicos con soporte de temas */
     .sidebar .card[style*="background"] {
         background: white !important;
         background-color: white !important;
     }
     
     .sidebar .card-header[style*="background"] {
-        background: #f8f9fa !important;
-        background-color: #f8f9fa !important;
-        color: #333 !important;
+        background: #f1f5f9 !important;
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
     }
     
     .sidebar h6[style*="color"] {
-        color: #333 !important;
+        color: #1e293b !important;
     }
     
-    /* Timestamp para forzar refresh: 20250831-1135 */
+    /* Timestamp actualizado para sistema de temas: 2025-10-19 */
     
-    /* MÁXIMA ESPECIFICIDAD PARA PANEL DE CONTROL */
-    .sidebar.sidebar-force-white,
-    .sidebar.sidebar-force-white.card,
-    .sidebar.sidebar-force-white.card.bg-dark,
-    .sidebar.sidebar-force-white.card.bg-dark.border-secondary {
-        background: white !important;
-        background-color: white !important;
-        border: 1px solid #dee2e6 !important;
-    }
-    
-    .sidebar .sidebar-header-force,
-    .sidebar .sidebar-header-force.card-header,
-    .sidebar .sidebar-header-force.card-header.bg-dark {
-        background: #f8f9fa !important;
-        background-color: #f8f9fa !important;
-        color: #333 !important;
-        border-bottom: 1px solid #dee2e6 !important;
-    }
-    
-    .sidebar .sidebar-title-force,
-    .sidebar .sidebar-title-force.mb-0,
-    .sidebar .sidebar-title-force.text-white {
-        color: #333 !important;
-        font-weight: 600 !important;
-    }
-    
-    /* NUEVA CLASE ULTRA-ESPECÍFICA - ELIMINAR CUALQUIER BG-DARK */
-    .sidebar-white,
-    .sidebar-white.card,
-    .sidebar-white.sidebar,
-    .sidebar-white.sidebar.card {
-        background: white !important;
-        background-color: white !important;
-        border: 1px solid #dee2e6 !important;
-    }
-    
-    .sidebar-header-white,
-    .sidebar-header-white.card-header {
-        background: #f8f9fa !important;
-        background-color: #f8f9fa !important;
-        color: #333 !important;
-        border-bottom: 1px solid #dee2e6 !important;
-    }
-    
-    .sidebar-title-white,
-    .sidebar-title-white.mb-0 {
-        color: #333 !important;
-        font-weight: 600 !important;
-    }
-    
-    /* ENFOQUE NUCLEAR - ANULAR CUALQUIER BG-DARK EN SIDEBAR */
+    /* Elementos sidebar con máxima especificidad y soporte de temas */
     .sidebar *,
     .sidebar *.bg-dark,
     .sidebar *.bg-secondary,
@@ -291,17 +385,18 @@
     
     .sidebar .card-header *,
     .sidebar .card-header *.bg-dark {
-        background: #f8f9fa !important;
-        background-color: #f8f9fa !important;
-        color: #333 !important;
+        background: #f1f5f9 !important;
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
     }
     
-    /* Charts con colores sólidos */
+    /* Charts con soporte de temas */
     .chart-container {
         background: white !important;
         padding: 1rem;
         border-radius: 8px;
-        border: 1px solid #dee2e6;
+        border: 1px solid #e2e8f0;
+        color: #1e293b;
     }
     
     /* Estilos profesionales para recomendaciones categorizadas - UNIFICADOS */
@@ -861,6 +956,7 @@
         #mis-coachees .table td:nth-child(4) {
             padding: 0.3rem 0.2rem !important;
             overflow: visible !important;
+            text-align: center !important;
         }
         
         #mis-coachees .table td:nth-child(4) .btn-group {
@@ -906,7 +1002,7 @@
         #mis-coachees .table td:nth-child(4) { 
             width: 15% !important;
             max-width: 15% !important;
-            text-align: center; 
+            text-align: center !important; 
         }
         
         /* Cards móviles mejoradas */
@@ -2224,20 +2320,13 @@
     /* Animaciones para cambios de vista */
     .fc-view {
         animation: fadeIn 0.3s ease !important;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<!-- Chart.js para gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
-<link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles">
+        <!-- Particles will be generated by JavaScript -->
+    </div>
 
 <div class="container-fluid py-4">
     <!-- Header -->
@@ -2352,9 +2441,11 @@
         <div class="col-md-9" style="padding-left: 0.75rem; padding-right: 0.75rem; overflow: visible;">
             <!-- Mis Coachees Module -->
             <div id="mis-coachees" class="module-content">
-                <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important; margin-bottom: 1rem;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">Mis Coachees</h5>
+                        <h5 class="text-dark mb-0">
+                            <i class="fas fa-users me-2 text-primary"></i>Mis Coachees
+                        </h5>
                     </div>
                     <div class="card-body" style="background-color: white !important; padding: 1rem; overflow: visible;">
         <!-- Vista tabla para desktop -->
@@ -2384,9 +2475,11 @@
 
             <!-- Gestión de Tareas Module -->
             <div id="gestion-tareas" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">Gestión de Tareas</h5>
+                        <h5 class="text-dark mb-0">
+                            <i class="fas fa-tasks me-2 text-primary"></i>Gestión de Tareas
+                        </h5>
                     </div>
                     <div class="card-body" style="background-color: white !important;">
                         
@@ -2490,9 +2583,11 @@
 
             <!-- Invitar Coachee Module -->
             <div id="invitar-coachee" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">Invitar Nuevo Coachee</h5>
+                        <h5 class="text-dark mb-0">
+                            <i class="fas fa-user-plus me-2 text-primary"></i>Invitar Nuevo Coachee
+                        </h5>
                         <p class="text-muted small mb-0">Invita a un coachee y asigna una evaluación inicial</p>
                     </div>
                     <div class="card-body" style="background-color: white !important;">
@@ -2597,7 +2692,7 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" onclick="closeInvitationModal()">
-                                            <i class="fas fa-times me-1"></i>Cerrar Modal
+                                            <i class="fas fa-times me-1"></i>Cerrar
                                         </button>
                                         <button type="button" class="btn btn-primary" onclick="copyInvitationToClipboard()">
                                             <i class="fas fa-copy me-1"></i>Copiar Mensaje
@@ -2612,7 +2707,7 @@
 
             <!-- Seleccionar Evaluaciones Module -->
             <div id="seleccionar-evaluaciones" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
                     <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
                         <div>
                             <h5 class="text-dark mb-1">
@@ -2667,7 +2762,7 @@
 
             <!-- Agregar Contenido Module -->
             <div id="agregar-contenido" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
                         <h5 class="text-dark mb-0">
                             <i class="fas fa-video me-2 text-primary"></i>
@@ -2681,6 +2776,12 @@
                                 <button class="nav-link active" id="assign-content-tab" data-bs-toggle="tab" 
                                     data-bs-target="#assign-content-pane" type="button" role="tab">
                                     <i class="fas fa-plus-circle me-1"></i>Asignar Video
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="upload-documents-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#upload-documents-pane" type="button" role="tab">
+                                    <i class="fas fa-file-upload me-1"></i>Subir Documentos
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
@@ -2783,6 +2884,156 @@
                                 </div>
                             </div>
                             
+                            <!-- Pestaña: Subir Documentos -->
+                            <div class="tab-pane fade" id="upload-documents-pane" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-lg-8">
+                                        <div class="card mb-4">
+                                            <div class="card-header">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-cloud-upload-alt me-2"></i>Subir Documentos PDF e Imágenes
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <form id="uploadDocumentForm" enctype="multipart/form-data">
+                                                    <div class="mb-3">
+                                                        <label for="coacheeSelectDocuments" class="form-label">
+                                                            <i class="fas fa-user me-1"></i>Seleccionar Coachee
+                                                        </label>
+                                                        <select class="form-select" id="coacheeSelectDocuments" required>
+                                                            <option value="">Selecciona un coachee...</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="documentFile" class="form-label">
+                                                            <i class="fas fa-file me-1"></i>Seleccionar Archivo
+                                                        </label>
+                                                        <input type="file" class="form-control" id="documentFile" 
+                                                               accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx" required>
+                                                        <div class="form-text">
+                                                            Formatos permitidos: PDF, JPG, PNG, GIF, DOC, DOCX (máximo 10MB)
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="documentTitle" class="form-label">
+                                                            <i class="fas fa-heading me-1"></i>Título del Documento
+                                                        </label>
+                                                        <input type="text" class="form-control" id="documentTitle" 
+                                                               placeholder="Ej: Manual de Ejercicios de Asertividad" required>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="documentDescription" class="form-label">
+                                                            <i class="fas fa-align-left me-1"></i>Descripción
+                                                        </label>
+                                                        <textarea class="form-control" id="documentDescription" rows="3"
+                                                                  placeholder="Describe el contenido del documento y por qué es relevante para el coachee..."></textarea>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="documentCategory" class="form-label">
+                                                            <i class="fas fa-tags me-1"></i>Categoría
+                                                        </label>
+                                                        <select class="form-select" id="documentCategory" required>
+                                                            <option value="">Selecciona una categoría...</option>
+                                                            <option value="ejercicios">Ejercicios y Actividades</option>
+                                                            <option value="teoria">Material Teórico</option>
+                                                            <option value="evaluacion">Evaluaciones Complementarias</option>
+                                                            <option value="recurso">Recursos de Apoyo</option>
+                                                            <option value="tarea">Tareas y Asignaciones</option>
+                                                            <option value="referencias">Referencias y Bibliografía</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <label for="documentPriority" class="form-label">
+                                                                <i class="fas fa-exclamation-circle me-1"></i>Prioridad
+                                                            </label>
+                                                            <select class="form-select" id="documentPriority">
+                                                                <option value="normal">Normal</option>
+                                                                <option value="alta">Alta</option>
+                                                                <option value="urgente">Urgente</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-check mt-4">
+                                                                <input class="form-check-input" type="checkbox" id="notifyCoachee">
+                                                                <label class="form-check-label" for="notifyCoachee">
+                                                                    <i class="fas fa-bell me-1"></i>Notificar al coachee
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                                        <button type="reset" class="btn btn-outline-secondary me-2">
+                                                            <i class="fas fa-times me-1"></i>Cancelar
+                                                        </button>
+                                                        <button type="submit" class="btn btn-primary">
+                                                            <i class="fas fa-upload me-1"></i>Subir Documento
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-lg-4">
+                                        <!-- Vista previa del archivo -->
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-eye me-2"></i>Vista Previa
+                                                </h6>
+                                            </div>
+                                            <div class="card-body text-center" id="documentPreviewContainer">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>
+                                                    <p class="mt-3">Selecciona un archivo para ver la vista previa</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Estadísticas de documentos -->
+                                        <div class="card mt-3">
+                                            <div class="card-header">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-chart-pie me-2"></i>Estadísticas
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row text-center">
+                                                    <div class="col-4">
+                                                        <div class="text-primary">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                            <div class="fw-bold" id="pdfCount">0</div>
+                                                            <small>PDFs</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <div class="text-success">
+                                                            <i class="fas fa-image"></i>
+                                                            <div class="fw-bold" id="imageCount">0</div>
+                                                            <small>Imágenes</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <div class="text-info">
+                                                            <i class="fas fa-file-word"></i>
+                                                            <div class="fw-bold" id="docCount">0</div>
+                                                            <small>Docs</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Pestaña: Contenido Asignado -->
                             <div class="tab-pane fade" id="manage-content-pane" role="tabpanel">
                                 <!-- Controles de filtrado -->
@@ -2854,7 +3105,7 @@
 
             <!-- Agenda Module -->
             <div id="agenda" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="--theme-card-bg: white !important; background-color: white !important;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
                         <h5 class="text-dark mb-0">
                             <i class="fas fa-calendar-alt me-2 text-primary"></i>
@@ -3781,13 +4032,29 @@
     </div>
 </div>
 
-{% endblock %}
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
+<link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
 
-{% block extra_js %}
 <script>
 // Variables globales
 let coacheesData = [];
 let tasksData = [];
+
+// Initialize particles animation - IGUAL QUE COACHEE
+function createParticles() {
+    const particlesContainer = document.querySelector('.particles');
+    for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 20 + 's';
+        particle.style.width = particle.style.height = (Math.random() * 4 + 2) + 'px';
+        particle.style.animationDuration = (Math.random() * 10 + 20) + 's';
+        particlesContainer.appendChild(particle);
+    }
+}
 
 // Función para mostrar módulos
 function showModule(moduleId) {
@@ -5050,11 +5317,18 @@ function displayCoacheeEvaluations(evaluations) {
 
 // Funciones auxiliares para displayCoacheeEvaluations
 function formatDateShort(dateString) {
-    return new Date(dateString).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+    return date.toLocaleDateString('es-CL', { 
+        timeZone: 'America/Santiago',
+        day: '2-digit', 
+        month: '2-digit' 
+    });
 }
 
 function formatDateLong(dateString) {
-    return new Date(dateString).toLocaleDateString('es-ES', { 
+    const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+    return date.toLocaleDateString('es-CL', { 
+        timeZone: 'America/Santiago',
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
@@ -5632,13 +5906,17 @@ function getDimensionDescription(dimension, score) {
 
 function formatDate(dateString) {
     try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES', {
+        // Crear fecha asumiendo que viene en UTC desde el backend
+        const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+        
+        return date.toLocaleDateString('es-CL', {
+            timeZone: 'America/Santiago',
             year: 'numeric',
             month: 'long',
             day: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: false
         });
     } catch (e) {
         return dateString || 'Fecha no disponible';
@@ -5775,7 +6053,7 @@ document.getElementById('inviteForm').addEventListener('submit', function(e) {
             // Llenar datos en el modal
             document.getElementById('modalCoacheeName').textContent = data.coachee.full_name;
             document.getElementById('modalCoacheeEmail').textContent = data.coachee.email;
-            document.getElementById('modalCoacheeUsername').textContent = data.coachee.username;
+            document.getElementById('modalCoacheeUsername').textContent = data.coachee.full_name.toLowerCase();
             document.getElementById('modalCoacheePassword').textContent = data.coachee.password;
             
             // Mostrar información de evaluación asignada si existe
@@ -7453,12 +7731,12 @@ function renderAssignedContent(contentList, data) {
     if (!contentList || contentList.length === 0) {
         listContainer.innerHTML = `
             <div class="text-center py-5">
-                <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
                 <h5 class="text-muted">Sin Contenido Asignado</h5>
                 <p class="text-muted">No has asignado ningún contenido todavía.</p>
                 <p class="small text-info">
                     <i class="fas fa-info-circle me-1"></i>
-                    Usa la pestaña "Asignar Video" para crear nuevas asignaciones
+                    Usa las pestañas "Asignar Video" o "Subir Documentos" para crear nuevas asignaciones
                 </p>
             </div>
         `;
@@ -7505,7 +7783,7 @@ function renderAssignedContent(contentList, data) {
                                 <h4 class="mb-0">${stats.total_assigned}</h4>
                                 <p class="mb-0">Total Asignado</p>
                             </div>
-                            <i class="fas fa-video fa-2x"></i>
+                            <i class="fas fa-share-alt fa-2x"></i>
                         </div>
                     </div>
                 </div>
@@ -7575,9 +7853,38 @@ function renderAssignedContent(contentList, data) {
 function renderUniqueContentCard(content) {
     const duration = content.duration ? Math.ceil(content.duration / 60) + ' min' : '';
     
+    // Determinar tipo de contenido e icono
+    const isDocument = content.content_type === 'document';
+    const isVideo = content.content_type === 'video' || !content.content_type; // Por defecto video si no está definido
+    
     // Extraer video ID para thumbnail si es YouTube
     let thumbnailUrl = content.thumbnail_url;
-    if (!thumbnailUrl && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be'))) {
+    let contentIcon = 'fas fa-video';
+    let contentLabel = 'Video';
+    
+    if (isDocument) {
+        contentIcon = getFileIcon(content.content_url);
+        contentLabel = 'Documento';
+        // Generar preview para documentos (puede ser asíncrono para PDFs)
+        const previewResult = generateDocumentPreview(content.content_url, content.title);
+        
+        // Si es una promesa (PDF), manejarla de forma asíncrona
+        if (previewResult && typeof previewResult.then === 'function') {
+            // Usar imagen placeholder mientras se carga el PDF
+            thumbnailUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjZGMzNTQ1Ii8+Cjx0ZXh0IHg9IjE2MCIgeT0iOTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjE0Ij5DYXJnYW5kbyBQREYuLi48L3RleHQ+Cjwvc3ZnPg==';
+            
+            // Actualizar thumbnail cuando la promesa se resuelva
+            previewResult.then(dataUrl => {
+                // Buscar la imagen en el DOM y actualizarla
+                const thumbnails = document.querySelectorAll(`img[data-content-id="${content.id}"]`);
+                thumbnails.forEach(img => {
+                    img.src = dataUrl;
+                });
+            });
+        } else {
+            thumbnailUrl = previewResult;
+        }
+    } else if (isVideo && !thumbnailUrl && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be'))) {
         let videoId = '';
         if (content.content_url.includes('youtube.com/watch?v=')) {
             videoId = content.content_url.split('v=')[1].split('&')[0];
@@ -7597,7 +7904,7 @@ function renderUniqueContentCard(content) {
             <div class="card h-100">
                 ${thumbnailUrl ? `
                     <div class="position-relative">
-                        <img src="${thumbnailUrl}" class="card-img-top" style="height: 180px; object-fit: cover;">
+                        <img src="${thumbnailUrl}" class="card-img-top" style="height: 180px; object-fit: cover;" data-content-id="${content.id}">
                         <div class="position-absolute top-0 end-0 m-2">
                             <span class="badge bg-info">
                                 <i class="fas fa-users me-1"></i>${content.total_assigned} asignado${content.total_assigned !== 1 ? 's' : ''}
@@ -7614,11 +7921,14 @@ function renderUniqueContentCard(content) {
                 ` : `
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
                         <div class="text-center">
-                            <i class="fas fa-video fa-3x text-muted mb-2"></i>
+                            <i class="${contentIcon} fa-3x text-muted mb-2"></i>
                             <div>
                                 <span class="badge bg-info">
                                     <i class="fas fa-users me-1"></i>${content.total_assigned} asignado${content.total_assigned !== 1 ? 's' : ''}
                                 </span>
+                            </div>
+                            <div class="mt-1">
+                                <small class="text-muted">${contentLabel}</small>
                             </div>
                         </div>
                     </div>
@@ -7671,7 +7981,7 @@ function renderUniqueContentCard(content) {
                 <div class="card-footer bg-transparent">
                     <div class="d-flex gap-2">
                         <button class="btn btn-sm btn-outline-primary" onclick="window.open('${content.content_url}', '_blank')">
-                            <i class="fas fa-external-link-alt me-1"></i>Ver Contenido
+                            <i class="fas ${isDocument ? 'fa-file-alt' : 'fa-play'} me-1"></i>Ver ${isDocument ? 'Documento' : 'Video'}
                         </button>
                         <button class="btn btn-sm btn-outline-info" onclick="showContentAssignments(${content.id})">
                             <i class="fas fa-list me-1"></i>Ver Asignaciones
@@ -7709,9 +8019,38 @@ function renderIndividualContentCard(content) {
         '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Visto</span>' : 
         '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pendiente</span>';
     
+    // Determinar tipo de contenido e icono
+    const isDocument = content.content_type === 'document';
+    const isVideo = content.content_type === 'video' || !content.content_type;
+    
     // Extraer video ID para thumbnail si es YouTube
     let thumbnailUrl = content.thumbnail_url;
-    if (!thumbnailUrl && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be'))) {
+    let contentIcon = 'fas fa-video';
+    let contentLabel = 'Video';
+    
+    if (isDocument) {
+        contentIcon = getFileIcon(content.content_url);
+        contentLabel = 'Documento';
+        // Generar preview para documentos (puede ser asíncrono para PDFs)
+        const previewResult = generateDocumentPreview(content.content_url, content.title);
+        
+        // Si es una promesa (PDF), manejarla de forma asíncrona
+        if (previewResult && typeof previewResult.then === 'function') {
+            // Usar imagen placeholder mientras se carga el PDF
+            thumbnailUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjZGMzNTQ1Ii8+Cjx0ZXh0IHg9IjE2MCIgeT0iOTAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjE0Ij5DYXJnYW5kbyBQREYuLi48L3RleHQ+Cjwvc3ZnPg==';
+            
+            // Actualizar thumbnail cuando la promesa se resuelva
+            previewResult.then(dataUrl => {
+                // Buscar la imagen en el DOM y actualizarla
+                const thumbnails = document.querySelectorAll(`img[data-content-id="${content.id}"]`);
+                thumbnails.forEach(img => {
+                    img.src = dataUrl;
+                });
+            });
+        } else {
+            thumbnailUrl = previewResult;
+        }
+    } else if (isVideo && !thumbnailUrl && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be'))) {
         let videoId = '';
         if (content.content_url.includes('youtube.com/watch?v=')) {
             videoId = content.content_url.split('v=')[1].split('&')[0];
@@ -7728,7 +8067,7 @@ function renderIndividualContentCard(content) {
             <div class="card h-100">
                 ${thumbnailUrl ? `
                     <div class="position-relative">
-                        <img src="${thumbnailUrl}" class="card-img-top" style="height: 180px; object-fit: cover;">
+                        <img src="${thumbnailUrl}" class="card-img-top" style="height: 180px; object-fit: cover;" data-content-id="${content.id}">
                         <div class="position-absolute top-0 end-0 m-2">
                             ${statusBadge}
                         </div>
@@ -7743,8 +8082,11 @@ function renderIndividualContentCard(content) {
                 ` : `
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
                         <div class="text-center">
-                            <i class="fas fa-${content.content_type === 'video' ? 'video' : 'file-alt'} fa-3x text-muted mb-2"></i>
+                            <i class="${contentIcon} fa-3x text-muted mb-2"></i>
                             <div>${statusBadge}</div>
+                            <div class="mt-1">
+                                <small class="text-muted">${contentLabel}</small>
+                            </div>
                         </div>
                     </div>
                 `}
@@ -7780,7 +8122,7 @@ function renderIndividualContentCard(content) {
                 <div class="card-footer bg-transparent">
                     <div class="d-flex gap-2">
                         <button class="btn btn-sm btn-outline-primary" onclick="window.open('${content.content_url}', '_blank')">
-                            <i class="fas fa-external-link-alt me-1"></i>Ver Contenido
+                            <i class="fas ${isDocument ? 'fa-file-alt' : 'fa-play'} me-1"></i>Ver ${isDocument ? 'Documento' : 'Video'}
                         </button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteAssignedContent(${content.id})">
                             <i class="fas fa-trash me-1"></i>Eliminar
@@ -7874,6 +8216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (isVisible) {
                         console.log('🎯 Módulo de contenido ahora visible, inicializando...');
                         initializeContentModule();
+                        initializeDocumentModule();
                     }
                 }
             });
@@ -7888,6 +8231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (contentModule.style.display !== 'none') {
             console.log('🎯 Módulo ya visible, inicializando inmediatamente...');
             initializeContentModule();
+            initializeDocumentModule();
         }
     } else {
         console.error('❌ Módulo de contenido no encontrado');
@@ -8265,6 +8609,701 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
+
+// ===== FUNCIONES DE GESTIÓN DE DOCUMENTOS =====
+
+// Cargar coachees para el selector de documentos
+function loadCoacheesForDocuments() {
+    console.log('🔍 Cargando coachees para documentos...');
+    
+    fetch('/api/coach/my-coachees', {
+        credentials: 'include'
+    })
+        .then(response => {
+            console.log('📡 Respuesta loadCoacheesForDocuments:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('📄 Datos recibidos:', data);
+            
+            const select = document.getElementById('coacheeSelectDocuments');
+            if (!select) {
+                console.error('❌ Selector coacheeSelectDocuments no encontrado');
+                return;
+            }
+            
+            select.innerHTML = '<option value="">Selecciona un coachee...</option>';
+            
+            if (data.success && data.coachees) {
+                console.log(`✅ Cargando ${data.coachees.length} coachees`);
+                data.coachees.forEach(coachee => {
+                    const option = document.createElement('option');
+                    option.value = coachee.id;
+                    option.textContent = `${coachee.full_name} (${coachee.email})`;
+                    select.appendChild(option);
+                });
+            } else {
+                console.warn('⚠️ No se encontraron coachees o respuesta no exitosa');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error cargando coachees para documentos:', error);
+        });
+}
+
+// Configurar vista previa de archivo
+function setupDocumentPreview() {
+    const fileInput = document.getElementById('documentFile');
+    const previewContainer = document.getElementById('documentPreviewContainer');
+    
+    if (!fileInput || !previewContainer) return;
+    
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) {
+            showDefaultPreview();
+            return;
+        }
+        
+        // Validar tamaño (10MB máximo)
+        if (file.size > 10 * 1024 * 1024) {
+            showToast('El archivo es demasiado grande. Máximo 10MB permitido.', 'error');
+            fileInput.value = '';
+            showDefaultPreview();
+            return;
+        }
+        
+        // Mostrar información del archivo
+        const fileInfo = `
+            <div class="text-center">
+                <i class="fas ${getFileIcon(file.type)} fa-3x text-primary mb-3"></i>
+                <h6 class="mb-2">${file.name}</h6>
+                <p class="text-muted mb-1">Tamaño: ${formatFileSize(file.size)}</p>
+                <p class="text-muted">Tipo: ${file.type || 'Desconocido'}</p>
+                
+                ${file.type.startsWith('image/') ? `
+                    <div class="mt-3">
+                        <img id="imagePreview" src="" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
+                    </div>
+                ` : ''}
+                
+                ${file.type === 'application/pdf' ? `
+                    <div class="mt-3">
+                        <div id="pdfPreviewContainer" class="border rounded p-2" style="min-height: 250px; background-color: #f8f9fa;">
+                            <div class="d-flex justify-content-center align-items-center" style="height: 230px;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando vista previa...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Vista previa de la primera página</small>
+                    </div>
+                ` : ''}
+                
+                ${(file.type.includes('document') || file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) ? `
+                    <div class="mt-3">
+                        <div class="alert alert-info">
+                            <i class="fas fa-file-word me-2"></i>
+                            <strong>Documento Word detectado</strong><br>
+                            <small>La vista previa estará disponible después de la conversión automática a PDF</small>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        previewContainer.innerHTML = fileInfo;
+        
+        // Si es imagen, mostrar vista previa
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imagePreview = document.getElementById('imagePreview');
+                if (imagePreview) {
+                    imagePreview.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Si es PDF, mostrar vista previa usando PDF.js
+        if (file.type === 'application/pdf') {
+            displayPDFPreview(file);
+        }
+        // Si es documento Word
+        else if (file.type.includes('word') || file.type.includes('msword') || 
+                 file.type.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+                 file.name.toLowerCase().endsWith('.doc') || file.name.toLowerCase().endsWith('.docx')) {
+            displayWordDocumentInfo(file);
+        }
+        // Para otros tipos de documento
+        else if (!file.type.startsWith('image/')) {
+            displayGenericDocumentInfo(file);
+        }
+        
+        // Auto-rellenar título si está vacío
+        const titleInput = document.getElementById('documentTitle');
+        if (titleInput && !titleInput.value) {
+            const fileName = file.name.split('.').slice(0, -1).join('.');
+            titleInput.value = fileName;
+        }
+    });
+}
+
+// Mostrar vista previa por defecto
+function showDefaultPreview() {
+    const previewContainer = document.getElementById('documentPreviewContainer');
+    if (!previewContainer) return;
+    
+    previewContainer.innerHTML = `
+        <div class="text-muted">
+            <i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>
+            <p class="mt-3">Selecciona un archivo para ver la vista previa</p>
+        </div>
+    `;
+}
+
+// Mostrar vista previa de PDF
+async function displayPDFPreview(file) {
+    const container = document.getElementById('pdfPreviewContainer');
+    if (!container) return;
+    
+    try {
+        // Verificar si PDF.js está disponible
+        if (typeof pdfjsLib === 'undefined') {
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Vista previa no disponible</strong><br>
+                    <small>PDF seleccionado correctamente, pero la vista previa requiere configuración adicional</small>
+                </div>
+            `;
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        container.innerHTML = `
+            <div class="d-flex justify-content-center align-items-center" style="height: 230px;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Generando vista previa...</span>
+                </div>
+            </div>
+        `;
+        
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const typedarray = new Uint8Array(e.target.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                const page = await pdf.getPage(1);
+                
+                // Crear canvas con dimensiones similares a generateDocumentPreview
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                // Configurar dimensiones (proporción 16:9 como en generateDocumentPreview)
+                canvas.width = 320;
+                canvas.height = 180;
+                
+                const viewport = page.getViewport({ scale: 1 });
+                
+                // Calcular escala para ajustar al canvas (misma lógica que generatePDFPreview)
+                const scaleX = canvas.width / viewport.width;
+                const scaleY = canvas.height / viewport.height;
+                const scale = Math.min(scaleX, scaleY);
+                
+                const scaledViewport = page.getViewport({ scale: scale });
+                
+                // Centrar el contenido
+                const offsetX = (canvas.width - scaledViewport.width) / 2;
+                const offsetY = (canvas.height - scaledViewport.height) / 2;
+                
+                // Limpiar canvas con fondo blanco
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Configurar contexto para renderizado
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: scaledViewport,
+                    transform: [1, 0, 0, 1, offsetX, offsetY]
+                };
+                
+                await page.render(renderContext).promise;
+                
+                // Mostrar canvas en el contenedor
+                container.innerHTML = '';
+                canvas.className = 'img-fluid rounded border';
+                canvas.style.maxWidth = '100%';
+                canvas.style.maxHeight = '230px';
+                canvas.style.objectFit = 'contain';
+                container.appendChild(canvas);
+                
+            } catch (error) {
+                console.error('Error renderizando PDF:', error);
+                // Usar el fallback genérico de generateGenericDocumentPreview
+                const fallbackCanvas = document.createElement('canvas');
+                const ctx = fallbackCanvas.getContext('2d');
+                fallbackCanvas.width = 320;
+                fallbackCanvas.height = 180;
+                
+                const dataUrl = generateGenericDocumentPreview('document.pdf', file.name, fallbackCanvas, ctx);
+                
+                container.innerHTML = `
+                    <img src="${dataUrl}" class="img-fluid rounded border" style="max-width: 100%; max-height: 230px; object-fit: contain;" alt="Vista previa del documento">
+                `;
+            }
+        };
+        
+        reader.readAsArrayBuffer(file);
+        
+    } catch (error) {
+        console.error('Error cargando PDF:', error);
+        // Usar el fallback genérico de generateGenericDocumentPreview
+        const fallbackCanvas = document.createElement('canvas');
+        const ctx = fallbackCanvas.getContext('2d');
+        fallbackCanvas.width = 320;
+        fallbackCanvas.height = 180;
+        
+        const dataUrl = generateGenericDocumentPreview('document.pdf', file.name, fallbackCanvas, ctx);
+        
+        container.innerHTML = `
+            <img src="${dataUrl}" class="img-fluid rounded border" style="max-width: 100%; max-height: 230px; object-fit: contain;" alt="Vista previa del documento">
+        `;
+    }
+}
+
+// Mostrar información para documentos Word
+function displayWordDocumentInfo(file) {
+    const container = document.getElementById('wordPreviewContainer');
+    if (!container) return;
+    
+    const fileSizeKB = (file.size / 1024).toFixed(1);
+    container.innerHTML = `
+        <div class="alert alert-info">
+            <i class="fas fa-file-word me-2" style="color: #2b579a;"></i>
+            <strong>Documento Word seleccionado</strong><br>
+            <small class="text-muted">
+                ${file.name}<br>
+                Tamaño: ${fileSizeKB} KB
+            </small>
+        </div>
+    `;
+}
+
+// Mostrar información para documentos genéricos
+function displayGenericDocumentInfo(file) {
+    const container = document.getElementById('wordPreviewContainer');
+    if (!container) return;
+    
+    const fileSizeKB = (file.size / 1024).toFixed(1);
+    const extension = file.name.split('.').pop().toUpperCase();
+    
+    container.innerHTML = `
+        <div class="alert alert-secondary">
+            <i class="fas fa-file me-2"></i>
+            <strong>Documento ${extension} seleccionado</strong><br>
+            <small class="text-muted">
+                ${file.name}<br>
+                Tamaño: ${fileSizeKB} KB
+            </small>
+        </div>
+    `;
+}
+
+// Obtener icono según tipo de archivo
+function getFileIcon(input) {
+    // Si es un MIME type
+    if (input.includes('/')) {
+        if (input.startsWith('image/')) return 'fa-image';
+        if (input === 'application/pdf') return 'fa-file-pdf';
+        if (input.includes('word')) return 'fa-file-word';
+        if (input.includes('excel') || input.includes('spreadsheet')) return 'fa-file-excel';
+        if (input.includes('powerpoint') || input.includes('presentation')) return 'fa-file-powerpoint';
+        return 'fa-file';
+    }
+    
+    // Si es una URL, extraer la extensión
+    const extension = input.split('.').pop().toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) return 'fa-image';
+    if (extension === 'pdf') return 'fa-file-pdf';
+    if (['doc', 'docx'].includes(extension)) return 'fa-file-word';
+    if (['xls', 'xlsx'].includes(extension)) return 'fa-file-excel';
+    if (['ppt', 'pptx'].includes(extension)) return 'fa-file-powerpoint';
+    if (['mp4', 'avi', 'mov', 'wmv', 'webm'].includes(extension)) return 'fa-video';
+    return 'fa-file';
+}
+
+// Generar preview para documentos
+function generateDocumentPreview(contentUrl, title) {
+    // Crear canvas para el preview
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Configurar dimensiones (proporción 16:9 como los videos de YouTube)
+    canvas.width = 320;
+    canvas.height = 180;
+    
+    // Detectar si es un documento basándose en la URL o el título
+    const isPDFUrl = contentUrl.includes('/api/coach/documents/') || contentUrl.includes('.pdf');
+    const isPDFTitle = title && (title.toLowerCase().includes('.pdf') || title.toLowerCase().endsWith('pdf'));
+    
+    // Si es PDF, intentar renderizar la primera página
+    if (isPDFUrl || isPDFTitle) {
+        return generatePDFPreview(contentUrl, canvas);
+    } else {
+        // Para otros tipos de documento, usar preview genérico
+        return generateGenericDocumentPreview(contentUrl, title, canvas, ctx);
+    }
+}
+
+function generatePDFPreview(contentUrl, canvas) {
+    const ctx = canvas.getContext('2d');
+    
+    // Cargar PDF.js si no está disponible
+    if (typeof pdfjsLib === 'undefined') {
+        console.log('PDF.js no disponible, usando preview genérico');
+        return generateGenericDocumentPreview(contentUrl, 'PDF Document', canvas, ctx);
+    }
+    
+    // Configurar PDF.js worker
+    pdfjsLib.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    return new Promise((resolve) => {
+        // Si es una URL de descarga de documentos, necesitamos obtenerla con fetch para incluir cookies
+        if (contentUrl.includes('/api/coach/documents/')) {
+            fetch(contentUrl, {
+                method: 'GET',
+                credentials: 'include', // Incluir cookies de sesión
+                headers: {
+                    'Accept': 'application/pdf'
+                }
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Error descargando documento');
+                }
+                return response.arrayBuffer();
+            }).then(arrayBuffer => {
+                const typedarray = new Uint8Array(arrayBuffer);
+                return pdfjsLib.getDocument(typedarray).promise;
+            }).then(function(pdf) {
+                // Renderizar la primera página
+                pdf.getPage(1).then(function(page) {
+                    const viewport = page.getViewport({ scale: 1 });
+                    
+                    // Calcular escala para ajustar al canvas
+                    const scaleX = canvas.width / viewport.width;
+                    const scaleY = canvas.height / viewport.height;
+                    const scale = Math.min(scaleX, scaleY);
+                    
+                    const scaledViewport = page.getViewport({ scale: scale });
+                    
+                    // Centrar el contenido
+                    const offsetX = (canvas.width - scaledViewport.width) / 2;
+                    const offsetY = (canvas.height - scaledViewport.height) / 2;
+                    
+                    // Limpiar canvas con fondo blanco
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Configurar contexto para renderizado
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: scaledViewport,
+                        transform: [1, 0, 0, 1, offsetX, offsetY]
+                    };
+                    
+                    // Renderizar la página
+                    page.render(renderContext).promise.then(function() {
+                        resolve(canvas.toDataURL('image/png'));
+                    });
+                });
+            }).catch(function(error) {
+                console.log('Error cargando PDF desde URL de descarga:', error);
+                // Fallback a preview genérico
+                resolve(generateGenericDocumentPreview(contentUrl, 'PDF Document', canvas, ctx));
+            });
+        } else {
+            // Para URLs directas de PDF, usar método original
+            pdfjsLib.getDocument(contentUrl).promise.then(function(pdf) {
+                // Renderizar la primera página
+                pdf.getPage(1).then(function(page) {
+                    const viewport = page.getViewport({ scale: 1 });
+                    
+                    // Calcular escala para ajustar al canvas
+                    const scaleX = canvas.width / viewport.width;
+                    const scaleY = canvas.height / viewport.height;
+                    const scale = Math.min(scaleX, scaleY);
+                    
+                    const scaledViewport = page.getViewport({ scale: scale });
+                    
+                    // Centrar el contenido
+                    const offsetX = (canvas.width - scaledViewport.width) / 2;
+                    const offsetY = (canvas.height - scaledViewport.height) / 2;
+                    
+                    // Limpiar canvas con fondo blanco
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Configurar contexto para renderizado
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: scaledViewport,
+                        transform: [1, 0, 0, 1, offsetX, offsetY]
+                    };
+                    
+                    // Renderizar la página
+                    page.render(renderContext).promise.then(function() {
+                        resolve(canvas.toDataURL('image/png'));
+                    });
+                });
+            }).catch(function(error) {
+                console.log('Error cargando PDF:', error);
+                // Fallback a preview genérico
+                resolve(generateGenericDocumentPreview(contentUrl, 'PDF Document', canvas, ctx));
+            });
+        }
+    });
+}
+
+function generateGenericDocumentPreview(contentUrl, title, canvas, ctx) {
+    // Detectar extensión del archivo desde la URL o el título
+    let extension = 'default';
+    
+    if (contentUrl.includes('/api/coach/documents/')) {
+        // Para URLs de descarga, intentar obtener extensión del título
+        if (title) {
+            const titleLower = title.toLowerCase();
+            if (titleLower.includes('.pdf') || titleLower.endsWith('pdf')) extension = 'pdf';
+            else if (titleLower.includes('.doc')) extension = titleLower.includes('.docx') ? 'docx' : 'doc';
+            else if (titleLower.includes('.ppt')) extension = titleLower.includes('.pptx') ? 'pptx' : 'ppt';
+            else if (titleLower.includes('.xls')) extension = titleLower.includes('.xlsx') ? 'xlsx' : 'xls';
+            else if (titleLower.includes('.txt')) extension = 'txt';
+        }
+    } else {
+        // Para URLs normales, obtener extensión de la URL
+        extension = contentUrl.split('.').pop().toLowerCase();
+    }
+    
+    // Colores y iconos por tipo de documento
+    const documentTypes = {
+        'pdf': { color: '#dc3545', gradient: '#ff6b6b', icon: '\uf1c1' }, // fa-file-pdf
+        'doc': { color: '#0d6efd', gradient: '#4dabf7', icon: '\uf1c2' }, // fa-file-word
+        'docx': { color: '#0d6efd', gradient: '#4dabf7', icon: '\uf1c2' },
+        'ppt': { color: '#fd7e14', gradient: '#ffa726', icon: '\uf1c4' }, // fa-file-powerpoint
+        'pptx': { color: '#fd7e14', gradient: '#ffa726', icon: '\uf1c4' },
+        'xls': { color: '#198754', gradient: '#66bb6a', icon: '\uf1c3' }, // fa-file-excel
+        'xlsx': { color: '#198754', gradient: '#66bb6a', icon: '\uf1c3' },
+        'txt': { color: '#6c757d', gradient: '#90a4ae', icon: '\uf15c' }, // fa-file-text
+        'default': { color: '#6c757d', gradient: '#90a4ae', icon: '\uf15b' } // fa-file
+    };
+    
+    const docType = documentTypes[extension] || documentTypes.default;
+    
+    // Crear gradiente de fondo
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, docType.color);
+    gradient.addColorStop(1, docType.gradient);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Agregar icono (usando FontAwesome Unicode)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.font = 'bold 48px "Font Awesome 6 Free"';
+    ctx.textAlign = 'center';
+    ctx.fillText(docType.icon, canvas.width / 2, canvas.height / 2 - 10);
+    
+    // Agregar título del documento
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    
+    // Truncar título si es muy largo
+    let displayTitle = title;
+    if (title.length > 25) {
+        displayTitle = title.substring(0, 22) + '...';
+    }
+    
+    ctx.fillText(displayTitle, canvas.width / 2, canvas.height / 2 + 35);
+    
+    // Agregar extensión del archivo
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText(extension.toUpperCase(), canvas.width / 2, canvas.height / 2 + 55);
+    
+    // Convertir canvas a data URL
+    return canvas.toDataURL('image/png');
+}
+
+// Formatear tamaño de archivo
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Configurar formulario de subida de documentos
+function setupDocumentUploadForm() {
+    console.log('🔧 Configurando formulario de subida de documentos...');
+    const form = document.getElementById('uploadDocumentForm');
+    if (!form) {
+        console.error('❌ Formulario uploadDocumentForm no encontrado');
+        return;
+    }
+    
+    // Verificar si ya tiene un event listener
+    if (form.hasAttribute('data-listener-added')) {
+        console.log('⚠️ Event listener ya agregado al formulario, saltando...');
+        return;
+    }
+    
+    console.log('✅ Formulario encontrado, agregando event listener...');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('📤 Formulario de documento enviado');
+        
+        const fileInput = document.getElementById('documentFile');
+        const coacheeSelect = document.getElementById('coacheeSelectDocuments');
+        const titleInput = document.getElementById('documentTitle');
+        const categorySelect = document.getElementById('documentCategory');
+        
+        // Debug: verificar elementos
+        console.log('🔍 Verificando elementos del formulario:', {
+            fileInput: !!fileInput,
+            coacheeSelect: !!coacheeSelect,
+            titleInput: !!titleInput,
+            categorySelect: !!categorySelect
+        });
+        
+        const file = fileInput?.files[0];
+        const coacheeId = coacheeSelect?.value;
+        const title = titleInput?.value;
+        const category = categorySelect?.value;
+        
+        console.log('📋 Datos del formulario:', {
+            file: file ? file.name : 'No file',
+            coacheeId,
+            title,
+            category
+        });
+        
+        if (!file) {
+            alert('Por favor selecciona un archivo');
+            return;
+        }
+        
+        if (!coacheeId) {
+            alert('Por favor selecciona un coachee');
+            return;
+        }
+        
+        if (!title) {
+            alert('Por favor ingresa un título');
+            return;
+        }
+        
+        if (!category) {
+            alert('Por favor selecciona una categoría');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('coachee_id', coacheeId);
+        formData.append('title', title);
+        formData.append('description', document.getElementById('documentDescription')?.value || '');
+        formData.append('category', category);
+        formData.append('priority', document.getElementById('documentPriority')?.value || 'normal');
+        formData.append('notify_coachee', document.getElementById('notifyCoachee')?.checked || false);
+        
+        console.log('🚀 Enviando documento al servidor...');
+        
+        try {
+            const response = await fetch('/api/coach/upload-document', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+            
+            console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+            
+            const result = await response.json();
+            console.log('📄 Resultado JSON:', result);
+            
+            if (result.success) {
+                alert('Documento subido exitosamente');
+                form.reset();
+                showDefaultPreview();
+                updateDocumentStats();
+            } else {
+                alert(result.error || 'Error al subir el documento');
+            }
+        } catch (error) {
+            console.error('❌ Error subiendo documento:', error);
+            alert('Error de conexión al subir el documento');
+        }
+    });
+    
+    // Marcar el formulario como que ya tiene un event listener
+    form.setAttribute('data-listener-added', 'true');
+}
+
+// Actualizar estadísticas de documentos
+function updateDocumentStats() {
+    fetch('/api/coach/document-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('pdfCount').textContent = data.stats.pdf || 0;
+                document.getElementById('imageCount').textContent = data.stats.images || 0;
+                document.getElementById('docCount').textContent = data.stats.documents || 0;
+            }
+        })
+        .catch(error => {
+            console.error('Error actualizando estadísticas:', error);
+        });
+}
+
+// Variable para controlar la inicialización
+let documentModuleInitialized = false;
+
+// Inicializar módulo de documentos
+function initializeDocumentModule() {
+    if (documentModuleInitialized) {
+        console.log('⚠️ Módulo de documentos ya inicializado, saltando...');
+        return;
+    }
+    
+    console.log('🚀 Inicializando módulo de documentos...');
+    
+    // Verificar que los elementos necesarios existen
+    const form = document.getElementById('uploadDocumentForm');
+    const coacheeSelect = document.getElementById('coacheeSelectDocuments');
+    
+    console.log('🔍 Elementos encontrados:', {
+        form: !!form,
+        coacheeSelect: !!coacheeSelect
+    });
+    
+    // Cargar coachees
+    loadCoacheesForDocuments();
+    
+    // Configurar vista previa
+    setupDocumentPreview();
+    
+    // Configurar formulario
+    setupDocumentUploadForm();
+    
+    // Cargar estadísticas
+    updateDocumentStats();
+    
+    // Marcar como inicializado
+    documentModuleInitialized = true;
+    
+    console.log('✅ Módulo de documentos inicializado');
+}
 
 // ================================
 // AGENDA Y CALENDARIO FUNCIONES
@@ -9160,8 +10199,11 @@ function getStatusLabel(status) {
 }
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
+    // Crear fecha asumiendo que viene en UTC desde el backend
+    const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+    
     return date.toLocaleDateString('es-CL', { 
+        timeZone: 'America/Santiago',
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
@@ -9170,8 +10212,13 @@ function formatDate(dateString) {
 }
 
 function formatDateTime(dateTimeString) {
-    const date = new Date(dateTimeString);
-    return date.toLocaleString('es-CL');
+    // Crear fecha asumiendo que viene en UTC desde el backend
+    const date = new Date(dateTimeString + (dateTimeString.includes('Z') ? '' : 'Z'));
+    
+    return date.toLocaleString('es-CL', {
+        timeZone: 'America/Santiago',
+        hour12: false
+    });
 }
 
 // Función para eliminar actividad autoagendada
@@ -9207,7 +10254,6 @@ async function deleteSelfScheduledActivity(activityId) {
 
 // Configurar listeners para los formularios de gestión de citas
 function setupAppointmentManagementListeners() {
-    // Listener para autoagenda
     // Listener para autoagenda
     const selfScheduleForm = document.getElementById('selfScheduleForm');
     if (selfScheduleForm) {
@@ -9263,5 +10309,23 @@ function setupAppointmentManagementListeners() {
 console.log('🔄 Coach Dashboard: 2025-10-18-21:52 - DEBUGGING CREAR CITA DIRECTA');
 console.log('🇨🇱 Hora actual Santiago:', getSantiagoDateTime().toLocaleString('es-CL'));
 console.log('🔧 IMPORTANTE: Revisa los logs de debug cuando hagas clic en "Crear Cita Directa"');
+
+// ==========================================
+// FIN DEL ARCHIVO
+// ==========================================
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🎨 DOM listo...');
+        createParticles(); // Initialize particles
+    });
+} else {
+    console.log('🎨 DOM ya listo...');
+    createParticles(); // Initialize particles
+}
+
 </script>
-{% endblock %}
+
+</body>
+</html>
