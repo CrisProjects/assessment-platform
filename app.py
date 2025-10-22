@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Imports principales
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
@@ -17,6 +17,9 @@ from sqlalchemy import func, desc, inspect, text, and_, or_
 from logging.handlers import RotatingFileHandler
 import os, secrets, re, logging, string, traceback
 import pytz
+import boto3
+from botocore.exceptions import ClientError
+import uuid
 
 # Configuración global
 # Configurar zona horaria de Santiago de Chile
@@ -66,7 +69,10 @@ app.config.update({
     'SESSION_COOKIE_SAMESITE': 'Lax',
     'REMEMBER_COOKIE_DURATION': timedelta(days=30),
     'REMEMBER_COOKIE_SECURE': IS_PRODUCTION,
-    'REMEMBER_COOKIE_HTTPONLY': True
+    'REMEMBER_COOKIE_HTTPONLY': True,
+    # Desactivar cache de templates para desarrollo
+    'TEMPLATES_AUTO_RELOAD': True,
+    'SEND_FILE_MAX_AGE_DEFAULT': 0
 })
 
 # Configurar CORS
@@ -468,6 +474,47 @@ class CoachingSession(db.Model):
     def session_end_datetime(self):
         """Combinar fecha y hora de fin para el calendario"""
         return datetime.combine(self.session_date, self.end_time)
+
+# Modelos para el sistema de documentos
+class Document(db.Model):
+    __tablename__ = 'document'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    category = db.Column(db.String(50), nullable=False, index=True)  # ejercicios, teoria, evaluacion, etc.
+    priority = db.Column(db.String(20), default='normal', index=True)  # normal, alta, urgente
+    notify_coachee = db.Column(db.Boolean, default=True)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='uploaded_documents')
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_documents')
+    files = db.relationship('DocumentFile', backref='document', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.uploaded_at = kwargs.get('uploaded_at', datetime.utcnow())
+
+class DocumentFile(db.Model):
+    __tablename__ = 'document_file'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False, index=True)
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)
+    mime_type = db.Column(db.String(100), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.uploaded_at = kwargs.get('uploaded_at', datetime.utcnow())
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -5299,6 +5346,245 @@ def api_coach_delete_self_scheduled_activity(activity_id):
         logger.error(f"Error eliminando actividad: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error al eliminar actividad: {str(e)}'}), 500
 
+# ===== ENDPOINTS DE DOCUMENTOS =====
+import os
+from werkzeug.utils import secure_filename
+import uuid
+from pathlib import Path
+
+# Configuración para subida de archivos
+UPLOAD_FOLDER = 'uploads/documents'
+ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx'}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Configuración de AWS S3
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_S3_BUCKET = os.environ.get('AWS_S3_BUCKET')
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+USE_S3 = all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET])
+
+# Inicializar cliente S3 si está configurado
+s3_client = None
+if USE_S3:
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION
+        )
+        logger.info(f"✅ Cliente S3 inicializado correctamente. Bucket: {AWS_S3_BUCKET}")
+    except Exception as e:
+        logger.error(f"❌ Error inicializando cliente S3: {str(e)}")
+        USE_S3 = False
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def ensure_upload_folder():
+    """Asegurar que existe la carpeta de uploads (solo para modo local)"""
+    if not USE_S3 and not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+
+def upload_file_to_s3(file, filename):
+    """Subir archivo a S3"""
+    try:
+        s3_key = f"documents/{filename}"
+        s3_client.upload_fileobj(
+            file,
+            AWS_S3_BUCKET,
+            s3_key,
+            ExtraArgs={
+                'ContentType': file.content_type or 'application/octet-stream',
+                'ContentDisposition': f'inline; filename="{filename}"'
+            }
+        )
+        # Generar URL del archivo
+        file_url = f"https://{AWS_S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
+        logger.info(f"✅ Archivo subido a S3: {file_url}")
+        return file_url
+    except ClientError as e:
+        logger.error(f"❌ Error subiendo archivo a S3: {str(e)}")
+        raise
+
+def download_file_from_s3(s3_key):
+    """Descargar archivo desde S3"""
+    try:
+        response = s3_client.get_object(Bucket=AWS_S3_BUCKET, Key=s3_key)
+        return response['Body'].read()
+    except ClientError as e:
+        logger.error(f"❌ Error descargando archivo desde S3: {str(e)}")
+        raise
+
+@app.route('/api/coach/upload-document', methods=['POST'])
+@coach_session_required
+def api_coach_upload_document():
+    """Endpoint para subir documentos"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Verificar que se envió un archivo
+        if 'file' not in request.files:
+            return jsonify({'error': 'No se envió ningún archivo'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
+        
+        # Validar archivo
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Tipo de archivo no permitido'}), 400
+        
+        # Obtener datos del formulario
+        coachee_id = request.form.get('coachee_id')
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        category = request.form.get('category', '').strip()
+        priority = request.form.get('priority', 'normal')
+        notify_coachee = request.form.get('notify_coachee') == 'true'
+        
+        # Validar datos requeridos
+        if not coachee_id or not title or not category:
+            return jsonify({'error': 'Faltan datos requeridos'}), 400
+        
+        # Verificar que el coachee existe y pertenece al coach
+        coachee = User.query.filter_by(id=coachee_id, role='coachee').first()
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado'}), 404
+        
+        # Verificar relación coach-coachee (esto podría requerir una tabla de relaciones)
+        # Por ahora asumimos que cualquier coach puede asignar a cualquier coachee
+        
+        # Validar tamaño del archivo
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({'error': f'El archivo es demasiado grande. Máximo {MAX_FILE_SIZE // (1024*1024)}MB'}), 400
+        
+        # Preparar directorio de subida (solo si no usamos S3)
+        if not USE_S3:
+            ensure_upload_folder()
+        
+        # Generar nombre único para el archivo
+        original_filename = file.filename
+        file_extension = original_filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        
+        # Subir archivo a S3 o guardar localmente
+        if USE_S3:
+            # Subir a S3
+            file_url = upload_file_to_s3(file, unique_filename)
+            file_path = file_url  # Guardar URL de S3
+        else:
+            # Guardar localmente
+            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            file.save(file_path)
+        
+        # Crear registro de documento
+        document = Document(
+            coach_id=current_coach.id,
+            coachee_id=coachee_id,
+            title=title,
+            description=description,
+            category=category,
+            priority=priority,
+            notify_coachee=notify_coachee
+        )
+        
+        db.session.add(document)
+        db.session.flush()  # Para obtener el ID del documento
+        
+        # Crear registro del archivo
+        document_file = DocumentFile(
+            document_id=document.id,
+            filename=unique_filename,
+            original_filename=original_filename,
+            file_path=file_path,
+            file_size=file_size,
+            mime_type=file.content_type or 'application/octet-stream'
+        )
+        
+        db.session.add(document_file)
+        
+        # NUEVO: Crear también un registro en la tabla Content para que aparezca en "Contenido Asignado"
+        # Usar endpoint específico para coachees para acceso a documentos asignados
+        content_url = f"/api/coachee/assigned-documents/{document.id}/download"
+        content = Content(
+            coach_id=current_coach.id,
+            coachee_id=coachee_id,
+            title=title,
+            description=description,
+            content_type='document',
+            content_url=content_url,
+            assigned_at=datetime.utcnow()
+        )
+        
+        db.session.add(content)
+        db.session.commit()
+        
+        logger.info(f"Coach {current_coach.id} subió documento {document.id} para coachee {coachee_id} y creó contenido {content.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Documento subido exitosamente',
+            'document_id': document.id,
+            'content_id': content.id
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error subiendo documento: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al subir documento: {str(e)}'}), 500
+
+@app.route('/api/coach/document-stats', methods=['GET'])
+@coach_session_required
+def api_coach_document_stats():
+    """Obtener estadísticas de documentos subidos por el coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Contar documentos por tipo
+        stats = db.session.query(
+            DocumentFile.mime_type,
+            db.func.count(DocumentFile.id)
+        ).join(Document).filter(
+            Document.coach_id == current_coach.id,
+            Document.is_active == True
+        ).group_by(DocumentFile.mime_type).all()
+        
+        # Organizar estadísticas
+        pdf_count = 0
+        image_count = 0
+        doc_count = 0
+        
+        for mime_type, count in stats:
+            if 'pdf' in mime_type.lower():
+                pdf_count += count
+            elif any(img_type in mime_type.lower() for img_type in ['image', 'jpeg', 'jpg', 'png', 'gif']):
+                image_count += count
+            elif any(doc_type in mime_type.lower() for doc_type in ['document', 'word', 'msword']):
+                doc_count += count
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'pdf': pdf_count,
+                'images': image_count,
+                'documents': doc_count
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo estadísticas de documentos: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al obtener estadísticas: {str(e)}'}), 500
+
 @app.route('/api/coachee/profile', methods=['GET'])
 @login_required
 def api_coachee_profile():
@@ -6677,6 +6963,342 @@ def api_coachee_session_detail(session_id):
         logger.error(f"Error en api_coachee_session_detail: {str(e)}", exc_info=True)
         db.session.rollback()
         return jsonify({'error': f'Error gestionando sesión: {str(e)}'}), 500
+
+@app.route('/api/coachee/request-development-plan', methods=['POST'])
+def request_development_plan():
+    """Endpoint para que el coachee solicite un plan de desarrollo al coach"""
+    try:
+        current_coachee = get_current_coachee()
+        if not current_coachee:
+            return jsonify({'error': 'No autorizado'}), 401
+        
+        data = request.get_json()
+        evaluation_id = data.get('evaluation_id')
+        message = data.get('message', 'Solicito un plan de desarrollo personalizado.')
+        
+        if not evaluation_id:
+            return jsonify({'error': 'ID de evaluación requerido'}), 400
+        
+        # Verificar que la evaluación pertenece al coachee
+        evaluation = AssessmentResult.query.filter_by(
+            id=evaluation_id,
+            user_id=current_coachee.id
+        ).first()
+        
+        if not evaluation:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Por ahora, simplemente loggeamos la solicitud
+        # En el futuro, esto podría crear una notificación o tarea para el coach
+        logger.info(f"📋 DEVELOPMENT PLAN REQUEST: Coachee {current_coachee.username} (ID: {current_coachee.id}) "
+                   f"requested development plan for evaluation {evaluation_id}")
+        logger.info(f"📋 MESSAGE: {message}")
+        logger.info(f"📋 EVALUATION: Assessment ID: {evaluation.assessment_id}, Score: {evaluation.score}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Solicitud de plan de desarrollo enviada exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en request_development_plan: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error procesando solicitud: {str(e)}'}), 500
+
+@app.route('/api/coachee/contact-coach-session', methods=['POST'])
+def contact_coach_session():
+    """Endpoint para que el coachee solicite una sesión gratuita con un coach"""
+    try:
+        current_coachee = get_current_coachee()
+        if not current_coachee:
+            return jsonify({'error': 'No autorizado'}), 401
+        
+        data = request.get_json()
+        evaluation_id = data.get('evaluation_id')
+        session_type = data.get('session_type', 'free_consultation')
+        message = data.get('message', 'Solicito una sesión gratuita de 30 minutos.')
+        
+        # Verificar que la evaluación pertenece al coachee (si se proporciona)
+        if evaluation_id:
+            evaluation = AssessmentResult.query.filter_by(
+                id=evaluation_id,
+                user_id=current_coachee.id
+            ).first()
+            
+            if not evaluation:
+                return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Loggear la solicitud de sesión gratuita
+        logger.info(f"🎯 FREE SESSION REQUEST: Coachee {current_coachee.username} (ID: {current_coachee.id}) "
+                   f"requested {session_type} session")
+        logger.info(f"🎯 SESSION MESSAGE: {message}")
+        if evaluation_id:
+            logger.info(f"🎯 RELATED EVALUATION: ID {evaluation_id}, Assessment ID: {evaluation.assessment_id}, Score: {evaluation.score}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Solicitud de sesión gratuita enviada exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en contact_coach_session: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error procesando solicitud: {str(e)}'}), 500
+
+# ===== ENDPOINTS DE DOCUMENTOS PARA COACHEES =====
+
+@app.route('/api/coachee/documents', methods=['GET'])
+@coachee_session_required
+def api_coachee_documents():
+    """Obtener documentos asignados al coachee"""
+    try:
+        current_coachee = getattr(g, 'current_user', None)
+        if not current_coachee or current_coachee.role != 'coachee':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Obtener documentos asignados al coachee
+        documents = db.session.query(Document).filter(
+            Document.coachee_id == current_coachee.id,
+            Document.is_active == True
+        ).order_by(Document.uploaded_at.desc()).all()
+        
+        documents_data = []
+        for doc in documents:
+            # Obtener archivos del documento
+            files_data = []
+            for file in doc.files:
+                files_data.append({
+                    'id': file.id,
+                    'filename': file.original_filename,
+                    'size': file.file_size,
+                    'mime_type': file.mime_type
+                })
+            
+            documents_data.append({
+                'id': doc.id,
+                'title': doc.title,
+                'description': doc.description,
+                'category': doc.category,
+                'priority': doc.priority,
+                'uploaded_at': doc.uploaded_at.isoformat(),
+                'uploaded_by': doc.coach.full_name if doc.coach else 'Coach',
+                'files': files_data
+            })
+        
+        return jsonify({
+            'success': True,
+            'documents': documents_data
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo documentos del coachee: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al obtener documentos: {str(e)}'}), 500
+
+@app.route('/api/coachee/documents/<int:document_id>/files/<int:file_id>/preview', methods=['GET'])
+@coachee_session_required
+def api_coachee_document_preview(document_id, file_id):
+    """Vista previa de un archivo de documento"""
+    try:
+        current_coachee = getattr(g, 'current_user', None)
+        if not current_coachee or current_coachee.role != 'coachee':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Verificar que el documento pertenece al coachee
+        document = Document.query.filter_by(
+            id=document_id,
+            coachee_id=current_coachee.id,
+            is_active=True
+        ).first()
+        
+        if not document:
+            return jsonify({'error': 'Documento no encontrado'}), 404
+        
+        # Obtener el archivo
+        doc_file = DocumentFile.query.filter_by(
+            id=file_id,
+            document_id=document_id
+        ).first()
+        
+        if not doc_file:
+            return jsonify({'error': 'Archivo no encontrado'}), 404
+        
+        # Obtener archivo desde S3 o sistema de archivos local
+        if USE_S3 and doc_file.file_path.startswith('https://'):
+            # Redirigir a la URL de S3
+            from flask import redirect
+            return redirect(doc_file.file_path)
+        else:
+            # Verificar que el archivo existe localmente
+            if not os.path.exists(doc_file.file_path):
+                return jsonify({'error': 'Archivo no encontrado en el servidor'}), 404
+            
+            # Devolver el archivo
+            return send_file(
+                doc_file.file_path,
+                mimetype=doc_file.mime_type,
+                as_attachment=False,
+                download_name=doc_file.original_filename
+            )
+        
+    except Exception as e:
+        logger.error(f"Error en vista previa de documento: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al obtener vista previa: {str(e)}'}), 500
+
+@app.route('/api/coachee/documents/<int:document_id>/files/<int:file_id>/download', methods=['GET'])
+@coachee_session_required
+def api_coachee_document_download(document_id, file_id):
+    """Descarga de un archivo de documento"""
+    try:
+        current_coachee = getattr(g, 'current_user', None)
+        if not current_coachee or current_coachee.role != 'coachee':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Verificar que el documento pertenece al coachee
+        document = Document.query.filter_by(
+            id=document_id,
+            coachee_id=current_coachee.id,
+            is_active=True
+        ).first()
+        
+        if not document:
+            return jsonify({'error': 'Documento no encontrado'}), 404
+        
+        # Obtener el archivo
+        doc_file = DocumentFile.query.filter_by(
+            id=file_id,
+            document_id=document_id
+        ).first()
+        
+        if not doc_file:
+            return jsonify({'error': 'Archivo no encontrado'}), 404
+        
+        # Obtener archivo desde S3 o sistema de archivos local
+        if USE_S3 and doc_file.file_path.startswith('https://'):
+            # Redirigir a la URL de S3 para descarga
+            from flask import redirect
+            return redirect(doc_file.file_path)
+        else:
+            # Verificar que el archivo existe localmente
+            if not os.path.exists(doc_file.file_path):
+                return jsonify({'error': 'Archivo no encontrado en el servidor'}), 404
+            
+            # Devolver el archivo para descarga
+            return send_file(
+                doc_file.file_path,
+                mimetype=doc_file.mime_type,
+                as_attachment=True,
+                download_name=doc_file.original_filename
+            )
+        
+    except Exception as e:
+        logger.error(f"Error descargando documento: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al descargar archivo: {str(e)}'}), 500
+
+@app.route('/api/coach/documents/<int:document_id>/download', methods=['GET'])
+@coach_session_required
+def api_coach_document_download(document_id):
+    """Descarga de documento para coaches"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Verificar que el documento pertenece al coach
+        document = Document.query.filter_by(
+            id=document_id,
+            coach_id=current_coach.id,
+            is_active=True
+        ).first()
+        
+        if not document:
+            return jsonify({'error': 'Documento no encontrado'}), 404
+        
+        # Obtener el archivo (asumiendo que hay uno por documento)
+        doc_file = DocumentFile.query.filter_by(
+            document_id=document_id
+        ).first()
+        
+        if not doc_file:
+            return jsonify({'error': 'Archivo no encontrado'}), 404
+        
+        # Obtener archivo desde S3 o sistema de archivos local
+        if USE_S3 and doc_file.file_path.startswith('https://'):
+            # Redirigir a la URL de S3 para descarga
+            from flask import redirect
+            return redirect(doc_file.file_path)
+        else:
+            # Verificar que el archivo existe localmente
+            if not os.path.exists(doc_file.file_path):
+                return jsonify({'error': 'Archivo no encontrado en el servidor'}), 404
+            
+            # Devolver el archivo para descarga
+            return send_file(
+                doc_file.file_path,
+                mimetype=doc_file.mime_type,
+                as_attachment=True,
+                download_name=doc_file.original_filename
+            )
+        
+    except Exception as e:
+        logger.error(f"Error descargando documento: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al descargar archivo: {str(e)}'}), 500
+
+@app.route('/api/coachee/assigned-documents/<int:document_id>/download', methods=['GET'])
+@coachee_session_required
+def api_coachee_assigned_document_download(document_id):
+    """Descarga de documento asignado por coach para coachees"""
+    try:
+        current_coachee = getattr(g, 'current_user', None)
+        if not current_coachee or current_coachee.role != 'coachee':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Verificar que el coachee tiene un documento asignado por contenido
+        content = Content.query.filter_by(
+            coachee_id=current_coachee.id,
+            content_type='document'
+        ).filter(Content.content_url.like(f'%/{document_id}/download%')).first()
+        
+        if not content:
+            return jsonify({'error': 'Documento no asignado o no encontrado'}), 404
+        
+        # Verificar que el documento existe y pertenece a un coach
+        document = Document.query.filter_by(
+            id=document_id,
+            is_active=True
+        ).first()
+        
+        if not document:
+            return jsonify({'error': 'Documento no encontrado'}), 404
+        
+        # Obtener el archivo (tomar el primero disponible)
+        doc_file = DocumentFile.query.filter_by(
+            document_id=document_id
+        ).first()
+        
+        if not doc_file:
+            return jsonify({'error': 'Archivo no encontrado'}), 404
+        
+        # Obtener archivo desde S3 o sistema de archivos local
+        if USE_S3 and doc_file.file_path.startswith('https://'):
+            # Redirigir a la URL de S3 para preview
+            from flask import redirect
+            return redirect(doc_file.file_path)
+        else:
+            # Verificar que el archivo existe localmente
+            if not os.path.exists(doc_file.file_path):
+                return jsonify({'error': 'Archivo no encontrado en el servidor'}), 404
+            
+            logger.info(f"Coachee {current_coachee.id} descargando documento asignado {document_id}")
+            
+            # Devolver el archivo para descarga/preview
+            return send_file(
+                doc_file.file_path,
+                mimetype=doc_file.mime_type,
+                as_attachment=False,  # Para permitir preview en navegador
+                download_name=doc_file.original_filename
+            )
+        
+    except Exception as e:
+        logger.error(f"Error descargando documento asignado: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al descargar archivo: {str(e)}'}), 500
 
 if __name__ == '__main__':
     with app.app_context():
