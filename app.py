@@ -1233,9 +1233,9 @@ def get_dashboard_url(role):
     urls = {
         'platform_admin': '/platform-admin-dashboard',
         'coach': '/coach-dashboard',
-        'coachee': '/coachee-dashboard'
+        'coachee': '/coachee-feed'  # Cambiado a feed como página inicial
     }
-    return urls.get(role, '/coachee-dashboard')
+    return urls.get(role, '/coachee-feed')
 
 def validate_required_fields(data, required_fields):
     """Valida campos requeridos en los datos"""
@@ -3409,7 +3409,26 @@ def coachee_dashboard():
     logger.info(f"Coachee dashboard access granted - User: {user.username}")
     
     return render_template('coachee_dashboard.html')
-    return render_template('coachee_dashboard.html')
+
+@app.route('/coachee-feed')
+def coachee_feed():
+    # Verificar sesión de coachee específicamente
+    coachee_user_id = session.get('coachee_user_id')
+    
+    if not coachee_user_id:
+        logger.info("No coachee session found, redirecting to participant access")
+        return redirect(url_for('participant_access'))
+    
+    # Obtener usuario desde la base de datos
+    user = User.query.get(coachee_user_id)
+    if not user or user.role != 'coachee':
+        logger.warning(f"Invalid coachee user or role - User ID: {coachee_user_id}")
+        session.pop('coachee_user_id', None)
+        return redirect(url_for('participant_access'))
+    
+    logger.info(f"Coachee feed access granted - User: {user.username}")
+    
+    return render_template('coachee_feed.html')
 
 @app.route('/platform-admin-dashboard')
 @login_required
