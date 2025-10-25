@@ -2454,6 +2454,75 @@ def api_debug_users():
             'traceback': traceback.format_exc()
         }), 500
 
+@app.route('/api/force-reset-admin', methods=['POST', 'GET'])
+def api_force_reset_admin():
+    """
+    Endpoint URGENTE para forzar reset del admin en Railway
+    Acceder a: /api/force-reset-admin
+    """
+    try:
+        # Buscar usuario admin
+        admin = User.query.filter_by(username='admin').first()
+        
+        if not admin:
+            # Crear admin si no existe
+            logger.info("🚨 FORCE RESET: Admin no existe, creando...")
+            admin = User(
+                username='admin',
+                email='admin@assessment.com',
+                full_name='Platform Administrator',
+                role='platform_admin',
+                is_active=True,
+                active=True
+            )
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'action': 'created',
+                'message': '✅ Usuario admin creado exitosamente',
+                'username': 'admin',
+                'password': 'admin123',
+                'login_url': '/admin-login'
+            }), 200
+        else:
+            # Admin existe, forzar reset de contraseña
+            logger.info("🚨 FORCE RESET: Reseteando contraseña de admin...")
+            admin.set_password('admin123')
+            admin.is_active = True
+            admin.active = True
+            db.session.commit()
+            
+            # Verificar que funcionó
+            password_works = admin.check_password('admin123')
+            
+            return jsonify({
+                'success': True,
+                'action': 'reset',
+                'message': '✅ Contraseña de admin reseteada exitosamente',
+                'username': 'admin',
+                'password': 'admin123',
+                'password_verified': password_works,
+                'login_url': '/admin-login',
+                'admin_info': {
+                    'id': admin.id,
+                    'email': admin.email,
+                    'role': admin.role,
+                    'is_active': admin.is_active
+                }
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"❌ Error en force reset admin: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'message': 'Error reseteando admin. Verifica los logs.'
+        }), 500
+
 # Rutas de autenticación
 @app.route('/login')
 def login():
