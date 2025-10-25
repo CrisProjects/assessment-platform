@@ -179,7 +179,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)  # 🔧 Aumentado de 120 a 255 para hashes largos
     original_password = db.Column(db.String(120), nullable=True)  # Solo para coachees recién creados
     full_name = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='coachee', index=True)
@@ -674,6 +674,27 @@ def auto_initialize_database():
         # Esperar un momento en caso de PostgreSQL
         import time
         time.sleep(1)
+        
+        # 🔧 RAILWAY FIX: Eliminar tabla User si existe para recrearla con password_hash más largo
+        try:
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                # Verificar si existe la tabla user
+                result = conn.execute(text("""
+                    SELECT column_name, character_maximum_length 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'user' AND column_name = 'password_hash'
+                """))
+                row = result.fetchone()
+                
+                if row and row[1] and row[1] < 255:
+                    logger.warning(f"⚠️ DETECTADO: password_hash con longitud {row[1]} (necesita 255)")
+                    logger.info("💣 Eliminando tabla 'user' para recrearla con esquema correcto...")
+                    conn.execute(text("DROP TABLE IF EXISTS \"user\" CASCADE"))
+                    conn.commit()
+                    logger.info("✅ Tabla 'user' eliminada, será recreada con password_hash(255)")
+        except Exception as e:
+            logger.info(f"ℹ️ No se pudo verificar/eliminar tabla user (probablemente no existe): {e}")
         
         db.create_all()
         logger.info("✅ AUTO-INIT: db.create_all() ejecutado")
