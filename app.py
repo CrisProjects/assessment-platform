@@ -2395,6 +2395,65 @@ def debug_evaluation_results():
 def favicon():
     return '', 204
 
+@app.route('/api/debug-users')
+def api_debug_users():
+    """
+    Endpoint de diagnóstico para verificar usuarios en Railway
+    Acceder a: /api/debug-users
+    """
+    try:
+        # Verificar todos los usuarios
+        all_users = User.query.all()
+        
+        users_info = []
+        for user in all_users:
+            # Verificar contraseñas comunes
+            password_checks = {
+                'admin123': user.check_password('admin123'),
+                'coach123': user.check_password('coach123'),
+                f'{user.username}123': user.check_password(f'{user.username}123')
+            }
+            
+            users_info.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'full_name': user.full_name,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'password_hash_exists': bool(user.password_hash),
+                'password_hash_length': len(user.password_hash) if user.password_hash else 0,
+                'password_checks': password_checks,
+                'working_password': next((pwd for pwd, works in password_checks.items() if works), 'Unknown')
+            })
+        
+        # Información de la base de datos
+        database_url = os.environ.get('DATABASE_URL', 'No configurada')
+        db_type = 'PostgreSQL' if database_url and 'postgres' in database_url else 'SQLite'
+        
+        return jsonify({
+            'success': True,
+            'timestamp': datetime.utcnow().isoformat(),
+            'database_type': db_type,
+            'database_configured': database_url != 'No configurada',
+            'total_users': len(all_users),
+            'users': users_info,
+            'environment': {
+                'is_railway': bool(os.environ.get('RAILWAY_ENVIRONMENT')),
+                'flask_env': os.environ.get('FLASK_ENV')
+            },
+            'admin_exists': User.query.filter_by(username='admin').first() is not None,
+            'coach_exists': User.query.filter_by(username='coach').first() is not None
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
 # Rutas de autenticación
 @app.route('/login')
 def login():
