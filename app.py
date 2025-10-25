@@ -60,7 +60,7 @@ if not SECRET_KEY:
 
 app.config.update({
     'SECRET_KEY': SECRET_KEY,
-    'SQLALCHEMY_DATABASE_URI': os.environ.get('DATABASE_URL', 'sqlite:///assessments.db').replace('postgres://', 'postgresql://', 1),
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:///assessments.db',  # SQLite por defecto (sin PostgreSQL)
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'PERMANENT_SESSION_LIFETIME': timedelta(days=30),
     'SESSION_PERMANENT': True,

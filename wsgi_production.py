@@ -31,17 +31,19 @@ try:
         'ENV': 'production',
         'DEBUG': False,
         'TESTING': False,
-        'SQLALCHEMY_ECHO': False
+        'SQLALCHEMY_ECHO': False,
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///assessments.db'  # Forzar SQLite
     })
     
-    # Verificar base de datos
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url:
-        logger.info(f"🗄️ RAILWAY: Conectando a PostgreSQL...")
-        # Railway proporciona DATABASE_URL automáticamente
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url.replace('postgres://', 'postgresql://', 1)
-    else:
-        logger.warning("⚠️ RAILWAY: No se encontró DATABASE_URL, usando SQLite")
+    # NO usar PostgreSQL - comentado
+    # database_url = os.environ.get('DATABASE_URL')
+    # if database_url:
+    #     logger.info(f"🗄️ RAILWAY: Conectando a PostgreSQL...")
+    #     app.config['SQLALCHEMY_DATABASE_URI'] = database_url.replace('postgres://', 'postgresql://', 1)
+    # else:
+    #     logger.warning("⚠️ RAILWAY: No se encontró DATABASE_URL, usando SQLite")
+    
+    logger.info("🗄️ RAILWAY: Usando SQLite (base de datos local)")
     
     # Variable para gunicorn
     application = app
