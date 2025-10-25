@@ -715,7 +715,9 @@ def auto_initialize_database():
                     username='admin',
                     email='admin@assessment.com',
                     full_name='Platform Administrator',
-                    role='platform_admin'
+                    role='platform_admin',
+                    is_active=True,
+                    active=True
                 )
                 admin_user.set_password('admin123')
                 db.session.add(admin_user)
@@ -723,13 +725,18 @@ def auto_initialize_database():
                 logger.info("✅ AUTO-INIT: Usuario admin creado correctamente")
             else:
                 logger.info("ℹ️ AUTO-INIT: Usuario admin ya existe")
-                # Verificar contraseña
+                # FORZAR reset de contraseña SIEMPRE (para Railway)
+                logger.warning("🔧 AUTO-INIT: FORZANDO reset de contraseña admin a 'admin123'")
+                admin_exists.set_password('admin123')
+                admin_exists.is_active = True
+                admin_exists.active = True
+                db.session.commit()
+                # Verificar que funcionó
                 if admin_exists.check_password('admin123'):
-                    logger.info("✅ AUTO-INIT: Contraseña admin verificada")
+                    logger.info("✅ AUTO-INIT: Contraseña admin verificada correctamente")
                 else:
-                    logger.warning("🔧 AUTO-INIT: Actualizando contraseña admin")
-                    admin_exists.set_password('admin123')
-                    db.session.commit()
+                    logger.error("❌ AUTO-INIT: ERROR - Contraseña admin NO funcionó después del reset")
+                logger.info(f"🔑 CREDENCIALES ADMIN: username='admin', password='admin123'")
                 
             # Crear usuario coach si no existe
             coach_exists = User.query.filter_by(username='coach').first()
@@ -739,7 +746,9 @@ def auto_initialize_database():
                     username='coach',
                     email='coach@assessment.com',
                     full_name='Coach Principal',
-                    role='coach'
+                    role='coach',
+                    is_active=True,
+                    active=True
                 )
                 coach_user.set_password('coach123')
                 db.session.add(coach_user)
@@ -747,13 +756,18 @@ def auto_initialize_database():
                 logger.info("✅ AUTO-INIT: Usuario coach creado correctamente")
             else:
                 logger.info("ℹ️ AUTO-INIT: Usuario coach ya existe")
-                # Verificar contraseña
+                # FORZAR reset de contraseña SIEMPRE (para Railway)
+                logger.warning("🔧 AUTO-INIT: FORZANDO reset de contraseña coach a 'coach123'")
+                coach_exists.set_password('coach123')
+                coach_exists.is_active = True
+                coach_exists.active = True
+                db.session.commit()
+                # Verificar que funcionó
                 if coach_exists.check_password('coach123'):
-                    logger.info("✅ AUTO-INIT: Contraseña coach verificada")
+                    logger.info("✅ AUTO-INIT: Contraseña coach verificada correctamente")
                 else:
-                    logger.warning("🔧 AUTO-INIT: Actualizando contraseña coach")
-                    coach_exists.set_password('coach123')
-                    db.session.commit()
+                    logger.error("❌ AUTO-INIT: ERROR - Contraseña coach NO funcionó después del reset")
+                logger.info(f"🔑 CREDENCIALES COACH: username='coach', password='coach123'")
         
         # Inicializar assessment de asertividad
         if not Assessment.query.filter_by(id=1).first():
