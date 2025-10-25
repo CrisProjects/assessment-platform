@@ -2811,6 +2811,10 @@ def api_admin_get_coaches():
             coachees_count = User.query.filter_by(coach_id=coach.id, role='coachee').count()
             assessments_count = AssessmentResult.query.filter_by(coach_id=coach.id).count()
             
+            # Intentar determinar si usa contraseña por defecto
+            default_password = 'coach123' if coach.username == 'coach' else f'{coach.username}123'
+            uses_default = coach.check_password(default_password)
+            
             coaches_data.append({
                 'id': coach.id,
                 'username': coach.username,
@@ -2820,7 +2824,8 @@ def api_admin_get_coaches():
                 'created_at': coach.created_at.isoformat() if coach.created_at else None,
                 'last_login': coach.last_login.isoformat() if coach.last_login else None,
                 'coachees_count': coachees_count,
-                'assessments_count': assessments_count
+                'assessments_count': assessments_count,
+                'default_password': default_password if uses_default else None
             })
         
         return jsonify({

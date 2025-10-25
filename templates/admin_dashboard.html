@@ -735,6 +735,8 @@
                     <thead>
                         <tr>
                             <th>Coach</th>
+                            <th>Usuario</th>
+                            <th>Contraseña</th>
                             <th class="d-none d-lg-table-cell">Email</th>
                             <th class="d-none d-md-table-cell">Coachees</th>
                             <th class="d-none d-md-table-cell">Evaluaciones</th>
@@ -746,9 +748,21 @@
                         ${coaches.map(coach => `
                             <tr>
                                 <td>
-                                    <div class="fw-semibold">${coach.username}</div>
-                                    <div class="small text-muted">${coach.full_name}</div>
+                                    <div class="fw-semibold">${coach.full_name}</div>
                                     <div class="d-lg-none small text-muted">${coach.email}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-primary">${coach.username}</div>
+                                </td>
+                                <td>
+                                    ${coach.default_password ? 
+                                        `<div class="text-monospace">
+                                            <span id="pass-${coach.id}" style="cursor: pointer;" onclick="copyPassword('${coach.default_password}', ${coach.id})" title="Clic para copiar">
+                                                <i class="fas fa-key text-warning me-1"></i>${coach.default_password}
+                                            </span>
+                                        </div>` : 
+                                        `<small class="text-muted">Personalizada</small>`
+                                    }
                                 </td>
                                 <td class="d-none d-lg-table-cell">${coach.email}</td>
                                 <td class="d-none d-md-table-cell">
@@ -848,6 +862,34 @@
         function showAlert(message, type) {
             // Usar alert nativo por simplicidad, pero podría implementarse con Bootstrap Toast
             alert(message);
+        }
+
+        // Copiar contraseña al portapapeles
+        function copyPassword(password, coachId) {
+            navigator.clipboard.writeText(password).then(() => {
+                // Cambiar icono temporalmente para indicar que se copió
+                const element = document.getElementById(`pass-${coachId}`);
+                const originalHTML = element.innerHTML;
+                element.innerHTML = `<i class="fas fa-check text-success me-1"></i>${password}`;
+                
+                // Mostrar tooltip o mensaje
+                showAlert('✅ Contraseña copiada al portapapeles', 'success');
+                
+                // Restaurar después de 2 segundos
+                setTimeout(() => {
+                    element.innerHTML = originalHTML;
+                }, 2000);
+            }).catch(err => {
+                console.error('Error copiando contraseña:', err);
+                // Fallback: seleccionar texto
+                const tempInput = document.createElement('input');
+                tempInput.value = password;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showAlert('✅ Contraseña copiada', 'success');
+            });
         }
 
         // Generar contraseña aleatoria
