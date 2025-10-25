@@ -50,33 +50,14 @@ try:
     if not hasattr(app, '_railway_initialized'):
         try:
             logger.info("🔧 RAILWAY: Inicializando base de datos...")
-            
-            # Usar timeout para evitar bloquear el startup
-            import signal
-            
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Inicialización de BD excedió timeout")
-            
-            # Dar 30 segundos máximo para inicialización
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(30)
-            
-            try:
-                with app.app_context():
-                    from app import auto_initialize_database
-                    auto_initialize_database()
-                    app._railway_initialized = True
-                    logger.info("✅ RAILWAY: Base de datos inicializada correctamente")
-            finally:
-                signal.alarm(0)  # Cancelar alarma
-                
-        except TimeoutError:
-            logger.error("⏱️ RAILWAY: Timeout en inicialización de BD (continuando de todos modos)")
-            app._railway_initialized = True  # Marcar como inicializada para no reintentar
+            with app.app_context():
+                from app import auto_initialize_database
+                auto_initialize_database()
+                app._railway_initialized = True
+                logger.info("✅ RAILWAY: Base de datos inicializada correctamente")
         except Exception as init_error:
             logger.error(f"❌ RAILWAY: Error inicializando base de datos: {init_error}")
-            logger.error("⚠️ RAILWAY: Continuando de todos modos, puede que necesites ejecutar /api/nuclear-reset-users")
-            app._railway_initialized = True  # Marcar como inicializada para no reintentar
+            # No fallar completamente, Railway puede necesitar tiempo
     
     logger.info("✅ RAILWAY: WSGI configurado correctamente")
 

@@ -179,7 +179,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(255), nullable=False)  # 🔧 Aumentado de 120 a 255 para hashes largos
+    password_hash = db.Column(db.String(120), nullable=False)
     original_password = db.Column(db.String(120), nullable=True)  # Solo para coachees recién creados
     full_name = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='coachee', index=True)
@@ -675,30 +675,6 @@ def auto_initialize_database():
         import time
         time.sleep(1)
         
-        # 🔧 RAILWAY FIX: Eliminar tabla User si existe para recrearla con password_hash más largo
-        try:
-            from sqlalchemy import text
-            # Usar begin() para transacciones explícitas
-            with db.engine.begin() as conn:
-                # Verificar si existe la tabla user
-                result = conn.execute(text("""
-                    SELECT column_name, character_maximum_length 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'user' AND column_name = 'password_hash'
-                """))
-                row = result.fetchone()
-                
-                if row and row[1] and row[1] < 255:
-                    logger.warning(f"⚠️ DETECTADO: password_hash con longitud {row[1]} (necesita 255)")
-                    logger.info("💣 Eliminando tabla 'user' para recrearla con esquema correcto...")
-                    conn.execute(text("DROP TABLE IF EXISTS \"user\" CASCADE"))
-                    logger.info("✅ Tabla 'user' eliminada, será recreada con password_hash(255)")
-                else:
-                    logger.info("ℹ️ Tabla 'user' no existe o ya tiene password_hash(255)")
-        except Exception as e:
-            logger.warning(f"⚠️ No se pudo verificar/eliminar tabla user: {e}")
-            # No es fatal, continuar con create_all()
-        
         db.create_all()
         logger.info("✅ AUTO-INIT: db.create_all() ejecutado")
         
@@ -739,9 +715,7 @@ def auto_initialize_database():
                     username='admin',
                     email='admin@assessment.com',
                     full_name='Platform Administrator',
-                    role='platform_admin',
-                    is_active=True,
-                    active=True
+                    role='platform_admin'
                 )
                 admin_user.set_password('admin123')
                 db.session.add(admin_user)
@@ -749,18 +723,13 @@ def auto_initialize_database():
                 logger.info("✅ AUTO-INIT: Usuario admin creado correctamente")
             else:
                 logger.info("ℹ️ AUTO-INIT: Usuario admin ya existe")
-                # FORZAR reset de contraseña SIEMPRE (para Railway)
-                logger.warning("🔧 AUTO-INIT: FORZANDO reset de contraseña admin a 'admin123'")
-                admin_exists.set_password('admin123')
-                admin_exists.is_active = True
-                admin_exists.active = True
-                db.session.commit()
-                # Verificar que funcionó
+                # Verificar contraseña
                 if admin_exists.check_password('admin123'):
-                    logger.info("✅ AUTO-INIT: Contraseña admin verificada correctamente")
+                    logger.info("✅ AUTO-INIT: Contraseña admin verificada")
                 else:
-                    logger.error("❌ AUTO-INIT: ERROR - Contraseña admin NO funcionó después del reset")
-                logger.info(f"🔑 CREDENCIALES ADMIN: username='admin', password='admin123'")
+                    logger.warning("🔧 AUTO-INIT: Actualizando contraseña admin")
+                    admin_exists.set_password('admin123')
+                    db.session.commit()
                 
             # Crear usuario coach si no existe
             coach_exists = User.query.filter_by(username='coach').first()
@@ -770,9 +739,7 @@ def auto_initialize_database():
                     username='coach',
                     email='coach@assessment.com',
                     full_name='Coach Principal',
-                    role='coach',
-                    is_active=True,
-                    active=True
+                    role='coach'
                 )
                 coach_user.set_password('coach123')
                 db.session.add(coach_user)
@@ -780,18 +747,13 @@ def auto_initialize_database():
                 logger.info("✅ AUTO-INIT: Usuario coach creado correctamente")
             else:
                 logger.info("ℹ️ AUTO-INIT: Usuario coach ya existe")
-                # FORZAR reset de contraseña SIEMPRE (para Railway)
-                logger.warning("🔧 AUTO-INIT: FORZANDO reset de contraseña coach a 'coach123'")
-                coach_exists.set_password('coach123')
-                coach_exists.is_active = True
-                coach_exists.active = True
-                db.session.commit()
-                # Verificar que funcionó
+                # Verificar contraseña
                 if coach_exists.check_password('coach123'):
-                    logger.info("✅ AUTO-INIT: Contraseña coach verificada correctamente")
+                    logger.info("✅ AUTO-INIT: Contraseña coach verificada")
                 else:
-                    logger.error("❌ AUTO-INIT: ERROR - Contraseña coach NO funcionó después del reset")
-                logger.info(f"🔑 CREDENCIALES COACH: username='coach', password='coach123'")
+                    logger.warning("🔧 AUTO-INIT: Actualizando contraseña coach")
+                    coach_exists.set_password('coach123')
+                    db.session.commit()
         
         # Inicializar assessment de asertividad
         if not Assessment.query.filter_by(id=1).first():
@@ -2433,236 +2395,6 @@ def debug_evaluation_results():
 def favicon():
     return '', 204
 
-@app.route('/api/debug-users')
-def api_debug_users():
-    """
-    Endpoint de diagnóstico para verificar usuarios en Railway
-    Acceder a: /api/debug-users
-    """
-    try:
-        # Verificar todos los usuarios
-        all_users = User.query.all()
-        
-        users_info = []
-        for user in all_users:
-            # Verificar contraseñas comunes
-            password_checks = {
-                'admin123': user.check_password('admin123'),
-                'coach123': user.check_password('coach123'),
-                f'{user.username}123': user.check_password(f'{user.username}123')
-            }
-            
-            users_info.append({
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'role': user.role,
-                'full_name': user.full_name,
-                'is_active': user.is_active,
-                'created_at': user.created_at.isoformat() if user.created_at else None,
-                'password_hash_exists': bool(user.password_hash),
-                'password_hash_length': len(user.password_hash) if user.password_hash else 0,
-                'password_checks': password_checks,
-                'working_password': next((pwd for pwd, works in password_checks.items() if works), 'Unknown')
-            })
-        
-        # Información de la base de datos
-        database_url = os.environ.get('DATABASE_URL', 'No configurada')
-        db_type = 'PostgreSQL' if database_url and 'postgres' in database_url else 'SQLite'
-        
-        return jsonify({
-            'success': True,
-            'timestamp': datetime.utcnow().isoformat(),
-            'database_type': db_type,
-            'database_configured': database_url != 'No configurada',
-            'total_users': len(all_users),
-            'users': users_info,
-            'environment': {
-                'is_railway': bool(os.environ.get('RAILWAY_ENVIRONMENT')),
-                'flask_env': os.environ.get('FLASK_ENV')
-            },
-            'admin_exists': User.query.filter_by(username='admin').first() is not None,
-            'coach_exists': User.query.filter_by(username='coach').first() is not None
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
-
-@app.route('/api/force-reset-admin', methods=['POST', 'GET'])
-def api_force_reset_admin():
-    """
-    Endpoint URGENTE para forzar reset del admin en Railway
-    Acceder a: /api/force-reset-admin
-    """
-    try:
-        # Buscar usuario admin
-        admin = User.query.filter_by(username='admin').first()
-        
-        if not admin:
-            # Crear admin si no existe
-            logger.info("🚨 FORCE RESET: Admin no existe, creando...")
-            admin = User(
-                username='admin',
-                email='admin@assessment.com',
-                full_name='Platform Administrator',
-                role='platform_admin',
-                is_active=True,
-                active=True
-            )
-            admin.set_password('admin123')
-            db.session.add(admin)
-            db.session.commit()
-            
-            return jsonify({
-                'success': True,
-                'action': 'created',
-                'message': '✅ Usuario admin creado exitosamente',
-                'username': 'admin',
-                'password': 'admin123',
-                'login_url': '/admin-login'
-            }), 200
-        else:
-            # Admin existe, forzar reset de contraseña
-            logger.info("🚨 FORCE RESET: Reseteando contraseña de admin...")
-            admin.set_password('admin123')
-            admin.is_active = True
-            admin.active = True
-            db.session.commit()
-            
-            # Verificar que funcionó
-            password_works = admin.check_password('admin123')
-            
-            return jsonify({
-                'success': True,
-                'action': 'reset',
-                'message': '✅ Contraseña de admin reseteada exitosamente',
-                'username': 'admin',
-                'password': 'admin123',
-                'password_verified': password_works,
-                'login_url': '/admin-login',
-                'admin_info': {
-                    'id': admin.id,
-                    'email': admin.email,
-                    'role': admin.role,
-                    'is_active': admin.is_active
-                }
-            }), 200
-            
-    except Exception as e:
-        logger.error(f"❌ Error en force reset admin: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc(),
-            'message': 'Error reseteando admin. Verifica los logs.'
-        }), 500
-
-@app.route('/api/nuclear-reset-users', methods=['POST', 'GET'])
-def api_nuclear_reset_users():
-    """
-    ENDPOINT NUCLEAR: Elimina y recrea admin y coach desde CERO
-    Usar SOLO si nada más funciona
-    Acceder a: /api/nuclear-reset-users
-    """
-    try:
-        logger.info("💣 NUCLEAR RESET: Iniciando eliminación y recreación de usuarios...")
-        
-        # PASO 1: Eliminar usuarios admin y coach existentes
-        admin_old = User.query.filter_by(username='admin').first()
-        if admin_old:
-            logger.info(f"💣 Eliminando admin existente (ID: {admin_old.id})...")
-            db.session.delete(admin_old)
-        
-        coach_old = User.query.filter_by(username='coach').first()
-        if coach_old:
-            logger.info(f"💣 Eliminando coach existente (ID: {coach_old.id})...")
-            db.session.delete(coach_old)
-        
-        db.session.commit()
-        logger.info("✅ Usuarios antiguos eliminados")
-        
-        # PASO 2: Crear admin NUEVO desde cero
-        logger.info("👤 Creando admin NUEVO...")
-        admin_new = User(
-            username='admin',
-            email='admin@assessment.com',
-            full_name='Platform Administrator',
-            role='platform_admin',
-            is_active=True,
-            active=True
-        )
-        admin_new.set_password('admin123')
-        db.session.add(admin_new)
-        db.session.flush()
-        logger.info(f"✅ Admin creado con ID: {admin_new.id}")
-        
-        # PASO 3: Crear coach NUEVO desde cero
-        logger.info("👤 Creando coach NUEVO...")
-        coach_new = User(
-            username='coach',
-            email='coach@assessment.com',
-            full_name='Coach Principal',
-            role='coach',
-            is_active=True,
-            active=True
-        )
-        coach_new.set_password('coach123')
-        db.session.add(coach_new)
-        db.session.flush()
-        logger.info(f"✅ Coach creado con ID: {coach_new.id}")
-        
-        # PASO 4: Commit final
-        db.session.commit()
-        
-        # PASO 5: Verificar que funcionan
-        admin_verify = User.query.filter_by(username='admin').first()
-        coach_verify = User.query.filter_by(username='coach').first()
-        
-        admin_password_works = admin_verify.check_password('admin123') if admin_verify else False
-        coach_password_works = coach_verify.check_password('coach123') if coach_verify else False
-        
-        return jsonify({
-            'success': True,
-            'message': '💣 NUCLEAR RESET COMPLETADO',
-            'users_created': {
-                'admin': {
-                    'created': admin_verify is not None,
-                    'id': admin_verify.id if admin_verify else None,
-                    'username': 'admin',
-                    'password': 'admin123',
-                    'password_works': admin_password_works,
-                    'login_url': '/admin-login'
-                },
-                'coach': {
-                    'created': coach_verify is not None,
-                    'id': coach_verify.id if coach_verify else None,
-                    'username': 'coach',
-                    'password': 'coach123',
-                    'password_works': coach_password_works,
-                    'login_url': '/coach-login'
-                }
-            },
-            'next_steps': [
-                '1. Intenta login en /admin-login con admin/admin123',
-                '2. Intenta login en /coach-login con coach/coach123',
-                '3. Si funciona, ¡todo listo! 🎉'
-            ]
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"❌ Error en nuclear reset: {str(e)}")
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc(),
-            'message': 'Error en nuclear reset. Revisa los logs de Railway.'
-        }), 500
-
 # Rutas de autenticación
 @app.route('/login')
 def login():
@@ -3079,10 +2811,6 @@ def api_admin_get_coaches():
             coachees_count = User.query.filter_by(coach_id=coach.id, role='coachee').count()
             assessments_count = AssessmentResult.query.filter_by(coach_id=coach.id).count()
             
-            # Intentar determinar si usa contraseña por defecto
-            default_password = 'coach123' if coach.username == 'coach' else f'{coach.username}123'
-            uses_default = coach.check_password(default_password)
-            
             coaches_data.append({
                 'id': coach.id,
                 'username': coach.username,
@@ -3092,8 +2820,7 @@ def api_admin_get_coaches():
                 'created_at': coach.created_at.isoformat() if coach.created_at else None,
                 'last_login': coach.last_login.isoformat() if coach.last_login else None,
                 'coachees_count': coachees_count,
-                'assessments_count': assessments_count,
-                'default_password': default_password if uses_default else None
+                'assessments_count': assessments_count
             })
         
         return jsonify({
