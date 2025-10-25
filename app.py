@@ -2537,6 +2537,108 @@ def api_force_reset_admin():
             'message': 'Error reseteando admin. Verifica los logs.'
         }), 500
 
+@app.route('/api/nuclear-reset-users', methods=['POST', 'GET'])
+def api_nuclear_reset_users():
+    """
+    ENDPOINT NUCLEAR: Elimina y recrea admin y coach desde CERO
+    Usar SOLO si nada más funciona
+    Acceder a: /api/nuclear-reset-users
+    """
+    try:
+        logger.info("💣 NUCLEAR RESET: Iniciando eliminación y recreación de usuarios...")
+        
+        # PASO 1: Eliminar usuarios admin y coach existentes
+        admin_old = User.query.filter_by(username='admin').first()
+        if admin_old:
+            logger.info(f"💣 Eliminando admin existente (ID: {admin_old.id})...")
+            db.session.delete(admin_old)
+        
+        coach_old = User.query.filter_by(username='coach').first()
+        if coach_old:
+            logger.info(f"💣 Eliminando coach existente (ID: {coach_old.id})...")
+            db.session.delete(coach_old)
+        
+        db.session.commit()
+        logger.info("✅ Usuarios antiguos eliminados")
+        
+        # PASO 2: Crear admin NUEVO desde cero
+        logger.info("👤 Creando admin NUEVO...")
+        admin_new = User(
+            username='admin',
+            email='admin@assessment.com',
+            full_name='Platform Administrator',
+            role='platform_admin',
+            is_active=True,
+            active=True
+        )
+        admin_new.set_password('admin123')
+        db.session.add(admin_new)
+        db.session.flush()
+        logger.info(f"✅ Admin creado con ID: {admin_new.id}")
+        
+        # PASO 3: Crear coach NUEVO desde cero
+        logger.info("👤 Creando coach NUEVO...")
+        coach_new = User(
+            username='coach',
+            email='coach@assessment.com',
+            full_name='Coach Principal',
+            role='coach',
+            is_active=True,
+            active=True
+        )
+        coach_new.set_password('coach123')
+        db.session.add(coach_new)
+        db.session.flush()
+        logger.info(f"✅ Coach creado con ID: {coach_new.id}")
+        
+        # PASO 4: Commit final
+        db.session.commit()
+        
+        # PASO 5: Verificar que funcionan
+        admin_verify = User.query.filter_by(username='admin').first()
+        coach_verify = User.query.filter_by(username='coach').first()
+        
+        admin_password_works = admin_verify.check_password('admin123') if admin_verify else False
+        coach_password_works = coach_verify.check_password('coach123') if coach_verify else False
+        
+        return jsonify({
+            'success': True,
+            'message': '💣 NUCLEAR RESET COMPLETADO',
+            'users_created': {
+                'admin': {
+                    'created': admin_verify is not None,
+                    'id': admin_verify.id if admin_verify else None,
+                    'username': 'admin',
+                    'password': 'admin123',
+                    'password_works': admin_password_works,
+                    'login_url': '/admin-login'
+                },
+                'coach': {
+                    'created': coach_verify is not None,
+                    'id': coach_verify.id if coach_verify else None,
+                    'username': 'coach',
+                    'password': 'coach123',
+                    'password_works': coach_password_works,
+                    'login_url': '/coach-login'
+                }
+            },
+            'next_steps': [
+                '1. Intenta login en /admin-login con admin/admin123',
+                '2. Intenta login en /coach-login con coach/coach123',
+                '3. Si funciona, ¡todo listo! 🎉'
+            ]
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ Error en nuclear reset: {str(e)}")
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'message': 'Error en nuclear reset. Revisa los logs de Railway.'
+        }), 500
+
 # Rutas de autenticación
 @app.route('/login')
 def login():
