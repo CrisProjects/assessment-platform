@@ -3269,8 +3269,8 @@ def api_save_assessment():
             db.session.rollback()
             error_str = str(commit_error)
             
-            # Manejar específicamente errores de UNIQUE constraint
-            if "UNIQUE constraint failed" in error_str or "IntegrityError" in error_str:
+            # Manejar específicamente errores de UNIQUE constraint (SQLite y PostgreSQL)
+            if "UNIQUE constraint failed" in error_str or "IntegrityError" in error_str or "UniqueViolation" in error_str or "duplicate key value" in error_str:
                 logger.warning(f"⚠️ SAVE_ASSESSMENT: UNIQUE constraint detected - attempting recovery")
                 logger.warning(f"⚠️ SAVE_ASSESSMENT: Error details: {error_str}")
                 
