@@ -7013,8 +7013,14 @@
                     
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('📥 API /api/user/my-profile response:', JSON.stringify(data, null, 2));
+                        
                         if (data.success && data.profile?.full_name) {
                             const realName = data.profile.full_name;
+                            console.log('👤 Nombre del COACHEE obtenido:', realName);
+                            console.log('📧 Email del COACHEE:', data.profile.email);
+                            console.log('🎭 Role del COACHEE:', data.profile.role);
+                            
                             const realWelcomeText = `¡Bienvenido, ${realName}!`;
                             updateAllWelcomeMessages(realWelcomeText);
                             console.log('✅ Actualizado con nombre real:', realWelcomeText);
@@ -7034,10 +7040,19 @@
                     
                     if (summaryResponse.ok) {
                         const summaryData = await summaryResponse.json();
-                        console.log('📊 Dashboard summary data:', summaryData);
+                        console.log('📊 Dashboard summary FULL data:', JSON.stringify(summaryData, null, 2));
                         
                         if (summaryData.success && summaryData.summary?.coachee?.name) {
                             const userName = summaryData.summary.coachee.name;
+                            console.log('👤 Nombre del COACHEE (dashboard-summary):', userName);
+                            console.log('📧 Email del COACHEE (dashboard-summary):', summaryData.summary.coachee.email);
+                            
+                            // Mostrar también info del coach para comparar
+                            if (summaryData.summary?.coach) {
+                                console.log('👔 Nombre del COACH:', summaryData.summary.coach.name);
+                                console.log('📧 Email del COACH:', summaryData.summary.coach.email);
+                            }
+                            
                             const welcomeText = `¡Bienvenido, ${userName}!`;
                             updateAllWelcomeMessages(welcomeText);
                             console.log('✅ Actualizado con nombre del dashboard summary:', welcomeText);
