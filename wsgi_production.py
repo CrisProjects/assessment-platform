@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 os.environ.setdefault('FLASK_ENV', 'production')
 os.environ.setdefault('FLASK_DEBUG', 'False')
 
-# Verificar puerto de Railway
-PORT = int(os.environ.get('PORT', 5000))
+# Verificar puerto de Railway (Railway asigna dinámicamente el puerto)
+PORT = int(os.environ.get('PORT', 8080))
 logger.info(f"🚀 RAILWAY: Configurando puerto {PORT}")
 
 try:

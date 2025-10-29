@@ -81,7 +81,9 @@ default_origins = [
     'http://localhost:3000', 'http://127.0.0.1:3000',
     'https://assessment-platform-1nuo.onrender.com',
     'https://assessment-platform-final.vercel.app',
-    'https://assessment-platform-deploy.vercel.app'
+    'https://assessment-platform-deploy.vercel.app',
+    'https://instacoach.cl',
+    'https://www.instacoach.cl'
 ]
 if not IS_PRODUCTION:
     default_origins.extend(['http://localhost:5002', 'http://127.0.0.1:5002'])
