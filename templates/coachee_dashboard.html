@@ -5926,7 +5926,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="header-info">
                                 <h3 class="text-white mb-1">Dashboard Coachee</h3>
-                                <p class="text-muted mb-0"><span id="welcomeMessage">Bienvenido, Usuario</span></p>
+                                <p class="text-muted mb-0"><span id="welcomeMessage">Welcome, User</span></p>
                             </div>
                         <div class="btn-group-mobile d-flex gap-2">
                             <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()" title="Actualizar">
@@ -7027,7 +7027,7 @@
                                 console.log('📧 Email del COACH:', summaryData.summary.coach.email);
                             }
                             
-                            const welcomeText = `¡Bienvenido, ${userName}!`;
+                            const welcomeText = `Welcome, ${userName}!`;
                             updateAllWelcomeMessages(welcomeText);
                             console.log('✅ Actualizado con nombre del dashboard summary:', welcomeText);
                             return;
@@ -7057,7 +7057,7 @@
                             console.log('📧 Email (my-profile):', data.profile.email);
                             console.log('🎭 Role (my-profile):', data.profile.role);
                             
-                            const realWelcomeText = `¡Bienvenido, ${realName}!`;
+                            const realWelcomeText = `Welcome, ${realName}!`;
                             updateAllWelcomeMessages(realWelcomeText);
                             console.log('✅ Actualizado con my-profile:', realWelcomeText);
                             currentUser = data.profile;
@@ -10630,15 +10630,15 @@
             const allSpans = document.querySelectorAll('span');
             console.log('🔍 DEBUG All spans content:');
             allSpans.forEach((span, i) => {
-                if (span.textContent?.includes('Bienvenido')) {
+                if (span.textContent?.includes('Welcome')) {
                     console.log(`  Span ${i}:`, span.id, span.textContent, span);
                 }
             });
             
             // Forzar actualización
             if (welcomeEl && currentUser?.full_name) {
-                welcomeEl.textContent = `¡Bienvenido, ${currentUser.full_name}!`;
-                console.log('🔄 FORCED update to:', `¡Bienvenido, ${currentUser.full_name}!`);
+                welcomeEl.textContent = `Welcome, ${currentUser.full_name}!`;
+                console.log('🔄 FORCED update to:', `Welcome, ${currentUser.full_name}!`);
             } else {
                 console.log('❌ Cannot update: element or user missing');
             }
@@ -10659,7 +10659,7 @@
                     
                     if (data.success && data.summary?.coachee?.name) {
                         const userName = data.summary.coachee.name;
-                        const welcomeText = `¡Bienvenido, ${userName}!`;
+                        const welcomeText = `Welcome, ${userName}!`;
                         const count = updateAllWelcomeMessages(welcomeText);
                         console.log(`✅ Actualizado ${count} elementos con: ${welcomeText}`);
                         return true;
@@ -10693,7 +10693,7 @@
             // Actualizar el elemento restante
             const finalElement = document.getElementById('welcomeMessage');
             if (finalElement) {
-                finalElement.textContent = '¡Bienvenido, test15!';
+                finalElement.textContent = 'Welcome, test15!';
                 console.log('✅ Updated final element:', finalElement.textContent);
                 return true;
             }
@@ -10726,11 +10726,11 @@
                     welcomeEl = document.querySelector('#welcomeMessage');
                 }
                 
-                // Método 3: Buscar en todos los spans que contengan "Bienvenido"
+                // Método 3: Buscar en todos los spans que contengan "Welcome"
                 if (!welcomeEl) {
                     const spans = document.querySelectorAll('span');
                     for (let span of spans) {
-                        if (span.textContent && span.textContent.includes('Bienvenido')) {
+                        if (span.textContent && span.textContent.includes('Welcome')) {
                             welcomeEl = span;
                             console.log('🔍 Found welcome element via content search');
                             break;
@@ -10739,7 +10739,7 @@
                 }
                 
                 if (welcomeEl) {
-                    welcomeEl.textContent = '¡Bienvenido, test15!';
+                    welcomeEl.textContent = 'Welcome, test15!';
                     console.log('🔄 FORCED update with delay successful');
                     console.log('🔄 Updated element:', welcomeEl);
                 } else {
@@ -10748,7 +10748,7 @@
                     // Método 4: Crear el elemento si no existe
                     const h3 = document.querySelector('h3');
                     if (h3) {
-                        h3.innerHTML = '<i class="fas fa-home me-2"></i><span id="welcomeMessage">¡Bienvenido, test15!</span>';
+                        h3.innerHTML = '<i class="fas fa-home me-2"></i><span id="welcomeMessage">Welcome, test15!</span>';
                         console.log('🔧 Created welcome element manually');
                     }
                 }
@@ -10758,7 +10758,7 @@
         // Función para actualizar el mensaje de bienvenida
         function updateWelcomeMessage() {
             if (currentUser && currentUser.full_name) {
-                const welcomeText = `¡Bienvenido, ${currentUser.full_name}!`;
+                const welcomeText = `Welcome, ${currentUser.full_name}!`;
                 const updatedCount = updateAllWelcomeMessages(welcomeText);
                 console.log('🔄 Actualizados', updatedCount, 'elementos con mensaje forzado:', welcomeText);
             }
