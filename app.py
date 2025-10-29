@@ -5746,6 +5746,7 @@ def api_coachee_dashboard_summary():
                 'coachee': {
                     'name': current_user.full_name,
                     'email': current_user.email,
+                    'avatar_url': current_user.avatar_url,
                     'joined_at': current_user.created_at.isoformat() if current_user.created_at else None
                 },
                 'coach': {
