@@ -467,11 +467,24 @@
         // Función para cargar el avatar del usuario
         async function loadUserAvatar() {
             try {
-                const response = await fetch('/api/user/my-profile');
+                // Usar el endpoint específico del dashboard del coachee para evitar confusión de sesiones
+                const response = await fetch('/api/coachee/dashboard-summary');
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.success && data.profile) {
-                        updateHeaderAvatar(data.profile.avatar_url, data.profile.username);
+                    if (data.success && data.summary?.coachee) {
+                        const coachee = data.summary.coachee;
+                        // Buscar el avatar del coachee en el perfil
+                        const profileResponse = await fetch('/api/user/my-profile');
+                        if (profileResponse.ok) {
+                            const profileData = await profileResponse.json();
+                            if (profileData.success && profileData.profile) {
+                                updateHeaderAvatar(profileData.profile.avatar_url, coachee.name);
+                            } else {
+                                updateHeaderAvatar(null, coachee.name);
+                            }
+                        } else {
+                            updateHeaderAvatar(null, coachee.name);
+                        }
                     }
                 }
             } catch (error) {
