@@ -182,6 +182,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
     original_password = db.Column(db.String(120), nullable=True)  # Solo para coachees recién creados
     full_name = db.Column(db.String(200), nullable=False)
+    avatar_url = db.Column(db.String(500), nullable=True)  # URL del avatar del usuario
     role = db.Column(db.String(20), default='coachee', index=True)
     active = db.Column(db.Boolean, default=True, index=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
@@ -1250,7 +1251,8 @@ def create_user_response(user):
         'full_name': user.full_name,
         'email': user.email,
         'role': user.role,
-        'coach_id': user.coach_id
+        'coach_id': user.coach_id,
+        'avatar_url': user.avatar_url
     }
 
 def validate_evaluation_visibility(coachee_id, assessment_id=None):
@@ -3429,6 +3431,26 @@ def coachee_feed():
     logger.info(f"Coachee feed access granted - User: {user.username}")
     
     return render_template('coachee_feed.html')
+
+@app.route('/coachee-profile')
+def coachee_profile():
+    # Verificar sesión de coachee específicamente
+    coachee_user_id = session.get('coachee_user_id')
+    
+    if not coachee_user_id:
+        logger.info("No coachee session found, redirecting to participant access")
+        return redirect(url_for('participant_access'))
+    
+    # Obtener usuario desde la base de datos
+    user = User.query.get(coachee_user_id)
+    if not user or user.role != 'coachee':
+        logger.warning(f"Invalid coachee user or role - User ID: {coachee_user_id}")
+        session.pop('coachee_user_id', None)
+        return redirect(url_for('participant_access'))
+    
+    logger.info(f"Coachee profile access granted - User: {user.username}")
+    
+    return render_template('coachee_profile.html')
 
 @app.route('/platform-admin-dashboard')
 @login_required
@@ -5972,6 +5994,93 @@ def api_user_my_profile():
     except Exception as e:
         logger.error(f"Error en api_user_my_profile: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
+
+# API endpoints para perfil de coachee
+@app.route('/api/coachee/upload-avatar', methods=['POST'])
+@coachee_session_required
+def api_coachee_upload_avatar():
+    """Upload avatar para coachee"""
+    try:
+        if 'avatar' not in request.files:
+            return jsonify({'success': False, 'error': 'No se recibió ningún archivo'}), 400
+        
+        file = request.files['avatar']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No se seleccionó ningún archivo'}), 400
+        
+        # Validar tipo de archivo
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        
+        if file_ext not in allowed_extensions:
+            return jsonify({'success': False, 'error': 'Tipo de archivo no permitido'}), 400
+        
+        # Generar nombre único para el archivo
+        unique_filename = f"{g.current_user.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+        
+        # Guardar en el directorio static/avatars
+        avatars_dir = os.path.join(app.root_path, 'static', 'avatars')
+        os.makedirs(avatars_dir, exist_ok=True)
+        
+        file_path = os.path.join(avatars_dir, unique_filename)
+        file.save(file_path)
+        
+        # Actualizar URL del avatar en la base de datos
+        avatar_url = f"/static/avatars/{unique_filename}"
+        g.current_user.avatar_url = avatar_url
+        db.session.commit()
+        
+        logger.info(f"Avatar uploaded for user {g.current_user.id}: {avatar_url}")
+        
+        return jsonify({
+            'success': True,
+            'avatar_url': avatar_url
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error uploading avatar: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/coachee/change-password', methods=['POST'])
+@coachee_session_required
+def api_coachee_change_password():
+    """Cambiar contraseña del coachee"""
+    try:
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not current_password or not new_password:
+            return jsonify({'success': False, 'error': 'Faltan datos requeridos'}), 400
+        
+        # Verificar contraseña actual
+        if not g.current_user.check_password(current_password):
+            return jsonify({'success': False, 'error': 'Contraseña actual incorrecta'}), 401
+        
+        # Validar nueva contraseña
+        if len(new_password) < 6:
+            return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+        
+        # Actualizar contraseña
+        g.current_user.set_password(new_password)
+        # Limpiar original_password si existe
+        g.current_user.original_password = None
+        db.session.commit()
+        
+        logger.info(f"Password changed for user {g.current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña actualizada correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error changing password: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # API endpoints para contenido/videos
 @app.route('/api/coachee/content', methods=['GET'])

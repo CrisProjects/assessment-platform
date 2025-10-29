@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaCoach - Mi Perfil</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Lobster Two -->
+    <link href="https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        /* Header */
+        .feed-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .feed-header h1 {
+            font-family: 'Lobster Two', cursive;
+            font-size: 28px;
+            color: white;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .feed-header .back-btn {
+            color: white;
+            text-decoration: none;
+            font-size: 20px;
+        }
+        
+        /* Profile Container */
+        .profile-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .avatar-upload-btn {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .avatar-upload-btn input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .form-section {
+            margin-bottom: 25px;
+        }
+        
+        .form-section h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #efefef;
+        }
+        
+        .info-item label {
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .info-item span {
+            color: #333;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #666;
+            font-size: 12px;
+            padding: 5px 10px;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .nav-item i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item:hover,
+        .nav-item.active {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="feed-header">
+        <a href="/coachee-feed" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1>Mi Perfil</h1>
+        <div style="width: 24px;"></div>
+    </div>
+    
+    <!-- Profile Container -->
+    <div class="profile-container">
+        <div class="profile-card">
+            <!-- Avatar Section -->
+            <div class="avatar-section">
+                <div class="avatar-preview" id="avatarPreview">
+                    <i class="fas fa-user" id="defaultAvatar"></i>
+                    <img id="avatarImage" style="display: none;">
+                </div>
+                <div class="avatar-upload-btn">
+                    <button class="btn btn-primary btn-sm">
+                        <i class="fas fa-camera me-1"></i> Cambiar Foto
+                        <input type="file" id="avatarInput" accept="image/*">
+                    </button>
+                </div>
+                <div id="avatarError" class="text-danger mt-2" style="display: none;"></div>
+            </div>
+            
+            <!-- User Info Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-user-circle me-2"></i>Información Personal</h3>
+                <div class="info-item">
+                    <label>Nombre:</label>
+                    <span id="userName">Cargando...</span>
+                </div>
+                <div class="info-item">
+                    <label>Email:</label>
+                    <span id="userEmail">Cargando...</span>
+                </div>
+                <div class="info-item">
+                    <label>Usuario:</label>
+                    <span id="userUsername">Cargando...</span>
+                </div>
+            </div>
+            
+            <!-- Change Password Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-lock me-2"></i>Cambiar Contraseña</h3>
+                <form id="changePasswordForm">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Contraseña Actual</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Nueva Contraseña</label>
+                        <input type="password" class="form-control" id="newPassword" required minlength="6">
+                        <div class="form-text">Mínimo 6 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirmar Nueva Contraseña</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                    <div id="passwordError" class="alert alert-danger" style="display: none;"></div>
+                    <div id="passwordSuccess" class="alert alert-success" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Guardar Contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-navigation">
+        <a href="/coachee-feed" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        
+        <a href="/coachee-dashboard" class="nav-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <button class="nav-item" onclick="confirmLogout()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
+        </button>
+    </nav>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const API_BASE_URL = window.location.origin;
+        
+        // Load user profile on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserProfile();
+            setupAvatarUpload();
+            setupPasswordForm();
+        });
+        
+        // Load user profile data
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.summary?.coachee) {
+                        document.getElementById('userName').textContent = data.summary.coachee.name || 'No disponible';
+                        document.getElementById('userEmail').textContent = data.summary.coachee.email || 'No disponible';
+                    }
+                }
+                
+                // Load username separately
+                const profileResponse = await fetch(`${API_BASE_URL}/api/user/my-profile`);
+                if (profileResponse.ok) {
+                    const profileData = await profileResponse.json();
+                    if (profileData.success && profileData.profile) {
+                        document.getElementById('userUsername').textContent = profileData.profile.username || 'No disponible';
+                        
+                        // Load avatar if exists
+                        if (profileData.profile.avatar_url) {
+                            showAvatar(profileData.profile.avatar_url);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+        
+        // Setup avatar upload
+        function setupAvatarUpload() {
+            const avatarInput = document.getElementById('avatarInput');
+            
+            avatarInput.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                
+                if (!file) return;
+                
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showAvatarError('Por favor selecciona una imagen válida');
+                    return;
+                }
+                
+                // Validate file size (max 2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    showAvatarError('La imagen debe ser menor a 2MB');
+                    return;
+                }
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    showAvatar(e.target.result);
+                };
+                reader.readAsDataURL(file);
+                
+                // Upload to server
+                const formData = new FormData();
+                formData.append('avatar', file);
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/coachee/upload-avatar`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showAvatarSuccess('Avatar actualizado correctamente');
+                    } else {
+                        showAvatarError(data.error || 'Error al subir la imagen');
+                    }
+                } catch (error) {
+                    showAvatarError('Error al subir la imagen');
+                    console.error('Upload error:', error);
+                }
+            });
+        }
+        
+        // Show avatar image
+        function showAvatar(imageUrl) {
+            const defaultAvatar = document.getElementById('defaultAvatar');
+            const avatarImage = document.getElementById('avatarImage');
+            
+            defaultAvatar.style.display = 'none';
+            avatarImage.src = imageUrl;
+            avatarImage.style.display = 'block';
+        }
+        
+        // Show avatar error
+        function showAvatarError(message) {
+            const errorDiv = document.getElementById('avatarError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Show avatar success
+        function showAvatarSuccess(message) {
+            // Could use a toast or similar
+            console.log(message);
+        }
+        
+        // Setup password change form
+        function setupPasswordForm() {
+            const form = document.getElementById('changePasswordForm');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                // Validate passwords match
+                if (newPassword !== confirmPassword) {
+                    showPasswordError('Las contraseñas no coinciden');
+                    return;
+                }
+                
+                // Validate password length
+                if (newPassword.length < 6) {
+                    showPasswordError('La contraseña debe tener al menos 6 caracteres');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/coachee/change-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            current_password: currentPassword,
+                            new_password: newPassword
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showPasswordSuccess('Contraseña actualizada correctamente');
+                        form.reset();
+                    } else {
+                        showPasswordError(data.error || 'Error al cambiar la contraseña');
+                    }
+                } catch (error) {
+                    showPasswordError('Error al cambiar la contraseña');
+                    console.error('Password change error:', error);
+                }
+            });
+        }
+        
+        // Show password error
+        function showPasswordError(message) {
+            const errorDiv = document.getElementById('passwordError');
+            const successDiv = document.getElementById('passwordSuccess');
+            
+            successDiv.style.display = 'none';
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Show password success
+        function showPasswordSuccess(message) {
+            const errorDiv = document.getElementById('passwordError');
+            const successDiv = document.getElementById('passwordSuccess');
+            
+            errorDiv.style.display = 'none';
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Confirm logout
+        function confirmLogout() {
+            if (confirm('¿Estás seguro que deseas salir?')) {
+                window.location.href = '/participant-access';
+            }
+        }
+    </script>
+</body>
+</html>
