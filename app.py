@@ -5930,18 +5930,18 @@ def api_user_my_profile():
     """Obtener perfil del usuario actual (genérico para cualquier rol)"""
     try:
         profile_data = {
-            'id': current_user.id,
-            'full_name': current_user.full_name,
-            'email': current_user.email,
-            'role': current_user.role,
-            'created_at': current_user.created_at.isoformat() if hasattr(current_user, 'created_at') and current_user.created_at else None
+            'id': g.current_user.id,
+            'full_name': g.current_user.full_name,
+            'email': g.current_user.email,
+            'role': g.current_user.role,
+            'created_at': g.current_user.created_at.isoformat() if hasattr(g.current_user, 'created_at') and g.current_user.created_at else None
         }
         
         # Agregar información específica según el rol
-        if current_user.role == 'coachee':
+        if g.current_user.role == 'coachee':
             coach = None
-            if current_user.coach_id:
-                coach = User.query.get(current_user.coach_id)
+            if g.current_user.coach_id:
+                coach = User.query.get(g.current_user.coach_id)
             
             profile_data['coach'] = {
                 'id': coach.id if coach else None,
@@ -5951,13 +5951,13 @@ def api_user_my_profile():
             
             # Estadísticas del coachee
             profile_data['stats'] = {
-                'total_evaluations': AssessmentResult.query.filter_by(user_id=current_user.id).count()
+                'total_evaluations': AssessmentResult.query.filter_by(user_id=g.current_user.id).count()
             }
             
-        elif current_user.role == 'coach':
+        elif g.current_user.role == 'coach':
             # Estadísticas del coach
-            coachees_count = User.query.filter_by(coach_id=current_user.id, role='coachee').count()
-            total_evaluations = AssessmentResult.query.filter_by(coach_id=current_user.id).count()
+            coachees_count = User.query.filter_by(coach_id=g.current_user.id, role='coachee').count()
+            total_evaluations = AssessmentResult.query.filter_by(coach_id=g.current_user.id).count()
             
             profile_data['stats'] = {
                 'total_coachees': coachees_count,
