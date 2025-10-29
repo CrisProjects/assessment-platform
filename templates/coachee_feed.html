@@ -442,8 +442,48 @@
         // Cargar feeds al iniciar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🎬 DOM Content Loaded - Loading feeds...');
+            loadUserAvatar();
             loadInstagramFeeds();
+            
+            // Revisar si el avatar fue actualizado
+            if (localStorage.getItem('avatarUpdated') === 'true') {
+                console.log('🔄 Avatar was updated, reloading...');
+                localStorage.removeItem('avatarUpdated');
+                // Recargar avatar después de un pequeño delay
+                setTimeout(() => {
+                    loadUserAvatar();
+                }, 500);
+            }
         });
+        
+        // Función para cargar el avatar del usuario
+        async function loadUserAvatar() {
+            try {
+                const response = await fetch('/api/user/my-profile');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.profile) {
+                        updateHeaderAvatar(data.profile.avatar_url, data.profile.username);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user avatar:', error);
+            }
+        }
+        
+        // Función para actualizar el avatar en el header
+        function updateHeaderAvatar(avatarUrl, username) {
+            const headerAvatar = document.getElementById('headerAvatar');
+            if (!headerAvatar) return;
+            
+            if (avatarUrl) {
+                headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${username}">`;
+            } else {
+                // Mostrar inicial del username si no hay avatar
+                const initial = username ? username.charAt(0).toUpperCase() : 'U';
+                headerAvatar.innerHTML = initial;
+            }
+        }
         
         // Función para cargar feeds desde la API
         async function loadInstagramFeeds() {
