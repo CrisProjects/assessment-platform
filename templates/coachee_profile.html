@@ -180,6 +180,117 @@
         .nav-item.active {
             color: #667eea;
         }
+        
+        /* Avatar Gallery Modal */
+        .avatar-gallery-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .avatar-gallery-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .avatar-gallery-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+        }
+        
+        .avatar-gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #efefef;
+        }
+        
+        .avatar-gallery-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close-gallery {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .close-gallery:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .avatar-option {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+            background: #f5f5f5;
+        }
+        
+        .avatar-option:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .avatar-option.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .avatar-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .avatar-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .avatar-buttons .btn {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -201,10 +312,15 @@
                     <i class="fas fa-user" id="defaultAvatar"></i>
                     <img id="avatarImage" style="display: none;">
                 </div>
-                <div class="avatar-upload-btn">
-                    <input type="file" id="avatarInput" accept="image/*">
-                    <button class="btn btn-primary btn-sm">
-                        <i class="fas fa-camera me-1"></i> Cambiar Foto
+                <div class="avatar-buttons">
+                    <div class="avatar-upload-btn">
+                        <input type="file" id="avatarInput" accept="image/*">
+                        <button class="btn btn-primary btn-sm">
+                            <i class="fas fa-camera me-1"></i> Cambiar Foto
+                        </button>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm" onclick="openAvatarGallery()">
+                        <i class="fas fa-images me-1"></i> Elegir Avatar
                     </button>
                 </div>
                 <div id="avatarError" class="text-danger mt-2" style="display: none;"></div>
@@ -271,6 +387,21 @@
             <span>Salir</span>
         </button>
     </nav>
+    
+    <!-- Avatar Gallery Modal -->
+    <div id="avatarGalleryModal" class="avatar-gallery-modal">
+        <div class="avatar-gallery-content">
+            <div class="avatar-gallery-header">
+                <h3><i class="fas fa-user-circle me-2"></i>Elige tu Avatar</h3>
+                <button class="close-gallery" onclick="closeAvatarGallery()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="avatar-grid" id="avatarGrid">
+                <!-- Avatars will be loaded here -->
+            </div>
+        </div>
+    </div>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -480,6 +611,130 @@
                 window.location.href = '/participant-access';
             }
         }
+        
+        // Avatar Gallery Functions
+        const predefinedAvatars = [
+            'https://i.pravatar.cc/300?img=1',
+            'https://i.pravatar.cc/300?img=2',
+            'https://i.pravatar.cc/300?img=3',
+            'https://i.pravatar.cc/300?img=5',
+            'https://i.pravatar.cc/300?img=7',
+            'https://i.pravatar.cc/300?img=8',
+            'https://i.pravatar.cc/300?img=9',
+            'https://i.pravatar.cc/300?img=11',
+            'https://i.pravatar.cc/300?img=12',
+            'https://i.pravatar.cc/300?img=13',
+            'https://i.pravatar.cc/300?img=14',
+            'https://i.pravatar.cc/300?img=15',
+            'https://i.pravatar.cc/300?img=16',
+            'https://i.pravatar.cc/300?img=17',
+            'https://i.pravatar.cc/300?img=18',
+            'https://i.pravatar.cc/300?img=19',
+            'https://i.pravatar.cc/300?img=20',
+            'https://i.pravatar.cc/300?img=22',
+            'https://i.pravatar.cc/300?img=23',
+            'https://i.pravatar.cc/300?img=24',
+            'https://i.pravatar.cc/300?img=25',
+            'https://i.pravatar.cc/300?img=26',
+            'https://i.pravatar.cc/300?img=27',
+            'https://i.pravatar.cc/300?img=28',
+            'https://i.pravatar.cc/300?img=29',
+            'https://i.pravatar.cc/300?img=30',
+            'https://i.pravatar.cc/300?img=31',
+            'https://i.pravatar.cc/300?img=32',
+            'https://i.pravatar.cc/300?img=33',
+            'https://i.pravatar.cc/300?img=34',
+            'https://i.pravatar.cc/300?img=35',
+            'https://i.pravatar.cc/300?img=36'
+        ];
+        
+        let selectedAvatarUrl = null;
+        
+        function openAvatarGallery() {
+            const modal = document.getElementById('avatarGalleryModal');
+            const grid = document.getElementById('avatarGrid');
+            
+            // Clear existing grid
+            grid.innerHTML = '';
+            
+            // Load avatar options
+            predefinedAvatars.forEach(url => {
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'avatar-option';
+                avatarDiv.innerHTML = `<img src="${url}" alt="Avatar">`;
+                avatarDiv.onclick = () => selectAvatar(url, avatarDiv);
+                grid.appendChild(avatarDiv);
+            });
+            
+            modal.classList.add('show');
+        }
+        
+        function closeAvatarGallery() {
+            const modal = document.getElementById('avatarGalleryModal');
+            modal.classList.remove('show');
+            selectedAvatarUrl = null;
+            
+            // Remove all selected classes
+            document.querySelectorAll('.avatar-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+        }
+        
+        function selectAvatar(url, element) {
+            // Remove previous selection
+            document.querySelectorAll('.avatar-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Mark as selected
+            element.classList.add('selected');
+            selectedAvatarUrl = url;
+            
+            // Apply avatar immediately
+            applySelectedAvatar();
+        }
+        
+        async function applySelectedAvatar() {
+            if (!selectedAvatarUrl) return;
+            
+            try {
+                // Show preview immediately
+                showAvatar(selectedAvatarUrl);
+                
+                // Save to server
+                const response = await fetch(`${API_BASE_URL}/api/coachee/set-avatar-url`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        avatar_url: selectedAvatarUrl
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAvatarSuccess('Avatar actualizado correctamente');
+                    closeAvatarGallery();
+                } else {
+                    showAvatarError(data.error || 'Error al actualizar avatar');
+                }
+            } catch (error) {
+                showAvatarError('Error al actualizar avatar');
+                console.error('Avatar update error:', error);
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('avatarGalleryModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeAvatarGallery();
+                }
+            });
+        });
     </script>
 </body>
 </html>

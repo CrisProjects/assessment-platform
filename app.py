@@ -6082,6 +6082,45 @@ def api_coachee_change_password():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/coachee/set-avatar-url', methods=['POST'])
+@coachee_session_required
+def api_coachee_set_avatar_url():
+    """Establecer URL de avatar predefinido para coachee"""
+    try:
+        data = request.get_json()
+        
+        avatar_url = data.get('avatar_url')
+        
+        if not avatar_url:
+            return jsonify({'success': False, 'error': 'URL del avatar es requerida'}), 400
+        
+        # Validar que la URL sea de un servicio permitido
+        allowed_domains = ['pravatar.cc', 'ui-avatars.com', 'robohash.org', 'i.pravatar.cc']
+        from urllib.parse import urlparse
+        parsed_url = urlparse(avatar_url)
+        
+        if not any(domain in parsed_url.netloc for domain in allowed_domains):
+            # Si es una URL local (empieza con /static/), también permitirla
+            if not avatar_url.startswith('/static/'):
+                return jsonify({'success': False, 'error': 'URL de avatar no permitida'}), 400
+        
+        # Actualizar URL del avatar en la base de datos
+        g.current_user.avatar_url = avatar_url
+        db.session.commit()
+        
+        logger.info(f"Avatar URL set for user {g.current_user.id}: {avatar_url}")
+        
+        return jsonify({
+            'success': True,
+            'avatar_url': avatar_url
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error setting avatar URL: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # API endpoints para contenido/videos
 @app.route('/api/coachee/content', methods=['GET'])
 @either_session_required
