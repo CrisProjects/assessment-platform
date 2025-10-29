@@ -454,13 +454,14 @@
             loadInstagramFeeds();
             
             // Revisar si el avatar fue actualizado
-            if (localStorage.getItem('avatarUpdated') === 'true') {
+            const avatarUpdatedTimestamp = localStorage.getItem('avatarUpdated');
+            if (avatarUpdatedTimestamp) {
                 console.log('🔄 Avatar was updated, reloading...');
                 localStorage.removeItem('avatarUpdated');
-                // Recargar avatar después de un pequeño delay
+                // Recargar avatar inmediatamente
                 setTimeout(() => {
                     loadUserAvatar();
-                }, 500);
+                }, 300);
             }
         });
         

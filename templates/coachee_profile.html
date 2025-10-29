@@ -582,8 +582,13 @@
                         window.pendingAvatarFile = null;
                         window.pendingAvatarType = null;
                         
-                        // Marcar que el avatar fue actualizado
-                        localStorage.setItem('avatarUpdated', 'true');
+                        // Marcar que el avatar fue actualizado con timestamp
+                        localStorage.setItem('avatarUpdated', Date.now().toString());
+                        
+                        // Mostrar mensaje y redirigir al feed después de 2 segundos
+                        setTimeout(() => {
+                            window.location.href = '/coachee-feed';
+                        }, 1500);
                     } else {
                         showAvatarError(data.error || 'Error al guardar la imagen');
                     }
@@ -608,8 +613,13 @@
                         window.pendingAvatarType = null;
                         closeAvatarGallery();
                         
-                        // Marcar que el avatar fue actualizado
-                        localStorage.setItem('avatarUpdated', 'true');
+                        // Marcar que el avatar fue actualizado con timestamp
+                        localStorage.setItem('avatarUpdated', Date.now().toString());
+                        
+                        // Mostrar mensaje y redirigir al feed después de 2 segundos
+                        setTimeout(() => {
+                            window.location.href = '/coachee-feed';
+                        }, 1500);
                     } else {
                         showAvatarError(data.error || 'Error al guardar avatar');
                     }
