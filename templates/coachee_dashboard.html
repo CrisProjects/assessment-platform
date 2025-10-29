@@ -7006,34 +7006,8 @@
                 // SOLUCIÓN: Obtener nombre real del usuario automáticamente
                 console.log('🔧 MODO AUTOMÁTICO: Obteniendo nombre del usuario...');
                 
-                // Intentar cargar perfil real desde API
-                try {
-                    const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
-                    console.log('🌐 Response status:', response.status);
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('📥 API /api/user/my-profile response:', JSON.stringify(data, null, 2));
-                        
-                        if (data.success && data.profile?.full_name) {
-                            const realName = data.profile.full_name;
-                            console.log('👤 Nombre del COACHEE obtenido:', realName);
-                            console.log('📧 Email del COACHEE:', data.profile.email);
-                            console.log('🎭 Role del COACHEE:', data.profile.role);
-                            
-                            const realWelcomeText = `¡Bienvenido, ${realName}!`;
-                            updateAllWelcomeMessages(realWelcomeText);
-                            console.log('✅ Actualizado con nombre real:', realWelcomeText);
-                            currentUser = data.profile;
-                            return; // Salir si se obtuvo el nombre real
-                        }
-                    }
-                } catch (apiError) {
-                    console.log('⚠️ API error:', apiError.message);
-                }
-                
-                // Fallback: Intentar obtener nombre del dashboard summary
-                console.log('🔄 Intentando dashboard summary como fallback...');
+                // PRIORIDAD 1: Usar endpoint específico de coachee (más confiable)
+                console.log('🎯 PRIORIDAD 1: Intentando dashboard-summary (específico de coachee)...');
                 try {
                     const summaryResponse = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
                     console.log('🌐 Dashboard summary response status:', summaryResponse.status);
@@ -7067,27 +7041,35 @@
                     console.log('⚠️ Dashboard summary error:', summaryError.message);
                 }
                 
-                // Último fallback: mantener el HTML original
-                console.log('🔄 Manteniendo texto HTML original como fallback');
-                
-                // Intentar cargar perfil real desde API (opcional)
+                // PRIORIDAD 2: Fallback a /api/user/my-profile (menos confiable para coachees)
+                console.log('🔄 PRIORIDAD 2: Fallback a my-profile (genérico)...');
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
-                    console.log('🌐 Response status:', response.status);
+                    console.log('🌐 my-profile response status:', response.status);
                     
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('📥 API /api/user/my-profile response:', JSON.stringify(data, null, 2));
+                        
                         if (data.success && data.profile?.full_name) {
                             const realName = data.profile.full_name;
+                            console.log('👤 Nombre obtenido (my-profile):', realName);
+                            console.log('📧 Email (my-profile):', data.profile.email);
+                            console.log('🎭 Role (my-profile):', data.profile.role);
+                            
                             const realWelcomeText = `¡Bienvenido, ${realName}!`;
                             updateAllWelcomeMessages(realWelcomeText);
-                            console.log('✅ Actualizado con nombre real:', realWelcomeText);
+                            console.log('✅ Actualizado con my-profile:', realWelcomeText);
                             currentUser = data.profile;
+                            return;
                         }
                     }
                 } catch (apiError) {
-                    console.log('⚠️ API no disponible, usando nombre de test:', testName);
+                    console.log('⚠️ my-profile API error:', apiError.message);
                 }
+                
+                // Último fallback: mantener mensaje genérico
+                console.log('🔄 Manteniendo mensaje genérico - todos los endpoints fallaron');
                 
             } catch (error) {
                 console.error('❌ Error cargando perfil:', error);
