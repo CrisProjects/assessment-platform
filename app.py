@@ -5955,6 +5955,8 @@ def api_user_my_profile():
             'id': g.current_user.id,
             'full_name': g.current_user.full_name,
             'email': g.current_user.email,
+            'username': g.current_user.username,
+            'avatar_url': g.current_user.avatar_url,
             'role': g.current_user.role,
             'created_at': g.current_user.created_at.isoformat() if hasattr(g.current_user, 'created_at') and g.current_user.created_at else None
         }
