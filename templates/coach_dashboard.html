@@ -4633,7 +4633,7 @@ function displayCoachees() {
         </tr>
     `).join('');
     
-    // Vista cards para móvil - mejorada con estilos unificados
+    // Vista cards para móvil - igualada a versión desktop
     cardsContainer.innerHTML = `
         <div class="results-list">
             ${coacheesData.map(coachee => `
@@ -4641,9 +4641,6 @@ function displayCoachees() {
                     <div class="unified-card-header">
                         <div class="d-flex justify-content-between align-items-start w-100">
                             <h5 class="unified-card-title">${coachee.name || 'Sin nombre'}</h5>
-                            <span class="unified-badge ${coachee.is_active ? 'unified-badge-success' : 'unified-badge-secondary'}">
-                                ${coachee.is_active ? 'Activo' : 'Inactivo'}
-                            </span>
                         </div>
                     </div>
                     <div class="unified-card-body">
@@ -4666,13 +4663,6 @@ function displayCoachees() {
                                 </div>
                             </div>
                             ` : ''}
-                            <div class="meta-item">
-                                <i class="fas fa-chart-line"></i>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="unified-badge unified-badge-info">${coachee.evaluations_count || 0} evaluaciones</span>
-                                    ${coachee.avg_score ? `<span class="text-muted">Promedio: ${Math.round(coachee.avg_score)}%</span>` : ''}
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <div class="unified-card-footer">
@@ -4688,10 +4678,6 @@ function displayCoachees() {
                             <button class="unified-btn unified-btn-success unified-btn-sm" onclick="showAssignModal(${coachee.id}, '${coachee.name}')" title="Asignar">
                                 <i class="fas fa-plus"></i>
                                 Asignar
-                            </button>
-                            <button class="unified-btn unified-btn-info unified-btn-sm" onclick="showAssignedAssessments(${coachee.id}, '${coachee.name}')" title="Ver evaluaciones">
-                                <i class="fas fa-list"></i>
-                                Evaluaciones
                             </button>
                         </div>
                     </div>

@@ -314,9 +314,13 @@ class Invitation(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False, index=True)
     used_at = db.Column(db.DateTime, nullable=True)
     is_used = db.Column(db.Boolean, default=False, index=True)
+    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=True, index=True)  # Evaluación asignada
+    accepted_at = db.Column(db.DateTime, nullable=True)  # Primera vez que accede
+    status = db.Column(db.String(20), default='pending')  # pending, accepted, expired
     
     coach = db.relationship('User', foreign_keys=[coach_id], backref='sent_invitations')
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_invitation')
+    assessment = db.relationship('Assessment', foreign_keys=[assessment_id], backref='invitations')
     
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -1236,9 +1240,9 @@ def get_dashboard_url(role):
     urls = {
         'platform_admin': '/platform-admin-dashboard',
         'coach': '/coach-dashboard',
-        'coachee': '/coachee-feed'  # Cambiado a feed como página inicial
+        'coachee': '/coachee-dashboard'  # Dashboard principal con auto-start de evaluaciones
     }
-    return urls.get(role, '/coachee-feed')
+    return urls.get(role, '/coachee-dashboard')
 
 def validate_required_fields(data, required_fields):
     """Valida campos requeridos en los datos"""
@@ -2408,6 +2412,62 @@ def login():
 def participant_access():
     return render_template('participant_access.html')
 
+@app.route('/invite/<token>')
+def invitation_landing(token):
+    """Página de aterrizaje para invitaciones con token único"""
+    try:
+        logger.info(f"🔗 INVITE: Access attempt with token: {token[:10]}...")
+        
+        # Buscar invitación por token
+        invitation = Invitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            logger.warning(f"❌ INVITE: Invalid token: {token[:10]}...")
+            flash('Invitación inválida o no encontrada', 'error')
+            return redirect(url_for('participant_access'))
+        
+        # Verificar si ya fue usada
+        if invitation.status == 'accepted' or invitation.is_used:
+            logger.info(f"ℹ️ INVITE: Token already used for {invitation.email}")
+            flash('Esta invitación ya fue utilizada. Por favor inicia sesión normalmente.', 'info')
+            return redirect(url_for('participant_access'))
+        
+        # Verificar si expiró
+        if invitation.expires_at < datetime.utcnow():
+            logger.warning(f"⏰ INVITE: Expired token for {invitation.email}")
+            flash('Esta invitación ha expirado. Contacta a tu coach.', 'warning')
+            return redirect(url_for('participant_access'))
+        
+        # Buscar coachee
+        coachee = User.query.get(invitation.coachee_id)
+        if not coachee:
+            logger.error(f"❌ INVITE: Coachee not found for invitation {invitation.id}")
+            flash('Error: Usuario no encontrado', 'error')
+            return redirect(url_for('participant_access'))
+        
+        # Buscar assessment si está asignado
+        assessment_title = None
+        if invitation.assessment_id:
+            assessment = Assessment.query.get(invitation.assessment_id)
+            if assessment:
+                assessment_title = assessment.title
+        
+        logger.info(f"✅ INVITE: Valid invitation for {coachee.full_name} ({coachee.email})")
+        
+        # Renderizar página de bienvenida con datos pre-llenados
+        return render_template('invitation_welcome.html',
+                             token=token,
+                             username=coachee.username,
+                             full_name=coachee.full_name,
+                             email=coachee.email,
+                             assessment_title=assessment_title,
+                             coach_name=invitation.coach.full_name if invitation.coach else 'Tu coach')
+    
+    except Exception as e:
+        logger.error(f"❌ INVITE: Error processing invitation: {str(e)}")
+        flash('Error al procesar la invitación', 'error')
+        return redirect(url_for('participant_access'))
+
 @app.route('/dashboard_selection')
 @app.route('/dashboard-selection')
 def dashboard_selection():
@@ -2466,6 +2526,94 @@ def api_login():
     except Exception as e:
         logger.error(f"Error in api_login: {str(e)}")
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
+
+@app.route('/api/invite-login', methods=['POST'])
+def api_invite_login():
+    """Login especial para invitaciones con token - redirige directo a evaluación"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        password = data.get('password')
+        
+        logger.info(f"🔐 INVITE-LOGIN: Login attempt with token: {token[:10] if token else 'None'}...")
+        
+        if not token or not password:
+            logger.warning("❌ INVITE-LOGIN: Missing token or password")
+            return jsonify({'success': False, 'error': 'Token y contraseña requeridos'}), 400
+        
+        # Validar invitación
+        invitation = Invitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            logger.warning(f"❌ INVITE-LOGIN: Invalid token: {token[:10]}...")
+            return jsonify({'success': False, 'error': 'Token de invitación inválido'}), 400
+        
+        if invitation.status == 'accepted' or invitation.is_used:
+            logger.info(f"ℹ️ INVITE-LOGIN: Token already used for {invitation.email}")
+            return jsonify({'success': False, 'error': 'Esta invitación ya fue utilizada', 'redirect': '/participant-access'}), 400
+        
+        if invitation.expires_at < datetime.utcnow():
+            logger.warning(f"⏰ INVITE-LOGIN: Expired token for {invitation.email}")
+            return jsonify({'success': False, 'error': 'Esta invitación ha expirado'}), 400
+        
+        # Validar password del coachee
+        coachee = User.query.get(invitation.coachee_id)
+        
+        if not coachee:
+            logger.error(f"❌ INVITE-LOGIN: Coachee not found for invitation {invitation.id}")
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
+        if not coachee.check_password(password):
+            logger.warning(f"❌ INVITE-LOGIN: Invalid password for {coachee.username}")
+            return jsonify({'success': False, 'error': 'Contraseña incorrecta'}), 401
+        
+        # Crear sesión de coachee
+        session['coachee_user_id'] = coachee.id
+        session['user_id'] = coachee.id
+        session['username'] = coachee.username
+        session['role'] = 'coachee'
+        session['first_login'] = True  # Marcar como primera vez
+        session['target_assessment_id'] = invitation.assessment_id  # Guardar evaluación objetivo
+        session.permanent = True
+        
+        # Actualizar last_login
+        coachee.last_login = datetime.utcnow()
+        
+        # Marcar invitación como aceptada
+        invitation.status = 'accepted'
+        invitation.is_used = True
+        invitation.used_at = datetime.utcnow()
+        invitation.accepted_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        logger.info(f"✅ INVITE-LOGIN: Successful login for {coachee.full_name} via invitation")
+        logger.info(f"🎯 INVITE-LOGIN: Will redirect to assessment ID: {invitation.assessment_id}")
+        
+        # Determinar URL de redirección
+        if invitation.assessment_id:
+            # Redirigir al dashboard con parámetro para auto-iniciar evaluación
+            redirect_url = f'/coachee-dashboard?auto_start={invitation.assessment_id}'
+        else:
+            # Si no hay evaluación asignada, ir al dashboard normal
+            redirect_url = '/coachee-dashboard'
+        
+        return jsonify({
+            'success': True,
+            'message': f'Bienvenido {coachee.full_name}',
+            'redirect': redirect_url,
+            'user': {
+                'id': coachee.id,
+                'username': coachee.username,
+                'full_name': coachee.full_name,
+                'role': 'coachee'
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ INVITE-LOGIN: Error: {str(e)}")
+        return jsonify({'success': False, 'error': f'Error en login: {str(e)}'}), 500
 
 @app.route('/logout')
 def logout_page():
@@ -3410,9 +3558,16 @@ def coachee_dashboard():
         session.pop('coachee_user_id', None)
         return redirect(url_for('participant_access'))
     
+    # ✨ NUEVO: Detectar si viene de invitación y pasar assessment_id al template
+    auto_start_assessment = None
+    if session.get('first_login') and session.get('target_assessment_id'):
+        auto_start_assessment = session.pop('target_assessment_id')
+        session.pop('first_login')
+        logger.info(f"🎯 FIRST-LOGIN: Will auto-start assessment {auto_start_assessment} for {user.username}")
+    
     logger.info(f"Coachee dashboard access granted - User: {user.username}")
     
-    return render_template('coachee_dashboard.html')
+    return render_template('coachee_dashboard.html', auto_start_assessment=auto_start_assessment)
 
 @app.route('/coachee-feed')
 def coachee_feed():
@@ -3521,6 +3676,10 @@ def api_coach_create_invitation_v2():
         password_chars = string.ascii_letters + string.digits
         password = ''.join(secrets.choice(password_chars) for _ in range(8))
         
+        # Generar token único para invitación
+        invite_token = secrets.token_urlsafe(32)
+        logger.info(f"🔑 INVITATION: Generated secure token for invitation")
+        
         # Crear el usuario coachee
         logger.info(f"👤 INVITATION: Creating coachee {full_name} with username {username}")
         logger.info(f"👤 INVITATION: Coach ID will be set to: {current_coach.id}")
@@ -3536,7 +3695,25 @@ def api_coach_create_invitation_v2():
         new_coachee.set_password(password)
         
         db.session.add(new_coachee)
+        db.session.flush()  # Obtener ID sin hacer commit completo
+        
+        # Crear registro de invitación
+        invitation = Invitation(
+            coach_id=current_coach.id,
+            coachee_id=new_coachee.id,
+            email=email,
+            full_name=full_name,
+            token=invite_token,
+            message=message,
+            created_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(days=30),
+            assessment_id=assigned_assessment_id,
+            status='pending'
+        )
+        db.session.add(invitation)
         db.session.commit()
+        
+        logger.info(f"✅ INVITATION: Invitation record created with token for coachee {new_coachee.id}")
         
         # Verificar que se creó correctamente
         logger.info(f"✅ INVITATION: Coachee {full_name} created successfully with ID {new_coachee.id}")
@@ -3603,6 +3780,9 @@ def api_coach_create_invitation_v2():
                 logger.error(f"❌ INVITATION: Error in assessment assignment process: {str(e)}")
                 # No fallar la invitación si hay error en la asignación
         
+        # Construir URL de invitación con token
+        invitation_url = f"{request.url_root}invite/{invite_token}"
+        
         return jsonify({
             'success': True,
             'message': f'Coachee {full_name} creado exitosamente' + 
@@ -3613,7 +3793,8 @@ def api_coach_create_invitation_v2():
                 'email': email,
                 'full_name': full_name,
                 'password': password,
-                'login_url': f"{request.url_root}login?role=coachee",
+                'invitation_url': invitation_url,  # Nueva URL con token
+                'login_url': f"{request.url_root}participant-access",  # Backup
                 'assigned_assessment': assigned_assessment_title if assessment_assigned else None
             }
         }), 201

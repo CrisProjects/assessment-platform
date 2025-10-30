@@ -9,6 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts - Lobster Two -->
+    <link href="https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap" rel="stylesheet">
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- PDF.js para previsualización de documentos -->
@@ -366,53 +368,28 @@
         
         /* ESTILOS GENERALES PARA DASHBOARD HEADER - IGUAL QUE COACH */
         .dashboard-header {
-            padding: 1rem !important;
+            padding: 1.5rem !important;
         }
         
-        .dashboard-header .btn-group-mobile {
-            display: flex !important;
-            gap: 0.5rem !important;
+        .dashboard-header .header-info {
+            width: 100%;
         }
         
-        .dashboard-header .btn-group-mobile .btn .fas {
-            margin-right: 0.25rem !important;
+        .dashboard-header h3 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
         }
         
-        /* HEADER RESPONSIVE MEJORADO - VERSIÓN OPTIMIZADA */
+        .dashboard-header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        /* HEADER RESPONSIVE - OPTIMIZADO SIN BOTONES */
         @media (max-width: 768px) {
-            .dashboard-header .d-flex {
-                flex-direction: column !important;
-                align-items: flex-start !important;
-                gap: 1rem !important;
-            }
-            
-            .dashboard-header .btn-group-mobile {
-                flex-wrap: wrap !important;
-                width: 100% !important;
-                flex-direction: column !important;
-                gap: 0.75rem !important;
-            }
-            
-            .dashboard-header .btn-group-mobile .btn {
-                flex: none !important;
-                width: 100% !important;
-                min-width: 0 !important;
-                font-size: 0.875rem !important;
-                padding: 0.75rem 1rem !important;
-                justify-content: center !important;
-                align-items: center !important;
-                text-align: center !important;
-                min-height: 44px !important;
-            }
-            
-            /* MOSTRAR TEXTO EN MÓVILES - Forzar que el texto sea visible */
-            .dashboard-header .btn-group-mobile .btn .d-none.d-sm-inline {
-                display: inline !important;
-            }
-            
-            /* CENTRAR ICONOS Y TEXTO EN MÓVILES */
-            .dashboard-header .btn-group-mobile .btn .fas {
-                margin-right: 0.5rem !important;
+            .dashboard-header {
+                padding: 1.25rem !important;
             }
             
             .dashboard-header h3 {
@@ -424,15 +401,18 @@
             }
         }
         
-        /* ESTILOS ADICIONALES PARA TABLETS - IGUAL QUE COACH */
-        @media (max-width: 992px) {
-            .dashboard-header .btn-group-mobile .btn {
-                font-size: 0.8rem !important;
-                padding: 0.4rem 0.6rem !important;
+        /* MÓVILES PEQUEÑOS */
+        @media (max-width: 576px) {
+            .dashboard-header {
+                padding: 1rem !important;
             }
             
-            .stats-card-mobile h4 {
-                font-size: 1.3rem !important;
+            .dashboard-header h3 {
+                font-size: 1.25rem !important;
+            }
+            
+            .dashboard-header p {
+                font-size: 0.8rem !important;
             }
         }
         
@@ -5923,22 +5903,9 @@
             <div class="col-12">
                 <div class="card bg-dark border-secondary">
                     <div class="card-body dashboard-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="header-info">
-                                <h3 class="text-white mb-1">Dashboard Coachee</h3>
-                                <p class="text-muted mb-0"><span id="welcomeMessage">Welcome, User</span></p>
-                            </div>
-                        <div class="btn-group-mobile d-flex gap-2">
-                            <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()" title="Actualizar">
-                                <i class="fas fa-sync-alt me-1"></i><span class="d-none d-sm-inline">Actualizar</span>
-                            </button>
-                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/'" title="Inicio">
-                                <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Inicio</span>
-                            </button>
-                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/participant-access'" title="Salir">
-                                <i class="fas fa-sign-out-alt me-1"></i><span class="d-none d-sm-inline">Salir</span>
-                            </button>
-                        </div>
+                        <div class="header-info">
+                            <h3 class="text-white mb-1" style="font-family: 'Lobster Two', cursive; font-size: 32px; font-weight: 400; letter-spacing: 0.5px;">InstaCoach</h3>
+                            <p class="text-muted mb-0">Welcome Coachee <span id="welcomeMessage"></span></p>
                         </div>
                     </div>
                 </div>
@@ -6027,10 +5994,6 @@
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                                onclick="showTab('content'); return false;" data-tab="content">
                                 <i class="fas fa-play-circle me-3"></i>Contenido
-                            </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
-                               onclick="showTab('feeds'); return false;" data-tab="feeds">
-                                <i class="fas fa-stream me-3"></i>Feeds
                             </a>
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                                onclick="showTab('progress'); return false;" data-tab="progress">
@@ -6305,39 +6268,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Feeds Tab - Instagram Style -->
-                <div class="tab-pane fade" id="feeds" role="tabpanel">
-                    <div class="container-fluid px-0">
-                        <!-- Header del feed -->
-                        <div class="feeds-header mb-4">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h3 class="mb-1">
-                                        <i class="fas fa-stream me-2"></i>
-                                        Feeds
-                                    </h3>
-                                    <p class="text-muted mb-0">Contenido compartido por tu coach</p>
-                                </div>
-                                <div>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="refreshFeeds()">
-                                        <i class="fas fa-sync-alt me-1"></i>Actualizar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Feed Container -->
-                        <div class="feeds-container" id="feedsContainer">
-                            <div class="text-center py-5">
-                                <div class="spinner-border text-primary mb-3" role="status">
-                                    <span class="visually-hidden">Cargando feeds...</span>
-                                </div>
-                                <p class="text-muted">Cargando contenido...</p>
                             </div>
                         </div>
                     </div>
@@ -7027,7 +6957,7 @@
                                 console.log('📧 Email del COACH:', summaryData.summary.coach.email);
                             }
                             
-                            const welcomeText = `Welcome, ${userName}!`;
+                            const welcomeText = userName;
                             updateAllWelcomeMessages(welcomeText);
                             console.log('✅ Actualizado con nombre del dashboard summary:', welcomeText);
                             return;
@@ -7057,7 +6987,7 @@
                             console.log('📧 Email (my-profile):', data.profile.email);
                             console.log('🎭 Role (my-profile):', data.profile.role);
                             
-                            const realWelcomeText = `Welcome, ${realName}!`;
+                            const realWelcomeText = realName;
                             updateAllWelcomeMessages(realWelcomeText);
                             console.log('✅ Actualizado con my-profile:', realWelcomeText);
                             currentUser = data.profile;
@@ -10637,8 +10567,8 @@
             
             // Forzar actualización
             if (welcomeEl && currentUser?.full_name) {
-                welcomeEl.textContent = `Welcome, ${currentUser.full_name}!`;
-                console.log('🔄 FORCED update to:', `Welcome, ${currentUser.full_name}!`);
+                welcomeEl.textContent = currentUser.full_name;
+                console.log('🔄 FORCED update to:', currentUser.full_name);
             } else {
                 console.log('❌ Cannot update: element or user missing');
             }
@@ -10659,7 +10589,7 @@
                     
                     if (data.success && data.summary?.coachee?.name) {
                         const userName = data.summary.coachee.name;
-                        const welcomeText = `Welcome, ${userName}!`;
+                        const welcomeText = userName;
                         const count = updateAllWelcomeMessages(welcomeText);
                         console.log(`✅ Actualizado ${count} elementos con: ${welcomeText}`);
                         return true;
@@ -10758,7 +10688,7 @@
         // Función para actualizar el mensaje de bienvenida
         function updateWelcomeMessage() {
             if (currentUser && currentUser.full_name) {
-                const welcomeText = `Welcome, ${currentUser.full_name}!`;
+                const welcomeText = currentUser.full_name;
                 const updatedCount = updateAllWelcomeMessages(welcomeText);
                 console.log('🔄 Actualizados', updatedCount, 'elementos con mensaje forzado:', welcomeText);
             }
@@ -13022,6 +12952,11 @@
                 `;
             }
         }
+        
+        // ✨ AUTO-START ASSESSMENT: Detectar si viene de invitación
+        // AUTO-START ASSESSMENT: This block requires server-side template rendering.
+        // If using Jinja, ensure this file is processed by Flask or Django.
+        // If not using a template engine, remove or replace this block with valid JavaScript.
     </script>
     
     <!-- Script común para presentación de recomendaciones -->
