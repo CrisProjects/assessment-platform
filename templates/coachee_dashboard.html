@@ -366,53 +366,117 @@
             background: #007bff !important;
         }
         
-        /* ESTILOS GENERALES PARA DASHBOARD HEADER - IGUAL QUE COACH */
-        .dashboard-header {
-            padding: 1.5rem !important;
+        /* ESTILOS GENERALES PARA DASHBOARD HEADER - ESTILO FEED */
+        .dashboard-header-fixed {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
         }
         
-        .dashboard-header .header-info {
-            width: 100%;
+        .dashboard-header-fixed h3 {
+            font-family: 'Lobster Two', cursive;
+            font-size: 32px;
+            font-weight: 400;
+            margin: 0;
+            color: #000000;
+            letter-spacing: 0.5px;
         }
         
-        .dashboard-header h3 {
-            font-size: 1.75rem;
+        .dashboard-header-fixed .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dashboard-header-fixed .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            overflow: hidden;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
         }
         
-        .dashboard-header p {
-            font-size: 1rem;
+        .dashboard-header-fixed .user-avatar:hover {
+            transform: scale(1.08);
+        }
+        
+        .dashboard-header-fixed .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .dashboard-header-fixed .dropdown .btn-link {
+            font-size: 20px;
+            text-decoration: none;
             opacity: 0.9;
+            transition: opacity 0.2s;
+            color: #374151 !important;
         }
         
-        /* HEADER RESPONSIVE - OPTIMIZADO SIN BOTONES */
+        .dashboard-header-fixed .dropdown .btn-link:hover {
+            opacity: 1;
+        }
+        
+        .dashboard-header-fixed .dropdown-menu {
+            min-width: 200px;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .dashboard-header-fixed .dropdown-item {
+            color: #374151;
+        }
+        
+        .dashboard-header-fixed .dropdown-item:hover {
+            background-color: #f3f4f6;
+            color: #111827;
+        }
+        
+        .dashboard-header-fixed .dropdown-divider {
+            border-color: #e5e7eb;
+        }
+        
+        /* HEADER RESPONSIVE */
         @media (max-width: 768px) {
-            .dashboard-header {
-                padding: 1.25rem !important;
+            .dashboard-header-fixed h3 {
+                font-size: 28px;
             }
             
-            .dashboard-header h3 {
-                font-size: 1.5rem !important;
-            }
-            
-            .dashboard-header p {
-                font-size: 0.875rem !important;
+            .dashboard-header-fixed .user-avatar {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
             }
         }
         
         /* MÓVILES PEQUEÑOS */
         @media (max-width: 576px) {
-            .dashboard-header {
-                padding: 1rem !important;
+            .dashboard-header-fixed h3 {
+                font-size: 24px;
             }
             
-            .dashboard-header h3 {
-                font-size: 1.25rem !important;
-            }
-            
-            .dashboard-header p {
-                font-size: 0.8rem !important;
+            .dashboard-header-fixed .user-avatar {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
             }
         }
         
@@ -4788,73 +4852,6 @@
             filter: brightness(0.9) contrast(1.1);
         }
 
-        /* Botón de cambio de tema específico para coachee dashboard */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #FFFFFF;
-            border: 3px solid #3B82F6;
-            color: #3B82F6;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            z-index: 1050;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-        }
-
-        .theme-toggle:hover {
-            transform: scale(1.1) rotate(10deg);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
-            background: #3B82F6;
-            color: #FFFFFF;
-        }
-
-        /* Estilos específicos para modo noche */
-        [data-theme="dark"] .theme-toggle {
-            background: #1E293B;
-            border: 3px solid #F59E0B;
-            color: #F59E0B;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
-        }
-
-        [data-theme="dark"] .theme-toggle:hover {
-            background: #F59E0B;
-            color: #1E293B;
-            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.6);
-        }
-
-        .theme-toggle .icon {
-            transition: all 0.3s ease;
-            position: absolute;
-        }
-
-        [data-theme="dark"] .theme-toggle .sun-icon {
-            opacity: 1;
-            transform: rotate(0deg);
-        }
-
-        [data-theme="dark"] .theme-toggle .moon-icon {
-            opacity: 0;
-            transform: rotate(180deg);
-        }
-
-        :root .theme-toggle .moon-icon {
-            opacity: 1;
-            transform: rotate(0deg);
-        }
-
-        :root .theme-toggle .sun-icon {
-            opacity: 0;
-            transform: rotate(-180deg);
-        }
-
         /* Transiciones suaves */
         body,
         .glass-card,
@@ -5897,20 +5894,30 @@
         <!-- Particles will be generated by JavaScript -->
     </div>
 
-<div class="container-fluid py-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-body dashboard-header">
-                        <div class="header-info">
-                            <h3 class="text-white mb-1" style="font-family: 'Lobster Two', cursive; font-size: 32px; font-weight: 400; letter-spacing: 0.5px;">InstaCoach</h3>
-                            <p class="text-muted mb-0">Welcome Coachee <span id="welcomeMessage"></span></p>
-                        </div>
-                    </div>
-                </div>
+    <!-- Header Fijo - Estilo Feed -->
+    <div class="dashboard-header-fixed">
+        <div>
+            <h3>InstaCoach</h3>
+            <p class="mb-0" style="font-size: 14px; margin-top: 4px; color: #6b7280;">Welcome <span id="welcomeMessage"></span></p>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar" id="headerAvatarDashboard">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-link p-0 ms-2" type="button" id="userMenuDropdownDashboard" data-bs-toggle="dropdown" aria-expanded="false" style="color: #374151;">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdownDashboard">
+                    <li><a class="dropdown-item" href="/coachee-profile"><i class="fas fa-user-circle me-2"></i>Mi Perfil</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/participant-access"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                </ul>
             </div>
         </div>
+    </div>
+
+<div class="container-fluid py-4">
         
         <!-- Statistics Cards - UNIFICADO CON COACH -->
         <div class="row mb-4">
@@ -6950,6 +6957,7 @@
                             const userName = summaryData.summary.coachee.name;
                             console.log('👤 Nombre del COACHEE (dashboard-summary):', userName);
                             console.log('📧 Email del COACHEE (dashboard-summary):', summaryData.summary.coachee.email);
+                            console.log('🖼️ Avatar del COACHEE (dashboard-summary):', summaryData.summary.coachee.avatar_url);
                             
                             // Mostrar también info del coach para comparar
                             if (summaryData.summary?.coach) {
@@ -6957,9 +6965,17 @@
                                 console.log('📧 Email del COACH:', summaryData.summary.coach.email);
                             }
                             
+                            // Crear objeto currentUser con los datos del coachee
+                            currentUser = {
+                                full_name: userName,
+                                email: summaryData.summary.coachee.email,
+                                avatar_url: summaryData.summary.coachee.avatar_url
+                            };
+                            
                             const welcomeText = userName;
                             updateAllWelcomeMessages(welcomeText);
-                            console.log('✅ Actualizado con nombre del dashboard summary:', welcomeText);
+                            updateHeaderAvatar();
+                            console.log('✅ Actualizado con nombre y avatar del dashboard summary:', welcomeText);
                             return;
                         } else {
                             console.log('❌ Dashboard summary no tiene nombre de usuario');
@@ -6971,31 +6987,33 @@
                     console.log('⚠️ Dashboard summary error:', summaryError.message);
                 }
                 
-                // PRIORIDAD 2: Fallback a /api/user/my-profile (menos confiable para coachees)
-                console.log('🔄 PRIORIDAD 2: Fallback a my-profile (genérico)...');
+                // PRIORIDAD 2: Fallback a /api/coachee/profile (específico para coachees con avatar)
+                console.log('🔄 PRIORIDAD 2: Fallback a coachee/profile (con avatar)...');
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/user/my-profile`);
-                    console.log('🌐 my-profile response status:', response.status);
+                    const response = await fetch(`${API_BASE_URL}/api/coachee/profile`);
+                    console.log('🌐 coachee/profile response status:', response.status);
                     
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('📥 API /api/user/my-profile response:', JSON.stringify(data, null, 2));
+                        console.log('📥 API /api/coachee/profile response:', JSON.stringify(data, null, 2));
                         
                         if (data.success && data.profile?.full_name) {
                             const realName = data.profile.full_name;
-                            console.log('👤 Nombre obtenido (my-profile):', realName);
-                            console.log('📧 Email (my-profile):', data.profile.email);
-                            console.log('🎭 Role (my-profile):', data.profile.role);
+                            console.log('👤 Nombre obtenido (coachee/profile):', realName);
+                            console.log('📧 Email (coachee/profile):', data.profile.email);
+                            console.log('🎭 Role (coachee/profile):', data.profile.role);
+                            console.log('🖼️ Avatar (coachee/profile):', data.profile.avatar_url);
                             
                             const realWelcomeText = realName;
                             updateAllWelcomeMessages(realWelcomeText);
-                            console.log('✅ Actualizado con my-profile:', realWelcomeText);
+                            console.log('✅ Actualizado con coachee/profile:', realWelcomeText);
                             currentUser = data.profile;
+                            updateHeaderAvatar();
                             return;
                         }
                     }
                 } catch (apiError) {
-                    console.log('⚠️ my-profile API error:', apiError.message);
+                    console.log('⚠️ coachee/profile API error:', apiError.message);
                 }
                 
                 // Último fallback: mantener mensaje genérico
@@ -10512,6 +10530,10 @@
                 // Setup content tab listeners
                 setupContentTabListeners();
                 
+                // Inicializar sincronización de avatar
+                setupAvatarSync();
+                debugLog('🔄 Sistema de sincronización de avatar inicializado');
+                
                 // Load initial data
                 debugLog('📊 Cargando perfil de usuario...');
                 await loadUserProfile();
@@ -10692,6 +10714,75 @@
                 const updatedCount = updateAllWelcomeMessages(welcomeText);
                 console.log('🔄 Actualizados', updatedCount, 'elementos con mensaje forzado:', welcomeText);
             }
+        }
+        
+        // Función para actualizar el avatar del header
+        function updateHeaderAvatar(forceRefresh = false) {
+            if (currentUser && currentUser.full_name) {
+                const avatarElement = document.getElementById('headerAvatarDashboard');
+                if (avatarElement) {
+                    // Si hay avatar_url, mostrar imagen
+                    if (currentUser.avatar_url) {
+                        avatarElement.innerHTML = `<img src="${currentUser.avatar_url}" alt="${currentUser.full_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        console.log('✅ Avatar actualizado con imagen:', currentUser.avatar_url);
+                    } else {
+                        // Obtener iniciales del nombre
+                        const nameParts = currentUser.full_name.trim().split(' ');
+                        let initials = '';
+                        if (nameParts.length >= 2) {
+                            initials = nameParts[0].charAt(0) + nameParts[1].charAt(0);
+                        } else {
+                            initials = nameParts[0].charAt(0);
+                        }
+                        avatarElement.innerHTML = initials.toUpperCase();
+                        console.log('✅ Avatar actualizado con iniciales:', initials);
+                    }
+                }
+            }
+        }
+        
+        // Sistema de sincronización de avatar entre pestañas
+        function setupAvatarSync() {
+            // Escuchar cambios en localStorage (cuando se actualiza en otra pestaña)
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'avatarUpdated') {
+                    console.log('🔄 Avatar actualizado en otra pestaña, recargando perfil...');
+                    // Recargar perfil del usuario
+                    fetch(`${API_BASE_URL}/api/coachee/profile`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.profile) {
+                                // Actualizar currentUser con el nuevo avatar
+                                currentUser = data.profile;
+                                updateHeaderAvatar(true);
+                            }
+                        })
+                        .catch(error => console.error('Error recargando perfil:', error));
+                }
+            });
+            
+            // Verificar cambios cada 5 segundos (para misma pestaña después de volver del perfil)
+            setInterval(function() {
+                const lastUpdate = localStorage.getItem('avatarUpdated');
+                const lastCheck = sessionStorage.getItem('lastAvatarCheck') || '0';
+                
+                if (lastUpdate && lastUpdate > lastCheck) {
+                    console.log('🔄 Avatar actualizado detectado, recargando perfil...');
+                    sessionStorage.setItem('lastAvatarCheck', Date.now().toString());
+                    
+                    // Recargar perfil del usuario
+                    fetch(`${API_BASE_URL}/api/coachee/profile`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.profile) {
+                                // Actualizar currentUser con el nuevo avatar
+                                currentUser = data.profile;
+                                updateHeaderAvatar(true);
+                            }
+                        })
+                        .catch(error => console.error('Error recargando perfil:', error));
+                }
+            }, 5000);
         }
 
         // Función de emergencia para desbloquear el dashboard
@@ -11021,56 +11112,6 @@
         };
         
         debugLog('🔧 Global debugging functions available via window.debugDashboard');
-
-        // === SISTEMA DE TEMAS ===
-        function initThemeSystem() {
-            const themeToggle = document.getElementById('themeToggle');
-            const html = document.documentElement;
-            
-            // Cargar tema guardado o usar el predeterminado
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            setTheme(savedTheme);
-            
-            // Event listener para el botón de cambio de tema
-            if (themeToggle) {
-                themeToggle.addEventListener('click', toggleTheme);
-            }
-            
-            function toggleTheme() {
-                const currentTheme = html.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-            }
-            
-            function setTheme(theme) {
-                html.setAttribute('data-theme', theme);
-                localStorage.setItem('theme', theme);
-                
-                // Actualizar el ícono del botón
-                updateThemeIcon(theme);
-                
-                // Trigger evento personalizado para otros componentes
-                window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
-            }
-            
-            function updateThemeIcon(theme) {
-                const sunIcon = document.querySelector('.sun-icon');
-                const moonIcon = document.querySelector('.moon-icon');
-                
-                if (sunIcon && moonIcon) {
-                    if (theme === 'dark') {
-                        sunIcon.style.opacity = '1';
-                        moonIcon.style.opacity = '0';
-                    } else {
-                        sunIcon.style.opacity = '0';
-                        moonIcon.style.opacity = '1';
-                    }
-                }
-            }
-        }
-        
-        // Inicializar sistema de temas después de que se cargue todo
-        setTimeout(initThemeSystem, 100);
 
         // ========== FORZAR TEXTO BLANCO CON JAVASCRIPT ========== 
         function forceWhiteTextOnButtons() {
@@ -12961,12 +13002,6 @@
     
     <!-- Script común para presentación de recomendaciones -->
     <script src="{{ url_for('static', filename='js/recommendations.js') }}"></script>
-    
-    <!-- Botón de cambio de tema -->
-    <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
-        <i class="fas fa-sun icon sun-icon"></i>
-        <i class="fas fa-moon icon moon-icon"></i>
-    </button>
 
     <!-- Bottom Navigation - Estilo LinkedIn -->
     <nav class="bottom-navigation">

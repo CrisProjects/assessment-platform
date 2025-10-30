@@ -5833,6 +5833,7 @@ def api_coachee_profile():
                 'full_name': current_user.full_name,
                 'email': current_user.email,
                 'role': current_user.role,
+                'avatar_url': current_user.avatar_url if hasattr(current_user, 'avatar_url') else None,
                 'created_at': current_user.created_at.isoformat() if hasattr(current_user, 'created_at') and current_user.created_at else None,
                 'coach': {
                     'id': coach.id if coach else None,

@@ -393,7 +393,10 @@
 <body>
     <!-- Header -->
     <div class="feed-header">
-        <h1>InstaCoach</h1>
+        <div>
+            <h1>InstaCoach</h1>
+            <p class="mb-0" style="font-size: 14px; margin-top: 4px; color: #8e8e8e;">Welcome <span id="welcomeMessageFeed"></span></p>
+        </div>
         <div class="user-info">
             <div class="user-avatar" id="headerAvatar">
                 <i class="fas fa-user"></i>
@@ -454,11 +457,15 @@
             loadUserAvatar();
             loadInstagramFeeds();
             
+            // Inicializar sincronización de avatar
+            setupAvatarSync();
+            console.log('🔄 Sistema de sincronización de avatar inicializado');
+            
             // Revisar si el avatar fue actualizado
             const avatarUpdatedTimestamp = localStorage.getItem('avatarUpdated');
             if (avatarUpdatedTimestamp) {
                 console.log('🔄 Avatar was updated, reloading...');
-                localStorage.removeItem('avatarUpdated');
+                // No eliminar el timestamp, lo necesitamos para sincronización
                 // Recargar avatar inmediatamente
                 setTimeout(() => {
                     loadUserAvatar();
@@ -498,6 +505,37 @@
                 const initial = username ? username.charAt(0).toUpperCase() : 'U';
                 headerAvatar.innerHTML = initial;
             }
+            
+            // Actualizar mensaje de bienvenida
+            const welcomeMessage = document.getElementById('welcomeMessageFeed');
+            if (welcomeMessage && username) {
+                welcomeMessage.textContent = username;
+                console.log('✅ Welcome message updated with:', username);
+            }
+        }
+        
+        // Sistema de sincronización de avatar entre pestañas
+        function setupAvatarSync() {
+            // Escuchar cambios en localStorage (cuando se actualiza en otra pestaña)
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'avatarUpdated') {
+                    console.log('🔄 Avatar actualizado en otra pestaña, recargando avatar...');
+                    // Recargar avatar
+                    loadUserAvatar();
+                }
+            });
+            
+            // Verificar cambios cada 5 segundos (para misma pestaña después de volver del perfil)
+            setInterval(function() {
+                const lastUpdate = localStorage.getItem('avatarUpdated');
+                const lastCheck = sessionStorage.getItem('lastAvatarCheck') || '0';
+                
+                if (lastUpdate && lastUpdate > lastCheck) {
+                    console.log('🔄 Avatar actualizado detectado, recargando avatar...');
+                    sessionStorage.setItem('lastAvatarCheck', Date.now().toString());
+                    loadUserAvatar();
+                }
+            }, 5000);
         }
         
         // Función para cargar feeds desde la API

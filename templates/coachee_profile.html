@@ -328,7 +328,7 @@
 <body>
     <!-- Header -->
     <div class="feed-header">
-        <a href="/coachee-feed" class="back-btn">
+        <a href="#" class="back-btn" onclick="goBackToOrigin(event)">
             <i class="fas fa-arrow-left"></i>
         </a>
         <h1>Mi Perfil</h1>
@@ -472,6 +472,16 @@
         
         // Load user profile on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Guardar la página de origen si viene del referer
+            const referer = document.referrer;
+            if (referer && !sessionStorage.getItem('profileReturnUrl')) {
+                if (referer.includes('/coachee-dashboard')) {
+                    sessionStorage.setItem('profileReturnUrl', '/coachee-dashboard');
+                } else if (referer.includes('/coachee-feed')) {
+                    sessionStorage.setItem('profileReturnUrl', '/coachee-feed');
+                }
+            }
+            
             loadUserProfile();
             setupAvatarUpload();
             setupPasswordForm();
@@ -585,9 +595,11 @@
                         // Marcar que el avatar fue actualizado con timestamp
                         localStorage.setItem('avatarUpdated', Date.now().toString());
                         
-                        // Mostrar mensaje y redirigir al feed después de 2 segundos
+                        // Redirigir a la página de origen
                         setTimeout(() => {
-                            window.location.href = '/coachee-feed';
+                            const returnUrl = sessionStorage.getItem('profileReturnUrl') || '/coachee-feed';
+                            sessionStorage.removeItem('profileReturnUrl'); // Limpiar después de usar
+                            window.location.href = returnUrl;
                         }, 1500);
                     } else {
                         showAvatarError(data.error || 'Error al guardar la imagen');
@@ -616,9 +628,11 @@
                         // Marcar que el avatar fue actualizado con timestamp
                         localStorage.setItem('avatarUpdated', Date.now().toString());
                         
-                        // Mostrar mensaje y redirigir al feed después de 2 segundos
+                        // Redirigir a la página de origen
                         setTimeout(() => {
-                            window.location.href = '/coachee-feed';
+                            const returnUrl = sessionStorage.getItem('profileReturnUrl') || '/coachee-feed';
+                            sessionStorage.removeItem('profileReturnUrl'); // Limpiar después de usar
+                            window.location.href = returnUrl;
                         }, 1500);
                     } else {
                         showAvatarError(data.error || 'Error al guardar avatar');
@@ -922,6 +936,14 @@
             showAvatar(url);
             showSaveButton();
             closeAvatarGallery();
+        }
+        
+        // Función para volver a la página de origen
+        function goBackToOrigin(event) {
+            event.preventDefault();
+            const returnUrl = sessionStorage.getItem('profileReturnUrl') || '/coachee-feed';
+            sessionStorage.removeItem('profileReturnUrl'); // Limpiar después de usar
+            window.location.href = returnUrl;
         }
 
         
