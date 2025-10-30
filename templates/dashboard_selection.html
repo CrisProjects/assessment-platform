@@ -12,6 +12,25 @@
                     <h1 class="instacoach-main-title">InstaCoach</h1>
                     <p class="instacoach-tagline">Tu plataforma de desarrollo personal y profesional</p>
                 </div>
+                
+                <!-- Botón Encontrar Coach - CTA Principal -->
+                <div class="find-coach-cta mb-5">
+                    <button type="button" class="btn-find-coach" data-bs-toggle="modal" data-bs-target="#findCoachModal">
+                        <div class="btn-find-coach-content">
+                            <div class="btn-find-coach-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="btn-find-coach-text">
+                                <span class="btn-find-coach-title">Encontrar un Coach Para Mí</span>
+                                <span class="btn-find-coach-subtitle">Responde 3 preguntas y te conectamos con el coach ideal</span>
+                            </div>
+                            <div class="btn-find-coach-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+                
                 <h2 class="selection-title mb-3">
                     Elige tu Experiencia
                 </h2>
@@ -32,7 +51,7 @@
                             </div>
                         </div>
                         
-                        <h4 class="card-title-selection fw-bold mb-3">Panel Coach</h4>
+                        <h4 class="card-title-selection fw-bold mb-3" style="font-family: 'Lobster Two', cursive;">Soy Coach</h4>
                         <p class="card-description-selection mb-4">
                             Gestiona evaluaciones, supervisa el progreso de tus coachees y accede a reportes detallados
                         </p>
@@ -73,7 +92,7 @@
                             </div>
                         </div>
                         
-                        <h4 class="card-title-selection fw-bold mb-3">Panel Coachee</h4>
+                        <h4 class="card-title-selection fw-bold mb-3" style="font-family: 'Lobster Two', cursive;">Soy Coachee</h4>
                         <p class="card-description-selection mb-4">
                             Completa tus evaluaciones y accede a tu programa de desarrollo personalizado
                         </p>
@@ -99,7 +118,7 @@
                         
                         <a href="{{ url_for('participant_access') }}" class="btn btn-success w-100">
                             <i class="fas fa-play-circle me-2"></i>
-                            Comenzar Evaluación
+                            Comenzar mi Desarrollo
                         </a>
                     </div>
                 </div>
@@ -147,6 +166,162 @@
                         </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Encontrar Coach -->
+<div class="modal fade" id="findCoachModal" tabindex="-1" aria-labelledby="findCoachModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content find-coach-modal">
+            <div class="modal-header border-0">
+                <h3 class="modal-title w-100 text-center" id="findCoachModalLabel" style="font-family: 'Lobster Two', cursive; font-size: 2.5rem; color: #1a1a1a;">
+                    <i class="fas fa-star text-warning me-2"></i>
+                    Encuentra tu Coach Ideal
+                </h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-center mb-4 text-muted fs-5">
+                    Responde estas preguntas para conectarte con el coach perfecto para ti
+                </p>
+                
+                <form id="findCoachForm">
+                    <!-- Pregunta 1: Áreas de Desarrollo -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-bullseye text-primary me-2"></i>
+                            1. ¿En qué áreas te gustaría desarrollarte?
+                        </label>
+                        <div class="interest-pills">
+                            <input type="checkbox" class="btn-check" id="area-liderazgo" name="areas" value="liderazgo">
+                            <label class="btn btn-outline-primary pill-option" for="area-liderazgo">
+                                <i class="fas fa-crown me-2"></i>Liderazgo
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="area-comunicacion" name="areas" value="comunicacion">
+                            <label class="btn btn-outline-primary pill-option" for="area-comunicacion">
+                                <i class="fas fa-comments me-2"></i>Comunicación
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="area-inteligencia-emocional" name="areas" value="inteligencia-emocional">
+                            <label class="btn btn-outline-primary pill-option" for="area-inteligencia-emocional">
+                                <i class="fas fa-heart me-2"></i>Inteligencia Emocional
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="area-productividad" name="areas" value="productividad">
+                            <label class="btn btn-outline-primary pill-option" for="area-productividad">
+                                <i class="fas fa-rocket me-2"></i>Productividad
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="area-carrera" name="areas" value="carrera">
+                            <label class="btn btn-outline-primary pill-option" for="area-carrera">
+                                <i class="fas fa-briefcase me-2"></i>Desarrollo de Carrera
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="area-equilibrio" name="areas" value="equilibrio">
+                            <label class="btn btn-outline-primary pill-option" for="area-equilibrio">
+                                <i class="fas fa-balance-scale me-2"></i>Balance Vida-Trabajo
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Pregunta 2: Experiencia Preferida -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-user-graduate text-success me-2"></i>
+                            2. ¿Qué nivel de experiencia prefieres en tu coach?
+                        </label>
+                        <div class="experience-options">
+                            <input type="radio" class="btn-check" id="exp-cualquiera" name="experiencia" value="cualquiera" checked>
+                            <label class="btn btn-outline-success exp-option" for="exp-cualquiera">
+                                <i class="fas fa-users mb-2"></i>
+                                <span class="d-block fw-bold">Cualquiera</span>
+                                <small class="text-muted">Abierto a diferentes perfiles</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="exp-junior" name="experiencia" value="junior">
+                            <label class="btn btn-outline-success exp-option" for="exp-junior">
+                                <i class="fas fa-seedling mb-2"></i>
+                                <span class="d-block fw-bold">En Crecimiento</span>
+                                <small class="text-muted">1-3 años de experiencia</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="exp-senior" name="experiencia" value="senior">
+                            <label class="btn btn-outline-success exp-option" for="exp-senior">
+                                <i class="fas fa-medal mb-2"></i>
+                                <span class="d-block fw-bold">Experimentado</span>
+                                <small class="text-muted">5+ años de experiencia</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Pregunta 3: Estilo de Coaching -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-palette text-info me-2"></i>
+                            3. ¿Qué estilo de coaching prefieres?
+                        </label>
+                        <div class="style-options">
+                            <input type="radio" class="btn-check" id="style-directivo" name="estilo" value="directivo">
+                            <label class="btn btn-outline-info style-option" for="style-directivo">
+                                <i class="fas fa-bullhorn mb-2"></i>
+                                <span class="d-block fw-bold">Directivo</span>
+                                <small class="text-muted">Guía clara y estructura</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="style-colaborativo" name="estilo" value="colaborativo" checked>
+                            <label class="btn btn-outline-info style-option" for="style-colaborativo">
+                                <i class="fas fa-handshake mb-2"></i>
+                                <span class="d-block fw-bold">Colaborativo</span>
+                                <small class="text-muted">Trabajo en equipo</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="style-reflexivo" name="estilo" value="reflexivo">
+                            <label class="btn btn-outline-info style-option" for="style-reflexivo">
+                                <i class="fas fa-lightbulb mb-2"></i>
+                                <span class="d-block fw-bold">Reflexivo</span>
+                                <small class="text-muted">Autoconocimiento profundo</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de Contacto -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-envelope text-danger me-2"></i>
+                            4. ¿Cómo te contactamos?
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="contacto-nombre" name="nombre" placeholder="Nombre" required>
+                                    <label for="contacto-nombre"><i class="fas fa-user me-2"></i>Nombre completo</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="contacto-email" name="email" placeholder="Email" required>
+                                    <label for="contacto-email"><i class="fas fa-at me-2"></i>Email</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <textarea class="form-control" id="contacto-mensaje" name="mensaje" placeholder="Mensaje" style="height: 100px"></textarea>
+                                    <label for="contacto-mensaje"><i class="fas fa-comment-dots me-2"></i>Cuéntanos más sobre tus objetivos (opcional)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-lg btn-find-coach-submit" onclick="submitFindCoach()">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Encontrar mi Coach Ideal
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -818,6 +993,405 @@
         background-clip: text !important;
         font-weight: 700 !important;
     }
+    
+    /* === ESTILOS PARA BOTÓN ENCONTRAR COACH === */
+    
+    .find-coach-cta {
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.02);
+        }
+    }
+    
+    .btn-find-coach {
+        background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F59E0B 100%);
+        border: none;
+        border-radius: 20px;
+        padding: 0;
+        box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        max-width: 700px;
+        margin: 0 auto;
+        display: block;
+        width: 100%;
+    }
+    
+    .btn-find-coach::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
+    }
+    
+    .btn-find-coach:hover::before {
+        left: 100%;
+    }
+    
+    .btn-find-coach:hover {
+        transform: translateY(-5px) scale(1.03);
+        box-shadow: 0 15px 50px rgba(139, 92, 246, 0.6);
+    }
+    
+    .btn-find-coach-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 30px;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        margin: 3px;
+        gap: 20px;
+    }
+    
+    .btn-find-coach-icon {
+        background: linear-gradient(135deg, #8B5CF6, #EC4899);
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+    
+    .btn-find-coach-icon i {
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .btn-find-coach-text {
+        flex-grow: 1;
+        text-align: left;
+    }
+    
+    .btn-find-coach-title {
+        display: block;
+        font-family: 'Lobster Two', cursive;
+        font-size: 1.8rem;
+        color: #1a1a1a;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 5px;
+    }
+    
+    .btn-find-coach-subtitle {
+        display: block;
+        font-size: 0.95rem;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .btn-find-coach-arrow {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #F59E0B, #EF4444);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .btn-find-coach-arrow i {
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .btn-find-coach:hover .btn-find-coach-arrow {
+        transform: translateX(5px);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .btn-find-coach-content {
+            padding: 15px 20px;
+            gap: 15px;
+        }
+        
+        .btn-find-coach-icon {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .btn-find-coach-icon i {
+            font-size: 1.2rem;
+        }
+        
+        .btn-find-coach-title {
+            font-size: 1.4rem;
+        }
+        
+        .btn-find-coach-subtitle {
+            font-size: 0.85rem;
+        }
+        
+        .btn-find-coach-arrow {
+            width: 35px;
+            height: 35px;
+        }
+    }
+    
+    /* === ESTILOS PARA MODAL ENCONTRAR COACH === */
+    
+    .find-coach-modal .modal-content {
+        border-radius: 25px;
+        border: none;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+    
+    .find-coach-modal .modal-header {
+        background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F59E0B 100%);
+        padding: 2rem;
+        position: relative;
+    }
+    
+    .find-coach-modal .modal-title {
+        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .find-coach-modal .btn-close {
+        background: white;
+        border-radius: 50%;
+        opacity: 1;
+        width: 35px;
+        height: 35px;
+    }
+    
+    .interest-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .pill-option {
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 2px solid #3B82F6;
+    }
+    
+    .pill-option:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-check:checked + .pill-option {
+        background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
+        color: white !important;
+        border-color: #3B82F6 !important;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    .experience-options,
+    .style-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .exp-option,
+    .style-option {
+        border-radius: 15px;
+        padding: 20px 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid #10B981;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .style-option {
+        border-color: #06B6D4;
+    }
+    
+    .exp-option:hover,
+    .style-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+    }
+    
+    .style-option:hover {
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+    }
+    
+    .exp-option i,
+    .style-option i {
+        font-size: 2rem;
+        display: block;
+    }
+    
+    .btn-check:checked + .exp-option {
+        background: linear-gradient(135deg, #10B981, #059669) !important;
+        color: white !important;
+        border-color: #10B981 !important;
+        box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
+    }
+    
+    .btn-check:checked + .style-option {
+        background: linear-gradient(135deg, #06B6D4, #0891B2) !important;
+        color: white !important;
+        border-color: #06B6D4 !important;
+        box-shadow: 0 6px 25px rgba(6, 182, 212, 0.5);
+    }
+    
+    .btn-find-coach-submit {
+        background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F59E0B 100%);
+        border: none;
+        color: white;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        transition: all 0.3s ease;
+        font-family: 'Lobster Two', cursive;
+    }
+    
+    .btn-find-coach-submit:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 12px 35px rgba(139, 92, 246, 0.6);
+        color: white;
+    }
+    
+    .fade-in-item {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .fade-in-item:nth-child(1) { animation-delay: 0.1s; }
+    .fade-in-item:nth-child(2) { animation-delay: 0.2s; }
+    .fade-in-item:nth-child(3) { animation-delay: 0.3s; }
+    .fade-in-item:nth-child(4) { animation-delay: 0.4s; }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Modo oscuro para el modal */
+    [data-theme="dark"] .find-coach-modal .modal-content {
+        background: #1e293b;
+        color: #f1f5f9;
+    }
+    
+    [data-theme="dark"] .find-coach-modal .form-control {
+        background: #334155;
+        border-color: #475569;
+        color: #f1f5f9;
+    }
+    
+    [data-theme="dark"] .find-coach-modal .form-control:focus {
+        background: #334155;
+        color: #f1f5f9;
+    }
 </style>
+
+<script>
+    // Función para enviar solicitud de coach
+    function submitFindCoach() {
+        console.log('🎯 Enviando solicitud de coach...');
+        
+        // Recopilar datos del formulario
+        const form = document.getElementById('findCoachForm');
+        const formData = new FormData(form);
+        
+        // Obtener áreas seleccionadas
+        const areas = [];
+        document.querySelectorAll('input[name="areas"]:checked').forEach(checkbox => {
+            areas.push(checkbox.value);
+        });
+        
+        const data = {
+            areas: areas,
+            experiencia: formData.get('experiencia'),
+            estilo: formData.get('estilo'),
+            nombre: formData.get('nombre'),
+            email: formData.get('email'),
+            mensaje: formData.get('mensaje'),
+            timestamp: new Date().toISOString()
+        };
+        
+        // Validar datos básicos
+        if (areas.length === 0) {
+            alert('Por favor selecciona al menos un área de desarrollo');
+            return;
+        }
+        
+        if (!data.nombre || !data.email) {
+            alert('Por favor completa tu nombre y email');
+            return;
+        }
+        
+        console.log('📊 Datos recopilados:', data);
+        
+        // Mostrar mensaje de éxito (simulado)
+        const modal = bootstrap.Modal.getInstance(document.getElementById('findCoachModal'));
+        modal.hide();
+        
+        // Crear mensaje de confirmación atractivo
+        const successMessage = document.createElement('div');
+        successMessage.className = 'alert alert-success position-fixed top-50 start-50 translate-middle text-center';
+        successMessage.style.cssText = 'z-index: 9999; min-width: 400px; border-radius: 20px; box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3); background: linear-gradient(135deg, #10B981, #059669); color: white; border: none;';
+        successMessage.innerHTML = `
+            <div class="py-3">
+                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                <h4 style="font-family: 'Lobster Two', cursive;">¡Solicitud Enviada!</h4>
+                <p class="mb-0">Te contactaremos pronto con tu coach ideal</p>
+            </div>
+        `;
+        document.body.appendChild(successMessage);
+        
+        // Remover mensaje después de 4 segundos
+        setTimeout(() => {
+            successMessage.remove();
+        }, 4000);
+        
+        // Limpiar formulario
+        form.reset();
+        
+        // TODO: Aquí se enviará al pool de coaches
+        // fetch('/api/solicitar-coach', {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify(data)
+        // });
+    }
+    
+    // Animar entrada del modal
+    document.getElementById('findCoachModal').addEventListener('show.bs.modal', function () {
+        console.log('🎨 Modal abierto - Encontrar Coach');
+    });
+</script>
+
 {% endblock %}
 {% endblock %}
