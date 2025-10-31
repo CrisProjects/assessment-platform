@@ -5498,9 +5498,37 @@ function displayEvaluationDetails(evaluation) {
     const recommendations = evaluation.recommendations || [];
     const detailedAnalysis = evaluation.detailed_analysis;
     
+    // Calcular porcentaje correcto según el tipo de evaluación
+    let displayPercentage;
+    let levelLabel;
+    
+    if (isLeadershipAssessment) {
+        // Liderazgo: score es suma (10-50), convertir a porcentaje
+        displayPercentage = Math.round((data.score / 50) * 100);
+        levelLabel = 'Nivel de Liderazgo';
+    } else if (isTeamworkAssessment) {
+        // Trabajo en Equipo: score es suma (12-60), convertir a porcentaje
+        displayPercentage = Math.round((data.score / 60) * 100);
+        levelLabel = 'Nivel de Colaboración';
+    } else if (isDiscAssessment) {
+        // DISC: score es suma (16-80), convertir a porcentaje
+        displayPercentage = Math.round((data.score / 80) * 100);
+        levelLabel = 'Estilo DISC Dominante';
+    } else if (isEmotionalIntelligenceAssessment) {
+        // IE: score es suma (12-60), convertir a porcentaje
+        displayPercentage = Math.round((data.score / 60) * 100);
+        levelLabel = 'Nivel de Inteligencia Emocional';
+    } else {
+        // Asertividad: score ya es porcentaje
+        displayPercentage = Math.round(data.score || 0);
+        levelLabel = 'Nivel de Asertividad';
+    }
+    
     console.log('Final data to use:', data);
     console.log('Dimensional scores:', dimensionalScores);
     console.log('Assessment Title:', assessmentTitle);
+    console.log('Raw Score:', data.score);
+    console.log('Display Percentage:', displayPercentage);
     console.log('Is DISC Assessment:', isDiscAssessment);
     console.log('Is Emotional Intelligence Assessment:', isEmotionalIntelligenceAssessment);
     console.log('Is Leadership Assessment:', isLeadershipAssessment);
@@ -5523,12 +5551,12 @@ function displayEvaluationDetails(evaluation) {
                         <h4 class="mb-3" style="color: #333;">${analysisTitle}</h4>
                         <div class="row">
                             <div class="col-md-3">
-                                <div class="h2" style="color: #007bff;">${Math.round(data.score || data.percentage || 0)}%</div>
+                                <div class="h2" style="color: #007bff;">${displayPercentage}%</div>
                                 <div style="color: #666;">Puntuación Total</div>
                             </div>
                             <div class="col-md-3">
-                                <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || data.percentage || 0) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || data.percentage || 0) : (isLeadershipAssessment ? getLeadershipLevelFromScore(data.score || data.percentage || 0) : (isTeamworkAssessment ? getTeamworkLevelFromScore(data.score || data.percentage || 0) : getAssertiveLevelFromScore(data.score || data.percentage || 0))))}</div>
-                                <div style="color: #666;">${isDiscAssessment ? 'Estilo DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : (isLeadershipAssessment ? 'Nivel de Liderazgo' : (isTeamworkAssessment ? 'Nivel de Colaboración' : 'Nivel de Asertividad')))}</div>
+                                <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score) : (isLeadershipAssessment ? getLeadershipLevelFromScore(data.score) : (isTeamworkAssessment ? getTeamworkLevelFromScore(data.score) : getAssertiveLevelFromScore(data.score))))}</div>
+                                <div style="color: #666;">${levelLabel}</div>
                             </div>
                             <div class="col-md-3">
                                 <div class="h6" style="color: #333;">${formatDate(data.completed_at)}</div>
