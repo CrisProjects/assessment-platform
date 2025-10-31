@@ -314,13 +314,15 @@ class Invitation(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False, index=True)
     used_at = db.Column(db.DateTime, nullable=True)
     is_used = db.Column(db.Boolean, default=False, index=True)
-    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=True, index=True)  # Evaluación asignada
+    # NOTA: assessment_id comentado temporalmente hasta ejecutar migración en Railway
+    # assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=True, index=True)  # Evaluación asignada
     accepted_at = db.Column(db.DateTime, nullable=True)  # Primera vez que accede
     status = db.Column(db.String(20), default='pending')  # pending, accepted, expired
     
     coach = db.relationship('User', foreign_keys=[coach_id], backref='sent_invitations')
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_invitation')
-    assessment = db.relationship('Assessment', foreign_keys=[assessment_id], backref='invitations')
+    # NOTA: Relación assessment comentada temporalmente hasta ejecutar migración en Railway
+    # assessment = db.relationship('Assessment', foreign_keys=[assessment_id], backref='invitations')
     
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -3697,45 +3699,21 @@ def api_coach_create_invitation_v2():
         db.session.add(new_coachee)
         db.session.flush()  # Obtener ID sin hacer commit completo
         
-        # Crear registro de invitación - Compatible con bases de datos sin assessment_id
-        try:
-            # Intentar crear con assessment_id (PostgreSQL actualizado o SQLite)
-            invitation = Invitation(
-                coach_id=current_coach.id,
-                coachee_id=new_coachee.id,
-                email=email,
-                full_name=full_name,
-                token=invite_token,
-                message=message,
-                created_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(days=30),
-                assessment_id=assigned_assessment_id,
-                status='pending'
-            )
-            db.session.add(invitation)
-            db.session.commit()
-            logger.info(f"✅ INVITATION: Invitation created with assessment_id support")
-        except Exception as inv_error:
-            # Si falla (columna no existe), crear sin assessment_id
-            logger.warning(f"⚠️ INVITATION: Column assessment_id not found, creating without it: {str(inv_error)}")
-            db.session.rollback()
-            
-            # Crear invitación sin assessment_id usando SQL directo
-            invitation = Invitation(
-                coach_id=current_coach.id,
-                coachee_id=new_coachee.id,
-                email=email,
-                full_name=full_name,
-                token=invite_token,
-                message=message,
-                created_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(days=30),
-                status='pending'
-            )
-            # No establecer assessment_id si causa problemas
-            db.session.add(invitation)
-            db.session.commit()
-            logger.info(f"✅ INVITATION: Invitation created without assessment_id (legacy mode)")
+        # Crear registro de invitación (sin assessment_id hasta migración en Railway)
+        invitation = Invitation(
+            coach_id=current_coach.id,
+            coachee_id=new_coachee.id,
+            email=email,
+            full_name=full_name,
+            token=invite_token,
+            message=message,
+            created_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(days=30),
+            status='pending'
+        )
+        db.session.add(invitation)
+        db.session.commit()
+        logger.info(f"✅ INVITATION: Invitation created successfully (assessment tracked via Task table)")
         
         logger.info(f"✅ INVITATION: Invitation record created with token for coachee {new_coachee.id}")
         
