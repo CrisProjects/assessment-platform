@@ -5568,12 +5568,12 @@ function displayEvaluationDetails(evaluation) {
     
     // Crear el gráfico radar después de insertar el HTML
     setTimeout(() => {
-        createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment);
+        createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isLeadershipAssessment, isTeamworkAssessment);
     }, 100);
 }
 
 // Función para crear gráfico radar
-function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotionalIntelligenceAssessment = false) {
+function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotionalIntelligenceAssessment = false, isLeadershipAssessment = false, isTeamworkAssessment = false) {
     const ctx = document.getElementById('evaluationRadarChart');
     if (!ctx) return;
     
@@ -5615,6 +5615,20 @@ function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotion
         ];
         chartLabel = 'Perfil de Inteligencia Emocional';
         console.log('🧠 COACH RADAR DEBUG: IE data values:', data);
+    } else if (isLeadershipAssessment || isTeamworkAssessment) {
+        // Configuración para Liderazgo o Trabajo en Equipo (usar dimensiones dinámicas)
+        if (dimensionalScores && typeof dimensionalScores === 'object') {
+            if (Array.isArray(dimensionalScores)) {
+                labels = dimensionalScores.map(score => score.dimension || score.name);
+                data = dimensionalScores.map(score => Math.round((score.score / score.max_score) * 100));
+            } else {
+                // Objeto con claves de dimensiones - mantener orden y nombres originales
+                labels = Object.keys(dimensionalScores);
+                data = Object.values(dimensionalScores);
+            }
+        }
+        chartLabel = isLeadershipAssessment ? 'Competencias de Liderazgo (%)' : 'Competencias de Trabajo en Equipo (%)';
+        console.log(`🎯 COACH RADAR DEBUG: ${isLeadershipAssessment ? 'Leadership' : 'Teamwork'} data:`, { labels, data });
     } else {
         // Configuración para Asertividad (lógica original)
         if (dimensionalScores && typeof dimensionalScores === 'object') {
