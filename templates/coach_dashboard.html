@@ -2746,12 +2746,15 @@
                         </div>
                         
                         <!-- Error message -->
-                        <div id="assessments-error" class="alert alert-warning d-flex align-items-center" style="display: none;">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <div>
-                                <strong>Error:</strong> No se pudieron cargar las evaluaciones disponibles.
-                                <br><small>Intenta actualizar la página o contacta al administrador.</small>
+                        <div id="assessments-error" class="alert alert-warning" style="display: none;">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Error:</strong>
                             </div>
+                            <p class="mb-2 small">No se pudieron cargar las evaluaciones disponibles.</p>
+                            <button class="btn btn-sm btn-warning" onclick="loadAvailableAssessments()">
+                                <i class="fas fa-sync-alt me-1"></i>Reintentar ahora
+                            </button>
                         </div>
                         
                         <!-- No assessments message -->
@@ -4266,22 +4269,58 @@ function loadAvailableAssessments() {
     errorElement.style.display = 'none';
     noAssessmentsElement.style.display = 'none';
     
-    fetch('/api/coach/available-assessments')
-        .then(response => response.json())
+    // Cache-busting: agregar timestamp para evitar problemas de caché
+    const cacheBuster = new Date().getTime();
+    
+    fetch(`/api/coach/available-assessments?_=${cacheBuster}`, {
+        method: 'GET',
+        headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Evaluaciones recibidas:', data);
             loadingElement.style.display = 'none';
             
-            if (data.success && data.assessments && data.assessments.length > 0) {
-                displayAvailableAssessments(data.assessments);
-                listElement.style.display = 'block';
+            // Mejor validación de datos
+            if (data && data.success === true) {
+                if (data.assessments && Array.isArray(data.assessments) && data.assessments.length > 0) {
+                    displayAvailableAssessments(data.assessments);
+                    listElement.style.display = 'block';
+                } else {
+                    console.log('No hay evaluaciones disponibles');
+                    noAssessmentsElement.style.display = 'block';
+                }
+            } else if (data && data.success === false) {
+                // Error del servidor pero con respuesta estructurada
+                console.error('Error del servidor:', data.error || data.message);
+                errorElement.style.display = 'block';
+                errorElement.querySelector('p').textContent = data.error || 'Error al cargar evaluaciones';
             } else {
+                console.warn('Respuesta inesperada:', data);
                 noAssessmentsElement.style.display = 'block';
             }
         })
         .catch(error => {
             console.error('Error loading assessments:', error);
+            console.error('Error details:', error.message);
             loadingElement.style.display = 'none';
             errorElement.style.display = 'block';
+            
+            // Mostrar mensaje de error más informativo
+            const errorMsg = errorElement.querySelector('p');
+            if (errorMsg) {
+                errorMsg.textContent = `Error de conexión: ${error.message}. Por favor, actualiza la página.`;
+            }
         });
 }
 
