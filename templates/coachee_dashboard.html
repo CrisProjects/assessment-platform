@@ -8821,6 +8821,7 @@
             const assessmentTitle = evaluation.assessment_title || data.assessment_title || 'Evaluación';
             const isDiscAssessment = assessmentTitle.includes('DISC');
             const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+            const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
             const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
             const isGrowthPreparationAssessment = assessmentTitle.includes('Preparación para crecer 2026');
             
@@ -8831,6 +8832,9 @@
             } else if (isEmotionalIntelligenceAssessment) {
                 analysisTitle = 'Análisis Completo de Inteligencia Emocional';
                 chartTitle = 'Radar de Competencias Emocionales';
+            } else if (isLeadershipAssessment) {
+                analysisTitle = 'Análisis Completo de Habilidades de Liderazgo';
+                chartTitle = 'Radar de Competencias de Liderazgo';
             } else if (isTeamworkAssessment) {
                 analysisTitle = 'Análisis Completo de Trabajo en Equipo';
                 chartTitle = 'Radar de Competencias de Colaboración';
@@ -8842,7 +8846,7 @@
                 chartTitle = 'Radar de Competencias';
             }
             
-            console.log('Assessment type detected:', { assessmentTitle, isDiscAssessment, analysisTitle });
+            console.log('Assessment type detected:', { assessmentTitle, isDiscAssessment, isLeadershipAssessment, analysisTitle });
             console.log('Final data to use:', data);
             console.log('Dimensional scores:', dimensionalScores);
             console.log('Recommendations from server:', recommendations);
@@ -8861,6 +8865,27 @@
                 return;
             }
             
+            // Calcular porcentaje correcto según el tipo de evaluación
+            let displayPercentage;
+            const rawScore = data.score || evaluation.score || 0;
+            
+            if (isLeadershipAssessment) {
+                // Liderazgo: score es suma (10-50), convertir a porcentaje
+                displayPercentage = Math.round((rawScore / 50) * 100);
+            } else if (isTeamworkAssessment) {
+                // Trabajo en Equipo: score es suma (12-60), convertir a porcentaje
+                displayPercentage = Math.round((rawScore / 60) * 100);
+            } else if (isDiscAssessment) {
+                // DISC: score es suma (16-80), convertir a porcentaje
+                displayPercentage = Math.round((rawScore / 80) * 100);
+            } else if (isEmotionalIntelligenceAssessment) {
+                // IE: score es suma (12-60), convertir a porcentaje
+                displayPercentage = Math.round((rawScore / 60) * 100);
+            } else {
+                // Asertividad y otras: score ya es porcentaje
+                displayPercentage = Math.round(rawScore);
+            }
+            
             const html = `
                 <!-- Resumen General -->
                 <div class="row mb-4">
@@ -8870,12 +8895,12 @@
                                 <h4 class="mb-3" style="color: #333;">${analysisTitle}</h4>
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <div class="h2" style="color: #007bff;">${Math.round(data.score || evaluation.score)}%</div>
+                                        <div class="h2" style="color: #007bff;">${displayPercentage}%</div>
                                         <div style="color: #666;">Puntuación Total</div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || evaluation.score) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || evaluation.score) : (isTeamworkAssessment ? getTeamworkLevelFromScore(data.score || evaluation.score) : (isGrowthPreparationAssessment ? getGrowthPreparationLevelFromScore(data.score || evaluation.score) : getAssertiveLevelFromScore(data.score || evaluation.score))))}</div>
-                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : (isTeamworkAssessment ? 'Nivel de Trabajo en Equipo' : (isGrowthPreparationAssessment ? 'Nivel de Preparación' : 'Nivel de Asertividad')))}</div>
+                                        <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(rawScore) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(rawScore) : (isLeadershipAssessment ? getLeadershipLevelFromScore(rawScore) : (isTeamworkAssessment ? getTeamworkLevelFromScore(rawScore) : (isGrowthPreparationAssessment ? getGrowthPreparationLevelFromScore(rawScore) : getAssertiveLevelFromScore(rawScore)))))}</div>
+                                        <div style="color: #666;">${isDiscAssessment ? 'Perfil DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : (isLeadershipAssessment ? 'Nivel de Liderazgo' : (isTeamworkAssessment ? 'Nivel de Trabajo en Equipo' : (isGrowthPreparationAssessment ? 'Nivel de Preparación' : 'Nivel de Asertividad'))))}</div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="h6" style="color: #333;">${formatDate(data.completed_at || evaluation.completed_at)}</div>
@@ -9774,6 +9799,13 @@
             if (score >= 55) return 'Colaborador Competente';
             if (score >= 40) return 'Colaborador en Desarrollo';
             return 'Necesita Desarrollar Habilidades';
+        }
+
+        function getLeadershipLevelFromScore(score) {
+            if (score >= 40) return 'Liderazgo consolidado';
+            if (score >= 30) return 'Liderazgo competente';
+            if (score >= 20) return 'Liderazgo en desarrollo';
+            return 'Liderazgo inicial';
         }
 
         function getDimensionDescription(dimension, score) {

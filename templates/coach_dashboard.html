@@ -5474,29 +5474,43 @@ function viewEvaluationDetails(evaluationId) {
 
 // Función para mostrar detalles de evaluación
 function displayEvaluationDetails(evaluation) {
-    console.log('renderEvaluationDetails called with:', evaluation);
+    console.log('🔍 displayEvaluationDetails called with:', evaluation);
     
     const container = document.getElementById('evaluationDetailsContent');
     
     // Detectar si es una evaluación DISC, Inteligencia Emocional o de Asertividad
     const assessmentTitle = evaluation.assessment?.title || '';
+    console.log('🏷️ Assessment Title:', assessmentTitle);
+    
     const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
     const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
     const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
     const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
     const isGrowthPreparationAssessment = assessmentTitle.includes('Preparación para crecer 2026');
     
+    console.log('🎯 Detection Flags:', {
+        isDiscAssessment,
+        isEmotionalIntelligenceAssessment,
+        isLeadershipAssessment,
+        isTeamworkAssessment,
+        isGrowthPreparationAssessment
+    });
+    
     // Si es la evaluación "Preparación para crecer 2026", usar el layout personalizado
     if (isGrowthPreparationAssessment) {
+        console.log('✅ Redirecting to displayGrowthPreparationEvaluation');
         displayGrowthPreparationEvaluation(evaluation);
         return;
     }
     
     // Si es la evaluación de Liderazgo, usar el layout específico de Liderazgo
     if (isLeadershipAssessment) {
+        console.log('✅ Redirecting to displayLeadershipEvaluation');
         displayLeadershipEvaluation(evaluation);
         return;
     }
+    
+    console.log('⚠️ Using generic displayEvaluationDetails (not Leadership)');
     
     // Usar datos de la evaluación
     const data = evaluation;
