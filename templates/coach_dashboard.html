@@ -5453,6 +5453,8 @@ function displayEvaluationDetails(evaluation) {
     const assessmentTitle = evaluation.assessment?.title || '';
     const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
     const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+    const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
+    const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
     const isGrowthPreparationAssessment = assessmentTitle.includes('Preparación para crecer 2026');
     
     // Si es la evaluación "Preparación para crecer 2026", usar el layout personalizado
@@ -5475,7 +5477,9 @@ function displayEvaluationDetails(evaluation) {
     
     // Título dinámico según el tipo de evaluación
     const analysisTitle = isDiscAssessment ? 'Análisis Completo DISC de Personalidad' : 
-                         (isEmotionalIntelligenceAssessment ? 'Análisis Completo de Inteligencia Emocional' : 'Análisis Completo de Asertividad');
+                         (isEmotionalIntelligenceAssessment ? 'Análisis Completo de Inteligencia Emocional' :
+                         (isLeadershipAssessment ? 'Análisis Completo de Habilidades de Liderazgo' :
+                         (isTeamworkAssessment ? 'Análisis Completo de Trabajo en Equipo' : 'Análisis Completo de Asertividad')));
     
     const html = `
         <!-- Resumen General -->
@@ -5490,8 +5494,8 @@ function displayEvaluationDetails(evaluation) {
                                 <div style="color: #666;">Puntuación Total</div>
                             </div>
                             <div class="col-md-3">
-                                <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || data.percentage || 0) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || data.percentage || 0) : getAssertiveLevelFromScore(data.score || data.percentage || 0))}</div>
-                                <div style="color: #666;">${isDiscAssessment ? 'Estilo DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : 'Nivel de Asertividad')}</div>
+                                <div class="h4" style="color: #28a745;">${isDiscAssessment ? getDiscLevelFromScore(data.score || data.percentage || 0) : (isEmotionalIntelligenceAssessment ? getEmotionalIntelligenceLevelFromScore(data.score || data.percentage || 0) : (isLeadershipAssessment ? getLeadershipLevelFromScore(data.score || data.percentage || 0) : (isTeamworkAssessment ? getTeamworkLevelFromScore(data.score || data.percentage || 0) : getAssertiveLevelFromScore(data.score || data.percentage || 0))))}</div>
+                                <div style="color: #666;">${isDiscAssessment ? 'Estilo DISC Dominante' : (isEmotionalIntelligenceAssessment ? 'Nivel de Inteligencia Emocional' : (isLeadershipAssessment ? 'Nivel de Liderazgo' : (isTeamworkAssessment ? 'Nivel de Colaboración' : 'Nivel de Asertividad')))}</div>
                             </div>
                             <div class="col-md-3">
                                 <div class="h6" style="color: #333;">${formatDate(data.completed_at)}</div>
@@ -5518,7 +5522,7 @@ function displayEvaluationDetails(evaluation) {
             <div class="col-lg-6 mb-4">
                 <div class="card border-0 h-100" style="background: #f8f9fa; border: 1px solid #dee2e6;">
                     <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
-                        <h5 style="color: #333;"><i class="fas fa-chart-radar me-2"></i>${isDiscAssessment ? 'Radar de Dimensiones DISC' : (isEmotionalIntelligenceAssessment ? 'Radar de Dimensiones IE' : 'Radar de Competencias')}</h5>
+                        <h5 style="color: #333;"><i class="fas fa-chart-radar me-2"></i>${isDiscAssessment ? 'Radar de Dimensiones DISC' : (isEmotionalIntelligenceAssessment ? 'Radar de Dimensiones IE' : (isLeadershipAssessment ? 'Radar de Competencias de Liderazgo' : (isTeamworkAssessment ? 'Radar de Competencias de Trabajo en Equipo' : 'Radar de Competencias')))}</h5>
                     </div>
                     <div class="card-body">
                         <div class="radar-chart-container" style="position: relative; height: 300px;">
@@ -5916,6 +5920,20 @@ function getEmotionalIntelligenceLevelFromScore(score) {
     return 'Muy Baja';
 }
 
+function getLeadershipLevelFromScore(score) {
+    if (score >= 80) return 'Liderazgo Excepcional';
+    if (score >= 60) return 'Buen Liderazgo';
+    if (score >= 40) return 'Liderazgo en Desarrollo';
+    return 'Liderazgo Inicial';
+}
+
+function getTeamworkLevelFromScore(score) {
+    if (score >= 80) return 'Excelente Colaborador';
+    if (score >= 60) return 'Buen Colaborador';
+    if (score >= 40) return 'Colaborador en Desarrollo';
+    return 'Colaborador Inicial';
+}
+
 function formatDimensionName(dimension) {
     const nameMap = {
         'comunicacion': 'Comunicación',
@@ -5924,7 +5942,12 @@ function formatDimensionName(dimension) {
         'conflictos': 'Manejo de Conflictos',
         'autoconfianza': 'Autoconfianza'
     };
-    return nameMap[dimension] || dimension.charAt(0).toUpperCase() + dimension.slice(1);
+    // Si ya está en el mapa, usar ese nombre
+    if (nameMap[dimension]) return nameMap[dimension];
+    // Si la dimensión ya tiene mayúscula (ej: Inspiración, Delegación), mantenerla tal cual
+    if (dimension.charAt(0) === dimension.charAt(0).toUpperCase()) return dimension;
+    // Si no, capitalizar primera letra
+    return dimension.charAt(0).toUpperCase() + dimension.slice(1);
 }
 
 function getDimensionDescription(dimension, score) {
@@ -5935,7 +5958,12 @@ function getDimensionDescription(dimension, score) {
         'conflictos': score >= 70 ? 'Maneja conflictos efectivamente' : 'Requiere desarrollo en manejo de conflictos',
         'autoconfianza': score >= 70 ? 'Alta confianza en sí mismo/a' : 'Oportunidad de fortalecer autoconfianza'
     };
-    return descriptions[dimension] || 'Área de desarrollo personal';
+    // Si está en el mapa específico, usar esa descripción
+    if (descriptions[dimension]) return descriptions[dimension];
+    // Descripción genérica basada en el score
+    if (score >= 70) return 'Fortaleza identificada en esta área';
+    if (score >= 50) return 'Área con oportunidad de mejora';
+    return 'Área prioritaria de desarrollo';
 }
 
 function formatDate(dateString) {
