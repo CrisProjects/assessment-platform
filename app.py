@@ -3697,21 +3697,45 @@ def api_coach_create_invitation_v2():
         db.session.add(new_coachee)
         db.session.flush()  # Obtener ID sin hacer commit completo
         
-        # Crear registro de invitación
-        invitation = Invitation(
-            coach_id=current_coach.id,
-            coachee_id=new_coachee.id,
-            email=email,
-            full_name=full_name,
-            token=invite_token,
-            message=message,
-            created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=30),
-            assessment_id=assigned_assessment_id,
-            status='pending'
-        )
-        db.session.add(invitation)
-        db.session.commit()
+        # Crear registro de invitación - Compatible con bases de datos sin assessment_id
+        try:
+            # Intentar crear con assessment_id (PostgreSQL actualizado o SQLite)
+            invitation = Invitation(
+                coach_id=current_coach.id,
+                coachee_id=new_coachee.id,
+                email=email,
+                full_name=full_name,
+                token=invite_token,
+                message=message,
+                created_at=datetime.utcnow(),
+                expires_at=datetime.utcnow() + timedelta(days=30),
+                assessment_id=assigned_assessment_id,
+                status='pending'
+            )
+            db.session.add(invitation)
+            db.session.commit()
+            logger.info(f"✅ INVITATION: Invitation created with assessment_id support")
+        except Exception as inv_error:
+            # Si falla (columna no existe), crear sin assessment_id
+            logger.warning(f"⚠️ INVITATION: Column assessment_id not found, creating without it: {str(inv_error)}")
+            db.session.rollback()
+            
+            # Crear invitación sin assessment_id usando SQL directo
+            invitation = Invitation(
+                coach_id=current_coach.id,
+                coachee_id=new_coachee.id,
+                email=email,
+                full_name=full_name,
+                token=invite_token,
+                message=message,
+                created_at=datetime.utcnow(),
+                expires_at=datetime.utcnow() + timedelta(days=30),
+                status='pending'
+            )
+            # No establecer assessment_id si causa problemas
+            db.session.add(invitation)
+            db.session.commit()
+            logger.info(f"✅ INVITATION: Invitation created without assessment_id (legacy mode)")
         
         logger.info(f"✅ INVITATION: Invitation record created with token for coachee {new_coachee.id}")
         
