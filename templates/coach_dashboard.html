@@ -5492,6 +5492,12 @@ function displayEvaluationDetails(evaluation) {
         return;
     }
     
+    // Si es la evaluación de Liderazgo, usar el layout específico de Liderazgo
+    if (isLeadershipAssessment) {
+        displayLeadershipEvaluation(evaluation);
+        return;
+    }
+    
     // Usar datos de la evaluación
     const data = evaluation;
     const dimensionalScores = evaluation.dimensional_scores;
@@ -7124,6 +7130,282 @@ function printEvaluationReport() {
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
+}
+
+// Función específica para mostrar evaluación de Liderazgo en dashboard del coach
+function displayLeadershipEvaluation(evaluation) {
+    console.log('👔 LEADERSHIP: Displaying Leadership evaluation:', evaluation);
+    
+    const container = document.getElementById('evaluationDetailsContent');
+    
+    // Datos de la evaluación
+    const rawScore = evaluation.score || 0;
+    const maxScore = 50; // 10 preguntas * 5 puntos máximo
+    const percentage = Math.round((rawScore / maxScore) * 100);
+    const dimensionalScores = evaluation.dimensional_scores || {};
+    
+    // Determinar nivel de liderazgo según el score
+    let level, levelColor, levelDescription;
+    if (rawScore >= 40) {
+        level = 'Liderazgo consolidado';
+        levelColor = '#28a745'; // Verde
+        levelDescription = 'Demuestras habilidades de liderazgo sólidas y efectivas.';
+    } else if (rawScore >= 30) {
+        level = 'Liderazgo competente';
+        levelColor = '#17a2b8'; // Azul
+        levelDescription = 'Posees buenas habilidades de liderazgo con áreas de mejora.';
+    } else if (rawScore >= 20) {
+        level = 'Liderazgo en desarrollo';
+        levelColor = '#ffc107'; // Amarillo
+        levelDescription = 'Muestras potencial de liderazgo con áreas importantes por desarrollar.';
+    } else {
+        level = 'Liderazgo inicial';
+        levelColor = '#dc3545'; // Rojo
+        levelDescription = 'Estás comenzando tu camino en el desarrollo de habilidades de liderazgo.';
+    }
+    
+    // Identificar fortalezas y áreas de mejora
+    const strengths = [];
+    const improvements = [];
+    
+    for (const [dimension, score] of Object.entries(dimensionalScores)) {
+        if (score >= 70) {
+            strengths.push({ name: dimension, score: score });
+        } else if (score < 50) {
+            improvements.push({ name: dimension, score: score });
+        }
+    }
+    
+    // Ordenar por score
+    strengths.sort((a, b) => b.score - a.score);
+    improvements.sort((a, b) => a.score - b.score);
+    
+    const html = `
+        <!-- Resumen General -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="card-body text-center py-4">
+                        <h3 class="mb-3">
+                            <i class="fas fa-users-cog me-2"></i>
+                            Análisis Completo de Habilidades de Liderazgo
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="display-4 fw-bold">${percentage}%</div>
+                                <div class="opacity-75">Puntuación Global</div>
+                                <small class="opacity-50">${rawScore}/${maxScore} puntos</small>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="h3 fw-bold">${level}</div>
+                                <div class="opacity-75">Nivel de Liderazgo</div>
+                                <small class="opacity-50">${levelDescription}</small>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="h5">${formatDate(evaluation.completed_at)}</div>
+                                <div class="opacity-75">Fecha de Completado</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="h5">${evaluation.total_questions || 10}</div>
+                                <div class="opacity-75">Preguntas Respondidas</div>
+                            </div>
+                        </div>
+                        ${evaluation.coachee ? `
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="h5">${evaluation.coachee.name}</div>
+                                    <div class="opacity-75">Participante</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radar y Dimensiones -->
+        <div class="row mb-4">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 h-100 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-radar me-2 text-primary"></i>
+                            Radar de Competencias de Liderazgo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="radar-chart-container" style="position: relative; height: 300px;">
+                            <canvas id="evaluationRadarChart" width="300" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 h-100 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2 text-primary"></i>
+                            Puntuaciones por Competencia
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        ${Object.entries(dimensionalScores).map(([dimension, score]) => {
+                            const percentage = Math.round(score);
+                            let barColor;
+                            if (percentage >= 70) barColor = '#28a745';
+                            else if (percentage >= 50) barColor = '#17a2b8';
+                            else if (percentage >= 30) barColor = '#ffc107';
+                            else barColor = '#dc3545';
+                            
+                            return `
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="fw-medium">${dimension}</span>
+                                        <span class="text-muted">${percentage}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar" style="width: ${percentage}%; background-color: ${barColor};" role="progressbar"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fortalezas y Áreas de Mejora -->
+        <div class="row mb-4">
+            ${strengths.length > 0 ? `
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 h-100 shadow-sm" style="border-left: 4px solid #28a745 !important;">
+                        <div class="card-header" style="background-color: #d4edda;">
+                            <h5 class="mb-0 text-success">
+                                <i class="fas fa-star me-2"></i>
+                                Fortalezas en Liderazgo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            ${strengths.map(item => `
+                                <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                                    <div class="flex-shrink-0 me-3">
+                                        <span class="badge bg-success fs-6">${Math.round(item.score)}%</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold">${item.name}</div>
+                                        <small class="text-muted">Competencia destacada</small>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${improvements.length > 0 ? `
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 h-100 shadow-sm" style="border-left: 4px solid #ffc107 !important;">
+                        <div class="card-header" style="background-color: #fff3cd;">
+                            <h5 class="mb-0 text-warning">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Áreas de Desarrollo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            ${improvements.map(item => `
+                                <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                                    <div class="flex-shrink-0 me-3">
+                                        <span class="badge ${item.score < 30 ? 'bg-danger' : 'bg-warning'} fs-6">${Math.round(item.score)}%</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold">${item.name}</div>
+                                        <small class="text-muted">Oportunidad de mejora</small>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+
+        <!-- Recomendaciones -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Recomendaciones para Desarrollar tu Liderazgo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <strong>${evaluation.result_text || levelDescription}</strong>
+                        </div>
+                        <ul class="list-unstyled">
+                            ${improvements.slice(0, 3).map(item => `
+                                <li class="mb-2">
+                                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                                    Fortalece tu <strong>${item.name}</strong> a través de práctica deliberada y feedback continuo.
+                                </li>
+                            `).join('')}
+                            ${improvements.length === 0 ? `
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Mantén y consolida tus fortalezas actuales en liderazgo.
+                                </li>
+                            ` : ''}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Respuestas Detalladas -->
+        ${evaluation.responses && evaluation.responses.length > 0 ? `
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list me-2"></i>
+                                Respuestas Detalladas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            ${evaluation.responses.map((response, index) => {
+                                const optionLabels = {
+                                    1: 'Nunca',
+                                    2: 'Raramente',
+                                    3: 'A veces',
+                                    4: 'Frecuentemente',
+                                    5: 'Siempre'
+                                };
+                                return `
+                                    <div class="mb-3 p-3 border rounded">
+                                        <div class="fw-bold mb-2">${index + 1}. ${response.question_text}</div>
+                                        <div class="text-muted">
+                                            <i class="fas fa-reply me-2"></i>
+                                            Respuesta: <span class="badge bg-secondary">${optionLabels[response.selected_option] || response.selected_option}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        ` : ''}
+    `;
+    
+    container.innerHTML = html;
+    
+    // Crear el gráfico radar después de insertar el HTML
+    setTimeout(() => {
+        createRadarChart(dimensionalScores, false, false, true, false);
+    }, 100);
 }
 
 // Función específica para mostrar evaluación "Preparación para crecer 2026" en dashboard del coach
