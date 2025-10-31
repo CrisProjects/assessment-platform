@@ -1527,17 +1527,20 @@ def calculate_disc_score(responses):
     
     # Calcular puntuaciones dimensionales
     dimensional_scores = {}
+    dimension_totals = {}  # Para guardar totales brutos
     
     for dimension, responses_list in dimension_responses.items():
         if responses_list:
             # Calcular porcentaje para esta dimensión
             dimension_total = sum(responses_list)
+            dimension_totals[dimension] = dimension_total  # Guardar total bruto
             max_possible = len(responses_list) * LIKERT_SCALE_MAX
             dimension_percentage = (dimension_total / max_possible) * 100
             dimensional_scores[dimension] = round(dimension_percentage, 1)
             logger.info(f"🎯 CALCULATE_DISC_SCORE: {dimension} = {dimension_total}/{max_possible} = {dimension_percentage}%")
         else:
             dimensional_scores[dimension] = 0
+            dimension_totals[dimension] = 0
             logger.info(f"🎯 CALCULATE_DISC_SCORE: {dimension} = 0 (no responses found)")
     
     # Determinar estilo predominante
@@ -1545,8 +1548,8 @@ def calculate_disc_score(responses):
         predominant_style = max(dimensional_scores, key=dimensional_scores.get)
         max_score = dimensional_scores[predominant_style]
         
-        # Calcular puntuación general como promedio de todas las dimensiones
-        overall_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+        # Calcular puntuación general como suma de todas las respuestas (no promediar porcentajes)
+        overall_score = sum(dimension_totals.values())
         
         # Generar texto descriptivo basado en el estilo predominante
         style_descriptions = {
@@ -1564,10 +1567,10 @@ def calculate_disc_score(responses):
             secondary_style = sorted_scores[1][0]
             result_text += f" Con características secundarias del estilo {secondary_style}."
         
-        logger.info(f"🎯 CALCULATE_DISC_SCORE: Final result - Score: {round(overall_score, 1)}, Style: {predominant_style}")
+        logger.info(f"🎯 CALCULATE_DISC_SCORE: Final result - Score: {overall_score}, Style: {predominant_style}")
         logger.info(f"🎯 CALCULATE_DISC_SCORE: Dimensional scores: {dimensional_scores}")
         
-        return round(overall_score, 1), result_text, dimensional_scores
+        return overall_score, result_text, dimensional_scores
     
     return 0, "No se pudieron calcular las puntuaciones DISC", {}
 
