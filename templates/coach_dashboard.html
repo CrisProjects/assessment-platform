@@ -5137,13 +5137,42 @@ function viewCoacheeDetails(coacheeId) {
             if (data.success && data.evaluations) {
                 // Procesar evaluaciones para agregar campos necesarios
                 const processedEvaluations = data.evaluations.map(evaluation => {
-                    // Calcular porcentaje basado en el score
-                    const percentage = evaluation.score || 0;
+                    const assessmentTitle = evaluation.assessment?.title || '';
+                    const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
+                    const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
+                    const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
+                    const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+                    
+                    // Calcular porcentaje basado en el tipo de evaluación
+                    let percentage;
+                    let level;
+                    
+                    if (isLeadershipAssessment) {
+                        // Liderazgo: score es suma (10-50), convertir a porcentaje
+                        percentage = Math.round((evaluation.score / 50) * 100);
+                        level = getLeadershipLevelFromScore(evaluation.score);
+                    } else if (isTeamworkAssessment) {
+                        // Trabajo en Equipo: score es suma (12-60), convertir a porcentaje
+                        percentage = Math.round((evaluation.score / 60) * 100);
+                        level = getTeamworkLevelFromScore(evaluation.score);
+                    } else if (isDiscAssessment) {
+                        // DISC: score es suma (16-80), convertir a porcentaje
+                        percentage = Math.round((evaluation.score / 80) * 100);
+                        level = getDiscLevelFromScore(evaluation.score);
+                    } else if (isEmotionalIntelligenceAssessment) {
+                        // IE: score es suma (12-60), convertir a porcentaje
+                        percentage = Math.round((evaluation.score / 60) * 100);
+                        level = getEmotionalIntelligenceLevelFromScore(evaluation.score);
+                    } else {
+                        // Asertividad y otras: score ya es porcentaje
+                        percentage = evaluation.score || 0;
+                        level = getAssertiveLevelFromScore(percentage);
+                    }
                     
                     return {
                         ...evaluation,
                         percentage: percentage,
-                        level: getAssertiveLevelFromScore(percentage),
+                        level: level,
                         interpretation: evaluation.result_text || ''
                     };
                 });
