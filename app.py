@@ -314,15 +314,13 @@ class Invitation(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False, index=True)
     used_at = db.Column(db.DateTime, nullable=True)
     is_used = db.Column(db.Boolean, default=False, index=True)
-    # NOTA: Columnas comentadas temporalmente hasta ejecutar migración en Railway
-    # assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=True, index=True)  # Evaluación asignada
-    # accepted_at = db.Column(db.DateTime, nullable=True)  # Primera vez que accede
-    # status = db.Column(db.String(20), default='pending')  # pending, accepted, expired
+    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=True, index=True)  # Evaluación asignada
+    accepted_at = db.Column(db.DateTime, nullable=True)  # Primera vez que accede
+    status = db.Column(db.String(20), default='pending')  # pending, accepted, expired
     
     coach = db.relationship('User', foreign_keys=[coach_id], backref='sent_invitations')
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_invitation')
-    # NOTA: Relación assessment comentada temporalmente hasta ejecutar migración en Railway
-    # assessment = db.relationship('Assessment', foreign_keys=[assessment_id], backref='invitations')
+    assessment = db.relationship('Assessment', foreign_keys=[assessment_id], backref='invitations')
     
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -3706,7 +3704,7 @@ def api_coach_create_invitation_v2():
         db.session.add(new_coachee)
         db.session.flush()  # Obtener ID sin hacer commit completo
         
-        # Crear registro de invitación (solo columnas básicas hasta migración en Railway)
+        # Crear registro de invitación
         invitation = Invitation(
             coach_id=current_coach.id,
             coachee_id=new_coachee.id,
@@ -3715,12 +3713,12 @@ def api_coach_create_invitation_v2():
             token=invite_token,
             message=message,
             created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=30)
-            # status='pending'  # Comentado: columna no existe en Railway
+            expires_at=datetime.utcnow() + timedelta(days=30),
+            status='pending'
         )
         db.session.add(invitation)
         db.session.commit()
-        logger.info(f"✅ INVITATION: Invitation created successfully (assessment tracked via Task table)")
+        logger.info(f"✅ INVITATION: Invitation created successfully with status 'pending'")
         
         logger.info(f"✅ INVITATION: Invitation record created with token for coachee {new_coachee.id}")
         
@@ -3755,7 +3753,11 @@ def api_coach_create_invitation_v2():
                 
                 if assessment:
                     try:
-                        # Crear una tarea de evaluación para el coachee con verificaciones Railway
+                        # Actualizar invitación con assessment_id
+                        invitation.assessment_id = assessment.id
+                        db.session.add(invitation)
+                        
+                        # Crear una tarea de evaluación para el coachee
                         new_task = Task(
                             coach_id=current_coach.id,
                             coachee_id=new_coachee.id,
@@ -3775,7 +3777,7 @@ def api_coach_create_invitation_v2():
                             db.session.commit()
                             assessment_assigned = True
                             assigned_assessment_title = assessment.title
-                            logger.info(f"✅ INVITATION: Assessment '{assessment.title}' assigned successfully to coachee {new_coachee.full_name} (Task ID: {new_task.id})")
+                            logger.info(f"✅ INVITATION: Assessment '{assessment.title}' assigned to invitation and task (Task ID: {new_task.id})")
                         else:
                             logger.error("❌ INVITATION: Task creation failed - no ID generated")
                             db.session.rollback()
