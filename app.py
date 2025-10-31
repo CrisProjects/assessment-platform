@@ -314,10 +314,10 @@ class Invitation(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False, index=True)
     used_at = db.Column(db.DateTime, nullable=True)
     is_used = db.Column(db.Boolean, default=False, index=True)
-    # NOTA: assessment_id comentado temporalmente hasta ejecutar migración en Railway
+    # NOTA: Columnas comentadas temporalmente hasta ejecutar migración en Railway
     # assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=True, index=True)  # Evaluación asignada
-    accepted_at = db.Column(db.DateTime, nullable=True)  # Primera vez que accede
-    status = db.Column(db.String(20), default='pending')  # pending, accepted, expired
+    # accepted_at = db.Column(db.DateTime, nullable=True)  # Primera vez que accede
+    # status = db.Column(db.String(20), default='pending')  # pending, accepted, expired
     
     coach = db.relationship('User', foreign_keys=[coach_id], backref='sent_invitations')
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_invitation')
@@ -2429,7 +2429,8 @@ def invitation_landing(token):
             return redirect(url_for('participant_access'))
         
         # Verificar si ya fue usada
-        if invitation.status == 'accepted' or invitation.is_used:
+        # Temporal: status comentado hasta migración en Railway
+        if invitation.is_used:  # or invitation.status == 'accepted':
             logger.info(f"ℹ️ INVITE: Token already used for {invitation.email}")
             flash('Esta invitación ya fue utilizada. Por favor inicia sesión normalmente.', 'info')
             return redirect(url_for('participant_access'))
@@ -2448,11 +2449,12 @@ def invitation_landing(token):
             return redirect(url_for('participant_access'))
         
         # Buscar assessment si está asignado
+        # Temporal: assessment_id comentado hasta migración en Railway
         assessment_title = None
-        if invitation.assessment_id:
-            assessment = Assessment.query.get(invitation.assessment_id)
-            if assessment:
-                assessment_title = assessment.title
+        # if invitation.assessment_id:
+        #     assessment = Assessment.query.get(invitation.assessment_id)
+        #     if assessment:
+        #         assessment_title = assessment.title
         
         logger.info(f"✅ INVITE: Valid invitation for {coachee.full_name} ({coachee.email})")
         
@@ -2550,7 +2552,8 @@ def api_invite_login():
             logger.warning(f"❌ INVITE-LOGIN: Invalid token: {token[:10]}...")
             return jsonify({'success': False, 'error': 'Token de invitación inválido'}), 400
         
-        if invitation.status == 'accepted' or invitation.is_used:
+        # Temporal: status comentado hasta migración en Railway
+        if invitation.is_used:  # or invitation.status == 'accepted':
             logger.info(f"ℹ️ INVITE-LOGIN: Token already used for {invitation.email}")
             return jsonify({'success': False, 'error': 'Esta invitación ya fue utilizada', 'redirect': '/participant-access'}), 400
         
@@ -2575,28 +2578,32 @@ def api_invite_login():
         session['username'] = coachee.username
         session['role'] = 'coachee'
         session['first_login'] = True  # Marcar como primera vez
-        session['target_assessment_id'] = invitation.assessment_id  # Guardar evaluación objetivo
+        # Temporal: assessment_id comentado hasta migración en Railway
+        session['target_assessment_id'] = None  # invitation.assessment_id
         session.permanent = True
         
         # Actualizar last_login
         coachee.last_login = datetime.utcnow()
         
         # Marcar invitación como aceptada
-        invitation.status = 'accepted'
+        # Temporal: status y accepted_at comentados hasta migración en Railway
+        # invitation.status = 'accepted'
         invitation.is_used = True
         invitation.used_at = datetime.utcnow()
-        invitation.accepted_at = datetime.utcnow()
+        # invitation.accepted_at = datetime.utcnow()
         
         db.session.commit()
         
         logger.info(f"✅ INVITE-LOGIN: Successful login for {coachee.full_name} via invitation")
-        logger.info(f"🎯 INVITE-LOGIN: Will redirect to assessment ID: {invitation.assessment_id}")
+        # Temporal: assessment_id comentado hasta migración en Railway
+        # logger.info(f"🎯 INVITE-LOGIN: Will redirect to assessment ID: {invitation.assessment_id}")
         
         # Determinar URL de redirección
-        if invitation.assessment_id:
-            # Redirigir al dashboard con parámetro para auto-iniciar evaluación
-            redirect_url = f'/coachee-dashboard?auto_start={invitation.assessment_id}'
-        else:
+        # Temporal: assessment_id comentado hasta migración en Railway
+        # if invitation.assessment_id:
+        #     redirect_url = f'/coachee-dashboard?auto_start={invitation.assessment_id}'
+        # else:
+        if True:  # Siempre redirigir al dashboard normal
             # Si no hay evaluación asignada, ir al dashboard normal
             redirect_url = '/coachee-dashboard'
         
@@ -3699,7 +3706,7 @@ def api_coach_create_invitation_v2():
         db.session.add(new_coachee)
         db.session.flush()  # Obtener ID sin hacer commit completo
         
-        # Crear registro de invitación (sin assessment_id hasta migración en Railway)
+        # Crear registro de invitación (solo columnas básicas hasta migración en Railway)
         invitation = Invitation(
             coach_id=current_coach.id,
             coachee_id=new_coachee.id,
@@ -3708,8 +3715,8 @@ def api_coach_create_invitation_v2():
             token=invite_token,
             message=message,
             created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=30),
-            status='pending'
+            expires_at=datetime.utcnow() + timedelta(days=30)
+            # status='pending'  # Comentado: columna no existe en Railway
         )
         db.session.add(invitation)
         db.session.commit()
