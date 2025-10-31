@@ -1578,6 +1578,7 @@ def calculate_disc_score(responses):
 def calculate_disc_score_legacy(response_dict, disc_dimensions):
     """Función legacy para compatibilidad hacia atrás"""
     dimensional_scores = {}
+    dimension_totals = {}  # Para guardar totales brutos
     
     # Calcular puntuación para cada dimensión DISC
     for dimension, question_ids in disc_dimensions.items():
@@ -1596,19 +1597,21 @@ def calculate_disc_score_legacy(response_dict, disc_dimensions):
                 logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: Question {question_id} NOT FOUND in responses")
         
         if dimension_count > 0:
-            # Calcular porcentaje para esta dimensión
+            # Guardar total bruto y calcular porcentaje para análisis
+            dimension_totals[dimension] = dimension_total
             max_possible = dimension_count * LIKERT_SCALE_MAX
             dimension_percentage = (dimension_total / max_possible) * 100
             dimensional_scores[dimension] = round(dimension_percentage, 1)
             logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: {dimension} = {dimension_total}/{max_possible} = {dimension_percentage}%")
         else:
             dimensional_scores[dimension] = 0
+            dimension_totals[dimension] = 0
             logger.info(f"🎯 CALCULATE_DISC_SCORE_LEGACY: {dimension} = 0 (no responses found)")
     
     # Determinar estilo predominante
     if dimensional_scores:
         predominant_style = max(dimensional_scores, key=dimensional_scores.get)
-        overall_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+        overall_score = sum(dimension_totals.values())  # Suma de totales brutos, no promedio de porcentajes
         
         style_descriptions = {
             'Dominante': "Estilo Dominante: Orientado a resultados, directo y decidido. Te enfocas en superar desafíos y lograr objetivos.",
@@ -1655,6 +1658,7 @@ def calculate_emotional_intelligence_score(responses):
     }
     
     dimensional_scores = {}
+    dimension_totals = {}  # Para guardar totales brutos
     
     # Calcular puntuación para cada dimensión de IE
     for dimension, question_ids in eq_dimensions.items():
@@ -1673,18 +1677,20 @@ def calculate_emotional_intelligence_score(responses):
                 logger.info(f"🎯 CALCULATE_EQ_SCORE: Question {question_id} NOT FOUND in responses")
         
         if dimension_count > 0:
-            # Calcular porcentaje para esta dimensión
+            # Guardar total bruto y calcular porcentaje para análisis
+            dimension_totals[dimension] = dimension_total
             max_possible = dimension_count * LIKERT_SCALE_MAX
             dimension_percentage = (dimension_total / max_possible) * 100
             dimensional_scores[dimension] = round(dimension_percentage, 1)
             logger.info(f"🎯 CALCULATE_EQ_SCORE: {dimension} = {dimension_total}/{max_possible} = {dimension_percentage}%")
         else:
             dimensional_scores[dimension] = 0
+            dimension_totals[dimension] = 0
             logger.info(f"🎯 CALCULATE_EQ_SCORE: {dimension} = 0 (no responses found)")
 
-    # Calcular puntuación general como promedio de todas las dimensiones
+    # Calcular puntuación general como suma de todas las respuestas (no promediar porcentajes)
     if dimensional_scores:
-        overall_score = sum(dimensional_scores.values()) / len(dimensional_scores)
+        overall_score = sum(dimension_totals.values())
         
         # Clasificación por nivel de inteligencia emocional
         if overall_score >= 85:
@@ -1714,12 +1720,156 @@ def calculate_emotional_intelligence_score(responses):
             if dimensional_scores[weakest_dimension] < 60:
                 result_text += f" Considera desarrollar más tu {weakest_dimension.lower()}."
 
-        logger.info(f"🎯 CALCULATE_EQ_SCORE: Final result - Score: {round(overall_score, 1)}, Level: {level}")
+        logger.info(f"🎯 CALCULATE_EQ_SCORE: Final result - Score: {overall_score}, Level: {level}")
         logger.info(f"🎯 CALCULATE_EQ_SCORE: Dimensional scores: {dimensional_scores}")
         
-        return round(overall_score, 1), result_text, dimensional_scores
+        return overall_score, result_text, dimensional_scores
     
     return 0, "No se pudieron calcular las puntuaciones de Inteligencia Emocional", {}
+
+
+def calculate_leadership_score(responses):
+    """Calcula puntuación de Liderazgo basada en respuestas y dimensiones"""
+    logger.info(f"🎯 CALCULATE_LEADERSHIP_SCORE: Starting with {len(responses) if responses else 0} responses")
+    
+    if not responses:
+        return 0, "Sin respuestas disponibles", None
+
+    # Manejar tanto formato lista como diccionario
+    if isinstance(responses, list):
+        response_dict = {str(r['question_id']): r['selected_option'] for r in responses}
+    else:
+        response_dict = responses
+    
+    # Obtener preguntas de liderazgo dinámicamente desde la base de datos
+    try:
+        questions = Question.query.filter_by(assessment_id=4).order_by(Question.order).all()
+        dimension_responses = {}
+        dimension_totals = {}
+        
+        for question in questions:
+            dimension = question.dimension if question.dimension else 'General'
+            question_id_str = str(question.id)
+            
+            if question_id_str in response_dict:
+                if dimension not in dimension_responses:
+                    dimension_responses[dimension] = []
+                    dimension_totals[dimension] = 0
+                
+                response_value = int(response_dict[question_id_str])
+                dimension_responses[dimension].append(response_value)
+                dimension_totals[dimension] += response_value
+        
+        # Calcular score total como suma de todas las respuestas
+        overall_score = sum(dimension_totals.values())
+        
+        # Calcular porcentajes por dimensión para el análisis
+        dimensional_scores = {}
+        for dimension, total in dimension_totals.items():
+            count = len(dimension_responses[dimension])
+            if count > 0:
+                max_possible = count * LIKERT_SCALE_MAX
+                percentage = (total / max_possible) * 100
+                dimensional_scores[dimension] = round(percentage, 1)
+        
+        # Clasificar nivel de liderazgo basado en porcentaje general
+        num_questions = len(response_dict)
+        max_possible_total = num_questions * LIKERT_SCALE_MAX
+        percentage = (overall_score / max_possible_total) * 100
+        
+        if percentage >= 80:
+            level = "Liderazgo excepcional"
+            text = "Demuestras habilidades de liderazgo excepcionales en todas las áreas clave."
+        elif percentage >= 60:
+            level = "Buen liderazgo"
+            text = "Tienes sólidas habilidades de liderazgo con oportunidades de crecimiento."
+        elif percentage >= 40:
+            level = "Liderazgo en desarrollo"
+            text = "Muestras potencial de liderazgo con áreas importantes por desarrollar."
+        else:
+            level = "Liderazgo inicial"
+            text = "Estás en las etapas iniciales del desarrollo de habilidades de liderazgo."
+        
+        result_text = f"{level}: {text}"
+        
+        logger.info(f"🎯 CALCULATE_LEADERSHIP_SCORE: Score={overall_score}, Level={level}")
+        return overall_score, result_text, dimensional_scores
+        
+    except Exception as e:
+        logger.error(f"🎯 CALCULATE_LEADERSHIP_SCORE: Error: {e}")
+        return 0, "Error al calcular puntuación de liderazgo", {}
+
+
+def calculate_teamwork_score(responses):
+    """Calcula puntuación de Trabajo en Equipo basada en respuestas y dimensiones"""
+    logger.info(f"🎯 CALCULATE_TEAMWORK_SCORE: Starting with {len(responses) if responses else 0} responses")
+    
+    if not responses:
+        return 0, "Sin respuestas disponibles", None
+
+    # Manejar tanto formato lista como diccionario
+    if isinstance(responses, list):
+        response_dict = {str(r['question_id']): r['selected_option'] for r in responses}
+    else:
+        response_dict = responses
+    
+    # Obtener preguntas de trabajo en equipo dinámicamente desde la base de datos
+    try:
+        questions = Question.query.filter_by(assessment_id=5).order_by(Question.order).all()
+        dimension_responses = {}
+        dimension_totals = {}
+        
+        for question in questions:
+            dimension = question.dimension if question.dimension else 'General'
+            question_id_str = str(question.id)
+            
+            if question_id_str in response_dict:
+                if dimension not in dimension_responses:
+                    dimension_responses[dimension] = []
+                    dimension_totals[dimension] = 0
+                
+                response_value = int(response_dict[question_id_str])
+                dimension_responses[dimension].append(response_value)
+                dimension_totals[dimension] += response_value
+        
+        # Calcular score total como suma de todas las respuestas
+        overall_score = sum(dimension_totals.values())
+        
+        # Calcular porcentajes por dimensión para el análisis
+        dimensional_scores = {}
+        for dimension, total in dimension_totals.items():
+            count = len(dimension_responses[dimension])
+            if count > 0:
+                max_possible = count * LIKERT_SCALE_MAX
+                percentage = (total / max_possible) * 100
+                dimensional_scores[dimension] = round(percentage, 1)
+        
+        # Clasificar nivel de trabajo en equipo basado en porcentaje general
+        num_questions = len(response_dict)
+        max_possible_total = num_questions * LIKERT_SCALE_MAX
+        percentage = (overall_score / max_possible_total) * 100
+        
+        if percentage >= 80:
+            level = "Excelente colaborador"
+            text = "Demuestras habilidades excepcionales de trabajo en equipo y colaboración."
+        elif percentage >= 60:
+            level = "Buen colaborador"
+            text = "Trabajas bien en equipo con oportunidades de mejorar la colaboración."
+        elif percentage >= 40:
+            level = "Colaborador en desarrollo"
+            text = "Tienes potencial colaborativo con áreas importantes por desarrollar."
+        else:
+            level = "Colaborador inicial"
+            text = "Estás desarrollando tus habilidades básicas de trabajo en equipo."
+        
+        result_text = f"{level}: {text}"
+        
+        logger.info(f"🎯 CALCULATE_TEAMWORK_SCORE: Score={overall_score}, Level={level}")
+        return overall_score, result_text, dimensional_scores
+        
+    except Exception as e:
+        logger.error(f"🎯 CALCULATE_TEAMWORK_SCORE: Error: {e}")
+        return 0, "Error al calcular puntuación de trabajo en equipo", {}
 
 
 def calculate_growth_preparation_score(responses):
@@ -3324,6 +3474,12 @@ def api_save_assessment():
         elif assessment_id_int == 3:  # Evaluación de Inteligencia Emocional
             logger.info("🎯 SAVE_ASSESSMENT: Using calculate_emotional_intelligence_score function")
             score, result_text, dimensional_scores = calculate_emotional_intelligence_score(responses)
+        elif assessment_id_int == 4:  # Evaluación de Habilidades de Liderazgo
+            logger.info("🎯 SAVE_ASSESSMENT: Using calculate_leadership_score function")
+            score, result_text, dimensional_scores = calculate_leadership_score(responses)
+        elif assessment_id_int == 5:  # Assessment de Trabajo en Equipo
+            logger.info("🎯 SAVE_ASSESSMENT: Using calculate_teamwork_score function")
+            score, result_text, dimensional_scores = calculate_teamwork_score(responses)
         elif assessment_id_int == 6:  # Evaluación Preparación para crecer 2026
             logger.info("🎯 SAVE_ASSESSMENT: Using calculate_growth_preparation_score function")
             score, result_text, dimensional_scores = calculate_growth_preparation_score(responses)
