@@ -367,36 +367,70 @@
         }
         
         /* ESTILOS GENERALES PARA DASHBOARD HEADER - ESTILO FEED */
-        .dashboard-header-fixed {
-            background: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
+        /* Header - UNIFICADO CON FEED */
+        .feed-header {
+            background: white;
+            border-bottom: 1px solid #dbdbdb;
             padding: 12px 16px;
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1rem;
         }
         
-        .dashboard-header-fixed h3 {
+        .feed-header h3 {
             font-family: 'Lobster Two', cursive !important;
             font-size: 32px !important;
             font-weight: 400 !important;
             margin: 0 !important;
-            color: #000000 !important;
+            color: #262626 !important;
             letter-spacing: 0.5px !important;
             line-height: 1.2 !important;
         }
         
-        .dashboard-header-fixed .user-info {
+        /* Responsive font sizes for InstaCoach title */
+        @media (max-width: 768px) {
+            .feed-header h3 {
+                font-size: 40px !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .feed-header h3 {
+                font-size: 36px !important;
+            }
+        }
+        
+        /* Extra specificity for h3 to override any Bootstrap or default styles */
+        .feed-header > div > h3,
+        #instacoach-title {
+            font-family: 'Lobster Two', cursive !important;
+            font-size: 32px !important;
+        }
+        
+        @media (max-width: 768px) {
+            .feed-header > div > h3,
+            #instacoach-title {
+                font-size: 40px !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .feed-header > div > h3,
+            #instacoach-title {
+                font-size: 36px !important;
+            }
+        }
+        
+        .feed-header .user-info {
             display: flex;
             align-items: center;
             gap: 8px;
         }
         
-        .dashboard-header-fixed .user-avatar {
+        .feed-header .user-avatar {
             width: 44px;
             height: 44px;
             border-radius: 50%;
@@ -408,77 +442,37 @@
             font-size: 18px;
             font-weight: 600;
             overflow: hidden;
-            border: 2px solid #e5e7eb;
+            border: 2px solid #ffffff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             cursor: pointer;
             transition: transform 0.2s;
         }
         
-        .dashboard-header-fixed .user-avatar:hover {
+        .feed-header .user-avatar:hover {
             transform: scale(1.08);
         }
         
-        .dashboard-header-fixed .user-avatar img {
+        .feed-header .user-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
         
-        .dashboard-header-fixed .dropdown .btn-link {
+        .feed-header .dropdown .btn-link {
             font-size: 20px;
             text-decoration: none;
             opacity: 0.9;
             transition: opacity 0.2s;
-            color: #374151 !important;
+            color: #262626 !important;
         }
         
-        .dashboard-header-fixed .dropdown .btn-link:hover {
+        .feed-header .dropdown .btn-link:hover {
             opacity: 1;
+            color: #000000 !important;
         }
         
-        .dashboard-header-fixed .dropdown-menu {
+        .feed-header .dropdown-menu {
             min-width: 200px;
-            background-color: #ffffff;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .dashboard-header-fixed .dropdown-item {
-            color: #374151;
-        }
-        
-        .dashboard-header-fixed .dropdown-item:hover {
-            background-color: #f3f4f6;
-            color: #111827;
-        }
-        
-        .dashboard-header-fixed .dropdown-divider {
-            border-color: #e5e7eb;
-        }
-        
-        /* HEADER RESPONSIVE */
-        @media (max-width: 768px) {
-            .dashboard-header-fixed h3 {
-                font-size: 40px !important; /* Igualado EXACTAMENTE con Feed */
-            }
-            
-            .dashboard-header-fixed .user-avatar {
-                width: 38px;
-                height: 38px;
-                font-size: 16px;
-            }
-        }
-        
-        /* MÓVILES PEQUEÑOS */
-        @media (max-width: 576px) {
-            .dashboard-header-fixed h3 {
-                font-size: 36px !important; /* Igualado EXACTAMENTE con Feed */
-            }
-            
-            .dashboard-header-fixed .user-avatar {
-                width: 36px;
-                height: 36px;
-                font-size: 14px;
-            }
         }
         
         /* STATISTICS CARDS MEJORADAS - DISEÑO MODERNO Y ATRACTIVO */
@@ -872,11 +866,6 @@
             
             /* TIPOGRAFÍA Y ESPACIADO OPTIMIZADO PARA MÓVIL - IGUALADO CON FEED */
             /* Se eliminó font-size de body para usar defaults del navegador como Feed */
-            
-            /* EXCEPCIÓN: Header fijo mantiene su tamaño incrementado */
-            .dashboard-header-fixed h3 {
-                font-size: 40px !important; /* Igualado EXACTAMENTE con Feed (tablet) */
-            }
             
             /* Espaciado de secciones optimizado */
             .container-fluid {
@@ -1348,11 +1337,6 @@
             
             /* TIPOGRAFÍA Y ESPACIADO OPTIMIZADO PARA TABLET - IGUALADO CON FEED */
             /* Se eliminó font-size de body para usar defaults del navegador como Feed */
-            
-            /* EXCEPCIÓN: Header fijo mantiene su tamaño incrementado en tablet */
-            .dashboard-header-fixed h3 {
-                font-size: 40px !important; /* Igualado EXACTAMENTE con Feed (tablet) */
-            }
             
             /* Espaciado de secciones optimizado para tablet */
             .container-fluid {
@@ -5874,18 +5858,18 @@
         <!-- Particles will be generated by JavaScript -->
     </div>
 
-    <!-- Header Fijo - Estilo Feed -->
-    <div class="dashboard-header-fixed">
+    <!-- Header - UNIFICADO CON FEED -->
+    <div class="feed-header">
         <div>
-            <h3>InstaCoach</h3>
-            <p class="mb-0" style="font-size: 14px; margin-top: 4px; color: #6b7280;">Welcome <span id="welcomeMessage"></span></p>
+            <h3 id="instacoach-title">InstaCoach</h3>
+            <p class="mb-0" style="font-size: 14px; margin-top: 4px; color: #8e8e8e;">Welcome <span id="welcomeMessage"></span></p>
         </div>
         <div class="user-info">
             <div class="user-avatar" id="headerAvatarDashboard">
                 <i class="fas fa-user"></i>
             </div>
             <div class="dropdown">
-                <button class="btn btn-link p-0 ms-2" type="button" id="userMenuDropdownDashboard" data-bs-toggle="dropdown" aria-expanded="false" style="color: #374151;">
+                <button class="btn btn-link p-0 ms-2" type="button" id="userMenuDropdownDashboard" data-bs-toggle="dropdown" aria-expanded="false" style="color: #262626;">
                     <i class="fas fa-ellipsis-v"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdownDashboard">
