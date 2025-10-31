@@ -4434,8 +4434,8 @@ def api_coach_available_assessments():
                     'id': assessment.id,
                     'title': assessment.title or 'Sin título',
                     'description': assessment.description or 'Sin descripción',
-                    'question_count': questions_count,  # Cambié de questions_count a question_count para consistencia
-                    'result_count': completed_count,    # Cambié de completed_count a result_count para consistencia
+                    'questions_count': questions_count,  # Coincide con el frontend
+                    'completed_count': completed_count,    # Coincide con el frontend
                     'created_at': assessment.created_at.isoformat() if assessment.created_at else None
                 }
                 
