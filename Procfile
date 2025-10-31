@@ -1,1 +1,1 @@
-web: python wsgi_production.py
+web: python add_assessment_id_to_invitation.py && python wsgi_production.py
