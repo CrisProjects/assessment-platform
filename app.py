@@ -1898,6 +1898,7 @@ def calculate_growth_preparation_score(responses):
     
     dimensional_scores = {}
     respuestas_c_count = 0  # Contador de respuestas C (opción 3)
+    total_score = 0  # Suma total de todas las respuestas
     
     # Calcular puntuación para cada dimensión y contar respuestas C
     for dimension, config in dimensions_config.items():
@@ -1908,6 +1909,7 @@ def calculate_growth_preparation_score(responses):
             if str(question_id) in response_dict:
                 response_value = response_dict[str(question_id)]
                 dimension_total += response_value
+                total_score += response_value  # Acumular total
                 dimension_count += 1
                 
                 # Contar respuestas C (opción 3)
@@ -1941,10 +1943,11 @@ def calculate_growth_preparation_score(responses):
     # Formato del resultado sin CTA
     result_text = f"{level} ({color}): {text}"
     
-    logger.info(f"🎯 CALCULATE_GROWTH_SCORE: Respuestas C: {respuestas_c_count}/7, Percentage: {percentage_score}%, Level: {level}")
+    logger.info(f"🎯 CALCULATE_GROWTH_SCORE: Total score: {total_score}, Respuestas C: {respuestas_c_count}/7, Level: {level}")
     logger.info(f"🎯 CALCULATE_GROWTH_SCORE: Dimensional scores: {dimensional_scores}")
     
-    return round(percentage_score, 1), result_text, dimensional_scores
+    # Retornar total_score (suma de respuestas) para consistencia con otras evaluaciones
+    return total_score, result_text, dimensional_scores
 
 
 def generate_disc_recommendations(disc_scores, overall_score):
