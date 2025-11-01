@@ -8935,6 +8935,8 @@
                                                 'Descubre cómo potenciar tu perfil de personalidad DISC con el apoyo de un coach especializado en desarrollo personal y profesional.' :
                                                 isEmotionalIntelligenceAssessment ?
                                                 'Potencia tu inteligencia emocional con el acompañamiento de un coach especializado en competencias emocionales y liderazgo.' :
+                                                isLeadershipAssessment ?
+                                                'Desarrolla tus habilidades de liderazgo con el acompañamiento de un coach especializado en desarrollo de líderes y gestión de equipos.' :
                                                 isTeamworkAssessment ?
                                                 'Fortalece tus habilidades de trabajo en equipo con el apoyo de un coach especializado en colaboración y liderazgo de equipos.' :
                                                 'Puedes desarrollar y fortalecer tus habilidades de asertividad con el apoyo personalizado de un coach profesional.'
@@ -9022,9 +9024,11 @@
                     dimensionalScores,
                     isDiscAssessment,
                     isEmotionalIntelligenceAssessment,
+                    isLeadershipAssessment,
+                    isTeamworkAssessment,
                     assessmentTitle
                 });
-                createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment);
+                createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isLeadershipAssessment, isTeamworkAssessment);
             }, 100);
         }
 
@@ -9858,10 +9862,12 @@
         // Variable global para almacenar el gráfico radar
         let radarChart = null;
 
-        function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotionalIntelligenceAssessment = false) {
+        function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotionalIntelligenceAssessment = false, isLeadershipAssessment = false, isTeamworkAssessment = false) {
             console.log('🎯 RADAR DEBUG: Function called with params:', {
                 isDiscAssessment,
                 isEmotionalIntelligenceAssessment,
+                isLeadershipAssessment,
+                isTeamworkAssessment,
                 dimensionalScores,
                 hasCanvas: !!document.getElementById('radarChart')
             });
@@ -9926,6 +9932,20 @@
                 
                 chartLabel = 'Perfil de Inteligencia Emocional';
                 console.log('🧠 RADAR DEBUG: IE data values:', dataValues);
+            } else if (isLeadershipAssessment) {
+                console.log('👔 RADAR DEBUG: Using Leadership configuration');
+                // Usar las dimensiones originales de Liderazgo (sin traducir)
+                labels = Object.keys(dimensionalScores);
+                dataValues = Object.values(dimensionalScores);
+                chartLabel = 'Perfil de Liderazgo';
+                console.log('👔 RADAR DEBUG: Leadership data:', { labels, dataValues });
+            } else if (isTeamworkAssessment) {
+                console.log('🤝 RADAR DEBUG: Using Teamwork configuration');
+                // Usar las dimensiones originales de Trabajo en Equipo (sin traducir)
+                labels = Object.keys(dimensionalScores);
+                dataValues = Object.values(dimensionalScores);
+                chartLabel = 'Perfil de Trabajo en Equipo';
+                console.log('🤝 RADAR DEBUG: Teamwork data:', { labels, dataValues });
             } else {
                 console.log('💬 RADAR DEBUG: Using Assertiveness configuration');
                 // Dimensiones Asertividad (configuración original)
