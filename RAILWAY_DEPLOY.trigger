@@ -15,3 +15,4 @@ FORCE_REBUILD=true
 
 # Railway should detect this change and redeploy automatically
 RAILWAY_TRIGGER=ACTIVE
+# Force deploy - Fri Oct 31 21:39:37 -03 2025
