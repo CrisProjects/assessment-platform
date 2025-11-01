@@ -2342,6 +2342,10 @@ def generate_recommendations(dimensional_scores, overall_score, assessment_type=
 def index():
     return render_template('index.html')
 
+@app.route('/test_carousel.html')
+def test_carousel():
+    return render_template('test_carousel.html')
+
 @app.route('/api/status')
 def api_status():
     return jsonify({
