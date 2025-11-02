@@ -2571,19 +2571,23 @@
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                            onclick="showModule('gestion-tareas'); return false;" data-module="gestion-tareas">
-                            <i class="fas fa-tasks me-3"></i>Gestión de Tareas
+                            <i class="fas fa-tasks me-3"></i>Gestión de Acciones y Metas
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                            onclick="showModule('seleccionar-evaluaciones'); return false;" data-module="seleccionar-evaluaciones">
-                            <i class="fas fa-clipboard-list me-3"></i>Evaluaciones
+                            <i class="fas fa-clipboard-list me-3"></i>Evaluaciones Disponibles
+                        </a>
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                           onclick="showModule('crear-cargar-evaluaciones'); return false;" data-module="crear-cargar-evaluaciones">
+                            <i class="fas fa-file-upload me-3"></i>Crear Nueva Evaluacion (En Proceso)
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                            onclick="showModule('agregar-contenido'); return false;" data-module="agregar-contenido">
-                            <i class="fas fa-plus-circle me-3"></i>Contenido
+                            <i class="fas fa-plus-circle me-3"></i>Compartir Contenido
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                            onclick="showModule('agenda'); return false;" data-module="agenda">
-                            <i class="fas fa-calendar-alt me-3"></i>Agenda
+                            <i class="fas fa-calendar-alt me-3"></i>Mi Agenda
                         </a>
                     </div>
                 </div>
@@ -2626,28 +2630,28 @@
                 </div>
             </div>
 
-            <!-- Gestión de Tareas Module -->
+            <!-- Gestión de Acciones y Metas Module -->
             <div id="gestion-tareas" class="module-content" style="display: none;">
                 <div class="card sidebar-white border-secondary" style="background-color: white !important;">
                     <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
                         <h5 class="text-dark mb-0">
-                            <i class="fas fa-tasks me-2 text-primary"></i>Gestión de Tareas
+                            <i class="fas fa-tasks me-2 text-primary"></i>Gestión de Acciones y Metas
                         </h5>
                     </div>
                     <div class="card-body" style="background-color: white !important;">
                         
-                        <!-- Formulario de Creación de Tareas -->
+                        <!-- Formulario de Creación de Acciones y Metas -->
                         <div class="card mb-4" style="border: 1px solid #e3e6f0; border-radius: 8px;">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0 text-dark">
-                                    <i class="fas fa-plus-circle me-2"></i>Crear Nueva Tarea
+                                    <i class="fas fa-plus-circle me-2"></i>Crear Nueva Acción o Meta
                                 </h6>
                             </div>
                             <div class="card-body">
                                 <!-- Formulario responsive -->
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label text-dark small fw-bold">Título de la Tarea</label>
+                                        <label class="form-label text-dark small fw-bold">Título</label>
                                         <input type="text" class="form-control border-secondary" 
                                                placeholder="Ingrese el título" id="taskTitle" 
                                                style="background-color: white; color: #212529;">
@@ -2657,11 +2661,21 @@
                                         <select class="form-select border-secondary" id="taskCategory" 
                                                 style="background-color: white; color: #212529;">
                                             <option value="">Seleccionar categoría</option>
-                                            <option value="coaching">Coaching</option>
-                                            <option value="evaluacion">Evaluación</option>
-                                            <option value="desarrollo">Desarrollo</option>
-                                            <option value="seguimiento">Seguimiento</option>
-                                            <option value="planificacion">Planificación</option>
+                                            <option value="personalidad">Personalidad</option>
+                                            <option value="liderazgo">Liderazgo</option>
+                                            <option value="inteligencia_emocional">Inteligencia Emocional</option>
+                                            <option value="trabajo_equipo">Trabajo en Equipo</option>
+                                            <option value="crecimiento_empresarial">Crecimiento Empresarial</option>
+                                            <option value="otros">Otros</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark small fw-bold">Tipo</label>
+                                        <select class="form-select border-secondary" id="taskType" 
+                                                style="background-color: white; color: #212529;">
+                                            <option value="">Seleccionar tipo</option>
+                                            <option value="accion">Acción</option>
+                                            <option value="meta">Meta</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
@@ -2680,24 +2694,24 @@
                                     <div class="col-12">
                                         <label class="form-label text-dark small fw-bold">Descripción</label>
                                         <textarea class="form-control border-secondary" 
-                                                  placeholder="Descripción detallada de la tarea" 
+                                                  placeholder="Descripción detallada de la acción o meta" 
                                                   id="taskDescription" rows="3" 
                                                   style="background-color: white; color: #212529;"></textarea>
                                     </div>
                                     <div class="col-12">
                                         <button class="btn btn-primary w-100" onclick="createTask()">
-                                            <i class="fas fa-plus me-1"></i>Crear Tarea
+                                            <i class="fas fa-plus me-1"></i>Crear Acción o Meta
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Lista de Tareas -->
+                        <!-- Lista de Acciones y Metas -->
                         <div class="card" style="border: 1px solid #e3e6f0; border-radius: 8px;">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0 text-dark">
-                                    <i class="fas fa-tasks me-2"></i>Lista de Tareas
+                                    <i class="fas fa-tasks me-2"></i>Lista de Acciones y Metas
                                 </h6>
                             </div>
                             <div class="card-body p-0">
@@ -2706,7 +2720,7 @@
                                     <table class="table table-striped mb-0">
                                         <thead>
                                             <tr>
-                                                <th style="color: #212529;">Tarea</th>
+                                                <th style="color: #212529;">Acción/Meta</th>
                                                 <th style="color: #212529;">Coachee</th>
                                                 <th style="color: #212529;">Categoría</th>
                                                 <th style="color: #212529;">Estado</th>
@@ -2718,7 +2732,7 @@
                                         </thead>
                                         <tbody id="tasksTableBody">
                                             <tr>
-                                                <td colspan="8" class="text-center text-muted">No hay tareas creadas</td>
+                                                <td colspan="8" class="text-center text-muted">No hay acciones o metas creadas</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -2911,6 +2925,96 @@
                             <button class="btn btn-primary btn-sm" onclick="loadAvailableAssessments()">
                                 <i class="fas fa-sync-alt me-1"></i>Intentar de nuevo
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crear o Cargar Evaluaciones Module -->
+            <div id="crear-cargar-evaluaciones" class="module-content" style="display: none;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
+                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                        <h5 class="text-dark mb-0">
+                            <i class="fas fa-file-upload me-2 text-primary"></i>
+                            Crear Nueva Evaluacion (En Proceso)
+                        </h5>
+                        <p class="text-muted mb-0 small mt-2">Sube un archivo con las evaluaciones en formato compatible</p>
+                    </div>
+                    <div class="card-body" style="background-color: white !important; padding: 1.5rem;">
+                        <!-- Formulario de carga -->
+                        <div class="mb-4">
+                            <label class="form-label text-dark fw-bold">
+                                <i class="fas fa-file-import me-2 text-primary"></i>Seleccionar archivo de evaluación
+                            </label>
+                            <p class="text-muted small mb-3">
+                                Formatos aceptados: JSON, CSV, Excel (.xlsx, .xls)
+                            </p>
+                            <div class="input-group">
+                                <input type="file" class="form-control border-secondary" id="evaluationFile" 
+                                       accept=".json,.csv,.xlsx,.xls"
+                                       style="background-color: white; color: #212529;">
+                                <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('evaluationFile').value = ''">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Información del formato -->
+                        <div class="alert alert-info" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle me-2"></i>Formato del archivo
+                            </h6>
+                            <p class="mb-2 small">El archivo debe contener la siguiente estructura:</p>
+                            <ul class="small mb-2">
+                                <li><strong>Título:</strong> Nombre de la evaluación</li>
+                                <li><strong>Descripción:</strong> Breve descripción</li>
+                                <li><strong>Categoría:</strong> Personalidad, Liderazgo, Inteligencia Emocional, Trabajo en Equipo, Crecimiento Empresarial, u Otros</li>
+                                <li><strong>Preguntas:</strong> Lista de preguntas con sus opciones y respuestas correctas</li>
+                            </ul>
+                            <button class="btn btn-sm btn-outline-info" onclick="downloadEvaluationTemplate()">
+                                <i class="fas fa-download me-1"></i>Descargar plantilla de ejemplo
+                            </button>
+                        </div>
+
+                        <!-- Vista previa del archivo -->
+                        <div id="filePreview" style="display: none;" class="mb-4">
+                            <h6 class="text-dark mb-3">
+                                <i class="fas fa-eye me-2 text-primary"></i>Vista previa
+                            </h6>
+                            <div class="card border-secondary">
+                                <div class="card-body" style="background-color: #f8f9fa;">
+                                    <div id="previewContent" class="small">
+                                        <!-- Preview content will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button class="btn btn-outline-secondary" onclick="cancelUpload()">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </button>
+                            <button class="btn btn-primary" onclick="uploadEvaluation()" id="uploadBtn" disabled>
+                                <i class="fas fa-upload me-1"></i>Cargar Evaluación
+                            </button>
+                        </div>
+
+                        <!-- Estado de carga -->
+                        <div id="uploadProgress" style="display: none;" class="mt-4">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="small text-muted">Cargando evaluación...</span>
+                                <span class="small text-muted" id="uploadPercent">0%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%" id="uploadProgressBar"></div>
+                            </div>
+                        </div>
+
+                        <!-- Resultado de la carga -->
+                        <div id="uploadResult" style="display: none;" class="mt-4">
+                            <!-- Success or error message will be shown here -->
                         </div>
                     </div>
                 </div>
@@ -4377,8 +4481,13 @@ function loadStats() {
                 if (elements.completedAssessments) {
                     elements.completedAssessments.textContent = totalEvaluations;
                 }
+                
+                // Calcular evaluaciones pendientes: Tareas asignadas - Completadas
                 if (elements.pendingAssessments) {
-                    elements.pendingAssessments.textContent = 0; // TODO: Implementar lógica de pendientes
+                    const assignedTasks = data.assigned_evaluation_tasks || 0;
+                    const pendingCount = assignedTasks - totalEvaluations;
+                    elements.pendingAssessments.textContent = Math.max(0, pendingCount); // Asegurar no negativos
+                    console.log(`📊 STATS: Pending = ${assignedTasks} assigned tasks - ${totalEvaluations} completed = ${pendingCount}`);
                 }
                 
                 // Calcular promedio general
@@ -11089,6 +11198,210 @@ function setupAppointmentManagementListeners() {
 console.log('🔄 Coach Dashboard: 2025-10-18-21:52 - DEBUGGING CREAR CITA DIRECTA');
 console.log('🇨🇱 Hora actual Santiago:', getSantiagoDateTime().toLocaleString('es-CL'));
 console.log('🔧 IMPORTANTE: Revisa los logs de debug cuando hagas clic en "Crear Cita Directa"');
+
+// ==========================================
+// FUNCIONES PARA CREAR/CARGAR EVALUACIONES
+// ==========================================
+
+// Activar el botón de carga cuando se selecciona un archivo
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('evaluationFile');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const uploadBtn = document.getElementById('uploadBtn');
+            const filePreview = document.getElementById('filePreview');
+            
+            if (e.target.files.length > 0) {
+                uploadBtn.disabled = false;
+                
+                // Mostrar preview básico
+                const file = e.target.files[0];
+                const previewContent = document.getElementById('previewContent');
+                previewContent.innerHTML = `
+                    <p class="mb-1"><strong>Archivo seleccionado:</strong> ${file.name}</p>
+                    <p class="mb-1"><strong>Tamaño:</strong> ${(file.size / 1024).toFixed(2)} KB</p>
+                    <p class="mb-0"><strong>Tipo:</strong> ${file.type || 'No especificado'}</p>
+                `;
+                filePreview.style.display = 'block';
+            } else {
+                uploadBtn.disabled = true;
+                filePreview.style.display = 'none';
+            }
+        });
+    }
+});
+
+// Función para cancelar la carga
+function cancelUpload() {
+    const fileInput = document.getElementById('evaluationFile');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const filePreview = document.getElementById('filePreview');
+    const uploadResult = document.getElementById('uploadResult');
+    
+    fileInput.value = '';
+    uploadBtn.disabled = true;
+    filePreview.style.display = 'none';
+    uploadResult.style.display = 'none';
+}
+
+// Función para cargar la evaluación
+function uploadEvaluation() {
+    const fileInput = document.getElementById('evaluationFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Por favor selecciona un archivo');
+        return;
+    }
+    
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadResult = document.getElementById('uploadResult');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    // Mostrar barra de progreso
+    uploadProgress.style.display = 'block';
+    uploadResult.style.display = 'none';
+    uploadBtn.disabled = true;
+    
+    // Crear FormData
+    const formData = new FormData();
+    formData.append('evaluation_file', file);
+    
+    // Simular progreso (en una implementación real, usarías XMLHttpRequest para progreso real)
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += 10;
+        document.getElementById('uploadProgressBar').style.width = progress + '%';
+        document.getElementById('uploadPercent').textContent = progress + '%';
+        
+        if (progress >= 90) {
+            clearInterval(progressInterval);
+        }
+    }, 200);
+    
+    // Enviar el archivo al servidor
+    fetch('/api/coach/upload-evaluation', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+    })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            document.getElementById('uploadProgressBar').style.width = '100%';
+            document.getElementById('uploadPercent').textContent = '100%';
+            
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+                
+                if (data.success) {
+                    uploadResult.innerHTML = `
+                        <div class="alert alert-success">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>¡Evaluación cargada exitosamente!</strong>
+                            </div>
+                            <p class="mb-2 small">${data.message || 'La evaluación se agregó a "Evaluaciones Disponibles"'}</p>
+                            <button class="btn btn-sm btn-success" onclick="showModule('seleccionar-evaluaciones')">
+                                <i class="fas fa-clipboard-list me-1"></i>Ver Evaluaciones Disponibles
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Limpiar el formulario
+                    setTimeout(() => {
+                        cancelUpload();
+                    }, 3000);
+                } else {
+                    uploadResult.innerHTML = `
+                        <div class="alert alert-danger">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Error al cargar la evaluación</strong>
+                            </div>
+                            <p class="mb-2 small">${data.error || 'Ocurrió un error al procesar el archivo'}</p>
+                            <button class="btn btn-sm btn-danger" onclick="cancelUpload()">
+                                <i class="fas fa-redo me-1"></i>Intentar nuevamente
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                uploadResult.style.display = 'block';
+                uploadBtn.disabled = false;
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            console.error('Error al cargar evaluación:', error);
+            
+            uploadProgress.style.display = 'none';
+            uploadResult.innerHTML = `
+                <div class="alert alert-danger">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error de conexión</strong>
+                    </div>
+                    <p class="mb-2 small">No se pudo conectar con el servidor. Por favor intenta nuevamente.</p>
+                    <button class="btn btn-sm btn-danger" onclick="cancelUpload()">
+                        <i class="fas fa-redo me-1"></i>Intentar nuevamente
+                    </button>
+                </div>
+            `;
+            uploadResult.style.display = 'block';
+            uploadBtn.disabled = false;
+        });
+}
+
+// Función para descargar plantilla de ejemplo
+function downloadEvaluationTemplate() {
+    // Crear una plantilla de ejemplo en formato JSON
+    const template = {
+        "titulo": "Ejemplo de Evaluación",
+        "descripcion": "Esta es una evaluación de ejemplo",
+        "categoria": "Personalidad",
+        "preguntas": [
+            {
+                "pregunta": "¿Cuál es tu estilo de liderazgo?",
+                "opciones": [
+                    "Directivo",
+                    "Participativo",
+                    "Delegativo",
+                    "Transformacional"
+                ],
+                "respuesta_correcta": 1,
+                "puntos": 10
+            },
+            {
+                "pregunta": "¿Cómo manejas el estrés?",
+                "opciones": [
+                    "Evitándolo",
+                    "Afrontándolo directamente",
+                    "Buscando apoyo",
+                    "Planificando con anticipación"
+                ],
+                "respuesta_correcta": 3,
+                "puntos": 10
+            }
+        ]
+    };
+    
+    // Convertir a JSON y crear un blob
+    const jsonString = JSON.stringify(template, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    
+    // Crear un enlace de descarga
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'plantilla_evaluacion.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ Plantilla de evaluación descargada');
+}
 
 // ==========================================
 // FIN DEL ARCHIVO

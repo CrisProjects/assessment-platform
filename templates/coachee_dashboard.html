@@ -1951,6 +1951,18 @@
         .card-header * {
             color: #FFFFFF !important;
         }
+        
+        /* Override para contenedor de evaluaciones con fondo blanco */
+        .sidebar-white .card-header h3,
+        .sidebar-white .card-header h5,
+        .sidebar-white .card-header p {
+            color: #262626 !important;
+        }
+        
+        .sidebar-white .card-header p {
+            color: #6c757d !important;
+            font-size: 0.875rem !important;
+        }
 
         /* CARD HEADERS MÓVIL OPTIMIZADOS */
         @media (max-width: 768px) {
@@ -5952,7 +5964,11 @@
                         <div class="list-group list-group-flush">
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary active" 
                                onclick="showTab('evaluations'); return false;" data-tab="evaluations">
-                                <i class="fas fa-clipboard-list me-3"></i>Evaluaciones
+                                <i class="fas fa-clipboard-list me-3"></i>Evaluaciones Disponibles
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                               onclick="showTab('completed-evaluations'); return false;" data-tab="completed-evaluations">
+                                <i class="fas fa-check-circle me-3"></i>Evaluaciones Completadas
                             </a>
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" id="assessment-sidebar-item" style="display: none;"
                                onclick="showTab('assessment'); return false;" data-tab="assessment">
@@ -5960,7 +5976,7 @@
                             </a>
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                                onclick="showTab('tasks'); return false;" data-tab="tasks">
-                                <i class="fas fa-tasks me-3"></i>Tareas
+                                <i class="fas fa-tasks me-3"></i>Acciones y Metas
                             </a>
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                                onclick="showTab('content'); return false;" data-tab="content">
@@ -5987,38 +6003,48 @@
                 <div class="tab-pane fade show active" id="evaluations" role="tabpanel">
                     <div class="row">
                         <!-- Available Evaluations -->
-                        <div class="col-lg-6">
-                            <div class="dashboard-card">
-                                <div class="card-header">
-                                    <h3 class="mb-0">
-                                        <i class="fas fa-plus-circle me-2"></i>
-                                        Evaluaciones Disponibles
-                                    </h3>
+                        <div class="col-12">
+                            <div class="dashboard-card sidebar-white border-secondary" style="background-color: white !important;">
+                                <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                                    <div>
+                                        <h3 class="mb-0" style="color: #262626 !important; font-size: 1.25rem; font-weight: 600;">
+                                            Evaluaciones Disponibles
+                                        </h3>
+                                        <p class="mb-0 mt-1" style="color: #6c757d !important; font-size: 0.875rem;">Comienza las evaluaciones asignadas por tu coach</p>
+                                    </div>
                                 </div>
-                                <div class="card-body" id="availableEvaluations">
-                                    <div class="loading-spinner">
-                                        <div class="spinner-border spinner-border-custom" role="status">
-                                            <span class="visually-hidden">Cargando...</span>
+                                <div class="card-body" id="availableEvaluations" style="background-color: white !important; padding: 1rem;">
+                                    <div class="loading-spinner text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando evaluaciones...</span>
                                         </div>
+                                        <p class="text-muted small mt-2 mb-0">Cargando evaluaciones disponibles...</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Completed Evaluations -->
-                        <div class="col-lg-6">
-                            <div class="dashboard-card">
-                                <div class="card-header">
-                                    <h3>
-                                        <i class="fas fa-history me-2"></i>
-                                        Evaluaciones Completadas
-                                    </h3>
+                <!-- Completed Evaluations Tab -->
+                <div class="tab-pane fade" id="completed-evaluations" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="dashboard-card sidebar-white border-secondary" style="background-color: white !important;">
+                                <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                                    <div>
+                                        <h3 class="mb-0" style="color: #262626 !important; font-size: 1.25rem; font-weight: 600;">
+                                            Evaluaciones Completadas
+                                        </h3>
+                                        <p class="mb-0 mt-1" style="color: #6c757d !important; font-size: 0.875rem;">Historial de evaluaciones finalizadas</p>
+                                    </div>
                                 </div>
-                                <div class="card-body" id="completedEvaluations">
-                                    <div class="loading-spinner">
-                                        <div class="spinner-border spinner-border-custom" role="status">
+                                <div class="card-body" id="completedEvaluationsSection" style="background-color: white !important; padding: 1rem;">
+                                    <div class="loading-spinner text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Cargando...</span>
                                         </div>
+                                        <p class="text-muted small mt-2 mb-0">Cargando evaluaciones completadas...</p>
                                     </div>
                                 </div>
                             </div>
@@ -6092,14 +6118,13 @@
 
                 <!-- Tasks Tab -->
                 <div class="tab-pane fade" id="tasks" role="tabpanel">
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3>
-                                <i class="fas fa-tasks me-2"></i>
-                                Mis Tareas Asignadas
-                            </h3>
+                    <div class="card sidebar-white border-secondary" style="background-color: white !important;">
+                        <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                            <h5 class="text-dark mb-0">
+                                <i class="fas fa-tasks me-2 text-primary"></i>Acciones y Metas
+                            </h5>
                         </div>
-                        <div class="card-body" id="tasksContainer">
+                        <div class="card-body" style="background-color: white !important; padding: 1rem;" id="tasksContainer">
                             <div class="loading-spinner">
                                 <div class="spinner-border spinner-border-custom" role="status">
                                     <span class="visually-hidden">Cargando tareas...</span>
@@ -6111,14 +6136,13 @@
 
                 <!-- Content Tab -->
                 <div class="tab-pane fade" id="content" role="tabpanel">
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3>
-                                <i class="fas fa-folder-open me-2"></i>
-                                Mi Contenido
-                            </h3>
+                    <div class="card sidebar-white border-secondary" style="background-color: white !important;">
+                        <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                            <h5 class="text-dark mb-0">
+                                <i class="fas fa-folder-open me-2 text-primary"></i>Mi Contenido
+                            </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" style="background-color: white !important; padding: 1rem;">
                             <!-- Pestañas para organizar el contenido -->
                             <ul class="nav nav-tabs mb-4" id="contentTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
@@ -6204,14 +6228,13 @@
                     <!-- Statistics Row -->
                     <div class="row">
                         <div class="col-lg-12">
-                            <div class="dashboard-card">
-                                <div class="card-header">
-                                    <h3>
-                                        <i class="fas fa-calculator me-2"></i>
-                                        Estadísticas
-                                    </h3>
+                            <div class="card sidebar-white border-secondary" style="background-color: white !important;">
+                                <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                                    <h5 class="text-dark mb-0">
+                                        <i class="fas fa-calculator me-2 text-primary"></i>Estadísticas
+                                    </h5>
                                 </div>
-                                <div class="card-body" id="statisticsContainer">
+                                <div class="card-body" style="background-color: white !important; padding: 1rem;" id="statisticsContainer">
                                     <div class="loading-spinner">
                                         <div class="spinner-border spinner-border-custom" role="status">
                                             <span class="visually-hidden">Cargando estadísticas...</span>
@@ -6225,14 +6248,13 @@
                     <!-- Latest Evaluation Details -->
                     <div class="row">
                         <div class="col-12">
-                            <div class="dashboard-card" id="latestEvaluationDetails">
-                                <div class="card-header">
-                                    <h3>
-                                        <i class="fas fa-bullseye me-2"></i>
-                                        Última Evaluación - Análisis Detallado
-                                    </h3>
+                            <div class="card sidebar-white border-secondary" style="background-color: white !important;" id="latestEvaluationDetails">
+                                <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                                    <h5 class="text-dark mb-0">
+                                        <i class="fas fa-bullseye me-2 text-primary"></i>Última Evaluación - Análisis Detallado
+                                    </h5>
                                 </div>
-                                <div class="card-body" id="latestEvaluationContainer">
+                                <div class="card-body" style="background-color: white !important; padding: 1rem;" id="latestEvaluationContainer">
                                     <div class="loading-spinner">
                                         <div class="spinner-border spinner-border-custom" role="status">
                                             <span class="visually-hidden">Cargando análisis...</span>
@@ -6248,14 +6270,13 @@
                 <div class="tab-pane fade" id="schedule-coach" role="tabpanel">
                     <div class="row">
                         <div class="col-12">
-                            <div class="dashboard-card">
-                                <div class="card-header">
-                                    <h3>
-                                        <i class="fas fa-calendar-plus me-2"></i>
-                                        Agendar Sesión con mi Coach
-                                    </h3>
+                            <div class="card sidebar-white border-secondary" style="background-color: white !important;">
+                                <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                                    <h5 class="text-dark mb-0">
+                                        <i class="fas fa-calendar-plus me-2 text-primary"></i>Agendar Sesión con mi Coach
+                                    </h5>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body" style="background-color: white !important; padding: 1rem;">
                                     <!-- Pestañas para organizar el contenido -->
                                     <ul class="nav nav-tabs mb-4" id="scheduleCoachTabs" role="tablist">
                                         <li class="nav-item" role="presentation">
@@ -6814,6 +6835,25 @@
 
         // Función para cambiar de tab con el sistema de sidebar
         function showTab(tabId) {
+            // Colapsar categorías de evaluaciones disponibles ANTES de cambiar de pestaña
+            const currentActiveTab = document.querySelector('.tab-pane.show.active');
+            if (currentActiveTab && currentActiveTab.id === 'evaluations' && tabId !== 'evaluations') {
+                // Estamos saliendo de la pestaña de evaluaciones
+                const allCategories = document.querySelectorAll('#availableEvaluations .assessments-grid[data-expanded="true"]');
+                allCategories.forEach(categoryGrid => {
+                    const categoryId = categoryGrid.id;
+                    const icon = document.getElementById(`icon-${categoryId}`);
+                    
+                    categoryGrid.style.maxHeight = '0px';
+                    categoryGrid.style.opacity = '0';
+                    categoryGrid.style.marginBottom = '0px';
+                    if (icon) {
+                        icon.style.transform = 'rotate(-90deg)';
+                    }
+                    categoryGrid.setAttribute('data-expanded', 'false');
+                });
+            }
+            
             // Ocultar todos los tab-panes
             const allTabPanes = document.querySelectorAll('.tab-pane');
             allTabPanes.forEach(pane => {
@@ -6852,6 +6892,13 @@
                         loadDocuments();
                     }
                 }, 100);
+            }
+            
+            // Cargar evaluaciones completadas cuando se muestra esa pestaña
+            if (tabId === 'completed-evaluations') {
+                if (evaluationsData && evaluationsData.completed) {
+                    renderCompletedEvaluationsSection();
+                }
             }
             
             // Manejar el item especial de evaluación activa
@@ -7100,8 +7147,6 @@
                     evaluationsData = data; // Ahora contiene {available: {}, completed: []}
                     debugLog('✅ Renderizando evaluaciones disponibles...');
                     renderAvailableEvaluations();
-                    debugLog('✅ Renderizando evaluaciones completadas...');
-                    renderCompletedEvaluations();
                 } else {
                     console.error('Formato de datos inesperado:', data);
                     throw new Error('Formato de datos inesperado del servidor');
@@ -7114,11 +7159,9 @@
                 // Inicializar con datos vacíos
                 evaluationsData = { available: {}, completed: [] };
                 
-                // Show error in both containers
+                // Show error in container
                 document.getElementById('availableEvaluations').innerHTML = 
                     '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando evaluaciones disponibles</p></div>';
-                document.getElementById('completedEvaluations').innerHTML = 
-                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando historial de evaluaciones</p></div>';
             }
         }
 
@@ -7129,6 +7172,80 @@
             if (score >= 50) return 'Moderadamente Asertivo';
             if (score >= 35) return 'Poco Asertivo';
             return 'Muy Poco Asertivo';
+        }
+
+        // Categories configuration
+        const evaluationCategories = {
+            'Personalidad': {
+                color: '#6f42c1',
+                icon: 'fa-user-circle',
+                keywords: ['personalidad', 'disc', 'temperamento', 'carácter']
+            },
+            'Liderazgo': {
+                color: '#fd7e14',
+                icon: 'fa-crown',
+                keywords: ['liderazgo', 'líder', 'gestión', 'dirección']
+            },
+            'Inteligencia Emocional': {
+                color: '#e83e8c',
+                icon: 'fa-heart',
+                keywords: ['emocional', 'emoción', 'sentimiento', 'asertividad']
+            },
+            'Trabajo en Equipo': {
+                color: '#20c997',
+                icon: 'fa-users',
+                keywords: ['equipo', 'colaboración', 'grupo', 'cooperación']
+            },
+            'Crecimiento Empresarial': {
+                color: '#17a2b8',
+                icon: 'fa-chart-line',
+                keywords: ['empresarial', 'negocio', 'crecer', 'crecimiento', '2026']
+            },
+            'Otros': {
+                color: '#6c757d',
+                icon: 'fa-clipboard-list',
+                keywords: []
+            }
+        };
+
+        // Function to classify evaluation by category
+        function classifyEvaluation(evaluation) {
+            const title = evaluation.title.toLowerCase();
+            const description = (evaluation.description || '').toLowerCase();
+            const searchText = `${title} ${description}`;
+            
+            for (const [category, data] of Object.entries(evaluationCategories)) {
+                if (category === 'Otros') continue;
+                
+                for (const keyword of data.keywords) {
+                    if (searchText.includes(keyword)) {
+                        return category;
+                    }
+                }
+            }
+            
+            return 'Otros';
+        }
+
+        // Toggle category function
+        function toggleCategory(categoryId, headerElement) {
+            const categoryGrid = document.getElementById(categoryId);
+            const icon = document.getElementById(`icon-${categoryId}`);
+            const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
+            
+            if (isExpanded) {
+                categoryGrid.style.maxHeight = '0px';
+                categoryGrid.style.opacity = '0';
+                categoryGrid.style.marginBottom = '0px';
+                icon.style.transform = 'rotate(-90deg)';
+                categoryGrid.setAttribute('data-expanded', 'false');
+            } else {
+                categoryGrid.style.maxHeight = '5000px';
+                categoryGrid.style.opacity = '1';
+                categoryGrid.style.marginBottom = '30px';
+                icon.style.transform = 'rotate(0deg)';
+                categoryGrid.setAttribute('data-expanded', 'true');
+            }
         }
 
         // Render available evaluations
@@ -7162,39 +7279,102 @@
                 return;
             }
             
-            let html = '<ul class="results-list">';
+            // Categorize evaluations
+            const categorizedEvaluations = {};
             Object.values(evaluationsData.available).forEach(evaluation => {
-                html += `
-                    <li class="results-list-item fade-in">
-                        <div class="evaluation-status evaluation-status-not-started">
-                            <i class="fas fa-play-circle unified-icon-lg"></i>
+                const category = classifyEvaluation(evaluation);
+                if (!categorizedEvaluations[category]) {
+                    categorizedEvaluations[category] = [];
+                }
+                categorizedEvaluations[category].push(evaluation);
+            });
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            // Render each category
+            Object.entries(categorizedEvaluations).forEach(([categoryName, evaluations]) => {
+                const category = evaluationCategories[categoryName];
+                
+                const categorySection = document.createElement('div');
+                categorySection.className = 'assessment-category mb-4';
+                const categoryId = `category-${categoryName.replace(/\s+/g, '-')}`;
+                
+                categorySection.innerHTML = `
+                    <div class="section-header-eval" style="margin: 30px 0 20px 0; padding: 15px; border-bottom: 2px solid ${category.color}; cursor: pointer; transition: all 0.3s ease; border-radius: 8px;" onclick="toggleCategory('${categoryId}', this)">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="color: #262626; font-size: 24px; font-weight: 600; margin: 0;">
+                                <i class="fas ${category.icon} me-2" style="color: ${category.color};"></i>
+                                ${categoryName}
+                                <span style="color: ${category.color}; font-size: 18px; font-weight: 500; margin-left: 8px;">(${evaluations.length})</span>
+                            </h4>
+                            <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease; transform: rotate(-90deg);"></i>
                         </div>
-                        <div class="results-list-item-content">
-                            <div class="results-list-item-title">${evaluation.title}</div>
-                            <div class="results-list-item-subtitle">${evaluation.description}</div>
-                            <div class="d-flex align-items-center gap-3 mt-2">
-                                <small class="text-muted">
-                                    <i class="fas fa-question-circle unified-icon-sm me-1"></i>
-                                    ${evaluation.total_questions} preguntas
-                                </small>
-                                <small class="text-muted">
-                                    <i class="fas fa-user-tie unified-icon-sm me-1"></i>
-                                    Coach: ${evaluation.coach_name || 'No asignado'}
-                                </small>
+                    </div>
+                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 0px; overflow: hidden; max-height: 0px; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
+                    </div>
+                `;
+                
+                container.appendChild(categorySection);
+                
+                const grid = document.getElementById(categoryId);
+                
+                evaluations.forEach(evaluation => {
+                    const card = document.createElement('div');
+                    card.className = 'assessment-card';
+                    card.style.cssText = `
+                        background: white;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                        transition: all 0.3s ease;
+                        border: 2px solid transparent;
+                        cursor: pointer;
+                    `;
+                    
+                    card.innerHTML = `
+                        <div class="assessment-image" style="width: 100%; height: 180px; background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 64px; color: white;">
+                            <i class="fas ${category.icon}"></i>
+                        </div>
+                        <div class="assessment-body" style="padding: 16px;">
+                            <div class="assessment-title" style="font-size: 18px; font-weight: 600; color: #262626; margin-bottom: 8px;">
+                                ${evaluation.title}
                             </div>
-                        </div>
-                        <div class="results-list-item-meta">
-                            <button class="unified-btn unified-btn-primary" onclick="startEvaluation('${evaluation.id}')">
-                                <i class="fas fa-play unified-icon-sm"></i>
-                                Comenzar
+                            <div class="assessment-description" style="font-size: 14px; color: #8e8e8e; margin-bottom: 12px;">
+                                ${evaluation.description || 'Sin descripción disponible'}
+                            </div>
+                            <div class="assessment-meta" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #8e8e8e; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-question-circle" style="color: ${category.color};"></i>
+                                    <span>${evaluation.total_questions} preguntas</span>
+                                </div>
+                                <div class="assessment-badge" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                    ${evaluation.coach_name || 'No asignado'}
+                                </div>
+                            </div>
+                            <button class="unified-btn unified-btn-primary w-100" onclick="startEvaluation('${evaluation.id}')" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); border: none; padding: 12px; border-radius: 8px; color: white; font-weight: 600; transition: all 0.3s ease;">
+                                <i class="fas fa-play unified-icon-sm me-2"></i>
+                                Comenzar Evaluación
                             </button>
                         </div>
-                    </li>
-                `;
+                    `;
+                    
+                    // Hover effects
+                    card.addEventListener('mouseenter', function() {
+                        this.style.transform = 'translateY(-4px)';
+                        this.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+                        this.style.borderColor = category.color;
+                    });
+                    
+                    card.addEventListener('mouseleave', function() {
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                        this.style.borderColor = 'transparent';
+                    });
+                    
+                    grid.appendChild(card);
+                });
             });
-            html += '</ul>';
-            
-            container.innerHTML = html;
         }
 
         // Render completed evaluations
@@ -7262,6 +7442,130 @@
             html += '</div>';
             
             container.innerHTML = html;
+        }
+
+        // Render completed evaluations in the dedicated section
+        function renderCompletedEvaluationsSection() {
+            const container = document.getElementById('completedEvaluationsSection');
+            
+            if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px;"><div class="empty-state-icon" style="font-size: 64px; color: #dbdbdb; margin-bottom: 16px;"><i class="fas fa-clipboard-list"></i></div><div class="empty-state-title" style="color: #262626; font-size: 18px; margin-bottom: 8px; font-weight: 600;">Sin evaluaciones completadas</div><div class="empty-state-description" style="color: #8e8e8e; font-size: 14px;">Aún no has completado ninguna evaluación</div></div>';
+                return;
+            }
+            
+            // Create categories for completed evaluations
+            const categorizedEvaluations = {};
+            evaluationsData.completed.forEach(evaluation => {
+                const title = evaluation.assessment_title || 'Evaluación completada';
+                let category = 'Otros';
+                
+                if (title.toLowerCase().includes('disc') || title.toLowerCase().includes('personalidad')) {
+                    category = 'Personalidad';
+                } else if (title.toLowerCase().includes('liderazgo') || title.toLowerCase().includes('líder')) {
+                    category = 'Liderazgo';
+                } else if (title.toLowerCase().includes('emocional') || title.toLowerCase().includes('asertividad')) {
+                    category = 'Inteligencia Emocional';
+                } else if (title.toLowerCase().includes('equipo') || title.toLowerCase().includes('colaboración')) {
+                    category = 'Trabajo en Equipo';
+                } else if (title.toLowerCase().includes('empresarial') || title.toLowerCase().includes('crecer') || title.toLowerCase().includes('2026')) {
+                    category = 'Crecimiento Empresarial';
+                }
+                
+                if (!categorizedEvaluations[category]) {
+                    categorizedEvaluations[category] = [];
+                }
+                categorizedEvaluations[category].push(evaluation);
+            });
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            // Render each category
+            Object.entries(categorizedEvaluations).forEach(([categoryName, evaluations]) => {
+                const category = evaluationCategories[categoryName];
+                
+                const categorySection = document.createElement('div');
+                categorySection.className = 'assessment-category mb-4';
+                const categoryId = `completed-category-${categoryName.replace(/\s+/g, '-')}`;
+                
+                categorySection.innerHTML = `
+                    <div class="section-header-eval" style="margin: 30px 0 20px 0; padding: 15px; border-bottom: 2px solid ${category.color}; cursor: pointer; transition: all 0.3s ease; border-radius: 8px;" onclick="toggleCategory('${categoryId}', this)">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="color: #262626; font-size: 24px; font-weight: 600; margin: 0;">
+                                <i class="fas ${category.icon} me-2" style="color: ${category.color};"></i>
+                                ${categoryName}
+                                <span style="color: ${category.color}; font-size: 18px; font-weight: 500; margin-left: 8px;">(${evaluations.length})</span>
+                            </h4>
+                            <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease; transform: rotate(-90deg);"></i>
+                        </div>
+                    </div>
+                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 0px; overflow: hidden; max-height: 0px; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
+                    </div>
+                `;
+                
+                container.appendChild(categorySection);
+                
+                const grid = document.getElementById(categoryId);
+                
+                evaluations.forEach(evaluation => {
+                    const score = evaluation.score || 0;
+                    const assessmentTitle = evaluation.assessment_title || 'Evaluación completada';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'assessment-card';
+                    card.style.cssText = `
+                        background: white;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                        transition: all 0.3s ease;
+                        border: 2px solid transparent;
+                        cursor: pointer;
+                    `;
+                    
+                    card.innerHTML = `
+                        <div class="assessment-image" style="width: 100%; height: 180px; background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 64px; color: white;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="assessment-body" style="padding: 16px;">
+                            <div class="assessment-title" style="font-size: 18px; font-weight: 600; color: #262626; margin-bottom: 8px;">
+                                ${assessmentTitle}
+                            </div>
+                            <div class="assessment-description" style="font-size: 14px; color: #8e8e8e; margin-bottom: 12px;">
+                                ${evaluation.result_text || 'Evaluación completada con éxito'}
+                            </div>
+                            <div class="assessment-meta" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #8e8e8e; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-chart-bar" style="color: ${category.color};"></i>
+                                    <span>${Math.round(score)}% Completado</span>
+                                </div>
+                                <div class="assessment-badge" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                    ${formatDate(evaluation.completed_at)}
+                                </div>
+                            </div>
+                            <button class="unified-btn unified-btn-primary w-100" onclick="viewEvaluationDetails(${evaluation.id})" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); border: none; padding: 12px; border-radius: 8px; color: white; font-weight: 600; transition: all 0.3s ease;">
+                                <i class="fas fa-eye unified-icon-sm me-2"></i>
+                                Ver Detalles
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Hover effects
+                    card.addEventListener('mouseenter', function() {
+                        this.style.transform = 'translateY(-4px)';
+                        this.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+                        this.style.borderColor = category.color;
+                    });
+                    
+                    card.addEventListener('mouseleave', function() {
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                        this.style.borderColor = 'transparent';
+                    });
+                    
+                    grid.appendChild(card);
+                });
+            });
         }
 
         // Load tasks data

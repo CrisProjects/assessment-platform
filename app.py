@@ -4041,6 +4041,14 @@ def api_coach_my_coachees():
         coachees = User.query.filter_by(coach_id=current_coach.id, role='coachee').all()
         logger.info(f"📊 MY-COACHEES: Found {len(coachees)} coachees")
         
+        # Contar tareas de evaluación asignadas a todos los coachees
+        total_assigned_tasks = Task.query.filter_by(
+            coach_id=current_coach.id,
+            category='evaluation',
+            is_active=True
+        ).count()
+        logger.info(f"📊 MY-COACHEES: Found {total_assigned_tasks} assigned evaluation tasks")
+        
         # Log de cada coachee encontrado
         for coachee in coachees:
             logger.info(f"👤 MY-COACHEES: Coachee found - ID: {coachee.id}, Username: {coachee.username}, Email: {coachee.email}, Full Name: {coachee.full_name}, Coach ID: {coachee.coach_id}")
@@ -4089,7 +4097,8 @@ def api_coach_my_coachees():
         return jsonify({
             'success': True,
             'coachees': coachees_data,
-            'total': len(coachees_data)
+            'total': len(coachees_data),
+            'assigned_evaluation_tasks': total_assigned_tasks  # Total tareas de evaluación asignadas
         }), 200
         
     except Exception as e:
