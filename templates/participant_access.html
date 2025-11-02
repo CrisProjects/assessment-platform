@@ -4,220 +4,207 @@
 
 {% block extra_css %}
 <style>
+    /* === BASE STYLES MATCHING DASHBOARD SELECTION === */
+    
+    body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
     .login-container {
-        min-height: calc(100vh - 200px);
+        min-height: calc(100vh - 60px);
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem 0;
+        padding: 0.5rem 1rem 1.5rem 1rem;
     }
 
+    /* === INSTACOACH BRANDING === */
+    .instacoach-brand-section {
+        text-align: center;
+        margin-bottom: 1rem;
+        padding-top: 0;
+    }
+    
+    .instacoach-main-title {
+        font-family: 'Lobster Two', cursive;
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: #000000 !important;
+        margin-bottom: 0.3rem;
+        line-height: 1.2;
+        text-shadow: none !important;
+    }
+    
+    .instacoach-tagline {
+        font-size: 1.1rem;
+        color: #4a4a4a;
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+
+    /* === COACHEE INVITATION TEXT === */
+    .coachee-invitation-text {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 0 1rem;
+    }
+    
+    .invitation-message {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: #2c3e50;
+        margin: 0;
+        font-weight: 400;
+    }
+    
+    .invitation-message strong {
+        color: #1a1a1a;
+        font-weight: 700;
+    }
+    
+    .invitation-message .highlight-text {
+        color: #3B82F6;
+        font-weight: 600;
+        font-style: italic;
+    }
+    
+    .invitation-message i {
+        vertical-align: middle;
+    }
+
+    /* === SEPARATOR === */
+    .separator-text {
+        text-align: center;
+        margin: 2rem auto;
+        max-width: 480px;
+    }
+    
+    .separator-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .separator-line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+    }
+    
+    .separator-content span {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* === LOGIN CARD === */
     .login-card {
-        background: var(--glass-card);
-        backdrop-filter: var(--glass-backdrop);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-xl);
-        box-shadow: var(--shadow-strong);
-        overflow: hidden;
-        max-width: 420px;
+        max-width: 480px;
         width: 100%;
+        margin: 0 auto;
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.98) !important;
+        border: 1px solid rgba(59, 130, 246, 0.15) !important;
+        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .login-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 48px rgba(59, 130, 246, 0.2);
     }
 
     .login-header {
-        background: linear-gradient(135deg, var(--havelock-blue), var(--medium-blue));
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
         padding: 2rem;
         text-align: center;
-        color: var(--pure-white);
+        color: #ffffff;
         position: relative;
-        /* Mejoras del sistema de temas */
-        transition: all 0.3s ease;
     }
-
-    /* Adaptación al sistema de temas */
-    [data-theme="light"] .login-header {
-        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
-        box-shadow: 0 8px 32px rgba(30, 64, 175, 0.3);
-    }
-
-    [data-theme="dark"] .login-header {
-        background: linear-gradient(135deg, #1E3A8A 0%, #3730A3 50%, #4338CA 100%);
-        box-shadow: 0 8px 32px rgba(30, 58, 138, 0.4);
-    }
-
-    .login-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-    }
-
+    
     .login-header i {
         font-size: 3rem;
         margin-bottom: 1rem;
-        position: relative;
-        z-index: 1;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        /* Mejoras de contraste */
-        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-        color: rgba(255, 255, 255, 0.95);
+        color: #ffffff;
     }
-
+    
     .login-header h2 {
+        font-family: 'Lobster Two', cursive;
+        font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
-        position: relative;
-        z-index: 1;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        /* Mejoras de texto */
-        font-size: 2rem;
-        letter-spacing: -0.5px;
+        color: #ffffff;
     }
-
-    /* Adaptaciones del texto por tema */
-    [data-theme="light"] .login-header h2,
-    [data-theme="light"] .login-header i {
-        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-        color: #FFFFFF;
-    }
-
-    [data-theme="dark"] .login-header h2,
-    [data-theme="dark"] .login-header i {
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-        color: rgba(255, 255, 255, 0.98);
-    }
-
+    
     .login-header p {
-        opacity: 0.9;
+        font-size: 1rem;
         margin: 0;
-        position: relative;
-        z-index: 1;
-        font-weight: 500;
-        /* Mejoras de legibilidad */
-        font-size: 1.1rem;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        opacity: 0.95;
+        color: #ffffff;
     }
 
     .login-body {
         padding: 2rem;
-        background: rgba(255, 255, 255, 0.05);
-        /* Mejoras del sistema de temas */
-        transition: background-color 0.3s ease;
+        background: #ffffff;
     }
-
-    /* Adaptación del cuerpo por tema */
-    [data-theme="light"] .login-body {
-        background: rgba(255, 255, 255, 0.85);
-    }
-
-    [data-theme="dark"] .login-body {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-
 
     .form-floating {
         margin-bottom: 1.5rem;
     }
 
     .form-floating .form-control {
-        background: rgba(255, 255, 255, 0.1);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-radius: var(--radius-lg);
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
         height: 58px;
         font-size: 1rem;
-        color: var(--pure-white);
-        backdrop-filter: blur(10px);
+        color: #1e293b;
         transition: all 0.3s ease;
-    }
-
-    /* Adaptación de campos por tema */
-    [data-theme="light"] .form-floating .form-control {
-        background: rgba(255, 255, 255, 0.9);
-        border: 2px solid rgba(30, 64, 175, 0.2);
-        color: var(--theme-text-primary);
-    }
-
-    [data-theme="dark"] .form-floating .form-control {
-        background: rgba(255, 255, 255, 0.1);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        color: var(--pure-white);
     }
 
     .form-floating .form-control:focus {
-        background: rgba(255, 255, 255, 0.15);
-        border-color: var(--havelock-blue);
-        box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25);
-        color: var(--pure-white);
-    }
-
-    [data-theme="light"] .form-floating .form-control:focus {
-        background: rgba(255, 255, 255, 0.95);
-        border-color: var(--havelock-blue);
-        box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.15);
-        color: var(--theme-text-primary);
+        background: #ffffff;
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+        color: #1e293b;
     }
 
     .form-floating .form-control::placeholder {
-        color: rgba(255, 255, 255, 0.6);
-    }
-
-    [data-theme="light"] .form-floating .form-control::placeholder {
-        color: rgba(30, 64, 175, 0.6);
+        color: #94a3b8;
     }
 
     .form-floating label {
-        color: rgba(255, 255, 255, 0.8);
+        color: #64748b;
         font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    [data-theme="light"] .form-floating label {
-        color: var(--theme-text-secondary);
     }
 
     .form-floating > .form-control:focus ~ label,
     .form-floating > .form-control:not(:placeholder-shown) ~ label {
-        color: var(--havelock-blue);
+        color: #3B82F6;
         font-weight: 600;
     }
 
     .login-btn {
         width: 100%;
         padding: 1rem;
-        border-radius: var(--radius-full);
+        border-radius: 50px;
         font-weight: 600;
-        background: var(--gradient-button);
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #3B82F6, #2563EB);
         border: none;
-        color: var(--pure-white);
-        transition: var(--transition-normal);
-        position: relative;
-        overflow: hidden;
-        box-shadow: var(--shadow-medium);
-    }
-
-    .login-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        transition: left 0.6s;
+        color: #ffffff;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
     .login-btn:hover {
         transform: translateY(-2px);
-        box-shadow: var(--shadow-strong);
-        background: linear-gradient(135deg, var(--calm-primary), var(--calm-primary-hover));
-    }
-
-    .login-btn:hover::before {
-        left: 100%;
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        background: linear-gradient(135deg, #2563EB, #1d4ed8);
     }
 
     .back-link {
@@ -226,56 +213,106 @@
     }
 
     .back-link a {
-        color: rgba(255, 255, 255, 0.7);
+        color: #64748b;
         text-decoration: none;
         font-weight: 500;
-        transition: var(--transition-normal);
-    }
-
-    /* Mejoras para el enlace "Volver a selección" por tema */
-    [data-theme="light"] .back-link a {
-        color: var(--theme-text-primary);
-        text-shadow: none !important;
-    }
-
-    [data-theme="dark"] .back-link a {
-        color: rgba(255, 255, 255, 0.7);
-        text-shadow: none !important;
+        transition: all 0.3s ease;
     }
 
     .back-link a:hover {
-        color: var(--havelock-blue);
+        color: #3B82F6;
         text-decoration: underline;
     }
 
-    [data-theme="light"] .back-link a:hover {
-        color: var(--havelock-blue);
-        text-shadow: none !important;
-    }
-
-    /* === MEJORAS PARA ELIMINAR SOMBRAS EN TEXTO NEGRO - MODO DÍA === */
-    
-    /* Todo el texto en modo día sin sombras */
-    [data-theme="light"] .login-body,
-    [data-theme="light"] .login-body *,
-    [data-theme="light"] .form-floating label,
-    [data-theme="light"] .form-control,
-    [data-theme="light"] .back-link a,
-    [data-theme="light"] p,
-    [data-theme="light"] span,
-    [data-theme="light"] div {
-        text-shadow: none !important;
+    /* === ANIMATIONS === */
+    .fade-in {
+        animation: fadeIn 0.6s ease-out;
     }
     
-    /* Asegurar que el texto use los colores correctos del tema */
-    [data-theme="light"] .login-body {
-        color: var(--theme-text-primary);
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
-    /* Responsive */
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+        .instacoach-brand-section {
+            margin-bottom: 0.75rem;
+            padding-top: 0;
+        }
+        
+        .instacoach-main-title {
+            font-size: 2.8rem;
+        }
+        
+        .instacoach-tagline {
+            font-size: 1rem;
+        }
+        
+        .coachee-invitation-text {
+            margin-bottom: 1.5rem;
+            padding: 0 0.75rem;
+        }
+        
+        .invitation-message {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .separator-content {
+            font-size: 0.85rem;
+        }
+        
+        .login-card {
+            max-width: 100%;
+        }
+        
+        .login-header i {
+            font-size: 2.5rem;
+        }
+        
+        .login-header h2 {
+            font-size: 1.6rem;
+        }
+        
+        .login-header p {
+            font-size: 0.85rem;
+        }
+    }
+    
     @media (max-width: 576px) {
         .login-container {
-            padding: 1rem;
+            padding: 0.25rem 0.75rem 1rem 0.75rem;
+            min-height: calc(100vh - 50px);
+        }
+        
+        .instacoach-brand-section {
+            margin-bottom: 0.5rem;
+            padding-top: 0;
+        }
+        
+        .instacoach-main-title {
+            font-size: 2.2rem;
+        }
+        
+        .instacoach-tagline {
+            font-size: 0.9rem;
+        }
+        
+        .coachee-invitation-text {
+            margin-bottom: 1.25rem;
+            padding: 0 0.5rem;
+        }
+        
+        .invitation-message {
+            font-size: 0.9rem;
+            line-height: 1.55;
         }
         
         .login-header {
@@ -285,6 +322,20 @@
         .login-body {
             padding: 1.5rem;
         }
+        
+        .login-card {
+            border-radius: 12px;
+        }
+    }
+    
+    @media (max-width: 400px) {
+        .instacoach-main-title {
+            font-size: 2rem;
+        }
+        
+        .invitation-message {
+            font-size: 0.85rem;
+        }
     }
 </style>
 {% endblock %}
@@ -293,12 +344,40 @@
 <div class="login-container">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-sm-8 col-md-6 col-lg-5">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+                
+                <!-- InstaCoach Branding -->
+                <div class="instacoach-brand-section fade-in">
+                    <h1 class="instacoach-main-title">InstaCoach</h1>
+                    <p class="instacoach-tagline">Tu plataforma de desarrollo personal y profesional</p>
+                </div>
+                
+                <!-- Coachee Invitation Text -->
+                <div class="coachee-invitation-text fade-in">
+                    <p class="invitation-message">
+                        <i class="fas fa-heart text-danger me-2"></i>
+                        <strong>Bienvenido a tu espacio de crecimiento.</strong> 
+                        Accede a tus evaluaciones personalizadas, conecta con tu coach y descubre 
+                        herramientas diseñadas para potenciar tu desarrollo personal y profesional. 
+                        <span class="highlight-text">Tu transformación comienza aquí.</span>
+                    </p>
+                </div>
+                
+                <!-- Separator -->
+                <div class="separator-text">
+                    <div class="separator-content">
+                        <div class="separator-line"></div>
+                        <span>Accede a tu cuenta</span>
+                        <div class="separator-line"></div>
+                    </div>
+                </div>
+                
+                <!-- Login Card -->
                 <div class="login-card fade-in">
                     <div class="login-header">
                         <i class="fas fa-user-check"></i>
-                        <h2 style="font-family: 'Lobster Two', cursive;">Soy Coachee</h2>
-                        <p>Accede para iniciar tu desarrollo personal</p>
+                        <h2>Acceso Coachee</h2>
+                        <p>Inicia sesión para continuar tu desarrollo</p>
                     </div>
                     
                     <div class="login-body">
@@ -326,6 +405,7 @@
                         </div>
                     </div>
                 </div>
+                
             </div>
         </div>
     </div>

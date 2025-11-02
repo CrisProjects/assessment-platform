@@ -4,44 +4,243 @@
 
 {% block extra_css %}
 <style>
+    /* === BASE STYLES MATCHING DASHBOARD SELECTION === */
+    
+    body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
     .login-container {
-        min-height: calc(100vh - 200px);
+        min-height: calc(100vh - 60px);
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem 0;
+        padding: 0.5rem 1rem 1.5rem 1rem;
     }
 
-    .login-card {
-        background: var(--glass-card);
-        backdrop-filter: var(--glass-backdrop);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-xl);
-        box-shadow: var(--shadow-strong);
-        overflow: hidden;
-        max-width: 420px;
-        width: 100%;
-    }
-
-    .login-header {
-        background: linear-gradient(135deg, var(--havelock-blue), var(--medium-blue));
-        padding: 2rem;
+    /* === INSTACOACH BRANDING === */
+    .instacoach-brand-section {
         text-align: center;
-        color: var(--pure-white);
+        margin-bottom: 1rem;
+        padding-top: 0;
+    }
+    
+    .instacoach-main-title {
+        font-family: 'Lobster Two', cursive;
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: #000000 !important;
+        margin-bottom: 0.3rem;
+        line-height: 1.2;
+        text-shadow: none !important;
+    }
+    
+    .instacoach-tagline {
+        font-size: 1.1rem;
+        color: #4a4a4a;
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+
+    /* === COACH INVITATION TEXT === */
+    .coach-invitation-text {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 0 1rem;
+    }
+    
+    .invitation-message {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: #2c3e50;
+        margin: 0;
+        font-weight: 400;
+    }
+    
+    .invitation-message strong {
+        color: #1a1a1a;
+        font-weight: 700;
+    }
+    
+    .invitation-message .highlight-text {
+        color: #3B82F6;
+        font-weight: 600;
+        font-style: italic;
+    }
+    
+    .invitation-message i {
+        vertical-align: middle;
+    }
+
+    /* === REGISTER COACH CTA BUTTON (MATCHING FIND COACH STYLE) === */
+    .register-coach-cta {
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.02);
+        }
+    }
+    
+    .btn-register-coach {
+        background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F59E0B 100%);
+        border: none;
+        border-radius: 20px;
+        padding: 0;
+        box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
         position: relative;
-        /* Mejoras del sistema de temas */
+        overflow: hidden;
+        width: 100%;
+        display: block;
+    }
+    
+    .btn-register-coach::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
+    }
+    
+    .btn-register-coach:hover::before {
+        left: 100%;
+    }
+    
+    .btn-register-coach:hover {
+        transform: translateY(-5px) scale(1.03);
+        box-shadow: 0 15px 50px rgba(139, 92, 246, 0.6);
+    }
+    
+    .btn-register-coach-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 30px;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        margin: 3px;
+        gap: 20px;
+    }
+    
+    .btn-register-coach-icon {
+        background: linear-gradient(135deg, #8B5CF6, #EC4899);
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+    
+    .btn-register-coach-icon i {
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .btn-register-coach-text {
+        flex-grow: 1;
+        text-align: left;
+    }
+    
+    .btn-register-coach-title {
+        display: block;
+        font-family: 'Lobster Two', cursive;
+        font-size: 1.8rem;
+        color: #1a1a1a;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 5px;
+    }
+    
+    .btn-register-coach-subtitle {
+        display: block;
+        font-size: 0.95rem;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .btn-register-coach-arrow {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #F59E0B, #EF4444);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .btn-register-coach-arrow i {
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .btn-register-coach:hover .btn-register-coach-arrow {
+        transform: translateX(5px);
+    }
+
+    /* === SEPARATOR STYLE === */
+    .separator-text {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 0 auto;
+        max-width: 480px;
+    }
+    
+    .separator-line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+    }
+    
+    .separator-content {
+        color: #666;
+        font-size: 0.9rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* === GLASS CARD STYLE === */
+    .login-card {
+        background: rgba(255, 255, 255, 0.98) !important;
+        border: 1px solid rgba(59, 130, 246, 0.15) !important;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1) !important;
+        border-radius: 16px;
+        overflow: hidden;
+        max-width: 480px;
+        width: 100%;
+        margin: 0 auto;
         transition: all 0.3s ease;
     }
-
-    /* Adaptación al sistema de temas */
-    [data-theme="light"] .login-header {
-        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
-        box-shadow: 0 8px 32px rgba(30, 64, 175, 0.3);
+    
+    .login-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.2) !important;
+        border-color: rgba(59, 130, 246, 0.3) !important;
     }
 
-    [data-theme="dark"] .login-header {
-        background: linear-gradient(135deg, #1E3A8A 0%, #3730A3 50%, #4338CA 100%);
-        box-shadow: 0 8px 32px rgba(30, 58, 138, 0.4);
+    /* === CARD HEADER === */
+    .login-header {
+        background: linear-gradient(135deg, #3B82F6, #2563EB);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: #ffffff;
+        position: relative;
     }
 
     .login-header::before {
@@ -52,149 +251,95 @@
         right: 0;
         bottom: 0;
         background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
+        pointer-events: none;
     }
 
     .login-header i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
+        font-size: 2.8rem;
+        margin-bottom: 0.75rem;
         position: relative;
         z-index: 1;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        /* Mejoras de contraste */
-        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-        color: rgba(255, 255, 255, 0.95);
+        color: #ffffff;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
     }
 
     .login-header h2 {
+        font-family: 'Lobster Two', cursive;
         font-weight: 700;
-        margin-bottom: 0.5rem;
+        font-size: 1.8rem;
+        margin-bottom: 0.3rem;
         position: relative;
         z-index: 1;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        /* Mejoras de texto */
-        font-size: 2rem;
-        letter-spacing: -0.5px;
-    }
-
-    /* Adaptaciones del texto por tema */
-    [data-theme="light"] .login-header h2,
-    [data-theme="light"] .login-header i {
-        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-        color: #FFFFFF;
-    }
-
-    [data-theme="dark"] .login-header h2,
-    [data-theme="dark"] .login-header i {
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-        color: rgba(255, 255, 255, 0.98);
+        color: #ffffff;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .login-header p {
-        opacity: 0.9;
+        font-size: 0.9rem;
         margin: 0;
         position: relative;
         z-index: 1;
+        color: rgba(255, 255, 255, 0.95);
         font-weight: 500;
-        /* Mejoras de legibilidad */
-        font-size: 1.1rem;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
 
+    /* === FORM BODY === */
     .login-body {
-        padding: 2rem;
-        background: rgba(255, 255, 255, 0.05);
-        /* Mejoras del sistema de temas */
-        transition: background-color 0.3s ease;
-    }
-
-    /* Adaptación del cuerpo por tema */
-    [data-theme="light"] .login-body {
-        background: rgba(255, 255, 255, 0.85);
-    }
-
-    [data-theme="dark"] .login-body {
-        background: rgba(255, 255, 255, 0.05);
+        padding: 2rem 1.5rem;
+        background: #ffffff;
     }
 
     .form-floating {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
 
     .form-floating .form-control {
-        background: rgba(255, 255, 255, 0.1);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-radius: var(--radius-lg);
-        height: 58px;
-        font-size: 1rem;
-        color: var(--pure-white);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
-    }
-
-    /* Adaptación de campos por tema */
-    [data-theme="light"] .form-floating .form-control {
         background: rgba(255, 255, 255, 0.9);
-        border: 2px solid rgba(30, 64, 175, 0.2);
-        color: var(--theme-text-primary);
-    }
-
-    [data-theme="dark"] .form-floating .form-control {
-        background: rgba(255, 255, 255, 0.1);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        color: var(--pure-white);
+        border: 2px solid rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        height: 52px;
+        font-size: 0.95rem;
+        color: #1a1a1a;
+        transition: all 0.3s ease;
     }
 
     .form-floating .form-control:focus {
-        background: rgba(255, 255, 255, 0.15);
-        border-color: var(--havelock-blue);
-        box-shadow: 0 0 0 0.2rem rgba(98, 130, 227, 0.25);
-        color: var(--pure-white);
-    }
-
-    [data-theme="light"] .form-floating .form-control:focus {
-        background: rgba(255, 255, 255, 0.95);
-        border-color: var(--havelock-blue);
-        box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.15);
-        color: var(--theme-text-primary);
+        background: #ffffff;
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        outline: none;
     }
 
     .form-floating .form-control::placeholder {
-        color: rgba(255, 255, 255, 0.6);
-    }
-
-    [data-theme="light"] .form-floating .form-control::placeholder {
-        color: rgba(30, 64, 175, 0.6);
+        color: rgba(59, 130, 246, 0.5);
     }
 
     .form-floating label {
-        color: rgba(255, 255, 255, 0.8);
+        color: #666666;
         font-weight: 500;
         transition: all 0.3s ease;
-    }
-
-    [data-theme="light"] .form-floating label {
-        color: var(--theme-text-secondary);
     }
 
     .form-floating > .form-control:focus ~ label,
     .form-floating > .form-control:not(:placeholder-shown) ~ label {
-        color: var(--havelock-blue);
+        color: #3B82F6;
         font-weight: 600;
     }
 
+    /* === BUTTONS === */
     .login-btn {
         width: 100%;
-        padding: 1rem;
-        border-radius: var(--radius-full);
+        padding: 0.85rem 1.5rem;
+        border-radius: 50px;
         font-weight: 600;
-        background: var(--gradient-button);
+        font-size: 1rem;
+        background: linear-gradient(135deg, #3B82F6, #2563EB);
         border: none;
-        color: var(--pure-white);
-        transition: var(--transition-normal);
+        color: #ffffff;
+        transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
-        box-shadow: var(--shadow-medium);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     }
 
     .login-btn::before {
@@ -210,59 +355,45 @@
 
     .login-btn:hover {
         transform: translateY(-2px);
-        box-shadow: var(--shadow-strong);
-        background: linear-gradient(135deg, var(--calm-primary), var(--calm-primary-hover));
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        background: linear-gradient(135deg, #2563EB, #3B82F6);
+        color: #ffffff;
     }
 
     .login-btn:hover::before {
         left: 100%;
     }
 
+    /* === BACK LINK === */
     .back-link {
         text-align: center;
-        margin-top: 1.5rem;
+        margin-top: 1.25rem;
+        padding-bottom: 0.75rem;
     }
 
     .back-link a {
-        color: rgba(255, 255, 255, 0.7);
+        color: #3B82F6;
         text-decoration: none;
-        font-weight: 500;
-        transition: var(--transition-normal);
-    }
-
-    /* Mejoras para el enlace "Volver a selección" por tema */
-    [data-theme="light"] .back-link a {
-        color: var(--theme-text-primary);
-        text-shadow: none !important;
-    }
-
-    [data-theme="dark"] .back-link a {
-        color: rgba(255, 255, 255, 0.7);
-        text-shadow: none !important;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .back-link a:hover {
-        color: var(--havelock-blue);
-        text-decoration: underline;
+        color: #2563EB;
+        text-decoration: none;
+        transform: translateX(-3px);
     }
-
-    [data-theme="light"] .back-link a:hover {
-        color: var(--havelock-blue);
-        text-shadow: none !important;
-    }
-
-    /* === MEJORAS PARA ELIMINAR SOMBRAS EN TEXTO NEGRO - MODO DÍA === */
     
-    /* Todo el texto en modo día sin sombras */
-    [data-theme="light"] .login-body,
-    [data-theme="light"] .login-body *,
-    [data-theme="light"] .form-floating label,
-    [data-theme="light"] .form-control,
-    [data-theme="light"] .back-link a,
-    [data-theme="light"] p,
-    [data-theme="light"] span,
-    [data-theme="light"] div {
-        text-shadow: none !important;
+    .back-link a i {
+        transition: transform 0.3s ease;
+    }
+    
+    .back-link a:hover i {
+        transform: translateX(-3px);
     }
     
     /* Asegurar que el texto use los colores correctos del tema */
@@ -270,18 +401,218 @@
         color: var(--theme-text-primary);
     }
 
-    /* Responsive */
+    /* === RESPONSIVE DESIGN === */
+    @media (max-width: 768px) {
+        .instacoach-brand-section {
+            margin-bottom: 0.75rem;
+            padding-top: 0;
+        }
+        
+        .instacoach-main-title {
+            font-size: 2.8rem;
+        }
+        
+        .instacoach-tagline {
+            font-size: 1rem;
+        }
+        
+        .coach-invitation-text {
+            margin-bottom: 1.5rem;
+            padding: 0 0.75rem;
+        }
+        
+        .invitation-message {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .btn-register-coach-content {
+            padding: 15px 20px;
+            gap: 15px;
+        }
+        
+        .btn-register-coach-icon {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .btn-register-coach-icon i {
+            font-size: 1.2rem;
+        }
+        
+        .btn-register-coach-title {
+            font-size: 1.4rem;
+        }
+        
+        .btn-register-coach-subtitle {
+            font-size: 0.85rem;
+        }
+        
+        .btn-register-coach-arrow {
+            width: 35px;
+            height: 35px;
+        }
+        
+        .separator-content {
+            font-size: 0.85rem;
+        }
+        
+        .login-card {
+            max-width: 100%;
+        }
+        
+        .login-header i {
+            font-size: 2.5rem;
+        }
+        
+        .login-header h2 {
+            font-size: 1.6rem;
+        }
+        
+        .login-header p {
+            font-size: 0.85rem;
+        }
+    }
+    
     @media (max-width: 576px) {
         .login-container {
-            padding: 1rem;
+            padding: 0.25rem 0.75rem 1rem 0.75rem;
+            min-height: calc(100vh - 50px);
+        }
+        
+        .instacoach-brand-section {
+            margin-bottom: 0.5rem;
+            padding-top: 0;
+        }
+        
+        .instacoach-main-title {
+            font-size: 2.2rem;
+        }
+        
+        .instacoach-tagline {
+            font-size: 0.9rem;
+        }
+        
+        .coach-invitation-text {
+            margin-bottom: 1.25rem;
+            padding: 0 0.5rem;
+        }
+        
+        .invitation-message {
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+        
+        .register-coach-cta {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .btn-register-coach-content {
+            padding: 12px 15px;
+            gap: 12px;
+        }
+        
+        .btn-register-coach-icon {
+            width: 45px;
+            height: 45px;
+        }
+        
+        .btn-register-coach-icon i {
+            font-size: 1.1rem;
+        }
+        
+        .btn-register-coach-title {
+            font-size: 1.2rem;
+        }
+        
+        .btn-register-coach-subtitle {
+            font-size: 0.8rem;
+        }
+        
+        .btn-register-coach-arrow {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .btn-register-coach-arrow i {
+            font-size: 1rem;
+        }
+        
+        .separator-text {
+            gap: 0.75rem;
+        }
+        
+        .separator-content {
+            font-size: 0.8rem;
+        }
+        
+        .login-card {
+            border-radius: 12px;
         }
         
         .login-header {
-            padding: 1.5rem;
+            padding: 1.5rem 1.25rem;
+        }
+        
+        .login-header i {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-header h2 {
+            font-size: 1.4rem;
+        }
+        
+        .login-header p {
+            font-size: 0.8rem;
         }
         
         .login-body {
-            padding: 1.5rem;
+            padding: 1.5rem 1.25rem;
+        }
+        
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        
+        .form-floating .form-control {
+            height: 48px;
+            font-size: 0.9rem;
+        }
+        
+        .login-btn {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+        }
+        
+        .back-link {
+            margin-top: 1rem;
+        }
+        
+        .back-link a {
+            font-size: 0.85rem;
+        }
+    }
+    
+    @media (max-width: 400px) {
+        .instacoach-main-title {
+            font-size: 2rem;
+        }
+        
+        .btn-register-coach-title {
+            font-size: 1.1rem;
+        }
+        
+        .btn-register-coach-subtitle {
+            font-size: 0.75rem;
+        }
+        
+        .login-header i {
+            font-size: 2rem;
+        }
+        
+        .login-header h2 {
+            font-size: 1.3rem;
         }
     }
 </style>
@@ -291,12 +622,57 @@
 <div class="login-container">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-sm-8 col-md-6 col-lg-5">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+                <!-- InstaCoach Branding -->
+                <div class="instacoach-brand-section fade-in">
+                    <h1 class="instacoach-main-title">InstaCoach</h1>
+                    <p class="instacoach-tagline">Tu plataforma de desarrollo personal y profesional</p>
+                </div>
+                
+                <!-- Mensaje motivacional para Coaches -->
+                <div class="coach-invitation-text fade-in">
+                    <p class="invitation-message">
+                        <i class="fas fa-star text-warning me-2"></i>
+                        <strong>Únete a la comunidad de coaches profesionales.</strong> 
+                        Amplifica tu impacto, conecta con personas que buscan tu experiencia y accede a 
+                        herramientas exclusivas que potenciarán tu práctica de coaching. 
+                        <span class="highlight-text">Tu próximo coachee te está buscando.</span>
+                    </p>
+                </div>
+                
+                <!-- Botón Registrarse como Coach - CTA Principal -->
+                <div class="register-coach-cta mb-4 fade-in">
+                    <button type="button" class="btn-register-coach" data-bs-toggle="modal" data-bs-target="#registerCoachModal">
+                        <div class="btn-register-coach-content">
+                            <div class="btn-register-coach-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="btn-register-coach-text">
+                                <span class="btn-register-coach-title">Registrarse como Coach</span>
+                                <span class="btn-register-coach-subtitle">Completa tu perfil y conecta con coachees</span>
+                            </div>
+                            <div class="btn-register-coach-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+                
+                <!-- Separador -->
+                <div class="text-center mb-4 fade-in">
+                    <p class="separator-text">
+                        <span class="separator-line"></span>
+                        <span class="separator-content">o accede si ya tienes cuenta</span>
+                        <span class="separator-line"></span>
+                    </p>
+                </div>
+                
+                <!-- Card de Login -->
                 <div class="login-card fade-in">
                     <div class="login-header">
-                        <i class="fas fa-user-tie"></i>
-                        <h2 style="font-family: 'Lobster Two', cursive;">Soy Coach</h2>
-                        <p>Accede para guiar y acompañar a tus coachees</p>
+                        <i class="fas fa-sign-in-alt"></i>
+                        <h2>Acceso Coach</h2>
+                        <p>Ingresa con tus credenciales</p>
                     </div>
                     
                     <div class="login-body">
@@ -328,6 +704,485 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Registro de Coach -->
+<div class="modal fade" id="registerCoachModal" tabindex="-1" aria-labelledby="registerCoachModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content register-coach-modal">
+            <div class="modal-header border-0">
+                <h3 class="modal-title w-100 text-center" id="registerCoachModalLabel" style="font-family: 'Lobster Two', cursive; font-size: 2.5rem; color: #1a1a1a;">
+                    <i class="fas fa-user-tie text-primary me-2"></i>
+                    Registro de Coach
+                </h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-center mb-4 text-muted fs-5">
+                    Completa tu perfil para conectarte con coachees que necesiten tu experiencia
+                </p>
+                
+                <form id="registerCoachForm">
+                    <!-- Información Personal -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-user text-primary me-2"></i>
+                            1. Información Personal
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="registro-nombre" name="nombre" placeholder="Nombre" required>
+                                    <label for="registro-nombre"><i class="fas fa-user me-2"></i>Nombre completo</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="registro-email" name="email" placeholder="Email" required>
+                                    <label for="registro-email"><i class="fas fa-at me-2"></i>Email</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="registro-usuario" name="username" placeholder="Usuario" required>
+                                    <label for="registro-usuario"><i class="fas fa-id-card me-2"></i>Usuario</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="password" class="form-control" id="registro-password" name="password" placeholder="Contraseña" required>
+                                    <label for="registro-password"><i class="fas fa-lock me-2"></i>Contraseña</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Áreas de Expertise -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-bullseye text-success me-2"></i>
+                            2. ¿En qué áreas ofreces coaching?
+                        </label>
+                        <div class="interest-pills">
+                            <input type="checkbox" class="btn-check" id="coach-area-liderazgo" name="areas" value="liderazgo">
+                            <label class="btn btn-outline-primary pill-option" for="coach-area-liderazgo">
+                                <i class="fas fa-crown me-2"></i>Liderazgo
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="coach-area-comunicacion" name="areas" value="comunicacion">
+                            <label class="btn btn-outline-primary pill-option" for="coach-area-comunicacion">
+                                <i class="fas fa-comments me-2"></i>Comunicación
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="coach-area-inteligencia-emocional" name="areas" value="inteligencia-emocional">
+                            <label class="btn btn-outline-primary pill-option" for="coach-area-inteligencia-emocional">
+                                <i class="fas fa-heart me-2"></i>Inteligencia Emocional
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="coach-area-productividad" name="areas" value="productividad">
+                            <label class="btn btn-outline-primary pill-option" for="coach-area-productividad">
+                                <i class="fas fa-rocket me-2"></i>Productividad
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="coach-area-carrera" name="areas" value="carrera">
+                            <label class="btn btn-outline-primary pill-option" for="coach-area-carrera">
+                                <i class="fas fa-briefcase me-2"></i>Desarrollo de Carrera
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="coach-area-equilibrio" name="areas" value="equilibrio">
+                            <label class="btn btn-outline-primary pill-option" for="coach-area-equilibrio">
+                                <i class="fas fa-balance-scale me-2"></i>Balance Vida-Trabajo
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Nivel de Experiencia -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-medal text-warning me-2"></i>
+                            3. ¿Cuál es tu nivel de experiencia como coach?
+                        </label>
+                        <div class="experience-options">
+                            <input type="radio" class="btn-check" id="coach-exp-junior" name="experiencia" value="junior">
+                            <label class="btn btn-outline-success exp-option" for="coach-exp-junior">
+                                <i class="fas fa-seedling mb-2"></i>
+                                <span class="d-block fw-bold">En Crecimiento</span>
+                                <small class="text-muted">1-3 años de experiencia</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="coach-exp-mid" name="experiencia" value="mid" checked>
+                            <label class="btn btn-outline-success exp-option" for="coach-exp-mid">
+                                <i class="fas fa-star mb-2"></i>
+                                <span class="d-block fw-bold">Intermedio</span>
+                                <small class="text-muted">3-5 años de experiencia</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="coach-exp-senior" name="experiencia" value="senior">
+                            <label class="btn btn-outline-success exp-option" for="coach-exp-senior">
+                                <i class="fas fa-medal mb-2"></i>
+                                <span class="d-block fw-bold">Experimentado</span>
+                                <small class="text-muted">5+ años de experiencia</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Estilo de Coaching -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-palette text-info me-2"></i>
+                            4. ¿Cuál es tu estilo de coaching?
+                        </label>
+                        <div class="style-options">
+                            <input type="radio" class="btn-check" id="coach-style-directivo" name="estilo" value="directivo">
+                            <label class="btn btn-outline-info style-option" for="coach-style-directivo">
+                                <i class="fas fa-bullhorn mb-2"></i>
+                                <span class="d-block fw-bold">Directivo</span>
+                                <small class="text-muted">Guía clara y estructura</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="coach-style-colaborativo" name="estilo" value="colaborativo" checked>
+                            <label class="btn btn-outline-info style-option" for="coach-style-colaborativo">
+                                <i class="fas fa-handshake mb-2"></i>
+                                <span class="d-block fw-bold">Colaborativo</span>
+                                <small class="text-muted">Trabajo en equipo</small>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" id="coach-style-reflexivo" name="estilo" value="reflexivo">
+                            <label class="btn btn-outline-info style-option" for="coach-style-reflexivo">
+                                <i class="fas fa-lightbulb mb-2"></i>
+                                <span class="d-block fw-bold">Reflexivo</span>
+                                <small class="text-muted">Autoconocimiento profundo</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Bio/Descripción -->
+                    <div class="mb-4 fade-in-item">
+                        <label class="form-label fw-bold fs-5 mb-3">
+                            <i class="fas fa-file-alt text-danger me-2"></i>
+                            5. Cuéntanos sobre tu experiencia
+                        </label>
+                        <div class="form-floating">
+                            <textarea class="form-control" id="registro-bio" name="bio" placeholder="Bio" style="height: 120px" required></textarea>
+                            <label for="registro-bio"><i class="fas fa-comment-dots me-2"></i>Describe tu experiencia y enfoque como coach</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-lg btn-register-coach-submit" onclick="submitRegisterCoach()">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Completar Registro
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos para el enlace de registro */
+    /* === REGISTRATION LINK === */
+    .register-text {
+        color: #666666;
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .register-link {
+        color: #3B82F6;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 1.05rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        background: rgba(59, 130, 246, 0.1);
+    }
+    
+    .register-link:hover {
+        color: #2563EB;
+        background: rgba(59, 130, 246, 0.15);
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+    
+    .register-link i {
+        transition: transform 0.3s ease;
+    }
+    
+    .register-link:hover i {
+        transform: scale(1.1);
+    }
+    
+    /* === REGISTRATION MODAL STYLES (MATCHING DASHBOARD SELECTION) === */
+    .register-coach-modal .modal-content {
+        border-radius: 25px;
+        border: none;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+    
+    .register-coach-modal .modal-header {
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #1E40AF 100%);
+        padding: 2rem;
+        position: relative;
+        border-bottom: none;
+    }
+    
+    .register-coach-modal .modal-title {
+        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-family: 'Lobster Two', cursive !important;
+        color: #ffffff !important;
+    }
+    
+    .register-coach-modal .btn-close {
+        background: white;
+        border-radius: 50%;
+        opacity: 1;
+        width: 35px;
+        height: 35px;
+    }
+    
+    .register-coach-modal .modal-body {
+        background: #ffffff;
+        padding: 2rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    /* === INTEREST PILLS (MATCHING DASHBOARD SELECTION) === */
+    .interest-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .pill-option {
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 2px solid #3B82F6;
+    }
+    
+    .pill-option:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-check:checked + .pill-option {
+        background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
+        color: white !important;
+        border-color: #3B82F6 !important;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    /* === EXPERIENCE OPTIONS (MATCHING DASHBOARD SELECTION) === */
+    .experience-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .exp-option {
+        border-radius: 15px;
+        padding: 20px 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid #10B981;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .exp-option i {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .exp-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-check:checked + .exp-option {
+        background: linear-gradient(135deg, #10B981, #059669) !important;
+        color: white !important;
+        border-color: #10B981 !important;
+        box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
+    }
+    
+    /* === STYLE OPTIONS (MATCHING DASHBOARD SELECTION) === */
+    .style-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .style-option {
+        border-radius: 15px;
+        padding: 20px 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid #06B6D4;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .style-option i {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .style-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+    }
+    
+    .btn-check:checked + .style-option {
+        background: linear-gradient(135deg, #06B6D4, #0891B2) !important;
+        color: white !important;
+        border-color: #06B6D4 !important;
+        box-shadow: 0 6px 25px rgba(6, 182, 212, 0.5);
+    }
+    
+    /* === SUBMIT BUTTON (MATCHING DASHBOARD SELECTION) === */
+    .btn-register-coach-submit {
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #1E40AF 100%);
+        border: none;
+        color: white;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        transition: all 0.3s ease;
+        font-family: 'Lobster Two', cursive;
+    }
+    
+    .btn-register-coach-submit:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 12px 35px rgba(59, 130, 246, 0.6);
+        color: white;
+    }
+    
+    /* Animaciones fade-in */
+    .fade-in-item {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* === MODAL RESPONSIVE === */
+    @media (max-width: 768px) {
+        .register-coach-modal .modal-dialog {
+            margin: 0.5rem;
+        }
+        
+        .register-coach-modal .modal-header {
+            padding: 1.5rem;
+        }
+        
+        .register-coach-modal .modal-title {
+            font-size: 2rem !important;
+        }
+        
+        .register-coach-modal .modal-body {
+            padding: 1.5rem;
+            max-height: 65vh;
+        }
+        
+        .interest-pills {
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .pill-option {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .experience-options,
+        .style-options {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .exp-option,
+        .style-option {
+            min-height: 100px;
+            padding: 15px 12px;
+        }
+        
+        .exp-option i,
+        .style-option i {
+            font-size: 1.8rem;
+        }
+        
+        .btn-register-coach-submit {
+            padding: 12px 30px;
+            font-size: 1rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .register-coach-modal .modal-title {
+            font-size: 1.6rem !important;
+        }
+        
+        .register-coach-modal .modal-body {
+            padding: 1.25rem;
+        }
+        
+        .form-floating .form-control {
+            height: 48px;
+            font-size: 0.9rem;
+        }
+        
+        .pill-option {
+            padding: 7px 14px;
+            font-size: 0.85rem;
+        }
+        
+        .exp-option,
+        .style-option {
+            min-height: 90px;
+            padding: 12px 10px;
+        }
+        
+        .exp-option i,
+        .style-option i {
+            font-size: 1.6rem;
+        }
+        
+        .btn-register-coach-submit {
+            padding: 10px 25px;
+            font-size: 0.95rem;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -424,5 +1279,90 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 });
+
+// Función para manejar el registro de coach
+function submitRegisterCoach() {
+    const form = document.getElementById('registerCoachForm');
+    const formData = new FormData(form);
+    
+    // Validar que se haya seleccionado al menos un área
+    const areas = formData.getAll('areas');
+    if (areas.length === 0) {
+        showAlert('Por favor selecciona al menos un área de expertise', 'warning');
+        return;
+    }
+    
+    // Preparar datos
+    const data = {
+        nombre: formData.get('nombre'),
+        email: formData.get('email'),
+        username: formData.get('username'),
+        password: formData.get('password'),
+        areas: areas,
+        experiencia: formData.get('experiencia'),
+        estilo: formData.get('estilo'),
+        bio: formData.get('bio')
+    };
+    
+    // Deshabilitar botón
+    const submitBtn = document.querySelector('.btn-register-coach-submit');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando registro...';
+    
+    // Enviar datos
+    fetch('/api/coach/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>¡Registro exitoso!';
+            submitBtn.style.background = 'var(--success-green)';
+            
+            showAlert('¡Registro completado con éxito! Redirigiendo...', 'success');
+            
+            setTimeout(() => {
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('registerCoachModal'));
+                modal.hide();
+                
+                // Limpiar formulario
+                form.reset();
+                
+                // Opcional: Redirigir al login o dashboard
+                if (result.redirect) {
+                    window.location.href = result.redirect;
+                }
+            }, 2000);
+        } else {
+            submitBtn.innerHTML = '<i class="fas fa-times me-2"></i>' + (result.message || 'Error en el registro');
+            submitBtn.style.background = 'var(--danger-red)';
+            showAlert(result.message || 'Error al procesar el registro', 'danger');
+            
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.style.background = '';
+                submitBtn.innerHTML = originalText;
+            }, 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error de conexión';
+        submitBtn.style.background = 'var(--danger-red)';
+        showAlert('Error de conexión. Intenta nuevamente.', 'danger');
+        
+        setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.style.background = '';
+            submitBtn.innerHTML = originalText;
+        }, 3000);
+    });
+}
 </script>
 {% endblock %}

@@ -3715,6 +3715,46 @@ def coach_dashboard():
     
     return render_template('coach_dashboard.html')
 
+@app.route('/coach-feed')
+def coach_feed():
+    # Verificar sesión de coach específicamente
+    coach_user_id = session.get('coach_user_id')
+    
+    if not coach_user_id:
+        logger.info("No coach session found, redirecting to coach login")
+        return redirect(url_for('coach_login_page'))
+    
+    # Obtener usuario desde la base de datos
+    user = User.query.get(coach_user_id)
+    if not user or user.role != 'coach':
+        logger.warning(f"Invalid coach user or role - User ID: {coach_user_id}")
+        session.pop('coach_user_id', None)
+        return redirect(url_for('coach_login_page'))
+    
+    logger.info(f"Coach feed access granted - User: {user.username}")
+    
+    return render_template('coach_feed.html')
+
+@app.route('/coach-comunidad')
+def coach_comunidad():
+    # Verificar sesión de coach específicamente
+    coach_user_id = session.get('coach_user_id')
+    
+    if not coach_user_id:
+        logger.info("No coach session found, redirecting to coach login")
+        return redirect(url_for('coach_login_page'))
+    
+    # Obtener usuario desde la base de datos
+    user = User.query.get(coach_user_id)
+    if not user or user.role != 'coach':
+        logger.warning(f"Invalid coach user or role - User ID: {coach_user_id}")
+        session.pop('coach_user_id', None)
+        return redirect(url_for('coach_login_page'))
+    
+    logger.info(f"Coach comunidad access granted - User: {user.username}")
+    
+    return render_template('coach_comunidad.html')
+
 @app.route('/coachee-dashboard')
 def coachee_dashboard():
     # Verificar sesión de coachee específicamente
@@ -4645,6 +4685,99 @@ def api_coach_available_assessments():
             'assessments': [],
             'total': 0,
             'message': 'Error interno del servidor'
+        }), 500
+
+@app.route('/api/assessments/<int:assessment_id>/questions', methods=['GET'])
+@coach_session_required
+def api_get_assessment_questions(assessment_id):
+    """Obtener las preguntas de una evaluación específica"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        app.logger.info(f"=== OBTENIENDO PREGUNTAS - Evaluación: {assessment_id}, Usuario: {current_coach.email if current_coach else 'Unknown'} ===")
+        
+        if not current_coach or current_coach.role != 'coach':
+            app.logger.warning(f"❌ GET-QUESTIONS: Access denied for user {current_coach.username if current_coach else 'None'}")
+            return jsonify({'error': 'Acceso denegado.'}), 403
+        
+        # Verificar que la evaluación existe
+        assessment = Assessment.query.get(assessment_id)
+        if not assessment:
+            app.logger.warning(f"❌ GET-QUESTIONS: Assessment {assessment_id} not found")
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        app.logger.info(f"🔍 GET-QUESTIONS: Querying questions for assessment {assessment_id}: {assessment.title}")
+        
+        # Obtener las preguntas de la evaluación
+        questions = Question.query.filter_by(
+            assessment_id=assessment_id,
+            is_active=True
+        ).order_by(Question.id).all()
+        
+        app.logger.info(f"📊 GET-QUESTIONS: Found {len(questions)} questions")
+        
+        questions_data = []
+        for question in questions:
+            try:
+                # Determinar opciones según el tipo de pregunta
+                options = None
+                if question.question_type == 'likert' or question.question_type is None:
+                    # Para preguntas tipo Likert, mostrar escala estándar (1-5)
+                    options = [
+                        "1 - Totalmente en desacuerdo",
+                        "2 - En desacuerdo",
+                        "3 - Neutral",
+                        "4 - De acuerdo",
+                        "5 - Totalmente de acuerdo"
+                    ]
+                elif question.question_type == 'likert_3_scale':
+                    # Para preguntas tipo Likert escala 1-3 (Preparación para crecer 2026)
+                    # Opciones específicas por dimensión
+                    growth_options_by_dimension = {
+                        'Delegación': ['1 - Todo depende de mí', '2 - Delego algo, pero sigo resolviendo mucho', '3 - Mi equipo opera sin mí'],
+                        'Estructura organizacional': ['1 - Todo es improvisado', '2 - Algunas áreas tienen estructura', '3 - Todo está formalizado'],
+                        'Gestión del tiempo del dueño': ['1 - > 8 h', '2 - 4–7 h', '3 - < 4 h (más foco en estrategia)'],
+                        'Finanzas': ['1 - No confío / errores frecuentes', '2 - Parcialmente actualizada', '3 - Confiable y oportuna'],
+                        'Crecimiento estratégico': ['1 - Miedo de perder control', '2 - Quiero crecer pero no sé cómo', '3 - Preparado con estrategia'],
+                        'Bienestar personal': ['1 - Agotado', '2 - Cansado pero motivado', '3 - Con energía y foco'],
+                        'Visión a futuro': ['1 - Frustrado', '2 - Inquieto pero optimista', '3 - Orgulloso']
+                    }
+                    # Obtener opciones específicas según la dimensión de la pregunta
+                    dimension = question.dimension.strip() if question.dimension else None
+                    options = growth_options_by_dimension.get(dimension, ['1 - Opción 1', '2 - Opción 2', '3 - Opción 3'])
+                
+                question_data = {
+                    'id': question.id,
+                    'question_text': question.text,  # El campo correcto es 'text'
+                    'question_type': question.question_type or 'likert',
+                    'options': options,
+                    'dimension': question.dimension
+                }
+                
+                questions_data.append(question_data)
+                
+            except Exception as q_error:
+                app.logger.error(f"❌ GET-QUESTIONS: Error processing question {question.id}: {str(q_error)}")
+                continue
+        
+        app.logger.info(f"📤 GET-QUESTIONS: Returning {len(questions_data)} questions")
+        
+        return jsonify({
+            'success': True,
+            'questions': questions_data,
+            'total': len(questions_data),
+            'assessment_title': assessment.title,
+            'message': f'Se encontraron {len(questions_data)} preguntas'
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"❌ GET-QUESTIONS: Critical error: {str(e)}")
+        app.logger.error(f"❌ GET-QUESTIONS: Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Error obteniendo preguntas: {str(e)}',
+            'questions': [],
+            'total': 0
         }), 500
 
 @app.route('/api/admin/create-additional-assessments', methods=['POST'])
@@ -6816,6 +6949,57 @@ def api_coach_delete_content(content_id):
         db.session.rollback()
         logger.error(f"Error en api_coach_delete_content: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error eliminando contenido: {str(e)}'}), 500
+
+@app.route('/api/coach/my-content', methods=['GET'])
+@coach_session_required
+def api_coach_get_my_content():
+    """Obtener todo el contenido publicado por el coach (vista simplificada para feed)"""
+    try:
+        # Usar g.current_user que es establecido por @coach_session_required
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver su contenido.'}), 403
+        
+        # Obtener todo el contenido del coach agrupado por título/URL
+        content_items = Content.query.filter_by(
+            coach_id=current_coach.id,
+            is_active=True
+        ).order_by(Content.assigned_at.desc()).all()
+        
+        logger.info(f"🔍 MY-CONTENT: Coach {current_coach.id} solicitando su contenido publicado")
+        logger.info(f"📊 Encontrados {len(content_items)} items totales")
+        
+        # Agrupar contenido único por título y URL
+        unique_content = {}
+        for content in content_items:
+            key = f"{content.title}_{content.content_url}"
+            if key not in unique_content:
+                unique_content[key] = {
+                    'id': content.id,
+                    'title': content.title,
+                    'description': content.description,
+                    'content_type': content.content_type,
+                    'content_url': content.content_url,
+                    'thumbnail_url': content.thumbnail_url,
+                    'created_at': content.assigned_at.isoformat() if content.assigned_at else None,
+                    'assigned_count': 0
+                }
+            unique_content[key]['assigned_count'] += 1
+        
+        # Convertir a lista
+        content_list = list(unique_content.values())
+        
+        logger.info(f"✅ MY-CONTENT: Devolviendo {len(content_list)} items únicos de contenido")
+        
+        return jsonify({
+            'success': True,
+            'content': content_list
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_get_my_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo contenido: {str(e)}'}), 500
 
 @app.route('/api/coach/update-coachee/<int:coachee_id>', methods=['PUT'])
 @coach_session_required

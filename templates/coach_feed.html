@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaCoach - Feed Coach</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fafafa;
+            padding-bottom: 70px; /* Espacio para la navegación inferior */
+        }
+        
+        /* Header */
+        .feed-header {
+            background: white;
+            border-bottom: 1px solid #dbdbdb;
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .feed-header h3 {
+            font-family: 'Lobster Two', cursive !important;
+            font-size: 32px !important;
+            font-weight: 400 !important;
+            margin: 0 !important;
+            color: #262626 !important;
+            letter-spacing: 0.5px !important;
+            line-height: 1.2 !important;
+        }
+        
+        /* Responsive font sizes for InstaCoach title */
+        @media (max-width: 768px) {
+            .feed-header h3 {
+                font-size: 40px !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .feed-header h3 {
+                font-size: 36px !important;
+            }
+        }
+        
+        .feed-header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .feed-header .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            overflow: hidden;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .feed-header .user-avatar:hover {
+            transform: scale(1.08);
+        }
+        
+        .feed-header .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Feed Container */
+        .feeds-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+        
+        /* Instagram Style Post */
+        .instagram-post {
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+        }
+        
+        .post-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .author-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .author-info h6 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        .author-info small {
+            font-size: 12px;
+            color: #8e8e8e;
+        }
+        
+        .post-media {
+            width: 100%;
+            background: #000;
+        }
+        
+        .post-image {
+            width: 100%;
+            display: block;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .post-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #262626;
+            cursor: pointer;
+            padding: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .post-info {
+            padding: 0 16px 16px 16px;
+        }
+        
+        .post-caption {
+            font-size: 14px;
+            color: #262626;
+            line-height: 1.5;
+        }
+        
+        .post-caption .username {
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        
+        .post-time {
+            font-size: 12px;
+            color: #8e8e8e;
+            margin-top: 8px;
+        }
+        
+        /* Bottom Navigation - Estilo LinkedIn */
+        .bottom-navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: white;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.2s;
+            color: #8e8e8e;
+            text-decoration: none;
+        }
+        
+        .nav-item i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover,
+        .nav-item.active {
+            color: #0a66c2;
+        }
+        
+        .nav-item.active {
+            color: #262626;
+        }
+        
+        /* Loading y Empty States */
+        .loading-container,
+        .empty-state,
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #dbdbdb;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state h5 {
+            color: #8e8e8e;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state p {
+            color: #8e8e8e;
+            font-size: 14px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .feeds-container {
+                padding: 0;
+            }
+            
+            .instagram-post {
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                margin-bottom: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="feed-header">
+        <div>
+            <h3>InstaCoach</h3>
+            <p class="mb-0" style="font-size: 14px; margin-top: 4px; color: #8e8e8e;">Welcome Coach <span id="welcomeMessageFeed"></span></p>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar" id="headerAvatar">
+                <i class="fas fa-user-tie"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Feeds Container -->
+    <div class="feeds-container" id="feedsContainer">
+        <div class="loading-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando feeds...</span>
+            </div>
+            <p class="mt-3 text-muted">Cargando tu contenido...</p>
+        </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-navigation">
+        <a href="/coach-feed" class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        
+        <a href="/coach-comunidad" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>Comunidad</span>
+        </a>
+        
+        <a href="/coach-dashboard" class="nav-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <button class="nav-item" onclick="confirmLogout()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
+        </button>
+    </nav>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        console.log('📱 Coach Feed Page Loaded');
+        
+        // Cargar feeds al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎬 DOM Content Loaded - Loading coach feeds...');
+            loadUserInfo();
+            loadCoachFeeds();
+        });
+        
+        // Función para cargar información del usuario
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/coach/profile');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📊 Coach profile data:', data);
+                    if (data.success && data.profile) {
+                        const profile = data.profile;
+                        const displayName = profile.full_name || profile.username || 'Coach';
+                        updateHeaderInfo(profile.avatar_url, displayName);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        // Función para actualizar header
+        function updateHeaderInfo(avatarUrl, displayName) {
+            const headerAvatar = document.getElementById('headerAvatar');
+            if (headerAvatar && avatarUrl) {
+                headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${displayName}">`;
+            } else if (headerAvatar && displayName) {
+                const initial = displayName.charAt(0).toUpperCase();
+                headerAvatar.innerHTML = initial;
+            }
+            
+            const welcomeMessage = document.getElementById('welcomeMessageFeed');
+            if (welcomeMessage && displayName) {
+                welcomeMessage.textContent = displayName;
+            }
+        }
+        
+        // Función para cargar feeds del coach
+        async function loadCoachFeeds() {
+            console.log('🎬 Loading coach content feeds...');
+            
+            const container = document.getElementById('feedsContainer');
+            if (!container) {
+                console.log('❌ Feeds container not found');
+                return;
+            }
+            
+            try {
+                // Obtener el contenido que el coach ha publicado
+                const response = await fetch('/api/coach/my-content');
+                const data = await response.json();
+                
+                console.log('📊 API Response for coach content:', data);
+                
+                if (data.success && data.content && data.content.length > 0) {
+                    displayCoachFeeds(data.content);
+                } else {
+                    displayNoFeeds();
+                }
+            } catch (error) {
+                console.error('❌ Error loading coach feeds:', error);
+                displayFeedsError();
+            }
+        }
+        
+        // Función para mostrar feeds del coach
+        function displayCoachFeeds(content) {
+            const container = document.getElementById('feedsContainer');
+            if (!container) return;
+            
+            let feedsHTML = '';
+            
+            content.forEach((item) => {
+                const videoId = extractYouTubeVideoId(item.content_url);
+                const isYouTubeVideo = videoId && item.content_type === 'video';
+                const isDocument = item.content_type === 'document';
+                
+                // Determinar thumbnail
+                let thumbnail;
+                if (isYouTubeVideo) {
+                    thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                } else if (isDocument) {
+                    thumbnail = null;
+                } else {
+                    thumbnail = 'data:image/svg+xml;base64,' + btoa(`
+                        <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="600" height="400" fill="#f8f9fa"/>
+                            <circle cx="300" cy="200" r="60" fill="#6c757d"/>
+                            <polygon points="270,170 270,230 330,200" fill="white"/>
+                        </svg>
+                    `);
+                }
+                
+                const timeAgo = getRelativeTime(item.created_at);
+                
+                feedsHTML += `
+                    <div class="instagram-post">
+                        <div class="post-header">
+                            <div class="post-author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div class="author-info">
+                                    <h6>Mi contenido</h6>
+                                    <small>${timeAgo}</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="post-media">
+                            ${isYouTubeVideo ? `
+                                <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden;">
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 56.25%;">
+                                        <iframe id="youtube-feed-${item.id}" 
+                                            src="https://www.youtube.com/embed/${videoId}?enablejsapi=1" 
+                                            title="${item.title}" 
+                                            frameborder="0" 
+                                            allowfullscreen
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            style="width: 100%; height: 100%; border-radius: 0;">
+                                        </iframe>
+                                    </div>
+                                </div>
+                            ` : isDocument ? `
+                                <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden;" onclick="openDocument('${item.content_url}')">
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 56.25%; overflow-y: auto; background: white; border-radius: 8px;">
+                                        <canvas id="doc-preview-${item.id}"
+                                                width="1200"
+                                                height="1000"
+                                                style="width: 100%; height: auto; pointer-events: none; display: block;">
+                                        </canvas>
+                                    </div>
+                                    <div style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                                        <i class="fas fa-file-alt" style="color: white; font-size: 16px;"></i>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div onclick="openVideo('${item.content_url}')" style="position: relative; cursor: pointer;">
+                                    <img src="${thumbnail}" alt="${item.title}" class="post-image">
+                                    <div class="video-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                        
+                        <div class="post-actions">
+                            <div class="action-buttons">
+                                ${isYouTubeVideo ? `
+                                    <button class="action-btn" disabled style="color: #28a745; opacity: 0.7;" title="Video embebido">
+                                        <i class="fas fa-play-circle"></i>
+                                    </button>
+                                ` : isDocument ? `
+                                    <button class="action-btn" onclick="openDocument('${item.content_url}')" title="Abrir documento">
+                                        <i class="far fa-file-alt"></i>
+                                    </button>
+                                ` : `
+                                    <button class="action-btn" onclick="openVideo('${item.content_url}')" title="Reproducir video">
+                                        <i class="far fa-play-circle"></i>
+                                    </button>
+                                `}
+                                <button class="action-btn" title="Compartido con ${item.assigned_count || 0} coachees">
+                                    <i class="fas fa-users"></i>
+                                    <small style="font-size: 12px; margin-left: 4px;">${item.assigned_count || 0}</small>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="post-info">
+                            <div class="post-caption">
+                                <span class="username">Título:</span>
+                                ${item.title}
+                                ${item.description ? '<br><small class="text-muted">' + item.description + '</small>' : ''}
+                            </div>
+                            <div class="post-time">
+                                ${timeAgo}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = feedsHTML;
+            console.log(`✅ Displayed ${content.length} coach content feeds`);
+            
+            // Generar previews de documentos
+            content.forEach(item => {
+                if (item.content_type === 'document') {
+                    const canvasId = `doc-preview-${item.id}`;
+                    setTimeout(() => {
+                        const canvas = document.getElementById(canvasId);
+                        if (canvas) {
+                            generateDocumentPreview(item.content_url, canvasId);
+                        }
+                    }, 500);
+                }
+            });
+        }
+        
+        // Función para mostrar cuando no hay feeds
+        function displayNoFeeds() {
+            const container = document.getElementById('feedsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-stream"></i>
+                        <h5>No has publicado contenido aún</h5>
+                        <p>Ve al dashboard para agregar videos, documentos y recursos para tus coachees.</p>
+                        <a href="/coach-dashboard" class="btn btn-primary mt-3">
+                            <i class="fas fa-chart-line me-2"></i>Ir al Dashboard
+                        </a>
+                    </div>
+                `;
+            }
+        }
+        
+        // Función para mostrar error
+        function displayFeedsError() {
+            const container = document.getElementById('feedsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle" style="color: #ed4956;"></i>
+                        <h5>Error al cargar el contenido</h5>
+                        <p>Por favor, intenta nuevamente.</p>
+                        <button class="btn btn-outline-primary mt-3" onclick="loadCoachFeeds()">
+                            <i class="fas fa-redo me-2"></i>Reintentar
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Función para extraer ID de YouTube
+        function extractYouTubeVideoId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+        
+        // Función para calcular tiempo relativo
+        function getRelativeTime(dateString) {
+            if (!dateString) return 'Hace un momento';
+            
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffMs = now - date;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 0) {
+                return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+            } else if (diffHours > 0) {
+                return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+            } else {
+                return 'Hace un momento';
+            }
+        }
+        
+        // Función para abrir video
+        function openVideo(url) {
+            console.log('🚀 Opening video:', url);
+            window.open(url, '_blank');
+        }
+        
+        // Función para abrir documento
+        function openDocument(url) {
+            console.log('📄 Opening document:', url);
+            window.open(url, '_blank');
+        }
+        
+        // Función para generar preview de documento
+        async function generateDocumentPreview(url, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1200;
+            canvas.height = 1000;
+            
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, 1200, 1000);
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Cargando documento...', 600, 500);
+            
+            if (url.toLowerCase().includes('.pdf') || url.includes('content_type=document') || url.includes('/download')) {
+                try {
+                    await generatePDFPreview(url, canvasId, 1200, 1000);
+                } catch (error) {
+                    console.error('❌ PDF preview failed:', error);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, 1200, 1000);
+                    ctx.fillStyle = '#dc3545';
+                    ctx.font = '32px Arial';
+                    ctx.fillText('Error al cargar PDF', 600, 400);
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '96px Arial';
+                    ctx.fillText('📄', 600, 700);
+                }
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 1200, 1000);
+                ctx.fillStyle = '#495057';
+                ctx.font = '96px Arial';
+                ctx.fillText('📄', 600, 500);
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '32px Arial';
+                ctx.fillText('Documento', 600, 700);
+            }
+        }
+        
+        // Función para generar preview de PDF
+        async function generatePDFPreview(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
+            if (typeof pdfjsLib === 'undefined') {
+                console.error('❌ PDF.js not loaded');
+                return;
+            }
+            
+            try {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                canvas.width = maxWidth;
+                canvas.height = maxHeight;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, maxWidth, maxHeight);
+                
+                const loadingTask = pdfjsLib.getDocument({
+                    url: url,
+                    disableWorker: false,
+                    disableAutoFetch: false,
+                    disableStream: false
+                });
+                
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+                
+                const scaleX = maxWidth / viewport.width;
+                const scaleY = maxHeight / viewport.height;
+                const scale = Math.min(scaleX, scaleY);
+                
+                const scaledViewport = page.getViewport({ scale });
+                const offsetX = (maxWidth - scaledViewport.width) / 2;
+                const offsetY = (maxHeight - scaledViewport.height) / 2;
+                
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: scaledViewport,
+                    transform: [1, 0, 0, 1, offsetX, offsetY]
+                };
+                
+                await page.render(renderContext).promise;
+                console.log('✅ PDF preview generated successfully');
+                
+            } catch (error) {
+                console.error('❌ Error generating PDF preview:', error);
+                throw error;
+            }
+        }
+        
+        // Función para confirmar logout
+        function confirmLogout() {
+            if (confirm('¿Estás seguro que deseas salir?')) {
+                window.location.href = '/coach-login';
+            }
+        }
+    </script>
+</body>
+</html>

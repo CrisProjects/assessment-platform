@@ -1305,16 +1305,17 @@
     /* Estilos para evaluaciones disponibles */
     .assessment-card {
         background: white;
-        border: 1px solid #e3e6f0;
         border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        cursor: pointer;
+        border: 2px solid transparent;
     }
     
     .assessment-card:hover {
-        border-color: #e3e6f0;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.05);
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     }
     
     .assessment-card.selected {
@@ -1397,6 +1398,91 @@
     
     .assessment-stat i {
         color: #4e73df;
+    }
+    
+    /* Estilos para categorías de evaluaciones */
+    .assessment-category {
+        margin-bottom: 2.5rem;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Estilos para el header colapsable */
+    .section-header-eval {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+    
+    .section-header-eval:active {
+        transform: scale(0.99);
+    }
+    
+    .category-container {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .category-container:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .category-header-visual {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .category-icon-large {
+        animation: iconFloat 3s ease-in-out infinite;
+    }
+    
+    @keyframes iconFloat {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    .category-count-badge {
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulseGlow {
+        0%, 100% {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        50% {
+            box-shadow: 0 4px 20px rgba(255,255,255,0.4);
+        }
+    }
+    
+    .category-assessments-wrapper {
+        background: white;
+    }
+    
+    .category-assessments-wrapper .assessment-card {
+        margin-bottom: 1rem;
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .category-assessments-wrapper .assessment-card:hover {
+        border-left-color: currentColor;
+        transform: translateX(5px);
     }
     
     /* Responsive styles para evaluaciones en móvil */
@@ -2329,6 +2415,77 @@
     /* Animaciones para cambios de vista */
     .fc-view {
         animation: fadeIn 0.3s ease !important;
+    }
+
+    /* === BOTTOM NAVIGATION BAR === */
+    .bottom-navigation {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: white;
+        border-top: 1px solid #dbdbdb;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 1000;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 8px;
+        transition: color 0.2s;
+        color: #8e8e8e;
+        text-decoration: none;
+    }
+    
+    .nav-item i {
+        font-size: 24px;
+        margin-bottom: 4px;
+    }
+    
+    .nav-item span {
+        font-size: 11px;
+        font-weight: 500;
+    }
+    
+    .nav-item:hover,
+    .nav-item.active {
+        color: #0a66c2;
+    }
+    
+    .nav-item.active {
+        color: #262626;
+    }
+    
+    /* Espacio inferior para evitar que el contenido quede debajo del nav */
+    body {
+        padding-bottom: 70px;
+    }
+    
+    /* Tema oscuro para bottom navigation */
+    [data-theme="dark"] .bottom-navigation {
+        background: #1a1a1a;
+        border-top-color: #2a2a2a;
+    }
+    
+    [data-theme="dark"] .nav-item {
+        color: #8e8e8e;
+    }
+    
+    [data-theme="dark"] .nav-item:hover,
+    [data-theme="dark"] .nav-item.active {
+        color: #0a66c2;
+    }
     </style>
 </head>
 <body>
@@ -2343,22 +2500,9 @@
         <div class="col-12">
             <div class="card bg-dark border-secondary">
                 <div class="card-body dashboard-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="header-info">
-                            <h3 class="text-white mb-1" style="font-family: 'Lobster Two', cursive; font-size: 32px; font-weight: 400; letter-spacing: 0.5px;">InstaCoach</h3>
-                            <p class="text-muted mb-0">Welcome Coach <span id="coachName"></span></p>
-                        </div>
-                        <div class="btn-group-mobile d-flex gap-2">
-                            <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()" title="Actualizar">
-                                <i class="fas fa-sync-alt me-1"></i><span class="d-none d-sm-inline">Actualizar</span>
-                            </button>
-                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/'" title="Inicio">
-                                <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Inicio</span>
-                            </button>
-                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/coach-login'" title="Salir">
-                                <i class="fas fa-sign-out-alt me-1"></i><span class="d-none d-sm-inline">Salir</span>
-                            </button>
-                        </div>
+                    <div class="header-info">
+                        <h3 class="text-white mb-1" style="font-family: 'Lobster Two', cursive; font-size: 32px; font-weight: 400; letter-spacing: 0.5px;">InstaCoach</h3>
+                        <p class="text-muted mb-0">Welcome Coach <span id="coachName"></span></p>
                     </div>
                 </div>
             </div>
@@ -4340,78 +4484,170 @@ function displayAvailableAssessments(assessments) {
         return;
     }
     
-    assessments.forEach((assessment, index) => {
-        const card = document.createElement('div');
-        card.className = 'assessment-card';
-        card.setAttribute('data-assessment-id', assessment.id);
+    // Categorizar evaluaciones por tipo
+    const categories = {
+        'Personalidad': {
+            icon: 'fa-user-circle',
+            color: '#6f42c1',
+            assessments: []
+        },
+        'Liderazgo': {
+            icon: 'fa-crown',
+            color: '#fd7e14',
+            assessments: []
+        },
+        'Inteligencia Emocional': {
+            icon: 'fa-heart',
+            color: '#e83e8c',
+            assessments: []
+        },
+        'Trabajo en Equipo': {
+            icon: 'fa-users',
+            color: '#20c997',
+            assessments: []
+        },
+        'Crecimiento Empresarial': {
+            icon: 'fa-chart-line',
+            color: '#17a2b8',
+            assessments: []
+        },
+        'Otros': {
+            icon: 'fa-clipboard-list',
+            color: '#6c757d',
+            assessments: []
+        }
+    };
+    
+    // Clasificar evaluaciones por categoría
+    assessments.forEach(assessment => {
+        const title = assessment.title.toLowerCase();
         
-        // Agregar animación de entrada escalonada
-        card.style.animationDelay = `${index * 0.1}s`;
+        if (title.includes('disc') || title.includes('personalidad') || title.includes('asertividad')) {
+            categories['Personalidad'].assessments.push(assessment);
+        } else if (title.includes('liderazgo')) {
+            categories['Liderazgo'].assessments.push(assessment);
+        } else if (title.includes('inteligencia emocional') || title.includes('emocional')) {
+            categories['Inteligencia Emocional'].assessments.push(assessment);
+        } else if (title.includes('trabajo en equipo') || title.includes('equipo')) {
+            categories['Trabajo en Equipo'].assessments.push(assessment);
+        } else if (title.includes('crecer') || title.includes('crecimiento') || title.includes('preparación')) {
+            categories['Crecimiento Empresarial'].assessments.push(assessment);
+        } else {
+            categories['Otros'].assessments.push(assessment);
+        }
+    });
+    
+    // Renderizar categorías con evaluaciones
+    let totalDisplayed = 0;
+    Object.keys(categories).forEach(categoryName => {
+        const category = categories[categoryName];
         
-        const createdDate = assessment.created_at ? 
-            new Date(assessment.created_at).toLocaleDateString('es-ES', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-            }) : 'No disponible';
+        if (category.assessments.length === 0) {
+            return; // Saltar categorías vacías
+        }
         
-        // Determinar color del badge basado en estadísticas
-        const badgeClass = assessment.completed_count > 0 ? 'success' : 'primary';
-        const badgeIcon = assessment.completed_count > 0 ? 'check-circle' : 'clipboard-list';
-        
-        card.innerHTML = `
-            <div class="assessment-header">
-                <h6 class="assessment-title">${assessment.title}</h6>
-                <span class="assessment-badge bg-${badgeClass}">
-                    <i class="fas fa-${badgeIcon} me-1"></i>
-                    ${assessment.completed_count > 0 ? 'Activa' : 'Nueva'}
-                </span>
+        // Crear contenedor de categoría estilo landing page con collapse
+        const categorySection = document.createElement('div');
+        categorySection.className = 'assessment-category mb-4';
+        const categoryId = `category-${categoryName.replace(/\s+/g, '-')}`;
+        categorySection.innerHTML = `
+            <div class="section-header-eval" style="margin: 30px 0 20px 0; padding: 15px; border-bottom: 2px solid ${category.color}; cursor: pointer; transition: all 0.3s ease; border-radius: 8px;" onclick="toggleCategory('${categoryId}', this)" onmouseover="this.style.backgroundColor='${category.color}10'" onmouseout="this.style.backgroundColor='transparent'">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="color: #262626; font-size: 24px; font-weight: 600; margin: 0;">
+                        <i class="fas ${category.icon} me-2" style="color: ${category.color};"></i>
+                        ${categoryName}
+                        <span style="color: ${category.color}; font-size: 18px; font-weight: 500; margin-left: 8px;">(${category.assessments.length})</span>
+                    </h4>
+                    <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease; transform: rotate(-90deg);"></i>
+                </div>
             </div>
-            
-            <p class="assessment-description">
-                ${assessment.description || 'Sin descripción disponible'}
-            </p>
-            
-            <div class="assessment-stats">
-                <div class="assessment-stat">
-                    <i class="fas fa-question-circle"></i>
-                    <span>${assessment.questions_count} ${assessment.questions_count === 1 ? 'pregunta' : 'preguntas'}</span>
-                </div>
-                <div class="assessment-stat">
-                    <i class="fas fa-users"></i>
-                    <span>${assessment.completed_count} ${assessment.completed_count === 1 ? 'completada' : 'completadas'}</span>
-                </div>
-                <div class="assessment-stat">
-                    <i class="fas fa-calendar-plus"></i>
-                    <span class="d-none d-sm-inline">Creada: </span>${createdDate}</span>
-                </div>
-            </div>
-            
-            <!-- Botones de acción -->
-            <div class="assessment-actions mt-2">
-                <!-- Botón de asignación -->
-                <button class="btn btn-outline-success btn-sm w-100" onclick="event.stopPropagation(); openAssignModalFromEvaluation(${assessment.id}, '${assessment.title}')">
-                    <i class="fas fa-user-plus me-1"></i>Asignar a Coachee
-                </button>
+            <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 0px; overflow: hidden; max-height: 0px; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
             </div>
         `;
         
-        container.appendChild(card);
+        container.appendChild(categorySection);
+        
+        // Agregar evaluaciones a la categoría
+        const categoryContainer = categorySection.querySelector('.assessments-grid');
+        category.assessments.forEach((assessment, index) => {
+            const card = document.createElement('div');
+            card.className = 'assessment-card';
+            card.setAttribute('data-assessment-id', assessment.id);
+            
+            // Agregar animación de entrada escalonada
+            card.style.animationDelay = `${totalDisplayed * 0.1}s`;
+            totalDisplayed++;
+            
+            const createdDate = assessment.created_at ? 
+                new Date(assessment.created_at).toLocaleDateString('es-ES', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                }) : 'No disponible';
+            
+            // Determinar color del badge basado en estadísticas
+            const badgeClass = assessment.completed_count > 0 ? 'success' : 'primary';
+            const badgeIcon = assessment.completed_count > 0 ? 'check-circle' : 'clipboard-list';
+            
+            card.innerHTML = `
+                <div class="assessment-image" style="width: 100%; height: 180px; background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 64px; color: white;">
+                    <i class="fas ${category.icon}"></i>
+                </div>
+                <div class="assessment-body" style="padding: 16px;">
+                    <div class="assessment-title" style="font-size: 18px; font-weight: 600; color: #262626; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${assessment.title}
+                    </div>
+                    <div class="assessment-description" style="font-size: 14px; color: #8e8e8e; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${assessment.description || 'Sin descripción disponible'}
+                    </div>
+                    <div class="assessment-meta" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #8e8e8e; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-users" style="color: ${category.color};"></i>
+                            <span>${assessment.completed_count} ${assessment.completed_count === 1 ? 'completada' : 'completadas'}</span>
+                        </div>
+                        <div class="assessment-badge" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                            ${assessment.questions_count} ${assessment.questions_count === 1 ? 'pregunta' : 'preguntas'}
+                        </div>
+                    </div>
+                    <div class="assessment-actions" style="display: flex; gap: 8px;">
+                        <button class="btn btn-sm flex-fill" style="background: ${category.color}; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s;" onclick="event.stopPropagation(); openAssignModalFromEvaluation(${assessment.id}, '${assessment.title}')" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                            <i class="fas fa-user-plus me-1"></i>Asignar
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm flex-fill" style="border: 2px solid ${category.color}30; color: ${category.color}; padding: 8px 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s;" onclick="event.stopPropagation(); viewAssessmentQuestions(${assessment.id}, '${assessment.title}')" onmouseover="this.style.background='${category.color}15'" onmouseout="this.style.background='transparent'">
+                            <i class="fas fa-list me-1"></i>Ver
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            categoryContainer.appendChild(card);
+        });
     });
+}
+
+// Función para expandir/contraer categorías
+function toggleCategory(categoryId, headerElement) {
+    const categoryGrid = document.getElementById(categoryId);
+    const icon = document.getElementById(`icon-${categoryId}`);
+    const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
     
-    // Agregar mensaje informativo al final
-    const infoMessage = document.createElement('div');
-    infoMessage.className = 'alert alert-info mt-3';
-    infoMessage.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <div>
-                <strong>${assessments.length} ${assessments.length === 1 ? 'evaluación disponible' : 'evaluaciones disponibles'}</strong>
-                <br><small>Usa el botón "Asignar a Coachee" para asignar evaluaciones a tus coachees.</small>
-            </div>
-        </div>
-    `;
-    container.appendChild(infoMessage);
+    if (isExpanded) {
+        // Contraer
+        categoryGrid.style.maxHeight = '0px';
+        categoryGrid.style.opacity = '0';
+        categoryGrid.style.marginBottom = '0px';
+        categoryGrid.style.paddingTop = '0px';
+        icon.style.transform = 'rotate(-90deg)';
+        categoryGrid.setAttribute('data-expanded', 'false');
+    } else {
+        // Expandir
+        categoryGrid.style.maxHeight = '5000px';
+        categoryGrid.style.opacity = '1';
+        categoryGrid.style.marginBottom = '30px';
+        categoryGrid.style.paddingTop = '0px';
+        icon.style.transform = 'rotate(0deg)';
+        categoryGrid.setAttribute('data-expanded', 'true');
+    }
 }
 
 // Función para seleccionar una evaluación
@@ -4549,6 +4785,117 @@ function confirmAssignAssessment(assessmentId) {
             }
         });
     }, 1000);
+}
+
+// Función para ver las preguntas de una evaluación
+async function viewAssessmentQuestions(assessmentId, assessmentTitle) {
+    console.log('👁️ VIEW-QUESTIONS: Cargando preguntas para evaluación:', assessmentId);
+    
+    try {
+        // Mostrar loading
+        showNotification('Cargando preguntas...', 'info');
+        
+        // Obtener las preguntas desde la API
+        const response = await fetch(`/api/assessments/${assessmentId}/questions`);
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Error al cargar las preguntas');
+        }
+        
+        const questions = data.questions || [];
+        console.log('✅ VIEW-QUESTIONS: Preguntas cargadas:', questions.length);
+        
+        // Crear contenido del modal con las preguntas
+        let questionsHtml = '';
+        if (questions.length === 0) {
+            questionsHtml = `
+                <div class="text-center py-4">
+                    <i class="fas fa-question-circle text-muted mb-3" style="font-size: 3rem;"></i>
+                    <h6 class="text-muted">No hay preguntas disponibles</h6>
+                    <p class="text-muted small">Esta evaluación aún no tiene preguntas configuradas.</p>
+                </div>
+            `;
+        } else {
+            questionsHtml = questions.map((question, index) => `
+                <div class="question-item mb-3 p-3 border rounded">
+                    <div class="d-flex align-items-start">
+                        <span class="badge bg-primary me-2 mt-1">${index + 1}</span>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-2">${question.question_text}</h6>
+                            ${question.options ? `
+                                <div class="options-list mt-2">
+                                    ${question.options.map((option, optIndex) => `
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" disabled>
+                                            <label class="form-check-label text-muted small">
+                                                ${option}
+                                            </label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Crear modal con las preguntas
+        const modalHtml = `
+            <div class="modal fade" id="viewQuestionsModal" tabindex="-1" aria-labelledby="viewQuestionsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="viewQuestionsModalLabel">
+                                <i class="fas fa-list me-2"></i>${assessmentTitle} - Preguntas
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info d-flex align-items-start mb-3">
+                                <i class="fas fa-info-circle me-2 mt-1"></i>
+                                <div>
+                                    <strong>${questions.length} ${questions.length === 1 ? 'pregunta' : 'preguntas'}</strong>
+                                    <br><small>Esta es la lista de preguntas que verán tus coachees al completar esta evaluación.</small>
+                                </div>
+                            </div>
+                            <div class="questions-container">
+                                ${questionsHtml}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remover modal previo si existe
+        const existingModal = document.getElementById('viewQuestionsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Añadir nuevo modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('viewQuestionsModal'));
+        modal.show();
+        
+        // Limpiar modal cuando se cierre
+        document.getElementById('viewQuestionsModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
+        
+    } catch (error) {
+        console.error('❌ VIEW-QUESTIONS: Error:', error);
+        showNotification('Error al cargar las preguntas: ' + error.message, 'danger');
+    }
 }
 
 // Función para cargar evaluaciones en el selector del formulario de invitación
@@ -10759,6 +11106,38 @@ if (document.readyState === 'loading') {
 }
 
 </script>
+
+    <!-- Bottom Navigation - Estilo LinkedIn -->
+    <nav class="bottom-navigation">
+        <a href="/coach-feed" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        
+        <a href="/coach-comunidad" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>Comunidad</span>
+        </a>
+        
+        <a href="/coach-dashboard" class="nav-item active">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <button class="nav-item" onclick="confirmLogoutFromCoachDashboard()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
+        </button>
+    </nav>
+
+    <script>
+        // Función para confirmar logout desde coach dashboard
+        function confirmLogoutFromCoachDashboard() {
+            if (confirm('¿Estás seguro que deseas salir?')) {
+                window.location.href = '/coach-login';
+            }
+        }
+    </script>
 
 </body>
 </html>

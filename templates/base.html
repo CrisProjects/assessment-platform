@@ -189,64 +189,6 @@
             --glass-card: rgba(30, 41, 59, 0.4);
         }
 
-        /* === BOTÓN DE CAMBIO DE TEMA MEJORADO === */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 55px;
-            height: 55px;
-            border-radius: var(--radius-full);
-            background: var(--theme-card-bg);
-            border: 2px solid var(--theme-card-border);
-            color: var(--theme-text-primary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            transition: all var(--transition-normal);
-            backdrop-filter: var(--theme-glass-backdrop);
-            z-index: 1050;
-            box-shadow: var(--theme-card-shadow);
-        }
-
-        .theme-toggle:hover {
-            transform: scale(1.1) rotate(15deg);
-            box-shadow: 0 12px 30px var(--theme-focus-ring);
-            background: var(--theme-hover-bg);
-            border-color: var(--theme-text-accent);
-        }
-
-        .theme-toggle .icon {
-            transition: all var(--transition-fast);
-            position: absolute;
-        }
-
-        /* Iconos del toggle - modo día */
-        [data-theme="light"] .theme-toggle .sun-icon {
-            opacity: 1;
-            transform: rotate(0deg) scale(1);
-            color: #F59E0B;
-        }
-
-        [data-theme="light"] .theme-toggle .moon-icon {
-            opacity: 0;
-            transform: rotate(-180deg) scale(0.5);
-        }
-
-        /* Iconos del toggle - modo noche */
-        [data-theme="dark"] .theme-toggle .sun-icon {
-            opacity: 0;
-            transform: rotate(180deg) scale(0.5);
-        }
-
-        [data-theme="dark"] .theme-toggle .moon-icon {
-            opacity: 1;
-            transform: rotate(0deg) scale(1);
-            color: #60A5FA;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -1243,64 +1185,8 @@
                     this.style.boxShadow = '0 8px 40px rgba(27, 34, 80, 0.15)';
                 });
             });
-
-            // Sistema de cambio de tema
-            function initThemeSystem() {
-                const themeToggle = document.getElementById('themeToggle');
-                const html = document.documentElement;
-                
-                // Cargar tema guardado o usar el predeterminado
-                const savedTheme = localStorage.getItem('theme') || 'light';
-                setTheme(savedTheme);
-                
-                // Event listener para el botón de cambio de tema
-                if (themeToggle) {
-                    themeToggle.addEventListener('click', toggleTheme);
-                }
-                
-                function toggleTheme() {
-                    const currentTheme = html.getAttribute('data-theme');
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                    setTheme(newTheme);
-                }
-                
-                function setTheme(theme) {
-                    html.setAttribute('data-theme', theme);
-                    localStorage.setItem('theme', theme);
-                    
-                    // Actualizar el ícono del botón
-                    updateThemeIcon(theme);
-                    
-                    // Trigger evento personalizado para otros componentes
-                    window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
-                }
-                
-                function updateThemeIcon(theme) {
-                    const sunIcon = document.querySelector('.sun-icon');
-                    const moonIcon = document.querySelector('.moon-icon');
-                    
-                    if (sunIcon && moonIcon) {
-                        if (theme === 'dark') {
-                            sunIcon.style.opacity = '1';
-                            moonIcon.style.opacity = '0';
-                        } else {
-                            sunIcon.style.opacity = '0';
-                            moonIcon.style.opacity = '1';
-                        }
-                    }
-                }
-            }
-            
-            // Inicializar sistema de temas
-            initThemeSystem();
         });
     </script>
-    
-    <!-- Botón de cambio de tema -->
-    <button id="themeToggle" class="theme-toggle" title="Cambiar tema">
-        <i class="fas fa-sun icon sun-icon" style="position: absolute;"></i>
-        <i class="fas fa-moon icon moon-icon" style="position: absolute;"></i>
-    </button>
     
     {% block extra_js %}{% endblock %}
 </body>

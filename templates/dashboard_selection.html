@@ -1278,14 +1278,9 @@
     }
     
     .fade-in-item {
-        animation: fadeInUp 0.6s ease-out forwards;
-        opacity: 0;
+        opacity: 1 !important;
+        display: block !important;
     }
-    
-    .fade-in-item:nth-child(1) { animation-delay: 0.1s; }
-    .fade-in-item:nth-child(2) { animation-delay: 0.2s; }
-    .fade-in-item:nth-child(3) { animation-delay: 0.3s; }
-    .fade-in-item:nth-child(4) { animation-delay: 0.4s; }
     
     @keyframes fadeInUp {
         from {
@@ -1376,9 +1371,6 @@
             successMessage.remove();
         }, 4000);
         
-        // Limpiar formulario
-        form.reset();
-        
         // TODO: Aquí se enviará al pool de coaches
         // fetch('/api/solicitar-coach', {
         //     method: 'POST',
@@ -1387,9 +1379,18 @@
         // });
     }
     
-    // Animar entrada del modal
+    // Modal abierto
     document.getElementById('findCoachModal').addEventListener('show.bs.modal', function () {
         console.log('🎨 Modal abierto - Encontrar Coach');
+    });
+    
+    // Limpiar formulario DESPUÉS de que el modal se cierre completamente
+    document.getElementById('findCoachModal').addEventListener('hidden.bs.modal', function () {
+        console.log('🧹 Modal cerrado - Limpiando formulario');
+        const form = document.getElementById('findCoachForm');
+        if (form) {
+            form.reset();
+        }
     });
 </script>
 

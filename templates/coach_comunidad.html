@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaCoach - Comunidad</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fafafa;
+            padding-bottom: 70px;
+        }
+        
+        /* Header */
+        .feed-header {
+            background: white;
+            border-bottom: 1px solid #dbdbdb;
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .feed-header h3 {
+            font-family: 'Lobster Two', cursive !important;
+            font-size: 32px !important;
+            font-weight: 400 !important;
+            margin: 0 !important;
+            color: #262626 !important;
+            letter-spacing: 0.5px !important;
+            line-height: 1.2 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .feed-header h3 {
+                font-size: 40px !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .feed-header h3 {
+                font-size: 36px !important;
+            }
+        }
+        
+        .feed-header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .feed-header .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            overflow: hidden;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .feed-header .user-avatar:hover {
+            transform: scale(1.08);
+        }
+        
+        .feed-header .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Community Container */
+        .community-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Section Headers */
+        .section-header {
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3B82F6;
+        }
+        
+        .section-header h4 {
+            color: #262626;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        /* Group Cards - Estilo Landing Page */
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .group-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .group-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border-color: #3B82F6;
+        }
+        
+        .group-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+        }
+        
+        .group-body {
+            padding: 16px;
+        }
+        
+        .group-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .group-description {
+            font-size: 14px;
+            color: #8e8e8e;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .group-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #8e8e8e;
+        }
+        
+        .group-members {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .group-members i {
+            color: #3B82F6;
+        }
+        
+        .group-badge {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #dbdbdb;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state h5 {
+            color: #8e8e8e;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state p {
+            color: #8e8e8e;
+            font-size: 14px;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: white;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.2s;
+            color: #8e8e8e;
+            text-decoration: none;
+        }
+        
+        .nav-item i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover,
+        .nav-item.active {
+            color: #0a66c2;
+        }
+        
+        .nav-item.active {
+            color: #262626;
+        }
+        
+        /* Create Group Button */
+        .create-group-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white;
+            border: none;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 999;
+        }
+        
+        .create-group-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .community-container {
+                padding: 15px;
+            }
+            
+            .groups-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 16px;
+            }
+            
+            .section-header h4 {
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .groups-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="feed-header">
+        <div>
+            <h3>InstaCoach</h3>
+            <p class="mb-0" style="font-size: 14px; margin-top: 4px; color: #8e8e8e;">Comunidad Coach <span id="welcomeMessageComunidad"></span></p>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar" id="headerAvatar">
+                <i class="fas fa-user-tie"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Community Container -->
+    <div class="community-container">
+        <!-- Mis Grupos Section -->
+        <div class="section-header">
+            <h4><i class="fas fa-users me-2"></i>Mis Grupos</h4>
+        </div>
+        <div class="groups-grid" id="myGroupsContainer">
+            <!-- Grupos del coach se cargarán aquí -->
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <h5>Aún no has creado grupos</h5>
+                <p>Crea tu primer grupo para conectar con otros coaches</p>
+            </div>
+        </div>
+        
+        <!-- Otros Grupos Section -->
+        <div class="section-header">
+            <h4><i class="fas fa-globe me-2"></i>Otros Grupos</h4>
+        </div>
+        <div class="groups-grid" id="otherGroupsContainer">
+            <!-- Otros grupos se cargarán aquí -->
+            <div class="empty-state">
+                <i class="fas fa-globe"></i>
+                <h5>No hay otros grupos disponibles</h5>
+                <p>Sé el primero en crear un grupo</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Group Button -->
+    <button class="create-group-btn" onclick="openCreateGroupModal()" title="Crear Grupo">
+        <i class="fas fa-plus"></i>
+    </button>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-navigation">
+        <a href="/coach-feed" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        
+        <a href="/coach-comunidad" class="nav-item active">
+            <i class="fas fa-users"></i>
+            <span>Comunidad</span>
+        </a>
+        
+        <a href="/coach-dashboard" class="nav-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <button class="nav-item" onclick="confirmLogout()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
+        </button>
+    </nav>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        console.log('🌐 Coach Comunidad Page Loaded');
+        
+        // Cargar información al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎬 DOM Content Loaded - Loading community...');
+            loadUserInfo();
+            loadGroups();
+        });
+        
+        // Función para cargar información del usuario
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/coach/profile');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📊 Coach profile data:', data);
+                    if (data.success && data.profile) {
+                        const profile = data.profile;
+                        const displayName = profile.full_name || profile.username || 'Coach';
+                        updateHeaderInfo(profile.avatar_url, displayName);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        // Función para actualizar header
+        function updateHeaderInfo(avatarUrl, displayName) {
+            const headerAvatar = document.getElementById('headerAvatar');
+            if (headerAvatar && avatarUrl) {
+                headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${displayName}">`;
+            } else if (headerAvatar && displayName) {
+                const initial = displayName.charAt(0).toUpperCase();
+                headerAvatar.innerHTML = initial;
+            }
+            
+            const welcomeMessage = document.getElementById('welcomeMessageComunidad');
+            if (welcomeMessage && displayName) {
+                welcomeMessage.textContent = displayName;
+            }
+        }
+        
+        // Función para cargar grupos (simulado por ahora)
+        function loadGroups() {
+            console.log('📊 Loading groups...');
+            
+            // Por ahora mostrar datos de ejemplo
+            const myGroups = [
+                {
+                    id: 1,
+                    name: 'Coaches de Liderazgo',
+                    description: 'Grupo para compartir estrategias y herramientas de liderazgo efectivo',
+                    members: 24,
+                    isOwner: true,
+                    icon: '👥'
+                },
+                {
+                    id: 2,
+                    name: 'Desarrollo Personal',
+                    description: 'Espacio para discutir técnicas de crecimiento personal y profesional',
+                    members: 18,
+                    isOwner: true,
+                    icon: '🌱'
+                }
+            ];
+            
+            const otherGroups = [
+                {
+                    id: 3,
+                    name: 'Coaching Ejecutivo',
+                    description: 'Red de coaches especializados en alta dirección y ejecutivos',
+                    members: 42,
+                    isOwner: false,
+                    icon: '💼'
+                },
+                {
+                    id: 4,
+                    name: 'Mindfulness & Bienestar',
+                    description: 'Prácticas de mindfulness aplicadas al coaching',
+                    members: 35,
+                    isOwner: false,
+                    icon: '🧘'
+                },
+                {
+                    id: 5,
+                    name: 'Coaching Deportivo',
+                    description: 'Técnicas de coaching aplicadas al rendimiento deportivo',
+                    members: 28,
+                    isOwner: false,
+                    icon: '⚽'
+                }
+            ];
+            
+            displayGroups(myGroups, 'myGroupsContainer', true);
+            displayGroups(otherGroups, 'otherGroupsContainer', false);
+        }
+        
+        // Función para mostrar grupos
+        function displayGroups(groups, containerId, isMyGroups) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (groups.length === 0) {
+                return; // Mantener empty state
+            }
+            
+            let groupsHTML = '';
+            groups.forEach(group => {
+                groupsHTML += `
+                    <div class="group-card" onclick="openGroup(${group.id})">
+                        <div class="group-image">
+                            ${group.icon}
+                        </div>
+                        <div class="group-body">
+                            <div class="group-title">${group.name}</div>
+                            <div class="group-description">${group.description}</div>
+                            <div class="group-meta">
+                                <div class="group-members">
+                                    <i class="fas fa-user-friends"></i>
+                                    <span>${group.members} miembros</span>
+                                </div>
+                                ${group.isOwner ? '<span class="group-badge">Owner</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = groupsHTML;
+        }
+        
+        // Función para abrir grupo
+        function openGroup(groupId) {
+            console.log('🔓 Opening group:', groupId);
+            alert(`Funcionalidad de grupo ${groupId} en desarrollo`);
+        }
+        
+        // Función para abrir modal de crear grupo
+        function openCreateGroupModal() {
+            console.log('➕ Opening create group modal');
+            alert('Funcionalidad de crear grupo en desarrollo');
+        }
+        
+        // Función para confirmar logout
+        function confirmLogout() {
+            if (confirm('¿Estás seguro que deseas salir?')) {
+                window.location.href = '/coach-login';
+            }
+        }
+    </script>
+</body>
+</html>
