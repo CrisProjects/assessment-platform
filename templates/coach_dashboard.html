@@ -3028,7 +3028,7 @@
                             </div>
                             <div class="card-body p-0">
                                 <!-- Vista tabla para desktop -->
-                                <div class="table-responsive d-none d-md-block">
+                                <div class="table-responsive d-block">
                                     <table class="table table-striped mb-0">
                                         <thead>
                                             <tr>
@@ -3047,8 +3047,8 @@
                                     </table>
                                 </div>
                                 
-                                <!-- Vista cards para móvil -->
-                                <div class="d-block d-md-none p-3" id="pendingEvaluationsCardsContainer">
+                                <!-- Vista cards para móvil (oculta por ahora, mostrar solo tabla) -->
+                                <div class="d-none p-3" id="pendingEvaluationsCardsContainer">
                                     <div class="text-center text-muted">No hay evaluaciones pendientes</div>
                                 </div>
                             </div>
@@ -5628,12 +5628,18 @@ function loadPendingEvaluations() {
     console.log('📊 Loading pending evaluations...');
     
     fetch('/api/coach/pending-evaluations')
-        .then(response => response.json())
+        .then(response => {
+            console.log('📊 Pending evaluations response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('📊 Pending evaluations data:', data);
             if (data.success) {
                 console.log(`✅ Found ${data.total} pending evaluations`);
+                console.log('📊 Calling displayPendingEvaluations with:', data.pending_evaluations);
                 displayPendingEvaluations(data.pending_evaluations);
             } else {
+                console.warn('⚠️ Pending evaluations request did not return success:', data);
                 throw new Error(data.error || 'Error desconocido');
             }
         })
@@ -5648,26 +5654,38 @@ function loadPendingEvaluations() {
 
 // Función para mostrar evaluaciones pendientes
 function displayPendingEvaluations(pending) {
+    console.log('🎨 displayPendingEvaluations called with:', pending);
+    console.log('🎨 Number of pending evaluations:', pending ? pending.length : 'null/undefined');
+    
     const tableBody = document.getElementById('pendingEvaluationsTableBody');
     const cardsContainer = document.getElementById('pendingEvaluationsCardsContainer');
     
+    console.log('🎨 Table body element:', tableBody);
+    console.log('🎨 Cards container element:', cardsContainer);
+    
     if (!tableBody || !cardsContainer) {
-        console.warn('Contenedores de evaluaciones pendientes no encontrados');
+        console.warn('⚠️ Contenedores de evaluaciones pendientes no encontrados');
         return;
     }
     
     if (pending.length === 0) {
+        console.log('ℹ️ No pending evaluations, showing empty state');
         tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay evaluaciones pendientes</td></tr>';
         cardsContainer.innerHTML = '<div class="text-center text-muted">No hay evaluaciones pendientes</div>';
         return;
     }
     
+    console.log(`✅ Displaying ${pending.length} pending evaluations`);
+    
     // Limpiar contenedores
     tableBody.innerHTML = '';
     cardsContainer.innerHTML = '';
     
-    pending.forEach(eval => {
+    console.log('🔄 Starting forEach loop...');
+    pending.forEach((eval, index) => {
+        console.log(`🔄 Processing evaluation ${index + 1}:`, eval);
         const fechaAsignacion = new Date(eval.assigned_date).toLocaleDateString('es-ES');
+        console.log('📅 Formatted date:', fechaAsignacion);
         
         // Badge de estado
         const estadoBadge = '<span class="badge bg-warning text-dark">Pendiente</span>';
@@ -5690,7 +5708,9 @@ function displayPendingEvaluations(pending) {
                 </button>
             </td>
         `;
+        console.log('➕ Appending row to table body...');
         tableBody.appendChild(row);
+        console.log('✅ Row appended successfully');
         
         // Crear card para móvil
         const card = document.createElement('div');
@@ -5713,8 +5733,11 @@ function displayPendingEvaluations(pending) {
                 </button>
             </div>
         `;
+        console.log('➕ Appending card to cards container...');
         cardsContainer.appendChild(card);
+        console.log('✅ Card appended successfully');
     });
+    console.log('🎉 All pending evaluations displayed!');
 }
 
 // Función para enviar recordatorio

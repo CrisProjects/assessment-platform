@@ -4197,10 +4197,6 @@ def api_coach_pending_evaluations():
                 is_active=True
             ).all()
             
-            # Obtener IDs de evaluaciones completadas
-            completed_results = AssessmentResult.query.filter_by(user_id=coachee.id).all()
-            completed_assessment_ids = {r.assessment_id for r in completed_results}
-            
             # Para cada tarea, verificar si está pendiente
             for task in eval_tasks:
                 # Extraer título de la evaluación del task title
@@ -4212,20 +4208,28 @@ def api_coach_pending_evaluations():
                     Assessment.title.like(f'%{title_match}%')
                 ).first()
                 
-                if assessment and assessment.id not in completed_assessment_ids:
-                    # Esta evaluación está PENDIENTE
-                    progress = TaskProgress.query.filter_by(task_id=task.id).first()
+                if assessment:
+                    # Verificar si fue completada DESPUÉS de ser asignada
+                    completed_after_assignment = AssessmentResult.query.filter(
+                        AssessmentResult.user_id == coachee.id,
+                        AssessmentResult.assessment_id == assessment.id,
+                        AssessmentResult.completed_at >= task.created_at
+                    ).first()
                     
-                    pending_evaluations.append({
-                        'task_id': task.id,
-                        'assessment_id': assessment.id,
-                        'assessment_title': assessment.title,
-                        'coachee_id': coachee.id,
-                        'coachee_name': coachee.full_name or coachee.username,
-                        'coachee_email': coachee.email,
-                        'assigned_date': task.created_at.isoformat(),
-                        'status': progress.status if progress else 'pending'
-                    })
+                    if not completed_after_assignment:
+                        # Esta evaluación está PENDIENTE (no completada después de asignarla)
+                        progress = TaskProgress.query.filter_by(task_id=task.id).first()
+                        
+                        pending_evaluations.append({
+                            'task_id': task.id,
+                            'assessment_id': assessment.id,
+                            'assessment_title': assessment.title,
+                            'coachee_id': coachee.id,
+                            'coachee_name': coachee.full_name or coachee.username,
+                            'coachee_email': coachee.email,
+                            'assigned_date': task.created_at.isoformat(),
+                            'status': progress.status if progress else 'pending'
+                        })
         
         logger.info(f"📊 PENDING-EVALUATIONS: Found {len(pending_evaluations)} pending evaluations")
         
