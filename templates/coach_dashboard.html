@@ -456,7 +456,7 @@
     .category-title {
         font-weight: 700;
         color: var(--calm-primary);
-        font-size: 1.1rem;
+        font-size: 1rem;
         margin: 0;
         display: flex;
         align-items: center;
@@ -1658,7 +1658,7 @@
     }
     
     .assessment-title {
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         color: #2c3e50;
         margin: 0;
@@ -1685,7 +1685,7 @@
     
     .assessment-description {
         color: #6c757d;
-        font-size: 0.9rem;
+        font-size: 0.875rem;
         line-height: 1.5;
         margin-bottom: 1rem;
     }
@@ -2886,6 +2886,10 @@
                             <i class="fas fa-clipboard-list me-3"></i>Evaluaciones Disponibles
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
+                           onclick="showModule('evaluaciones-pendientes'); return false;" data-module="evaluaciones-pendientes">
+                            <i class="fas fa-hourglass-half me-3"></i>Evaluaciones Pendientes
+                        </a>
+                        <a href="javascript:void(0)" class="list-group-item list-group-item-action border-secondary" 
                            onclick="showModule('crear-cargar-evaluaciones'); return false;" data-module="crear-cargar-evaluaciones">
                             <i class="fas fa-file-upload me-3"></i>Crear Nueva Evaluacion (En Proceso)
                         </a>
@@ -2941,34 +2945,39 @@
 
             <!-- Gestión de Acciones y Metas Module -->
             <div id="gestion-tareas" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
-                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">
-                            <i class="fas fa-tasks me-2 text-primary"></i>Gestión de Acciones y Metas
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
+                        <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                            <i class="fas fa-tasks me-3" style="font-size: 1.75rem;"></i>Gestión de Acciones y Metas
                         </h5>
+                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Crea y gestiona acciones y metas para tus coachees</p>
                     </div>
-                    <div class="card-body" style="background-color: white !important;">
+                    <div class="card-body" style="background-color: white !important; padding: 1.5rem;">
                         
                         <!-- Formulario de Creación de Acciones y Metas -->
-                        <div class="card mb-4" style="border: 1px solid #e3e6f0; border-radius: 8px;">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0 text-dark">
+                        <div class="card mb-4" style="border: 2px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                            <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; border-bottom: none !important; padding: 1rem 1.25rem;">
+                                <h6 class="mb-0" style="color: white !important; font-weight: 600; font-size: 1.1rem;">
                                     <i class="fas fa-plus-circle me-2"></i>Crear Nueva Acción o Meta
                                 </h6>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body" style="padding: 1.5rem;">
                                 <!-- Formulario responsive -->
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label text-dark small fw-bold">Título</label>
+                                        <label class="form-label text-dark small fw-bold">
+                                            <i class="fas fa-heading me-1 text-primary"></i>Título
+                                        </label>
                                         <input type="text" class="form-control border-secondary" 
-                                               placeholder="Ingrese el título" id="taskTitle" 
-                                               style="background-color: white; color: #212529;">
+                                               placeholder="Ingrese el título de la acción o meta" id="taskTitle" 
+                                               style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label text-dark small fw-bold">Categoría</label>
+                                        <label class="form-label text-dark small fw-bold">
+                                            <i class="fas fa-tag me-1 text-primary"></i>Categoría
+                                        </label>
                                         <select class="form-select border-secondary" id="taskCategory" 
-                                                style="background-color: white; color: #212529;">
+                                                style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                             <option value="">Seleccionar categoría</option>
                                             <option value="personalidad">Personalidad</option>
                                             <option value="liderazgo">Liderazgo</option>
@@ -2979,37 +2988,46 @@
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label text-dark small fw-bold">Tipo</label>
+                                        <label class="form-label text-dark small fw-bold">
+                                            <i class="fas fa-list-check me-1 text-primary"></i>Tipo
+                                        </label>
                                         <select class="form-select border-secondary" id="taskType" 
-                                                style="background-color: white; color: #212529;">
+                                                style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                             <option value="">Seleccionar tipo</option>
                                             <option value="accion">Acción</option>
                                             <option value="meta">Meta</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label text-dark small fw-bold">Asignar a Coachee</label>
+                                        <label class="form-label text-dark small fw-bold">
+                                            <i class="fas fa-user me-1 text-primary"></i>Asignar a Coachee
+                                        </label>
                                         <select class="form-select border-secondary" id="taskCoachee" 
-                                                style="background-color: white; color: #212529;">
+                                                style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                             <option value="">Seleccionar coachee</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label text-dark small fw-bold">Fecha de Vencimiento</label>
+                                        <label class="form-label text-dark small fw-bold">
+                                            <i class="fas fa-calendar me-1 text-primary"></i>Fecha de Vencimiento
+                                        </label>
                                         <input type="date" class="form-control border-secondary" 
                                                id="taskDueDate" 
-                                               style="background-color: white; color: #212529;">
+                                               style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label text-dark small fw-bold">Descripción</label>
+                                        <label class="form-label text-dark small fw-bold">
+                                            <i class="fas fa-align-left me-1 text-primary"></i>Descripción
+                                        </label>
                                         <textarea class="form-control border-secondary" 
                                                   placeholder="Descripción detallada de la acción o meta" 
                                                   id="taskDescription" rows="3" 
-                                                  style="background-color: white; color: #212529;"></textarea>
+                                                  style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;"></textarea>
                                     </div>
                                     <div class="col-12">
-                                        <button class="btn btn-primary w-100" onclick="createTask()">
-                                            <i class="fas fa-plus me-1"></i>Crear Acción o Meta
+                                        <button class="btn btn-success btn-lg" onclick="createTask()" 
+                                                style="border-radius: 8px; padding: 0.75rem 2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); width: 100%;">
+                                            <i class="fas fa-plus me-2"></i>Crear Acción o Meta
                                         </button>
                                     </div>
                                 </div>
@@ -3017,9 +3035,9 @@
                         </div>
 
                         <!-- Lista de Acciones y Metas -->
-                        <div class="card" style="border: 1px solid #e3e6f0; border-radius: 8px;">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0 text-dark">
+                        <div class="card" style="border: 2px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                            <div class="card-header" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%) !important; border-bottom: none !important; padding: 1rem 1.25rem;">
+                                <h6 class="mb-0" style="color: white !important; font-weight: 600; font-size: 1.1rem;">
                                     <i class="fas fa-tasks me-2"></i>Lista de Acciones y Metas
                                 </h6>
                             </div>
@@ -3053,96 +3071,73 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Evaluaciones Pendientes -->
-                        <div class="card mt-4" style="border: 1px solid #e3e6f0; border-radius: 8px;">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0 text-dark">
-                                    <i class="fas fa-clipboard-list me-2"></i>Evaluaciones Pendientes
-                                </h6>
-                            </div>
-                            <div class="card-body p-0">
-                                <!-- Vista tabla para desktop -->
-                                <div class="table-responsive d-block">
-                                    <table class="table table-striped mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th style="color: #212529;">Evaluación</th>
-                                                <th style="color: #212529;">Coachee</th>
-                                                <th style="color: #212529;">Fecha Asignación</th>
-                                                <th style="color: #212529;">Estado</th>
-                                                <th style="color: #212529;">Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="pendingEvaluationsTableBody">
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted">No hay evaluaciones pendientes</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <!-- Vista cards para móvil (oculta por ahora, mostrar solo tabla) -->
-                                <div class="d-none p-3" id="pendingEvaluationsCardsContainer">
-                                    <div class="text-center text-muted">No hay evaluaciones pendientes</div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Invitar Coachee Module -->
             <div id="invitar-coachee" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
-                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">
-                            <i class="fas fa-user-plus me-2 text-primary"></i>Invitar Nuevo Coachee
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
+                        <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                            <i class="fas fa-user-plus me-3" style="font-size: 1.75rem;"></i>Invitar Nuevo Coachee
                         </h5>
-                        <p class="text-muted small mb-0">Invita a un coachee y asigna una evaluación inicial</p>
+                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Invita a un coachee y asigna una evaluación inicial</p>
                     </div>
-                    <div class="card-body" style="background-color: white !important;">
+                    <div class="card-body" style="background-color: white !important; padding: 1.5rem;">
                         <form id="inviteForm">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-dark">Nombre</label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-dark small fw-bold">
+                                        <i class="fas fa-user me-1 text-primary"></i>Nombre
+                                    </label>
                                     <input type="text" class="form-control border-secondary" 
-                                           id="coacheeName" required style="background-color: white; color: #212529;">
+                                           id="coacheeName" required 
+                                           placeholder="Nombre completo del coachee"
+                                           style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-dark">Email</label>
+                                <div class="col-md-6">
+                                    <label class="form-label text-dark small fw-bold">
+                                        <i class="fas fa-envelope me-1 text-primary"></i>Email
+                                    </label>
                                     <input type="email" class="form-control border-secondary" 
-                                           id="coacheeEmail" required style="background-color: white; color: #212529;">
+                                           id="coacheeEmail" required 
+                                           placeholder="correo@ejemplo.com"
+                                           style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                 </div>
                             </div>
                             
                             <!-- Sección de evaluación -->
-                            <div class="mb-3">
-                                <label class="form-label text-dark">
+                            <div class="mb-3 mt-3">
+                                <label class="form-label text-dark small fw-bold">
                                     <i class="fas fa-clipboard-list me-1 text-primary"></i>
                                     Evaluación a Asignar (Opcional)
                                 </label>
                                 <select class="form-select border-secondary" id="assignedAssessment" 
-                                        style="background-color: white; color: #212529;">
+                                        style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;">
                                     <option value="">Seleccionar evaluación...</option>
                                 </select>
-                                <div class="form-text text-muted">
+                                <div class="form-text text-muted small">
                                     <i class="fas fa-info-circle me-1"></i>
                                     Si seleccionas una evaluación, se asignará automáticamente al coachee
                                 </div>
                             </div>
                             
                             <!-- Mensaje personalizado -->
-                            <div class="mb-3">
-                                <label class="form-label text-dark">Mensaje Personalizado (Opcional)</label>
+                            <div class="mb-4">
+                                <label class="form-label text-dark small fw-bold">
+                                    <i class="fas fa-comment-dots me-1 text-primary"></i>Mensaje Personalizado (Opcional)
+                                </label>
                                 <textarea class="form-control border-secondary" id="customMessage" rows="3" 
-                                          style="background-color: white; color: #212529;" 
+                                          style="background-color: white; color: #212529; border-radius: 8px; border: 2px solid #e2e8f0;" 
                                           placeholder="Mensaje de bienvenida para tu coachee..."></textarea>
                             </div>
                             
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-paper-plane me-1"></i>Crear Coachee
-                            </button>
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="submit" class="btn btn-success btn-lg" style="border-radius: 8px; padding: 0.75rem 2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                                    <i class="fas fa-paper-plane me-2"></i>Crear Coachee
+                                </button>
+                            </div>
                         </form>
                         
                         <!-- Modal para mostrar invitación creada -->
@@ -3218,22 +3213,22 @@
 
             <!-- Seleccionar Evaluaciones Module -->
             <div id="seleccionar-evaluaciones" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
-                    <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                    <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
                         <div>
-                            <h5 class="text-dark mb-1">
-                                <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                            <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                                <i class="fas fa-clipboard-list me-3" style="font-size: 1.75rem;"></i>
                                 Evaluaciones Disponibles
                             </h5>
-                            <p class="text-muted mb-0 small">Selecciona evaluaciones para asignar a tus coachees</p>
+                            <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Selecciona evaluaciones para asignar a tus coachees</p>
                         </div>
                         <!-- Botón de actualizar para móvil -->
-                        <button class="btn btn-outline-primary btn-sm mt-2 mt-sm-0" onclick="loadAvailableAssessments()" title="Actualizar evaluaciones">
+                        <button class="btn btn-light btn-sm mt-2 mt-sm-0" onclick="loadAvailableAssessments()" title="Actualizar evaluaciones" style="border-radius: 8px; font-weight: 600; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);">
                             <i class="fas fa-sync-alt me-1"></i>
                             <span class="d-none d-sm-inline">Actualizar</span>
                         </button>
                     </div>
-                    <div class="card-body" style="background-color: white !important; padding: 1rem;">
+                    <div class="card-body" style="background-color: white !important; padding: 1.5rem;">
                         <!-- Loading skeleton (más atractivo que spinner) -->
                         <div id="assessments-loading" class="py-2">
                             <div class="skeleton-card mb-3">
@@ -3285,20 +3280,59 @@
                 </div>
             </div>
 
+            <!-- Evaluaciones Pendientes Module -->
+            <div id="evaluaciones-pendientes" class="module-content" style="display: none;">
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; border-bottom: none !important; padding: 1.25rem;">
+                        <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                            <i class="fas fa-hourglass-half me-3" style="font-size: 1.75rem;"></i>
+                            Evaluaciones Pendientes
+                        </h5>
+                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Evaluaciones asignadas que están en proceso o pendientes de completar</p>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Vista tabla para desktop -->
+                        <div class="table-responsive d-block">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="color: #212529;">Evaluación</th>
+                                        <th style="color: #212529;">Coachee</th>
+                                        <th style="color: #212529;">Fecha Asignación</th>
+                                        <th style="color: #212529;">Estado</th>
+                                        <th style="color: #212529;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingEvaluationsTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No hay evaluaciones pendientes</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Vista cards para móvil (oculta por ahora, mostrar solo tabla) -->
+                        <div class="d-none p-3" id="pendingEvaluationsCardsContainer">
+                            <div class="text-center text-muted">No hay evaluaciones pendientes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Crear o Cargar Evaluaciones Module -->
             <div id="crear-cargar-evaluaciones" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
-                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">
-                            <i class="fas fa-file-upload me-2 text-primary"></i>
-                            Crear Nueva Evaluacion (En Proceso)
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
+                        <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                            <i class="fas fa-file-upload me-3" style="font-size: 1.75rem;"></i>
+                            Crear Nueva Evaluación (En Proceso)
                         </h5>
-                        <p class="text-muted mb-0 small mt-2">Sube un archivo con las evaluaciones en formato compatible</p>
+                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Sube un archivo con las evaluaciones en formato compatible</p>
                     </div>
                     <div class="card-body" style="background-color: white !important; padding: 1.5rem;">
                         <!-- Formulario de carga -->
                         <div class="mb-4">
-                            <label class="form-label text-dark fw-bold">
+                            <label class="form-label text-dark small fw-bold">
                                 <i class="fas fa-file-import me-2 text-primary"></i>Seleccionar archivo de evaluación
                             </label>
                             <p class="text-muted small mb-3">
@@ -3307,8 +3341,8 @@
                             <div class="input-group">
                                 <input type="file" class="form-control border-secondary" id="evaluationFile" 
                                        accept=".json,.csv,.xlsx,.xls"
-                                       style="background-color: white; color: #212529;">
-                                <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('evaluationFile').value = ''">
+                                       style="background-color: white; color: #212529; border-radius: 8px 0 0 8px; border: 2px solid #e2e8f0;">
+                                <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('evaluationFile').value = ''" style="border-radius: 0 8px 8px 0; border: 2px solid #e2e8f0;">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -3347,10 +3381,10 @@
 
                         <!-- Botones de acción -->
                         <div class="d-flex gap-2 justify-content-end">
-                            <button class="btn btn-outline-secondary" onclick="cancelUpload()">
+                            <button class="btn btn-outline-secondary" onclick="cancelUpload()" style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 600;">
                                 <i class="fas fa-times me-1"></i>Cancelar
                             </button>
-                            <button class="btn btn-primary" onclick="uploadEvaluation()" id="uploadBtn" disabled>
+                            <button class="btn btn-primary" onclick="uploadEvaluation()" id="uploadBtn" disabled style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
                                 <i class="fas fa-upload me-1"></i>Cargar Evaluación
                             </button>
                         </div>
@@ -3377,14 +3411,15 @@
 
             <!-- Agregar Contenido Module -->
             <div id="agregar-contenido" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
-                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">
-                            <i class="fas fa-video me-2 text-primary"></i>
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
+                        <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                            <i class="fas fa-video me-3" style="font-size: 1.75rem;"></i>
                             Gestión de Contenido
                         </h5>
+                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Asigna videos y documentos a tus coachees</p>
                     </div>
-                    <div class="card-body" style="background-color: white !important;">
+                    <div class="card-body" style="background-color: white !important; padding: 1.5rem;">
                         <!-- Pestañas para organizar contenido -->
                         <ul class="nav nav-tabs mb-4" id="contentTabs" role="tablist">
                             <li class="nav-item" role="presentation">
@@ -3720,14 +3755,15 @@
 
             <!-- Agenda Module -->
             <div id="agenda" class="module-content" style="display: none;">
-                <div class="card sidebar-white border-secondary" style="background-color: white !important;">
-                    <div class="card-header" style="background-color: white !important; border-bottom: 1px solid #dee2e6;">
-                        <h5 class="text-dark mb-0">
-                            <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                <div class="card sidebar-white border-secondary" style="background-color: white !important; margin-bottom: 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
+                        <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                            <i class="fas fa-calendar-alt me-3" style="font-size: 1.75rem;"></i>
                             Mi Agenda
                         </h5>
+                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Gestiona tu calendario y disponibilidad</p>
                     </div>
-                    <div class="card-body" style="background-color: white !important; padding: 1rem;">
+                    <div class="card-body" style="background-color: white !important; padding: 1.5rem;">
                         
                         <!-- Pestañas de la Agenda -->
                         <ul class="nav nav-tabs mb-4" id="agendaTabs" role="tablist">
