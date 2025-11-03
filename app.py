@@ -4776,29 +4776,48 @@ def api_coach_available_assessments():
                 app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Could not create assessments: {str(create_error)}")
                 assessments = []
         
+        # OPTIMIZACIÓN: Obtener todos los conteos en 2 queries agrupadas en lugar de N queries
+        assessment_ids = [a.id for a in assessments]
+        
+        # Query agrupada para contar preguntas por evaluación
+        questions_counts = {}
+        try:
+            question_counts_result = db.session.query(
+                Question.assessment_id,
+                func.count(Question.id)
+            ).filter(
+                Question.assessment_id.in_(assessment_ids),
+                Question.is_active == True
+            ).group_by(Question.assessment_id).all()
+            questions_counts = {aid: count for aid, count in question_counts_result}
+            app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: Loaded question counts for {len(questions_counts)} assessments")
+        except Exception as q_error:
+            app.logger.warning(f"⚠️ AVAILABLE-ASSESSMENTS: Could not load question counts: {str(q_error)}")
+        
+        # Query agrupada para contar resultados completados por evaluación
+        completed_counts = {}
+        try:
+            results_counts_result = db.session.query(
+                AssessmentResult.assessment_id,
+                func.count(AssessmentResult.id)
+            ).filter(
+                AssessmentResult.assessment_id.in_(assessment_ids)
+            ).group_by(AssessmentResult.assessment_id).all()
+            completed_counts = {aid: count for aid, count in results_counts_result}
+            app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: Loaded completed counts for {len(completed_counts)} assessments")
+        except Exception as r_error:
+            app.logger.warning(f"⚠️ AVAILABLE-ASSESSMENTS: Could not load completed counts: {str(r_error)}")
+        
+        # Construir datos de respuesta usando los conteos precargados
         assessments_data = []
         for assessment in assessments:
             try:
-                # Contar preguntas de la evaluación de manera segura
-                questions_count = 0
-                try:
-                    questions_count = Question.query.filter_by(assessment_id=assessment.id, is_active=True).count()
-                except Exception as q_error:
-                    app.logger.warning(f"⚠️ AVAILABLE-ASSESSMENTS: Could not count questions for assessment {assessment.id}: {str(q_error)}")
-                
-                # Contar resultados completados para esta evaluación de manera segura
-                completed_count = 0
-                try:
-                    completed_count = AssessmentResult.query.filter_by(assessment_id=assessment.id).count()
-                except Exception as r_error:
-                    app.logger.warning(f"⚠️ AVAILABLE-ASSESSMENTS: Could not count results for assessment {assessment.id}: {str(r_error)}")
-                
                 assessment_data = {
                     'id': assessment.id,
                     'title': assessment.title or 'Sin título',
                     'description': assessment.description or 'Sin descripción',
-                    'questions_count': questions_count,  # Coincide con el frontend
-                    'completed_count': completed_count,    # Coincide con el frontend
+                    'questions_count': questions_counts.get(assessment.id, 0),
+                    'completed_count': completed_counts.get(assessment.id, 0),
                     'created_at': assessment.created_at.isoformat() if assessment.created_at else None
                 }
                 
