@@ -4597,6 +4597,9 @@ function showModule(moduleId) {
         event.preventDefault();
     }
     
+    // Colapsar todas las tarjetas de coachees al cambiar de sección
+    collapseAllCoacheeCards();
+    
     // Ocultar todos los módulos
     document.querySelectorAll('.module-content').forEach(module => {
         module.style.display = 'none';
@@ -5475,8 +5478,8 @@ function displayCoachees() {
                     '<span class="badge bg-secondary" style="font-size: 0.7rem; padding: 4px 10px;">Inactivo</span>';
                 
                 return `
-                <div class="unified-card">
-                    <div class="unified-card-header">
+                <div class="unified-card coachee-card-collapsible" data-coachee-id="${coachee.id}">
+                    <div class="unified-card-header" onclick="toggleCoacheeCard(${coachee.id})" style="cursor: pointer;">
                         <div class="d-flex align-items-center gap-3 w-100">
                             <div class="coachee-avatar" style="
                                 width: 60px;
@@ -5496,9 +5499,10 @@ function displayCoachees() {
                                 <h5 class="unified-card-title mb-2">${coachee.name || 'Sin nombre'}</h5>
                                 ${statusBadge}
                             </div>
+                            <i class="fas fa-chevron-down coachee-toggle-icon" style="color: #3B82F6; font-size: 1.2rem; transition: transform 0.3s ease;"></i>
                         </div>
                     </div>
-                    <div class="unified-card-body">
+                    <div class="unified-card-body coachee-card-content" style="display: none;">
                         <div class="coachee-details">
                             <div class="meta-item">
                                 <i class="fas fa-envelope"></i>
@@ -5509,10 +5513,10 @@ function displayCoachees() {
                                 <i class="fas fa-key"></i>
                                 <div class="d-flex align-items-center flex-grow-1">
                                     <span class="password-text" id="pwd-mobile-${coachee.id}" style="font-family: 'Courier New', monospace; font-weight: 600;">●●●●●●●●</span>
-                                    <button class="unified-btn unified-btn-sm unified-btn-secondary ms-2" onclick="togglePasswordMobile(${coachee.id}, '${coachee.password}')" title="Mostrar/Ocultar">
+                                    <button class="unified-btn unified-btn-sm unified-btn-secondary ms-2" onclick="event.stopPropagation(); togglePasswordMobile(${coachee.id}, '${coachee.password}')" title="Mostrar/Ocultar">
                                         <i class="fas fa-eye" id="eye-mobile-${coachee.id}"></i>
                                     </button>
-                                    <button class="unified-btn unified-btn-sm unified-btn-primary ms-1" onclick="copyPassword('${coachee.password}')" title="Copiar">
+                                    <button class="unified-btn unified-btn-sm unified-btn-primary ms-1" onclick="event.stopPropagation(); copyPassword('${coachee.password}')" title="Copiar">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
@@ -5526,17 +5530,17 @@ function displayCoachees() {
                             </div>
                         </div>
                     </div>
-                    <div class="unified-card-footer">
+                    <div class="unified-card-footer coachee-card-content" style="display: none;">
                         <div class="d-flex gap-2 flex-wrap">
-                            <button class="unified-btn unified-btn-primary unified-btn-sm" onclick="viewCoacheeDetails(${coachee.id})" title="Ver detalles">
+                            <button class="unified-btn unified-btn-primary unified-btn-sm" onclick="event.stopPropagation(); viewCoacheeDetails(${coachee.id})" title="Ver detalles">
                                 <i class="fas fa-eye"></i>
                                 Detalles
                             </button>
-                            <button class="unified-btn unified-btn-secondary unified-btn-sm" onclick="editCoachee(${coachee.id})" title="Editar">
+                            <button class="unified-btn unified-btn-secondary unified-btn-sm" onclick="event.stopPropagation(); editCoachee(${coachee.id})" title="Editar">
                                 <i class="fas fa-edit"></i>
                                 Editar
                             </button>
-                            <button class="unified-btn unified-btn-success unified-btn-sm" onclick="showAssignModal(${coachee.id}, '${coachee.name}')" title="Asignar">
+                            <button class="unified-btn unified-btn-success unified-btn-sm" onclick="event.stopPropagation(); showAssignModal(${coachee.id}, '${coachee.name}')" title="Asignar">
                                 <i class="fas fa-plus"></i>
                                 Asignar
                             </button>
@@ -6956,6 +6960,42 @@ function togglePasswordMobile(coacheeId, password) {
         passwordElement.textContent = '●●●●●●●●';
         eyeIcon.className = 'fas fa-eye';
     }
+}
+
+// ✅ Función para colapsar/expandir tarjetas de coachees en móvil
+function toggleCoacheeCard(coacheeId) {
+    const card = document.querySelector(`.coachee-card-collapsible[data-coachee-id="${coacheeId}"]`);
+    if (!card) return;
+    
+    const contents = card.querySelectorAll('.coachee-card-content');
+    const icon = card.querySelector('.coachee-toggle-icon');
+    
+    const isExpanded = contents[0].style.display !== 'none';
+    
+    contents.forEach(content => {
+        content.style.display = isExpanded ? 'none' : 'block';
+    });
+    
+    if (icon) {
+        icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+}
+
+// ✅ Función para colapsar todas las tarjetas de coachees
+function collapseAllCoacheeCards() {
+    const cards = document.querySelectorAll('.coachee-card-collapsible');
+    cards.forEach(card => {
+        const contents = card.querySelectorAll('.coachee-card-content');
+        const icon = card.querySelector('.coachee-toggle-icon');
+        
+        contents.forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        if (icon) {
+            icon.style.transform = 'rotate(0deg)';
+        }
+    });
 }
 
 // ✅ Función para copiar contraseña al portapapeles
