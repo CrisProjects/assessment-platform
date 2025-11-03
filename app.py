@@ -3411,6 +3411,130 @@ def api_coach_get_profile():
     except Exception as e:
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
+@app.route('/api/coach/upload-avatar', methods=['POST'])
+@coach_session_required
+def api_coach_upload_avatar():
+    """Upload avatar para coach"""
+    try:
+        if 'avatar' not in request.files:
+            return jsonify({'success': False, 'error': 'No se recibió ningún archivo'}), 400
+        
+        file = request.files['avatar']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No se seleccionó ningún archivo'}), 400
+        
+        # Validar tipo de archivo
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        
+        if file_ext not in allowed_extensions:
+            return jsonify({'success': False, 'error': 'Tipo de archivo no permitido'}), 400
+        
+        # Generar nombre único para el archivo
+        unique_filename = f"{g.current_user.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+        
+        # Guardar en el directorio static/avatars
+        avatars_dir = os.path.join(app.root_path, 'static', 'avatars')
+        os.makedirs(avatars_dir, exist_ok=True)
+        
+        file_path = os.path.join(avatars_dir, unique_filename)
+        file.save(file_path)
+        
+        # Actualizar URL del avatar en la base de datos
+        avatar_url = f"/static/avatars/{unique_filename}"
+        g.current_user.avatar_url = avatar_url
+        db.session.commit()
+        
+        logger.info(f"Avatar uploaded for coach {g.current_user.id}: {avatar_url}")
+        
+        return jsonify({
+            'success': True,
+            'avatar_url': avatar_url
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error uploading coach avatar: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/coach/change-password', methods=['POST'])
+@coach_session_required
+def api_coach_change_password():
+    """Cambiar contraseña del coach"""
+    try:
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not current_password or not new_password:
+            return jsonify({'success': False, 'error': 'Faltan datos requeridos'}), 400
+        
+        # Verificar contraseña actual
+        if not g.current_user.check_password(current_password):
+            return jsonify({'success': False, 'error': 'Contraseña actual incorrecta'}), 401
+        
+        # Validar nueva contraseña
+        if len(new_password) < 6:
+            return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+        
+        # Actualizar contraseña
+        g.current_user.set_password(new_password)
+        # Limpiar original_password si existe
+        g.current_user.original_password = None
+        db.session.commit()
+        
+        logger.info(f"Password changed for coach {g.current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña actualizada correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error changing coach password: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/coach/set-avatar-url', methods=['POST'])
+@coach_session_required
+def api_coach_set_avatar_url():
+    """Establecer URL de avatar predefinido para coach"""
+    try:
+        data = request.get_json()
+        
+        avatar_url = data.get('avatar_url')
+        
+        if not avatar_url:
+            return jsonify({'success': False, 'error': 'URL del avatar es requerida'}), 400
+        
+        # Validar que la URL sea de un servicio permitido
+        allowed_domains = ['pravatar.cc', 'ui-avatars.com', 'robohash.org', 'i.pravatar.cc']
+        from urllib.parse import urlparse
+        parsed_url = urlparse(avatar_url)
+        
+        if not any(domain in parsed_url.netloc for domain in allowed_domains):
+            # Si es una URL local (empieza con /static/), también permitirla
+            if not avatar_url.startswith('/static/'):
+                return jsonify({'success': False, 'error': 'URL de avatar no permitida'}), 400
+        
+        # Actualizar URL del avatar en la base de datos
+        g.current_user.avatar_url = avatar_url
+        db.session.commit()
+        
+        logger.info(f"Avatar URL set for coach {g.current_user.id}: {avatar_url}")
+        
+        return jsonify({
+            'success': True,
+            'avatar_url': avatar_url
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error setting coach avatar URL: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Rutas de evaluación
 @app.route('/api/questions', methods=['GET'])
 def api_get_questions():

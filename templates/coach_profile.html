@@ -187,6 +187,138 @@
             margin-top: 8px;
             justify-content: center;
         }
+        
+        /* Avatar Gallery Modal */
+        .avatar-gallery-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .avatar-gallery-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .avatar-gallery-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+        }
+        
+        .avatar-gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #efefef;
+        }
+        
+        .avatar-gallery-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close-gallery {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .close-gallery:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .avatar-categories {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .category-btn {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .category-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .category-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+        
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .avatar-option {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+            background: #f5f5f5;
+        }
+        
+        .avatar-option:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+        
+        .avatar-option.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .avatar-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -215,6 +347,9 @@
                             <i class="fas fa-camera me-1"></i> Cambiar Foto
                         </button>
                     </div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="openAvatarGallery()">
+                        <i class="fas fa-images me-1"></i> Elegir Avatar
+                    </button>
                 </div>
                 <div id="saveAvatarSection" style="display: none; margin-top: 12px;">
                     <button class="btn btn-success btn-sm w-100" onclick="saveAvatar()">
@@ -292,11 +427,73 @@
         </button>
     </nav>
     
+    <!-- Avatar Gallery Modal -->
+    <div id="avatarGalleryModal" class="avatar-gallery-modal">
+        <div class="avatar-gallery-content">
+            <div class="avatar-gallery-header">
+                <h3><i class="fas fa-user-circle me-2"></i>Elige tu Avatar</h3>
+                <button class="close-gallery" onclick="closeAvatarGallery()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Categories -->
+            <div class="avatar-categories">
+                <button class="category-btn active" onclick="filterAvatars('all')">
+                    <i class="fas fa-th me-1"></i>Todos
+                </button>
+                <button class="category-btn" onclick="filterAvatars('people')">
+                    <i class="fas fa-user me-1"></i>Personas
+                </button>
+                <button class="category-btn" onclick="filterAvatars('cats')">
+                    <i class="fas fa-cat me-1"></i>Gatos
+                </button>
+                <button class="category-btn" onclick="filterAvatars('robots')">
+                    <i class="fas fa-robot me-1"></i>Robots
+                </button>
+                <button class="category-btn" onclick="filterAvatars('monsters')">
+                    <i class="fas fa-dragon me-1"></i>Monstruos
+                </button>
+                <button class="category-btn" onclick="filterAvatars('aliens')">
+                    <i class="fas fa-space-shuttle me-1"></i>Aliens
+                </button>
+            </div>
+            
+            <div class="avatar-grid" id="avatarGrid">
+                <!-- Avatars will be loaded here -->
+            </div>
+        </div>
+    </div>
+    
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
         let selectedAvatar = null;
+        
+        // Obtener página de retorno desde la URL o localStorage
+        function getReturnPage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnParam = urlParams.get('return');
+            if (returnParam) {
+                localStorage.setItem('coach_profile_return', returnParam);
+                return returnParam;
+            }
+            return localStorage.getItem('coach_profile_return') || 'dashboard';
+        }
+        
+        // Obtener URL de retorno
+        function getReturnUrl() {
+            const returnPage = getReturnPage();
+            const urlMap = {
+                'home': '/coach-feed',
+                'feed': '/coach-feed',
+                'comunidad': '/coach-comunidad',
+                'community': '/coach-comunidad',
+                'dashboard': '/coach-dashboard'
+            };
+            return urlMap[returnPage] || '/coach-dashboard';
+        }
         
         // Cargar perfil al iniciar
         document.addEventListener('DOMContentLoaded', function() {
@@ -358,35 +555,49 @@
             successDiv.style.display = 'none';
             
             if (!selectedAvatar) {
-                errorDiv.textContent = 'Por favor selecciona una imagen';
+                errorDiv.textContent = 'Por favor selecciona una imagen o avatar';
                 errorDiv.style.display = 'block';
                 return;
             }
             
-            const formData = new FormData();
-            formData.append('avatar', selectedAvatar);
-            
             try {
-                const response = await fetch('/api/coach/update-avatar', {
-                    method: 'POST',
-                    body: formData
-                });
+                let response;
+                
+                // Si es una URL (avatar de galería)
+                if (selectedAvatar.type === 'url') {
+                    response = await fetch('/api/coach/set-avatar-url', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ avatar_url: selectedAvatar.value })
+                    });
+                } 
+                // Si es un archivo (upload)
+                else {
+                    const formData = new FormData();
+                    formData.append('avatar', selectedAvatar);
+                    
+                    response = await fetch('/api/coach/upload-avatar', {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    successDiv.textContent = 'Avatar actualizado correctamente';
+                    successDiv.textContent = 'Avatar actualizado correctamente. Redirigiendo...';
                     successDiv.style.display = 'block';
                     document.getElementById('saveAvatarSection').style.display = 'none';
                     selectedAvatar = null;
                     
-                    // Recargar perfil
+                    // Redirigir a la página de origen después de 1 segundo
                     setTimeout(() => {
-                        loadProfile();
-                        successDiv.style.display = 'none';
-                    }, 2000);
+                        window.location.href = getReturnUrl();
+                    }, 1000);
                 } else {
-                    errorDiv.textContent = data.message || 'Error al actualizar avatar';
+                    errorDiv.textContent = data.error || 'Error al actualizar avatar';
                     errorDiv.style.display = 'block';
                 }
             } catch (error) {
@@ -429,13 +640,14 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    successDiv.textContent = 'Contraseña actualizada correctamente';
+                    successDiv.textContent = 'Contraseña actualizada correctamente. Redirigiendo...';
                     successDiv.style.display = 'block';
                     document.getElementById('changePasswordForm').reset();
                     
+                    // Redirigir a la página de origen después de 1 segundo
                     setTimeout(() => {
-                        successDiv.style.display = 'none';
-                    }, 3000);
+                        window.location.href = getReturnUrl();
+                    }, 1000);
                 } else {
                     errorDiv.textContent = data.message || 'Error al cambiar contraseña';
                     errorDiv.style.display = 'block';
@@ -452,6 +664,189 @@
                 window.location.href = '/coach-login';
             }
         }
+        
+        // Avatar Gallery Functions
+        const avatarsByCategory = {
+            people: [
+                'https://i.pravatar.cc/300?img=1',
+                'https://i.pravatar.cc/300?img=2',
+                'https://i.pravatar.cc/300?img=3',
+                'https://i.pravatar.cc/300?img=5',
+                'https://i.pravatar.cc/300?img=6',
+                'https://i.pravatar.cc/300?img=7',
+                'https://i.pravatar.cc/300?img=8',
+                'https://i.pravatar.cc/300?img=9',
+                'https://i.pravatar.cc/300?img=12',
+                'https://i.pravatar.cc/300?img=13',
+                'https://i.pravatar.cc/300?img=14',
+                'https://i.pravatar.cc/300?img=15',
+                'https://i.pravatar.cc/300?img=16',
+                'https://i.pravatar.cc/300?img=17',
+                'https://i.pravatar.cc/300?img=18',
+                'https://i.pravatar.cc/300?img=19',
+                'https://i.pravatar.cc/300?img=20',
+                'https://i.pravatar.cc/300?img=22',
+                'https://i.pravatar.cc/300?img=23',
+                'https://i.pravatar.cc/300?img=24',
+                'https://i.pravatar.cc/300?img=25',
+                'https://i.pravatar.cc/300?img=26',
+                'https://i.pravatar.cc/300?img=27',
+                'https://i.pravatar.cc/300?img=28',
+                'https://i.pravatar.cc/300?img=29',
+                'https://i.pravatar.cc/300?img=30',
+                'https://i.pravatar.cc/300?img=31',
+                'https://i.pravatar.cc/300?img=32',
+                'https://i.pravatar.cc/300?img=33',
+                'https://i.pravatar.cc/300?img=34',
+                'https://i.pravatar.cc/300?img=35',
+                'https://i.pravatar.cc/300?img=36'
+            ],
+            cats: [
+                'https://robohash.org/cat1?set=set4&size=300x300',
+                'https://robohash.org/cat2?set=set4&size=300x300',
+                'https://robohash.org/cat3?set=set4&size=300x300',
+                'https://robohash.org/cat4?set=set4&size=300x300',
+                'https://robohash.org/cat5?set=set4&size=300x300',
+                'https://robohash.org/cat6?set=set4&size=300x300',
+                'https://robohash.org/cat7?set=set4&size=300x300',
+                'https://robohash.org/cat8?set=set4&size=300x300',
+                'https://robohash.org/cat9?set=set4&size=300x300'
+            ],
+            robots: [
+                'https://robohash.org/robot1?set=set1&size=300x300',
+                'https://robohash.org/robot2?set=set1&size=300x300',
+                'https://robohash.org/robot3?set=set1&size=300x300',
+                'https://robohash.org/robot4?set=set1&size=300x300',
+                'https://robohash.org/robot5?set=set1&size=300x300',
+                'https://robohash.org/robot6?set=set1&size=300x300',
+                'https://robohash.org/robot7?set=set1&size=300x300',
+                'https://robohash.org/robot8?set=set1&size=300x300',
+                'https://robohash.org/robot9?set=set1&size=300x300'
+            ],
+            monsters: [
+                'https://robohash.org/monster1?set=set2&size=300x300',
+                'https://robohash.org/monster2?set=set2&size=300x300',
+                'https://robohash.org/monster3?set=set2&size=300x300',
+                'https://robohash.org/monster4?set=set2&size=300x300',
+                'https://robohash.org/monster5?set=set2&size=300x300',
+                'https://robohash.org/monster6?set=set2&size=300x300',
+                'https://robohash.org/monster7?set=set2&size=300x300',
+                'https://robohash.org/monster8?set=set2&size=300x300',
+                'https://robohash.org/monster9?set=set2&size=300x300'
+            ],
+            aliens: [
+                'https://robohash.org/alien1?set=set3&size=300x300',
+                'https://robohash.org/alien2?set=set3&size=300x300',
+                'https://robohash.org/alien3?set=set3&size=300x300',
+                'https://robohash.org/alien4?set=set3&size=300x300',
+                'https://robohash.org/alien5?set=set3&size=300x300',
+                'https://robohash.org/alien6?set=set3&size=300x300',
+                'https://robohash.org/alien7?set=set3&size=300x300',
+                'https://robohash.org/alien8?set=set3&size=300x300',
+                'https://robohash.org/alien9?set=set3&size=300x300'
+            ]
+        };
+        
+        let selectedAvatarUrl = null;
+        let currentCategory = 'all';
+        
+        function getAllAvatars() {
+            return [
+                ...avatarsByCategory.people,
+                ...avatarsByCategory.cats,
+                ...avatarsByCategory.robots,
+                ...avatarsByCategory.monsters,
+                ...avatarsByCategory.aliens
+            ];
+        }
+        
+        function filterAvatars(category) {
+            currentCategory = category;
+            
+            // Update active button
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.category-btn').classList.add('active');
+            
+            // Load avatars for selected category
+            loadAvatarsToGrid(category);
+        }
+        
+        function loadAvatarsToGrid(category) {
+            const grid = document.getElementById('avatarGrid');
+            const avatars = category === 'all' ? getAllAvatars() : avatarsByCategory[category];
+            
+            grid.innerHTML = '';
+            
+            avatars.forEach(url => {
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'avatar-option';
+                avatarDiv.innerHTML = `<img src="${url}" alt="Avatar">`;
+                avatarDiv.onclick = () => selectAvatar(url, avatarDiv);
+                grid.appendChild(avatarDiv);
+            });
+        }
+        
+        function openAvatarGallery() {
+            const modal = document.getElementById('avatarGalleryModal');
+            
+            // Load all avatars by default
+            loadAvatarsToGrid('all');
+            
+            // Reset category buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.category-btn').classList.add('active');
+            
+            modal.classList.add('show');
+        }
+        
+        function closeAvatarGallery() {
+            const modal = document.getElementById('avatarGalleryModal');
+            modal.classList.remove('show');
+            selectedAvatarUrl = null;
+            
+            // Remove all selected classes
+            document.querySelectorAll('.avatar-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+        }
+        
+        function selectAvatar(url, element) {
+            // Remove previous selection
+            document.querySelectorAll('.avatar-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Mark as selected
+            element.classList.add('selected');
+            selectedAvatarUrl = url;
+            
+            // Update preview
+            const avatarImage = document.getElementById('avatarImage');
+            const defaultAvatar = document.getElementById('defaultAvatar');
+            avatarImage.src = url;
+            avatarImage.style.display = 'block';
+            defaultAvatar.style.display = 'none';
+            
+            // Show save button
+            document.getElementById('saveAvatarSection').style.display = 'block';
+            
+            // Set selectedAvatar to URL type
+            selectedAvatar = { type: 'url', value: url };
+            
+            // Close gallery
+            closeAvatarGallery();
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('avatarGalleryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAvatarGallery();
+            }
+        });
     </script>
 </body>
 </html>
