@@ -12067,21 +12067,32 @@
             }
         }
 
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                testChartJSAvailability();
-                initializeApp();
-                // Inicializar tooltips de Bootstrap
-                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-                const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-            });
-        } else {
+        // OPTIMIZACIÓN: Flag global para prevenir inicialización múltiple
+        let isAppInitialized = false;
+        
+        async function safeInitializeApp() {
+            if (isAppInitialized) {
+                console.log('⚠️ App already initialized, skipping duplicate initialization');
+                return;
+            }
+            isAppInitialized = true;
+            console.log('🚀 Starting app initialization...');
+            
             testChartJSAvailability();
-            initializeApp();
+            await initializeApp();
+            
             // Inicializar tooltips de Bootstrap
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            
+            console.log('✅ App initialization complete');
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', safeInitializeApp);
+        } else {
+            safeInitializeApp();
         }
         
         // DEBUG: Global functions for browser console debugging
