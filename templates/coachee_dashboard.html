@@ -6915,7 +6915,10 @@
             }
             
             // Cargar contenido específico según la pestaña
-            if (tabId === 'content') {
+            if (tabId === 'tasks') {
+                // Cargar tareas (con cache automático de 30 segundos)
+                loadTasks();
+            } else if (tabId === 'content') {
                 // Cuando se muestra Mi Contenido, activar la pestaña de documentos y cargar datos
                 setTimeout(() => {
                     const documentsTab = document.getElementById('documents-tab');
@@ -6928,6 +6931,9 @@
                         loadDocuments();
                     }
                 }, 100);
+            } else if (tabId === 'progress') {
+                // Cargar historial de evaluaciones para el progreso
+                loadEvaluationHistory();
             }
             
             // Cargar evaluaciones completadas cuando se muestra esa pestaña
@@ -7170,7 +7176,30 @@
         }
 
         // Load evaluations data
-        async function loadEvaluations() {
+        // Control de carga duplicada para evaluaciones
+        let isLoadingEvaluations = false;
+        let evaluationsLastLoaded = null;
+        const EVALUATIONS_CACHE_DURATION = 30000; // 30 segundos
+        
+        async function loadEvaluations(forceRefresh = false) {
+            // OPTIMIZACIÓN: Evitar carga duplicada
+            if (isLoadingEvaluations) {
+                console.log('⏳ Evaluations already loading, skipping duplicate request');
+                return;
+            }
+            
+            // OPTIMIZACIÓN: Usar cache si los datos son recientes
+            if (!forceRefresh && evaluationsData && evaluationsLastLoaded) {
+                const age = Date.now() - evaluationsLastLoaded;
+                if (age < EVALUATIONS_CACHE_DURATION) {
+                    console.log(`📦 Using cached evaluations data (age: ${Math.round(age/1000)}s)`);
+                    renderAvailableEvaluations();
+                    return;
+                }
+            }
+            
+            isLoadingEvaluations = true;
+            
             try {
                 debugLog('🔍 Iniciando carga de evaluaciones...');
                 const response = await fetch(`${API_BASE_URL}/api/coachee/evaluations`);
@@ -7186,6 +7215,7 @@
                 
                 if (data && typeof data === 'object') {
                     evaluationsData = data; // Ahora contiene {available: {}, completed: []}
+                    evaluationsLastLoaded = Date.now();
                     debugLog('✅ Renderizando evaluaciones disponibles...');
                     renderAvailableEvaluations();
                 } else {
@@ -7203,6 +7233,8 @@
                 // Show error in container
                 document.getElementById('availableEvaluations').innerHTML = 
                     '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando mis evaluaciones disponibles</p></div>';
+            } finally {
+                isLoadingEvaluations = false;
             }
         }
 
@@ -7722,9 +7754,32 @@
             });
         }
 
-        // Load tasks data
-        async function loadTasks() {
+        // Load tasks data con control de carga duplicada
+        let isLoadingTasks = false;
+        let tasksLastLoaded = null;
+        const TASKS_CACHE_DURATION = 30000; // 30 segundos
+        
+        async function loadTasks(forceRefresh = false) {
+            // OPTIMIZACIÓN: Evitar carga duplicada si ya se está cargando
+            if (isLoadingTasks) {
+                console.log('⏳ Tasks already loading, skipping duplicate request');
+                return;
+            }
+            
+            // OPTIMIZACIÓN: Usar cache si los datos son recientes (< 30 segundos)
+            if (!forceRefresh && tasksData && tasksData.length > 0 && tasksLastLoaded) {
+                const age = Date.now() - tasksLastLoaded;
+                if (age < TASKS_CACHE_DURATION) {
+                    console.log(`📦 Using cached tasks data (age: ${Math.round(age/1000)}s)`);
+                    renderTasks();
+                    return;
+                }
+            }
+            
+            isLoadingTasks = true;
+            
             try {
+                console.log('🔄 Loading tasks from server...');
                 const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`, {
                     credentials: 'include'
                 });
@@ -7737,6 +7792,8 @@
                 
                 if (Array.isArray(data)) {
                     tasksData = data; // La API devuelve directamente el array
+                    tasksLastLoaded = Date.now(); // Marcar tiempo de carga
+                    console.log(`✅ Tasks loaded successfully (${data.length} tasks)`);
                     renderTasks();
                 } else {
                     console.error('Formato de datos inesperado para tareas:', data);
@@ -7751,6 +7808,8 @@
                 
                 document.getElementById('tasksContainer').innerHTML = 
                     '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando tareas</p></div>';
+            } finally {
+                isLoadingTasks = false;
             }
         }
 
@@ -9055,8 +9114,8 @@
                     const modal = bootstrap.Modal.getInstance(document.getElementById('taskProgressModal'));
                     modal.hide();
                     
-                    // Refresh tasks
-                    await loadTasks();
+                    // Refresh tasks (forzar recarga porque hubo cambios)
+                    await loadTasks(true);
                     await loadDashboardSummary();
                 } else {
                     throw new Error(data.error);
@@ -11015,24 +11074,12 @@
 
         // Setup event listeners
         function setupEventListeners() {
-            // Sidebar click events
-            document.querySelectorAll('.list-group-item[data-tab]').forEach(item => {
-                item.addEventListener('click', function (event) {
-                    const target = this.getAttribute('data-tab');
-                    
-                    // Load data when tabs are activated
-                    if (target === 'tasks') {
-                        loadTasks(); // Siempre cargar tareas para mantener datos actualizados
-                    } else if (target === 'content') {
-                        // Solo cargar contenido si no se ha cargado ya o si está vacío
-                        if (!contentData || contentData.length === 0) {
-                            loadContent();
-                        }
-                    } else if (target === 'progress') {
-                        loadEvaluationHistory();
-                    }
-                });
-            });
+            // NOTA: Los elementos del sidebar ya tienen onclick="showTab()" en el HTML
+            // NO agregamos event listeners adicionales para evitar duplicación
+            // El código anterior causaba que loadTasks() se llamara DOS VECES
+            
+            // Sidebar click events - REMOVIDO para evitar duplicación
+            // Ya no es necesario porque tenemos onclick en el HTML
 
             // Modal close event listener
             const evaluationDetailsModal = document.getElementById('evaluationDetailsModal');
