@@ -4118,29 +4118,72 @@ def api_coach_my_coachees():
         for coachee in coachees:
             logger.info(f"👤 MY-COACHEES: Coachee found - ID: {coachee.id}, Username: {coachee.username}, Email: {coachee.email}, Full Name: {coachee.full_name}, Coach ID: {coachee.coach_id}")
         
+        # OPTIMIZACIÓN: Precalcular conteos y última evaluación en queries agrupadas
+        coachee_ids = [c.id for c in coachees]
+        
+        # Query agrupada para contar evaluaciones por coachee
+        evaluations_counts = {}
+        try:
+            eval_counts_result = db.session.query(
+                AssessmentResult.user_id,
+                func.count(AssessmentResult.id)
+            ).filter(
+                AssessmentResult.user_id.in_(coachee_ids)
+            ).group_by(AssessmentResult.user_id).all()
+            evaluations_counts = {user_id: count for user_id, count in eval_counts_result}
+            logger.info(f"📊 MY-COACHEES: Loaded evaluation counts for {len(evaluations_counts)} coachees")
+        except Exception as ec_error:
+            logger.warning(f"⚠️ MY-COACHEES: Could not load evaluation counts: {str(ec_error)}")
+        
+        # Query agrupada para obtener promedios de scores
+        avg_scores = {}
+        try:
+            avg_scores_result = db.session.query(
+                AssessmentResult.user_id,
+                func.avg(AssessmentResult.score)
+            ).filter(
+                AssessmentResult.user_id.in_(coachee_ids),
+                AssessmentResult.score.isnot(None)
+            ).group_by(AssessmentResult.user_id).all()
+            avg_scores = {user_id: round(float(avg), 1) for user_id, avg in avg_scores_result if avg is not None}
+            logger.info(f"📊 MY-COACHEES: Loaded average scores for {len(avg_scores)} coachees")
+        except Exception as as_error:
+            logger.warning(f"⚠️ MY-COACHEES: Could not load average scores: {str(as_error)}")
+        
+        # Query para obtener la última evaluación de cada coachee usando subquery
+        last_evaluations = {}
+        try:
+            # Subquery para obtener la fecha más reciente por usuario
+            subq = db.session.query(
+                AssessmentResult.user_id,
+                func.max(AssessmentResult.completed_at).label('max_date')
+            ).filter(
+                AssessmentResult.user_id.in_(coachee_ids)
+            ).group_by(AssessmentResult.user_id).subquery()
+            
+            # Query principal para obtener los datos completos de la última evaluación
+            last_evals_result = db.session.query(AssessmentResult).join(
+                subq,
+                and_(
+                    AssessmentResult.user_id == subq.c.user_id,
+                    AssessmentResult.completed_at == subq.c.max_date
+                )
+            ).all()
+            
+            for eval_result in last_evals_result:
+                last_evaluations[eval_result.user_id] = {
+                    'id': eval_result.id,
+                    'score': eval_result.score,
+                    'completed_at': eval_result.completed_at.isoformat(),
+                    'assessment_id': eval_result.assessment_id
+                }
+            logger.info(f"📊 MY-COACHEES: Loaded last evaluations for {len(last_evaluations)} coachees")
+        except Exception as le_error:
+            logger.warning(f"⚠️ MY-COACHEES: Could not load last evaluations: {str(le_error)}")
+        
+        # Construir respuesta usando datos precargados
         coachees_data = []
         for coachee in coachees:
-            # Obtener evaluaciones del coachee ordenadas por fecha
-            evaluations = AssessmentResult.query.filter_by(user_id=coachee.id).order_by(desc(AssessmentResult.completed_at)).all()
-            
-            # Calcular estadísticas de evaluaciones
-            last_evaluation_data = None
-            avg_score = None
-            
-            if evaluations:
-                last_eval = evaluations[0]  # La más reciente
-                last_evaluation_data = {
-                    'id': last_eval.id,
-                    'score': last_eval.score,
-                    'completed_at': last_eval.completed_at.isoformat(),
-                    'assessment_id': last_eval.assessment_id
-                }
-                
-                # Calcular promedio de scores
-                valid_scores = [e.score for e in evaluations if e.score is not None]
-                if valid_scores:
-                    avg_score = round(sum(valid_scores) / len(valid_scores), 1)
-            
             coachee_data = {
                 'id': coachee.id,
                 'username': coachee.username,
@@ -4149,9 +4192,9 @@ def api_coach_my_coachees():
                 'name': coachee.full_name,  # ✅ Agregar campo 'name' para compatibilidad
                 'created_at': coachee.created_at.isoformat() if coachee.created_at else None,
                 'is_active': coachee.is_active,
-                'evaluations_count': len(evaluations),
-                'last_evaluation': last_evaluation_data,
-                'avg_score': avg_score,
+                'evaluations_count': evaluations_counts.get(coachee.id, 0),
+                'last_evaluation': last_evaluations.get(coachee.id),
+                'avg_score': avg_scores.get(coachee.id),
                 'password': coachee.original_password  # ✅ Incluir contraseña original para que el coach pueda verla
             }
             coachees_data.append(coachee_data)
@@ -4186,50 +4229,106 @@ def api_coach_pending_evaluations():
         
         # Obtener todos los coachees del coach
         coachees = User.query.filter_by(coach_id=current_coach.id, role='coachee').all()
+        coachee_ids = [c.id for c in coachees]
+        
+        # OPTIMIZACIÓN: Obtener todas las tareas de evaluación de una vez
+        eval_tasks = Task.query.filter(
+            Task.coachee_id.in_(coachee_ids),
+            Task.category == 'evaluation',
+            Task.is_active == True
+        ).all() if coachee_ids else []
+        
+        logger.info(f"📊 PENDING-EVALUATIONS: Found {len(eval_tasks)} evaluation tasks for {len(coachees)} coachees")
+        
+        # OPTIMIZACIÓN: Precalcular task progress en una query
+        task_ids = [t.id for t in eval_tasks]
+        progress_dict = {}
+        if task_ids:
+            try:
+                progresses = TaskProgress.query.filter(TaskProgress.task_id.in_(task_ids)).all()
+                progress_dict = {tp.task_id: tp for tp in progresses}
+                logger.info(f"📊 PENDING-EVALUATIONS: Loaded progress for {len(progress_dict)} tasks")
+            except Exception as tp_error:
+                logger.warning(f"⚠️ PENDING-EVALUATIONS: Could not load task progress: {str(tp_error)}")
+        
+        # OPTIMIZACIÓN: Cargar todos los assessments de una vez
+        all_assessments = {a.title: a for a in Assessment.query.all()}
+        
+        # OPTIMIZACIÓN: Precalcular resultados completados después de asignación en una query
+        # Crear un diccionario de (user_id, assessment_id, task_created_at) -> result
+        completed_results = {}
+        if eval_tasks:
+            try:
+                # Obtener todos los resultados relevantes
+                assessment_ids_set = set()
+                for task in eval_tasks:
+                    title_match = task.title.replace('Evaluación: ', '').split(' (')[0]
+                    for title, assessment in all_assessments.items():
+                        if title_match in title:
+                            assessment_ids_set.add(assessment.id)
+                
+                if assessment_ids_set and coachee_ids:
+                    results = AssessmentResult.query.filter(
+                        AssessmentResult.user_id.in_(coachee_ids),
+                        AssessmentResult.assessment_id.in_(list(assessment_ids_set))
+                    ).all()
+                    
+                    for result in results:
+                        key = (result.user_id, result.assessment_id)
+                        if key not in completed_results:
+                            completed_results[key] = []
+                        completed_results[key].append(result)
+                    
+                    logger.info(f"📊 PENDING-EVALUATIONS: Loaded {len(results)} completed results")
+            except Exception as cr_error:
+                logger.warning(f"⚠️ PENDING-EVALUATIONS: Could not load completed results: {str(cr_error)}")
+        
+        # Crear diccionario de coachees por ID
+        coachees_dict = {c.id: c for c in coachees}
         
         pending_evaluations = []
         
-        for coachee in coachees:
-            # Obtener tareas de evaluación asignadas
-            eval_tasks = Task.query.filter_by(
-                coachee_id=coachee.id,
-                category='evaluation',
-                is_active=True
-            ).all()
+        # Procesar todas las tareas usando datos precargados
+        for task in eval_tasks:
+            coachee = coachees_dict.get(task.coachee_id)
+            if not coachee:
+                continue
             
-            # Para cada tarea, verificar si está pendiente
-            for task in eval_tasks:
-                # Extraer título de la evaluación del task title
-                # Formato: "Evaluación: <Nombre> (<N> preguntas)"
-                title_match = task.title.replace('Evaluación: ', '').split(' (')[0]
+            # Extraer título de la evaluación del task title
+            title_match = task.title.replace('Evaluación: ', '').split(' (')[0]
+            
+            # Buscar assessment en diccionario precargado
+            assessment = None
+            for title, a in all_assessments.items():
+                if title_match in title:
+                    assessment = a
+                    break
+            
+            if assessment:
+                # Verificar si fue completada DESPUÉS de ser asignada usando datos precargados
+                key = (coachee.id, assessment.id)
+                completed_after_assignment = None
                 
-                # Buscar assessment por título
-                assessment = Assessment.query.filter(
-                    Assessment.title.like(f'%{title_match}%')
-                ).first()
+                if key in completed_results:
+                    for result in completed_results[key]:
+                        if result.completed_at >= task.created_at:
+                            completed_after_assignment = result
+                            break
                 
-                if assessment:
-                    # Verificar si fue completada DESPUÉS de ser asignada
-                    completed_after_assignment = AssessmentResult.query.filter(
-                        AssessmentResult.user_id == coachee.id,
-                        AssessmentResult.assessment_id == assessment.id,
-                        AssessmentResult.completed_at >= task.created_at
-                    ).first()
+                if not completed_after_assignment:
+                    # Esta evaluación está PENDIENTE
+                    progress = progress_dict.get(task.id)
                     
-                    if not completed_after_assignment:
-                        # Esta evaluación está PENDIENTE (no completada después de asignarla)
-                        progress = TaskProgress.query.filter_by(task_id=task.id).first()
-                        
-                        pending_evaluations.append({
-                            'task_id': task.id,
-                            'assessment_id': assessment.id,
-                            'assessment_title': assessment.title,
-                            'coachee_id': coachee.id,
-                            'coachee_name': coachee.full_name or coachee.username,
-                            'coachee_email': coachee.email,
-                            'assigned_date': task.created_at.isoformat(),
-                            'status': progress.status if progress else 'pending'
-                        })
+                    pending_evaluations.append({
+                        'task_id': task.id,
+                        'assessment_id': assessment.id,
+                        'assessment_title': assessment.title,
+                        'coachee_id': coachee.id,
+                        'coachee_name': coachee.full_name or coachee.username,
+                        'coachee_email': coachee.email,
+                        'assigned_date': task.created_at.isoformat(),
+                        'status': progress.status if progress else 'pending'
+                    })
         
         logger.info(f"📊 PENDING-EVALUATIONS: Found {len(pending_evaluations)} pending evaluations")
         
@@ -4329,11 +4428,38 @@ def api_coach_tasks_get():
         ).all()
         app.logger.info(f"Tareas encontradas: {len(tasks)}")
         
-        tasks_data = []
+        # OPTIMIZACIÓN: Precalcular últimos progresos en una query usando subquery
+        task_ids = [t.id for t in tasks]
+        latest_progress_dict = {}
         
+        if task_ids:
+            try:
+                # Subquery para obtener la fecha más reciente por tarea
+                subq = db.session.query(
+                    TaskProgress.task_id,
+                    func.max(TaskProgress.created_at).label('max_date')
+                ).filter(
+                    TaskProgress.task_id.in_(task_ids)
+                ).group_by(TaskProgress.task_id).subquery()
+                
+                # Query principal para obtener los datos completos del último progreso
+                latest_progresses = db.session.query(TaskProgress).join(
+                    subq,
+                    and_(
+                        TaskProgress.task_id == subq.c.task_id,
+                        TaskProgress.created_at == subq.c.max_date
+                    )
+                ).all()
+                
+                latest_progress_dict = {tp.task_id: tp for tp in latest_progresses}
+                app.logger.info(f"📊 TASKS: Loaded latest progress for {len(latest_progress_dict)} tasks")
+            except Exception as tp_error:
+                app.logger.warning(f"⚠️ TASKS: Could not load task progress: {str(tp_error)}")
+        
+        tasks_data = []
         for task in tasks:
-            # Obtener el último progreso
-            latest_progress = TaskProgress.query.filter_by(task_id=task.id).order_by(TaskProgress.created_at.desc()).first()
+            # Usar progreso precargado
+            latest_progress = latest_progress_dict.get(task.id)
             
             task_data = {
                 'id': task.id,
