@@ -3820,6 +3820,26 @@ def coach_comunidad():
     
     return render_template('coach_comunidad.html')
 
+@app.route('/coach-profile')
+def coach_profile():
+    # Verificar sesión de coach específicamente
+    coach_user_id = session.get('coach_user_id')
+    
+    if not coach_user_id:
+        logger.info("No coach session found, redirecting to coach login")
+        return redirect(url_for('coach_login_page'))
+    
+    # Obtener usuario desde la base de datos
+    user = User.query.get(coach_user_id)
+    if not user or user.role != 'coach':
+        logger.warning(f"Invalid coach user or role - User ID: {coach_user_id}")
+        session.pop('coach_user_id', None)
+        return redirect(url_for('coach_login_page'))
+    
+    logger.info(f"Coach profile access granted - User: {user.username}")
+    
+    return render_template('coach_profile.html')
+
 @app.route('/coachee-dashboard')
 def coachee_dashboard():
     # Verificar sesión de coachee específicamente

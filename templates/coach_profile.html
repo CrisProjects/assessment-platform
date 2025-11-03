@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaCoach - Mi Perfil</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Lobster Two -->
+    <link href="https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        /* Header */
+        .feed-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .feed-header h1 {
+            font-family: 'Lobster Two', cursive;
+            font-size: 28px;
+            color: white;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .feed-header .back-btn {
+            color: white;
+            text-decoration: none;
+            font-size: 20px;
+        }
+        
+        /* Profile Container */
+        .profile-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .avatar-upload-btn {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .avatar-upload-btn input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        .avatar-upload-btn .btn {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .form-section {
+            margin-bottom: 25px;
+        }
+        
+        .form-section h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #efefef;
+        }
+        
+        .info-item label {
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .info-item span {
+            color: #333;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #666;
+            font-size: 12px;
+            padding: 5px 10px;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .nav-item i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item:hover,
+        .nav-item.active {
+            color: #667eea;
+        }
+        
+        .avatar-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="feed-header">
+        <a href="/coach-dashboard" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1>Mi Perfil</h1>
+        <div style="width: 24px;"></div>
+    </div>
+    
+    <!-- Profile Container -->
+    <div class="profile-container">
+        <div class="profile-card">
+            <!-- Avatar Section -->
+            <div class="avatar-section">
+                <div class="avatar-preview" id="avatarPreview">
+                    <i class="fas fa-user-tie" id="defaultAvatar"></i>
+                    <img id="avatarImage" style="display: none;">
+                </div>
+                <div class="avatar-buttons">
+                    <div class="avatar-upload-btn">
+                        <input type="file" id="avatarInput" accept="image/*" onchange="previewAvatar(event)">
+                        <button class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-camera me-1"></i> Cambiar Foto
+                        </button>
+                    </div>
+                </div>
+                <div id="saveAvatarSection" style="display: none; margin-top: 12px;">
+                    <button class="btn btn-success btn-sm w-100" onclick="saveAvatar()">
+                        <i class="fas fa-save me-1"></i> Guardar Avatar
+                    </button>
+                </div>
+                <div id="avatarError" class="text-danger mt-2" style="display: none;"></div>
+                <div id="avatarSuccess" class="text-success mt-2" style="display: none;"></div>
+            </div>
+            
+            <!-- User Info Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-user-circle me-2"></i>Información Personal</h3>
+                <div class="info-item">
+                    <label>Nombre:</label>
+                    <span id="userName">Cargando...</span>
+                </div>
+                <div class="info-item">
+                    <label>Email:</label>
+                    <span id="userEmail">Cargando...</span>
+                </div>
+                <div class="info-item">
+                    <label>Usuario:</label>
+                    <span id="userUsername">Cargando...</span>
+                </div>
+            </div>
+            
+            <!-- Change Password Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-lock me-2"></i>Cambiar Contraseña</h3>
+                <form id="changePasswordForm" onsubmit="changePassword(event)">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Contraseña Actual</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Nueva Contraseña</label>
+                        <input type="password" class="form-control" id="newPassword" required minlength="6">
+                        <div class="form-text">Mínimo 6 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirmar Nueva Contraseña</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                    <div id="passwordError" class="text-danger mb-2" style="display: none;"></div>
+                    <div id="passwordSuccess" class="text-success mb-2" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-navigation">
+        <a href="/coach-feed" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        
+        <a href="/coach-comunidad" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>Comunidad</span>
+        </a>
+        
+        <a href="/coach-dashboard" class="nav-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <button class="nav-item" onclick="confirmLogout()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
+        </button>
+    </nav>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let selectedAvatar = null;
+        
+        // Cargar perfil al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfile();
+        });
+        
+        // Cargar información del perfil
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/coach/profile');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.profile) {
+                        const profile = data.profile;
+                        
+                        // Actualizar información
+                        document.getElementById('userName').textContent = profile.full_name || 'No especificado';
+                        document.getElementById('userEmail').textContent = profile.email || 'No especificado';
+                        document.getElementById('userUsername').textContent = profile.username || 'No especificado';
+                        
+                        // Cargar avatar
+                        if (profile.avatar_url) {
+                            const avatarImage = document.getElementById('avatarImage');
+                            const defaultAvatar = document.getElementById('defaultAvatar');
+                            avatarImage.src = profile.avatar_url;
+                            avatarImage.style.display = 'block';
+                            defaultAvatar.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+        
+        // Preview avatar
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const avatarImage = document.getElementById('avatarImage');
+                    const defaultAvatar = document.getElementById('defaultAvatar');
+                    avatarImage.src = e.target.result;
+                    avatarImage.style.display = 'block';
+                    defaultAvatar.style.display = 'none';
+                    document.getElementById('saveAvatarSection').style.display = 'block';
+                    selectedAvatar = file;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Guardar avatar
+        async function saveAvatar() {
+            const errorDiv = document.getElementById('avatarError');
+            const successDiv = document.getElementById('avatarSuccess');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (!selectedAvatar) {
+                errorDiv.textContent = 'Por favor selecciona una imagen';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('avatar', selectedAvatar);
+            
+            try {
+                const response = await fetch('/api/coach/update-avatar', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    successDiv.textContent = 'Avatar actualizado correctamente';
+                    successDiv.style.display = 'block';
+                    document.getElementById('saveAvatarSection').style.display = 'none';
+                    selectedAvatar = null;
+                    
+                    // Recargar perfil
+                    setTimeout(() => {
+                        loadProfile();
+                        successDiv.style.display = 'none';
+                    }, 2000);
+                } else {
+                    errorDiv.textContent = data.message || 'Error al actualizar avatar';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error de conexión';
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Cambiar contraseña
+        async function changePassword(event) {
+            event.preventDefault();
+            
+            const errorDiv = document.getElementById('passwordError');
+            const successDiv = document.getElementById('passwordSuccess');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = 'Las contraseñas no coinciden';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coach/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    successDiv.textContent = 'Contraseña actualizada correctamente';
+                    successDiv.style.display = 'block';
+                    document.getElementById('changePasswordForm').reset();
+                    
+                    setTimeout(() => {
+                        successDiv.style.display = 'none';
+                    }, 3000);
+                } else {
+                    errorDiv.textContent = data.message || 'Error al cambiar contraseña';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error de conexión';
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Confirmar logout
+        function confirmLogout() {
+            if (confirm('¿Estás seguro que deseas salir?')) {
+                window.location.href = '/coach-login';
+            }
+        }
+    </script>
+</body>
+</html>
