@@ -3018,6 +3018,41 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Evaluaciones Pendientes -->
+                        <div class="card mt-4" style="border: 1px solid #e3e6f0; border-radius: 8px;">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 text-dark">
+                                    <i class="fas fa-clipboard-list me-2"></i>Evaluaciones Pendientes
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <!-- Vista tabla para desktop -->
+                                <div class="table-responsive d-none d-md-block">
+                                    <table class="table table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="color: #212529;">Evaluación</th>
+                                                <th style="color: #212529;">Coachee</th>
+                                                <th style="color: #212529;">Fecha Asignación</th>
+                                                <th style="color: #212529;">Estado</th>
+                                                <th style="color: #212529;">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pendingEvaluationsTableBody">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">No hay evaluaciones pendientes</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Vista cards para móvil -->
+                                <div class="d-block d-md-none p-3" id="pendingEvaluationsCardsContainer">
+                                    <div class="text-center text-muted">No hay evaluaciones pendientes</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -4318,7 +4353,7 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Evaluaciones de <span id="modalCoacheeName"></span></h5>
+                <h5 class="modal-title">Evaluaciones Completadas <span id="modalCoacheeName"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -4638,6 +4673,8 @@ function showModule(moduleId) {
         loadCoachees();
     } else if (moduleId === 'gestion-tareas') {
         loadTasks();
+    } else if (moduleId === 'gestion-acciones') {
+        loadTasks(); // Cargar tareas y evaluaciones pendientes
     } else if (moduleId === 'seleccionar-evaluaciones') {
         loadAvailableAssessments();
     } else if (moduleId === 'invitar-coachee') {
@@ -5568,6 +5605,7 @@ function loadTasks() {
             if (data.success) {
                 tasksData = data.tasks;
                 displayTasks();
+                loadPendingEvaluations(); // Cargar evaluaciones pendientes también
             }
         })
         .catch(error => {
@@ -5575,6 +5613,108 @@ function loadTasks() {
             document.getElementById('tasksTableBody').innerHTML = 
                 '<tr><td colspan="8" class="text-center text-danger">Error al cargar tareas</td></tr>';
         });
+}
+
+// Función para cargar evaluaciones pendientes
+function loadPendingEvaluations() {
+    console.log('📊 Loading pending evaluations...');
+    
+    fetch('/api/coach/pending-evaluations')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`✅ Found ${data.total} pending evaluations`);
+                displayPendingEvaluations(data.pending_evaluations);
+            } else {
+                throw new Error(data.error || 'Error desconocido');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error loading pending evaluations:', error);
+            document.getElementById('pendingEvaluationsTableBody').innerHTML = 
+                '<tr><td colspan="5" class="text-center text-danger">Error al cargar evaluaciones pendientes</td></tr>';
+            document.getElementById('pendingEvaluationsCardsContainer').innerHTML = 
+                '<div class="text-center text-danger">Error al cargar evaluaciones pendientes</div>';
+        });
+}
+
+// Función para mostrar evaluaciones pendientes
+function displayPendingEvaluations(pending) {
+    const tableBody = document.getElementById('pendingEvaluationsTableBody');
+    const cardsContainer = document.getElementById('pendingEvaluationsCardsContainer');
+    
+    if (!tableBody || !cardsContainer) {
+        console.warn('Contenedores de evaluaciones pendientes no encontrados');
+        return;
+    }
+    
+    if (pending.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay evaluaciones pendientes</td></tr>';
+        cardsContainer.innerHTML = '<div class="text-center text-muted">No hay evaluaciones pendientes</div>';
+        return;
+    }
+    
+    // Limpiar contenedores
+    tableBody.innerHTML = '';
+    cardsContainer.innerHTML = '';
+    
+    pending.forEach(eval => {
+        const fechaAsignacion = new Date(eval.assigned_date).toLocaleDateString('es-ES');
+        
+        // Badge de estado
+        const estadoBadge = '<span class="badge bg-warning text-dark">Pendiente</span>';
+        
+        // Crear fila para tabla (desktop)
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div class="fw-bold text-dark">${eval.assessment_title}</div>
+            </td>
+            <td>
+                <div class="text-dark">${eval.coachee_name}</div>
+                <small class="text-muted">${eval.coachee_email}</small>
+            </td>
+            <td class="text-dark">${fechaAsignacion}</td>
+            <td>${estadoBadge}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="sendReminder(${eval.coachee_id}, '${eval.assessment_title}')" title="Enviar recordatorio">
+                    <i class="fas fa-bell me-1"></i>Recordar
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+        
+        // Crear card para móvil
+        const card = document.createElement('div');
+        card.className = 'card mb-3 border-secondary';
+        card.innerHTML = `
+            <div class="card-body" style="background-color: white;">
+                <h6 class="card-title text-dark fw-bold">${eval.assessment_title}</h6>
+                <p class="card-text mb-2">
+                    <strong class="text-dark">Coachee:</strong> <span class="text-dark">${eval.coachee_name}</span><br>
+                    <small class="text-muted">${eval.coachee_email}</small>
+                </p>
+                <p class="card-text mb-2">
+                    <strong class="text-dark">Fecha Asignación:</strong> <span class="text-dark">${fechaAsignacion}</span>
+                </p>
+                <p class="card-text mb-2">
+                    <strong class="text-dark">Estado:</strong> ${estadoBadge}
+                </p>
+                <button class="btn btn-sm btn-outline-primary w-100" onclick="sendReminder(${eval.coachee_id}, '${eval.assessment_title}')">
+                    <i class="fas fa-bell me-1"></i>Enviar Recordatorio
+                </button>
+            </div>
+        `;
+        cardsContainer.appendChild(card);
+    });
+}
+
+// Función para enviar recordatorio
+function sendReminder(coacheeId, assessmentTitle) {
+    if (confirm(`¿Enviar recordatorio para completar "${assessmentTitle}"?`)) {
+        // TODO: Implementar endpoint de recordatorio
+        alert(`Función de recordatorio en desarrollo.\nCoachee ID: ${coacheeId}\nEvaluación: ${assessmentTitle}`);
+    }
 }
 
 // Función para mostrar tareas
@@ -6344,6 +6484,10 @@ function displayEvaluationDetails(evaluation) {
     const recommendations = evaluation.recommendations || [];
     const detailedAnalysis = evaluation.detailed_analysis;
     
+    // Log para debug de respuestas
+    console.log('📝 Responses data:', evaluation.responses);
+    console.log('📊 Is Teamwork?', isTeamworkAssessment);
+    
     // Calcular porcentaje correcto según el tipo de evaluación
     let displayPercentage;
     let levelLabel;
@@ -6454,7 +6598,6 @@ function displayEvaluationDetails(evaluation) {
         </div>
 
         ${generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores))}
-        ${recommendations && recommendations.length > 0 ? generateRecommendationsHTML(recommendations) : ''}
         
         <!-- Respuestas Detalladas -->
         <div class="row">
@@ -8204,39 +8347,6 @@ function displayLeadershipEvaluation(evaluation) {
                     </div>
                 </div>
             ` : ''}
-        </div>
-
-        <!-- Recomendaciones -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-lightbulb me-2"></i>
-                            Recomendaciones para Desarrollar tu Liderazgo
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info mb-3">
-                            <strong>${evaluation.result_text || levelDescription}</strong>
-                        </div>
-                        <ul class="list-unstyled">
-                            ${improvements.slice(0, 3).map(item => `
-                                <li class="mb-2">
-                                    <i class="fas fa-arrow-right text-primary me-2"></i>
-                                    Fortalece tu <strong>${item.name}</strong> a través de práctica deliberada y feedback continuo.
-                                </li>
-                            `).join('')}
-                            ${improvements.length === 0 ? `
-                                <li class="mb-2">
-                                    <i class="fas fa-check text-success me-2"></i>
-                                    Mantén y consolida tus fortalezas actuales en liderazgo.
-                                </li>
-                            ` : ''}
-                        </ul>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Respuestas Detalladas -->

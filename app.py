@@ -288,6 +288,38 @@ class AssessmentResult(db.Model):
             setattr(self, key, value)
         self.completed_at = kwargs.get('completed_at', datetime.utcnow())
 
+class AssessmentHistory(db.Model):
+    """Tabla para almacenar el historial completo de todos los intentos de evaluación"""
+    __tablename__ = 'assessment_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    assessment_id = db.Column(db.Integer, db.ForeignKey('assessment.id'), nullable=False, index=True)
+    score = db.Column(db.Float)
+    total_questions = db.Column(db.Integer)
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    result_text = db.Column(db.Text)
+    dimensional_scores = db.Column(db.JSON, nullable=True)
+    attempt_number = db.Column(db.Integer, default=1)  # Número de intento para esta evaluación
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    
+    # Relaciones
+    user = db.relationship('User', foreign_keys=[user_id], backref='assessment_history')
+    assessment = db.relationship('Assessment', foreign_keys=[assessment_id])
+    coach = db.relationship('User', foreign_keys=[coach_id])
+    
+    __table_args__ = (
+        db.Index('idx_history_user', 'user_id'),
+        db.Index('idx_history_assessment', 'assessment_id'),
+        db.Index('idx_history_completed', 'completed_at'),
+        db.Index('idx_history_user_assessment', 'user_id', 'assessment_id'),
+    )
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.completed_at = kwargs.get('completed_at', datetime.utcnow())
+
 class Response(db.Model):
     __tablename__ = 'response'
     
@@ -3414,29 +3446,59 @@ def api_get_questions():
 
 def update_score_history(assessment_result, new_score, max_history=10):
     """
-    Actualiza el historial de puntajes manteniendo un límite máximo de intentos
+    Actualiza el historial de puntajes manteniendo un límite máximo de intentos.
+    AHORA TAMBIÉN guarda en la tabla AssessmentHistory para análisis de progreso.
     """
     # Inicializar score_history si no existe
     if assessment_result.score_history is None:
         assessment_result.score_history = []
     
-    # Crear nuevo registro de intento
+    # Calcular número de intento actual
+    attempt_number = len(assessment_result.score_history) + 1
+    
+    # 📊 Calcular porcentaje CORRECTO usando escala Likert
+    total_questions = assessment_result.total_questions or 1  # Evitar división por cero
+    max_possible_score = total_questions * LIKERT_SCALE_MAX  # Total máximo posible (preguntas × 5)
+    score_percentage = round((new_score / max_possible_score) * 100, 2)
+    
+    # Crear nuevo registro de intento en JSON
     new_attempt = {
         'score': new_score,
+        'score_percentage': score_percentage,
         'completed_at': datetime.utcnow().isoformat(),
-        'attempt_number': len(assessment_result.score_history) + 1
+        'attempt_number': attempt_number
     }
     
-    # Agregar nuevo intento
+    # Agregar nuevo intento al JSON
     assessment_result.score_history.append(new_attempt)
     
-    # Mantener solo los últimos max_history intentos
+    # Mantener solo los últimos max_history intentos en JSON
     if len(assessment_result.score_history) > max_history:
         assessment_result.score_history = assessment_result.score_history[-max_history:]
         
     # Actualizar números de intento después del recorte
     for i, attempt in enumerate(assessment_result.score_history, 1):
         attempt['attempt_number'] = i
+    
+    # 🆕 NUEVO: Guardar en tabla AssessmentHistory para análisis completo
+    try:
+        history_entry = AssessmentHistory(
+            user_id=assessment_result.user_id,
+            assessment_id=assessment_result.assessment_id,
+            score=score_percentage,  # 📊 Guardamos el PORCENTAJE, no el score raw
+            total_questions=assessment_result.total_questions,
+            completed_at=datetime.utcnow(),
+            result_text=assessment_result.result_text,
+            dimensional_scores=assessment_result.dimensional_scores,
+            attempt_number=attempt_number,
+            coach_id=assessment_result.coach_id
+        )
+        db.session.add(history_entry)
+        db.session.flush()  # Flush para asignar ID sin hacer commit todavía
+        logger.info(f"📊 HISTORY: Saved attempt #{attempt_number} to AssessmentHistory (ID: {history_entry.id}, Score: {score_percentage}%)")
+    except Exception as e:
+        logger.error(f"❌ HISTORY: Error saving to AssessmentHistory: {str(e)}")
+        # No fallar si hay error en historial, continuar con el proceso principal
     
     return len(assessment_result.score_history)
 
@@ -3553,6 +3615,9 @@ def api_save_assessment():
                     assessment_result.coach_id = current_coachee.coach_id
                 
                 db.session.add(assessment_result)
+                # Hacer flush para asignar ID antes de guardar respuestas
+                db.session.flush()
+                logger.info(f"SAVE_ASSESSMENT: Nuevo resultado creado con ID {assessment_result.id}")
                 
         except Exception as query_error:
             logger.error(f"❌ SAVE_ASSESSMENT: Error en query inicial: {str(query_error)}")
@@ -4106,6 +4171,74 @@ def api_coach_my_coachees():
         logger.error(f"❌ MY-COACHEES: Exception details: {e.__class__.__name__}: {str(e)}")
         logger.error(f"❌ MY-COACHEES: Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error obteniendo coachees: {str(e)}'}), 500
+
+@app.route('/api/coach/pending-evaluations', methods=['GET'])
+@coach_session_required
+def api_coach_pending_evaluations():
+    """Obtener evaluaciones pendientes de todos los coachees del coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        logger.info(f"🔍 PENDING-EVALUATIONS: Request from coach {current_coach.username} (ID: {current_coach.id})")
+        
+        # Obtener todos los coachees del coach
+        coachees = User.query.filter_by(coach_id=current_coach.id, role='coachee').all()
+        
+        pending_evaluations = []
+        
+        for coachee in coachees:
+            # Obtener tareas de evaluación asignadas
+            eval_tasks = Task.query.filter_by(
+                coachee_id=coachee.id,
+                category='evaluation',
+                is_active=True
+            ).all()
+            
+            # Obtener IDs de evaluaciones completadas
+            completed_results = AssessmentResult.query.filter_by(user_id=coachee.id).all()
+            completed_assessment_ids = {r.assessment_id for r in completed_results}
+            
+            # Para cada tarea, verificar si está pendiente
+            for task in eval_tasks:
+                # Extraer título de la evaluación del task title
+                # Formato: "Evaluación: <Nombre> (<N> preguntas)"
+                title_match = task.title.replace('Evaluación: ', '').split(' (')[0]
+                
+                # Buscar assessment por título
+                assessment = Assessment.query.filter(
+                    Assessment.title.like(f'%{title_match}%')
+                ).first()
+                
+                if assessment and assessment.id not in completed_assessment_ids:
+                    # Esta evaluación está PENDIENTE
+                    progress = TaskProgress.query.filter_by(task_id=task.id).first()
+                    
+                    pending_evaluations.append({
+                        'task_id': task.id,
+                        'assessment_id': assessment.id,
+                        'assessment_title': assessment.title,
+                        'coachee_id': coachee.id,
+                        'coachee_name': coachee.full_name or coachee.username,
+                        'coachee_email': coachee.email,
+                        'assigned_date': task.created_at.isoformat(),
+                        'status': progress.status if progress else 'pending'
+                    })
+        
+        logger.info(f"📊 PENDING-EVALUATIONS: Found {len(pending_evaluations)} pending evaluations")
+        
+        return jsonify({
+            'success': True,
+            'pending_evaluations': pending_evaluations,
+            'total': len(pending_evaluations)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ PENDING-EVALUATIONS: Error getting pending evaluations: {str(e)}")
+        logger.error(f"❌ PENDING-EVALUATIONS: Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Error obteniendo evaluaciones pendientes: {str(e)}'}), 500
 
 @app.route('/api/coach/debug-users', methods=['GET'])
 @coach_session_required
@@ -5183,6 +5316,86 @@ def api_coachee_evaluations():
         logger.error(f"Error en api_coachee_evaluations: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo evaluaciones: {str(e)}'}), 500
 
+@app.route('/api/coachee/pending-evaluations', methods=['GET'])
+@coachee_session_required
+def api_coachee_pending_evaluations():
+    """Obtener evaluaciones pendientes del coachee actual"""
+    try:
+        current_user = g.current_user
+        logger.info(f"🔍 COACHEE-PENDING: User {current_user.username} (ID: {current_user.id}) requesting pending evaluations")
+        
+        # Verificar que tenga coach asignado
+        if not current_user.coach_id:
+            return jsonify({
+                'success': True,
+                'pending_evaluations': [],
+                'total': 0
+            }), 200
+        
+        # Obtener tareas de evaluación asignadas
+        assigned_tasks = Task.query.filter_by(
+            coachee_id=current_user.id,
+            is_active=True,
+            category='evaluation'
+        ).all()
+        
+        # Obtener todas las evaluaciones completadas con sus fechas
+        completed_results = AssessmentResult.query.filter_by(user_id=current_user.id).all()
+        
+        pending_evaluations = []
+        
+        # Para cada tarea, verificar si está pendiente
+        for task in assigned_tasks:
+            # Buscar la evaluación que coincida con el título de la tarea
+            for assessment in Assessment.query.filter(Assessment.is_active == True).all():
+                if assessment.title in task.title:
+                    # Verificar si hay alguna completación DESPUÉS de la asignación
+                    is_pending = True
+                    
+                    for result in completed_results:
+                        if result.assessment_id == assessment.id:
+                            # Comparar fechas: ¿La evaluación fue completada DESPUÉS de asignada?
+                            if result.completed_at and task.created_at:
+                                if result.completed_at > task.created_at:
+                                    # Se completó después de ser asignada = NO está pendiente
+                                    is_pending = False
+                                    logger.info(f"✅ COACHEE-PENDING: {assessment.title} completed after assignment (Task: {task.created_at}, Completed: {result.completed_at})")
+                                    break
+                    
+                    if is_pending:
+                        # Esta evaluación está PENDIENTE (nunca completada o completada antes de la asignación actual)
+                        questions = Question.query.filter_by(
+                            assessment_id=assessment.id,
+                            is_active=True
+                        ).count()
+                        
+                        logger.info(f"⏳ COACHEE-PENDING: {assessment.title} is PENDING (assigned: {task.created_at})")
+                        
+                        pending_evaluations.append({
+                            'task_id': task.id,
+                            'assessment_id': assessment.id,
+                            'assessment_title': assessment.title,
+                            'assessment_description': assessment.description,
+                            'total_questions': questions,
+                            'assigned_date': task.created_at.isoformat(),
+                            'priority': task.priority,
+                            'coach_name': current_user.coach.full_name if current_user.coach else 'Sin asignar'
+                        })
+                    break
+        
+        logger.info(f"📊 COACHEE-PENDING: Found {len(pending_evaluations)} pending evaluations")
+        
+        return jsonify({
+            'success': True,
+            'pending_evaluations': pending_evaluations,
+            'total': len(pending_evaluations)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ COACHEE-PENDING: Error getting pending evaluations: {str(e)}")
+        logger.error(f"❌ COACHEE-PENDING: Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Error obteniendo evaluaciones pendientes: {str(e)}'}), 500
+
 @app.route('/api/coachee/evaluation-history', methods=['GET'])
 @coachee_session_required
 def api_coachee_evaluation_history():
@@ -5373,6 +5586,202 @@ def api_coachee_evaluation_history():
     except Exception as e:
         logger.error(f"Error en api_coachee_evaluation_history: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo historial: {str(e)}'}), 500
+
+@app.route('/api/coachee/assessment-history/<int:assessment_id>', methods=['GET'])
+@coachee_session_required
+def api_coachee_assessment_history(assessment_id):
+    """
+    Obtener historial completo de todos los intentos de una evaluación específica.
+    Usa la tabla AssessmentHistory para tener el historial completo sin límites.
+    """
+    try:
+        logger.info(f"🔍 ASSESSMENT-HISTORY: User {g.current_user.username} (ID: {g.current_user.id}) requesting history for assessment {assessment_id}")
+        
+        # Obtener assessment info
+        assessment = Assessment.query.get(assessment_id)
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Obtener historial completo desde AssessmentHistory
+        history_entries = AssessmentHistory.query.filter_by(
+            user_id=g.current_user.id,
+            assessment_id=assessment_id
+        ).order_by(AssessmentHistory.completed_at.asc()).all()
+        
+        # Formatear datos del historial
+        history_data = []
+        for entry in history_entries:
+            # Formatear fecha con formato legible
+            if entry.completed_at:
+                # Formato: "03 Nov 2025 14:30"
+                formatted_date = entry.completed_at.strftime('%d %b %Y %H:%M')
+                date_only = entry.completed_at.strftime('%d/%m/%Y')
+                time_only = entry.completed_at.strftime('%H:%M')
+            else:
+                formatted_date = 'N/A'
+                date_only = 'N/A'
+                time_only = 'N/A'
+            
+            history_data.append({
+                'id': entry.id,
+                'score': entry.score,  # Ya es porcentaje
+                'score_percentage': entry.score,  # Explícito como porcentaje
+                'total_questions': entry.total_questions,
+                'completed_at': entry.completed_at.isoformat() if entry.completed_at else None,
+                'formatted_date': formatted_date,
+                'date_only': date_only,
+                'time_only': time_only,
+                'result_text': entry.result_text,
+                'dimensional_scores': entry.dimensional_scores,
+                'attempt_number': entry.attempt_number
+            })
+        
+        # Calcular estadísticas (scores ya son porcentajes)
+        statistics = {}
+        if history_data:
+            scores = [h['score'] for h in history_data]
+            statistics = {
+                'total_attempts': len(history_data),
+                'first_score': round(scores[0], 2),
+                'latest_score': round(scores[-1], 2),
+                'best_score': round(max(scores), 2),
+                'worst_score': round(min(scores), 2),
+                'average_score': round(sum(scores) / len(scores), 2),
+                'improvement': round(scores[-1] - scores[0], 2) if len(scores) > 1 else 0,
+                'improvement_percentage': round(scores[-1] - scores[0], 2) if len(scores) > 1 else 0  # Ya es diferencia de porcentajes
+            }
+        
+        # Datos para gráfico de progreso
+        chart_data = {
+            'labels': [h['formatted_date'] for h in history_data],  # Fecha legible completa
+            'scores': [round(h['score'], 2) for h in history_data],  # Scores como porcentajes
+            'dates': [h['date_only'] for h in history_data],  # Solo fecha para ordenar
+            'times': [h['time_only'] for h in history_data],  # Solo hora
+            'attempt_numbers': [h['attempt_number'] for h in history_data]  # Números de intento
+        }
+        
+        logger.info(f"✅ ASSESSMENT-HISTORY: Returning {len(history_data)} attempts for assessment {assessment.title}")
+        
+        return jsonify({
+            'success': True,
+            'assessment': {
+                'id': assessment.id,
+                'title': assessment.title,
+                'description': assessment.description
+            },
+            'history': history_data,
+            'statistics': statistics,
+            'chart_data': chart_data
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coachee_assessment_history: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo historial: {str(e)}'}), 500
+
+@app.route('/api/coachee/all-assessment-history', methods=['GET'])
+@coachee_session_required
+def api_coachee_all_assessment_history():
+    """
+    Obtener historial completo de TODAS las evaluaciones del coachee.
+    Retorna datos agrupados por assessment_id para gráfico multi-línea.
+    """
+    try:
+        logger.info(f"🔍 ALL-ASSESSMENT-HISTORY: User {g.current_user.username} (ID: {g.current_user.id}) requesting all assessment history")
+        
+        # Obtener TODO el historial del coachee desde AssessmentHistory
+        history_entries = AssessmentHistory.query.filter_by(
+            user_id=g.current_user.id
+        ).order_by(AssessmentHistory.completed_at.asc()).all()
+        
+        if not history_entries:
+            logger.info(f"📊 ALL-ASSESSMENT-HISTORY: No history found for user {g.current_user.id}")
+            return jsonify({
+                'success': True,
+                'history': {},
+                'total_evaluations': 0,
+                'total_attempts': 0
+            }), 200
+        
+        # Agrupar por assessment_id
+        grouped_history = {}
+        total_attempts = 0
+        
+        for entry in history_entries:
+            assessment_id = entry.assessment_id
+            
+            # Obtener info del assessment si no existe en el grupo
+            if assessment_id not in grouped_history:
+                assessment = Assessment.query.get(assessment_id)
+                if not assessment:
+                    continue
+                    
+                grouped_history[assessment_id] = {
+                    'title': assessment.title,
+                    'description': assessment.description,
+                    'data': []
+                }
+            
+            # Formatear fecha
+            if entry.completed_at:
+                formatted_date = entry.completed_at.strftime('%d %b %Y %H:%M')
+                date_only = entry.completed_at.strftime('%d/%m/%Y')
+                time_only = entry.completed_at.strftime('%H:%M')
+                iso_date = entry.completed_at.isoformat()
+            else:
+                formatted_date = 'N/A'
+                date_only = 'N/A'
+                time_only = 'N/A'
+                iso_date = None
+            
+            # Agregar dato al grupo
+            grouped_history[assessment_id]['data'].append({
+                'id': entry.id,
+                'score': entry.score,  # Ya es porcentaje
+                'percentage': entry.score,  # Explícito
+                'total_questions': entry.total_questions,
+                'completed_at': iso_date,
+                'formatted_date': formatted_date,
+                'date_only': date_only,
+                'time_only': time_only,
+                'result_text': entry.result_text,
+                'dimensional_scores': entry.dimensional_scores,
+                'attempt_number': entry.attempt_number
+            })
+            
+            total_attempts += 1
+        
+        # Calcular estadísticas generales
+        all_scores = []
+        for assessment_data in grouped_history.values():
+            all_scores.extend([d['score'] for d in assessment_data['data']])
+        
+        statistics = {}
+        if all_scores:
+            statistics = {
+                'total_evaluations': len(grouped_history),
+                'total_attempts': total_attempts,
+                'average_score': round(sum(all_scores) / len(all_scores), 2),
+                'best_score': round(max(all_scores), 2),
+                'worst_score': round(min(all_scores), 2)
+            }
+        
+        # ✅ ORDENAR datos dentro de cada grupo por fecha (ascendente)
+        for assessment_id, assessment_data in grouped_history.items():
+            assessment_data['data'].sort(key=lambda x: x['completed_at'] if x['completed_at'] else '')
+        
+        logger.info(f"✅ ALL-ASSESSMENT-HISTORY: Returning {len(grouped_history)} evaluation types with {total_attempts} total attempts")
+        
+        return jsonify({
+            'success': True,
+            'history': grouped_history,
+            'statistics': statistics,
+            'total_evaluations': len(grouped_history),
+            'total_attempts': total_attempts
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coachee_all_assessment_history: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': f'Error obteniendo historial: {str(e)}'}), 500
 
 @app.route('/api/coachee/evaluation-details/<int:evaluation_id>', methods=['GET'])
 @coachee_session_required
