@@ -6891,6 +6891,8 @@
 
         // Función para cambiar de tab con el sistema de sidebar
         function showTab(tabId) {
+            console.log('🔄 showTab called with:', tabId);
+            
             // Colapsar categorías de evaluaciones disponibles ANTES de cambiar de pestaña
             const currentActiveTab = document.querySelector('.tab-pane.show.active');
             if (currentActiveTab && currentActiveTab.id === 'evaluations' && tabId !== 'evaluations') {
@@ -6932,6 +6934,21 @@
             const activeItem = document.querySelector(`[data-tab="${tabId}"]`);
             if (activeItem) {
                 activeItem.classList.add('active');
+            }
+            
+            // 📱 MOBILE: Scroll automático hacia la sección y cerrar sidebar si está abierto
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    const contentArea = document.querySelector('.col-md-9');
+                    if (contentArea) {
+                        // Scroll suave hacia el área de contenido
+                        contentArea.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start'
+                        });
+                        console.log('📱 Mobile: Scrolling to content area');
+                    }
+                }, 100);
             }
             
             // Cargar contenido específico según la pestaña
