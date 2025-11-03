@@ -1586,6 +1586,41 @@
         border: 2px solid transparent;
     }
     
+    /* Skeleton loader styles */
+    .skeleton-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .skeleton-header,
+    .skeleton-text {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 4px;
+    }
+    
+    .skeleton-header {
+        height: 24px;
+        width: 70%;
+    }
+    
+    .skeleton-text {
+        height: 16px;
+        width: 100%;
+    }
+    
+    .skeleton-text.short {
+        width: 50%;
+    }
+    
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    
     .assessment-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
@@ -3199,12 +3234,23 @@
                         </button>
                     </div>
                     <div class="card-body" style="background-color: white !important; padding: 1rem;">
-                        <!-- Loading spinner -->
-                        <div id="assessments-loading" class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Cargando evaluaciones...</span>
+                        <!-- Loading skeleton (más atractivo que spinner) -->
+                        <div id="assessments-loading" class="py-2">
+                            <div class="skeleton-card mb-3">
+                                <div class="skeleton-header mb-2"></div>
+                                <div class="skeleton-text mb-2"></div>
+                                <div class="skeleton-text short"></div>
                             </div>
-                            <p class="text-muted small mt-2 mb-0">Cargando evaluaciones disponibles...</p>
+                            <div class="skeleton-card mb-3">
+                                <div class="skeleton-header mb-2"></div>
+                                <div class="skeleton-text mb-2"></div>
+                                <div class="skeleton-text short"></div>
+                            </div>
+                            <div class="skeleton-card">
+                                <div class="skeleton-header mb-2"></div>
+                                <div class="skeleton-text mb-2"></div>
+                                <div class="skeleton-text short"></div>
+                            </div>
                         </div>
                         
                         <!-- Assessments list -->
@@ -4823,12 +4869,50 @@ function loadStats() {
         });
 }
 
-// Función para cargar evaluaciones disponibles
-function loadAvailableAssessments() {
+// Función para cargar evaluaciones disponibles con caching optimizado
+function loadAvailableAssessments(forceRefresh = false) {
     const loadingElement = document.getElementById('assessments-loading');
     const listElement = document.getElementById('assessments-list');
     const errorElement = document.getElementById('assessments-error');
     const noAssessmentsElement = document.getElementById('no-assessments');
+    
+    // OPTIMIZACIÓN: Intentar cargar desde cache primero si existe
+    const cacheKey = 'coach_assessments_cache';
+    const cacheTimeKey = 'coach_assessments_cache_time';
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+    
+    if (!forceRefresh) {
+        try {
+            const cachedData = localStorage.getItem(cacheKey);
+            const cacheTime = localStorage.getItem(cacheTimeKey);
+            
+            if (cachedData && cacheTime) {
+                const age = Date.now() - parseInt(cacheTime);
+                if (age < CACHE_DURATION) {
+                    console.log('📦 Using cached assessments data (age: ' + Math.round(age/1000) + 's)');
+                    const data = JSON.parse(cachedData);
+                    
+                    // Mostrar datos del cache inmediatamente
+                    loadingElement.style.display = 'none';
+                    if (data.assessments && data.assessments.length > 0) {
+                        displayAvailableAssessments(data.assessments);
+                        listElement.style.display = 'block';
+                    } else {
+                        noAssessmentsElement.style.display = 'block';
+                    }
+                    
+                    // Actualizar en segundo plano si el cache tiene más de 2 minutos
+                    if (age > 2 * 60 * 1000) {
+                        console.log('🔄 Cache old, refreshing in background...');
+                        setTimeout(() => loadAvailableAssessments(true), 100);
+                    }
+                    return; // Salir temprano con datos del cache
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ Error reading cache:', e);
+        }
+    }
     
     // Mostrar loading y ocultar otros elementos
     loadingElement.style.display = 'block';
@@ -4857,6 +4941,17 @@ function loadAvailableAssessments() {
         .then(data => {
             console.log('Evaluaciones recibidas:', data);
             loadingElement.style.display = 'none';
+            
+            // OPTIMIZACIÓN: Guardar en cache si la respuesta es exitosa
+            if (data && data.success === true) {
+                try {
+                    localStorage.setItem(cacheKey, JSON.stringify(data));
+                    localStorage.setItem(cacheTimeKey, Date.now().toString());
+                    console.log('💾 Cached assessments data');
+                } catch (e) {
+                    console.warn('⚠️ Could not save to cache:', e);
+                }
+            }
             
             // Mejor validación de datos
             if (data && data.success === true) {
