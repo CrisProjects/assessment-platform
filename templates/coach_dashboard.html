@@ -5599,17 +5599,25 @@ function updateCoacheeSelect() {
 
 // Función para cargar tareas
 function loadTasks() {
+    console.log('📋 Loading tasks...');
     fetch('/api/coach/tasks')
-        .then(response => response.json())
+        .then(response => {
+            console.log('📋 Tasks response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('📋 Tasks data:', data);
             if (data.success) {
                 tasksData = data.tasks;
                 displayTasks();
+                console.log('📋 Calling loadPendingEvaluations...');
                 loadPendingEvaluations(); // Cargar evaluaciones pendientes también
+            } else {
+                console.warn('📋 Tasks request did not return success:', data);
             }
         })
         .catch(error => {
-            console.error('Error loading tasks:', error);
+            console.error('❌ Error loading tasks:', error);
             document.getElementById('tasksTableBody').innerHTML = 
                 '<tr><td colspan="8" class="text-center text-danger">Error al cargar tareas</td></tr>';
         });
