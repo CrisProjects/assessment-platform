@@ -178,26 +178,26 @@
         }
         
         .sidebar-header-white {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-            border-bottom: none !important;
+            background: white !important;
+            background-color: white !important;
+            color: #262626 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
         }
         
         .sidebar-header-force {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
+            background: white !important;
+            background-color: white !important;
+            color: #262626 !important;
             border-bottom: none !important;
         }
         
         .sidebar-title-white {
-            color: white !important;
+            color: #262626 !important;
             font-weight: 700 !important;
         }
         
         .sidebar-title-force {
-            color: white !important;
+            color: #262626 !important;
             font-weight: 700 !important;
         }
         
@@ -381,12 +381,6 @@
         background-color: white !important;
     }
     
-    .sidebar .card-header[style*="background"] {
-        background: #f1f5f9 !important;
-        background-color: #f1f5f9 !important;
-        color: #1e293b !important;
-    }
-    
     .sidebar h6[style*="color"] {
         color: #1e293b !important;
     }
@@ -407,9 +401,9 @@
     
     .sidebar .card-header *,
     .sidebar .card-header *.bg-dark {
-        background: #f1f5f9 !important;
-        background-color: #f1f5f9 !important;
-        color: #1e293b !important;
+        background: white !important;
+        background-color: white !important;
+        color: #262626 !important;
     }
     
     /* Charts con soporte de temas */
@@ -3019,9 +3013,9 @@
         <!-- Sidebar Navigation -->
         <div class="col-md-3">
             <div class="card sidebar sidebar-white sidebar-force-white" style="background: white !important; background-color: white !important; border: 2px solid #e2e8f0 !important; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden;">
-                <div class="card-header sidebar-header-white sidebar-header-force" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.5rem 1.25rem;">
-                    <h5 class="mb-0 sidebar-title-white sidebar-title-force" style="color: white !important; font-weight: 700 !important; font-size: 1.4rem; display: flex; align-items: center;">
-                        <i class="fas fa-tachometer-alt me-3" style="color: #fbbf24 !important; font-size: 1.5rem;"></i>Panel de Control
+                <div class="card-header sidebar-header-white sidebar-header-force" style="background: white !important; background-color: white !important; border-bottom: 1px solid #e2e8f0 !important; padding: 1.5rem 1.25rem;">
+                    <h5 class="mb-0 sidebar-title-white sidebar-title-force" style="color: #262626 !important; font-weight: 700 !important; font-size: 1.4rem; display: flex; align-items: center;">
+                        <i class="fas fa-tachometer-alt me-3" style="color: #667eea !important; font-size: 1.5rem;"></i>Panel de Control
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -7660,51 +7654,57 @@ document.getElementById('inviteForm').addEventListener('submit', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     refreshDashboard();
     
-    // FORZAR APLICACIÓN DE ESTILOS PANEL DE CONTROL
+    // FORZAR APLICACIÓN DE ESTILOS PANEL DE CONTROL - MANTENER GRADIENTE PÚRPURA
     setTimeout(function() {
         // Elementos con las clases nuevas
         const sidebar = document.querySelector('.sidebar-white');
-        const header = document.querySelector('.sidebar-header-white');
-        const title = document.querySelector('.sidebar-title-white');
+        // const header = document.querySelector('.sidebar-header-white'); // COMENTADO: No sobrescribir el gradiente
+        // const title = document.querySelector('.sidebar-title-white'); // COMENTADO: Mantener color blanco
         
         // Elementos con las clases originales (por si acaso)
         const sidebarOld = document.querySelector('.sidebar-force-white');
-        const headerOld = document.querySelector('.sidebar-header-force');
-        const titleOld = document.querySelector('.sidebar-title-force');
+        // const headerOld = document.querySelector('.sidebar-header-force'); // COMENTADO: No sobrescribir el gradiente
+        // const titleOld = document.querySelector('.sidebar-title-force'); // COMENTADO: Mantener color blanco
         
-        // Aplicar estilos a elementos nuevos
+        // Aplicar estilos solo al contenedor del sidebar (mantener fondo blanco del body)
         if (sidebar) {
             sidebar.style.setProperty('background', 'white', 'important');
             sidebar.style.setProperty('background-color', 'white', 'important');
-            sidebar.style.setProperty('border', '1px solid #dee2e6', 'important');
+            sidebar.style.setProperty('border', '2px solid #e2e8f0', 'important');
             sidebar.classList.remove('bg-dark', 'border-secondary');
         }
-        if (header) {
-            header.style.setProperty('background', '#f8f9fa', 'important');
-            header.style.setProperty('background-color', '#f8f9fa', 'important');
-            header.style.setProperty('color', '#333', 'important');
-            header.classList.remove('bg-dark');
-        }
-        if (title) {
-            title.style.setProperty('color', '#333', 'important');
-            title.classList.remove('text-white');
-        }
         
-        // Aplicar estilos a elementos originales (fallback)
+        // NO TOCAR EL HEADER - Mantener gradiente púrpura definido en HTML/CSS
+        // if (header) {
+        //     header.style.setProperty('background', '#f8f9fa', 'important');
+        //     header.style.setProperty('background-color', '#f8f9fa', 'important');
+        //     header.style.setProperty('color', '#333', 'important');
+        //     header.classList.remove('bg-dark');
+        // }
+        
+        // NO TOCAR EL TÍTULO - Mantener color blanco
+        // if (title) {
+        //     title.style.setProperty('color', '#333', 'important');
+        //     title.classList.remove('text-white');
+        // }
+        
+        // Aplicar estilos a elementos originales (fallback) - Solo sidebar
         if (sidebarOld) {
             sidebarOld.style.setProperty('background', 'white', 'important');
             sidebarOld.style.setProperty('background-color', 'white', 'important');
         }
-        if (headerOld) {
-            headerOld.style.setProperty('background', '#f8f9fa', 'important');
-            headerOld.style.setProperty('background-color', '#f8f9fa', 'important');
-            headerOld.style.setProperty('color', '#333', 'important');
-        }
-        if (titleOld) {
-            titleOld.style.setProperty('color', '#333', 'important');
-        }
         
-        console.log('Estilos del panel de control forzados ULTRA - v2.2');
+        // NO TOCAR HEADER NI TITLE ORIGINALES - Mantener gradiente púrpura
+        // if (headerOld) {
+        //     headerOld.style.setProperty('background', '#f8f9fa', 'important');
+        //     headerOld.style.setProperty('background-color', '#f8f9fa', 'important');
+        //     headerOld.style.setProperty('color', '#333', 'important');
+        // }
+        // if (titleOld) {
+        //     titleOld.style.setProperty('color', '#333', 'important');
+        // }
+        
+        console.log('✅ Estilos del panel de control aplicados - Gradiente púrpura preservado');
         
         // FORZAR VARIABLES CSS DEL TEMA
         const sidebarTheme = document.querySelector('.sidebar');

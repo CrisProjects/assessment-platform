@@ -8726,6 +8726,115 @@ def api_coachee_assigned_document_download(document_id):
         logger.error(f"Error descargando documento asignado: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error al descargar archivo: {str(e)}'}), 500
 
+# ============================================================================
+# MÓDULO EFECTOCOACH - DEMO MODE (SIN GUARDAR EN BD)
+# ============================================================================
+
+from efectocoach_utils import es_modo_demo, obtener_preguntas_demo, calcular_puntaje_demo
+
+@app.route('/efectocoach')
+def efectocoach_demo():
+    """
+    Página principal del módulo EfectoCoach en modo demo.
+    No requiere autenticación ni guarda datos en BD.
+    """
+    try:
+        logger.info("🎯 EFECTOCOACH: Acceso a página demo")
+        return render_template('efectocoach_demo.html')
+    except Exception as e:
+        logger.error(f"❌ EFECTOCOACH: Error renderizando página: {e}")
+        return "Error cargando la página de demo", 500
+
+@app.route('/api/efectocoach/questions', methods=['GET'])
+def api_efectocoach_questions():
+    """
+    API para obtener las preguntas de la evaluación demo.
+    Retorna preguntas hardcoded sin acceder a la BD.
+    """
+    try:
+        # Verificar que estamos en modo demo
+        if not es_modo_demo(request):
+            logger.warning("⚠️ EFECTOCOACH: Intento de acceso fuera de modo demo")
+            return jsonify({
+                'success': False,
+                'error': 'Esta API solo está disponible en modo demo'
+            }), 403
+        
+        logger.info("📊 EFECTOCOACH: Obteniendo preguntas demo")
+        
+        # Obtener preguntas desde memoria (sin BD)
+        preguntas = obtener_preguntas_demo()
+        
+        return jsonify({
+            'success': True,
+            'questions': preguntas,
+            'total': len(preguntas),
+            'demo_mode': True
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ EFECTOCOACH: Error obteniendo preguntas: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error cargando preguntas'
+        }), 500
+
+@app.route('/api/efectocoach/calculate', methods=['POST'])
+def api_efectocoach_calculate():
+    """
+    API para calcular resultados en modo demo.
+    Procesa respuestas SOLO en memoria, sin guardar en BD.
+    """
+    try:
+        # Verificar que estamos en modo demo
+        if not es_modo_demo(request):
+            logger.warning("⚠️ EFECTOCOACH: Intento de cálculo fuera de modo demo")
+            return jsonify({
+                'success': False,
+                'error': 'Esta API solo está disponible en modo demo'
+            }), 403
+        
+        data = request.get_json()
+        if not data or 'responses' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Respuestas requeridas'
+            }), 400
+        
+        responses = data.get('responses', {})
+        
+        logger.info(f"📊 EFECTOCOACH: Calculando resultados demo ({len(responses)} respuestas)")
+        logger.info("🚫 EFECTOCOACH: MODO DEMO - No se guardará nada en BD")
+        
+        # Calcular puntaje en memoria (sin BD)
+        score, result_text, dimensional_scores = calcular_puntaje_demo(responses)
+        
+        logger.info(f"✅ EFECTOCOACH: Resultados calculados - Score: {score}")
+        
+        # IMPORTANTE: No hacer ningún INSERT, UPDATE ni COMMIT a la BD
+        # Los datos se procesan y retornan solo en memoria
+        
+        return jsonify({
+            'success': True,
+            'score': score,
+            'result_text': result_text,
+            'dimensional_scores': dimensional_scores,
+            'demo_mode': True,
+            'data_saved': False,  # Indicador explícito de que NO se guardó
+            'message': 'Resultados calculados en memoria. No se guardó ningún dato.'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ EFECTOCOACH: Error calculando resultados: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error procesando resultados'
+        }), 500
+
+# ============================================================================
+# FIN MÓDULO EFECTOCOACH
+# ============================================================================
+
 if __name__ == '__main__':
     with app.app_context():
         auto_initialize_database()
