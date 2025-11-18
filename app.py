@@ -21,6 +21,16 @@ import boto3
 from botocore.exceptions import ClientError
 import uuid
 
+# Imports de módulos personalizados
+from efectocoach_utils import es_modo_demo, obtener_preguntas_demo, calcular_puntaje_demo
+from testpersonal_utils import (
+    es_modo_demo_personal, 
+    obtener_preguntas_testpersonal, 
+    calcular_puntaje_testpersonal,
+    obtener_color_area,
+    obtener_interpretacion_area
+)
+
 # Configuración global
 # Configurar zona horaria de Santiago de Chile
 SANTIAGO_TZ = pytz.timezone('America/Santiago')
@@ -3904,6 +3914,29 @@ def coach_dashboard():
     
     return render_template('coach_dashboard.html')
 
+@app.route('/coach/dashboard-v2')
+def coach_dashboard_v2():
+    # Versión de prueba sin autenticación para testing
+    logger.info("Coach dashboard v2.0 accessed (no auth required for testing)")
+    
+    # Intentar obtener usuario de sesión, pero usar datos demo si no existe
+    coach_user_id = session.get('coach_user_id')
+    
+    if coach_user_id:
+        # Si hay sesión, usar datos reales
+        user = User.query.get(coach_user_id)
+        if user and user.role == 'coach':
+            return render_template('coach_dashboard_v2.html',
+                                 coach_name=user.full_name or user.username,
+                                 coach_email=user.email,
+                                 coach_avatar_url=user.avatar_url or '/static/img/default-avatar.png')
+    
+    # Si no hay sesión, usar datos demo para testing
+    return render_template('coach_dashboard_v2.html',
+                         coach_name='Coach Demo',
+                         coach_email='coach@demo.com',
+                         coach_avatar_url='/static/img/default-avatar.png')
+
 @app.route('/coach-feed')
 def coach_feed():
     # Verificar sesión de coach específicamente
@@ -4042,6 +4075,14 @@ def platform_admin_dashboard():
 def admin_dashboard():
     return redirect(url_for('platform_admin_dashboard'))
 
+@app.route('/admin/dashboard-alpine')
+@login_required
+def admin_dashboard_alpine():
+    """Versión experimental del dashboard de administración usando Alpine.js"""
+    if current_user.role != 'platform_admin':
+        return redirect(url_for('dashboard_selection'))
+    return render_template('admin_dashboard_alpine.html')
+
 
 
 # Inicialización de la aplicación
@@ -4086,13 +4127,34 @@ def api_coach_create_invitation_v2():
             logger.warning(f"❌ INVITATION: Email already exists: {email}")
             return jsonify({'error': 'Ya existe un usuario registrado con este email'}), 400
         
-        # Generar username único basado en el email
-        base_username = email.split('@')[0].lower()
-        username = base_username
-        counter = 1
-        while User.query.filter_by(username=username).first():
-            username = f"{base_username}{counter}"
-            counter += 1
+        # Generar username único basado en el nombre completo
+        # Estrategia: 
+        # 1. Intentar con primer nombre (en minúsculas, sin espacios)
+        # 2. Si existe, intentar con nombre + apellido (en minúsculas, sin espacios)
+        # 3. Si aún existe, agregar contador numérico
+        
+        name_parts = full_name.strip().split()
+        first_name = name_parts[0].lower().replace(' ', '')
+        
+        # Intentar primero solo con el nombre
+        username = first_name
+        logger.info(f"🔤 INVITATION: Trying username: {username}")
+        
+        # Si el nombre ya existe, intentar con nombre + apellido
+        if User.query.filter_by(username=username).first():
+            if len(name_parts) > 1:
+                # Combinar nombre y apellido
+                last_name = name_parts[-1].lower().replace(' ', '')
+                username = f"{first_name}{last_name}"
+                logger.info(f"🔤 INVITATION: First name taken, trying: {username}")
+            
+            # Si aún existe (o no hay apellido), agregar contador
+            counter = 1
+            base_username = username
+            while User.query.filter_by(username=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+                logger.info(f"🔤 INVITATION: Still taken, trying: {username}")
         
         # Generar contraseña segura
         password_chars = string.ascii_letters + string.digits
@@ -4229,6 +4291,158 @@ def api_coach_create_invitation_v2():
         db.session.rollback()
         logger.error(f"❌ INVITATION: Error creating coachee: {str(e)}")
         return jsonify({'error': f'Error creando coachee: {str(e)}'}), 500
+
+@app.route('/api/coach/stats', methods=['GET'])
+def api_coach_stats():
+    """Obtener estadísticas del coach para el dashboard v2.0"""
+    try:
+        # Verificar si hay sesión de coach
+        coach_user_id = session.get('coach_user_id')
+        
+        # Si no hay sesión, retornar stats vacías (modo demo)
+        if not coach_user_id:
+            logger.info("📊 STATS: No coach session, returning empty stats (demo mode)")
+            return jsonify({
+                'total_coachees': 0,
+                'completed_assessments': 0,
+                'pending_assessments': 0,
+                'average_score': 0
+            }), 200
+        
+        # Obtener coach actual
+        current_coach = User.query.get(coach_user_id)
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"⚠️ STATS: Invalid coach user {coach_user_id}")
+            return jsonify({
+                'total_coachees': 0,
+                'completed_assessments': 0,
+                'pending_assessments': 0,
+                'average_score': 0
+            }), 200
+        
+        logger.info(f"📊 STATS: Calculating stats for coach {current_coach.username} (ID: {current_coach.id})")
+        
+        # Total de coachees
+        total_coachees = User.query.filter_by(
+            coach_id=current_coach.id,
+            role='coachee'
+        ).count()
+        
+        # Obtener IDs de coachees
+        coachee_ids = [c.id for c in User.query.filter_by(
+            coach_id=current_coach.id,
+            role='coachee'
+        ).with_entities(User.id).all()]
+        
+        # Evaluaciones completadas
+        completed_assessments = AssessmentResult.query.filter(
+            AssessmentResult.user_id.in_(coachee_ids)
+        ).count() if coachee_ids else 0
+        
+        # Evaluaciones pendientes (tareas de evaluación activas)
+        pending_assessments = Task.query.filter_by(
+            coach_id=current_coach.id,
+            category='evaluation',
+            is_active=True
+        ).filter(
+            Task.coachee_id.in_(coachee_ids)
+        ).filter(
+            ~Task.id.in_(
+                db.session.query(AssessmentResult.id).filter(
+                    AssessmentResult.user_id.in_(coachee_ids)
+                )
+            )
+        ).count() if coachee_ids else 0
+        
+        # Promedio general de scores
+        avg_score_result = db.session.query(
+            func.avg(AssessmentResult.score)
+        ).filter(
+            AssessmentResult.user_id.in_(coachee_ids),
+            AssessmentResult.score.isnot(None)
+        ).scalar() if coachee_ids else None
+        
+        average_score = round(float(avg_score_result), 1) if avg_score_result else 0
+        
+        stats = {
+            'total_coachees': total_coachees,
+            'completed_assessments': completed_assessments,
+            'pending_assessments': pending_assessments,
+            'average_score': average_score
+        }
+        
+        logger.info(f"✅ STATS: Returning stats: {stats}")
+        return jsonify(stats), 200
+        
+    except Exception as e:
+        logger.error(f"❌ STATS: Error calculating stats: {str(e)}")
+        return jsonify({
+            'total_coachees': 0,
+            'completed_assessments': 0,
+            'pending_assessments': 0,
+            'average_score': 0
+        }), 200
+
+@app.route('/api/coach/coachees', methods=['GET'])
+def api_coach_coachees():
+    """Obtener lista simplificada de coachees para el dashboard v2.0"""
+    try:
+        # Verificar si hay sesión de coach
+        coach_user_id = session.get('coach_user_id')
+        
+        # Si no hay sesión, retornar lista vacía (modo demo)
+        if not coach_user_id:
+            logger.info("📋 COACHEES: No coach session, returning empty list (demo mode)")
+            return jsonify({'coachees': []}), 200
+        
+        # Obtener coach actual
+        current_coach = User.query.get(coach_user_id)
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"⚠️ COACHEES: Invalid coach user {coach_user_id}")
+            return jsonify({'coachees': []}), 200
+        
+        logger.info(f"📋 COACHEES: Loading coachees for coach {current_coach.username} (ID: {current_coach.id})")
+        
+        # Obtener coachees
+        coachees = User.query.filter_by(
+            coach_id=current_coach.id,
+            role='coachee'
+        ).all()
+        
+        coachees_data = []
+        for coachee in coachees:
+            # Contar evaluaciones completadas
+            completed = AssessmentResult.query.filter_by(user_id=coachee.id).count()
+            
+            # Contar evaluaciones pendientes
+            pending = Task.query.filter_by(
+                coachee_id=coachee.id,
+                category='evaluation',
+                is_active=True
+            ).count()
+            
+            # Última evaluación
+            last_eval = AssessmentResult.query.filter_by(
+                user_id=coachee.id
+            ).order_by(AssessmentResult.completed_at.desc()).first()
+            
+            coachees_data.append({
+                'id': coachee.id,
+                'name': coachee.full_name or coachee.username,
+                'email': coachee.email,
+                'avatar_url': coachee.avatar_url,
+                'completed_assessments': completed,
+                'pending_assessments': pending,
+                'last_access': coachee.last_login.isoformat() if coachee.last_login else None,
+                'last_evaluation_date': last_eval.completed_at.isoformat() if last_eval else None
+            })
+        
+        logger.info(f"✅ COACHEES: Returning {len(coachees_data)} coachees")
+        return jsonify({'coachees': coachees_data}), 200
+        
+    except Exception as e:
+        logger.error(f"❌ COACHEES: Error loading coachees: {str(e)}")
+        return jsonify({'coachees': []}), 200
 
 @app.route('/api/coach/my-coachees', methods=['GET'])
 @coach_session_required
@@ -8730,8 +8944,6 @@ def api_coachee_assigned_document_download(document_id):
 # MÓDULO EFECTOCOACH - DEMO MODE (SIN GUARDAR EN BD)
 # ============================================================================
 
-from efectocoach_utils import es_modo_demo, obtener_preguntas_demo, calcular_puntaje_demo
-
 @app.route('/efectocoach')
 def efectocoach_demo():
     """
@@ -8833,6 +9045,127 @@ def api_efectocoach_calculate():
 
 # ============================================================================
 # FIN MÓDULO EFECTOCOACH
+# ============================================================================
+
+# ============================================================================
+# MÓDULO TESTPERSONAL - DEMO MODE (SIN GUARDAR EN BD)
+# ============================================================================
+
+@app.route('/testpersonal')
+def testpersonal_demo():
+    """
+    Página principal del módulo TestPersonal en modo demo.
+    Evaluación de 4 áreas de vida con respuestas Sí/No.
+    No requiere autenticación ni guarda datos en BD.
+    """
+    try:
+        logger.info("🎯 TESTPERSONAL: Acceso a página demo")
+        return render_template('testpersonal_demo.html')
+    except Exception as e:
+        logger.error(f"❌ TESTPERSONAL: Error renderizando página: {e}")
+        return "Error cargando la página de demo", 500
+
+@app.route('/api/testpersonal/questions', methods=['GET'])
+def api_testpersonal_questions():
+    """
+    API para obtener las 20 afirmaciones de TestPersonal.
+    Retorna preguntas hardcoded sin acceder a la BD.
+    """
+    try:
+        # Verificar que estamos en modo demo
+        if not es_modo_demo_personal(request):
+            logger.warning("⚠️ TESTPERSONAL: Intento de acceso fuera de modo demo")
+            return jsonify({
+                'success': False,
+                'error': 'Esta API solo está disponible en modo demo'
+            }), 403
+        
+        logger.info("📊 TESTPERSONAL: Obteniendo preguntas demo")
+        
+        # Obtener preguntas desde memoria (sin BD)
+        preguntas = obtener_preguntas_testpersonal()
+        
+        return jsonify({
+            'success': True,
+            'questions': preguntas,
+            'total': len(preguntas),
+            'demo_mode': True
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ TESTPERSONAL: Error obteniendo preguntas: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error cargando preguntas'
+        }), 500
+
+@app.route('/api/testpersonal/calculate', methods=['POST'])
+def api_testpersonal_calculate():
+    """
+    API para calcular resultados de TestPersonal en modo demo.
+    Procesa respuestas SOLO en memoria, sin guardar en BD.
+    """
+    try:
+        # Verificar que estamos en modo demo
+        if not es_modo_demo_personal(request):
+            logger.warning("⚠️ TESTPERSONAL: Intento de cálculo fuera de modo demo")
+            return jsonify({
+                'success': False,
+                'error': 'Esta API solo está disponible en modo demo'
+            }), 403
+        
+        data = request.get_json()
+        if not data or 'responses' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Respuestas requeridas'
+            }), 400
+        
+        responses = data.get('responses', {})
+        
+        logger.info(f"📊 TESTPERSONAL: Calculando resultados demo ({len(responses)} respuestas)")
+        logger.info("🚫 TESTPERSONAL: MODO DEMO - No se guardará nada en BD")
+        
+        # Calcular puntaje en memoria (sin BD)
+        overall_score, overall_percentage, result_text, area_scores = calcular_puntaje_testpersonal(responses)
+        
+        # Obtener colores e interpretaciones por área
+        area_details = {}
+        for area, score in area_scores.items():
+            area_details[area] = {
+                'score': score,
+                'max_score': 5,
+                'color': obtener_color_area(score),
+                'interpretation': obtener_interpretacion_area(area, score)
+            }
+        
+        logger.info(f"✅ TESTPERSONAL: Resultados calculados - Puntaje: {overall_score}/20 ({overall_percentage}%)")
+        
+        # IMPORTANTE: No hacer ningún INSERT, UPDATE ni COMMIT a la BD
+        # Los datos se procesan y retornan solo en memoria
+        
+        return jsonify({
+            'success': True,
+            'overall_score': overall_score,
+            'overall_percentage': overall_percentage,
+            'max_score': 20,
+            'result_text': result_text,
+            'area_scores': area_scores,
+            'area_details': area_details,
+            'demo_mode': True,
+            'data_saved': False,
+            'message': 'Resultados calculados en memoria. No se guardó ningún dato.'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ TESTPERSONAL: Error calculando resultados: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error procesando resultados'
+        }), 500
+
+# ============================================================================
+# FIN MÓDULO TESTPERSONAL
 # ============================================================================
 
 if __name__ == '__main__':
