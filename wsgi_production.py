@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 WSGI entry point para Railway - Optimizado
+Updated: 2025-11-17 - Added TestPersonal module support
 """
 import os
 import sys
