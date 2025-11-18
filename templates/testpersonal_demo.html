@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Personal - Evaluación de 4 Áreas de Vida</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js para el radar chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container-main {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .header-demo {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header-demo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header-demo p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            line-height: 1.6;
+        }
+        
+        .card-assessment {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            margin-bottom: 25px;
+        }
+        
+        .progress-bar-container {
+            margin-bottom: 35px;
+        }
+        
+        .progress {
+            height: 10px;
+            border-radius: 10px;
+            background-color: #f0f0f0;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 15px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .question-container {
+            display: none;
+        }
+        
+        .question-container.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .question-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .question-area {
+            font-size: 1rem;
+            color: #667eea;
+            margin-bottom: 25px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .question-area .area-icon {
+            font-size: 1.3rem;
+        }
+        
+        .binary-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .binary-option {
+            flex: 1;
+        }
+        
+        .binary-option input[type="radio"] {
+            display: none;
+        }
+        
+        .binary-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            border: 3px solid #e2e8f0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            min-height: 120px;
+        }
+        
+        .binary-label:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        .binary-option input[type="radio"]:checked + .binary-label {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .binary-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .binary-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        /* Navegación automática - no se necesitan botones */
+        
+        .results-container {
+            display: none;
+            text-align: center;
+        }
+        
+        .results-container.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .score-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .score-value {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 700;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            margin-bottom: 20px;
+        }
+        
+        .score-label {
+            font-size: 1.2rem;
+            color: #2d3748;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .results-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        
+        .results-description {
+            font-size: 1.1rem;
+            color: #2d3748;
+            line-height: 1.8;
+            margin-bottom: 35px;
+            white-space: pre-line;
+            background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
+            padding: 25px 30px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
+            position: relative;
+        }
+        
+        .results-description::before {
+            content: "📊";
+            font-size: 1.5rem;
+            position: absolute;
+            top: 20px;
+            left: -2px;
+            opacity: 0.8;
+        }
+        
+        .radar-chart-container {
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            min-height: 450px;
+        }
+        
+        .radar-chart-container canvas {
+            max-height: 400px;
+            width: 100% !important;
+            height: auto !important;
+        }
+        
+        .area-details {
+            margin-top: 35px;
+        }
+        
+        .area-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .area-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+        
+        .area-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .area-card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .area-card-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .area-card-interpretation {
+            font-size: 1rem;
+            color: #4a5568;
+            line-height: 1.6;
+            text-align: left;
+        }
+        
+        .cta-coaching {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 40px 45px;
+            margin: 40px 0;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-coaching::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+        }
+        
+        .cta-coaching h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .cta-coaching p {
+            font-size: 1.15rem;
+            margin-bottom: 30px;
+            opacity: 0.98;
+            line-height: 1.8;
+            position: relative;
+            z-index: 1;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .btn-schedule {
+            background: white;
+            color: #667eea;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn-schedule:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            background: #f8f9fa;
+        }
+        
+        .btn-restart {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 15px 35px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-restart:hover {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+        }
+        
+        .disclaimer {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .disclaimer-text {
+            color: #4a5568;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        .disclaimer-highlight {
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .dropdown-menu {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 10px;
+        }
+        
+        .dropdown-item {
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-item:hover {
+            background: #f7fafc;
+            transform: translateX(5px);
+        }
+        
+        /* Responsividad */
+        @media (max-width: 768px) {
+            .header-demo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card-assessment {
+                padding: 25px;
+            }
+            
+            .question-title {
+                font-size: 1.2rem;
+            }
+            
+            .binary-options {
+                flex-direction: column;
+            }
+            
+            .navigation-buttons {
+                flex-direction: column;
+            }
+            
+            .score-value {
+                width: 160px;
+                height: 160px;
+                font-size: 2.5rem;
+            }
+            
+            .results-title {
+                font-size: 1.6rem;
+            }
+            
+            .results-description {
+                font-size: 1rem;
+                padding: 20px;
+                margin-bottom: 25px;
+            }
+            
+            .cta-coaching {
+                padding: 30px 25px;
+                border-radius: 15px;
+            }
+            
+            .cta-coaching h3 {
+                font-size: 1.6rem;
+            }
+            
+            .cta-coaching p {
+                font-size: 1rem;
+            }
+            
+            .btn-schedule {
+                padding: 15px 30px;
+                font-size: 1rem;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .radar-chart-container {
+                padding: 20px;
+                min-height: 350px;
+            }
+            
+            .radar-chart-container canvas {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-main">
+        <!-- Header -->
+        <div class="header-demo">
+            <h1>🌟 Test Personal</h1>
+        </div>
+        
+        <!-- Card Principal -->
+        <div class="card-assessment">
+            <!-- Barra de Progreso -->
+            <div class="progress-bar-container">
+                <div class="progress">
+                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="currentQuestion">0</span> de <span id="totalQuestions">20</span> afirmaciones
+                </div>
+            </div>
+            
+            <!-- Contenedor de Preguntas -->
+            <div id="questionsContainer"></div>
+            
+            <!-- Contenedor de Resultados -->
+            <div class="results-container" id="resultsContainer">
+                <div class="score-display">
+                    <div class="score-value"><span id="scoreValue">0</span>%</div>
+                    <div class="score-label">Necesidad de Apoyo de Coaching</div>
+                </div>
+                
+                <!-- CTA Coaching -->
+                <div class="cta-coaching">
+                    <h3>💫 ¿Listo para dar el siguiente paso?</h3>
+                    <p>Los resultados que acabas de ver son una invitación a crecer. El coaching te ayuda a transformar estas áreas en fortalezas. 
+                    Te regalo una sesión gratuita de 30 minutos donde podemos explorar cómo trabajar juntos.</p>
+                    
+                    <!-- Dropdown para opciones de contacto -->
+                    <div class="dropdown">
+                        <button class="btn-schedule dropdown-toggle" type="button" id="contactDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-calendar-plus"></i>
+                            Agendar Sesión Gratuita
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-center" aria-labelledby="contactDropdown">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center py-3" 
+                                   href="https://wa.me/56994896670?text=Hola%2C%20completé%20el%20TestPersonal%20y%20me%20gustaría%20agendar%20una%20sesión%20gratuita" 
+                                   target="_blank" style="border-radius: 10px; margin: 5px;">
+                                    <i class="fab fa-whatsapp me-3" style="color: #25D366; font-size: 1.2em;"></i>
+                                    <div>
+                                        <strong>WhatsApp</strong>
+                                        <br><small class="text-muted">+56 9 9489 6670</small>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center py-3" 
+                                   href="mailto:coach@assessment.com?subject=Sesión%20Gratuita%20-%20TestPersonal&body=Hola%2C%0A%0ACompletaré%20el%20TestPersonal%20y%20me%20gustaría%20agendar%20una%20sesión%20gratuita.%0A%0AGracias." 
+                                   style="border-radius: 10px; margin: 5px;">
+                                    <i class="fas fa-envelope me-3" style="color: #0ea5e9; font-size: 1.2em;"></i>
+                                    <div>
+                                        <strong>Email</strong>
+                                        <br><small class="text-muted">Enviar correo al coach</small>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center py-3" 
+                                   href="tel:+56994896670" 
+                                   style="border-radius: 10px; margin: 5px;">
+                                    <i class="fas fa-phone me-3" style="color: #10b981; font-size: 1.2em;"></i>
+                                    <div>
+                                        <strong>Llamada</strong>
+                                        <br><small class="text-muted">+56 9 9489 6670</small>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="results-description" id="resultsDescription"></div>
+                
+                <!-- Radar Chart -->
+                <div class="radar-chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                
+                <button class="btn-restart" onclick="restartAssessment()">
+                    <i class="fas fa-redo"></i>Realizar Evaluación Nuevamente
+                </button>
+            </div>
+        </div>
+        
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <p class="disclaimer-text">
+                <i class="fas fa-info-circle me-2"></i>
+                <span class="disclaimer-highlight">Modo Demo:</span> 
+                Esta es una evaluación de autoconocimiento. Los resultados se procesan solo en tu navegador 
+                y no se guardan en ninguna base de datos. Mayor puntaje = Mayor necesidad de apoyo en esa área.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        console.log('🚀 TestPersonal Demo Mode Loaded');
+        
+        let currentQuestionIndex = 0;
+        let questions = [];
+        let responses = {};
+        
+        // Cargar preguntas al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📊 Loading TestPersonal questions...');
+            loadQuestions();
+        });
+        
+        async function loadQuestions() {
+            try {
+                const response = await fetch('/api/testpersonal/questions');
+                const data = await response.json();
+                
+                if (data.success) {
+                    questions = data.questions;
+                    console.log(`✅ ${questions.length} questions loaded`);
+                    
+                    document.getElementById('totalQuestions').textContent = questions.length;
+                    renderQuestions();
+                    showQuestion(0);
+                } else {
+                    console.error('❌ Error loading questions:', data.error);
+                    alert('Error cargando preguntas. Por favor, recarga la página.');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('Error de conexión. Por favor, verifica tu conexión e intenta nuevamente.');
+            }
+        }
+        
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            
+            questions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-container';
+                questionDiv.id = `question-${index}`;
+                
+                questionDiv.innerHTML = `
+                    <div class="question-area">
+                        <span class="area-icon">${question.icon}</span>
+                        <strong>${question.area}</strong>
+                    </div>
+                    <div class="question-title">
+                        ${question.text}
+                    </div>
+                    <div class="binary-options">
+                        <div class="binary-option">
+                            <input type="radio" id="q${question.id}-si" name="question-${question.id}" value="1" 
+                                   onchange="answerQuestion(${question.id}, 1, ${index})">
+                            <label for="q${question.id}-si" class="binary-label">
+                                <div class="binary-text">Sí</div>
+                            </label>
+                        </div>
+                        <div class="binary-option">
+                            <input type="radio" id="q${question.id}-no" name="question-${question.id}" value="0" 
+                                   onchange="answerQuestion(${question.id}, 0, ${index})">
+                            <label for="q${question.id}-no" class="binary-label">
+                                <div class="binary-text">No</div>
+                            </label>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(questionDiv);
+            });
+        }
+        
+        function showQuestion(index) {
+            // Ocultar todas las preguntas
+            document.querySelectorAll('.question-container').forEach(q => q.classList.remove('active'));
+            
+            // Mostrar la pregunta actual
+            const questionElement = document.getElementById(`question-${index}`);
+            if (questionElement) {
+                questionElement.classList.add('active');
+            }
+            
+            // Actualizar progreso
+            currentQuestionIndex = index;
+            const progress = ((index + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('currentQuestion').textContent = index + 1;
+            
+            // Restaurar respuesta previa si existe
+            const questionId = questions[index].id;
+            if (responses[questionId] !== undefined) {
+                const radio = document.querySelector(`input[name="question-${questionId}"][value="${responses[questionId]}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    document.getElementById(`nextBtn-${index}`).disabled = false;
+                }
+            }
+        }
+        
+        function answerQuestion(questionId, value, questionIndex) {
+            responses[questionId] = value;
+            console.log(`✅ Question ${questionId} answered:`, value);
+            
+            // Pequeña animación antes de avanzar
+            setTimeout(() => {
+                if (questionIndex < questions.length - 1) {
+                    // Avanzar a la siguiente pregunta
+                    showQuestion(questionIndex + 1);
+                } else {
+                    // Última pregunta - calcular resultados
+                    calculateResults();
+                }
+            }, 300); // 300ms de delay para mejor UX
+        }
+        
+        async function calculateResults() {
+            try {
+                console.log('📊 Calculating results...', responses);
+                console.log('📊 Total responses:', Object.keys(responses).length);
+                
+                const response = await fetch('/api/testpersonal/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ responses })
+                });
+                
+                console.log('📡 Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 Data received:', data);
+                
+                if (data.success) {
+                    console.log('✅ Results calculated:', data);
+                    displayResults(data);
+                } else {
+                    console.error('❌ Error calculating results:', data.error);
+                    alert('Error calculando resultados: ' + (data.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('❌ Error completo:', error);
+                console.error('❌ Error message:', error.message);
+                console.error('❌ Error stack:', error.stack);
+                alert('Error de conexión: ' + error.message + '. Por favor, revisa la consola para más detalles.');
+            }
+        }
+        
+        function displayResults(data) {
+            try {
+                console.log('🎨 Displaying results...', data);
+                
+                // Ocultar preguntas y progreso
+                document.getElementById('questionsContainer').style.display = 'none';
+                document.querySelector('.progress-bar-container').style.display = 'none';
+                
+                // Mostrar resultados
+                const resultsContainer = document.getElementById('resultsContainer');
+                resultsContainer.classList.add('active');
+                
+                // Score general (porcentaje)
+                document.getElementById('scoreValue').textContent = data.overall_percentage;
+                
+                // Descripción
+                document.getElementById('resultsDescription').textContent = data.result_text;
+                
+                // Crear radar chart
+                console.log('📊 Creating radar chart...');
+                console.log('📊 Area scores data:', data.area_scores);
+                createRadarChart(data.area_scores);
+                
+                console.log('✅ Results displayed successfully!');
+            } catch (error) {
+                console.error('❌ Error displaying results:', error);
+                console.error('❌ Error stack:', error.stack);
+                alert('Error mostrando resultados: ' + error.message);
+            }
+        }
+        
+        // Variable global para mantener la instancia del chart
+        let radarChartInstance = null;
+        
+        function createRadarChart(areaScores) {
+            console.log('🎯 createRadarChart called with:', areaScores);
+            
+            const canvas = document.getElementById('radarChart');
+            
+            // Destruir el chart anterior si existe
+            if (radarChartInstance) {
+                console.log('🗑️ Destroying previous chart instance');
+                radarChartInstance.destroy();
+            }
+            
+            const ctx = canvas.getContext('2d');
+            
+            const labels = Object.keys(areaScores);
+            const values = Object.values(areaScores);
+            
+            console.log('📊 Chart labels:', labels);
+            console.log('📊 Chart values:', values);
+            
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Necesidad de Coaching',
+                        data: values,
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgba(118, 75, 162, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(118, 75, 162, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.2,
+                    layout: {
+                        padding: {
+                            top: 20,
+                            right: 20,
+                            bottom: 20,
+                            left: 20
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5,
+                            min: 0,
+                            ticks: {
+                                stepSize: 1,
+                                font: {
+                                    size: 11
+                                },
+                                backdropPadding: 4
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 15,
+                                callback: function(label) {
+                                    // Dividir etiquetas largas en múltiples líneas
+                                    if (label.length > 15) {
+                                        const words = label.split('/');
+                                        return words;
+                                    }
+                                    return label;
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                circular: true
+                            },
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.r + ' de 5';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function displayAreaDetails(areaDetails) {
+            const container = document.getElementById('areaDetails');
+            container.innerHTML = '<h3 style="text-align: center; margin-bottom: 25px; font-size: 1.5rem; color: #2d3748;">Análisis por Área</h3>';
+            
+            // Mapear íconos por área
+            const areaIcons = {
+                'Profesional': '💼',
+                'Personal/Emocional': '💬',
+                'Propósito/Elecciones': '🧭',
+                'Bienestar': '❤️'
+            };
+            
+            for (const [area, details] of Object.entries(areaDetails)) {
+                const areaCard = document.createElement('div');
+                areaCard.className = 'area-card';
+                areaCard.style.borderLeftColor = details.color;
+                
+                areaCard.innerHTML = `
+                    <div class="area-card-header">
+                        <div class="area-card-title">
+                            <span>${areaIcons[area]}</span>
+                            ${area}
+                        </div>
+                        <div class="area-card-score" style="color: ${details.color};">
+                            ${details.score}/5
+                        </div>
+                    </div>
+                    <div class="area-card-interpretation">
+                        ${details.interpretation}
+                    </div>
+                `;
+                
+                container.appendChild(areaCard);
+            }
+        }
+        
+        function restartAssessment() {
+            // Resetear variables
+            currentQuestionIndex = 0;
+            responses = {};
+            
+            // Limpiar selecciones
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Deshabilitar botones siguiente
+            document.querySelectorAll('.btn-next').forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            // Ocultar resultados
+            document.getElementById('resultsContainer').classList.remove('active');
+            
+            // Mostrar preguntas y progreso
+            document.getElementById('questionsContainer').style.display = 'block';
+            document.querySelector('.progress-bar-container').style.display = 'block';
+            
+            // Volver a la primera pregunta
+            showQuestion(0);
+            
+            console.log('🔄 Assessment restarted');
+        }
+    </script>
+</body>
+</html>
