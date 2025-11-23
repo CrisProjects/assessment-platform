@@ -243,6 +243,7 @@
             border-left: 4px solid #667eea;
             box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
             position: relative;
+            z-index: 1;
         }
         
         .results-description::before {
@@ -327,7 +328,8 @@
             text-align: center;
             box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            z-index: 10;
         }
         
         .cta-coaching::before {
@@ -437,6 +439,7 @@
             border: none;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             padding: 10px;
+            z-index: 1050;
         }
         
         .dropdown-item {
@@ -507,12 +510,12 @@
             }
             
             .radar-chart-container {
-                padding: 20px;
-                min-height: 350px;
+                padding: 15px;
+                min-height: 420px;
             }
             
             .radar-chart-container canvas {
-                max-height: 300px;
+                max-height: 400px;
             }
         }
     </style>
@@ -521,7 +524,7 @@
     <div class="container-main">
         <!-- Header -->
         <div class="header-demo">
-            <h1>🌟 Test Personal</h1>
+            <h1>¿Necesitas Coaching?</h1>
         </div>
         
         <!-- Card Principal -->
@@ -832,6 +835,9 @@
             console.log('📊 Chart labels:', labels);
             console.log('📊 Chart values:', values);
             
+            // Detectar si es móvil
+            const isMobile = window.innerWidth <= 768;
+            
             radarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
@@ -846,20 +852,19 @@
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
                         pointHoverBorderColor: 'rgba(118, 75, 162, 1)',
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+                        pointRadius: isMobile ? 5 : 6,
+                        pointHoverRadius: isMobile ? 7 : 8
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 1.2,
+                    maintainAspectRatio: false,
                     layout: {
                         padding: {
-                            top: 20,
-                            right: 20,
-                            bottom: 20,
-                            left: 20
+                            top: isMobile ? 10 : 20,
+                            right: isMobile ? 10 : 20,
+                            bottom: isMobile ? 10 : 20,
+                            left: isMobile ? 10 : 20
                         }
                     },
                     scales: {
@@ -870,16 +875,16 @@
                             ticks: {
                                 stepSize: 1,
                                 font: {
-                                    size: 11
+                                    size: isMobile ? 10 : 11
                                 },
-                                backdropPadding: 4
+                                backdropPadding: isMobile ? 3 : 4
                             },
                             pointLabels: {
                                 font: {
-                                    size: 12,
+                                    size: isMobile ? 11 : 12,
                                     weight: 'bold'
                                 },
-                                padding: 15,
+                                padding: isMobile ? 10 : 15,
                                 callback: function(label) {
                                     // Dividir etiquetas largas en múltiples líneas
                                     if (label.length > 15) {

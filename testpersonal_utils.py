@@ -298,21 +298,21 @@ def generar_texto_resultado_testpersonal(overall_score, area_scores):
     
     # Mensaje si hay 3 o más en cualquier área
     if areas_con_3_o_mas:
-        descripcion_parts.append("💡 Hay un punto importante en tu vida donde el coaching podría ayudarte a generar claridad, tomar decisiones o re-conectarte contigo misma/o.")
+        descripcion_parts.append("Hay un punto importante en tu vida donde el coaching podría ayudarte a generar claridad, tomar decisiones o re-conectarte contigo misma/o.")
     
     # Mensaje si hay 8 o más en total
     if overall_score >= 8:
         if descripcion_parts:
             descripcion_parts.append("\n\n")
-        descripcion_parts.append("🔥 Es un buen momento para iniciar un proceso de coaching. No porque algo esté mal… Sino porque estás lista/o para algo mejor.")
+        descripcion_parts.append("Es un buen momento para iniciar un proceso de coaching. No porque algo esté mal… Sino porque estás lista/o para algo mejor.")
     
     # Mensaje final motivacional (siempre se muestra)
     if descripcion_parts:
         descripcion_parts.append("\n\n")
     
-    descripcion_parts.append("✳️ El coaching no es para cuando todo está mal.")
+    descripcion_parts.append("El coaching no es para cuando todo está mal.")
     descripcion_parts.append("\nEs para cuando estás lista para dejar de ir en automático y empezar a diseñar tu vida con intención.")
-    descripcion_parts.append("\n\n🌱 Si quieres avanzar con claridad, energía y propósito… el coaching es una puerta.")
+    descripcion_parts.append("\n\nSi quieres avanzar con claridad, energía y propósito… el coaching es una puerta.")
     
     return "".join(descripcion_parts)
 
