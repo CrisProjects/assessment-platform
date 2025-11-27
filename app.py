@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Imports principales
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, send_file, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
@@ -3915,27 +3915,31 @@ def coach_dashboard():
     return render_template('coach_dashboard.html')
 
 @app.route('/coach/dashboard-v2')
+@coach_session_required
 def coach_dashboard_v2():
-    # Versión de prueba sin autenticación para testing
-    logger.info("Coach dashboard v2.0 accessed (no auth required for testing)")
+    """Dashboard V2 reescrito completamente en Alpine.js - Mantiene todas las funcionalidades del original"""
+    current_coach = g.current_user
     
-    # Intentar obtener usuario de sesión, pero usar datos demo si no existe
-    coach_user_id = session.get('coach_user_id')
+    logger.info(f"✨ Coach dashboard v2 (Alpine.js) accessed by: {current_coach.username} (ID: {current_coach.id})")
     
-    if coach_user_id:
-        # Si hay sesión, usar datos reales
-        user = User.query.get(coach_user_id)
-        if user and user.role == 'coach':
-            return render_template('coach_dashboard_v2.html',
-                                 coach_name=user.full_name or user.username,
-                                 coach_email=user.email,
-                                 coach_avatar_url=user.avatar_url or '/static/img/default-avatar.png')
+    response = make_response(render_template('coach_dashboard_v2.html',
+                         coach_name=current_coach.full_name or current_coach.username,
+                         coach_email=current_coach.email,
+                         coach_id=current_coach.id,
+                         coach_avatar_url=current_coach.avatar_url or '/static/img/default-avatar.png'))
     
-    # Si no hay sesión, usar datos demo para testing
-    return render_template('coach_dashboard_v2.html',
-                         coach_name='Coach Demo',
-                         coach_email='coach@demo.com',
-                         coach_avatar_url='/static/img/default-avatar.png')
+    # Agregar CSP para permitir imágenes de dominios externos (avatares)
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+        "img-src 'self' data: https: http:; "  # Permite imágenes de cualquier origen HTTPS/HTTP
+        "connect-src 'self' https:; "
+        "frame-src 'self';"
+    )
+    
+    return response
 
 @app.route('/coach-feed')
 def coach_feed():
@@ -4553,7 +4557,8 @@ def api_coach_my_coachees():
                 'evaluations_count': evaluations_counts.get(coachee.id, 0),
                 'last_evaluation': last_evaluations.get(coachee.id),
                 'avg_score': avg_scores.get(coachee.id),
-                'password': coachee.original_password  # ✅ Incluir contraseña original para que el coach pueda verla
+                'password': coachee.original_password,  # ✅ Incluir contraseña original para que el coach pueda verla
+                'avatar_url': coachee.avatar_url  # ✅ Incluir URL del avatar
             }
             coachees_data.append(coachee_data)
             logger.info(f"✅ MY-COACHEES: Processed coachee {coachee.full_name} with data: {coachee_data}")
