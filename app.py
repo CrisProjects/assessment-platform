@@ -3928,15 +3928,17 @@ def coach_dashboard_v2():
                          coach_id=current_coach.id,
                          coach_avatar_url=current_coach.avatar_url or '/static/img/default-avatar.png'))
     
-    # Agregar CSP para permitir imágenes de dominios externos (avatares)
+    # Agregar CSP para permitir imágenes de dominios externos (avatares) y Chart.js
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; "
         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-        "img-src 'self' data: https: http:; "  # Permite imágenes de cualquier origen HTTPS/HTTP
+        "img-src 'self' data: https: http: blob:; "  # Permite imágenes de cualquier origen HTTPS/HTTP y blob para Chart.js
         "connect-src 'self' https:; "
-        "frame-src 'self';"
+        "frame-src 'self'; "
+        "worker-src 'self' blob:; "  # Permite Web Workers para Chart.js
+        "child-src 'self' blob:;"  # Soporte legacy para workers
     )
     
     return response
