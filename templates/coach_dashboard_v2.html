@@ -2973,6 +2973,186 @@
     .feed-header .dropdown-menu {
         min-width: 200px;
     }
+    
+    /* ========== ESTILOS PARA EVALUACIONES ========== */
+    
+    .summary-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .summary-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--bs-primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .summary-number {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .summary-label {
+        font-size: 0.85rem;
+        color: #666;
+    }
+    
+    .evaluation-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    
+    .evaluation-card.recent-evaluation {
+        border-left: 4px solid #28a745;
+    }
+    
+    .recent-badge {
+        position: absolute;
+        top: -8px;
+        right: 1rem;
+        background: #28a745;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .evaluation-icon {
+        width: 45px;
+        height: 45px;
+        background: var(--bs-primary);
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .evaluation-title {
+        color: #333;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .evaluation-meta {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .meta-item {
+        font-size: 0.85rem;
+        color: #666;
+    }
+    
+    .score-display {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .score-display.score-low { color: #dc3545; }      /* Rojo - Bajo 40% */
+    .score-display.score-medium { color: #007bff; }   /* Azul - 40-79% */
+    .score-display.score-high { color: #28a745; }     /* Verde - 80%+ */
+    
+    .score-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+    
+    .score-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    
+    .interpretation-text {
+        font-size: 0.9rem;
+        color: #666;
+        line-height: 1.5;
+        margin: 0;
+    }
+    
+    .dimensions-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .dimension-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 0.5rem;
+        flex: 1;
+        min-width: 120px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .dimension-name {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .dimension-score {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .evaluation-actions .btn-block {
+        width: 100%;
+    }
+    
+    .quick-stats {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .stat-value {
+        font-weight: 600;
+        color: #333;
+    }
     </style>
 </head>
 <body x-data="dashboardApp()" x-init="init()">
@@ -5387,20 +5567,344 @@ function dashboardApp() {
         
         // Ver detalles del coachee
         async viewCoacheeDetails(coacheeId) {
+            const coachee = this.coacheesData.find(c => c.id === coacheeId);
+            if (!coachee) {
+                alert('Coachee no encontrado');
+                return;
+            }
+            
+            document.getElementById('modalCoacheeName').textContent = coachee.full_name || coachee.name;
+            document.getElementById('coacheeEvaluationsContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando evaluaciones...</span>
+                    </div>
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('coacheeEvaluationsModal'));
+            modal.show();
+            
             try {
                 const response = await fetch(`/api/coach/coachee-evaluations/${coacheeId}`);
                 const data = await response.json();
                 
-                if (data.success) {
-                    this.currentCoachee = {
-                        id: coacheeId,
-                        evaluations: data.evaluations
-                    };
-                    this.modals.coacheeEvaluations = true;
+                if (data.success && data.evaluations) {
+                    // Procesar evaluaciones para agregar campos necesarios
+                    const processedEvaluations = data.evaluations.map(evaluation => {
+                        const assessmentTitle = evaluation.assessment?.title || '';
+                        const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
+                        const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
+                        const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
+                        const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+                        
+                        // Calcular porcentaje basado en el tipo de evaluación
+                        let percentage;
+                        let level;
+                        
+                        if (isLeadershipAssessment) {
+                            // Liderazgo: score es suma (10-50), convertir a porcentaje
+                            percentage = Math.round((evaluation.score / 50) * 100);
+                            level = this.getLeadershipLevelFromScore(evaluation.score);
+                        } else if (isTeamworkAssessment) {
+                            // Trabajo en Equipo: score es suma (12-60), convertir a porcentaje
+                            percentage = Math.round((evaluation.score / 60) * 100);
+                            level = this.getTeamworkLevelFromScore(evaluation.score);
+                        } else if (isDiscAssessment) {
+                            // DISC: score es suma (16-80), convertir a porcentaje
+                            percentage = Math.round((evaluation.score / 80) * 100);
+                            level = this.getDiscLevelFromScore(evaluation.score);
+                        } else if (isEmotionalIntelligenceAssessment) {
+                            // IE: score es suma (12-60), convertir a porcentaje
+                            percentage = Math.round((evaluation.score / 60) * 100);
+                            level = this.getEmotionalIntelligenceLevelFromScore(evaluation.score);
+                        } else {
+                            // Asertividad y otras: score ya es porcentaje
+                            percentage = evaluation.score || 0;
+                            level = this.getAssertiveLevelFromScore(percentage);
+                        }
+                        
+                        return {
+                            ...evaluation,
+                            percentage: percentage,
+                            level: level,
+                            interpretation: evaluation.result_text || ''
+                        };
+                    });
+                    
+                    this.displayCoacheeEvaluations(processedEvaluations);
+                } else {
+                    document.getElementById('coacheeEvaluationsContent').innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Este coachee no tiene evaluaciones completadas.
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('❌ Error loading coachee evaluations:', error);
+                document.getElementById('coacheeEvaluationsContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error al cargar las evaluaciones.
+                    </div>
+                `;
             }
+        },
+        
+        // Función para mostrar evaluaciones del coachee
+        displayCoacheeEvaluations(evaluations) {
+            if (!evaluations || evaluations.length === 0) {
+                document.getElementById('coacheeEvaluationsContent').innerHTML = `
+                    <div class="alert alert-info border-0" style="background: #f8f9fa; border-left: 4px solid #17a2b8 !important;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle me-3" style="font-size: 1.5rem; color: #17a2b8;"></i>
+                            <div>
+                                <h6 class="mb-0">No hay evaluaciones disponibles</h6>
+                                <small class="text-muted">Este coachee aún no ha completado ninguna evaluación.</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const totalEvaluations = evaluations.length;
+            const avgScore = evaluations.reduce((sum, eval) => sum + (eval.percentage || 0), 0) / totalEvaluations;
+            const sortedEvals = [...evaluations].sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+            const lastEvaluation = sortedEvals[0];
+
+            let html = `
+                <div class="evaluations-summary mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <div class="summary-content">
+                                    <div class="summary-number">${totalEvaluations}</div>
+                                    <div class="summary-label">Evaluaciones</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="summary-content">
+                                    <div class="summary-number">${Math.round(avgScore)}%</div>
+                                    <div class="summary-label">Promedio</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="summary-content">
+                                    <div class="summary-number">${this.formatDateShort(lastEvaluation.completed_at)}</div>
+                                    <div class="summary-label">Última evaluación</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="evaluations-list">
+                    <div class="list-header mb-3">
+                        <h6 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Historial de Evaluaciones
+                        </h6>
+                    </div>
+            `;
+
+            sortedEvals.forEach((evaluation, index) => {
+                const scoreColor = this.getScoreColor(evaluation.percentage);
+                const isRecent = index === 0;
+
+                html += `
+                    <div class="evaluation-card ${isRecent ? 'recent-evaluation' : ''}" data-evaluation-id="${evaluation.id}">
+                        ${isRecent ? '<div class="recent-badge">Más reciente</div>' : ''}
+                        
+                        <div class="evaluation-header">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div class="evaluation-info flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="evaluation-icon me-3">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="evaluation-title mb-1">
+                                                ${evaluation.assessment_title || 'Evaluación de Asertividad'}
+                                            </h6>
+                                            <div class="evaluation-meta">
+                                                <span class="meta-item">
+                                                    <i class="fas fa-calendar-alt me-1"></i>
+                                                    ${this.formatDateLong(evaluation.completed_at)}
+                                                </span>
+                                                <span class="meta-item">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    ${this.getTimeAgo(evaluation.completed_at)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="evaluation-score-section text-end">
+                                    <div class="score-display ${scoreColor}">
+                                        <div class="score-number">${evaluation.percentage || 0}%</div>
+                                        <div class="score-label">Puntuación</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="evaluation-body">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    ${evaluation.interpretation ? `
+                                        <div class="interpretation-section">
+                                            <h6 class="section-title">
+                                                <i class="fas fa-lightbulb me-2"></i>
+                                                Interpretación
+                                            </h6>
+                                            <p class="interpretation-text">${evaluation.interpretation}</p>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${evaluation.dimensional_scores && Object.keys(evaluation.dimensional_scores).length > 0 ? `
+                                        <div class="dimensions-preview">
+                                            <h6 class="section-title">
+                                                <i class="fas fa-chart-radar me-2"></i>
+                                                Dimensiones Evaluadas
+                                            </h6>
+                                            <div class="dimensions-grid">
+                                                ${this.generateDimensionsPreview(evaluation.dimensional_scores)}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="evaluation-actions">
+                                        <button class="btn btn-primary btn-block mb-2" 
+                                                onclick="viewEvaluationDetailsGlobal(${evaluation.id})"
+                                                title="Ver análisis completo de la evaluación">
+                                            <i class="fas fa-eye me-2"></i>
+                                            Ver Análisis Completo
+                                        </button>
+                                        
+                                        <div class="quick-stats">
+                                            <div class="stat-item">
+                                                <span class="stat-label">ID Evaluación:</span>
+                                                <span class="stat-value">#${evaluation.id}</span>
+                                            </div>
+                                            ${evaluation.total_questions ? `
+                                                <div class="stat-item">
+                                                    <span class="stat-label">Preguntas:</span>
+                                                    <span class="stat-value">${evaluation.total_questions}</span>
+                                                </div>
+                                            ` : ''}
+                                            <div class="stat-item">
+                                                <span class="stat-label">Estado:</span>
+                                                <span class="badge bg-success">Completada</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            
+            document.getElementById('coacheeEvaluationsContent').innerHTML = html;
+        },
+        
+        // Funciones auxiliares
+        formatDateShort(dateString) {
+            const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+            return date.toLocaleDateString('es-CL', { 
+                timeZone: 'America/Santiago',
+                day: '2-digit', 
+                month: '2-digit' 
+            });
+        },
+        
+        formatDateLong(dateString) {
+            const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+            return date.toLocaleDateString('es-CL', { 
+                timeZone: 'America/Santiago',
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        },
+        
+        getTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+            
+            if (diffInDays === 0) return 'Hoy';
+            if (diffInDays === 1) return 'Ayer';
+            if (diffInDays < 7) return `Hace ${diffInDays} días`;
+            if (diffInDays < 30) return `Hace ${Math.floor(diffInDays / 7)} semanas`;
+            return `Hace ${Math.floor(diffInDays / 30)} meses`;
+        },
+        
+        getScoreColor(percentage) {
+            if (percentage >= 80) return 'score-high';
+            if (percentage >= 40) return 'score-medium';
+            return 'score-low';
+        },
+        
+        generateDimensionsPreview(dimensionalScores) {
+            return Object.entries(dimensionalScores)
+                .slice(0, 3)
+                .map(([dimension, score]) => `
+                    <div class="dimension-item">
+                        <span class="dimension-name">${dimension}</span>
+                        <span class="dimension-score">${score}%</span>
+                    </div>
+                `).join('');
+        },
+        
+        getLeadershipLevelFromScore(score) {
+            if (score >= 40) return 'Alto';
+            if (score >= 25) return 'Medio';
+            return 'Bajo';
+        },
+        
+        getTeamworkLevelFromScore(score) {
+            if (score >= 48) return 'Alto';
+            if (score >= 30) return 'Medio';
+            return 'Bajo';
+        },
+        
+        getDiscLevelFromScore(score) {
+            if (score >= 64) return 'Alto';
+            if (score >= 40) return 'Medio';
+            return 'Bajo';
+        },
+        
+        getEmotionalIntelligenceLevelFromScore(score) {
+            if (score >= 48) return 'Alto';
+            if (score >= 30) return 'Medio';
+            return 'Bajo';
+        },
+        
+        getAssertiveLevelFromScore(percentage) {
+            if (percentage >= 80) return 'Alto';
+            if (percentage >= 40) return 'Medio';
+            return 'Bajo';
         },
         
         // Editar coachee
@@ -6461,6 +6965,76 @@ async function viewPendingEvaluationDetails(taskId, assessmentId, coacheeId) {
         console.error('❌ VIEW-PENDING: Error:', error);
         showNotification('Error al cargar detalles de la evaluación', 'error');
     }
+}
+
+// Función global para ver detalles de evaluación (llamada desde displayCoacheeEvaluations)
+function viewEvaluationDetailsGlobal(evaluationId) {
+    document.getElementById('evaluationDetailsContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Cargando detalles...</span>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('evaluationDetailsModal'));
+    modal.show();
+    
+    // Cargar detalles de la evaluación
+    fetch(`/api/coach/evaluation-details/${evaluationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Aquí podrías agregar una función displayEvaluationDetailsSimple
+                // Por ahora mostramos la información básica
+                const evaluation = data.evaluation;
+                document.getElementById('evaluationDetailsContent').innerHTML = `
+                    <div class="evaluation-details-container">
+                        <h5>${evaluation.assessment?.title || 'Evaluación'}</h5>
+                        <p class="text-muted">Completada el ${new Date(evaluation.completed_at).toLocaleDateString('es-CL')}</p>
+                        <hr>
+                        <div class="alert alert-info">
+                            <strong>Puntuación:</strong> ${evaluation.score}
+                        </div>
+                        ${evaluation.result_text ? `
+                            <div class="mt-3">
+                                <h6>Interpretación:</h6>
+                                <p>${evaluation.result_text}</p>
+                            </div>
+                        ` : ''}
+                        ${evaluation.dimensional_scores ? `
+                            <div class="mt-3">
+                                <h6>Dimensiones:</h6>
+                                <ul class="list-group">
+                                    ${Object.entries(evaluation.dimensional_scores).map(([dim, score]) => `
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            ${dim}
+                                            <span class="badge bg-primary rounded-pill">${score}%</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                document.getElementById('evaluationDetailsContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error al cargar los detalles de la evaluación.
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading evaluation details:', error);
+            document.getElementById('evaluationDetailsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar los detalles de la evaluación.
+                </div>
+            `;
+        });
 }
 </script>
 
