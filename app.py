@@ -2398,6 +2398,7 @@ def api_status():
     })
 
 @app.route('/api/railway-debug')
+@admin_required
 def api_railway_debug():
     """Endpoint de debug específico para Railway - Verificar resultados de evaluaciones"""
     try:
@@ -2509,6 +2510,7 @@ def api_railway_debug():
         }), 500
 
 @app.route('/api/debug/evaluation-results')
+@admin_required
 def debug_evaluation_results():
     """Debug específico para el problema de visualización de resultados"""
     try:
@@ -3547,6 +3549,7 @@ def api_coach_set_avatar_url():
 
 # Rutas de evaluación
 @app.route('/api/questions', methods=['GET'])
+@either_session_required
 def api_get_questions():
     try:
         assessment_id = request.args.get('assessment_id', DEFAULT_ASSESSMENT_ID, type=int)
@@ -5553,49 +5556,27 @@ def api_admin_fix_coach_assignments():
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 # Endpoint temporal público para diagnóstico (REMOVER DESPUÉS) - FORCE DEPLOY
-@app.route('/api/public/diagnose-coach-assignments', methods=['GET'])
-def api_public_diagnose_coach_assignments():
-    """Endpoint temporal público para diagnosticar problemas de coach_id"""
-    try:
-        # Buscar evaluaciones sin coach_id pero con usuarios que tienen coach
-        broken_evaluations = db.session.query(AssessmentResult, User).join(
-            User, AssessmentResult.user_id == User.id
-        ).filter(
-            AssessmentResult.coach_id.is_(None),
-            User.coach_id.isnot(None)
-        ).all()
-        
-        broken_data = []
-        for result, user in broken_evaluations:
-            broken_data.append({
-                'evaluation_id': result.id,
-                'user_id': user.id,
-                'user_name': user.full_name,
-                'user_email': user.email,
-                'should_have_coach_id': user.coach_id,
-                'completed_at': result.completed_at.isoformat() if result.completed_at else None
-            })
-        
-        return jsonify({
-            'success': True,
-            'broken_evaluations': broken_data,
-            'total_broken': len(broken_data),
-            'message': f'Encontradas {len(broken_data)} evaluaciones sin coach_id asignado'
-        }), 200
-        
-    except Exception as e:
-        app.logger.error(f"ERROR DIAGNÓSTICO PÚBLICO: {str(e)}")
-        return jsonify({'error': f'Error: {str(e)}'}), 500
+# REMOVIDO POR SEGURIDAD - Usar endpoint admin protegido /api/admin/check-coach-ids
+# @app.route('/api/public/diagnose-coach-assignments', methods=['GET'])
+# def api_public_diagnose_coach_assignments():
+#     """Endpoint temporal público para diagnosticar problemas de coach_id"""
+#     # ENDPOINT ELIMINADO POR SEGURIDAD - Exponía información sensible públicamente
 
-@app.route('/api/public/fix-coach-assignments/<secret_key>', methods=['POST'])
-def api_public_fix_coach_assignments(secret_key):
-    """Endpoint temporal público para corregir problemas de coach_id con clave secreta"""
+# ENDPOINT ELIMINADO POR SEGURIDAD
+# @app.route('/api/public/fix-coach-assignments/<secret_key>', methods=['POST'])
+# def api_public_fix_coach_assignments(secret_key):
+#     """Endpoint temporal público para corregir problemas de coach_id con clave secreta"""
+#     # ENDPOINT ELIMINADO - Clave débil hardcodeada permitía modificación de datos
+#     # Usar endpoint admin protegido /api/admin/fix-coach-assignments en su lugar
+
+# Placeholder para mantener compatibilidad de líneas - REMOVER EN PRÓXIMA VERSIÓN
+def _removed_public_fix_endpoint():
+    """Función placeholder - endpoint público eliminado por seguridad"""
+    pass
+
+# Continuar con el código original después de la función eliminada
+def _continue_after_removed_endpoint():
     try:
-        # Verificar clave secreta (simple protección)
-        if secret_key != 'fix-coach-assignments-2025':
-            return jsonify({'error': 'Clave secreta incorrecta'}), 403
-        
-        # Buscar y corregir evaluaciones sin coach_id
         broken_evaluations = db.session.query(AssessmentResult, User).join(
             User, AssessmentResult.user_id == User.id
         ).filter(
