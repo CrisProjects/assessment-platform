@@ -3898,23 +3898,8 @@ def api_save_assessment():
 
 # Rutas de dashboard
 @app.route('/coach-dashboard')
+@coach_session_required
 def coach_dashboard():
-    # Verificar sesión de coach específicamente
-    coach_user_id = session.get('coach_user_id')
-    
-    if not coach_user_id:
-        logger.info("No coach session found, redirecting to coach login")
-        return redirect(url_for('coach_login_page'))
-    
-    # Obtener usuario desde la base de datos
-    user = User.query.get(coach_user_id)
-    if not user or user.role != 'coach':
-        logger.warning(f"Invalid coach user or role - User ID: {coach_user_id}")
-        session.pop('coach_user_id', None)
-        return redirect(url_for('coach_login_page'))
-    
-    logger.info(f"Coach dashboard access granted - User: {user.username}")
-    
     return render_template('coach_dashboard.html')
 
 @app.route('/coach/dashboard-v2')
@@ -3948,130 +3933,39 @@ def coach_dashboard_v2():
     return response
 
 @app.route('/coach-feed')
+@coach_session_required
 def coach_feed():
-    # Verificar sesión de coach específicamente
-    coach_user_id = session.get('coach_user_id')
-    
-    if not coach_user_id:
-        logger.info("No coach session found, redirecting to coach login")
-        return redirect(url_for('coach_login_page'))
-    
-    # Obtener usuario desde la base de datos
-    user = User.query.get(coach_user_id)
-    if not user or user.role != 'coach':
-        logger.warning(f"Invalid coach user or role - User ID: {coach_user_id}")
-        session.pop('coach_user_id', None)
-        return redirect(url_for('coach_login_page'))
-    
-    logger.info(f"Coach feed access granted - User: {user.username}")
-    
     return render_template('coach_feed.html')
 
 @app.route('/coach-comunidad')
+@coach_session_required
 def coach_comunidad():
-    # Verificar sesión de coach específicamente
-    coach_user_id = session.get('coach_user_id')
-    
-    if not coach_user_id:
-        logger.info("No coach session found, redirecting to coach login")
-        return redirect(url_for('coach_login_page'))
-    
-    # Obtener usuario desde la base de datos
-    user = User.query.get(coach_user_id)
-    if not user or user.role != 'coach':
-        logger.warning(f"Invalid coach user or role - User ID: {coach_user_id}")
-        session.pop('coach_user_id', None)
-        return redirect(url_for('coach_login_page'))
-    
-    logger.info(f"Coach comunidad access granted - User: {user.username}")
-    
     return render_template('coach_comunidad.html')
 
 @app.route('/coach-profile')
+@coach_session_required
 def coach_profile():
-    # Verificar sesión de coach específicamente
-    coach_user_id = session.get('coach_user_id')
-    
-    if not coach_user_id:
-        logger.info("No coach session found, redirecting to coach login")
-        return redirect(url_for('coach_login_page'))
-    
-    # Obtener usuario desde la base de datos
-    user = User.query.get(coach_user_id)
-    if not user or user.role != 'coach':
-        logger.warning(f"Invalid coach user or role - User ID: {coach_user_id}")
-        session.pop('coach_user_id', None)
-        return redirect(url_for('coach_login_page'))
-    
-    logger.info(f"Coach profile access granted - User: {user.username}")
-    
     return render_template('coach_profile.html')
 
 @app.route('/coachee-dashboard')
+@coachee_session_required
 def coachee_dashboard():
-    # Verificar sesión de coachee específicamente
-    coachee_user_id = session.get('coachee_user_id')
-    
-    if not coachee_user_id:
-        logger.info("No coachee session found, redirecting to participant access")
-        return redirect(url_for('participant_access'))
-    
-    # Obtener usuario desde la base de datos
-    user = User.query.get(coachee_user_id)
-    if not user or user.role != 'coachee':
-        logger.warning(f"Invalid coachee user or role - User ID: {coachee_user_id}")
-        session.pop('coachee_user_id', None)
-        return redirect(url_for('participant_access'))
-    
     # ✨ NUEVO: Detectar si viene de invitación y pasar assessment_id al template
     auto_start_assessment = None
     if session.get('first_login') and session.get('target_assessment_id'):
         auto_start_assessment = session.pop('target_assessment_id')
         session.pop('first_login')
-        logger.info(f"🎯 FIRST-LOGIN: Will auto-start assessment {auto_start_assessment} for {user.username}")
-    
-    logger.info(f"Coachee dashboard access granted - User: {user.username}")
     
     return render_template('coachee_dashboard.html', auto_start_assessment=auto_start_assessment)
 
 @app.route('/coachee-feed')
+@coachee_session_required
 def coachee_feed():
-    # Verificar sesión de coachee específicamente
-    coachee_user_id = session.get('coachee_user_id')
-    
-    if not coachee_user_id:
-        logger.info("No coachee session found, redirecting to participant access")
-        return redirect(url_for('participant_access'))
-    
-    # Obtener usuario desde la base de datos
-    user = User.query.get(coachee_user_id)
-    if not user or user.role != 'coachee':
-        logger.warning(f"Invalid coachee user or role - User ID: {coachee_user_id}")
-        session.pop('coachee_user_id', None)
-        return redirect(url_for('participant_access'))
-    
-    logger.info(f"Coachee feed access granted - User: {user.username}")
-    
     return render_template('coachee_feed.html')
 
 @app.route('/coachee-profile')
+@coachee_session_required
 def coachee_profile():
-    # Verificar sesión de coachee específicamente
-    coachee_user_id = session.get('coachee_user_id')
-    
-    if not coachee_user_id:
-        logger.info("No coachee session found, redirecting to participant access")
-        return redirect(url_for('participant_access'))
-    
-    # Obtener usuario desde la base de datos
-    user = User.query.get(coachee_user_id)
-    if not user or user.role != 'coachee':
-        logger.warning(f"Invalid coachee user or role - User ID: {coachee_user_id}")
-        session.pop('coachee_user_id', None)
-        return redirect(url_for('participant_access'))
-    
-    logger.info(f"Coachee profile access granted - User: {user.username}")
-    
     return render_template('coachee_profile.html')
 
 @app.route('/platform-admin-dashboard')
