@@ -10,6 +10,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -104,6 +106,14 @@ login_manager.init_app(app)
 login_manager.login_view = 'dashboard_selection'  # type: ignore
 login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
 login_manager.login_message_category = 'info'
+
+# Configurar Rate Limiting
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Función para versioning automático de archivos estáticos
 def get_file_version(filename):
@@ -2677,6 +2687,7 @@ def dashboard_selection():
 
 # API Routes principales
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_login():
     try:
         data = request.get_json()
@@ -2728,6 +2739,7 @@ def api_login():
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
 
 @app.route('/api/invite-login', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_invite_login():
     """Login especial para invitaciones con token - redirige directo a evaluación"""
     try:
@@ -3047,6 +3059,7 @@ def admin_login_page():
     return render_template('admin_login.html')
 
 @app.route('/api/admin/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_admin_login():
     try:
         data = request.get_json()
@@ -3360,6 +3373,7 @@ def coach_login_page():
     return render_template('coach_login.html')
 
 @app.route('/api/coach/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_coach_login():
     try:
         data = request.get_json()

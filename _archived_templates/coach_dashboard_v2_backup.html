@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaCoach - Coach v2.0</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts - Lobster Two -->
+    <link href="https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
+    <link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+    
+    <!-- Alpine.js v3 -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACHEE */
+        :root {
+            --calm-primary: #1E3A8A;        /* Deep Blue */
+            --calm-secondary: #3B82F6;      /* Bright Blue */
+            --calm-accent: #06B6D4;         /* Cyan */
+            --calm-light: #EFF6FF;          /* Very Light Blue */
+            --calm-dark: #1E293B;           /* Dark Slate */
+            --calm-white: #FFFFFF;
+            --calm-gray-50: #F8FAFC;
+            --calm-gray-100: #F1F5F9;
+        }
+
+        /* Estilos principales del body */
+        body {
+            background: #f8fafc !important;
+            color: #1e293b !important;
+            transition: all 0.3s ease;
+        }
+
+        /* Container principal con z-index para aparecer sobre partículas */
+        .container-fluid {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(90, 103, 216, 0.08);
+            border-radius: 50%;
+            animation: float 25s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Cards y contenedores */
+        .card,
+        .glass-card,
+        .modal-content {
+            background: white !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #1e293b !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+            transform: translateY(-2px);
+        }
+
+        /* Header styles */
+        .feed-header {
+            background: linear-gradient(135deg, var(--calm-primary), var(--calm-secondary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 3;
+        }
+
+        .brand-text {
+            font-family: 'Lobster Two', cursive;
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* User info section */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Stats cards con gradientes */
+        .stat-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--calm-primary), var(--calm-secondary));
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon.blue {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+        }
+
+        .stat-icon.green {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .stat-icon.orange {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+
+        .stat-icon.purple {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            color: white;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 1rem;
+        }
+
+        .nav-link {
+            color: var(--calm-dark);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-link:hover {
+            background: var(--calm-light);
+            color: var(--calm-primary);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--calm-primary), var(--calm-secondary));
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Module sections */
+        .module-section {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .module-title {
+            color: var(--calm-primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Tables */
+        .table {
+            background: white;
+        }
+
+        .table thead {
+            background: var(--calm-light);
+            color: var(--calm-primary);
+        }
+
+        .table tbody tr:hover {
+            background: var(--calm-gray-50);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--calm-primary), var(--calm-secondary));
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-outline-primary {
+            border-color: var(--calm-primary);
+            color: var(--calm-primary);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--calm-primary);
+            color: white;
+        }
+
+        /* Form controls */
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--calm-secondary);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        }
+
+        /* Badge v2.0 indicator */
+        .version-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--calm-primary), var(--calm-secondary));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+            z-index: 1000;
+            font-size: 0.875rem;
+        }
+
+        /* Coachee cards for mobile */
+        .coachee-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .coachee-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .coachee-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--calm-light);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: static;
+                margin-bottom: 1.5rem;
+            }
+            
+            .brand-text {
+                font-size: 1.5rem;
+            }
+            
+            .table-responsive {
+                display: none;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .coachee-cards {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Alpine.js main app -->
+    <div x-data="coachDashboard()" x-init="init()">
+        <!-- Header -->
+        <div class="feed-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="/coach-dashboard" class="brand-text text-decoration-none">
+                    <i class="fas fa-star me-2"></i>InstaCoach
+                </a>
+                <div class="user-info">
+                    <div class="dropdown">
+                        <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <img :src="coach.avatar || '/static/img/default-avatar.png'" 
+                                 :alt="coach.name" 
+                                 class="user-avatar me-2">
+                            <span x-text="coach.name"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/coach-profile"><i class="fas fa-user me-2"></i>Mi Perfil</a></li>
+                            <li><a class="dropdown-item" href="/coach-settings"><i class="fas fa-cog me-2"></i>Configuración</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="container-fluid mb-4">
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="mb-0" x-text="stats.totalCoachees">0</h3>
+                        <p class="text-muted mb-0">Total Coachees</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <h3 class="mb-0" x-text="stats.completedAssessments">0</h3>
+                        <p class="text-muted mb-0">Evaluaciones Completadas</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <h3 class="mb-0" x-text="stats.pendingAssessments">0</h3>
+                        <p class="text-muted mb-0">Evaluaciones Pendientes</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="mb-0" x-text="stats.averageScore + '%'">0%</h3>
+                        <p class="text-muted mb-0">Promedio General</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Sidebar Navigation -->
+                <div class="col-12 col-lg-3">
+                    <div class="sidebar">
+                        <h5 class="mb-3">Menú</h5>
+                        <nav>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'mis-coachees' }"
+                               @click="activeModule = 'mis-coachees'">
+                                <i class="fas fa-users"></i>
+                                <span>Mis Coachees</span>
+                            </a>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'invitar-coachee' }"
+                               @click="activeModule = 'invitar-coachee'">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Invitar Coachee</span>
+                            </a>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'gestion-tareas' }"
+                               @click="activeModule = 'gestion-tareas'">
+                                <i class="fas fa-tasks"></i>
+                                <span>Gestión de Acciones y Metas</span>
+                            </a>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'seleccionar-evaluaciones' }"
+                               @click="activeModule = 'seleccionar-evaluaciones'">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Seleccionar Evaluaciones</span>
+                            </a>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'evaluaciones-pendientes' }"
+                               @click="activeModule = 'evaluaciones-pendientes'">
+                                <i class="fas fa-hourglass-half"></i>
+                                <span>Evaluaciones Pendientes</span>
+                            </a>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'crear-evaluaciones' }"
+                               @click="activeModule = 'crear-evaluaciones'">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Crear o Cargar Evaluaciones</span>
+                            </a>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'agregar-contenido' }"
+                               @click="activeModule = 'agregar-contenido'">
+                                <i class="fas fa-file-upload"></i>
+                                <span>Agregar Contenido</span>
+                            </a>
+                            <a class="nav-link" 
+                               :class="{ 'active': activeModule === 'agenda' }"
+                               @click="activeModule = 'agenda'">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Agenda</span>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="col-12 col-lg-9">
+                    <!-- Mis Coachees Module -->
+                    <div x-show="activeModule === 'mis-coachees'" x-transition class="module-section">
+                        <h2 class="module-title">
+                            <i class="fas fa-users"></i>
+                            Mis Coachees
+                        </h2>
+
+                        <!-- Loading State -->
+                        <div x-show="loading.coachees" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-3">Cargando coachees...</p>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div x-show="!loading.coachees && coachees.length === 0" class="text-center py-5">
+                            <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No tienes coachees registrados aún.</p>
+                            <button @click="activeModule = 'invitar-coachee'" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Invitar Coachee
+                            </button>
+                        </div>
+
+                        <!-- Coachees Table (Desktop) -->
+                        <div x-show="!loading.coachees && coachees.length > 0" class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Avatar</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Evaluaciones Completadas</th>
+                                        <th>Evaluaciones Pendientes</th>
+                                        <th>Último Acceso</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="coachee in coachees" :key="coachee.id">
+                                        <tr>
+                                            <td>
+                                                <img :src="coachee.avatar_url || '/static/img/default-avatar.png'" 
+                                                     :alt="coachee.name" 
+                                                     class="coachee-avatar" 
+                                                     style="width: 40px; height: 40px;">
+                                            </td>
+                                            <td>
+                                                <strong x-text="coachee.name"></strong>
+                                            </td>
+                                            <td x-text="coachee.email"></td>
+                                            <td>
+                                                <span class="badge bg-success" x-text="coachee.completed_assessments || 0"></span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-warning" x-text="coachee.pending_assessments || 0"></span>
+                                            </td>
+                                            <td x-text="formatDate(coachee.last_access)"></td>
+                                            <td>
+                                                <button @click="viewCoacheeDetails(coachee)" 
+                                                        class="btn btn-sm btn-outline-primary me-1"
+                                                        title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button @click="editCoachee(coachee)" 
+                                                        class="btn btn-sm btn-outline-secondary me-1"
+                                                        title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button @click="deleteCoachee(coachee)" 
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Coachees Cards (Mobile) -->
+                        <div x-show="!loading.coachees && coachees.length > 0" class="coachee-cards">
+                            <template x-for="coachee in coachees" :key="coachee.id">
+                                <div class="coachee-card">
+                                    <div class="d-flex align-items-start mb-3">
+                                        <img :src="coachee.avatar_url || '/static/img/default-avatar.png'" 
+                                             :alt="coachee.name" 
+                                             class="coachee-avatar me-3">
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-1" x-text="coachee.name"></h5>
+                                            <p class="text-muted mb-2 small" x-text="coachee.email"></p>
+                                            <div class="d-flex gap-2 mb-2">
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>
+                                                    <span x-text="coachee.completed_assessments || 0"></span>
+                                                </span>
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-hourglass-half me-1"></i>
+                                                    <span x-text="coachee.pending_assessments || 0"></span>
+                                                </span>
+                                            </div>
+                                            <p class="small text-muted mb-0">
+                                                Último acceso: <span x-text="formatDate(coachee.last_access)"></span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button @click="viewCoacheeDetails(coachee)" 
+                                                class="btn btn-sm btn-outline-primary flex-grow-1">
+                                            <i class="fas fa-eye me-1"></i>Ver
+                                        </button>
+                                        <button @click="editCoachee(coachee)" 
+                                                class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button @click="deleteCoachee(coachee)" 
+                                                class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Invitar Coachee Module -->
+                    <div x-show="activeModule === 'invitar-coachee'" x-transition class="module-section">
+                        <h2 class="module-title">
+                            <i class="fas fa-user-plus"></i>
+                            Invitar Coachee
+                        </h2>
+
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <form @submit.prevent="inviteCoachee()">
+                                    <div class="mb-3">
+                                        <label for="coachee-name" class="form-label">Nombre Completo *</label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="coachee-name" 
+                                               x-model="newCoachee.name" 
+                                               placeholder="Ej: María González"
+                                               required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="coachee-email" class="form-label">Email *</label>
+                                        <input type="email" 
+                                               class="form-control" 
+                                               id="coachee-email" 
+                                               x-model="newCoachee.email" 
+                                               placeholder="maria@example.com"
+                                               required>
+                                        <div class="form-text">
+                                            El coachee recibirá un email con las instrucciones de acceso.
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="coachee-phone" class="form-label">Teléfono</label>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="coachee-phone" 
+                                               x-model="newCoachee.phone" 
+                                               placeholder="+56 9 1234 5678">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="coachee-company" class="form-label">Empresa</label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="coachee-company" 
+                                               x-model="newCoachee.company" 
+                                               placeholder="Nombre de la empresa">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="coachee-position" class="form-label">Cargo</label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="coachee-position" 
+                                               x-model="newCoachee.position" 
+                                               placeholder="Ej: Gerente de Ventas">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="coachee-notes" class="form-label">Notas (opcional)</label>
+                                        <textarea class="form-control" 
+                                                  id="coachee-notes" 
+                                                  x-model="newCoachee.notes" 
+                                                  rows="3"
+                                                  placeholder="Notas adicionales sobre el coachee..."></textarea>
+                                    </div>
+
+                                    <!-- Alert Messages -->
+                                    <div x-show="messages.success" 
+                                         x-transition
+                                         class="alert alert-success alert-dismissible fade show" 
+                                         role="alert">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <span x-text="messages.success"></span>
+                                        <button type="button" class="btn-close" @click="messages.success = ''"></button>
+                                    </div>
+
+                                    <div x-show="messages.error" 
+                                         x-transition
+                                         class="alert alert-danger alert-dismissible fade show" 
+                                         role="alert">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <span x-text="messages.error"></span>
+                                        <button type="button" class="btn-close" @click="messages.error = ''"></button>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" 
+                                                class="btn btn-primary"
+                                                :disabled="loading.invite">
+                                            <span x-show="!loading.invite">
+                                                <i class="fas fa-paper-plane me-2"></i>Enviar Invitación
+                                            </span>
+                                            <span x-show="loading.invite" class="spinner"></span>
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary"
+                                                @click="resetInviteForm()">
+                                            <i class="fas fa-redo me-2"></i>Limpiar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-info-circle me-2"></i>Información
+                                        </h5>
+                                        <p class="card-text small">
+                                            Al invitar a un coachee:
+                                        </p>
+                                        <ul class="small">
+                                            <li>Se creará automáticamente una cuenta</li>
+                                            <li>Recibirá un email de bienvenida</li>
+                                            <li>Podrá acceder con su email</li>
+                                            <li>Verá las evaluaciones que le asignes</li>
+                                        </ul>
+                                        <hr>
+                                        <p class="small text-muted mb-0">
+                                            <i class="fas fa-shield-alt me-2"></i>
+                                            Los datos están protegidos y solo tú podrás ver su información.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder para Módulos de Fase 2 -->
+                    <div x-show="['gestion-tareas', 'seleccionar-evaluaciones', 'evaluaciones-pendientes', 'crear-evaluaciones', 'agregar-contenido', 'agenda'].includes(activeModule)" 
+                         x-transition 
+                         class="module-section">
+                        <div class="text-center py-5">
+                            <i class="fas fa-tools fa-4x text-muted mb-3"></i>
+                            <h3>Módulo en desarrollo</h3>
+                            <p class="text-muted">Este módulo estará disponible en la Fase 2</p>
+                            <button @click="activeModule = 'mis-coachees'" class="btn btn-primary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver a Mis Coachees
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Version Badge -->
+        <div class="version-badge">
+            <i class="fas fa-rocket me-2"></i>Alpine.js v2.0 - Fase 1
+        </div>
+
+        <!-- Botón para volver a versión original -->
+        <a href="/coach-dashboard" class="btn btn-outline-light" style="position: fixed; bottom: 80px; right: 20px; z-index: 999; border-radius: 50px; padding: 10px 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); font-weight: 600; display: flex; align-items: center; gap: 8px; background: white; border: 2px solid var(--calm-primary); color: var(--calm-primary); text-decoration: none; font-size: 0.875rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0, 0, 0, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.2)'">
+            <i class="fas fa-arrow-left"></i>
+            <span>Versión Original</span>
+        </a>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Alpine.js Component -->
+    <script>
+        function coachDashboard() {
+            return {
+                // State
+                activeModule: 'mis-coachees',
+                coach: {
+                    name: '{{ coach_name }}',
+                    email: '{{ coach_email }}',
+                    avatar: '{{ coach_avatar_url }}'
+                },
+                stats: {
+                    totalCoachees: 0,
+                    completedAssessments: 0,
+                    pendingAssessments: 0,
+                    averageScore: 0
+                },
+                coachees: [],
+                newCoachee: {
+                    name: '',
+                    email: '',
+                    phone: '',
+                    company: '',
+                    position: '',
+                    notes: ''
+                },
+                loading: {
+                    stats: false,
+                    coachees: false,
+                    invite: false
+                },
+                messages: {
+                    success: '',
+                    error: ''
+                },
+
+                // Initialization
+                init() {
+                    this.loadStats();
+                    this.loadCoachees();
+                    this.initParticles();
+                },
+
+                // Load Stats
+                async loadStats() {
+                    this.loading.stats = true;
+                    try {
+                        const response = await fetch('/api/coach/stats');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.stats = {
+                                totalCoachees: data.total_coachees || 0,
+                                completedAssessments: data.completed_assessments || 0,
+                                pendingAssessments: data.pending_assessments || 0,
+                                averageScore: data.average_score || 0
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Error loading stats:', error);
+                    } finally {
+                        this.loading.stats = false;
+                    }
+                },
+
+                // Load Coachees
+                async loadCoachees() {
+                    this.loading.coachees = true;
+                    try {
+                        const response = await fetch('/api/coach/coachees');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.coachees = data.coachees || [];
+                        }
+                    } catch (error) {
+                        console.error('Error loading coachees:', error);
+                    } finally {
+                        this.loading.coachees = false;
+                    }
+                },
+
+                // Invite Coachee
+                async inviteCoachee() {
+                    this.loading.invite = true;
+                    this.messages.success = '';
+                    this.messages.error = '';
+
+                    try {
+                        const response = await fetch('/api/coach/invite-coachee', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(this.newCoachee)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.messages.success = data.message || '¡Invitación enviada exitosamente!';
+                            this.resetInviteForm();
+                            this.loadStats();
+                            this.loadCoachees();
+                            
+                            // Auto-hide success message after 5 seconds
+                            setTimeout(() => {
+                                this.messages.success = '';
+                            }, 5000);
+                        } else {
+                            this.messages.error = data.error || 'Error al enviar la invitación';
+                        }
+                    } catch (error) {
+                        console.error('Error inviting coachee:', error);
+                        this.messages.error = 'Error de conexión. Intenta nuevamente.';
+                    } finally {
+                        this.loading.invite = false;
+                    }
+                },
+
+                // Reset Invite Form
+                resetInviteForm() {
+                    this.newCoachee = {
+                        name: '',
+                        email: '',
+                        phone: '',
+                        company: '',
+                        position: '',
+                        notes: ''
+                    };
+                },
+
+                // View Coachee Details
+                viewCoacheeDetails(coachee) {
+                    window.location.href = `/coach/coachee/${coachee.id}`;
+                },
+
+                // Edit Coachee
+                editCoachee(coachee) {
+                    // TODO: Implementar modal de edición en Fase 2
+                    alert(`Editar coachee: ${coachee.name} (Disponible en Fase 2)`);
+                },
+
+                // Delete Coachee
+                async deleteCoachee(coachee) {
+                    if (!confirm(`¿Estás seguro de eliminar a ${coachee.name}?`)) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/coach/coachee/${coachee.id}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (response.ok) {
+                            this.messages.success = 'Coachee eliminado exitosamente';
+                            this.loadStats();
+                            this.loadCoachees();
+                            
+                            setTimeout(() => {
+                                this.messages.success = '';
+                            }, 3000);
+                        } else {
+                            const data = await response.json();
+                            this.messages.error = data.error || 'Error al eliminar coachee';
+                        }
+                    } catch (error) {
+                        console.error('Error deleting coachee:', error);
+                        this.messages.error = 'Error de conexión';
+                    }
+                },
+
+                // Format Date
+                formatDate(dateString) {
+                    if (!dateString) return 'Nunca';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                },
+
+                // Initialize Particles
+                initParticles() {
+                    const particlesContainer = document.getElementById('particles');
+                    if (!particlesContainer) return;
+
+                    const particleCount = 30;
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        const particle = document.createElement('div');
+                        particle.className = 'particle';
+                        
+                        const size = Math.random() * 60 + 20;
+                        particle.style.width = `${size}px`;
+                        particle.style.height = `${size}px`;
+                        particle.style.left = `${Math.random() * 100}%`;
+                        particle.style.animationDuration = `${Math.random() * 15 + 20}s`;
+                        particle.style.animationDelay = `${Math.random() * 5}s`;
+                        
+                        particlesContainer.appendChild(particle);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

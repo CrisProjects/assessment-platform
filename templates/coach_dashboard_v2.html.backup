@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coach V2 - InstaCoach</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --danger: #ef4444;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card {
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: 16px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-hover);
+        background: var(--surface-glass-hover);
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: white;
+        background: var(--gradient-primary);
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover .stat-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin: 0.5rem 0 0 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Main Content Grid */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1200px) {
+        .main-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Panel Principal de Coachees */
+    .coachees-panel {
+        background: var(--surface-glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-glass);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow-elegant);
+    }
+
+    .panel-header {
+        padding: 2rem;
+        border-bottom: 1px solid var(--border-glass);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .panel-title i {
+        width: 40px;
+        height: 40px;
+        background: var(--gradient-primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+    }
+
+    /* Lista de Coachees Modernizada */
+    .coachees-list {
+        max-height: 600px;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+    .coachee-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .coachee-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateX(4px);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .coachee-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .coachee-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: var(--gradient-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .coachee-details h4 {
+        color: var(--text-primary);
+        margin: 0 0 0.25rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .coachee-details p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .coachee-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .mini-stat {
+        text-align: center;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 10px;
+    }
+
+    .mini-stat-number {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .mini-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin: 0.25rem 0 0 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Panel Lateral de Acciones */
+    .actions-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .action-card {
+        background: var(--surface-glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-glass);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: var(--shadow-elegant);
+        transition: all 0.3s ease;
+    }
+
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .action-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .action-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .action-icon.invite {
+        background: var(--gradient-success);
+    }
+
+    .action-icon.tasks {
+        background: var(--gradient-warning);
+    }
+
+    .action-icon.analytics {
+        background: var(--gradient-info);
+    }
+
+    .action-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .action-description {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+
+    /* Botones Modernos */
+    .btn-modern {
+        background: var(--gradient-primary);
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .btn-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-modern.success {
+        background: var(--gradient-success);
+    }
+
+    .btn-modern.warning {
+        background: var(--gradient-warning);
+    }
+
+    .btn-modern.info {
+        background: var(--gradient-info);
+    }
+
+    /* Quick Stats en el Header */
+    .quick-stats {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .quick-stat {
+        text-align: center;
+    }
+
+    .quick-stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .quick-stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin: 0.25rem 0 0 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Estados de Progreso */
+    .progress-ring {
+        width: 60px;
+        height: 60px;
+        position: relative;
+    }
+
+    .progress-ring svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring circle {
+        fill: none;
+        stroke-width: 4;
+        stroke-linecap: round;
+    }
+
+    .progress-ring .bg {
+        stroke: rgba(255, 255, 255, 0.1);
+    }
+
+    .progress-ring .progress {
+        stroke: url(#progressGradient);
+        stroke-dasharray: 188.5;
+        stroke-dashoffset: 188.5;
+        transition: stroke-dashoffset 1s ease;
+    }
+
+    /* Loading States */
+    .loading-skeleton {
+        background: linear-gradient(90deg, 
+            rgba(255, 255, 255, 0.1) 25%, 
+            rgba(255, 255, 255, 0.2) 50%, 
+            rgba(255, 255, 255, 0.1) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: 1.5rem;
+        }
+        
+        .header-content {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .welcome-section h1 {
+            font-size: 2rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .quick-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .coachee-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Animaciones de Entrada */
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .fade-in-left {
+        animation: fadeInLeft 0.6s ease-out;
+    }
+
+    .fade-in-right {
+        animation: fadeInRight 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes fadeInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 1050;
+    }
+
+    .toast-modern {
+        background: var(--surface-glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        box-shadow: var(--shadow-elegant);
+        color: var(--text-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="container-fluid">
+        <!-- Header Moderno -->
+        <div class="dashboard-header fade-in-up">
+            <div class="header-content">
+                <div class="welcome-section">
+                    <h1><i class="fas fa-sparkles me-3"></i>Bienvenido, {{ coach_name }}</h1>
+                    <p>Panel de Control Avanzado - Gestiona tu equipo con estilo</p>
+                </div>
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <div class="quick-stat-number" id="totalCoachees">-</div>
+                        <div class="quick-stat-label">Coachees</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-number" id="totalEvaluations">-</div>
+                        <div class="quick-stat-label">Evaluaciones</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-number" id="activeTasks">-</div>
+                        <div class="quick-stat-label">Tareas Activas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card fade-in-up" style="animation-delay: 0.1s;">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number" id="statCoachees">0</div>
+                <div class="stat-label">Coachees Activos</div>
+            </div>
+            
+            <div class="stat-card fade-in-up" style="animation-delay: 0.2s;">
+                <div class="stat-icon" style="background: var(--gradient-success);">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-number" id="statEvaluations">0</div>
+                <div class="stat-label">Evaluaciones Completadas</div>
+            </div>
+            
+            <div class="stat-card fade-in-up" style="animation-delay: 0.3s;">
+                <div class="stat-icon" style="background: var(--gradient-warning);">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-number" id="statTasks">0</div>
+                <div class="stat-label">Tareas Pendientes</div>
+            </div>
+            
+            <div class="stat-card fade-in-up" style="animation-delay: 0.4s;">
+                <div class="stat-icon" style="background: var(--gradient-info);">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-number" id="statProgress">0%</div>
+                <div class="stat-label">Progreso Promedio</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Panel Principal de Coachees -->
+            <div class="coachees-panel fade-in-left">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i class="fas fa-user-graduate"></i>
+                        Mis Coachees
+                    </h2>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshCoachees()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="coachees-list" id="coacheesList">
+                    <!-- Loading skeleton -->
+                    <div class="loading-skeleton" style="height: 100px; margin-bottom: 1rem;"></div>
+                    <div class="loading-skeleton" style="height: 100px; margin-bottom: 1rem;"></div>
+                    <div class="loading-skeleton" style="height: 100px;"></div>
+                </div>
+            </div>
+
+            <!-- Panel Lateral de Acciones -->
+            <div class="actions-panel">
+                <!-- Crear Invitación -->
+                <div class="action-card fade-in-right" style="animation-delay: 0.1s;">
+                    <div class="action-header">
+                        <div class="action-icon invite">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h3 class="action-title">Invitar Coachee</h3>
+                    </div>
+                    <p class="action-description">
+                        Crea una nueva invitación personalizada para incorporar un coachee a tu equipo.
+                    </p>
+                    <button class="btn-modern success" onclick="openInvitationModal()">
+                        <i class="fas fa-paper-plane"></i>
+                        Crear Invitación
+                    </button>
+                </div>
+
+                <!-- Gestión de Tareas -->
+                <div class="action-card fade-in-right" style="animation-delay: 0.2s;">
+                    <div class="action-header">
+                        <div class="action-icon tasks">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <h3 class="action-title">Gestionar Tareas</h3>
+                    </div>
+                    <p class="action-description">
+                        Asigna y monitorea tareas personalizadas para el desarrollo de tus coachees.
+                    </p>
+                    <button class="btn-modern warning" onclick="openTasksModal()">
+                        <i class="fas fa-plus-circle"></i>
+                        Nueva Tarea
+                    </button>
+                </div>
+
+                <!-- Analytics -->
+                <div class="action-card fade-in-right" style="animation-delay: 0.3s;">
+                    <div class="action-header">
+                        <div class="action-icon analytics">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h3 class="action-title">Analytics</h3>
+                    </div>
+                    <p class="action-description">
+                        Visualiza métricas detalladas y tendencias de progreso de tu equipo.
+                    </p>
+                    <button class="btn-modern info" onclick="openAnalytics()">
+                        <i class="fas fa-analytics"></i>
+                        Ver Reportes
+                    </button>
+                </div>
+
+                <!-- Volver al Dashboard Clásico -->
+                <div class="action-card fade-in-right" style="animation-delay: 0.4s;">
+                    <div class="action-header">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <h3 class="action-title">Dashboard Clásico</h3>
+                    </div>
+                    <p class="action-description">
+                        Vuelve a la vista tradicional del panel de control con todas las funciones completas.
+                    </p>
+                    <a href="/coach/dashboard" class="btn-modern" style="text-decoration: none;">
+                        <i class="fas fa-arrow-left"></i>
+                        Ir a Dashboard Clásico
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
+
+<!-- SVG Definitions -->
+<svg style="display: none;">
+    <defs>
+        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+        </linearGradient>
+    </defs>
+</svg>
+
+<!-- Modales (reutilizando los existentes) -->
+<!-- Modal de Invitación -->
+<div class="modal fade" id="invitationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass);">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-user-plus me-2"></i>Crear Nueva Invitación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="invitationForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-white">Nombre Completo</label>
+                            <input type="text" class="form-control glass-input" id="fullName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white">Email</label>
+                            <input type="email" class="form-control glass-input" id="email" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-white">Mensaje Personalizado (Opcional)</label>
+                            <textarea class="form-control glass-input" id="customMessage" rows="3" 
+                                placeholder="Agrega un mensaje personalizado para tu coachee..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-modern success" onclick="createInvitation()">
+                    <i class="fas fa-paper-plane me-2"></i>Crear Invitación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variables globales
+let coacheesData = [];
+let statsData = {};
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    setupEventListeners();
+    
+    // Animaciones de entrada escalonadas
+    const cards = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+    });
+});
+
+// Cargar datos del dashboard
+async function loadDashboardData() {
+    try {
+        await Promise.all([
+            loadCoachees(),
+            loadStats(),
+            loadProfile()
+        ]);
+        updateQuickStats();
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        showToast('Error al cargar los datos del dashboard', 'error');
+    }
+}
+
+// Cargar coachees
+async function loadCoachees() {
+    try {
+        const response = await fetch('/api/coach/my-coachees');
+        const data = await response.json();
+        
+        if (response.ok) {
+            coacheesData = data;
+            renderCoachees();
+        } else {
+            throw new Error(data.error || 'Error al cargar coachees');
+        }
+    } catch (error) {
+        console.error('Error loading coachees:', error);
+        document.getElementById('coacheesList').innerHTML = `
+            <div class="text-center p-4">
+                <i class="fas fa-exclamation-triangle text-warning fa-2x mb-3"></i>
+                <p class="text-muted">Error al cargar los coachees</p>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadCoachees()">
+                    <i class="fas fa-redo me-2"></i>Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Renderizar coachees
+function renderCoachees() {
+    const container = document.getElementById('coacheesList');
+    
+    if (!coacheesData || coacheesData.length === 0) {
+        container.innerHTML = `
+            <div class="text-center p-4">
+                <i class="fas fa-users text-muted fa-3x mb-3" style="opacity: 0.3;"></i>
+                <h5 class="text-muted mb-3">No hay coachees aún</h5>
+                <p class="text-muted mb-4">Comienza creando tu primera invitación</p>
+                <button class="btn-modern success" onclick="openInvitationModal()">
+                    <i class="fas fa-user-plus me-2"></i>Crear Primera Invitación
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    const html = coacheesData.map(coachee => {
+        const initials = coachee.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+        const completionRate = coachee.evaluations_count > 0 ? 
+            Math.round((coachee.evaluations_count / 10) * 100) : 0; // Assuming 10 is max
+        
+        return `
+            <div class="coachee-card" onclick="viewCoacheeDetails(${coachee.id})">
+                <div class="coachee-info">
+                    <div class="coachee-avatar">${initials}</div>
+                    <div class="coachee-details">
+                        <h4>${coachee.full_name}</h4>
+                        <p><i class="fas fa-envelope me-2"></i>${coachee.email}</p>
+                    </div>
+                </div>
+                <div class="coachee-stats">
+                    <div class="mini-stat">
+                        <div class="mini-stat-number">${coachee.evaluations_count || 0}</div>
+                        <div class="mini-stat-label">Evaluaciones</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-number">${completionRate}%</div>
+                        <div class="mini-stat-label">Progreso</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+// Cargar estadísticas
+async function loadStats() {
+    try {
+        const response = await fetch('/api/coach/tasks');
+        const data = await response.json();
+        
+        if (response.ok) {
+            statsData.tasks = data;
+            updateStatsDisplay();
+        }
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+// Actualizar display de estadísticas
+function updateStatsDisplay() {
+    const totalCoachees = coacheesData.length;
+    const totalEvaluations = coacheesData.reduce((sum, c) => sum + (c.evaluations_count || 0), 0);
+    const activeTasks = statsData.tasks ? statsData.tasks.length : 0;
+    const avgProgress = totalCoachees > 0 ? 
+        Math.round(coacheesData.reduce((sum, c) => {
+            const progress = c.evaluations_count > 0 ? (c.evaluations_count / 10) * 100 : 0;
+            return sum + progress;
+        }, 0) / totalCoachees) : 0;
+
+    // Actualizar stats cards
+    document.getElementById('statCoachees').textContent = totalCoachees;
+    document.getElementById('statEvaluations').textContent = totalEvaluations;
+    document.getElementById('statTasks').textContent = activeTasks;
+    document.getElementById('statProgress').textContent = `${avgProgress}%`;
+}
+
+// Actualizar quick stats
+function updateQuickStats() {
+    const totalCoachees = coacheesData.length;
+    const totalEvaluations = coacheesData.reduce((sum, c) => sum + (c.evaluations_count || 0), 0);
+    const activeTasks = statsData.tasks ? statsData.tasks.length : 0;
+
+    document.getElementById('totalCoachees').textContent = totalCoachees;
+    document.getElementById('totalEvaluations').textContent = totalEvaluations;
+    document.getElementById('activeTasks').textContent = activeTasks;
+}
+
+// Event listeners
+function setupEventListeners() {
+    // Actualización automática cada 30 segundos
+    setInterval(() => {
+        loadDashboardData();
+    }, 30000);
+}
+
+// Funciones de acciones
+function openInvitationModal() {
+    new bootstrap.Modal(document.getElementById('invitationModal')).show();
+}
+
+function createInvitation() {
+    const fullName = document.getElementById('fullName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const customMessage = document.getElementById('customMessage').value.trim();
+
+    if (!fullName || !email) {
+        showToast('Por favor completa todos los campos requeridos', 'error');
+        return;
+    }
+
+    const invitationData = {
+        full_name: fullName,
+        email: email,
+        custom_message: customMessage || ''
+    };
+
+    fetch('/api/coach/create-invitation-v2', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invitationData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('¡Invitación creada exitosamente!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('invitationModal')).hide();
+            document.getElementById('invitationForm').reset();
+            loadCoachees(); // Recargar lista
+        } else {
+            throw new Error(data.error || 'Error al crear invitación');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error al crear la invitación', 'error');
+    });
+}
+
+function refreshCoachees() {
+    document.getElementById('coacheesList').innerHTML = `
+        <div class="loading-skeleton" style="height: 100px; margin-bottom: 1rem;"></div>
+        <div class="loading-skeleton" style="height: 100px; margin-bottom: 1rem;"></div>
+        <div class="loading-skeleton" style="height: 100px;"></div>
+    `;
+    loadCoachees();
+}
+
+function viewCoacheeDetails(coacheeId) {
+    // Implementar vista de detalles del coachee
+    console.log('Viewing details for coachee:', coacheeId);
+    showToast('Función de detalles en desarrollo', 'info');
+}
+
+function openTasksModal() {
+    showToast('Modal de tareas en desarrollo', 'info');
+}
+
+function openAnalytics() {
+    showToast('Analytics en desarrollo', 'info');
+}
+
+// Sistema de toast notifications
+function showToast(message, type = 'info') {
+    const toastContainer = document.querySelector('.toast-container');
+    const toastId = 'toast-' + Date.now();
+    
+    const iconMap = {
+        success: 'fas fa-check-circle',
+        error: 'fas fa-exclamation-triangle', 
+        warning: 'fas fa-exclamation-circle',
+        info: 'fas fa-info-circle'
+    };
+
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast toast-modern show`;
+    toast.innerHTML = `
+        <div class="toast-header border-0" style="background: transparent;">
+            <i class="${iconMap[type]} me-2" style="color: var(--${type === 'error' ? 'danger' : type});"></i>
+            <strong class="me-auto">Notificación</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">${message}</div>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (document.getElementById(toastId)) {
+            bootstrap.Toast.getInstance(toast).hide();
+        }
+    }, 5000);
+
+    // Remove from DOM after hide
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+// Función para cargar perfil (placeholder)
+async function loadProfile() {
+    // Placeholder para cargar información del perfil del coach
+    return Promise.resolve();
+}
+</script>
+{% endblock %}
