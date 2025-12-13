@@ -115,6 +115,198 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
+# ============================================================================
+# FUNCIONES DE VALIDACIÓN Y SANITIZACIÓN DE INPUTS
+# ============================================================================
+
+def sanitize_string(input_str, max_length=None):
+    """
+    Sanitiza strings para prevenir XSS y SQL injection.
+    - Elimina caracteres peligrosos y tags HTML
+    - Limita longitud si se especifica
+    - Convierte a string si no lo es
+    """
+    if input_str is None:
+        return ''
+    
+    # Convertir a string
+    input_str = str(input_str).strip()
+    
+    # Eliminar tags HTML y caracteres peligrosos
+    input_str = re.sub(r'<[^>]*>', '', input_str)
+    input_str = re.sub(r'[<>"\';]', '', input_str)
+    
+    # Limitar longitud
+    if max_length and len(input_str) > max_length:
+        input_str = input_str[:max_length]
+    
+    return input_str
+
+def validate_username(username):
+    """
+    Valida formato de username.
+    - Solo alfanuméricos, guiones bajos, puntos y guiones
+    - Entre 3 y 80 caracteres
+    """
+    if not username or not isinstance(username, str):
+        return False, 'Username es requerido'
+    
+    username = username.strip()
+    
+    if len(username) < 3:
+        return False, 'Username debe tener al menos 3 caracteres'
+    
+    if len(username) > 80:
+        return False, 'Username no puede exceder 80 caracteres'
+    
+    # Solo permitir caracteres seguros: alfanuméricos, guión bajo, punto y guión
+    if not re.match(r'^[a-zA-Z0-9_.-]+$', username):
+        return False, 'Username solo puede contener letras, números, puntos, guiones y guiones bajos'
+    
+    return True, sanitize_string(username, 80)
+
+def validate_email(email):
+    """
+    Valida formato de email.
+    - Formato estándar de email
+    - Máximo 120 caracteres
+    """
+    if not email or not isinstance(email, str):
+        return False, 'Email es requerido'
+    
+    email = email.strip().lower()
+    
+    if len(email) > 120:
+        return False, 'Email no puede exceder 120 caracteres'
+    
+    # Validar formato de email
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_regex, email):
+        return False, 'Formato de email inválido'
+    
+    return True, sanitize_string(email, 120)
+
+def validate_password(password):
+    """
+    Valida seguridad de contraseña.
+    - Mínimo 6 caracteres (requisito actual del sistema)
+    - Máximo 128 caracteres
+    """
+    if not password or not isinstance(password, str):
+        return False, 'Contraseña es requerida'
+    
+    if len(password) < 6:
+        return False, 'Contraseña debe tener al menos 6 caracteres'
+    
+    if len(password) > 128:
+        return False, 'Contraseña no puede exceder 128 caracteres'
+    
+    return True, password  # No sanitizar contraseñas, solo validar longitud
+
+def validate_full_name(full_name):
+    """
+    Valida nombre completo.
+    - Mínimo 2 caracteres
+    - Máximo 200 caracteres
+    - Solo letras, espacios y algunos caracteres especiales comunes
+    """
+    if not full_name or not isinstance(full_name, str):
+        return False, 'Nombre completo es requerido'
+    
+    full_name = full_name.strip()
+    
+    if len(full_name) < 2:
+        return False, 'Nombre completo debe tener al menos 2 caracteres'
+    
+    if len(full_name) > 200:
+        return False, 'Nombre completo no puede exceder 200 caracteres'
+    
+    # Permitir letras, espacios, acentos y algunos caracteres especiales comunes
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\'-]+$', full_name):
+        return False, 'Nombre completo solo puede contener letras, espacios, guiones y apóstrofes'
+    
+    return True, sanitize_string(full_name, 200)
+
+def validate_and_sanitize_login_input(data):
+    """
+    Valida y sanitiza inputs de login.
+    Retorna: (success: bool, result: dict|str)
+    """
+    if not data:
+        return False, 'Datos requeridos'
+    
+    # Obtener campos
+    username_or_email = data.get('username') or data.get('email')
+    password = data.get('password')
+    
+    if not username_or_email or not password:
+        return False, 'Usuario/email y contraseña son requeridos'
+    
+    # Sanitizar username/email
+    username_or_email = sanitize_string(username_or_email, 120)
+    
+    # Validar contraseña (no sanitizar)
+    valid, result = validate_password(password)
+    if not valid:
+        return False, result
+    
+    return True, {
+        'username_or_email': username_or_email,
+        'password': password
+    }
+
+def validate_and_sanitize_register_input(data):
+    """
+    Valida y sanitiza inputs de registro.
+    Retorna: (success: bool, result: dict|str)
+    """
+    if not data:
+        return False, 'Datos requeridos'
+    
+    # Validar email
+    email = data.get('email')
+    valid, result = validate_email(email)
+    if not valid:
+        return False, result
+    email = result
+    
+    # Validar contraseña
+    password = data.get('password')
+    valid, result = validate_password(password)
+    if not valid:
+        return False, result
+    password = result
+    
+    # Validar nombre completo
+    full_name = data.get('full_name')
+    valid, result = validate_full_name(full_name)
+    if not valid:
+        return False, result
+    full_name = result
+    
+    # Validar username (opcional, se genera si no se proporciona)
+    username = data.get('username')
+    if username:
+        valid, result = validate_username(username)
+        if not valid:
+            return False, result
+        username = result
+    else:
+        # Generar username seguro desde email
+        base = re.sub(r'[^a-zA-Z0-9]', '', email.split('@')[0])
+        username = sanitize_string(base[:80], 80)
+    
+    return True, {
+        'email': email,
+        'password': password,
+        'full_name': full_name,
+        'username': username
+    }
+
+# ============================================================================
+# FIN DE FUNCIONES DE VALIDACIÓN
+# ============================================================================
+
 # Función para versioning automático de archivos estáticos
 def get_file_version(filename):
     """
@@ -2691,13 +2883,16 @@ def dashboard_selection():
 def api_login():
     try:
         data = request.get_json()
-        username = data.get('username') or data.get('email')
-        password = data.get('password')
-        dashboard_type = data.get('dashboard_type', 'auto')  # 'coach', 'coachee', 'auto'
         
-        if not username or not password:
-            logger.warning(f"Login attempt with missing credentials from {request.remote_addr}")
-            return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
+        # Validar y sanitizar inputs
+        valid, result = validate_and_sanitize_login_input(data)
+        if not valid:
+            logger.warning(f"Login attempt with invalid input from {request.remote_addr}: {result}")
+            return jsonify({'error': result}), 400
+        
+        username = result['username_or_email']
+        password = result['password']
+        dashboard_type = data.get('dashboard_type', 'auto')  # 'coach', 'coachee', 'auto'
         
         user = User.query.filter((User.username == username) | (User.email == username)).first()  # type: ignore
         
@@ -2744,8 +2939,17 @@ def api_invite_login():
     """Login especial para invitaciones con token - redirige directo a evaluación"""
     try:
         data = request.get_json()
-        token = data.get('token')
+        
+        # Sanitizar token
+        token = sanitize_string(data.get('token'), 100)
+        
+        # Validar contraseña
         password = data.get('password')
+        valid, result = validate_password(password)
+        if not valid:
+            logger.warning(f"Invite-login attempt with invalid password from {request.remote_addr}")
+            return jsonify({'error': result}), 400
+        password = result
         
         logger.info(f"🔐 INVITE-LOGIN: Login attempt with token: {token[:10] if token else 'None'}...")
         
@@ -2977,40 +3181,23 @@ def api_register():
         if not data:
             return jsonify({'error': 'Datos JSON requeridos'}), 400
         
-        # Validar campos requeridos
-        required_fields = ['email', 'password', 'full_name']
-        if missing_fields := validate_required_fields(data, required_fields):
-            return jsonify({'error': f'Campos requeridos: {", ".join(missing_fields)}'}), 400
+        # Validar y sanitizar inputs
+        valid, result = validate_and_sanitize_register_input(data)
+        if not valid:
+            logger.warning(f"Registration attempt with invalid input from {request.remote_addr}: {result}")
+            return jsonify({'error': result}), 400
         
-        # Generar username si no se proporciona
-        if not data.get('username'):
-            email_temp = str(data['email']).strip().lower()
-            base_username = re.sub(r'[^a-zA-Z0-9]', '', email_temp.split('@')[0])
-            username = base_username.lower()
-            
-            counter = 1
-            original_username = username
-            while User.query.filter_by(username=username).first():
-                username = f"{original_username}{counter}"
-                counter += 1
-        else:
-            username = str(data['username']).strip()
+        email = result['email']
+        password = result['password']
+        full_name = result['full_name']
+        username = result['username']
         
-        email = str(data['email']).strip().lower()
-        password = str(data['password'])
-        full_name = str(data['full_name']).strip()
-        
-        # Validaciones
-        validations = [
-            (len(username) < 3, 'El nombre de usuario debe tener al menos 3 caracteres'),
-            (len(password) < 6, 'La contraseña debe tener al menos 6 caracteres'),
-            (not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email), 'Formato de email inválido'),
-            (len(full_name) < 2, 'El nombre completo debe tener al menos 2 caracteres')
-        ]
-        
-        for condition, message in validations:
-            if condition:
-                return jsonify({'error': message}), 400
+        # Verificar unicidad de username
+        counter = 1
+        original_username = username
+        while User.query.filter_by(username=username).first():
+            username = f"{original_username}{counter}"
+            counter += 1
         
         # Verificar si el usuario ya existe
         existing_user = User.query.filter((User.username == username) | (User.email == email)).first()  # type: ignore
@@ -3063,11 +3250,15 @@ def admin_login_page():
 def api_admin_login():
     try:
         data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
         
-        if not username or not password:
-            return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
+        # Validar y sanitizar inputs
+        valid, result = validate_and_sanitize_login_input(data)
+        if not valid:
+            logger.warning(f"Admin login attempt with invalid input from {request.remote_addr}: {result}")
+            return jsonify({'error': result}), 400
+        
+        username = result['username_or_email']
+        password = result['password']
         
         admin_user = User.query.filter(User.username == username, User.role == 'platform_admin').first()  # type: ignore
         
@@ -3377,11 +3568,15 @@ def coach_login_page():
 def api_coach_login():
     try:
         data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
         
-        if not username or not password:
-            return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
+        # Validar y sanitizar inputs
+        valid, result = validate_and_sanitize_login_input(data)
+        if not valid:
+            logger.warning(f"Coach login attempt with invalid input from {request.remote_addr}: {result}")
+            return jsonify({'error': result}), 400
+        
+        username = result['username_or_email']
+        password = result['password']
         
         coach_user = User.query.filter((User.username == username) | (User.email == username), User.role == 'coach').first()  # type: ignore
         
