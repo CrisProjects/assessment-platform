@@ -5906,6 +5906,8 @@
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdownDashboard">
                     <li><a class="dropdown-item" href="/coachee-profile"><i class="fas fa-user-circle me-2"></i>Mi Perfil</a></li>
                     <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); openChangePasswordModalCoachee();"><i class="fas fa-key me-2"></i>Cambiar Contraseña</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="/participant-access"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
                 </ul>
             </div>
@@ -14090,7 +14092,115 @@
                 window.location.href = '/participant-access';
             }
         }
+        
+        // ============================================================================
+        // FUNCIONES DE CAMBIO DE CONTRASEÑA COACHEE
+        // ============================================================================
+        
+        function openChangePasswordModalCoachee() {
+            const modal = new bootstrap.Modal(document.getElementById('changePasswordModalCoachee'));
+            modal.show();
+        }
+
+        async function submitPasswordChangeCoachee() {
+            const currentPassword = document.getElementById('coacheeCurrentPassword').value.trim();
+            const newPassword = document.getElementById('coacheeNewPassword').value.trim();
+            const confirmPassword = document.getElementById('coacheeConfirmPassword').value.trim();
+            
+            // Validar campos
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Todos los campos son requeridos');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('Las contraseñas nuevas no coinciden');
+                return;
+            }
+            
+            // Validar fortaleza
+            if (newPassword.length < 8) {
+                alert('La contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coachee/change-password', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Contraseña actualizada correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModalCoachee')).hide();
+                    // Limpiar campos
+                    document.getElementById('coacheeCurrentPassword').value = '';
+                    document.getElementById('coacheeNewPassword').value = '';
+                    document.getElementById('coacheeConfirmPassword').value = '';
+                } else {
+                    alert('❌ Error: ' + (data.error || 'No se pudo cambiar la contraseña'));
+                }
+            } catch (error) {
+                alert('❌ Error al cambiar la contraseña: ' + error.message);
+            }
+        }
     </script>
+
+    <!-- Modal de Cambio de Contraseña para Coachee -->
+    <div class="modal fade" id="changePasswordModalCoachee" tabindex="-1" aria-labelledby="changePasswordModalCoacheeLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="changePasswordModalCoacheeLabel">
+                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordFormCoachee" onsubmit="event.preventDefault(); submitPasswordChangeCoachee();">
+                        <div class="mb-3">
+                            <label for="coacheeCurrentPassword" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Contraseña Actual
+                            </label>
+                            <input type="password" class="form-control" id="coacheeCurrentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="coacheeNewPassword" class="form-label">
+                                <i class="fas fa-key me-1"></i>Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="coacheeNewPassword" required minlength="8">
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 símbolo especial
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="coacheeConfirmPassword" class="form-label">
+                                <i class="fas fa-check-circle me-1"></i>Confirmar Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="coacheeConfirmPassword" required minlength="8">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="submitPasswordChangeCoachee()">
+                        <i class="fas fa-save me-1"></i>Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

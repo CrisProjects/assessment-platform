@@ -626,6 +626,71 @@ def validate_s3_url(url, allowed_buckets=None):
 # FIN DE FUNCIONES DE VALIDACIÓN S3
 # ============================================================================
 
+# ============================================================================
+# FUNCIONES DE VALIDACIÓN Y CAMBIO DE CONTRASEÑAS
+# ============================================================================
+
+def validate_password_strength(password):
+    """
+    Valida que una contraseña cumpla con los requisitos mínimos de seguridad.
+    
+    Requisitos:
+    - Mínimo 8 caracteres
+    - Al menos 1 letra mayúscula
+    - Al menos 1 letra minúscula
+    - Al menos 1 número
+    - Al menos 1 carácter especial (!@#$%^&*()_+-=[]{}|;:,.<>?)
+    
+    Args:
+        password (str): Contraseña a validar
+    
+    Returns:
+        tuple: (is_valid: bool, error_message: str or None)
+    """
+    if not password or not isinstance(password, str):
+        return (False, 'La contraseña es requerida')
+    
+    if len(password) < 8:
+        return (False, 'La contraseña debe tener al menos 8 caracteres')
+    
+    if not re.search(r'[A-Z]', password):
+        return (False, 'La contraseña debe contener al menos una letra mayúscula')
+    
+    if not re.search(r'[a-z]', password):
+        return (False, 'La contraseña debe contener al menos una letra minúscula')
+    
+    if not re.search(r'\d', password):
+        return (False, 'La contraseña debe contener al menos un número')
+    
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]', password):
+        return (False, 'La contraseña debe contener al menos un carácter especial (!@#$%^&*()_+-=[]{}|;:,.<>?)')
+    
+    return (True, None)
+
+def log_password_change(user_id, user_type, username=None):
+    """
+    Registra un cambio de contraseña en el SecurityLog.
+    
+    Args:
+        user_id (int): ID del usuario
+        user_type (str): Tipo de usuario ('admin', 'coach', 'coachee')
+        username (str): Username o email del usuario (opcional)
+    """
+    try:
+        log_security_event(
+            event_type='password_changed',
+            severity='info',
+            user_id=user_id,
+            username=username,
+            description=f'Password changed successfully by {user_type} (ID: {user_id})'
+        )
+    except Exception as e:
+        logger.error(f"Error logging password change: {str(e)}")
+
+# ============================================================================
+# FIN DE FUNCIONES DE VALIDACIÓN Y CAMBIO DE CONTRASEÑAS
+# ============================================================================
+
 # Función para versioning automático de archivos estáticos
 def get_file_version(filename):
     """
@@ -3706,6 +3771,206 @@ def api_coachee_logout():
         session.pop('_fresh', None)
     
     return jsonify({'success': True, 'message': 'Sesión de coachee cerrada exitosamente', 'type': 'coachee'}), 200
+
+# ============================================================================
+# ENDPOINTS DE CAMBIO DE CONTRASEÑA
+# ============================================================================
+
+@app.route('/api/admin/change-password', methods=['POST'])
+@login_required
+def admin_change_password():
+    """Permite a un administrador cambiar su contraseña"""
+    try:
+        # Verificar sesión de administrador
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'No hay sesión de administrador activa'}), 401
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Datos JSON requeridos'}), 400
+        
+        current_password = data.get('current_password', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        # Validar que todos los campos estén presentes
+        if not all([current_password, new_password, confirm_password]):
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+        
+        # Verificar que las contraseñas nuevas coincidan
+        if new_password != confirm_password:
+            return jsonify({'error': 'Las contraseñas nuevas no coinciden'}), 400
+        
+        # Obtener usuario administrador
+        admin = User.query.get(current_user.id)
+        if not admin:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Verificar contraseña actual
+        if not check_password_hash(admin.password, current_password):
+            log_security_event(
+                event_type='password_change_failed',
+                severity='warning',
+                user_id=admin.id,
+                username=admin.username,
+                description='Intento de cambio de contraseña con contraseña actual incorrecta'
+            )
+            return jsonify({'error': 'La contraseña actual es incorrecta'}), 401
+        
+        # Validar fortaleza de la nueva contraseña
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # Actualizar contraseña
+        admin.password = generate_password_hash(new_password, method='pbkdf2:sha256')
+        db.session.commit()
+        
+        # Registrar cambio exitoso
+        log_password_change(admin.id, 'admin', admin.username)
+        
+        logger.info(f"Password changed successfully for admin {admin.username} (ID: {admin.id})")
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña actualizada correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in admin password change: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Error al cambiar la contraseña'}), 500
+
+@app.route('/api/coach/change-password', methods=['POST'])
+def coach_change_password():
+    """Permite a un coach cambiar su contraseña"""
+    try:
+        # Verificar sesión de coach
+        if 'coach_user_id' not in session:
+            return jsonify({'error': 'No hay sesión de coach activa'}), 401
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Datos JSON requeridos'}), 400
+        
+        current_password = data.get('current_password', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        # Validar que todos los campos estén presentes
+        if not all([current_password, new_password, confirm_password]):
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+        
+        # Verificar que las contraseñas nuevas coincidan
+        if new_password != confirm_password:
+            return jsonify({'error': 'Las contraseñas nuevas no coinciden'}), 400
+        
+        # Obtener coach (es un User con role='coach')
+        coach_id = session['coach_user_id']
+        coach = User.query.filter_by(id=coach_id, role='coach').first()
+        if not coach:
+            return jsonify({'error': 'Coach no encontrado'}), 404
+        
+        # Verificar contraseña actual
+        if not coach.check_password(current_password):
+            log_security_event(
+                event_type='password_change_failed',
+                severity='warning',
+                user_id=coach.id,
+                username=coach.email,
+                description='Intento de cambio de contraseña con contraseña actual incorrecta (Coach)'
+            )
+            return jsonify({'error': 'La contraseña actual es incorrecta'}), 401
+        
+        # Validar fortaleza de la nueva contraseña
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # Actualizar contraseña
+        coach.set_password(new_password)
+        db.session.commit()
+        
+        # Registrar cambio exitoso
+        log_password_change(coach.id, 'coach', coach.email)
+        
+        logger.info(f"Password changed successfully for coach {coach.email} (ID: {coach.id})")
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña actualizada correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in coach password change: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Error al cambiar la contraseña'}), 500
+
+@app.route('/api/coachee/change-password', methods=['POST'])
+def coachee_change_password():
+    """Permite a un coachee cambiar su contraseña"""
+    try:
+        # Verificar sesión de coachee
+        if 'coachee_user_id' not in session:
+            return jsonify({'error': 'No hay sesión de coachee activa'}), 401
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Datos JSON requeridos'}), 400
+        
+        current_password = data.get('current_password', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        # Validar que todos los campos estén presentes
+        if not all([current_password, new_password, confirm_password]):
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+        
+        # Verificar que las contraseñas nuevas coincidan
+        if new_password != confirm_password:
+            return jsonify({'error': 'Las contraseñas nuevas no coinciden'}), 400
+        
+        # Obtener coachee (es un User con role='coachee')
+        coachee_id = session['coachee_user_id']
+        coachee = User.query.filter_by(id=coachee_id, role='coachee').first()
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado'}), 404
+        
+        # Verificar contraseña actual
+        if not coachee.check_password(current_password):
+            log_security_event(
+                event_type='password_change_failed',
+                severity='warning',
+                user_id=coachee.id,
+                username=coachee.email,
+                description='Intento de cambio de contraseña con contraseña actual incorrecta (Coachee)'
+            )
+            return jsonify({'error': 'La contraseña actual es incorrecta'}), 401
+        
+        # Validar fortaleza de la nueva contraseña
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # Actualizar contraseña
+        coachee.set_password(new_password)
+        db.session.commit()
+        
+        # Registrar cambio exitoso
+        log_password_change(coachee.id, 'coachee', coachee.email)
+        
+        logger.info(f"Password changed successfully for coachee {coachee.email} (ID: {coachee.id})")
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña actualizada correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in coachee password change: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Error al cambiar la contraseña'}), 500
+
+# ============================================================================
+# FIN DE ENDPOINTS DE CAMBIO DE CONTRASEÑA
+# ============================================================================
 
 @app.route('/api/register', methods=['POST'])
 def api_register():

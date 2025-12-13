@@ -3258,6 +3258,8 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="/coach-profile?return=dashboard"><i class="fas fa-user-circle me-2"></i>Mi Perfil</a></li>
                     <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" @click.prevent="openChangePasswordModal()"><i class="fas fa-key me-2"></i>Cambiar Contraseña</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" @click.prevent="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
                 </ul>
             </div>
@@ -6551,6 +6553,64 @@ function dashboardApp() {
             }
         },
         
+        // Abrir modal de cambio de contraseña
+        openChangePasswordModal() {
+            const modal = new bootstrap.Modal(document.getElementById('changePasswordModalCoach'));
+            modal.show();
+        },
+        
+        // Cambiar contraseña
+        async submitPasswordChange() {
+            const currentPassword = document.getElementById('coachCurrentPassword').value.trim();
+            const newPassword = document.getElementById('coachNewPassword').value.trim();
+            const confirmPassword = document.getElementById('coachConfirmPassword').value.trim();
+            
+            // Validar campos
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                this.showNotification('Todos los campos son requeridos', 'danger');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                this.showNotification('Las contraseñas nuevas no coinciden', 'danger');
+                return;
+            }
+            
+            // Validar fortaleza
+            if (newPassword.length < 8) {
+                this.showNotification('La contraseña debe tener al menos 8 caracteres', 'danger');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coach/change-password', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showNotification('✅ Contraseña actualizada correctamente', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModalCoach')).hide();
+                    // Limpiar campos
+                    document.getElementById('coachCurrentPassword').value = '';
+                    document.getElementById('coachNewPassword').value = '';
+                    document.getElementById('coachConfirmPassword').value = '';
+                } else {
+                    this.showNotification('❌ ' + (data.error || 'No se pudo cambiar la contraseña'), 'danger');
+                }
+            } catch (error) {
+                this.showNotification('❌ Error al cambiar la contraseña: ' + error.message, 'danger');
+            }
+        },
+        
         // Mostrar notificación
         showNotification(message, type = 'info') {
             // Crear toast de Bootstrap
@@ -7404,6 +7464,54 @@ function generateDimensionalScoresHTMLV2(dimensionalScores) {
     return html;
 }
 </script>
+
+<!-- Modal de Cambio de Contraseña para Coach -->
+<div class="modal fade" id="changePasswordModalCoach" tabindex="-1" aria-labelledby="changePasswordModalCoachLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title" id="changePasswordModalCoachLabel">
+                    <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordFormCoach" onsubmit="event.preventDefault();">
+                    <div class="mb-3">
+                        <label for="coachCurrentPassword" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Contraseña Actual
+                        </label>
+                        <input type="password" class="form-control" id="coachCurrentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="coachNewPassword" class="form-label">
+                            <i class="fas fa-key me-1"></i>Nueva Contraseña
+                        </label>
+                        <input type="password" class="form-control" id="coachNewPassword" required minlength="8">
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 símbolo especial
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="coachConfirmPassword" class="form-label">
+                            <i class="fas fa-check-circle me-1"></i>Confirmar Nueva Contraseña
+                        </label>
+                        <input type="password" class="form-control" id="coachConfirmPassword" required minlength="8">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" @click="submitPasswordChange()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                    <i class="fas fa-save me-1"></i>Cambiar Contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
