@@ -4430,7 +4430,7 @@ def api_coach_login():
             return jsonify({
                 'success': True,
                 'user': create_user_response(coach_user),
-                'redirect_url': '/coach-dashboard'
+                'redirect_url': '/coach/dashboard-v2'
             }), 200
         else:
             # Registrar login fallido en auditoría
