@@ -414,8 +414,141 @@ def log_suspicious_activity(description, user_id=None, username=None, severity='
         description=description
     )
 
+def check_failed_login_threshold(ip_address, time_window_minutes=10, max_attempts=5):
+    """
+    Verifica si se ha excedido el umbral de intentos fallidos de login desde una IP.
+    
+    Args:
+        ip_address: Dirección IP a verificar
+        time_window_minutes: Ventana de tiempo en minutos (default: 10)
+        max_attempts: Máximo de intentos permitidos (default: 5)
+    
+    Returns:
+        bool: True si se excedió el umbral, False en caso contrario
+    """
+    try:
+        # Calcular timestamp de inicio de ventana
+        time_threshold = datetime.utcnow() - timedelta(minutes=time_window_minutes)
+        
+        # Contar intentos fallidos desde esta IP en la ventana de tiempo
+        failed_attempts = SecurityLog.query.filter(
+            SecurityLog.event_type == 'login_failed',
+            SecurityLog.ip_address == ip_address,
+            SecurityLog.created_at >= time_threshold
+        ).count()
+        
+        return failed_attempts >= max_attempts
+        
+    except Exception as e:
+        logger.error(f"Error checking failed login threshold: {str(e)}")
+        return False  # En caso de error, no bloquear el flujo
+
+def send_security_alert(event_type, details):
+    """
+    Envía alerta de seguridad por email cuando se detecta una amenaza.
+    Falla silenciosamente si no está configurado SMTP.
+    
+    Args:
+        event_type: Tipo de evento ('sustained_attack', 'account_locked', etc.)
+        details: Diccionario con detalles del evento (ip_address, username, attempts, etc.)
+    """
+    try:
+        # Verificar si las alertas están habilitadas
+        enable_alerts = os.environ.get('ENABLE_SECURITY_ALERTS', 'true').lower() == 'true'
+        if not enable_alerts:
+            logger.debug("Security alerts disabled via ENABLE_SECURITY_ALERTS")
+            return
+        
+        # Obtener configuración SMTP
+        smtp_server = os.environ.get('SMTP_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+        smtp_username = os.environ.get('SMTP_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        alert_email = os.environ.get('ALERT_EMAIL')
+        
+        # Si no hay configuración SMTP, solo registrar en log
+        if not all([smtp_server, smtp_username, smtp_password, alert_email]):
+            logger.info(f"Security alert [{event_type}]: {details} (SMTP not configured, logging only)")
+            return
+        
+        # Verificar rate limit de alertas (max 1 alerta cada 5 minutos por IP)
+        ip_address = details.get('ip_address', 'unknown')
+        cache_key = f"alert_sent_{event_type}_{ip_address}"
+        last_alert_time = getattr(send_security_alert, cache_key, None)
+        
+        if last_alert_time:
+            time_since_last = datetime.utcnow() - last_alert_time
+            if time_since_last < timedelta(minutes=5):
+                logger.debug(f"Alert rate limit active for {ip_address}")
+                return
+        
+        # Preparar mensaje de email
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = alert_email
+        msg['Subject'] = f'🚨 Security Alert: {event_type.replace("_", " ").title()}'
+        
+        # Construir cuerpo del email
+        body = f"""
+        ALERTA DE SEGURIDAD - Assessment Platform
+        ==========================================
+        
+        Tipo de Evento: {event_type.replace('_', ' ').upper()}
+        Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
+        
+        Detalles:
+        ---------
+        IP Address: {details.get('ip_address', 'N/A')}
+        Username: {details.get('username', 'N/A')}
+        Intentos Fallidos: {details.get('attempts', 'N/A')}
+        Ventana de Tiempo: {details.get('time_window', 'N/A')}
+        
+        Descripción:
+        {details.get('description', 'Se detectó actividad sospechosa en el sistema.')}
+        
+        Recomendaciones:
+        - Revisar logs en SecurityLog para más detalles
+        - Considerar bloqueo temporal de IP si continúa el ataque
+        - Verificar si es un ataque de fuerza bruta coordinado
+        
+        ---
+        Sistema de Monitoreo de Seguridad
+        Assessment Platform
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Enviar email con timeout
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=5)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        
+        # Registrar alerta enviada
+        setattr(send_security_alert, cache_key, datetime.utcnow())
+        logger.info(f"Security alert sent for {event_type} from IP {ip_address}")
+        
+        # Registrar en SecurityLog
+        log_security_event(
+            event_type='security_alert_sent',
+            severity='warning',
+            description=f"Alert sent for {event_type}",
+            additional_data=str(details)
+        )
+        
+    except smtplib.SMTPException as e:
+        logger.error(f"SMTP error sending security alert: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error sending security alert: {str(e)}")
+    # Falla silenciosamente - no debe interrumpir flujo de la aplicación
+
 # ============================================================================
-# FIN DE FUNCIONES DE AUDITORÍA
+# FIN DE FUNCIONES DE AUDITORÍA Y ALERTAS
 # ============================================================================
 
 # Función para versioning automático de archivos estáticos
@@ -3219,6 +3352,20 @@ def api_login():
             # Registrar login fallido en auditoría
             log_failed_login(username, 'Invalid credentials or inactive account')
             
+            # Verificar si hay ataque sostenido de fuerza bruta
+            if check_failed_login_threshold(request.remote_addr):
+                send_security_alert(
+                    event_type='sustained_attack',
+                    details={
+                        'ip_address': request.remote_addr,
+                        'username': username,
+                        'user_role': 'unknown',
+                        'attempts': '>5',
+                        'time_window': '10 minutes',
+                        'description': f'Ataque de fuerza bruta detectado: >5 intentos fallidos de login en 10 minutos desde IP {request.remote_addr}'
+                    }
+                )
+            
             logger.warning(f"Failed login attempt for username '{username}' from {request.remote_addr}")
             return jsonify({'error': 'Credenciales inválidas o cuenta desactivada'}), 401
             
@@ -3275,6 +3422,24 @@ def api_invite_login():
         
         if not coachee.check_password(password):
             logger.warning(f"❌ INVITE-LOGIN: Invalid password for {coachee.username}")
+            
+            # Registrar login fallido en auditoría
+            log_failed_login(coachee.username, 'Invalid password via invitation')
+            
+            # Verificar si hay ataque sostenido de fuerza bruta
+            if check_failed_login_threshold(request.remote_addr):
+                send_security_alert(
+                    event_type='sustained_attack',
+                    details={
+                        'ip_address': request.remote_addr,
+                        'username': coachee.username,
+                        'user_role': 'coachee',
+                        'attempts': '>5',
+                        'time_window': '10 minutes',
+                        'description': f'Ataque de fuerza bruta detectado en login por invitación: >5 intentos fallidos en 10 minutos desde IP {request.remote_addr}'
+                    }
+                )
+            
             return jsonify({'success': False, 'error': 'Contraseña incorrecta'}), 401
         
         # Crear sesión de coachee
@@ -3586,6 +3751,21 @@ def api_admin_login():
                 user_role='platform_admin',
                 description='Admin login failed - invalid credentials'
             )
+            
+            # Verificar si hay ataque sostenido de fuerza bruta (crítico para admin)
+            if check_failed_login_threshold(request.remote_addr):
+                send_security_alert(
+                    event_type='sustained_attack',
+                    details={
+                        'ip_address': request.remote_addr,
+                        'username': username,
+                        'user_role': 'platform_admin',
+                        'attempts': '>5',
+                        'time_window': '10 minutes',
+                        'description': f'⚠️ CRÍTICO: Ataque de fuerza bruta contra cuenta ADMIN detectado: >5 intentos fallidos en 10 minutos desde IP {request.remote_addr}'
+                    }
+                )
+            
             return jsonify({'error': 'Credenciales de administrador inválidas'}), 401
             
     except Exception as e:
@@ -3915,6 +4095,20 @@ def api_coach_login():
         else:
             # Registrar login fallido en auditoría
             log_failed_login(username, 'Invalid coach credentials')
+            
+            # Verificar si hay ataque sostenido de fuerza bruta
+            if check_failed_login_threshold(request.remote_addr):
+                send_security_alert(
+                    event_type='sustained_attack',
+                    details={
+                        'ip_address': request.remote_addr,
+                        'username': username,
+                        'user_role': 'coach',
+                        'attempts': '>5',
+                        'time_window': '10 minutes',
+                        'description': f'Ataque de fuerza bruta detectado: >5 intentos fallidos de login de coach en 10 minutos desde IP {request.remote_addr}'
+                    }
+                )
             
             logger.warning(f"Failed coach login attempt for username '{username}' from {request.remote_addr}")
             return jsonify({'error': 'Credenciales de coach inválidas'}), 401
