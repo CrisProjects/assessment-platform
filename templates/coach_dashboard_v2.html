@@ -127,6 +127,88 @@
             color: #1e293b !important;
         }
         
+        /* Botones con hover - Reemplazo de eventos inline */
+        .btn-hover-primary {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #667eea;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-hover-primary:hover {
+            background: #667eea !important;
+            color: white !important;
+        }
+        
+        .btn-hover-warning {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #f59e0b;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-hover-warning:hover {
+            background: #f59e0b !important;
+            color: white !important;
+        }
+        
+        .btn-hover-success {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #10b981;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-hover-success:hover {
+            background: #10b981 !important;
+            color: white !important;
+        }
+        
+        .btn-hover-danger {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #ef4444;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-hover-danger:hover {
+            background: #ef4444 !important;
+            color: white !important;
+        }
+        
+        .mini-assessment-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .mini-assessment-card:hover {
+            transform: translateX(4px);
+        }
+        
+        .category-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+        }
+        
+        .btn-assessment-assign:hover {
+            opacity: 0.85 !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        .btn-assessment-view:hover {
+            opacity: 0.9 !important;
+        }
+        
         .text-primary {
             color: var(--calm-secondary) !important;
         }
@@ -5492,16 +5574,16 @@ function dashboardApp() {
                         </td>
                         <td style="padding: 1.25rem 1.5rem; text-align: center; border: none;">
                             <div style="display: inline-flex; gap: 0.375rem;">
-                                <button class="btn btn-sm" @click="viewCoacheeDetails(${coachee.id})" style="background: white; border: 1px solid #e5e7eb; color: #667eea; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8125rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.background='#667eea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#667eea';">
+                                <button class="btn btn-sm btn-hover-primary" @click="viewCoacheeDetails(${coachee.id})">
                                     <i class="fas fa-chart-line" style="font-size: 0.75rem;"></i>
                                 </button>
-                                <button class="btn btn-sm" @click="editCoachee(${coachee.id})" style="background: white; border: 1px solid #e5e7eb; color: #f59e0b; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8125rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.background='#f59e0b'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#f59e0b';">
+                                <button class="btn btn-sm btn-hover-warning" @click="editCoachee(${coachee.id})">
                                     <i class="fas fa-edit" style="font-size: 0.75rem;"></i>
                                 </button>
-                                <button class="btn btn-sm" @click="showAssignedAssessments(${coachee.id}, '${coachee.full_name || coachee.name}')" style="background: white; border: 1px solid #e5e7eb; color: #10b981; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8125rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.background='#10b981'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#10b981';">
+                                <button class="btn btn-sm btn-hover-success" @click="showAssignedAssessments(${coachee.id}, '${coachee.full_name || coachee.name}')">
                                     <i class="fas fa-tasks" style="font-size: 0.75rem;"></i>
                                 </button>
-                                <button class="btn btn-sm" @click="deleteCoachee(${coachee.id}, '${coachee.full_name || coachee.name}')" style="background: white; border: 1px solid #e5e7eb; color: #ef4444; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8125rem; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#ef4444';">
+                                <button class="btn btn-sm btn-hover-danger" @click="deleteCoachee(${coachee.id}, '${coachee.full_name || coachee.name}')">
                                     <i class="fas fa-trash" style="font-size: 0.75rem;"></i>
                                 </button>
                             </div>
@@ -6181,7 +6263,7 @@ function dashboardApp() {
                     if (category.assessments.length === 0) return;
                     
                     html += `
-                        <div class="category-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 1px solid #f3f4f6;" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
+                        <div class="category-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 1px solid #f3f4f6;">
                             <!-- Category Header -->
                             <div style="background: ${category.gradient}; padding: 24px; position: relative; overflow: hidden;">
                                 <div style="position: absolute; top: -20px; right: -20px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
@@ -6208,9 +6290,8 @@ function dashboardApp() {
                     
                     category.assessments.forEach((assessment, index) => {
                         html += `
-                            <div class="mini-assessment-card" style="background: ${category.bgLight}; border: 2px solid ${category.color}20; border-radius: 12px; padding: 16px; margin-bottom: 12px; transition: all 0.2s ease; cursor: pointer;" 
-                                 onmouseover="this.style.borderColor='${category.color}'; this.style.transform='translateX(4px)'" 
-                                 onmouseout="this.style.borderColor='${category.color}20'; this.style.transform='translateX(0)'">
+                            <div class="mini-assessment-card" style="background: ${category.bgLight}; border: 2px solid ${category.color}20; border-radius: 12px; padding: 16px; margin-bottom: 12px;" 
+                                 data-color="${category.color}">
                                 <div style="display: flex; gap: 12px; align-items: start;">
                                     <div style="width: 48px; height: 48px; background: ${category.gradient}; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px ${category.color}30;">
                                         <i class="fas ${category.icon}" style="font-size: 20px; color: white;"></i>
@@ -6233,16 +6314,13 @@ function dashboardApp() {
                                             </span>
                                         </div>
                                         <div style="display: flex; gap: 8px;">
-                                            <button class="btn btn-sm" style="background: ${category.gradient}; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; flex: 1; transition: all 0.2s;" 
-                                                    onclick="event.stopPropagation(); openAssignModalFromEvaluation(${assessment.id}, '${assessment.title.replace(/'/g, "\\'")}')" 
-                                                    onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)'" 
-                                                    onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'">
+                                            <button class="btn btn-sm btn-assessment-assign" style="background: ${category.gradient}; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; flex: 1; transition: all 0.2s;" 
+                                                    onclick="event.stopPropagation(); openAssignModalFromEvaluation(${assessment.id}, '${assessment.title.replace(/'/g, "\\'")}')">
                                                 <i class="fas fa-user-plus me-1"></i>Asignar
                                             </button>
-                                            <button class="btn btn-sm" style="background: white; color: ${category.color}; border: 2px solid ${category.color}; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; flex: 1; transition: all 0.2s;" 
-                                                    onclick="event.stopPropagation(); viewAssessmentQuestions(${assessment.id}, '${assessment.title.replace(/'/g, "\\'")}')" 
-                                                    onmouseover="this.style.background='${category.bgLight}'" 
-                                                    onmouseout="this.style.background='white'">
+                                            <button class="btn btn-sm btn-assessment-view" style="background: white; color: ${category.color}; border: 2px solid ${category.color}; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; flex: 1; transition: all 0.2s;" 
+                                                    data-bg-light="${category.bgLight}"
+                                                    onclick="event.stopPropagation(); viewAssessmentQuestions(${assessment.id}, '${assessment.title.replace(/'/g, "\\'")}')">
                                                 <i class="fas fa-eye me-1"></i>Ver
                                             </button>
                                         </div>
@@ -6288,6 +6366,29 @@ function dashboardApp() {
                     style.id = 'assessment-category-cards-style';
                     document.head.appendChild(style);
                 }
+                
+                // Agregar event listeners para hover dinámico de assessment cards
+                setTimeout(() => {
+                    document.querySelectorAll('.mini-assessment-card').forEach(card => {
+                        const color = card.dataset.color;
+                        card.addEventListener('mouseenter', function() {
+                            this.style.borderColor = color;
+                        });
+                        card.addEventListener('mouseleave', function() {
+                            this.style.borderColor = color + '20';
+                        });
+                    });
+                    
+                    document.querySelectorAll('.btn-assessment-view').forEach(btn => {
+                        const bgLight = btn.dataset.bgLight;
+                        btn.addEventListener('mouseenter', function() {
+                            this.style.background = bgLight;
+                        });
+                        btn.addEventListener('mouseleave', function() {
+                            this.style.background = 'white';
+                        });
+                    });
+                }, 100);
             },
         async loadPendingEvaluations() {
             try {
