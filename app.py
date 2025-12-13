@@ -551,6 +551,81 @@ def send_security_alert(event_type, details):
 # FIN DE FUNCIONES DE AUDITORÍA Y ALERTAS
 # ============================================================================
 
+# ============================================================================
+# FUNCIONES DE VALIDACIÓN DE URLs S3
+# ============================================================================
+
+def validate_s3_url(url, allowed_buckets=None):
+    """
+    Valida que una URL sea de un bucket S3 permitido.
+    Previene ataques SSRF verificando que la URL pertenezca a buckets autorizados.
+    
+    Args:
+        url: URL a validar
+        allowed_buckets: Lista de nombres de buckets permitidos. Si None, usa AWS_S3_BUCKET
+    
+    Returns:
+        tuple: (is_valid: bool, error_message: str or None)
+    
+    Ejemplos de URLs válidas:
+        - https://efectocoach-avatars.s3.us-east-1.amazonaws.com/avatar.jpg
+        - https://s3.us-east-1.amazonaws.com/efectocoach-avatars/avatar.jpg
+    """
+    try:
+        from urllib.parse import urlparse
+        
+        # Si no se especifican buckets, usar el configurado en la app
+        if allowed_buckets is None:
+            aws_bucket = os.environ.get('AWS_S3_BUCKET', 'efectocoach-avatars')
+            allowed_buckets = [aws_bucket] if aws_bucket else []
+        
+        if not allowed_buckets:
+            # Si no hay buckets configurados, solo permitir URLs locales
+            if url.startswith('/static/'):
+                return (True, None)
+            return (False, 'No hay buckets S3 configurados')
+        
+        # Validar que sea HTTPS
+        if not url.startswith('https://'):
+            # Permitir URLs locales (/static/)
+            if url.startswith('/static/'):
+                return (True, None)
+            return (False, 'Solo se permiten URLs HTTPS o locales (/static/)')
+        
+        parsed = urlparse(url)
+        hostname = parsed.netloc.lower()
+        path = parsed.path
+        
+        # Formato 1: bucket.s3.region.amazonaws.com
+        # Ejemplo: efectocoach-avatars.s3.us-east-1.amazonaws.com
+        for bucket in allowed_buckets:
+            if hostname.startswith(f'{bucket}.s3.') and hostname.endswith('.amazonaws.com'):
+                return (True, None)
+        
+        # Formato 2: s3.region.amazonaws.com/bucket/
+        # Ejemplo: s3.us-east-1.amazonaws.com/efectocoach-avatars/
+        if hostname.startswith('s3.') and hostname.endswith('.amazonaws.com'):
+            # Verificar que el path empiece con alguno de los buckets permitidos
+            for bucket in allowed_buckets:
+                if path.startswith(f'/{bucket}/'):
+                    return (True, None)
+        
+        # Formato 3: bucket.s3.amazonaws.com (sin región explícita)
+        # Ejemplo: efectocoach-avatars.s3.amazonaws.com
+        for bucket in allowed_buckets:
+            if hostname == f'{bucket}.s3.amazonaws.com':
+                return (True, None)
+        
+        return (False, f'URL no pertenece a un bucket S3 autorizado. Buckets permitidos: {", ".join(allowed_buckets)}')
+        
+    except Exception as e:
+        logger.error(f"Error validating S3 URL: {str(e)}")
+        return (False, f'Error al validar URL: {str(e)}')
+
+# ============================================================================
+# FIN DE FUNCIONES DE VALIDACIÓN S3
+# ============================================================================
+
 # Función para versioning automático de archivos estáticos
 def get_file_version(filename):
     """
@@ -4236,15 +4311,28 @@ def api_coach_set_avatar_url():
         if not avatar_url:
             return jsonify({'success': False, 'error': 'URL del avatar es requerida'}), 400
         
-        # Validar que la URL sea de un servicio permitido
-        allowed_domains = ['pravatar.cc', 'ui-avatars.com', 'robohash.org', 'i.pravatar.cc']
-        from urllib.parse import urlparse
-        parsed_url = urlparse(avatar_url)
-        
-        if not any(domain in parsed_url.netloc for domain in allowed_domains):
-            # Si es una URL local (empieza con /static/), también permitirla
-            if not avatar_url.startswith('/static/'):
-                return jsonify({'success': False, 'error': 'URL de avatar no permitida'}), 400
+        # Validar URLs de S3 (si es una URL de AWS)
+        if 's3' in avatar_url.lower() and 'amazonaws.com' in avatar_url.lower():
+            is_valid, error_msg = validate_s3_url(avatar_url)
+            if not is_valid:
+                logger.warning(f"Invalid S3 URL rejected for coach {g.current_user.id}: {avatar_url}")
+                log_suspicious_activity(
+                    description=f'Attempted to set invalid S3 URL as avatar: {error_msg}',
+                    user_id=g.current_user.id,
+                    username=g.current_user.username,
+                    severity='warning'
+                )
+                return jsonify({'success': False, 'error': f'URL de S3 no válida: {error_msg}'}), 400
+        else:
+            # Validar que la URL sea de un servicio permitido (avatares externos)
+            allowed_domains = ['pravatar.cc', 'ui-avatars.com', 'robohash.org', 'i.pravatar.cc']
+            from urllib.parse import urlparse
+            parsed_url = urlparse(avatar_url)
+            
+            if not any(domain in parsed_url.netloc for domain in allowed_domains):
+                # Si es una URL local (empieza con /static/), también permitirla
+                if not avatar_url.startswith('/static/'):
+                    return jsonify({'success': False, 'error': 'URL de avatar no permitida'}), 400
         
         # Actualizar URL del avatar en la base de datos
         g.current_user.avatar_url = avatar_url
@@ -8114,15 +8202,28 @@ def api_coachee_set_avatar_url():
         if not avatar_url:
             return jsonify({'success': False, 'error': 'URL del avatar es requerida'}), 400
         
-        # Validar que la URL sea de un servicio permitido
-        allowed_domains = ['pravatar.cc', 'ui-avatars.com', 'robohash.org', 'i.pravatar.cc']
-        from urllib.parse import urlparse
-        parsed_url = urlparse(avatar_url)
-        
-        if not any(domain in parsed_url.netloc for domain in allowed_domains):
-            # Si es una URL local (empieza con /static/), también permitirla
-            if not avatar_url.startswith('/static/'):
-                return jsonify({'success': False, 'error': 'URL de avatar no permitida'}), 400
+        # Validar URLs de S3 (si es una URL de AWS)
+        if 's3' in avatar_url.lower() and 'amazonaws.com' in avatar_url.lower():
+            is_valid, error_msg = validate_s3_url(avatar_url)
+            if not is_valid:
+                logger.warning(f"Invalid S3 URL rejected for user {g.current_user.id}: {avatar_url}")
+                log_suspicious_activity(
+                    description=f'Attempted to set invalid S3 URL as avatar: {error_msg}',
+                    user_id=g.current_user.id,
+                    username=g.current_user.username,
+                    severity='warning'
+                )
+                return jsonify({'success': False, 'error': f'URL de S3 no válida: {error_msg}'}), 400
+        else:
+            # Validar que la URL sea de un servicio permitido (avatares externos)
+            allowed_domains = ['pravatar.cc', 'ui-avatars.com', 'robohash.org', 'i.pravatar.cc']
+            from urllib.parse import urlparse
+            parsed_url = urlparse(avatar_url)
+            
+            if not any(domain in parsed_url.netloc for domain in allowed_domains):
+                # Si es una URL local (empieza con /static/), también permitirla
+                if not avatar_url.startswith('/static/'):
+                    return jsonify({'success': False, 'error': 'URL de avatar no permitida'}), 400
         
         # Actualizar URL del avatar en la base de datos
         g.current_user.avatar_url = avatar_url
