@@ -85,20 +85,14 @@ app.config.update({
     'SEND_FILE_MAX_AGE_DEFAULT': 0
 })
 
-# Configurar CORS
-env_origins = [origin.strip() for origin in os.environ.get('ALLOWED_ORIGINS', '').split(',') if origin.strip()]
-default_origins = [
-    'http://localhost:3000', 'http://127.0.0.1:3000',
-    'https://assessment-platform-1nuo.onrender.com',
-    'https://assessment-platform-final.vercel.app',
-    'https://assessment-platform-deploy.vercel.app',
-    'https://instacoach.cl',
-    'https://www.instacoach.cl'
-]
-if not IS_PRODUCTION:
-    default_origins.extend(['http://localhost:5002', 'http://127.0.0.1:5002'])
+# Configurar CORS - Restringido solo a dominio de producción
+if IS_PRODUCTION:
+    # Solo el dominio de producción actual de Railway
+    allowed_origins = [os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'https://assessment-platform-production.up.railway.app')]
+else:
+    # En desarrollo, permitir localhost
+    allowed_origins = ['http://localhost:5002', 'http://127.0.0.1:5002', 'http://localhost:3000', 'http://127.0.0.1:3000']
 
-allowed_origins = list(set(env_origins + default_origins))
 CORS(app, origins=allowed_origins, supports_credentials=True,
      allow_headers=['Content-Type', 'Authorization', 'Origin', 'Accept'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
