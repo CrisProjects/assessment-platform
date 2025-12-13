@@ -509,14 +509,15 @@ def add_security_headers(response):
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     
     # Content-Security-Policy: Controla recursos que puede cargar la página
-    # Política reforzada sin unsafe-inline ni unsafe-eval para máxima seguridad
+    # NOTA CRÍTICA: unsafe-inline y unsafe-eval necesarios para Alpine.js, FullCalendar y eventos del DOM
+    # Eliminados generaría bloqueo total de la aplicación (setTimeout, onclick handlers, etc)
     csp_policy = (
         "default-src 'self'; "  # Por defecto, solo recursos del mismo origen
-        "script-src 'self' "  # Scripts: solo mismo origen y CDNs confiables
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' "  # Scripts completos (necesario para app funcional)
         "https://cdn.jsdelivr.net "  # FullCalendar CDN y Alpine.js
         "https://cdnjs.cloudflare.com "  # Chart.js, PDF.js y otras librerías
         "https://unpkg.com; "  # Alpine.js CDN alternativo
-        "style-src 'self' 'unsafe-inline' "  # Estilos: mismo origen + inline (aún necesario para estilos dinámicos)
+        "style-src 'self' 'unsafe-inline' "  # Estilos: mismo origen + inline (necesario para estilos dinámicos)
         "https://cdn.jsdelivr.net "  # FullCalendar CSS
         "https://cdnjs.cloudflare.com "  # Font Awesome y otros
         "https://fonts.googleapis.com; "  # Google Fonts
