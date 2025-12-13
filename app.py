@@ -2037,7 +2037,7 @@ def get_dashboard_url(role):
     """Retorna la URL del dashboard según el rol"""
     urls = {
         'platform_admin': '/platform-admin-dashboard',
-        'coach': '/coach-dashboard',
+        'coach': '/coach/dashboard-v2',
         'coachee': '/coachee-dashboard'  # Dashboard principal con auto-start de evaluaciones
     }
     return urls.get(role, '/coachee-dashboard')
