@@ -369,6 +369,81 @@ def utility_processor():
         convert_to_santiago=convert_to_santiago
     )
 
+# ============================================================================
+# SECURITY HEADERS
+# ============================================================================
+
+@app.after_request
+def add_security_headers(response):
+    """
+    Agrega headers de seguridad HTTP a todas las respuestas.
+    Protege contra ataques comunes como XSS, clickjacking, MIME sniffing, etc.
+    """
+    # X-Frame-Options: Previene clickjacking
+    # DENY: no permite que el sitio sea embebido en iframes
+    response.headers['X-Frame-Options'] = 'DENY'
+    
+    # X-Content-Type-Options: Previene MIME sniffing
+    # nosniff: navegador debe respetar el Content-Type declarado
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # X-XSS-Protection: Protección XSS legacy (navegadores antiguos)
+    # 1; mode=block: habilita filtro XSS y bloquea página si detecta ataque
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Strict-Transport-Security: Fuerza HTTPS (solo en producción)
+    # max-age=31536000: válido por 1 año
+    # includeSubDomains: aplica a todos los subdominios
+    if IS_PRODUCTION:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Content-Security-Policy: Controla recursos que puede cargar la página
+    # Política balanceada que permite funcionalidad actual pero aumenta seguridad
+    csp_policy = (
+        "default-src 'self'; "  # Por defecto, solo recursos del mismo origen
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' "  # Scripts: mismo origen + inline (necesario para Alpine.js y eventos inline)
+        "https://cdn.jsdelivr.net "  # FullCalendar CDN
+        "https://cdnjs.cloudflare.com "  # Chart.js y otras librerías
+        "https://unpkg.com; "  # Alpine.js CDN
+        "style-src 'self' 'unsafe-inline' "  # Estilos: mismo origen + inline (necesario para estilos inline)
+        "https://cdn.jsdelivr.net "  # FullCalendar CSS
+        "https://cdnjs.cloudflare.com "  # Font Awesome y otros
+        "https://fonts.googleapis.com; "  # Google Fonts
+        "font-src 'self' "  # Fuentes: mismo origen
+        "https://cdnjs.cloudflare.com "  # Font Awesome
+        "https://fonts.gstatic.com "  # Google Fonts
+        "data:; "  # Data URIs para fuentes embebidas
+        "img-src 'self' data: https: blob:; "  # Imágenes: mismo origen + data URIs + HTTPS (para avatares S3)
+        "connect-src 'self'; "  # Conexiones AJAX: solo mismo origen
+        "frame-ancestors 'none'; "  # No permitir ser embebido en iframes (complementa X-Frame-Options)
+        "base-uri 'self'; "  # Base URI solo mismo origen
+        "form-action 'self'"  # Formularios solo pueden enviar a mismo origen
+    )
+    response.headers['Content-Security-Policy'] = csp_policy
+    
+    # Referrer-Policy: Controla información de referrer enviada
+    # strict-origin-when-cross-origin: envía URL completa en mismo origen, solo origen en cross-origin HTTPS
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    
+    # Permissions-Policy: Controla APIs del navegador disponibles
+    # Deshabilita APIs no necesarias para reducir superficie de ataque
+    response.headers['Permissions-Policy'] = (
+        'geolocation=(), '  # No necesitamos geolocalización
+        'microphone=(), '  # No necesitamos micrófono
+        'camera=(), '  # No necesitamos cámara
+        'payment=(), '  # No procesamos pagos
+        'usb=(), '  # No usamos USB
+        'magnetometer=(), '  # No necesitamos magnetómetro
+        'gyroscope=(), '  # No necesitamos giroscopio
+        'accelerometer=()'  # No necesitamos acelerómetro
+    )
+    
+    return response
+
+# ============================================================================
+# FIN DE SECURITY HEADERS
+# ============================================================================
+
 @login_manager.unauthorized_handler
 def unauthorized():
     if request.path.startswith('/api/'):
