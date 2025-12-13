@@ -74,12 +74,12 @@ app.config.update({
     'SECRET_KEY': SECRET_KEY,
     'SQLALCHEMY_DATABASE_URI': os.environ.get('DATABASE_URL', 'sqlite:///assessments.db').replace('postgres://', 'postgresql://', 1),
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    'PERMANENT_SESSION_LIFETIME': timedelta(days=30),
+    'PERMANENT_SESSION_LIFETIME': timedelta(hours=24),  # Reducido de 30 días a 24h por seguridad
     'SESSION_PERMANENT': True,
     'SESSION_COOKIE_SECURE': IS_PRODUCTION,
     'SESSION_COOKIE_HTTPONLY': True,
     'SESSION_COOKIE_SAMESITE': 'Lax',
-    'REMEMBER_COOKIE_DURATION': timedelta(days=30),
+    'REMEMBER_COOKIE_DURATION': timedelta(days=7),  # Reducido de 30 a 7 días
     'REMEMBER_COOKIE_SECURE': IS_PRODUCTION,
     'REMEMBER_COOKIE_HTTPONLY': True,
     # Desactivar cache de templates para desarrollo
@@ -1142,9 +1142,46 @@ def get_current_user():
 # Override current_user con nuestro sistema de sesiones independientes
 @app.before_request
 def load_current_user():
-    """Cargar el usuario actual desde nuestras sesiones independientes"""
+    """Cargar el usuario actual y validar actividad reciente"""
     # Limpiar g.current_user al inicio de cada request
     g.current_user = None
+    
+    # VALIDACIÓN DE ACTIVIDAD RECIENTE (2 horas de inactividad = logout automático)
+    current_time = datetime.utcnow()
+    inactivity_limit = timedelta(hours=2)
+    
+    # Validar sesión de coach (independiente)
+    if 'coach_user_id' in session:
+        last_activity_coach = session.get('last_activity_coach')
+        if last_activity_coach:
+            try:
+                last_activity_time = datetime.fromisoformat(last_activity_coach)
+                if current_time - last_activity_time > inactivity_limit:
+                    # Sesión de coach expirada por inactividad
+                    session.pop('coach_user_id', None)
+                    session.pop('last_activity_coach', None)
+                    logger.info(f"Coach session expired due to inactivity")
+            except (ValueError, TypeError):
+                pass
+        # Actualizar timestamp de actividad
+        session['last_activity_coach'] = current_time.isoformat()
+    
+    # Validar sesión de coachee (independiente)
+    if 'coachee_user_id' in session:
+        last_activity_coachee = session.get('last_activity_coachee')
+        if last_activity_coachee:
+            try:
+                last_activity_time = datetime.fromisoformat(last_activity_coachee)
+                if current_time - last_activity_time > inactivity_limit:
+                    # Sesión de coachee expirada por inactividad
+                    session.pop('coachee_user_id', None)
+                    session.pop('coachee_user_id', None)
+                    session.pop('last_activity_coachee', None)
+                    logger.info(f"Coachee session expired due to inactivity")
+            except (ValueError, TypeError):
+                pass
+        # Actualizar timestamp de actividad
+        session['last_activity_coachee'] = current_time.isoformat()
     
     # No establecer g.current_user aquí para evitar conflictos.
     # Cada decorador específico (@coach_session_required, @coachee_session_required) 
