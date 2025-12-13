@@ -5849,6 +5849,54 @@ function dashboardApp() {
             });
         },
         
+        formatDimensionName(dimension) {
+            const dimensionMap = {
+                'dominancia': 'Dominancia',
+                'influencia': 'Influencia',
+                'estabilidad': 'Estabilidad',
+                'cumplimiento': 'Cumplimiento',
+                'autoconciencia': 'Autoconciencia',
+                'autorregulacion': 'Autorregulación',
+                'motivacion': 'Motivación',
+                'empatia': 'Empatía',
+                'habilidades_sociales': 'Habilidades Sociales',
+                'comunicacion': 'Comunicación',
+                'colaboracion': 'Colaboración',
+                'resolucion_conflictos': 'Resolución de Conflictos',
+                'adaptabilidad': 'Adaptabilidad',
+                'vision_estrategica': 'Visión Estratégica',
+                'toma_decisiones': 'Toma de Decisiones',
+                'desarrollo_equipo': 'Desarrollo de Equipo',
+                'inspiracion': 'Inspiración',
+                'delegacion': 'Delegación'
+            };
+            return dimensionMap[dimension] || dimension.charAt(0).toUpperCase() + dimension.slice(1).replace(/_/g, ' ');
+        },
+        
+        getDimensionDescription(dimension) {
+            const descriptions = {
+                'dominancia': 'Orientación a resultados, control y decisión',
+                'influencia': 'Capacidad de persuasión y relaciones sociales',
+                'estabilidad': 'Paciencia, consistencia y trabajo en equipo',
+                'cumplimiento': 'Precisión, calidad y seguimiento de normas',
+                'autoconciencia': 'Reconocimiento de emociones propias',
+                'autorregulacion': 'Control emocional y adaptación',
+                'motivacion': 'Impulso interior y compromiso',
+                'empatia': 'Comprensión de emociones ajenas',
+                'habilidades_sociales': 'Gestión de relaciones interpersonales',
+                'comunicacion': 'Expresión clara y efectiva',
+                'colaboracion': 'Trabajo conjunto hacia objetivos comunes',
+                'resolucion_conflictos': 'Manejo constructivo de desacuerdos',
+                'adaptabilidad': 'Flexibilidad ante cambios',
+                'vision_estrategica': 'Pensamiento a largo plazo',
+                'toma_decisiones': 'Análisis y elección efectiva',
+                'desarrollo_equipo': 'Potenciación del talento',
+                'inspiracion': 'Motivación y ejemplo',
+                'delegacion': 'Asignación efectiva de responsabilidades'
+            };
+            return descriptions[dimension] || 'Aspecto evaluado';
+        },
+        
         getTimeAgo(dateString) {
             const now = new Date();
             const date = new Date(dateString);
@@ -6986,38 +7034,7 @@ function viewEvaluationDetailsGlobal(evaluationId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Aquí podrías agregar una función displayEvaluationDetailsSimple
-                // Por ahora mostramos la información básica
-                const evaluation = data.evaluation;
-                document.getElementById('evaluationDetailsContent').innerHTML = `
-                    <div class="evaluation-details-container">
-                        <h5>${evaluation.assessment?.title || 'Evaluación'}</h5>
-                        <p class="text-muted">Completada el ${new Date(evaluation.completed_at).toLocaleDateString('es-CL')}</p>
-                        <hr>
-                        <div class="alert alert-info">
-                            <strong>Puntuación:</strong> ${evaluation.score}
-                        </div>
-                        ${evaluation.result_text ? `
-                            <div class="mt-3">
-                                <h6>Interpretación:</h6>
-                                <p>${evaluation.result_text}</p>
-                            </div>
-                        ` : ''}
-                        ${evaluation.dimensional_scores ? `
-                            <div class="mt-3">
-                                <h6>Dimensiones:</h6>
-                                <ul class="list-group">
-                                    ${Object.entries(evaluation.dimensional_scores).map(([dim, score]) => `
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            ${dim}
-                                            <span class="badge bg-primary rounded-pill">${score}%</span>
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
+                displayEvaluationDetailsV2(data.evaluation);
             } else {
                 document.getElementById('evaluationDetailsContent').innerHTML = `
                     <div class="alert alert-danger">
@@ -7036,6 +7053,222 @@ function viewEvaluationDetailsGlobal(evaluationId) {
                 </div>
             `;
         });
+}
+
+// Función para mostrar detalles completos de evaluación
+function displayEvaluationDetailsV2(evaluation) {
+    const container = document.getElementById('evaluationDetailsContent');
+    
+    const assessmentTitle = evaluation.assessment?.title || '';
+    const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
+    const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
+    const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
+    const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
+    
+    const data = evaluation;
+    const dimensionalScores = evaluation.dimensional_scores;
+    
+    // Calcular porcentaje correcto según el tipo de evaluación
+    let displayPercentage;
+    let levelLabel;
+    let levelText;
+    
+    if (isLeadershipAssessment) {
+        displayPercentage = Math.round((data.score / 50) * 100);
+        levelLabel = 'Nivel de Liderazgo';
+        levelText = displayPercentage >= 80 ? 'Excepcional' : displayPercentage >= 60 ? 'Bueno' : displayPercentage >= 40 ? 'En Desarrollo' : 'Inicial';
+    } else if (isTeamworkAssessment) {
+        displayPercentage = Math.round((data.score / 60) * 100);
+        levelLabel = 'Nivel de Colaboración';
+        levelText = displayPercentage >= 80 ? 'Excelente' : displayPercentage >= 60 ? 'Bueno' : displayPercentage >= 40 ? 'En Desarrollo' : 'Inicial';
+    } else if (isDiscAssessment) {
+        displayPercentage = Math.round((data.score / 80) * 100);
+        levelLabel = 'Estilo DISC';
+        levelText = displayPercentage >= 80 ? 'Dominante Alto' : displayPercentage >= 60 ? 'Influyente Alto' : displayPercentage >= 40 ? 'Estable Alto' : 'Concienzudo';
+    } else if (isEmotionalIntelligenceAssessment) {
+        displayPercentage = Math.round((data.score / 60) * 100);
+        levelLabel = 'Nivel de IE';
+        levelText = displayPercentage >= 80 ? 'Muy Alta' : displayPercentage >= 65 ? 'Alta' : displayPercentage >= 50 ? 'Moderada' : 'Baja';
+    } else {
+        displayPercentage = Math.round(data.score || 0);
+        levelLabel = 'Nivel de Asertividad';
+        levelText = displayPercentage >= 85 ? 'Muy Asertivo' : displayPercentage >= 70 ? 'Asertivo' : displayPercentage >= 50 ? 'Moderado' : 'Bajo';
+    }
+    
+    const analysisTitle = isDiscAssessment ? 'Análisis DISC de Personalidad' : 
+                         (isEmotionalIntelligenceAssessment ? 'Análisis de Inteligencia Emocional' :
+                         (isLeadershipAssessment ? 'Análisis de Liderazgo' :
+                         (isTeamworkAssessment ? 'Análisis de Trabajo en Equipo' : 'Análisis de Asertividad')));
+    
+    // Formatear fecha
+    let formattedDate = 'N/A';
+    try {
+        const date = new Date(data.completed_at + (data.completed_at.includes('Z') ? '' : 'Z'));
+        formattedDate = date.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch (e) {}
+    
+    const html = `
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0" style="background: #f8f9fa;">
+                    <div class="card-body text-center">
+                        <h4 class="mb-3">${analysisTitle}</h4>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="h2 text-primary">${displayPercentage}%</div>
+                                <div class="text-muted">Puntuación Total</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="h4 text-success">${levelText}</div>
+                                <div class="text-muted">${levelLabel}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="h6">${formattedDate}</div>
+                                <div class="text-muted">Fecha de Completado</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="h6">${evaluation.responses ? evaluation.responses.length : 'N/A'}</div>
+                                <div class="text-muted">Preguntas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 h-100" style="background: #f8f9fa;">
+                    <div class="card-header" style="background: #e9ecef;">
+                        <h5><i class="fas fa-chart-radar me-2"></i>Radar de Dimensiones</h5>
+                    </div>
+                    <div class="card-body">
+                        <div style="position: relative; height: 300px;">
+                            <canvas id="evaluationRadarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 h-100" style="background: #f8f9fa;">
+                    <div class="card-header" style="background: #e9ecef;">
+                        <h5><i class="fas fa-chart-bar me-2"></i>Puntuaciones</h5>
+                    </div>
+                    <div class="card-body">
+                        ${generateDimensionalScoresHTMLV2(dimensionalScores)}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        ${evaluation.result_text ? `
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0" style="background: #f8f9fa;">
+                    <div class="card-header" style="background: #e9ecef;">
+                        <h5><i class="fas fa-lightbulb me-2"></i>Interpretación</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>${evaluation.result_text}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    container.innerHTML = html;
+    
+    setTimeout(() => {
+        createRadarChartV2(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isLeadershipAssessment, isTeamworkAssessment);
+    }, 100);
+}
+
+function createRadarChartV2(dimensionalScores, isDisc, isIE, isLeadership, isTeamwork) {
+    const ctx = document.getElementById('evaluationRadarChart');
+    if (!ctx) return;
+    
+    let labels = [];
+    let data = [];
+    
+    if (isDisc) {
+        labels = ['Dominante', 'Influyente', 'Estable', 'Concienzudo'];
+        data = [
+            dimensionalScores?.Dominante || 0,
+            dimensionalScores?.Influyente || 0,
+            dimensionalScores?.Estable || 0,
+            dimensionalScores?.Concienzudo || 0
+        ];
+    } else if (isIE) {
+        labels = ['Autoconciencia', 'Autorregulación', 'Automotivación', 'Empatía', 'Habilidades Sociales'];
+        data = [
+            dimensionalScores?.Autoconciencia || 0,
+            dimensionalScores?.Autorregulación || 0,
+            dimensionalScores?.Automotivación || 0,
+            dimensionalScores?.Empatía || 0,
+            dimensionalScores?.['Habilidades Sociales'] || 0
+        ];
+    } else if (dimensionalScores && typeof dimensionalScores === 'object') {
+        labels = Object.keys(dimensionalScores);
+        data = Object.values(dimensionalScores);
+    }
+    
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Puntuación (%)',
+                data: data,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { stepSize: 20 }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+function generateDimensionalScoresHTMLV2(dimensionalScores) {
+    if (!dimensionalScores) return '<p class="text-muted">No hay datos disponibles.</p>';
+    
+    let html = '';
+    
+    if (typeof dimensionalScores === 'object') {
+        for (const [dimension, score] of Object.entries(dimensionalScores)) {
+            const percentage = Math.round(score);
+            let colorClass = percentage >= 70 ? 'success' : percentage >= 50 ? 'warning' : 'danger';
+            
+            html += `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong>${dimension}</strong>
+                        <span class="badge bg-${colorClass}">${percentage}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-${colorClass}" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    return html;
 }
 </script>
 
