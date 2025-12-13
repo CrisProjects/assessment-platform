@@ -307,6 +307,117 @@ def validate_and_sanitize_register_input(data):
 # FIN DE FUNCIONES DE VALIDACIÓN
 # ============================================================================
 
+# ============================================================================
+# FUNCIONES DE AUDITORÍA DE SEGURIDAD
+# ============================================================================
+
+def log_security_event(event_type, severity='info', user_id=None, username=None, 
+                       user_role=None, description=None, additional_data=None):
+    """
+    Registra un evento de seguridad en la base de datos.
+    
+    Args:
+        event_type: Tipo de evento ('login_failed', 'unauthorized_access', etc.)
+        severity: Nivel de severidad ('info', 'warning', 'error', 'critical')
+        user_id: ID del usuario (si existe)
+        username: Nombre de usuario (guardado por si el usuario no existe)
+        user_role: Rol del usuario
+        description: Descripción del evento
+        additional_data: Datos adicionales en formato string (puede ser JSON)
+    """
+    try:
+        # Obtener información de la solicitud HTTP
+        ip_address = request.remote_addr if request else None
+        user_agent = request.headers.get('User-Agent', '')[:500] if request else None
+        endpoint = request.endpoint if request else None
+        method = request.method if request else None
+        
+        # Crear registro de seguridad
+        security_log = SecurityLog(
+            event_type=event_type,
+            severity=severity,
+            user_id=user_id,
+            username=username,
+            user_role=user_role,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            method=method,
+            description=description,
+            additional_data=additional_data
+        )
+        
+        db.session.add(security_log)
+        db.session.commit()
+        
+        # Log en el sistema de logging estándar
+        log_message = f"Security Event: {event_type} | Severity: {severity} | User: {username or 'Unknown'} | IP: {ip_address}"
+        if severity == 'critical':
+            logger.critical(log_message)
+        elif severity == 'error':
+            logger.error(log_message)
+        elif severity == 'warning':
+            logger.warning(log_message)
+        else:
+            logger.info(log_message)
+            
+    except Exception as e:
+        logger.error(f"Error logging security event: {str(e)}")
+        # No lanzar excepción para no interrumpir flujo principal
+
+def log_failed_login(username, reason='Invalid credentials'):
+    """Registra un intento de login fallido"""
+    log_security_event(
+        event_type='login_failed',
+        severity='warning',
+        username=username,
+        description=f'Failed login attempt: {reason}'
+    )
+
+def log_successful_login(user):
+    """Registra un login exitoso"""
+    log_security_event(
+        event_type='login_success',
+        severity='info',
+        user_id=user.id,
+        username=user.username,
+        user_role=user.role,
+        description=f'Successful login for {user.role}'
+    )
+
+def log_unauthorized_access(user_id=None, username=None, required_role=None):
+    """Registra un intento de acceso no autorizado"""
+    log_security_event(
+        event_type='unauthorized_access',
+        severity='error',
+        user_id=user_id,
+        username=username,
+        description=f'Unauthorized access attempt. Required role: {required_role}'
+    )
+
+def log_rate_limit_exceeded(username=None):
+    """Registra cuando se excede el límite de rate limiting"""
+    log_security_event(
+        event_type='rate_limit_exceeded',
+        severity='warning',
+        username=username,
+        description='Rate limit exceeded for login attempts'
+    )
+
+def log_suspicious_activity(description, user_id=None, username=None, severity='warning'):
+    """Registra actividad sospechosa"""
+    log_security_event(
+        event_type='suspicious_activity',
+        severity=severity,
+        user_id=user_id,
+        username=username,
+        description=description
+    )
+
+# ============================================================================
+# FIN DE FUNCIONES DE AUDITORÍA
+# ============================================================================
+
 # Función para versioning automático de archivos estáticos
 def get_file_version(filename):
     """
@@ -795,6 +906,62 @@ class CoachingSession(db.Model):
         """Combinar fecha y hora de fin para el calendario"""
         return datetime.combine(self.session_date, self.end_time)
 
+# ============================================================================
+# MODELO DE AUDITORÍA DE SEGURIDAD
+# ============================================================================
+
+class SecurityLog(db.Model):
+    """
+    Modelo para registro de eventos de seguridad.
+    Registra eventos críticos como logins fallidos, accesos no autorizados,
+    cambios de contraseña, y otras actividades sospechosas.
+    """
+    __tablename__ = 'security_log'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Información del evento
+    event_type = db.Column(db.String(50), nullable=False, index=True)
+    # Tipos: 'login_failed', 'login_success', 'unauthorized_access', 
+    #        'password_change', 'account_locked', 'suspicious_activity',
+    #        'rate_limit_exceeded', 'invalid_token', 'session_hijack_attempt'
+    
+    severity = db.Column(db.String(20), nullable=False, index=True)
+    # Niveles: 'info', 'warning', 'error', 'critical'
+    
+    # Información del usuario
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    username = db.Column(db.String(120), nullable=True, index=True)  # Guardado por si usuario no existe
+    user_role = db.Column(db.String(20), nullable=True)
+    
+    # Información de la solicitud
+    ip_address = db.Column(db.String(45), nullable=True, index=True)  # IPv4 o IPv6
+    user_agent = db.Column(db.String(500), nullable=True)
+    endpoint = db.Column(db.String(200), nullable=True, index=True)
+    method = db.Column(db.String(10), nullable=True)  # GET, POST, PUT, DELETE
+    
+    # Detalles del evento
+    description = db.Column(db.Text, nullable=True)
+    additional_data = db.Column(db.Text, nullable=True)  # JSON string con datos adicionales
+    
+    # Timestamp
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    # Relación con usuario (si existe)
+    user = db.relationship('User', backref='security_logs', foreign_keys=[user_id])
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.created_at = kwargs.get('created_at', datetime.utcnow())
+    
+    def __repr__(self):
+        return f'<SecurityLog {self.event_type} - {self.severity} - {self.created_at}>'
+
+# ============================================================================
+# FIN DE MODELO DE AUDITORÍA
+# ============================================================================
+
 # Modelos para el sistema de documentos
 class Document(db.Model):
     __tablename__ = 'document'
@@ -868,6 +1035,11 @@ def create_decorator(required_condition, error_message, redirect_func=None):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not required_condition():
+                # Registrar intento de acceso no autorizado
+                user_id = current_user.id if current_user.is_authenticated else None
+                username = current_user.username if current_user.is_authenticated else None
+                log_unauthorized_access(user_id=user_id, username=username, required_role=error_message)
+                
                 if request.path.startswith('/api/'):
                     return jsonify({'error': error_message}), 401 if 'Autenticación' in error_message else 403
                 return redirect_func() if redirect_func else redirect(url_for('dashboard_selection'))
@@ -896,11 +1068,13 @@ def coach_session_required(f):
     def decorated_function(*args, **kwargs):
         coach_user_id = session.get('coach_user_id')
         if not coach_user_id:
+            log_unauthorized_access(required_role='coach')
             return jsonify({'error': 'Sesión de coach expirada. Por favor, inicia sesión nuevamente.'}), 401
         
         # Verificar que el usuario existe y es coach
         coach_user = User.query.get(coach_user_id)
         if not coach_user or coach_user.role != 'coach':
+            log_unauthorized_access(user_id=coach_user_id, required_role='coach')
             session.pop('coach_user_id', None)
             return jsonify({'error': 'Usuario de coach inválido.'}), 401
         
@@ -2993,6 +3167,9 @@ def api_login():
             user.last_login = datetime.utcnow()
             db.session.commit()
             
+            # Registrar login exitoso en auditoría
+            log_successful_login(user)
+            
             logger.info(f"Successful login for user {user.username} (ID: {user.id}, Role: {user.role}, Dashboard: {dashboard_type}) from {request.remote_addr}")
             
             return jsonify({
@@ -3001,6 +3178,9 @@ def api_login():
                 'redirect': get_dashboard_url(user.role)
             }), 200
         else:
+            # Registrar login fallido en auditoría
+            log_failed_login(username, 'Invalid credentials or inactive account')
+            
             logger.warning(f"Failed login attempt for username '{username}' from {request.remote_addr}")
             return jsonify({'error': 'Credenciales inválidas o cuenta desactivada'}), 401
             
@@ -3330,6 +3510,7 @@ def api_admin_login():
         valid, result = validate_and_sanitize_login_input(data)
         if not valid:
             logger.warning(f"Admin login attempt with invalid input from {request.remote_addr}: {result}")
+            log_suspicious_activity(f'Admin login with invalid input: {result}', username=data.get('username'))
             return jsonify({'error': result}), 400
         
         username = result['username_or_email']
@@ -3343,12 +3524,30 @@ def api_admin_login():
             admin_user.last_login = datetime.utcnow()
             db.session.commit()
             
+            # Registrar login de admin exitoso (crítico)
+            log_security_event(
+                event_type='login_success',
+                severity='info',
+                user_id=admin_user.id,
+                username=admin_user.username,
+                user_role='platform_admin',
+                description='Admin login successful'
+            )
+            
             return jsonify({
                 'success': True,
                 'user': create_user_response(admin_user),
                 'redirect_url': '/platform-admin-dashboard'
             }), 200
         else:
+            # Registrar intento fallido de admin (crítico)
+            log_security_event(
+                event_type='login_failed',
+                severity='error',
+                username=username,
+                user_role='platform_admin',
+                description='Admin login failed - invalid credentials'
+            )
             return jsonify({'error': 'Credenciales de administrador inválidas'}), 401
             
     except Exception as e:
@@ -3665,6 +3864,9 @@ def api_coach_login():
             coach_user.last_login = datetime.utcnow()
             db.session.commit()
             
+            # Registrar login exitoso en auditoría
+            log_successful_login(coach_user)
+            
             logger.info(f"Successful coach login for {coach_user.username} (ID: {coach_user.id}) from {request.remote_addr}")
             
             return jsonify({
@@ -3673,6 +3875,9 @@ def api_coach_login():
                 'redirect_url': '/coach-dashboard'
             }), 200
         else:
+            # Registrar login fallido en auditoría
+            log_failed_login(username, 'Invalid coach credentials')
+            
             logger.warning(f"Failed coach login attempt for username '{username}' from {request.remote_addr}")
             return jsonify({'error': 'Credenciales de coach inválidas'}), 401
             
