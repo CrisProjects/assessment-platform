@@ -6522,6 +6522,10 @@ function dashboardApp() {
         // Cargar contenido asignado
         async loadAssignedContent() {
             try {
+                // Cargar lista de coachees y llenar los selectores
+                await this.populateCoacheeSelectors();
+                
+                // Cargar contenido asignado
                 const response = await fetch('/api/coach/content');
                 const data = await response.json();
                 
@@ -6530,6 +6534,49 @@ function dashboardApp() {
                 }
             } catch (error) {
                 console.error('❌ Error loading assigned content:', error);
+            }
+        },
+        
+        // Poblar selectores de coachees en el módulo de contenido
+        async populateCoacheeSelectors() {
+            try {
+                // Si ya tenemos los coachees cargados, usarlos
+                if (!this.coacheesData || this.coacheesData.length === 0) {
+                    const response = await fetch('/api/coach/my-coachees');
+                    const data = await response.json();
+                    if (data.success) {
+                        this.coacheesData = data.coachees;
+                    }
+                }
+                
+                // Llenar selector de videos
+                const videoSelect = document.getElementById('coacheeSelect');
+                if (videoSelect) {
+                    videoSelect.innerHTML = '<option value="">Selecciona un coachee...</option>' +
+                        this.coacheesData.map(coachee => 
+                            `<option value="${coachee.id}">${coachee.full_name || coachee.name} (${coachee.email})</option>`
+                        ).join('');
+                }
+                
+                // Llenar selector de documentos
+                const docSelect = document.getElementById('coacheeSelectDocuments');
+                if (docSelect) {
+                    docSelect.innerHTML = '<option value="">Selecciona un coachee...</option>' +
+                        this.coacheesData.map(coachee => 
+                            `<option value="${coachee.id}">${coachee.full_name || coachee.name} (${coachee.email})</option>`
+                        ).join('');
+                }
+                
+                // Llenar filtro de coachees en la pestaña de gestión
+                const filterSelect = document.getElementById('coacheeFilter');
+                if (filterSelect) {
+                    filterSelect.innerHTML = '<option value="">Todos los coachees</option>' +
+                        this.coacheesData.map(coachee => 
+                            `<option value="${coachee.id}">${coachee.full_name || coachee.name}</option>`
+                        ).join('');
+                }
+            } catch (error) {
+                console.error('❌ Error populating coachee selectors:', error);
             }
         },
         
