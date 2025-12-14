@@ -3821,7 +3821,7 @@ def admin_change_password():
     """Permite a un administrador cambiar su contraseña"""
     try:
         # Verificar sesión de administrador
-        if not current_user.is_authenticated:
+        if not current_user.is_authenticated or current_user.role != 'admin':
             return jsonify({
                 'error': 'No hay sesión de administrador activa',
                 'redirect_url': '/admin-login',
@@ -3845,18 +3845,16 @@ def admin_change_password():
             return jsonify({'error': 'Las contraseñas nuevas no coinciden'}), 400
         
         # Obtener usuario administrador
-        admin = User.query.get(current_user.id)
-        if not admin:
-            return jsonify({'error': 'Usuario no encontrado'}), 404
+        admin = current_user
         
-        # Verificar contraseña actual
-        if not check_password_hash(admin.password, current_password):
+        # Verificar contraseña actual usando el método del modelo
+        if not admin.check_password(current_password):
             log_security_event(
                 event_type='password_change_failed',
                 severity='warning',
                 user_id=admin.id,
-                username=admin.username,
-                description='Intento de cambio de contraseña con contraseña actual incorrecta'
+                username=admin.username or admin.email,
+                description='Intento de cambio de contraseña con contraseña actual incorrecta (Admin)'
             )
             return jsonify({'error': 'La contraseña actual es incorrecta'}), 401
         
@@ -3865,14 +3863,14 @@ def admin_change_password():
         if not is_valid:
             return jsonify({'error': error_msg}), 400
         
-        # Actualizar contraseña
-        admin.password = generate_password_hash(new_password, method='pbkdf2:sha256')
+        # Actualizar contraseña usando el método del modelo
+        admin.set_password(new_password)
         db.session.commit()
         
         # Registrar cambio exitoso
-        log_password_change(admin.id, 'admin', admin.username)
+        log_password_change(admin.id, 'admin', admin.username or admin.email)
         
-        logger.info(f"Password changed successfully for admin {admin.username} (ID: {admin.id})")
+        logger.info(f"Password changed successfully for admin {admin.username or admin.email} (ID: {admin.id})")
         return jsonify({
             'success': True,
             'message': 'Contraseña actualizada correctamente'
