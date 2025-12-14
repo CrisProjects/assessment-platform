@@ -3360,7 +3360,7 @@ def debug_evaluation_results():
         # Verificar configuración del frontend
         frontend_config = {
             'coachee_dashboard_exists': os.path.exists('templates/coachee_dashboard.html'),
-            'coach_dashboard_exists': os.path.exists('templates/coach_dashboard.html'),
+            'coach_dashboard_exists': os.path.exists('templates/coach_dashboard_v2.html'),
             'static_files_exist': os.path.exists('static'),
             'api_endpoints_available': [
                 '/api/coachee/evaluations',
@@ -5019,7 +5019,8 @@ def api_save_assessment():
 @app.route('/coach-dashboard')
 @coach_session_required
 def coach_dashboard():
-    return render_template('coach_dashboard.html')
+    """Ruta principal del dashboard - Redirige a dashboard v2"""
+    return redirect(url_for('coach_dashboard_v2'))
 
 @app.route('/coach/dashboard-v2')
 @coach_session_required
