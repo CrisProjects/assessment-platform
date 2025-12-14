@@ -3401,11 +3401,6 @@
                             <span>Contenido</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('contenido-v2', true)" data-module="contenido-v2">
-                            <i class="fas fa-video"></i>
-                            <span>Contenido V2</span>
-                        </a>
-                        <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
                            @click.prevent="showModule('agenda', true)" data-module="agenda">
                             <i class="fas fa-calendar-alt"></i>
                             <span>Mi Agenda</span>
@@ -4337,39 +4332,6 @@
                                             <span class="visually-hidden">Cargando contenido...</span>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contenido V2 Module -->
-            <div id="contenido-v2" class="module-content" style="display: none;">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-video"></i> Contenido V2 - Vista Previa Simplificada
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-6 mb-3">
-                                <label for="videoUrlV2" class="form-label">URL del Video</label>
-                                <input type="url" 
-                                       id="videoUrlV2" 
-                                       class="form-control" 
-                                       placeholder="YouTube o Instagram: https://..."
-                                       autocomplete="off">
-                                <small class="text-muted">Ingresa una URL de YouTube o Instagram para ver la vista previa</small>
-                            </div>
-                            <div class="col-lg-6">
-                                <label class="form-label">Vista Previa</label>
-                                <div id="videoPreviewV2" 
-                                     class="border rounded p-4 text-center bg-light" 
-                                     style="min-height: 200px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                                    <i class="fas fa-video fa-3x mb-2 text-muted"></i>
-                                    <p class="small text-muted mb-0">La vista previa del video aparecerá aquí</p>
                                 </div>
                             </div>
                         </div>
@@ -5621,52 +5583,6 @@ function dashboardApp() {
                         videoListenersInitialized = false;
                     }
                     await this.loadAssignedContent();
-                    break;
-                case 'contenido-v2':
-                    // Inicializar listeners para video preview simplificado
-                    setTimeout(() => {
-                        const input = document.getElementById('videoUrlV2');
-                        if (input) {
-                            console.log('🎥 Inicializando Contenido V2 listeners');
-                            
-                            // Remover listeners previos si existen
-                            const newInput = input.cloneNode(true);
-                            input.parentNode.replaceChild(newInput, input);
-                            
-                            // Input event
-                            newInput.addEventListener('input', function(e) {
-                                const url = e.target.value.trim();
-                                console.log('📝 [V2] Input URL:', url);
-                                if (url) {
-                                    updateVideoPreviewV2(url);
-                                } else {
-                                    // Resetear preview si se borra el input
-                                    const previewContainer = document.getElementById('videoPreviewV2');
-                                    if (previewContainer) {
-                                        previewContainer.innerHTML = `
-                                            <i class="fas fa-video fa-3x mb-2 text-muted"></i>
-                                            <p class="small text-muted mb-0">La vista previa del video aparecerá aquí</p>
-                                        `;
-                                    }
-                                }
-                            });
-                            
-                            // Paste event
-                            newInput.addEventListener('paste', function(e) {
-                                setTimeout(() => {
-                                    const url = e.target.value.trim();
-                                    console.log('📋 [V2] Paste URL:', url);
-                                    if (url) {
-                                        updateVideoPreviewV2(url);
-                                    }
-                                }, 100);
-                            });
-                            
-                            console.log('✅ [V2] Listeners inicializados correctamente');
-                        } else {
-                            console.error('❌ [V2] No se encontró el input videoUrlV2');
-                        }
-                    }, 100);
                     break;
                 case 'agenda':
                     setTimeout(() => this.initializeCalendar(), 100);
@@ -7985,109 +7901,7 @@ async function fetchYouTubeVideoInfo(videoId) {
 }
 
 // ============================================================================
-// CONTENIDO V2 - VISTA PREVIA SIMPLIFICADA
-// ============================================================================
-
-// Función simplificada para actualizar vista previa en Contenido V2
-function updateVideoPreviewV2(url) {
-    console.log('🎬 [V2] updateVideoPreviewV2 llamada con URL:', url);
-    
-    const previewContainer = document.getElementById('videoPreviewV2');
-    if (!previewContainer) {
-        console.error('❌ [V2] No se encontró el elemento videoPreviewV2');
-        return;
-    }
-    
-    console.log('✅ [V2] Contenedor de preview encontrado');
-    
-    // Detectar plataforma
-    const platform = detectVideoPlatform(url);
-    console.log('🔍 [V2] Plataforma detectada:', platform);
-    
-    if (!platform) {
-        console.warn('⚠️ [V2] Plataforma no soportada');
-        previewContainer.innerHTML = `
-            <i class="fas fa-video fa-3x mb-2 text-muted"></i>
-            <p class="small text-muted mb-0">Ingresa una URL válida de YouTube o Instagram</p>
-        `;
-        return;
-    }
-    
-    let embedHtml = '';
-    let platformIcon = '';
-    let platformColor = '';
-    
-    if (platform === 'youtube') {
-        const videoId = extractYouTubeVideoId(url);
-        if (!videoId) {
-            console.warn('⚠️ [V2] No se pudo extraer ID del video de YouTube');
-            previewContainer.innerHTML = `
-                <i class="fas fa-video fa-3x mb-2 text-muted"></i>
-                <p class="small text-muted mb-0">URL de YouTube inválida</p>
-            `;
-            return;
-        }
-        
-        console.log('✅ [V2] YouTube ID:', videoId);
-        platformIcon = 'fab fa-youtube';
-        platformColor = '#FF0000';
-        
-        embedHtml = `
-            <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 8px; overflow: hidden;">
-                <iframe 
-                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-                    src="https://www.youtube.com/embed/${videoId}" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen>
-                </iframe>
-            </div>
-        `;
-    } else if (platform === 'instagram') {
-        const videoId = extractInstagramVideoId(url);
-        if (!videoId) {
-            console.warn('⚠️ [V2] No se pudo extraer ID del video de Instagram');
-            previewContainer.innerHTML = `
-                <i class="fab fa-instagram fa-3x mb-2 text-muted"></i>
-                <p class="small text-muted mb-0">URL de Instagram inválida</p>
-            `;
-            return;
-        }
-        
-        console.log('✅ [V2] Instagram ID:', videoId);
-        platformIcon = 'fab fa-instagram';
-        platformColor = '#E4405F';
-        
-        // Instagram requiere /embed al final de la URL
-        embedHtml = `
-            <div style="position: relative; width: 100%; max-width: 540px; margin: 0 auto; background: #000; border-radius: 8px; overflow: hidden;">
-                <iframe 
-                    style="width: 100%; min-height: 600px; border: none;"
-                    src="https://www.instagram.com/p/${videoId}/embed/" 
-                    frameborder="0" 
-                    scrolling="no"
-                    allowtransparency="true">
-                </iframe>
-            </div>
-        `;
-    }
-    
-    // Mostrar embed del video inmediatamente
-    previewContainer.innerHTML = `
-        ${embedHtml}
-        <div class="mt-2">
-            <small class="text-success">
-                <i class="${platformIcon} me-1" style="color: ${platformColor};"></i>
-                Video de ${platform === 'youtube' ? 'YouTube' : 'Instagram'} cargado correctamente
-            </small>
-        </div>
-    `;
-    
-    console.log('✅ [V2] Vista previa actualizada correctamente');
-}
-
-// ============================================================================
-// CONTENIDO ORIGINAL - FORMULARIO COMPLETO
+// CONTENIDO - FORMULARIO COMPLETO
 // ============================================================================
 
 // Resetear formulario de asignación de contenido
