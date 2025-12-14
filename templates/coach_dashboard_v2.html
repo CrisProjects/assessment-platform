@@ -7798,10 +7798,14 @@ function resetAssignForm() {
 // Función para inicializar listeners de video (llamada cuando el módulo se muestra)
 function initializeVideoListeners() {
     console.log('🎯 Inicializando listeners de video...');
+    console.log('🔍 Estado del módulo agregar-contenido:', document.getElementById('agregar-contenido')?.style.display);
+    console.log('🔍 Estado del pane assign-content-pane:', document.getElementById('assign-content-pane')?.classList.toString());
     
     const videoUrlInput = document.getElementById('videoUrl');
     if (videoUrlInput) {
         console.log('✅ Input de videoUrl encontrado:', videoUrlInput);
+        console.log('🔍 Elemento visible:', window.getComputedStyle(videoUrlInput).display !== 'none');
+        console.log('🔍 Offset parent:', videoUrlInput.offsetParent !== null);
         
         // Remover listeners anteriores (si existen) para evitar duplicados
         videoUrlInput.removeEventListener('input', handleVideoInput);
@@ -7815,14 +7819,26 @@ function initializeVideoListeners() {
         
         console.log('✅ Listeners agregados al input de videoUrl (input, paste, blur)');
         
+        // Verificar que los listeners se agregaron correctamente
+        const listeners = getEventListeners ? getEventListeners(videoUrlInput) : 'N/A';
+        console.log('🔍 Listeners activos:', listeners);
+        
         // Si ya hay un valor en el input, procesarlo inmediatamente
         if (videoUrlInput.value.trim()) {
             console.log('🔄 Procesando valor existente en el input:', videoUrlInput.value);
             updateVideoPreview(videoUrlInput.value.trim());
         }
+        
+        // Test adicional: agregar un listener de prueba que registre cualquier evento
+        videoUrlInput.addEventListener('input', function testListener(e) {
+            console.log('🧪 TEST LISTENER activado - el input está recibiendo eventos!', e.target.value);
+        }, { once: true });
+        
     } else {
         console.error('❌ No se encontró el input de videoUrl en el DOM');
-        console.log('📋 Elementos disponibles con ID:', Array.from(document.querySelectorAll('[id]')).map(el => el.id).join(', '));
+        console.log('📋 Módulo agregar-contenido visible:', document.getElementById('agregar-contenido')?.style.display);
+        console.log('📋 Elementos disponibles con ID en el módulo:', 
+            Array.from(document.getElementById('agregar-contenido')?.querySelectorAll('[id]') || []).map(el => el.id).join(', '));
     }
 }
 
@@ -7866,12 +7882,42 @@ document.addEventListener('DOMContentLoaded', function() {
     // Listener para cuando se muestre la pestaña de asignar contenido
     const assignContentTab = document.getElementById('assign-content-tab');
     if (assignContentTab) {
-        assignContentTab.addEventListener('shown.bs.tab', function() {
-            console.log('📺 Pestaña "Asignar Video" mostrada, inicializando listeners...');
+        console.log('✅ Tab "assign-content-tab" encontrado, agregando listener...');
+        assignContentTab.addEventListener('shown.bs.tab', function(event) {
+            console.log('📺 Pestaña "Asignar Video" mostrada via Bootstrap tab event:', event);
+            console.log('🔍 Target del evento:', event.target);
             setTimeout(() => {
+                console.log('⏱️ Ejecutando initializeVideoListeners después de 100ms...');
                 initializeVideoListeners();
             }, 100);
         });
+    } else {
+        console.error('❌ No se encontró el tab "assign-content-tab" en el DOM');
+    }
+    
+    // NUEVO: También escuchar en el tab pane directamente
+    const assignContentPane = document.getElementById('assign-content-pane');
+    if (assignContentPane) {
+        console.log('✅ Pane "assign-content-pane" encontrado');
+        // Observar cuando el pane se vuelve visible
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const isActive = assignContentPane.classList.contains('show') && 
+                                   assignContentPane.classList.contains('active');
+                    if (isActive) {
+                        console.log('👀 Pane "assign-content-pane" ahora es visible (via MutationObserver)');
+                        setTimeout(() => {
+                            initializeVideoListeners();
+                        }, 150);
+                    }
+                }
+            });
+        });
+        observer.observe(assignContentPane, { attributes: true });
+        console.log('✅ MutationObserver configurado para "assign-content-pane"');
+    } else {
+        console.error('❌ No se encontró el pane "assign-content-pane" en el DOM');
     }
     
     // Listener para el formulario de asignación de contenido
