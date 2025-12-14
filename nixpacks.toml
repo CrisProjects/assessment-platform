@@ -1,8 +1,14 @@
-# Configuración simple para Railway
+# Configuración para Railway - Deshabilitar mise
 providers = ["python"]
 
 [phases.setup]
-aptPkgs = ["libpq-dev"]
+aptPkgs = ["libpq-dev", "python3.11", "python3.11-dev", "python3-pip"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
 
 [start]
-cmd = "python wsgi_production.py"
+cmd = "python3.11 wsgi_production.py"
+
+[variables]
+NIXPACKS_NO_MISE = "1"
