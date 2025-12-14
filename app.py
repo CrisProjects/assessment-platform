@@ -832,7 +832,21 @@ def add_security_headers(response):
 @login_manager.unauthorized_handler
 def unauthorized():
     if request.path.startswith('/api/'):
-        return jsonify({'error': 'Sesión expirada. Por favor, inicia sesión nuevamente.'}), 401
+        # Determinar la URL de redirección según la ruta del API
+        redirect_url = '/login'
+        
+        if '/api/admin' in request.path or '/api/platform-admin' in request.path:
+            redirect_url = '/admin-login'
+        elif '/api/coach' in request.path:
+            redirect_url = '/coach-login'
+        elif '/api/coachee' in request.path:
+            redirect_url = '/login'
+        
+        return jsonify({
+            'error': 'Sesión expirada. Por favor, inicia sesión nuevamente.',
+            'redirect_url': redirect_url,
+            'session_expired': True
+        }), 401
     
     if request.path.startswith(('/platform-admin', '/admin')):
         return redirect(url_for('admin_login_page'))
@@ -1331,7 +1345,11 @@ def coachee_api_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not (coachee_user := get_current_coachee()):
-            return jsonify({'error': 'Sesión expirada. Por favor, inicia sesión nuevamente.'}), 401
+            return jsonify({
+                'error': 'Sesión expirada. Por favor, inicia sesión nuevamente.',
+                'redirect_url': '/login',
+                'session_expired': True
+            }), 401
         kwargs['current_coachee'] = coachee_user
         return f(*args, **kwargs)
     return decorated_function
@@ -1343,14 +1361,22 @@ def coach_session_required(f):
         coach_user_id = session.get('coach_user_id')
         if not coach_user_id:
             log_unauthorized_access(required_role='coach')
-            return jsonify({'error': 'Sesión de coach expirada. Por favor, inicia sesión nuevamente.'}), 401
+            return jsonify({
+                'error': 'Sesión de coach expirada. Por favor, inicia sesión nuevamente.',
+                'redirect_url': '/coach-login',
+                'session_expired': True
+            }), 401
         
         # Verificar que el usuario existe y es coach
         coach_user = User.query.get(coach_user_id)
         if not coach_user or coach_user.role != 'coach':
             log_unauthorized_access(user_id=coach_user_id, required_role='coach')
             session.pop('coach_user_id', None)
-            return jsonify({'error': 'Usuario de coach inválido.'}), 401
+            return jsonify({
+                'error': 'Usuario de coach inválido.',
+                'redirect_url': '/coach-login',
+                'session_expired': True
+            }), 401
         
         # Establecer current_user para esta petición sin usar Flask-Login
         g.current_user = coach_user
@@ -1363,13 +1389,21 @@ def coachee_session_required(f):
     def decorated_function(*args, **kwargs):
         coachee_user_id = session.get('coachee_user_id')
         if not coachee_user_id:
-            return jsonify({'error': 'Sesión de coachee expirada. Por favor, inicia sesión nuevamente.'}), 401
+            return jsonify({
+                'error': 'Sesión de coachee expirada. Por favor, inicia sesión nuevamente.',
+                'redirect_url': '/login',
+                'session_expired': True
+            }), 401
         
         # Verificar que el usuario existe y es coachee
         coachee_user = User.query.get(coachee_user_id)
         if not coachee_user or coachee_user.role != 'coachee':
             session.pop('coachee_user_id', None)
-            return jsonify({'error': 'Usuario de coachee inválido.'}), 401
+            return jsonify({
+                'error': 'Usuario de coachee inválido.',
+                'redirect_url': '/login',
+                'session_expired': True
+            }), 401
         
         # Establecer current_user para esta petición sin usar Flask-Login
         g.current_user = coachee_user
@@ -1397,7 +1431,11 @@ def either_session_required(f):
                 current_user = user
         
         if not current_user:
-            return jsonify({'error': 'No autorizado. Debe iniciar sesión.'}), 401
+            return jsonify({
+                'error': 'No autorizado. Debe iniciar sesión.',
+                'redirect_url': '/login',
+                'session_expired': True
+            }), 401
         
         # Establecer current_user para esta petición sin usar Flask-Login
         g.current_user = current_user
@@ -3783,7 +3821,11 @@ def admin_change_password():
     try:
         # Verificar sesión de administrador
         if not current_user.is_authenticated:
-            return jsonify({'error': 'No hay sesión de administrador activa'}), 401
+            return jsonify({
+                'error': 'No hay sesión de administrador activa',
+                'redirect_url': '/admin-login',
+                'session_expired': True
+            }), 401
         
         data = request.get_json()
         if not data:
@@ -3846,7 +3888,11 @@ def coach_change_password():
     try:
         # Verificar sesión de coach
         if 'coach_user_id' not in session:
-            return jsonify({'error': 'No hay sesión de coach activa'}), 401
+            return jsonify({
+                'error': 'No hay sesión de coach activa',
+                'redirect_url': '/coach-login',
+                'session_expired': True
+            }), 401
         
         data = request.get_json()
         if not data:
@@ -3910,7 +3956,11 @@ def coachee_change_password():
     try:
         # Verificar sesión de coachee
         if 'coachee_user_id' not in session:
-            return jsonify({'error': 'No hay sesión de coachee activa'}), 401
+            return jsonify({
+                'error': 'No hay sesión de coachee activa',
+                'redirect_url': '/login',
+                'session_expired': True
+            }), 401
         
         data = request.get_json()
         if not data:

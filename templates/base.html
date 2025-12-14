@@ -1156,6 +1156,51 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // ============================================================================
+        // MANEJADOR GLOBAL DE SESIONES EXPIRADAS
+        // ============================================================================
+        
+        // Interceptar todas las respuestas fetch para detectar sesiones expiradas
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            try {
+                const response = await originalFetch.apply(this, args);
+                
+                // Si es una respuesta 401 (No autorizado), verificar si es sesión expirada
+                if (response.status === 401) {
+                    const clonedResponse = response.clone();
+                    try {
+                        const data = await clonedResponse.json();
+                        if (data.session_expired && data.redirect_url) {
+                            console.warn('⚠️ Sesión expirada. Redirigiendo a:', data.redirect_url);
+                            
+                            // Mostrar notificación antes de redirigir
+                            if (typeof showNotification === 'function') {
+                                showNotification(data.error || 'Sesión expirada', 'warning');
+                            } else {
+                                alert(data.error || 'Sesión expirada. Redirigiendo...');
+                            }
+                            
+                            // Redirigir después de un breve delay
+                            setTimeout(() => {
+                                window.location.href = data.redirect_url;
+                            }, 1000);
+                        }
+                    } catch (e) {
+                        // Si no es JSON o no tiene la estructura esperada, devolver la respuesta original
+                    }
+                }
+                
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        };
+        
+        // ============================================================================
+        // EFECTOS VISUALES Y UI
+        // ============================================================================
+        
         // Efectos de carga suave
         document.addEventListener('DOMContentLoaded', function() {
             // Agregar clase fade-in a elementos
