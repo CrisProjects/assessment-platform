@@ -480,6 +480,37 @@
             return null;
         }
         
+        function extractInstagramVideoId(url) {
+            if (!url) return null;
+            
+            const patterns = [
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//,
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    return match[1];
+                }
+            }
+            
+            return null;
+        }
+        
+        function detectVideoPlatform(url) {
+            if (!url) return null;
+            
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                return 'youtube';
+            }
+            if (url.includes('instagram.com')) {
+                return 'instagram';
+            }
+            
+            return null;
+        }
+        
         function feedApp() {
             return {
                 // Estado
@@ -546,11 +577,13 @@
                 
                 // Renderizar media
                 renderMedia(item) {
-                    const videoId = extractYouTubeVideoId(item.content_url);
-                    const isYouTube = videoId && (item.content_type === 'youtube' || item.content_type === 'video');
+                    const platform = detectVideoPlatform(item.content_url);
                     const isDocument = item.content_type === 'document';
                     
-                    if (isYouTube) {
+                    if (platform === 'youtube') {
+                        const videoId = extractYouTubeVideoId(item.content_url);
+                        if (!videoId) return this.renderFallback(item);
+                        
                         return `
                             <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden;">
                                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 56.25%;">
@@ -560,6 +593,25 @@
                                         allowfullscreen
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         style="width: 100%; height: 100%; border-radius: 0;">
+                                    </iframe>
+                                </div>
+                            </div>
+                        `;
+                    } else if (platform === 'instagram') {
+                        const videoId = extractInstagramVideoId(item.content_url);
+                        if (!videoId) return this.renderFallback(item);
+                        
+                        return `
+                            <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #E4405F 0%, #C13584 100%); overflow: hidden;">
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 540px; height: auto; min-height: 600px;">
+                                    <iframe 
+                                        src="https://www.instagram.com/p/${videoId}/embed/" 
+                                        title="${item.title}" 
+                                        frameborder="0" 
+                                        scrolling="no" 
+                                        allowtransparency="true" 
+                                        allow="encrypted-media"
+                                        style="width: 100%; min-height: 600px; border: none; border-radius: 8px; background: white;">
                                     </iframe>
                                 </div>
                             </div>
@@ -580,27 +632,33 @@
                             </div>
                         `;
                     } else {
-                        const thumbnail = 'data:image/svg+xml;base64,' + btoa(`
-                            <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="600" height="400" fill="#f8f9fa"/>
-                                <circle cx="300" cy="200" r="60" fill="#6c757d"/>
-                                <polygon points="270,170 270,230 330,200" fill="white"/>
-                            </svg>
-                        `);
-                        return `
-                            <div style="position: relative; cursor: pointer;" onclick="window.open('${item.content_url}', '_blank')">
-                                <img src="${thumbnail}" alt="${item.title}" class="post-image">
-                                <div class="video-overlay">
-                                    <i class="fas fa-play"></i>
-                                </div>
-                            </div>
-                        `;
+                        return this.renderFallback(item);
                     }
+                },
+                
+                // Renderizar fallback para videos no soportados
+                renderFallback(item) {
+                    const thumbnail = 'data:image/svg+xml;base64,' + btoa(`
+                        <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="600" height="400" fill="#f8f9fa"/>
+                            <circle cx="300" cy="200" r="60" fill="#6c757d"/>
+                            <polygon points="270,170 270,230 330,200" fill="white"/>
+                        </svg>
+                    `);
+                    return `
+                        <div style="position: relative; cursor: pointer;" onclick="window.open('${item.content_url}', '_blank')">
+                            <img src="${thumbnail}" alt="${item.title}" class="post-image">
+                            <div class="video-overlay">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        </div>
+                    `;
                 },
                 
                 // Utilidades
                 isYouTubeVideo(url) {
-                    return extractYouTubeVideoId(url) !== null;
+                    const platform = detectVideoPlatform(url);
+                    return platform === 'youtube' || platform === 'instagram';
                 },
                 
                 getRelativeTime(dateString) {
