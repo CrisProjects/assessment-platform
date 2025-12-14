@@ -5629,25 +5629,42 @@ function dashboardApp() {
                         if (input) {
                             console.log('🎥 Inicializando Contenido V2 listeners');
                             
+                            // Remover listeners previos si existen
+                            const newInput = input.cloneNode(true);
+                            input.parentNode.replaceChild(newInput, input);
+                            
                             // Input event
-                            input.addEventListener('input', function(e) {
+                            newInput.addEventListener('input', function(e) {
                                 const url = e.target.value.trim();
-                                console.log('📝 Input URL:', url);
+                                console.log('📝 [V2] Input URL:', url);
                                 if (url) {
                                     updateVideoPreviewV2(url);
+                                } else {
+                                    // Resetear preview si se borra el input
+                                    const previewContainer = document.getElementById('videoPreviewV2');
+                                    if (previewContainer) {
+                                        previewContainer.innerHTML = `
+                                            <i class="fas fa-video fa-3x mb-2 text-muted"></i>
+                                            <p class="small text-muted mb-0">La vista previa del video aparecerá aquí</p>
+                                        `;
+                                    }
                                 }
                             });
                             
                             // Paste event
-                            input.addEventListener('paste', function(e) {
+                            newInput.addEventListener('paste', function(e) {
                                 setTimeout(() => {
                                     const url = e.target.value.trim();
-                                    console.log('📋 Paste URL:', url);
+                                    console.log('📋 [V2] Paste URL:', url);
                                     if (url) {
                                         updateVideoPreviewV2(url);
                                     }
                                 }, 100);
                             });
+                            
+                            console.log('✅ [V2] Listeners inicializados correctamente');
+                        } else {
+                            console.error('❌ [V2] No se encontró el input videoUrlV2');
                         }
                     }, 100);
                     break;
