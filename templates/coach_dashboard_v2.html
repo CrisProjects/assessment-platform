@@ -5398,7 +5398,10 @@ function dashboardApp() {
             
             await this.loadProfile();
             await this.loadStats();
-            await this.showModule('mis-coachees');
+            
+            // Recuperar la última sección activa desde localStorage
+            const lastActiveModule = localStorage.getItem('coach_active_module') || 'mis-coachees';
+            await this.showModule(lastActiveModule);
         },
         
         // Crear partículas animadas
@@ -5489,6 +5492,9 @@ function dashboardApp() {
         // Mostrar módulo
         async showModule(moduleId, shouldScroll = false) {
             this.activeModule = moduleId;
+            
+            // Guardar la sección activa en localStorage
+            localStorage.setItem('coach_active_module', moduleId);
             
             // Ocultar todos los módulos
             document.querySelectorAll('.module-content').forEach(module => {
