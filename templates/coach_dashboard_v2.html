@@ -6532,6 +6532,13 @@ function dashboardApp() {
                 if (data.success) {
                     this.assignedContent = data.content;
                 }
+                
+                // Inicializar listeners de video después de cargar el contenido
+                setTimeout(() => {
+                    if (typeof initializeVideoListeners === 'function') {
+                        initializeVideoListeners();
+                    }
+                }, 100);
             } catch (error) {
                 console.error('❌ Error loading assigned content:', error);
             }
@@ -7537,18 +7544,29 @@ function extractYouTubeVideoId(url) {
 
 // Actualizar vista previa del video
 function updateVideoPreview(url) {
+    console.log('🎬 updateVideoPreview llamada con URL:', url);
+    
     const previewContainer = document.getElementById('videoPreview');
-    if (!previewContainer) return;
+    if (!previewContainer) {
+        console.error('❌ No se encontró el elemento videoPreview');
+        return;
+    }
+    
+    console.log('✅ Contenedor de preview encontrado');
     
     const videoId = extractYouTubeVideoId(url);
+    console.log('🔍 Video ID extraído:', videoId);
     
     if (!videoId) {
+        console.warn('⚠️ No se pudo extraer ID del video');
         previewContainer.innerHTML = `
             <i class="fas fa-video fa-3x mb-2"></i>
             <p class="small">La vista previa del video aparecerá aquí cuando ingreses una URL válida</p>
         `;
         return;
     }
+    
+    console.log('✅ Mostrando embed del video:', videoId);
     
     // Mostrar embed del video
     previewContainer.innerHTML = `
@@ -7569,6 +7587,7 @@ function updateVideoPreview(url) {
         </div>
     `;
     
+    console.log('📡 Llamando a fetchYouTubeVideoInfo...');
     // Intentar obtener información del video (título, duración)
     fetchYouTubeVideoInfo(videoId);
 }
@@ -7718,27 +7737,53 @@ function resetAssignForm() {
     }
 }
 
-// Inicializar listeners cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    // Listener para el campo de URL de video
+// Función para inicializar listeners de video (llamada cuando el módulo se muestra)
+function initializeVideoListeners() {
+    console.log('🎯 Inicializando listeners de video...');
+    
     const videoUrlInput = document.getElementById('videoUrl');
     if (videoUrlInput) {
-        videoUrlInput.addEventListener('input', function(e) {
-            const url = e.target.value.trim();
-            if (url) {
-                updateVideoPreview(url);
-            }
-        });
+        console.log('✅ Input de videoUrl encontrado');
         
-        videoUrlInput.addEventListener('paste', function(e) {
-            setTimeout(() => {
-                const url = e.target.value.trim();
-                if (url) {
-                    updateVideoPreview(url);
-                }
-            }, 100);
-        });
+        // Remover listeners anteriores (si existen)
+        videoUrlInput.removeEventListener('input', handleVideoInput);
+        videoUrlInput.removeEventListener('paste', handleVideoPaste);
+        
+        // Agregar nuevos listeners
+        videoUrlInput.addEventListener('input', handleVideoInput);
+        videoUrlInput.addEventListener('paste', handleVideoPaste);
+        
+        console.log('✅ Listeners agregados al input de videoUrl');
+    } else {
+        console.error('❌ No se encontró el input de videoUrl');
     }
+}
+
+// Handler para el evento input
+function handleVideoInput(e) {
+    const url = e.target.value.trim();
+    console.log('⌨️ Input event:', url);
+    if (url) {
+        updateVideoPreview(url);
+    }
+}
+
+// Handler para el evento paste
+function handleVideoPaste(e) {
+    console.log('📋 Paste event detectado');
+    setTimeout(() => {
+        const url = e.target.value.trim();
+        console.log('📋 URL pegada:', url);
+        if (url) {
+            updateVideoPreview(url);
+        }
+    }, 100);
+}
+
+// Inicializar listeners cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM Content Loaded');
+    initializeVideoListeners();
     
     // Listener para el formulario de asignación de contenido
     const assignContentForm = document.getElementById('assignContentForm');
