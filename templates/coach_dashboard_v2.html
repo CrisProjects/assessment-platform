@@ -4053,12 +4053,12 @@
                                             
                                             <div class="mb-3">
                                                 <label for="videoUrl" class="form-label">
-                                                    <i class="fab fa-youtube me-1 text-danger"></i>URL del Video de YouTube
+                                                    <i class="fas fa-video me-1"></i>URL del Video
                                                 </label>
                                                 <input type="url" class="form-control" id="videoUrl" 
-                                                    placeholder="https://www.youtube.com/watch?v=..." required>
+                                                    placeholder="YouTube o Instagram: https://..." required>
                                                 <div class="form-text">
-                                                    Ejemplo: https://www.youtube.com/watch?v=b6vozRQhtCc
+                                                    Ejemplos: https://www.youtube.com/watch?v=... o https://www.instagram.com/reel/...
                                                 </div>
                                             </div>
                                             
@@ -7764,42 +7764,96 @@ function updateVideoPreview(url) {
     
     console.log('✅ Contenedor de preview encontrado');
     
-    const videoId = extractYouTubeVideoId(url);
-    console.log('🔍 Video ID extraído:', videoId);
+    const platform = detectVideoPlatform(url);
+    console.log('🔍 Plataforma detectada:', platform);
     
-    if (!videoId) {
-        console.warn('⚠️ No se pudo extraer ID del video');
+    if (!platform) {
+        console.warn('⚠️ Plataforma no soportada');
         previewContainer.innerHTML = `
             <i class="fas fa-video fa-3x mb-2"></i>
-            <p class="small">La vista previa del video aparecerá aquí cuando ingreses una URL válida</p>
+            <p class="small">La vista previa del video aparecerá aquí cuando ingreses una URL válida de YouTube o Instagram</p>
         `;
         return;
+    }
+    
+    let embedHtml = '';
+    let platformIcon = '';
+    let platformColor = '';
+    let platformName = '';
+    let videoId = null;
+    
+    if (platform === 'youtube') {
+        videoId = extractYouTubeVideoId(url);
+        if (!videoId) {
+            console.warn('⚠️ No se pudo extraer ID del video de YouTube');
+            previewContainer.innerHTML = `
+                <i class="fas fa-video fa-3x mb-2"></i>
+                <p class="small">URL de YouTube inválida</p>
+            `;
+            return;
+        }
+        
+        embedHtml = `
+            <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 8px; overflow: hidden;">
+                <iframe 
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                    src="https://www.youtube.com/embed/${videoId}" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        `;
+        platformIcon = 'fab fa-youtube';
+        platformColor = '#FF0000';
+        platformName = 'YouTube';
+        
+    } else if (platform === 'instagram') {
+        videoId = extractInstagramVideoId(url);
+        if (!videoId) {
+            console.warn('⚠️ No se pudo extraer ID del video de Instagram');
+            previewContainer.innerHTML = `
+                <i class="fas fa-video fa-3x mb-2"></i>
+                <p class="small">URL de Instagram inválida</p>
+            `;
+            return;
+        }
+        
+        embedHtml = `
+            <div style="max-width: 540px; margin: 0 auto;">
+                <iframe 
+                    src="https://www.instagram.com/p/${videoId}/embed/" 
+                    style="width: 100%; min-height: 600px; border: none; border-radius: 8px;"
+                    frameborder="0" 
+                    scrolling="no" 
+                    allowtransparency="true" 
+                    allow="encrypted-media">
+                </iframe>
+            </div>
+        `;
+        platformIcon = 'fab fa-instagram';
+        platformColor = '#E4405F';
+        platformName = 'Instagram';
     }
     
     console.log('✅ Mostrando embed del video:', videoId);
     
     // Mostrar embed del video
     previewContainer.innerHTML = `
-        <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 8px; overflow: hidden;">
-            <iframe 
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-                src="https://www.youtube.com/embed/${videoId}" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-            </iframe>
-        </div>
+        ${embedHtml}
         <div class="mt-2">
             <small class="text-success">
-                <i class="fas fa-check-circle me-1"></i>
-                Video de YouTube detectado
+                <i class="${platformIcon} me-1" style="color: ${platformColor};"></i>
+                Video de ${platformName} detectado
             </small>
         </div>
     `;
     
-    console.log('📡 Llamando a fetchYouTubeVideoInfo...');
-    // Intentar obtener información del video (título, duración)
-    fetchYouTubeVideoInfo(videoId);
+    // Solo intentar obtener información adicional si es YouTube
+    if (platform === 'youtube') {
+        console.log('📡 Llamando a fetchYouTubeVideoInfo...');
+        fetchYouTubeVideoInfo(videoId);
+    }
 }
 
 // Obtener información del video de YouTube
