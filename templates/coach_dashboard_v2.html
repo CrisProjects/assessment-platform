@@ -6590,17 +6590,28 @@ function dashboardApp() {
                     this.assignedContent = data.content;
                 }
                 
-                // Inicializar listeners de video después de cargar el contenido
-                // Usar nextTick para asegurar que el DOM esté actualizado
+                // Inicializar listeners de video DIRECTAMENTE AQUÍ
                 await this.$nextTick();
                 setTimeout(() => {
-                    console.log('🎬 Intentando inicializar video listeners desde loadAssignedContent...');
-                    if (typeof initializeVideoListeners === 'function') {
-                        initializeVideoListeners();
-                    } else {
-                        console.error('❌ initializeVideoListeners no está definida');
+                    const videoUrlInput = document.getElementById('videoUrl');
+                    if (videoUrlInput) {
+                        console.log('✅ Agregando listeners directamente desde Alpine.js');
+                        
+                        videoUrlInput.addEventListener('input', function(e) {
+                            const url = e.target.value.trim();
+                            console.log('⌨️ INPUT:', url);
+                            if (url) updateVideoPreview(url);
+                        });
+                        
+                        videoUrlInput.addEventListener('paste', function(e) {
+                            console.log('📋 PASTE detectado');
+                            setTimeout(() => {
+                                const url = e.target.value.trim();
+                                if (url) updateVideoPreview(url);
+                            }, 100);
+                        });
                     }
-                }, 200);
+                }, 300);
             } catch (error) {
                 console.error('❌ Error loading assigned content:', error);
             }
