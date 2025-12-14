@@ -7575,11 +7575,13 @@ function updateVideoPreview(url) {
 
 // Obtener información del video de YouTube
 async function fetchYouTubeVideoInfo(videoId) {
+    const titleInput = document.getElementById('contentTitle');
+    const durationInput = document.getElementById('videoDuration');
+    const descriptionInput = document.getElementById('contentDescription');
+    const previewContainer = document.getElementById('videoPreview');
+    
     try {
         console.log('📹 Obteniendo información del video:', videoId);
-        
-        // Primero intentar con oEmbed API (título y autor)
-        const oembedResponse = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
         
         let videoData = {
             title: '',
@@ -7588,73 +7590,72 @@ async function fetchYouTubeVideoInfo(videoId) {
             thumbnail: ''
         };
         
-        if (oembedResponse.ok) {
-            const oembedData = await oembedResponse.json();
-            videoData.title = oembedData.title || '';
-            videoData.author = oembedData.author_name || '';
-            videoData.thumbnail = oembedData.thumbnail_url || '';
+        let dataObtained = false;
+        
+        // Intentar con oEmbed API (más confiable para título y autor)
+        try {
+            const oembedResponse = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`, {
+                mode: 'cors',
+                cache: 'no-cache'
+            });
             
-            console.log('✅ oEmbed data:', videoData);
+            if (oembedResponse.ok) {
+                const oembedData = await oembedResponse.json();
+                videoData.title = oembedData.title || '';
+                videoData.author = oembedData.author_name || '';
+                videoData.thumbnail = oembedData.thumbnail_url || '';
+                dataObtained = true;
+                console.log('✅ Datos obtenidos de oEmbed:', videoData);
+            }
+        } catch (oembedError) {
+            console.warn('⚠️ Error en oEmbed API:', oembedError.message);
         }
         
-        // Intentar obtener duración desde la página de YouTube (scraping básico)
-        try {
-            const pageResponse = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
-            if (pageResponse.ok) {
-                const html = await pageResponse.text();
-                
-                // Buscar duración en el HTML (formato ISO 8601)
-                const durationMatch = html.match(/"lengthSeconds":"(\d+)"/);
-                if (durationMatch) {
-                    const seconds = parseInt(durationMatch[1]);
-                    const minutes = Math.floor(seconds / 60);
-                    videoData.duration = minutes;
-                    console.log('✅ Duración extraída:', minutes, 'minutos');
-                }
-                
-                // También buscar en formato alternativo
-                if (!videoData.duration) {
-                    const altDurationMatch = html.match(/"approxDurationMs":"(\d+)"/);
-                    if (altDurationMatch) {
-                        const milliseconds = parseInt(altDurationMatch[1]);
-                        const minutes = Math.floor(milliseconds / 60000);
-                        videoData.duration = minutes;
-                        console.log('✅ Duración extraída (alt):', minutes, 'minutos');
-                    }
+        // Si no obtuvimos datos, mostrar mensaje y salir
+        if (!dataObtained || !videoData.title) {
+            console.warn('⚠️ No se pudo obtener información del video');
+            
+            // Mostrar mensaje informativo en la vista previa
+            if (previewContainer) {
+                const currentContent = previewContainer.innerHTML;
+                if (!currentContent.includes('Información no disponible')) {
+                    previewContainer.innerHTML = currentContent + `
+                        <div class="mt-3 p-3" style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px; text-align: left;">
+                            <div class="mb-2">
+                                <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                                <strong>Información no disponible automáticamente</strong>
+                            </div>
+                            <small class="text-muted d-block">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Por favor, completa manualmente los campos: título y duración del video.
+                            </small>
+                        </div>
+                    `;
                 }
             }
-        } catch (durationError) {
-            console.log('⚠️ No se pudo obtener duración (CORS):', durationError.message);
+            return;
         }
         
-        // Autocompletar campos del formulario
-        const titleInput = document.getElementById('contentTitle');
-        const durationInput = document.getElementById('videoDuration');
-        const descriptionInput = document.getElementById('contentDescription');
-        
+        // Autocompletar campos del formulario si obtuvimos datos
         if (titleInput && !titleInput.value.trim() && videoData.title) {
             titleInput.value = videoData.title;
-            console.log('📝 Título autocompletado');
-        }
-        
-        if (durationInput && !durationInput.value.trim() && videoData.duration) {
-            durationInput.value = videoData.duration;
-            console.log('⏱️ Duración autocompletada:', videoData.duration, 'min');
+            console.log('📝 Título autocompletado:', videoData.title);
         }
         
         if (descriptionInput && !descriptionInput.value.trim() && videoData.author) {
             descriptionInput.value = `Video de ${videoData.author}`;
-            console.log('📄 Descripción sugerida');
+            console.log('📄 Descripción sugerida:', videoData.author);
         }
         
+        // Nota: La duración no está disponible en oEmbed, el usuario debe ingresarla manualmente
+        
         // Actualizar vista previa con información completa
-        const previewContainer = document.getElementById('videoPreview');
         if (previewContainer && videoData.title) {
             const currentContent = previewContainer.innerHTML;
             const infoHtml = `
-                <div class="mt-3 p-3" style="background: #f8f9fa; border-radius: 8px; text-align: left;">
+                <div class="mt-3 p-3" style="background: #d1fae5; border-left: 4px solid #10b981; border-radius: 8px; text-align: left;">
                     <div class="mb-2">
-                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        <i class="fas fa-check-circle me-2 text-success"></i>
                         <strong>Información del Video</strong>
                     </div>
                     <div class="ms-4">
@@ -7666,15 +7667,9 @@ async function fetchYouTubeVideoInfo(videoId) {
                             <i class="fab fa-youtube me-1"></i>
                             <strong>Canal:</strong> ${videoData.author || 'N/A'}
                         </small>
-                        ${videoData.duration ? `
-                        <small class="text-muted d-block mb-1">
-                            <i class="fas fa-clock me-1"></i>
-                            <strong>Duración:</strong> ${videoData.duration} minutos
-                        </small>
-                        ` : ''}
-                        <small class="text-success d-block mt-2">
-                            <i class="fas fa-check-circle me-1"></i>
-                            Datos autocompletados en el formulario
+                        <small class="text-info d-block mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Título y descripción autocompletados. Por favor ingresa la duración manualmente.
                         </small>
                     </div>
                 </div>
@@ -7682,26 +7677,27 @@ async function fetchYouTubeVideoInfo(videoId) {
             previewContainer.innerHTML = currentContent + infoHtml;
         }
         
-        return videoData;
-        
     } catch (error) {
-        console.error('❌ Error obteniendo información del video:', error);
+        console.error('❌ Error inesperado obteniendo información del video:', error);
         
-        // Mostrar mensaje de error en la vista previa
-        const previewContainer = document.getElementById('videoPreview');
+        // Mostrar mensaje de error general
         if (previewContainer) {
             const currentContent = previewContainer.innerHTML;
-            previewContainer.innerHTML = currentContent + `
-                <div class="mt-2 text-start">
-                    <small class="text-warning">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        No se pudo obtener información automática. Completa los campos manualmente.
-                    </small>
-                </div>
-            `;
+            if (!currentContent.includes('Error al obtener información')) {
+                previewContainer.innerHTML = currentContent + `
+                    <div class="mt-3 p-3" style="background: #fee2e2; border-left: 4px solid #dc3545; border-radius: 8px; text-align: left;">
+                        <div class="mb-2">
+                            <i class="fas fa-times-circle me-2 text-danger"></i>
+                            <strong>Error al obtener información</strong>
+                        </div>
+                        <small class="text-muted d-block">
+                            <i class="fas fa-edit me-1"></i>
+                            Por favor, completa todos los campos manualmente.
+                        </small>
+                    </div>
+                `;
+            }
         }
-        
-        return null;
     }
 }
 
