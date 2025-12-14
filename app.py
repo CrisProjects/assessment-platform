@@ -4549,44 +4549,7 @@ def api_coach_upload_avatar():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/coach/change-password', methods=['POST'])
-@coach_session_required
-def api_coach_change_password():
-    """Cambiar contraseña del coach"""
-    try:
-        data = request.get_json()
-        
-        current_password = data.get('current_password')
-        new_password = data.get('new_password')
-        
-        if not current_password or not new_password:
-            return jsonify({'success': False, 'error': 'Faltan datos requeridos'}), 400
-        
-        # Verificar contraseña actual
-        if not g.current_user.check_password(current_password):
-            return jsonify({'success': False, 'error': 'Contraseña actual incorrecta'}), 401
-        
-        # Validar nueva contraseña
-        if len(new_password) < 6:
-            return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
-        
-        # Actualizar contraseña
-        g.current_user.set_password(new_password)
-        # Limpiar original_password si existe
-        g.current_user.original_password = None
-        db.session.commit()
-        
-        logger.info(f"Password changed for coach {g.current_user.id}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Contraseña actualizada correctamente'
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error changing coach password: {str(e)}", exc_info=True)
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+# Endpoint de cambio de contraseña de coach eliminado (duplicado) - usar el de línea 3886
 
 @app.route('/api/coach/set-avatar-url', methods=['POST'])
 @coach_session_required
@@ -8441,44 +8404,7 @@ def api_coachee_upload_avatar():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/coachee/change-password', methods=['POST'])
-@coachee_session_required
-def api_coachee_change_password():
-    """Cambiar contraseña del coachee"""
-    try:
-        data = request.get_json()
-        
-        current_password = data.get('current_password')
-        new_password = data.get('new_password')
-        
-        if not current_password or not new_password:
-            return jsonify({'success': False, 'error': 'Faltan datos requeridos'}), 400
-        
-        # Verificar contraseña actual
-        if not g.current_user.check_password(current_password):
-            return jsonify({'success': False, 'error': 'Contraseña actual incorrecta'}), 401
-        
-        # Validar nueva contraseña
-        if len(new_password) < 6:
-            return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
-        
-        # Actualizar contraseña
-        g.current_user.set_password(new_password)
-        # Limpiar original_password si existe
-        g.current_user.original_password = None
-        db.session.commit()
-        
-        logger.info(f"Password changed for user {g.current_user.id}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Contraseña actualizada correctamente'
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error changing password: {str(e)}", exc_info=True)
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+# Endpoint de cambio de contraseña de coachee eliminado (duplicado) - usar el de línea 3954
 
 @app.route('/api/coachee/set-avatar-url', methods=['POST'])
 @coachee_session_required
