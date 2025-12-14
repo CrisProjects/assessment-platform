@@ -2957,7 +2957,14 @@
     
     /* Transiciones suaves para módulos */
     .module-content {
+        opacity: 0;
+        display: none;
         animation: fadeIn 0.3s ease-in;
+    }
+    
+    .module-content.module-visible {
+        opacity: 1;
+        display: block;
     }
     
     @keyframes fadeIn {
@@ -5396,6 +5403,11 @@ function dashboardApp() {
             this.updateDateTime();
             setInterval(() => this.updateDateTime(), 1000);
             
+            // Ocultar todos los módulos al inicio para evitar parpadeo
+            document.querySelectorAll('.module-content').forEach(module => {
+                module.style.display = 'none';
+            });
+            
             await this.loadProfile();
             await this.loadStats();
             
@@ -5510,6 +5522,7 @@ function dashboardApp() {
             const selectedModule = document.getElementById(moduleId);
             if (selectedModule) {
                 selectedModule.style.display = 'block';
+                selectedModule.classList.add('module-visible');
                 
                 // Scroll suave al módulo SOLO si se solicita explícitamente (click del usuario)
                 if (shouldScroll) {
