@@ -4162,34 +4162,7 @@ def api_admin_login():
     except Exception as e:
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
 
-@app.route('/api/admin/change-password', methods=['POST'])
-@admin_required
-def api_admin_change_password():
-    try:
-        data = request.get_json()
-        current_password = data.get('currentPassword')
-        new_password = data.get('newPassword')
-        
-        if not current_password or not new_password:
-            return jsonify({'error': 'Contraseña actual y nueva contraseña son requeridas'}), 400
-        
-        if len(new_password) < 6:
-            return jsonify({'error': 'La nueva contraseña debe tener al menos 6 caracteres'}), 400
-        
-        if not current_user.check_password(current_password):
-            return jsonify({'error': 'Contraseña actual incorrecta'}), 401
-        
-        current_user.set_password(new_password)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Contraseña actualizada exitosamente'
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Error al cambiar contraseña: {str(e)}'}), 500
+# Endpoint de cambio de contraseña de admin eliminado (duplicado) - usar el de línea 3818
 
 @app.route('/api/admin/create-coach', methods=['POST'])
 @admin_required
