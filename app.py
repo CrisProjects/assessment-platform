@@ -3820,8 +3820,8 @@ def api_coachee_logout():
 def admin_change_password():
     """Permite a un administrador cambiar su contraseña"""
     try:
-        # Verificar sesión de administrador
-        if not current_user.is_authenticated or current_user.role != 'admin':
+        # Verificar sesión de administrador (el rol correcto es 'platform_admin')
+        if not current_user.is_authenticated or current_user.role != 'platform_admin':
             return jsonify({
                 'error': 'No hay sesión de administrador activa',
                 'redirect_url': '/admin-login',
