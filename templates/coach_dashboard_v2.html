@@ -5441,11 +5441,24 @@ function dashboardApp() {
             this.currentTime = now.toLocaleTimeString('es-ES', timeOptions);
         },
         
+        // Verificar si la sesión expiró y redirigir
+        checkSessionExpired(data) {
+            if (data && data.session_expired && data.redirect_url) {
+                console.log('🔒 Sesión expirada, redirigiendo a login...');
+                window.location.href = data.redirect_url;
+                return true;
+            }
+            return false;
+        },
+        
         // Cargar perfil del coach
         async loadProfile() {
             try {
                 const response = await fetch('/api/coach/profile');
                 const data = await response.json();
+                
+                // Verificar sesión expirada
+                if (this.checkSessionExpired(data)) return;
                 
                 if (data.success) {
                     const profile = data.profile;
@@ -5469,6 +5482,9 @@ function dashboardApp() {
             try {
                 const response = await fetch('/api/coach/my-coachees');
                 const data = await response.json();
+                
+                // Verificar sesión expirada
+                if (this.checkSessionExpired(data)) return;
                 
                 if (data.success) {
                     this.stats.totalCoachees = data.coachees.length;
@@ -5571,14 +5587,17 @@ function dashboardApp() {
                 case 'agenda':
                     setTimeout(() => this.initializeCalendar(), 100);
                     break;
-            }
-        },
-        
         // Cargar coachees
         async loadCoachees() {
             this.loading.coachees = true;
             try {
                 const response = await fetch('/api/coach/my-coachees');
+                const data = await response.json();
+                
+                // Verificar sesión expirada
+                if (this.checkSessionExpired(data)) return;
+                
+                if (data.success) {ait fetch('/api/coach/my-coachees');
                 const data = await response.json();
                 
                 if (data.success) {
