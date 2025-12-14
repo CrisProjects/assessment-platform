@@ -6702,6 +6702,78 @@ function dashboardApp() {
         openChangePasswordModal() {
             const modal = new bootstrap.Modal(document.getElementById('changePasswordModalCoach'));
             modal.show();
+            
+            // Inicializar listeners de validación en tiempo real
+            this.$nextTick(() => {
+                const newPasswordInput = document.getElementById('coachNewPassword');
+                const confirmPasswordInput = document.getElementById('coachConfirmPassword');
+                
+                if (newPasswordInput) {
+                    newPasswordInput.addEventListener('input', () => this.validatePasswordPolicy());
+                }
+                
+                if (confirmPasswordInput) {
+                    confirmPasswordInput.addEventListener('input', () => this.validatePasswordMatch());
+                }
+            });
+        },
+        
+        // Validar política de contraseña en tiempo real
+        validatePasswordPolicy() {
+            const password = document.getElementById('coachNewPassword').value;
+            
+            // Requisitos
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+            
+            // Actualizar indicadores visuales
+            this.updateRequirementIndicator('req-length', requirements.length);
+            this.updateRequirementIndicator('req-uppercase', requirements.uppercase);
+            this.updateRequirementIndicator('req-lowercase', requirements.lowercase);
+            this.updateRequirementIndicator('req-number', requirements.number);
+            this.updateRequirementIndicator('req-special', requirements.special);
+            
+            return Object.values(requirements).every(r => r);
+        },
+        
+        // Actualizar indicador de requisito
+        updateRequirementIndicator(elementId, isValid) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const icon = element.querySelector('i');
+            
+            if (isValid) {
+                element.style.color = '#28a745';
+                icon.className = 'fas fa-check-circle';
+                icon.style.fontSize = '0.875rem';
+            } else {
+                element.style.color = '#6c757d';
+                icon.className = 'fas fa-circle';
+                icon.style.fontSize = '0.5rem';
+            }
+        },
+        
+        // Validar coincidencia de contraseñas
+        validatePasswordMatch() {
+            const newPassword = document.getElementById('coachNewPassword').value;
+            const confirmPassword = document.getElementById('coachConfirmPassword').value;
+            const indicator = document.getElementById('passwordMatchIndicator');
+            
+            if (!indicator || !confirmPassword) return;
+            
+            if (newPassword === confirmPassword) {
+                indicator.innerHTML = '<i class="fas fa-check-circle" style="color: #28a745; margin-right: 0.5rem;"></i>Las contraseñas coinciden';
+                indicator.style.color = '#28a745';
+            } else {
+                indicator.innerHTML = '<i class="fas fa-times-circle" style="color: #dc3545; margin-right: 0.5rem;"></i>Las contraseñas no coinciden';
+                indicator.style.color = '#dc3545';
+            }
         },
         
         // Cambiar contraseña
@@ -6712,18 +6784,33 @@ function dashboardApp() {
             
             // Validar campos
             if (!currentPassword || !newPassword || !confirmPassword) {
-                this.showNotification('Todos los campos son requeridos', 'danger');
+                this.showNotification('❌ Todos los campos son requeridos', 'danger');
                 return;
             }
             
             if (newPassword !== confirmPassword) {
-                this.showNotification('Las contraseñas nuevas no coinciden', 'danger');
+                this.showNotification('❌ Las contraseñas nuevas no coinciden', 'danger');
                 return;
             }
             
-            // Validar fortaleza
-            if (newPassword.length < 8) {
-                this.showNotification('La contraseña debe tener al menos 8 caracteres', 'danger');
+            // Validar política completa
+            const requirements = {
+                length: newPassword.length >= 8,
+                uppercase: /[A-Z]/.test(newPassword),
+                lowercase: /[a-z]/.test(newPassword),
+                number: /[0-9]/.test(newPassword),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword)
+            };
+            
+            const failedRequirements = [];
+            if (!requirements.length) failedRequirements.push('mínimo 8 caracteres');
+            if (!requirements.uppercase) failedRequirements.push('al menos 1 letra mayúscula');
+            if (!requirements.lowercase) failedRequirements.push('al menos 1 letra minúscula');
+            if (!requirements.number) failedRequirements.push('al menos 1 número');
+            if (!requirements.special) failedRequirements.push('al menos 1 símbolo especial');
+            
+            if (failedRequirements.length > 0) {
+                this.showNotification('❌ La contraseña debe cumplir: ' + failedRequirements.join(', '), 'danger');
                 return;
             }
             
@@ -6748,6 +6835,11 @@ function dashboardApp() {
                     document.getElementById('coachCurrentPassword').value = '';
                     document.getElementById('coachNewPassword').value = '';
                     document.getElementById('coachConfirmPassword').value = '';
+                    // Limpiar indicadores
+                    document.getElementById('passwordMatchIndicator').innerHTML = '';
+                    ['req-length', 'req-uppercase', 'req-lowercase', 'req-number', 'req-special'].forEach(id => {
+                        this.updateRequirementIndicator(id, false);
+                    });
                 } else {
                     this.showNotification('❌ ' + (data.error || 'No se pudo cambiar la contraseña'), 'danger');
                 }
@@ -8154,16 +8246,37 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-key me-1"></i>Nueva Contraseña
                         </label>
                         <input type="password" class="form-control" id="coachNewPassword" required minlength="8">
-                        <small class="form-text text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 símbolo especial
-                        </small>
+                        
+                        <!-- Indicadores de política de contraseña -->
+                        <div id="passwordRequirements" class="mt-2" style="font-size: 0.875rem;">
+                            <div class="password-requirement" id="req-length" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                Mínimo 8 caracteres
+                            </div>
+                            <div class="password-requirement" id="req-uppercase" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                Al menos 1 letra mayúscula
+                            </div>
+                            <div class="password-requirement" id="req-lowercase" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                Al menos 1 letra minúscula
+                            </div>
+                            <div class="password-requirement" id="req-number" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                Al menos 1 número
+                            </div>
+                            <div class="password-requirement" id="req-special" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                Al menos 1 símbolo especial (!@#$%^&*)
+                            </div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="coachConfirmPassword" class="form-label">
                             <i class="fas fa-check-circle me-1"></i>Confirmar Nueva Contraseña
                         </label>
                         <input type="password" class="form-control" id="coachConfirmPassword" required minlength="8">
+                        <div id="passwordMatchIndicator" style="font-size: 0.875rem; margin-top: 0.5rem;"></div>
                     </div>
                 </form>
             </div>
