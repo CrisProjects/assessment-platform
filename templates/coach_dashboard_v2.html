@@ -3359,42 +3359,42 @@
                 <div class="card-body">
                     <div class="list-group list-group-flush">
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action active" 
-                           @click.prevent="showModule('mis-coachees')" data-module="mis-coachees">
+                           @click.prevent="showModule('mis-coachees', true)" data-module="mis-coachees">
                             <i class="fas fa-users"></i>
                             <span>Mis Coachees</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('invitar-coachee')" data-module="invitar-coachee">
+                           @click.prevent="showModule('invitar-coachee', true)" data-module="invitar-coachee">
                             <i class="fas fa-user-plus"></i>
                             <span>Invitar Coachee</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('gestion-tareas')" data-module="gestion-tareas">
+                           @click.prevent="showModule('gestion-tareas', true)" data-module="gestion-tareas">
                             <i class="fas fa-tasks"></i>
                             <span>Acciones y Metas</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('seleccionar-evaluaciones')" data-module="seleccionar-evaluaciones">
+                           @click.prevent="showModule('seleccionar-evaluaciones', true)" data-module="seleccionar-evaluaciones">
                             <i class="fas fa-clipboard-check"></i>
                             <span>Evaluaciones</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('evaluaciones-pendientes')" data-module="evaluaciones-pendientes">
+                           @click.prevent="showModule('evaluaciones-pendientes', true)" data-module="evaluaciones-pendientes">
                             <i class="fas fa-clock"></i>
                             <span>Pendientes</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('crear-cargar-evaluaciones')" data-module="crear-cargar-evaluaciones">
+                           @click.prevent="showModule('crear-cargar-evaluaciones', true)" data-module="crear-cargar-evaluaciones">
                             <i class="fas fa-file-upload"></i>
                             <span>Crear Evaluación</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('agregar-contenido')" data-module="agregar-contenido">
+                           @click.prevent="showModule('agregar-contenido', true)" data-module="agregar-contenido">
                             <i class="fas fa-share-square"></i>
                             <span>Contenido</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('agenda')" data-module="agenda">
+                           @click.prevent="showModule('agenda', true)" data-module="agenda">
                             <i class="fas fa-calendar-alt"></i>
                             <span>Mi Agenda</span>
                         </a>
@@ -5487,7 +5487,7 @@ function dashboardApp() {
         },
         
         // Mostrar módulo
-        async showModule(moduleId) {
+        async showModule(moduleId, shouldScroll = false) {
             this.activeModule = moduleId;
             
             // Ocultar todos los módulos
@@ -5505,16 +5505,18 @@ function dashboardApp() {
             if (selectedModule) {
                 selectedModule.style.display = 'block';
                 
-                // Scroll suave al módulo en dispositivos móviles y tablets
-                setTimeout(() => {
-                    const isMobileOrTablet = window.innerWidth <= 1024;
-                    if (isMobileOrTablet) {
-                        selectedModule.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                }, 100);
+                // Scroll suave al módulo SOLO si se solicita explícitamente (click del usuario)
+                if (shouldScroll) {
+                    setTimeout(() => {
+                        const isMobileOrTablet = window.innerWidth <= 1024;
+                        if (isMobileOrTablet) {
+                            selectedModule.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    }, 100);
+                }
             }
             
             // Agregar clase active al enlace seleccionado
