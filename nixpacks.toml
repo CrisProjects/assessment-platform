@@ -1,4 +1,7 @@
-# Railway deployment config - NO MISE
+# Railway deployment - Force Python 3.11 without mise
+[providers]
+python = "3.11"
+
 [phases.setup]
 nixPkgs = ["python311", "libpq"]
 
@@ -7,7 +10,3 @@ cmds = ["pip3.11 install --upgrade pip", "pip3.11 install -r requirements.txt"]
 
 [start]
 cmd = "python3.11 wsgi_production.py"
-
-[variables]
-NIXPACKS_NO_MISE = "1"
-PYTHON_VERSION = "3.11"
