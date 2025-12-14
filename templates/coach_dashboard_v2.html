@@ -5562,6 +5562,10 @@ function dashboardApp() {
                     await this.loadAssessmentsForInvitation();
                     break;
                 case 'agregar-contenido':
+                    // Resetear flag de inicialización de video listeners
+                    if (typeof videoListenersInitialized !== 'undefined') {
+                        videoListenersInitialized = false;
+                    }
                     await this.loadAssignedContent();
                     break;
                 case 'agenda':
@@ -7796,6 +7800,9 @@ function resetAssignForm() {
 }
 
 // Función para inicializar listeners de video (llamada cuando el módulo se muestra)
+// Variable global para evitar múltiples inicializaciones
+let videoListenersInitialized = false;
+
 function initializeVideoListeners() {
     console.log('🎯 Inicializando listeners de video...');
     console.log('🔍 Estado del módulo agregar-contenido:', document.getElementById('agregar-contenido')?.style.display);
@@ -7806,22 +7813,55 @@ function initializeVideoListeners() {
         console.log('✅ Input de videoUrl encontrado:', videoUrlInput);
         console.log('🔍 Elemento visible:', window.getComputedStyle(videoUrlInput).display !== 'none');
         console.log('🔍 Offset parent:', videoUrlInput.offsetParent !== null);
+        console.log('🔍 Ya inicializado antes?', videoListenersInitialized);
         
-        // Remover listeners anteriores (si existen) para evitar duplicados
-        videoUrlInput.removeEventListener('input', handleVideoInput);
-        videoUrlInput.removeEventListener('paste', handleVideoPaste);
-        videoUrlInput.removeEventListener('blur', handleVideoBlur);
+        // Si ya se inicializaron, no hacer nada
+        if (videoListenersInitialized) {
+            console.log('⚠️ Listeners ya fueron inicializados, saltando...');
+            return;
+        }
         
-        // Agregar nuevos listeners
-        videoUrlInput.addEventListener('input', handleVideoInput);
-        videoUrlInput.addEventListener('paste', handleVideoPaste);
-        videoUrlInput.addEventListener('blur', handleVideoBlur);
+        // Marcar como inicializado
+        videoListenersInitialized = true;
         
-        console.log('✅ Listeners agregados al input de videoUrl (input, paste, blur)');
+        // Usar addEventListener con named functions para poder removerlos
+        const inputHandler = function(e) {
+            const url = e.target.value.trim();
+            console.log('⌨️ INPUT EVENT DETECTADO:', url);
+            if (url) {
+                updateVideoPreview(url);
+            }
+        };
         
-        // Verificar que los listeners se agregaron correctamente
-        const listeners = getEventListeners ? getEventListeners(videoUrlInput) : 'N/A';
-        console.log('🔍 Listeners activos:', listeners);
+        const pasteHandler = function(e) {
+            console.log('📋 PASTE EVENT DETECTADO');
+            setTimeout(() => {
+                const url = e.target.value.trim();
+                console.log('📋 URL pegada:', url);
+                if (url) {
+                    updateVideoPreview(url);
+                }
+            }, 100);
+        };
+        
+        const blurHandler = function(e) {
+            const url = e.target.value.trim();
+            console.log('👁️ BLUR EVENT DETECTADO:', url);
+            if (url) {
+                updateVideoPreview(url);
+            }
+        };
+        
+        // Agregar listeners
+        videoUrlInput.addEventListener('input', inputHandler);
+        videoUrlInput.addEventListener('paste', pasteHandler);
+        videoUrlInput.addEventListener('blur', blurHandler);
+        
+        // Guardar referencia para poder remover después si es necesario
+        videoUrlInput._videoHandlers = { inputHandler, pasteHandler, blurHandler };
+        
+        console.log('✅ Listeners agregados al input de videoUrl');
+        console.log('✅ Handlers:', videoUrlInput._videoHandlers);
         
         // Si ya hay un valor en el input, procesarlo inmediatamente
         if (videoUrlInput.value.trim()) {
@@ -7829,46 +7869,11 @@ function initializeVideoListeners() {
             updateVideoPreview(videoUrlInput.value.trim());
         }
         
-        // Test adicional: agregar un listener de prueba que registre cualquier evento
-        videoUrlInput.addEventListener('input', function testListener(e) {
-            console.log('🧪 TEST LISTENER activado - el input está recibiendo eventos!', e.target.value);
-        }, { once: true });
-        
     } else {
         console.error('❌ No se encontró el input de videoUrl en el DOM');
         console.log('📋 Módulo agregar-contenido visible:', document.getElementById('agregar-contenido')?.style.display);
         console.log('📋 Elementos disponibles con ID en el módulo:', 
             Array.from(document.getElementById('agregar-contenido')?.querySelectorAll('[id]') || []).map(el => el.id).join(', '));
-    }
-}
-
-// Handler para el evento input
-function handleVideoInput(e) {
-    const url = e.target.value.trim();
-    console.log('⌨️ Input event:', url);
-    if (url) {
-        updateVideoPreview(url);
-    }
-}
-
-// Handler para el evento paste
-function handleVideoPaste(e) {
-    console.log('📋 Paste event detectado');
-    setTimeout(() => {
-        const url = e.target.value.trim();
-        console.log('📋 URL pegada:', url);
-        if (url) {
-            updateVideoPreview(url);
-        }
-    }, 100);
-}
-
-// Handler para el evento blur (cuando el usuario sale del campo)
-function handleVideoBlur(e) {
-    const url = e.target.value.trim();
-    console.log('👁️ Blur event:', url);
-    if (url) {
-        updateVideoPreview(url);
     }
 }
 
