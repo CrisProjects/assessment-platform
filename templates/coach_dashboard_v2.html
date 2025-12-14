@@ -6587,11 +6587,16 @@ function dashboardApp() {
                 }
                 
                 // Inicializar listeners de video después de cargar el contenido
+                // Usar nextTick para asegurar que el DOM esté actualizado
+                await this.$nextTick();
                 setTimeout(() => {
+                    console.log('🎬 Intentando inicializar video listeners desde loadAssignedContent...');
                     if (typeof initializeVideoListeners === 'function') {
                         initializeVideoListeners();
+                    } else {
+                        console.error('❌ initializeVideoListeners no está definida');
                     }
-                }, 100);
+                }, 200);
             } catch (error) {
                 console.error('❌ Error loading assigned content:', error);
             }
@@ -7796,19 +7801,28 @@ function initializeVideoListeners() {
     
     const videoUrlInput = document.getElementById('videoUrl');
     if (videoUrlInput) {
-        console.log('✅ Input de videoUrl encontrado');
+        console.log('✅ Input de videoUrl encontrado:', videoUrlInput);
         
-        // Remover listeners anteriores (si existen)
+        // Remover listeners anteriores (si existen) para evitar duplicados
         videoUrlInput.removeEventListener('input', handleVideoInput);
         videoUrlInput.removeEventListener('paste', handleVideoPaste);
+        videoUrlInput.removeEventListener('blur', handleVideoBlur);
         
         // Agregar nuevos listeners
         videoUrlInput.addEventListener('input', handleVideoInput);
         videoUrlInput.addEventListener('paste', handleVideoPaste);
+        videoUrlInput.addEventListener('blur', handleVideoBlur);
         
-        console.log('✅ Listeners agregados al input de videoUrl');
+        console.log('✅ Listeners agregados al input de videoUrl (input, paste, blur)');
+        
+        // Si ya hay un valor en el input, procesarlo inmediatamente
+        if (videoUrlInput.value.trim()) {
+            console.log('🔄 Procesando valor existente en el input:', videoUrlInput.value);
+            updateVideoPreview(videoUrlInput.value.trim());
+        }
     } else {
-        console.error('❌ No se encontró el input de videoUrl');
+        console.error('❌ No se encontró el input de videoUrl en el DOM');
+        console.log('📋 Elementos disponibles con ID:', Array.from(document.querySelectorAll('[id]')).map(el => el.id).join(', '));
     }
 }
 
@@ -7833,10 +7847,32 @@ function handleVideoPaste(e) {
     }, 100);
 }
 
+// Handler para el evento blur (cuando el usuario sale del campo)
+function handleVideoBlur(e) {
+    const url = e.target.value.trim();
+    console.log('👁️ Blur event:', url);
+    if (url) {
+        updateVideoPreview(url);
+    }
+}
+
 // Inicializar listeners cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM Content Loaded');
-    initializeVideoListeners();
+    // NO inicializar listeners aquí porque el módulo de contenido está oculto
+    // Los listeners se inicializarán cuando se cargue el módulo desde Alpine.js
+    console.log('⏳ Esperando a que Alpine.js cargue el módulo de contenido...');
+    
+    // Listener para cuando se muestre la pestaña de asignar contenido
+    const assignContentTab = document.getElementById('assign-content-tab');
+    if (assignContentTab) {
+        assignContentTab.addEventListener('shown.bs.tab', function() {
+            console.log('📺 Pestaña "Asignar Video" mostrada, inicializando listeners...');
+            setTimeout(() => {
+                initializeVideoListeners();
+            }, 100);
+        });
+    }
     
     // Listener para el formulario de asignación de contenido
     const assignContentForm = document.getElementById('assignContentForm');
