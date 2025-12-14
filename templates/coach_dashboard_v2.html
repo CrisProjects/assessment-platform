@@ -8260,11 +8260,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Extraer ID del video para validación
-            const videoId = extractYouTubeVideoId(videoUrl);
-            if (!videoId) {
-                showNotification('URL de YouTube no válida', 'error');
+            // Detectar plataforma y validar URL
+            const platform = detectVideoPlatform(videoUrl);
+            if (!platform) {
+                showNotification('Por favor ingresa una URL válida de YouTube o Instagram', 'error');
                 return;
+            }
+            
+            // Extraer ID del video según la plataforma
+            let videoId = null;
+            let contentType = '';
+            
+            if (platform === 'youtube') {
+                videoId = extractYouTubeVideoId(videoUrl);
+                contentType = 'youtube';
+                if (!videoId) {
+                    showNotification('URL de YouTube no válida', 'error');
+                    return;
+                }
+            } else if (platform === 'instagram') {
+                videoId = extractInstagramVideoId(videoUrl);
+                contentType = 'instagram';
+                if (!videoId) {
+                    showNotification('URL de Instagram no válida', 'error');
+                    return;
+                }
             }
             
             try {
@@ -8275,7 +8295,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         coachee_id: coacheeId,
                         title: title,
                         description: description,
-                        content_type: 'youtube',
+                        content_type: contentType,
                         content_url: videoUrl,
                         duration: duration ? parseInt(duration) : null
                     })
