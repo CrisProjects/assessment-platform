@@ -4355,13 +4355,13 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-lg-6 mb-3">
-                                <label for="videoUrlV2" class="form-label">URL del Video de YouTube</label>
+                                <label for="videoUrlV2" class="form-label">URL del Video</label>
                                 <input type="url" 
                                        id="videoUrlV2" 
                                        class="form-control" 
-                                       placeholder="https://www.youtube.com/watch?v=..."
+                                       placeholder="YouTube o Instagram: https://..."
                                        autocomplete="off">
-                                <small class="text-muted">Ingresa una URL de YouTube para ver la vista previa</small>
+                                <small class="text-muted">Ingresa una URL de YouTube o Instagram para ver la vista previa</small>
                             </div>
                             <div class="col-lg-6">
                                 <label class="form-label">Vista Previa</label>
@@ -7698,7 +7698,7 @@ function generateDimensionalScoresHTMLV2(dimensionalScores) {
 // FUNCIONES PARA GESTIÓN DE CONTENIDO Y VISTA PREVIA DE VIDEOS
 // ============================================================================
 
-// Extraer ID de video de YouTube desde URL
+// Extraer ID de video de YouTube o Instagram desde URL
 function extractYouTubeVideoId(url) {
     if (!url) return null;
     
@@ -7713,6 +7713,40 @@ function extractYouTubeVideoId(url) {
         if (match && match[1]) {
             return match[1];
         }
+    }
+    
+    return null;
+}
+
+// Extraer ID de video/reel de Instagram desde URL
+function extractInstagramVideoId(url) {
+    if (!url) return null;
+    
+    // Patrones para diferentes formatos de URL de Instagram
+    const patterns = [
+        /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+        /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//,
+    ];
+    
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    
+    return null;
+}
+
+// Detectar tipo de plataforma de video
+function detectVideoPlatform(url) {
+    if (!url) return null;
+    
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        return 'youtube';
+    }
+    if (url.includes('instagram.com')) {
+        return 'instagram';
     }
     
     return null;
@@ -7912,35 +7946,85 @@ function updateVideoPreviewV2(url) {
     
     console.log('✅ [V2] Contenedor de preview encontrado');
     
-    const videoId = extractYouTubeVideoId(url);
-    console.log('🔍 [V2] Video ID extraído:', videoId);
+    // Detectar plataforma
+    const platform = detectVideoPlatform(url);
+    console.log('🔍 [V2] Plataforma detectada:', platform);
     
-    if (!videoId) {
-        console.warn('⚠️ [V2] No se pudo extraer ID del video');
+    if (!platform) {
+        console.warn('⚠️ [V2] Plataforma no soportada');
         previewContainer.innerHTML = `
             <i class="fas fa-video fa-3x mb-2 text-muted"></i>
-            <p class="small text-muted mb-0">Ingresa una URL válida de YouTube</p>
+            <p class="small text-muted mb-0">Ingresa una URL válida de YouTube o Instagram</p>
         `;
         return;
     }
     
-    console.log('✅ [V2] Mostrando embed del video:', videoId);
+    let embedHtml = '';
+    let platformIcon = '';
+    let platformColor = '';
+    
+    if (platform === 'youtube') {
+        const videoId = extractYouTubeVideoId(url);
+        if (!videoId) {
+            console.warn('⚠️ [V2] No se pudo extraer ID del video de YouTube');
+            previewContainer.innerHTML = `
+                <i class="fas fa-video fa-3x mb-2 text-muted"></i>
+                <p class="small text-muted mb-0">URL de YouTube inválida</p>
+            `;
+            return;
+        }
+        
+        console.log('✅ [V2] YouTube ID:', videoId);
+        platformIcon = 'fab fa-youtube';
+        platformColor = '#FF0000';
+        
+        embedHtml = `
+            <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 8px; overflow: hidden;">
+                <iframe 
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                    src="https://www.youtube.com/embed/${videoId}" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        `;
+    } else if (platform === 'instagram') {
+        const videoId = extractInstagramVideoId(url);
+        if (!videoId) {
+            console.warn('⚠️ [V2] No se pudo extraer ID del video de Instagram');
+            previewContainer.innerHTML = `
+                <i class="fab fa-instagram fa-3x mb-2 text-muted"></i>
+                <p class="small text-muted mb-0">URL de Instagram inválida</p>
+            `;
+            return;
+        }
+        
+        console.log('✅ [V2] Instagram ID:', videoId);
+        platformIcon = 'fab fa-instagram';
+        platformColor = '#E4405F';
+        
+        // Instagram requiere /embed al final de la URL
+        embedHtml = `
+            <div style="position: relative; width: 100%; max-width: 540px; margin: 0 auto; background: #000; border-radius: 8px; overflow: hidden;">
+                <iframe 
+                    style="width: 100%; min-height: 600px; border: none;"
+                    src="https://www.instagram.com/p/${videoId}/embed/" 
+                    frameborder="0" 
+                    scrolling="no"
+                    allowtransparency="true">
+                </iframe>
+            </div>
+        `;
+    }
     
     // Mostrar embed del video inmediatamente
     previewContainer.innerHTML = `
-        <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 8px; overflow: hidden;">
-            <iframe 
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-                src="https://www.youtube.com/embed/${videoId}" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-            </iframe>
-        </div>
+        ${embedHtml}
         <div class="mt-2">
             <small class="text-success">
-                <i class="fas fa-check-circle me-1"></i>
-                Video cargado correctamente
+                <i class="${platformIcon} me-1" style="color: ${platformColor};"></i>
+                Video de ${platform === 'youtube' ? 'YouTube' : 'Instagram'} cargado correctamente
             </small>
         </div>
     `;

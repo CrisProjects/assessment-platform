@@ -799,8 +799,8 @@ def add_security_headers(response):
         "https://fonts.gstatic.com "  # Google Fonts
         "data:; "  # Data URIs para fuentes embebidas
         "img-src 'self' data: https: blob:; "  # Imágenes: mismo origen + data URIs + HTTPS (para avatares S3)
-        "connect-src 'self' https://www.youtube.com https://youtube.com; "  # Conexiones AJAX + YouTube oEmbed API
-        "frame-src 'self' https://www.youtube.com https://youtube.com; "  # Permitir embeds de YouTube
+        "connect-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com; "  # Conexiones AJAX + YouTube/Instagram oEmbed API
+        "frame-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com; "  # Permitir embeds de YouTube e Instagram
         "frame-ancestors 'none'; "  # No permitir ser embebido en iframes (complementa X-Frame-Options)
         "base-uri 'self'; "  # Base URI solo mismo origen
         "form-action 'self'"  # Formularios solo pueden enviar a mismo origen
@@ -5043,8 +5043,8 @@ def coach_dashboard_v2():
         "style-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
         "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
         "img-src 'self' data: https: http: blob:; "  # Permite imágenes de cualquier origen HTTPS/HTTP y blob para Chart.js
-        "connect-src 'self' https: https://www.youtube.com; "  # Permitir YouTube oEmbed API
-        "frame-src 'self' https://www.youtube.com https://youtube.com; "  # Permitir embeds de YouTube
+        "connect-src 'self' https: https://www.youtube.com https://www.instagram.com; "  # Permitir YouTube/Instagram oEmbed API
+        "frame-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com; "  # Permitir embeds de YouTube e Instagram
         "worker-src 'self' blob:; "  # Permite Web Workers para Chart.js
         "child-src 'self' blob:;"  # Soporte legacy para workers
     )
