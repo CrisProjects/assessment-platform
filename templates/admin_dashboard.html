@@ -282,6 +282,10 @@
                             <i class="fas fa-user-shield me-1"></i>
                             Administrador
                         </span>
+                        <button class="btn btn-outline-light btn-sm" onclick="openEditProfileModal()">
+                            <i class="fas fa-user-edit me-1"></i>
+                            <span class="d-none d-sm-inline">Editar Perfil</span>
+                        </button>
                         <button class="btn btn-outline-light btn-sm" onclick="openChangePasswordModal()">
                             <i class="fas fa-key me-1"></i>
                             <span class="d-none d-sm-inline">Cambiar Contraseña</span>
@@ -923,6 +927,78 @@
         }
 
         // ============================================================================
+        // FUNCIONES DE EDICIÓN DE PERFIL
+        // ============================================================================
+        
+        async function openEditProfileModal() {
+            const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+            
+            // Cargar datos actuales del perfil
+            try {
+                const response = await fetch('/api/admin/profile');
+                const data = await response.json();
+                
+                if (data.success && data.profile) {
+                    document.getElementById('adminFullName').value = data.profile.full_name || '';
+                    document.getElementById('adminEmail').value = data.profile.email || '';
+                    document.getElementById('adminUsername').value = data.profile.username || '';
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                alert('❌ Error al cargar el perfil');
+                return;
+            }
+            
+            modal.show();
+        }
+        
+        async function submitProfileUpdate() {
+            const fullName = document.getElementById('adminFullName').value.trim();
+            const email = document.getElementById('adminEmail').value.trim();
+            
+            // Validar campos
+            if (!fullName || !email) {
+                alert('❌ Todos los campos son requeridos');
+                return;
+            }
+            
+            if (fullName.length < 3) {
+                alert('❌ El nombre completo debe tener al menos 3 caracteres');
+                return;
+            }
+            
+            // Validar formato de email
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailPattern.test(email)) {
+                alert('❌ Email inválido');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/profile', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email: email
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Perfil actualizado correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+                } else {
+                    alert('❌ Error: ' + (data.error || 'No se pudo actualizar el perfil'));
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('❌ Error al actualizar el perfil: ' + error.message);
+            }
+        }
+        
+        // ============================================================================
         // FUNCIONES DE CAMBIO DE CONTRASEÑA
         // ============================================================================
         
@@ -1073,6 +1149,62 @@
             }
         }
     </script>
+
+    <!-- Modal de Editar Perfil -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="editProfileModalLabel">
+                        <i class="fas fa-user-edit me-2"></i>Editar Perfil
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm" onsubmit="event.preventDefault(); submitProfileUpdate();">
+                        <div class="mb-3">
+                            <label for="adminFullName" class="form-label">
+                                <i class="fas fa-user me-1"></i>Nombre Completo
+                            </label>
+                            <input type="text" class="form-control" id="adminFullName" required minlength="3" placeholder="Ej: Juan Pérez">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Mínimo 3 caracteres
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="adminEmail" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email
+                            </label>
+                            <input type="email" class="form-control" id="adminEmail" required placeholder="admin@ejemplo.com">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Este email se usará para recuperación de contraseña
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">
+                                <i class="fas fa-user-tag me-1"></i>Usuario
+                            </label>
+                            <input type="text" class="form-control" id="adminUsername" disabled>
+                            <div class="form-text">
+                                <i class="fas fa-lock me-1"></i>
+                                El nombre de usuario no puede modificarse
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="submitProfileUpdate()">
+                        <i class="fas fa-save me-1"></i>Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal de Cambio de Contraseña -->
     <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">

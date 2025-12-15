@@ -904,6 +904,30 @@ class User(UserMixin, db.Model):
     @property
     def is_coachee(self): return self.role == 'coachee'
 
+class PasswordResetToken(db.Model):
+    __tablename__ = 'password_reset_token'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    token = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    used = db.Column(db.Boolean, default=False, index=True)
+    
+    user = db.relationship('User', backref='reset_tokens')
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        if 'created_at' not in kwargs:
+            self.created_at = datetime.utcnow()
+        if 'expires_at' not in kwargs:
+            self.expires_at = datetime.utcnow() + timedelta(hours=1)  # Token válido por 1 hora
+    
+    def is_valid(self):
+        """Verifica si el token sigue siendo válido"""
+        return not self.used and datetime.utcnow() < self.expires_at
+
 class Assessment(db.Model):
     __tablename__ = 'assessment'
     
@@ -3815,6 +3839,113 @@ def api_coachee_logout():
 # ENDPOINTS DE CAMBIO DE CONTRASEÑA
 # ============================================================================
 
+@app.route('/api/admin/profile', methods=['GET'])
+@login_required
+def get_admin_profile():
+    """Obtiene el perfil del administrador autenticado"""
+    try:
+        # Verificar sesión de administrador
+        if not current_user.is_authenticated or current_user.role != 'platform_admin':
+            return jsonify({
+                'error': 'No hay sesión de administrador activa',
+                'redirect_url': '/admin-login',
+                'session_expired': True
+            }), 401
+        
+        return jsonify({
+            'success': True,
+            'profile': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'full_name': current_user.full_name,
+                'role': current_user.role
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting admin profile: {str(e)}")
+        return jsonify({'error': 'Error al obtener el perfil'}), 500
+
+@app.route('/api/admin/profile', methods=['PUT'])
+@login_required
+def update_admin_profile():
+    """Actualiza el perfil del administrador autenticado"""
+    try:
+        # Verificar sesión de administrador
+        if not current_user.is_authenticated or current_user.role != 'platform_admin':
+            return jsonify({
+                'error': 'No hay sesión de administrador activa',
+                'redirect_url': '/admin-login',
+                'session_expired': True
+            }), 401
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Datos JSON requeridos'}), 400
+        
+        full_name = data.get('full_name', '').strip()
+        email = data.get('email', '').strip()
+        
+        # Validar que al menos un campo esté presente
+        if not full_name and not email:
+            return jsonify({'error': 'Debe proporcionar al menos un campo para actualizar'}), 400
+        
+        # Validar nombre completo
+        if full_name and len(full_name) < 3:
+            return jsonify({'error': 'El nombre completo debe tener al menos 3 caracteres'}), 400
+        
+        # Validar email
+        if email:
+            import re
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                return jsonify({'error': 'Email inválido'}), 400
+            
+            # Verificar si el email ya existe (excluyendo el usuario actual)
+            existing_user = User.query.filter(
+                User.email == email,
+                User.id != current_user.id
+            ).first()
+            
+            if existing_user:
+                return jsonify({'error': 'Este email ya está registrado por otro usuario'}), 400
+        
+        # Actualizar campos
+        if full_name:
+            current_user.full_name = full_name
+        if email:
+            current_user.email = email
+        
+        db.session.commit()
+        
+        # Registrar evento de seguridad
+        log_security_event(
+            event_type='profile_updated',
+            severity='info',
+            user_id=current_user.id,
+            username=current_user.username or current_user.email,
+            description=f'Perfil actualizado (Admin): {current_user.username}'
+        )
+        
+        logger.info(f"Profile updated for admin {current_user.username or current_user.email} (ID: {current_user.id})")
+        return jsonify({
+            'success': True,
+            'message': 'Perfil actualizado correctamente',
+            'profile': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'full_name': current_user.full_name,
+                'role': current_user.role
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating admin profile: {str(e)}")
+        return jsonify({'error': 'Error al actualizar el perfil'}), 500
+
 @app.route('/api/admin/change-password', methods=['POST'])
 @login_required
 def admin_change_password():
@@ -4159,6 +4290,159 @@ def api_admin_login():
             
     except Exception as e:
         return jsonify({'error': f'Error en login: {str(e)}'}), 500
+
+# ==================== RECUPERACIÓN DE CONTRASEÑA ====================
+
+def generate_reset_token():
+    """Genera un token seguro para recuperación de contraseña"""
+    import secrets
+    return secrets.token_urlsafe(32)
+
+def send_password_reset_email(user_email, reset_token, user_role='admin'):
+    """Envía email de recuperación de contraseña"""
+    try:
+        # Construir URL de recuperación
+        reset_url = f"{request.host_url}reset-password/{user_role}/{reset_token}"
+        
+        # Por ahora, solo registrar en logs (implementar envío de email real después)
+        logger.info(f"Password reset email would be sent to {user_email}")
+        logger.info(f"Reset URL: {reset_url}")
+        
+        # TODO: Integrar con servicio de email (SendGrid, AWS SES, etc.)
+        # Por ahora devolver True para simular envío exitoso
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error sending password reset email: {str(e)}")
+        return False
+
+@app.route('/api/admin/forgot-password', methods=['POST'])
+def admin_forgot_password():
+    """Endpoint para solicitar recuperación de contraseña del admin"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'error': 'Email requerido'}), 400
+        
+        # Buscar usuario admin con ese email
+        admin_user = User.query.filter(
+            User.email == email,
+            User.role == 'platform_admin',
+            User.active == True
+        ).first()
+        
+        # Por seguridad, siempre devolver el mismo mensaje
+        # (no revelar si el email existe o no)
+        if admin_user:
+            # Invalidar tokens anteriores del usuario
+            PasswordResetToken.query.filter_by(
+                user_id=admin_user.id,
+                used=False
+            ).update({'used': True})
+            db.session.commit()
+            
+            # Generar nuevo token
+            reset_token = generate_reset_token()
+            token_record = PasswordResetToken(
+                user_id=admin_user.id,
+                token=reset_token,
+                expires_at=datetime.utcnow() + timedelta(hours=1)
+            )
+            
+            db.session.add(token_record)
+            db.session.commit()
+            
+            # Enviar email
+            send_password_reset_email(email, reset_token, 'admin')
+            
+            # Log de seguridad
+            log_security_event(
+                event_type='password_reset_requested',
+                severity='info',
+                user_id=admin_user.id,
+                username=admin_user.username,
+                description=f'Password reset requested for admin {admin_user.email}'
+            )
+        
+        # Siempre devolver éxito (seguridad)
+        return jsonify({
+            'success': True,
+            'message': 'Si el email existe, recibirás instrucciones para restablecer tu contraseña.'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in forgot password: {str(e)}")
+        return jsonify({'error': 'Error procesando solicitud'}), 500
+
+@app.route('/reset-password/admin/<token>')
+def admin_reset_password_page(token):
+    """Página para restablecer contraseña del admin con token"""
+    # Verificar que el token existe y es válido
+    token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+    
+    if not token_record or not token_record.is_valid():
+        return render_template('password_reset_invalid.html', role='admin')
+    
+    return render_template('password_reset_form.html', token=token, role='admin')
+
+@app.route('/api/admin/reset-password', methods=['POST'])
+def admin_reset_password():
+    """Endpoint para restablecer contraseña del admin con token"""
+    try:
+        data = request.get_json()
+        token = data.get('token', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        if not all([token, new_password, confirm_password]):
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'error': 'Las contraseñas no coinciden'}), 400
+        
+        # Validar fortaleza de contraseña
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # Verificar token
+        token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+        
+        if not token_record or not token_record.is_valid():
+            return jsonify({'error': 'Token inválido o expirado'}), 400
+        
+        # Obtener usuario
+        user = User.query.get(token_record.user_id)
+        if not user or user.role != 'platform_admin':
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Actualizar contraseña
+        user.set_password(new_password)
+        
+        # Marcar token como usado
+        token_record.used = True
+        
+        db.session.commit()
+        
+        # Log de seguridad
+        log_security_event(
+            event_type='password_reset_completed',
+            severity='info',
+            user_id=user.id,
+            username=user.username,
+            description=f'Password successfully reset for admin {user.email}'
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña restablecida correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error resetting password: {str(e)}")
+        return jsonify({'error': 'Error al restablecer contraseña'}), 500
 
 # Endpoint de cambio de contraseña de admin eliminado (duplicado) - usar el de línea 3818
 
