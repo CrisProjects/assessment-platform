@@ -6686,14 +6686,37 @@ function dashboardApp() {
         // Logout
         async logout() {
             try {
-                await fetch('/api/coach/logout', {
+                console.log('🔓 Iniciando logout de coach...');
+                
+                const response = await fetch('/api/coach/logout', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' }
                 });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Logout exitoso, limpiando datos locales...');
+                    
+                    // Limpiar localStorage y sessionStorage
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Redirigir al login
+                    window.location.href = data.redirect_url || '/coach-login';
+                } else {
+                    console.error('❌ Error en logout:', data.error);
+                    // Aún así redirigir al login
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '/coach-login';
+                }
             } catch (error) {
-                console.error('Error during logout:', error);
-            } finally {
+                console.error('❌ Error durante logout:', error);
+                // Limpiar datos locales incluso si hay error
+                localStorage.clear();
+                sessionStorage.clear();
                 window.location.href = '/coach-login';
             }
         },

@@ -3814,23 +3814,82 @@ def api_logout():
 
 @app.route('/api/coach/logout', methods=['POST'])
 def api_coach_logout():
-    """Logout específico para coaches - solo cierra sesión de coach"""
-    if 'coach_user_id' not in session:
-        return jsonify({'error': 'No hay sesión de coach activa'}), 400
-    
-    coach_id = session['coach_user_id']
-    logger.info(f"Coach logout (ID: {coach_id}) - preserving coachee session")
-    
-    # Solo cerrar sesión de coach, preservar coachee
-    session.pop('coach_user_id', None)
-    
-    # Solo usar logout_user() si no hay sesión de coachee activa
-    if 'coachee_user_id' not in session:
+    """Logout seguro para coaches con expiración forzada de cookies y limpieza completa"""
+    try:
+        coach_id = session.get('coach_user_id')
+        coach_username = None
+        
+        if coach_id:
+            try:
+                coach_user = User.query.get(coach_id)
+                if coach_user:
+                    coach_username = coach_user.username
+            except:
+                pass
+        
+        logger.info(f"🔓 Coach logout initiated (ID: {coach_id}, Username: {coach_username})")
+        
+        # Registrar evento de seguridad
+        if coach_id:
+            try:
+                log_security_event(
+                    user_id=coach_id,
+                    event_type='logout',
+                    details=f'Coach {coach_username} cerró sesión',
+                    ip_address=request.remote_addr,
+                    user_agent=request.headers.get('User-Agent')
+                )
+            except Exception as e:
+                logger.error(f"Error logging security event: {str(e)}")
+        
+        # Cerrar sesión de Flask-Login
         logout_user()
-        session.pop('_user_id', None)
-        session.pop('_fresh', None)
-    
-    return jsonify({'success': True, 'message': 'Sesión de coach cerrada exitosamente', 'type': 'coach'}), 200
+        
+        # Limpiar completamente la sesión
+        session.clear()
+        
+        # Marcar sesión como modificada para forzar actualización
+        session.modified = True
+        
+        # Crear respuesta con redirección
+        response = make_response(jsonify({
+            'success': True, 
+            'message': 'Sesión de coach cerrada exitosamente',
+            'redirect_url': '/coach-login'
+        }), 200)
+        
+        # Expirar explícitamente las cookies de sesión
+        response.set_cookie('session', '', expires=0, path='/', httponly=True, samesite='Lax')
+        response.set_cookie('remember_token', '', expires=0, path='/', httponly=True, samesite='Lax')
+        
+        # Agregar headers de control de cache para prevenir acceso con botón atrás
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        logger.info(f"✅ Coach logout completed successfully (ID: {coach_id})")
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Error during coach logout: {str(e)}")
+        # En caso de error, forzar limpieza de sesión
+        try:
+            logout_user()
+            session.clear()
+        except:
+            pass
+        
+        response = make_response(jsonify({
+            'success': True, 
+            'message': 'Sesión cerrada',
+            'redirect_url': '/coach-login'
+        }), 200)
+        
+        # Expirar cookies incluso en caso de error
+        response.set_cookie('session', '', expires=0, path='/', httponly=True, samesite='Lax')
+        response.set_cookie('remember_token', '', expires=0, path='/', httponly=True, samesite='Lax')
+        
+        return response
 
 @app.route('/api/coachee/logout', methods=['POST'])
 def api_coachee_logout():
@@ -5502,6 +5561,31 @@ def coach_dashboard_v2():
     """Dashboard V2 reescrito completamente en Alpine.js - Mantiene todas las funcionalidades del original"""
     current_coach = g.current_user
     
+    # Validar que el usuario esté autenticado
+    if not current_coach or not hasattr(current_coach, 'id'):
+        logger.warning("⚠️ Intento de acceso a dashboard sin autenticación válida")
+        session.clear()
+        flash('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'warning')
+        return redirect(url_for('coach_login_page'))
+    
+    # Validar timeout de actividad (2 horas)
+    last_activity = session.get('last_activity_coach')
+    if last_activity:
+        from datetime import datetime, timedelta
+        try:
+            last_activity_time = datetime.fromisoformat(last_activity)
+            if datetime.utcnow() - last_activity_time > timedelta(hours=2):
+                logger.info(f"⏰ Sesión de coach expirada por inactividad (ID: {current_coach.id})")
+                logout_user()
+                session.clear()
+                flash('Tu sesión ha expirado por inactividad. Por favor, inicia sesión nuevamente.', 'warning')
+                return redirect(url_for('coach_login_page'))
+        except:
+            pass
+    
+    # Actualizar timestamp de actividad
+    session['last_activity_coach'] = datetime.utcnow().isoformat()
+    
     logger.info(f"✨ Coach dashboard v2 (Alpine.js) accessed by: {current_coach.username} (ID: {current_coach.id})")
     
     response = make_response(render_template('coach_dashboard_v2.html',
@@ -5523,6 +5607,10 @@ def coach_dashboard_v2():
         "worker-src 'self' blob:; "  # Permite Web Workers para Chart.js
         "child-src 'self' blob:;"  # Soporte legacy para workers
     )
+    
+    # Agregar headers de cache control para prevenir acceso con botón atrás
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
     
     return response
 
