@@ -4299,21 +4299,176 @@ def generate_reset_token():
     return secrets.token_urlsafe(32)
 
 def send_password_reset_email(user_email, reset_token, user_role='admin'):
-    """Envía email de recuperación de contraseña"""
+    """Envía email de recuperación de contraseña usando SMTP"""
     try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        # Configuración SMTP (Gmail/Google Workspace)
+        smtp_server = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+        smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        smtp_username = os.getenv('SMTP_USERNAME', 'support@instacoach.cl')
+        smtp_password = os.getenv('SMTP_PASSWORD', '')
+        sender_email = os.getenv('SENDER_EMAIL', 'support@instacoach.cl')
+        sender_name = os.getenv('SENDER_NAME', 'Instacoach - Soporte')
+        
+        # Validar que tenemos las credenciales
+        if not smtp_password:
+            logger.warning("SMTP_PASSWORD no configurado. Email no enviado. URL de recuperación en logs.")
+            reset_url = f"{request.host_url}reset-password/{user_role}/{reset_token}"
+            logger.info(f"Password reset URL for {user_email}: {reset_url}")
+            return False
+        
         # Construir URL de recuperación
         reset_url = f"{request.host_url}reset-password/{user_role}/{reset_token}"
         
-        # Por ahora, solo registrar en logs (implementar envío de email real después)
-        logger.info(f"Password reset email would be sent to {user_email}")
-        logger.info(f"Reset URL: {reset_url}")
+        # Determinar nombre del rol para el email
+        role_names = {
+            'admin': 'Administrador',
+            'coach': 'Coach',
+            'coachee': 'Coachee'
+        }
+        role_display = role_names.get(user_role, 'Usuario')
         
-        # TODO: Integrar con servicio de email (SendGrid, AWS SES, etc.)
-        # Por ahora devolver True para simular envío exitoso
+        # Crear mensaje HTML
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Recuperación de Contraseña</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td align="center" style="padding: 40px 0;">
+                        <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <!-- Header -->
+                            <tr>
+                                <td style="padding: 40px 40px 30px 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+                                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">Instacoach</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px;">Plataforma de Evaluaciones</p>
+                                </td>
+                            </tr>
+                            
+                            <!-- Body -->
+                            <tr>
+                                <td style="padding: 40px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px;">Recuperación de Contraseña</h2>
+                                    
+                                    <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                                        Hola,
+                                    </p>
+                                    
+                                    <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                                        Recibimos una solicitud para restablecer la contraseña de tu cuenta de <strong>{role_display}</strong> en Instacoach.
+                                    </p>
+                                    
+                                    <p style="margin: 0 0 30px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                                        Haz clic en el siguiente botón para crear una nueva contraseña:
+                                    </p>
+                                    
+                                    <!-- Button -->
+                                    <table role="presentation" style="margin: 0 auto;">
+                                        <tr>
+                                            <td style="border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                                <a href="{reset_url}" target="_blank" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 6px;">
+                                                    Restablecer Contraseña
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <p style="margin: 30px 0 20px 0; color: #666666; font-size: 14px; line-height: 1.6;">
+                                        O copia y pega este enlace en tu navegador:
+                                    </p>
+                                    
+                                    <p style="margin: 0 0 30px 0; padding: 15px; background-color: #f8f9fa; border-radius: 4px; color: #667eea; font-size: 14px; word-break: break-all;">
+                                        {reset_url}
+                                    </p>
+                                    
+                                    <div style="margin: 30px 0; padding: 20px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                                            <strong>⚠️ Importante:</strong><br>
+                                            • Este enlace es válido por <strong>1 hora</strong><br>
+                                            • Solo puedes usarlo una vez<br>
+                                            • Si no solicitaste este cambio, ignora este email
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Footer -->
+                            <tr>
+                                <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px; text-align: center;">
+                                    <p style="margin: 0 0 10px 0; color: #999999; font-size: 14px;">
+                                        © 2025 Instacoach. Todos los derechos reservados.
+                                    </p>
+                                    <p style="margin: 0; color: #999999; font-size: 12px;">
+                                        Si tienes problemas, contáctanos en <a href="mailto:support@instacoach.cl" style="color: #667eea;">support@instacoach.cl</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        
+        # Crear versión de texto plano
+        text_content = f"""
+        Recuperación de Contraseña - Instacoach
+        
+        Hola,
+        
+        Recibimos una solicitud para restablecer la contraseña de tu cuenta de {role_display} en Instacoach.
+        
+        Para crear una nueva contraseña, visita el siguiente enlace:
+        {reset_url}
+        
+        IMPORTANTE:
+        - Este enlace es válido por 1 hora
+        - Solo puedes usarlo una vez
+        - Si no solicitaste este cambio, ignora este email
+        
+        Si tienes problemas, contáctanos en support@instacoach.cl
+        
+        © 2025 Instacoach. Todos los derechos reservados.
+        """
+        
+        # Crear mensaje
+        message = MIMEMultipart('alternative')
+        message['Subject'] = f'Recuperación de Contraseña - Instacoach'
+        message['From'] = f'{sender_name} <{sender_email}>'
+        message['To'] = user_email
+        
+        # Adjuntar partes
+        part_text = MIMEText(text_content, 'plain', 'utf-8')
+        part_html = MIMEText(html_content, 'html', 'utf-8')
+        message.attach(part_text)
+        message.attach(part_html)
+        
+        # Enviar email
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(message)
+        
+        logger.info(f"Password reset email sent successfully to {user_email}")
         return True
         
     except Exception as e:
         logger.error(f"Error sending password reset email: {str(e)}")
+        # En caso de error, registrar URL en logs como fallback
+        try:
+            reset_url = f"{request.host_url}reset-password/{user_role}/{reset_token}"
+            logger.info(f"Fallback - Password reset URL for {user_email}: {reset_url}")
+        except:
+            pass
         return False
 
 @app.route('/api/admin/forgot-password', methods=['POST'])
