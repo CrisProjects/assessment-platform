@@ -75,10 +75,11 @@ app.config.update({
     'SQLALCHEMY_DATABASE_URI': os.environ.get('DATABASE_URL', 'sqlite:///assessments.db').replace('postgres://', 'postgresql://', 1),
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'PERMANENT_SESSION_LIFETIME': timedelta(hours=24),  # Reducido de 30 días a 24h por seguridad
-    'SESSION_PERMANENT': True,
+    'SESSION_PERMANENT': False,  # Cambiar a False para permitir logout completo
     'SESSION_COOKIE_SECURE': IS_PRODUCTION,
     'SESSION_COOKIE_HTTPONLY': True,
     'SESSION_COOKIE_SAMESITE': 'Lax',
+    'SESSION_REFRESH_EACH_REQUEST': True,  # Actualizar sesión en cada request
     'REMEMBER_COOKIE_DURATION': timedelta(days=7),  # Reducido de 30 a 7 días
     'REMEMBER_COOKIE_SECURE': IS_PRODUCTION,
     'REMEMBER_COOKIE_HTTPONLY': True,
@@ -3858,6 +3859,8 @@ def api_admin_logout():
     try:
         # Verificar que el usuario sea admin
         if not current_user.is_authenticated or current_user.role != 'platform_admin':
+            # Incluso si no está autenticado, limpiar sesión por si acaso
+            session.clear()
             return jsonify({'error': 'No hay sesión de administrador activa'}), 400
         
         admin_id = current_user.id
@@ -3882,11 +3885,23 @@ def api_admin_logout():
         # Forzar regeneración de session ID (previene session fixation)
         session.modified = True
         
-        return jsonify({
+        # Crear respuesta con headers para expirar cookies
+        response = make_response(jsonify({
             'success': True, 
             'message': 'Sesión de administrador cerrada exitosamente',
             'redirect_url': '/admin-login'
-        }), 200
+        }), 200)
+        
+        # Expirar explícitamente las cookies de sesión
+        response.set_cookie('session', '', expires=0, path='/', httponly=True, samesite='Lax')
+        response.set_cookie('remember_token', '', expires=0, path='/', httponly=True, samesite='Lax')
+        
+        # Agregar headers de control de cache
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
         
     except Exception as e:
         logger.error(f"Error during admin logout: {str(e)}")
@@ -3896,11 +3911,18 @@ def api_admin_logout():
             session.clear()
         except:
             pass
-        return jsonify({
+        
+        response = make_response(jsonify({
             'success': True, 
             'message': 'Sesión cerrada',
             'redirect_url': '/admin-login'
-        }), 200
+        }), 200)
+        
+        # Expirar cookies incluso en caso de error
+        response.set_cookie('session', '', expires=0, path='/', httponly=True, samesite='Lax')
+        response.set_cookie('remember_token', '', expires=0, path='/', httponly=True, samesite='Lax')
+        
+        return response
 
 # ============================================================================
 # ENDPOINTS DE CAMBIO DE CONTRASEÑA
@@ -5543,9 +5565,10 @@ def coachee_profile():
 @app.route('/platform-admin-dashboard')
 @login_required
 def platform_admin_dashboard():
-    # Validar sesión activa de admin
+    # Validar sesión activa de admin con múltiples verificaciones
     if not current_user.is_authenticated:
         logger.warning("Intento de acceso a admin dashboard sin autenticación")
+        session.clear()  # Limpiar cualquier resto de sesión
         flash('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'warning')
         return redirect(url_for('admin_login_page'))
     
@@ -5553,11 +5576,30 @@ def platform_admin_dashboard():
         logger.warning(f"Usuario {current_user.username} (role: {current_user.role}) intentó acceder a admin dashboard")
         return redirect(url_for('dashboard_selection'))
     
-    # Inicializar timestamp de actividad si no existe
-    if 'last_activity_admin' not in session:
-        session['last_activity_admin'] = datetime.utcnow().isoformat()
+    # Verificar que el timestamp de actividad no esté expirado
+    last_activity = session.get('last_activity_admin')
+    if last_activity:
+        try:
+            last_time = datetime.fromisoformat(last_activity)
+            if datetime.utcnow() - last_time > timedelta(hours=2):
+                logger.warning(f"Sesión de admin expirada por inactividad: {current_user.username}")
+                logout_user()
+                session.clear()
+                flash('Tu sesión ha expirado por inactividad.', 'warning')
+                return redirect(url_for('admin_login_page'))
+        except (ValueError, TypeError):
+            pass
     
-    return render_template('admin_dashboard.html')
+    # Inicializar o actualizar timestamp de actividad
+    session['last_activity_admin'] = datetime.utcnow().isoformat()
+    
+    # Agregar headers anti-cache
+    response = make_response(render_template('admin_dashboard.html'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    return response
 
 @app.route('/admin-dashboard')
 def admin_dashboard():
