@@ -159,6 +159,29 @@
         text-decoration: underline;
     }
 
+    /* Forgot Password Link */
+    .forgot-password-link {
+        display: inline-block;
+        color: rgba(255, 255, 255, 0.95) !important;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: var(--transition-normal);
+    }
+
+    .forgot-password-link:hover {
+        color: var(--pure-white) !important;
+        background: rgba(255, 107, 107, 0.2);
+        border-color: var(--calm-primary);
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        transform: translateY(-1px);
+    }
+
     /* Responsive */
     @media (max-width: 576px) {
         .login-container {
@@ -200,6 +223,12 @@
                                 <label for="password"><i class="fas fa-lock me-2"></i>Contraseña</label>
                             </div>
                             
+                            <div class="text-center mb-3">
+                                <a href="#" id="forgotPasswordLink" class="forgot-password-link">
+                                    <i class="fas fa-question-circle me-1"></i>¿Olvidaste tu contraseña?
+                                </a>
+                            </div>
+                            
                             <button type="submit" class="login-btn">
                                 <i class="fas fa-sign-in-alt me-2"></i>
                                 Acceder al Panel Admin
@@ -217,6 +246,45 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Recuperación de Contraseña -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(30, 30, 40, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                <h5 class="modal-title" id="forgotPasswordModalLabel" style="color: var(--pure-white);">
+                    <i class="fas fa-key me-2" style="color: var(--calm-primary);"></i>
+                    Recuperar Contraseña
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 1.5rem;">
+                    Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.
+                </p>
+                <form id="forgotPasswordForm">
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control" id="resetEmail" name="email" placeholder="correo@ejemplo.com" required
+                               style="background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.2); color: var(--pure-white);">
+                        <label for="resetEmail" style="color: rgba(255, 255, 255, 0.8);">
+                            <i class="fas fa-envelope me-2"></i>Correo Electrónico
+                        </label>
+                    </div>
+                    <div id="forgotPasswordMessage" style="display: none; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;"></div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary flex-fill" id="sendResetEmailBtn"
+                                style="background: linear-gradient(135deg, var(--calm-primary), var(--calm-primary-hover));">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Instrucciones
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -224,6 +292,75 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('adminLoginForm');
     const submitBtn = form.querySelector('button[type="submit"]');
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const sendResetEmailBtn = document.getElementById('sendResetEmailBtn');
+    const forgotPasswordMessage = document.getElementById('forgotPasswordMessage');
+    
+    // Abrir modal de recuperación de contraseña
+    forgotPasswordLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+        modal.show();
+    });
+    
+    // Manejar envío de formulario de recuperación
+    forgotPasswordForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('resetEmail').value.trim();
+        
+        if (!email) {
+            showForgotPasswordMessage('Por favor ingresa tu correo electrónico', 'danger');
+            return;
+        }
+        
+        // Deshabilitar botón
+        sendResetEmailBtn.disabled = true;
+        sendResetEmailBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+        
+        try {
+            const response = await fetch('/api/admin/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showForgotPasswordMessage(
+                    result.message || 'Si el email existe, recibirás instrucciones para restablecer tu contraseña.',
+                    'success'
+                );
+                
+                // Limpiar formulario
+                forgotPasswordForm.reset();
+                
+                // Cerrar modal después de 3 segundos
+                setTimeout(() => {
+                    bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
+                    forgotPasswordMessage.style.display = 'none';
+                }, 3000);
+            } else {
+                showForgotPasswordMessage(result.error || 'Error al procesar la solicitud', 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showForgotPasswordMessage('Error de conexión. Por favor intenta de nuevo.', 'danger');
+        } finally {
+            sendResetEmailBtn.disabled = false;
+            sendResetEmailBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar Instrucciones';
+        }
+    });
+    
+    function showForgotPasswordMessage(message, type) {
+        forgotPasswordMessage.textContent = message;
+        forgotPasswordMessage.className = `alert alert-${type}`;
+        forgotPasswordMessage.style.display = 'block';
+    }
     
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
