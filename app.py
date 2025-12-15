@@ -4759,6 +4759,150 @@ def admin_reset_password():
         logger.error(f"Error resetting password: {str(e)}")
         return jsonify({'error': 'Error al restablecer contraseña'}), 500
 
+# ============================================================================
+# RECUPERACIÓN DE CONTRASEÑA DE COACH
+# ============================================================================
+
+@app.route('/api/coach/forgot-password', methods=['POST'])
+def coach_forgot_password():
+    """Endpoint para solicitar recuperación de contraseña del coach"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'error': 'Email requerido'}), 400
+        
+        # Buscar usuario coach con ese email
+        coach_user = User.query.filter(
+            User.email == email,
+            User.role == 'coach',
+            User.active == True
+        ).first()
+        
+        # Por seguridad, siempre devolver el mismo mensaje
+        # (no revelar si el email existe o no)
+        if coach_user:
+            # Invalidar tokens anteriores del usuario
+            PasswordResetToken.query.filter_by(
+                user_id=coach_user.id,
+                used=False
+            ).update({'used': True})
+            db.session.commit()
+            
+            # Generar nuevo token
+            reset_token = generate_reset_token()
+            token_record = PasswordResetToken(
+                user_id=coach_user.id,
+                token=reset_token,
+                expires_at=datetime.utcnow() + timedelta(hours=1)
+            )
+            
+            db.session.add(token_record)
+            db.session.commit()
+            
+            # Enviar email
+            send_password_reset_email(email, reset_token, 'coach')
+            
+            # Log de seguridad
+            log_security_event(
+                event_type='password_reset_requested',
+                severity='info',
+                user_id=coach_user.id,
+                username=coach_user.username,
+                description=f'Password reset requested for coach {coach_user.email}'
+            )
+        
+        # Siempre devolver éxito (seguridad)
+        return jsonify({
+            'success': True,
+            'message': 'Si el email existe, recibirás instrucciones para restablecer tu contraseña.'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in coach forgot password: {str(e)}")
+        return jsonify({'error': 'Error procesando solicitud'}), 500
+
+@app.route('/reset-password/coach/<token>')
+def coach_reset_password_page(token):
+    """Página para restablecer contraseña del coach con token"""
+    try:
+        # Verificar que el token existe y es válido
+        token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+        
+        if not token_record:
+            logger.warning(f"Token not found in database: {token}")
+            return render_template('password_reset_invalid.html', role='coach', reason='not_found')
+        
+        if not token_record.is_valid():
+            logger.warning(f"Token expired or used: {token}")
+            return render_template('password_reset_invalid.html', role='coach', reason='expired')
+        
+        logger.info(f"Valid token accessed: {token} for user_id: {token_record.user_id}")
+        return render_template('password_reset_form.html', token=token, role='coach')
+        
+    except Exception as e:
+        logger.error(f"Error in coach_reset_password_page: {str(e)}")
+        logger.error(f"Token received: {token}")
+        return render_template('password_reset_invalid.html', role='coach', reason='error', error_message=str(e))
+
+@app.route('/api/coach/reset-password', methods=['POST'])
+def coach_reset_password():
+    """Endpoint para restablecer contraseña del coach con token"""
+    try:
+        data = request.get_json()
+        token = data.get('token', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        if not all([token, new_password, confirm_password]):
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'error': 'Las contraseñas no coinciden'}), 400
+        
+        # Validar fortaleza de contraseña
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # Verificar token
+        token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+        
+        if not token_record or not token_record.is_valid():
+            return jsonify({'error': 'Token inválido o expirado'}), 400
+        
+        # Obtener usuario
+        user = User.query.get(token_record.user_id)
+        if not user or user.role != 'coach':
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Actualizar contraseña
+        user.set_password(new_password)
+        
+        # Marcar token como usado
+        token_record.used = True
+        
+        db.session.commit()
+        
+        # Log de seguridad
+        log_security_event(
+            event_type='password_reset_completed',
+            severity='info',
+            user_id=user.id,
+            username=user.username,
+            description=f'Password successfully reset for coach {user.email}'
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña restablecida correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error resetting coach password: {str(e)}")
+        return jsonify({'error': 'Error al restablecer contraseña'}), 500
+
 # Endpoint de cambio de contraseña de admin eliminado (duplicado) - usar el de línea 3818
 
 @app.route('/api/admin/create-coach', methods=['POST'])
