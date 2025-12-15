@@ -4534,13 +4534,25 @@ def admin_forgot_password():
 @app.route('/reset-password/admin/<token>')
 def admin_reset_password_page(token):
     """Página para restablecer contraseña del admin con token"""
-    # Verificar que el token existe y es válido
-    token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
-    
-    if not token_record or not token_record.is_valid():
-        return render_template('password_reset_invalid.html', role='admin')
-    
-    return render_template('password_reset_form.html', token=token, role='admin')
+    try:
+        # Verificar que el token existe y es válido
+        token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+        
+        if not token_record:
+            logger.warning(f"Token not found in database: {token}")
+            return render_template('password_reset_invalid.html', role='admin', reason='not_found')
+        
+        if not token_record.is_valid():
+            logger.warning(f"Token expired or used: {token}")
+            return render_template('password_reset_invalid.html', role='admin', reason='expired')
+        
+        logger.info(f"Valid token accessed: {token} for user_id: {token_record.user_id}")
+        return render_template('password_reset_form.html', token=token, role='admin')
+        
+    except Exception as e:
+        logger.error(f"Error in admin_reset_password_page: {str(e)}")
+        logger.error(f"Token received: {token}")
+        return render_template('password_reset_invalid.html', role='admin', reason='error', error_message=str(e))
 
 @app.route('/api/admin/reset-password', methods=['POST'])
 def admin_reset_password():
