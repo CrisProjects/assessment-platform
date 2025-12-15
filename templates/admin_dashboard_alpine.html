@@ -317,11 +317,11 @@
                             <i class="fas fa-user-shield me-1"></i>
                             Administrador
                         </span>
-                        <a href="/logout" class="btn btn-outline-light btn-sm">
+                        <button onclick="adminLogout()" class="btn btn-outline-light btn-sm">
                             <i class="fas fa-sign-out-alt me-1"></i>
                             <span class="d-none d-sm-inline">Cerrar Sesión</span>
                             <span class="d-sm-none">Salir</span>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -912,6 +912,44 @@
                 viewSystemLogs() {
                     alert('Logs del sistema disponibles en el panel de Railway');
                 }
+            }
+        }
+        
+        // Función de logout seguro para administradores
+        async function adminLogout() {
+            try {
+                // Mostrar indicador de carga
+                const logoutBtn = event.target.closest('button');
+                const originalHtml = logoutBtn.innerHTML;
+                logoutBtn.disabled = true;
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cerrando...';
+                
+                const response = await fetch('/api/admin/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Limpiar localStorage y sessionStorage
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Mostrar mensaje y redirigir
+                    console.log('✅ Sesión cerrada correctamente');
+                    window.location.href = data.redirect_url || '/admin-login';
+                } else {
+                    // En caso de error, forzar redirección al login
+                    console.error('❌ Error cerrando sesión:', data.error);
+                    window.location.href = '/admin-login';
+                }
+            } catch (error) {
+                console.error('❌ Error en logout:', error);
+                // Forzar redirección incluso si hay error
+                window.location.href = '/admin-login';
             }
         }
     </script>

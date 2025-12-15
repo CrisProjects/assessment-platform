@@ -1486,6 +1486,23 @@ def load_current_user():
     current_time = datetime.utcnow()
     inactivity_limit = timedelta(hours=2)
     
+    # Validar sesión de admin (Flask-Login)
+    if current_user.is_authenticated and current_user.role == 'platform_admin':
+        last_activity_admin = session.get('last_activity_admin')
+        if last_activity_admin:
+            try:
+                last_activity_time = datetime.fromisoformat(last_activity_admin)
+                if current_time - last_activity_time > inactivity_limit:
+                    # Sesión de admin expirada por inactividad
+                    logger.info(f"Admin session expired due to inactivity (user: {current_user.username})")
+                    logout_user()
+                    session.clear()
+                    return redirect(url_for('admin_login_page'))
+            except (ValueError, TypeError):
+                pass
+        # Actualizar timestamp de actividad
+        session['last_activity_admin'] = current_time.isoformat()
+    
     # Validar sesión de coach (independiente)
     if 'coach_user_id' in session:
         last_activity_coach = session.get('last_activity_coach')
@@ -3835,6 +3852,56 @@ def api_coachee_logout():
     
     return jsonify({'success': True, 'message': 'Sesión de coachee cerrada exitosamente', 'type': 'coachee'}), 200
 
+@app.route('/api/admin/logout', methods=['POST'])
+def api_admin_logout():
+    """Logout específico para administradores - cierra sesión completamente"""
+    try:
+        # Verificar que el usuario sea admin
+        if not current_user.is_authenticated or current_user.role != 'platform_admin':
+            return jsonify({'error': 'No hay sesión de administrador activa'}), 400
+        
+        admin_id = current_user.id
+        admin_username = current_user.username
+        logger.info(f"Admin logout (ID: {admin_id}, username: {admin_username})")
+        
+        # Registrar evento de seguridad
+        log_security_event(
+            event_type='admin_logout',
+            severity='info',
+            user_id=admin_id,
+            username=admin_username,
+            description='Administrador cerró sesión exitosamente'
+        )
+        
+        # Limpiar completamente la sesión de Flask-Login
+        logout_user()
+        
+        # Limpiar todas las variables de sesión
+        session.clear()
+        
+        # Forzar regeneración de session ID (previene session fixation)
+        session.modified = True
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Sesión de administrador cerrada exitosamente',
+            'redirect_url': '/admin-login'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error during admin logout: {str(e)}")
+        # En caso de error, forzar limpieza de sesión
+        try:
+            logout_user()
+            session.clear()
+        except:
+            pass
+        return jsonify({
+            'success': True, 
+            'message': 'Sesión cerrada',
+            'redirect_url': '/admin-login'
+        }), 200
+
 # ============================================================================
 # ENDPOINTS DE CAMBIO DE CONTRASEÑA
 # ============================================================================
@@ -5476,8 +5543,20 @@ def coachee_profile():
 @app.route('/platform-admin-dashboard')
 @login_required
 def platform_admin_dashboard():
+    # Validar sesión activa de admin
+    if not current_user.is_authenticated:
+        logger.warning("Intento de acceso a admin dashboard sin autenticación")
+        flash('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'warning')
+        return redirect(url_for('admin_login_page'))
+    
     if current_user.role != 'platform_admin':
+        logger.warning(f"Usuario {current_user.username} (role: {current_user.role}) intentó acceder a admin dashboard")
         return redirect(url_for('dashboard_selection'))
+    
+    # Inicializar timestamp de actividad si no existe
+    if 'last_activity_admin' not in session:
+        session['last_activity_admin'] = datetime.utcnow().isoformat()
+    
     return render_template('admin_dashboard.html')
 
 @app.route('/admin-dashboard')
@@ -5488,8 +5567,20 @@ def admin_dashboard():
 @login_required
 def admin_dashboard_alpine():
     """Versión experimental del dashboard de administración usando Alpine.js"""
+    # Validar sesión activa de admin
+    if not current_user.is_authenticated:
+        logger.warning("Intento de acceso a admin dashboard alpine sin autenticación")
+        flash('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'warning')
+        return redirect(url_for('admin_login_page'))
+    
     if current_user.role != 'platform_admin':
+        logger.warning(f"Usuario {current_user.username} (role: {current_user.role}) intentó acceder a admin dashboard alpine")
         return redirect(url_for('dashboard_selection'))
+    
+    # Inicializar timestamp de actividad si no existe
+    if 'last_activity_admin' not in session:
+        session['last_activity_admin'] = datetime.utcnow().isoformat()
+    
     return render_template('admin_dashboard_alpine.html')
 
 
