@@ -1624,14 +1624,7 @@ def auto_initialize_database():
                 db.session.commit()
                 logger.info("✅ AUTO-INIT: Usuario admin creado correctamente")
             else:
-                logger.info("ℹ️ AUTO-INIT: Usuario admin ya existe")
-                # Verificar contraseña
-                if admin_exists.check_password('admin123'):
-                    logger.info("✅ AUTO-INIT: Contraseña admin verificada")
-                else:
-                    logger.warning("🔧 AUTO-INIT: Actualizando contraseña admin")
-                    admin_exists.set_password('admin123')
-                    db.session.commit()
+                logger.info("ℹ️ AUTO-INIT: Usuario admin ya existe - contraseña NO modificada")
                 
             # Crear usuario coach si no existe
             coach_exists = User.query.filter_by(username='coach').first()
