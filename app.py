@@ -3553,6 +3553,10 @@ def api_login():
         
         user = User.query.filter((User.username == username) | (User.email == username)).first()  # type: ignore
         
+        # Forzar recarga desde BD para evitar caché desactualizado
+        if user:
+            db.session.refresh(user)
+        
         if user and user.check_password(password) and user.is_active:
             # Verificar compatibilidad de roles si se especifica dashboard_type
             if dashboard_type == 'coach' and user.role != 'coach':
@@ -4415,6 +4419,10 @@ def api_admin_login():
         
         admin_user = User.query.filter(User.username == username, User.role == 'platform_admin').first()  # type: ignore
         
+        # Forzar recarga desde BD para evitar caché desactualizado
+        if admin_user:
+            db.session.refresh(admin_user)
+        
         if admin_user and admin_user.check_password(password) and admin_user.is_active:
             login_user(admin_user, remember=True)
             session.permanent = True
@@ -5204,6 +5212,10 @@ def api_coach_login():
         password = result['password']
         
         coach_user = User.query.filter((User.username == username) | (User.email == username), User.role == 'coach').first()  # type: ignore
+        
+        # Forzar recarga desde BD para evitar caché desactualizado
+        if coach_user:
+            db.session.refresh(coach_user)
         
         if coach_user and coach_user.check_password(password) and coach_user.is_active:
             # Usar sesión específica para coach
