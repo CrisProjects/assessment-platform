@@ -1116,6 +1116,12 @@
                 return;
             }
             
+            // ✨ NUEVO: Validar que la nueva contraseña sea diferente a la actual
+            if (currentPassword === newPassword) {
+                alert('❌ La nueva contraseña debe ser diferente a la contraseña actual');
+                return;
+            }
+            
             try {
                 const response = await fetch('/api/admin/change-password', {
                     method: 'POST',

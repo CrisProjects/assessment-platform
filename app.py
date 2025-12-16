@@ -4157,6 +4157,17 @@ def admin_change_password():
             )
             return jsonify({'error': 'La contraseña actual es incorrecta'}), 401
         
+        # ✨ NUEVO: Validar que la nueva contraseña sea diferente a la actual
+        if admin.check_password(new_password):
+            log_security_event(
+                event_type='password_reuse_attempt',
+                severity='info',
+                user_id=admin.id,
+                username=admin.username or admin.email,
+                description='Intento de reutilizar la misma contraseña (Admin)'
+            )
+            return jsonify({'error': 'La nueva contraseña debe ser diferente a la contraseña actual'}), 400
+        
         # Validar fortaleza de la nueva contraseña
         is_valid, error_msg = validate_password_strength(new_password)
         if not is_valid:
