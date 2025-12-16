@@ -4162,8 +4162,8 @@ def admin_change_password():
         admin.set_password(new_password)
         db.session.add(admin)  # Asegurar que SQLAlchemy detecte el cambio
         db.session.flush()     # Forzar escritura inmediata a BD
-        db.session.commit()
-        db.session.expire_all()  # Expirar caché de objetos
+        db.session.commit()    # Confirmar cambios
+        db.session.expire_all()  # Expirar caché DESPUÉS del commit
         
         # Registrar cambio exitoso
         log_password_change(admin.id, 'admin', admin.username or admin.email)
@@ -4233,8 +4233,8 @@ def coach_change_password():
         coach.set_password(new_password)
         db.session.add(coach)  # Asegurar que SQLAlchemy detecte el cambio
         db.session.flush()     # Forzar escritura inmediata a BD
-        db.session.commit()
-        db.session.expire_all()  # Expirar caché de objetos
+        db.session.commit()    # Confirmar cambios
+        db.session.expire_all()  # Expirar caché DESPUÉS del commit
         
         # Registrar cambio exitoso
         log_password_change(coach.id, 'coach', coach.email)
@@ -4304,8 +4304,8 @@ def coachee_change_password():
         coachee.set_password(new_password)
         db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
         db.session.flush()     # Forzar escritura inmediata a BD
-        db.session.commit()
-        db.session.expire_all()  # Expirar caché de objetos
+        db.session.commit()    # Confirmar cambios
+        db.session.expire_all()  # Expirar caché DESPUÉS del commit
         
         # Registrar cambio exitoso
         log_password_change(coachee.id, 'coachee', coachee.email)
@@ -4755,6 +4755,8 @@ def admin_reset_password():
             return jsonify({'error': 'Token inválido o expirado'}), 400
         
         # Obtener usuario
+        user = token_record.user
+        
         # Actualizar contraseña
         user.set_password(new_password)
         db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
@@ -4763,8 +4765,8 @@ def admin_reset_password():
         token_record.used = True
         
         db.session.flush()     # Forzar escritura inmediata a BD
-        db.session.commit()
-        db.session.expire_all()  # Expirar caché de objetos
+        db.session.commit()    # Confirmar cambios
+        db.session.expire_all()  # Expirar caché DESPUÉS del commit
         
         # Log de seguridad
         log_security_event(
@@ -4898,6 +4900,8 @@ def coach_reset_password():
             return jsonify({'error': 'Token inválido o expirado'}), 400
         
         # Obtener usuario
+        user = token_record.user
+        
         # Actualizar contraseña
         user.set_password(new_password)
         db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
@@ -4906,8 +4910,8 @@ def coach_reset_password():
         token_record.used = True
         
         db.session.flush()     # Forzar escritura inmediata a BD
-        db.session.commit()
-        db.session.expire_all()  # Expirar caché de objetos
+        db.session.commit()    # Confirmar cambios
+        db.session.expire_all()  # Expirar caché DESPUÉS del commit
         
         # Log de seguridad
         log_security_event(
@@ -9738,8 +9742,8 @@ def api_coach_update_coachee(coachee_id):
             db.session.flush()  # Forzar escritura inmediata a BD
         
         # Guardar cambios
-        db.session.commit()
-        db.session.expire_all()  # Expirar caché de objetos
+        db.session.commit()    # Confirmar cambios
+        db.session.expire_all()  # Expirar caché DESPUÉS del commit
         
         logger.info(f"✅ UPDATE_COACHEE: Coachee {coachee_id} updated successfully")
         
