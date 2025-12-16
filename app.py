@@ -4298,6 +4298,8 @@ def coachee_change_password():
         # Validar fortaleza de la nueva contraseña
         is_valid, error_msg = validate_password_strength(new_password)
         if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
         # Actualizar contraseña
         coachee.set_password(new_password)
         db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
@@ -4307,7 +4309,6 @@ def coachee_change_password():
         
         # Registrar cambio exitoso
         log_password_change(coachee.id, 'coachee', coachee.email)
-        # Registrar cambio exitoso
         log_password_change(coachee.id, 'coachee', coachee.email)
         
         logger.info(f"Password changed successfully for coachee {coachee.email} (ID: {coachee.id})")
@@ -4772,10 +4773,6 @@ def admin_reset_password():
             user_id=user.id,
             username=user.username,
             description=f'Password successfully reset for admin {user.email}'
-        )   severity='info',
-            user_id=user.id,
-            username=user.username,
-            description=f'Password successfully reset for admin {user.email}'
         )
         
         return jsonify({
@@ -4916,10 +4913,6 @@ def coach_reset_password():
         log_security_event(
             event_type='password_reset_completed',
             severity='info',
-            user_id=user.id,
-            username=user.username,
-            description=f'Password successfully reset for coach {user.email}'
-        )   severity='info',
             user_id=user.id,
             username=user.username,
             description=f'Password successfully reset for coach {user.email}'
@@ -9746,13 +9739,7 @@ def api_coach_update_coachee(coachee_id):
         
         # Guardar cambios
         db.session.commit()
-        db.session.expire_all()  # Expirar caché de objetosify({'error': 'La contraseña debe tener al menos 4 caracteres'}), 400
-            coachee.set_password(new_password)
-            coachee.original_password = new_password  # Actualizar también la contraseña original visible
-            db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
-        
-        # Guardar cambios
-        db.session.commit()
+        db.session.expire_all()  # Expirar caché de objetos
         
         logger.info(f"✅ UPDATE_COACHEE: Coachee {coachee_id} updated successfully")
         
