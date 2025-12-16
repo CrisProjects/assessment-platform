@@ -4144,6 +4144,7 @@ def admin_change_password():
         
         # Actualizar contraseña usando el método del modelo
         admin.set_password(new_password)
+        db.session.add(admin)  # Asegurar que SQLAlchemy detecte el cambio
         db.session.commit()
         
         # Registrar cambio exitoso
@@ -4212,6 +4213,7 @@ def coach_change_password():
         
         # Actualizar contraseña
         coach.set_password(new_password)
+        db.session.add(coach)  # Asegurar que SQLAlchemy detecte el cambio
         db.session.commit()
         
         # Registrar cambio exitoso
@@ -4280,6 +4282,7 @@ def coachee_change_password():
         
         # Actualizar contraseña
         coachee.set_password(new_password)
+        db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
         db.session.commit()
         
         # Registrar cambio exitoso
@@ -4735,6 +4738,7 @@ def admin_reset_password():
         
         # Actualizar contraseña
         user.set_password(new_password)
+        db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
         
         # Marcar token como usado
         token_record.used = True
@@ -4879,6 +4883,7 @@ def coach_reset_password():
         
         # Actualizar contraseña
         user.set_password(new_password)
+        db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
         
         # Marcar token como usado
         token_record.used = True
@@ -9716,6 +9721,7 @@ def api_coach_update_coachee(coachee_id):
                 return jsonify({'error': 'La contraseña debe tener al menos 4 caracteres'}), 400
             coachee.set_password(new_password)
             coachee.original_password = new_password  # Actualizar también la contraseña original visible
+            db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
         
         # Guardar cambios
         db.session.commit()
