@@ -70,17 +70,14 @@ if not SECRET_KEY:
     else:
         raise ValueError("SECRET_KEY environment variable is required in production")
 
-app.config.update({
+# Configurar DATABASE_URI
+DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///assessments.db').replace('postgres://', 'postgresql://', 1)
+
+# Configuración base
+config_dict = {
     'SECRET_KEY': SECRET_KEY,
-    'SQLALCHEMY_DATABASE_URI': os.environ.get('DATABASE_URL', 'sqlite:///assessments.db').replace('postgres://', 'postgresql://', 1),
+    'SQLALCHEMY_DATABASE_URI': DATABASE_URI,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    'SQLALCHEMY_ENGINE_OPTIONS': {
-        'pool_pre_ping': True,  # Verificar conexiones antes de usar
-        'pool_recycle': 300,    # Reciclar conexiones cada 5 minutos
-        'pool_size': 10,        # Tamaño del pool de conexiones
-        'max_overflow': 20,     # Conexiones adicionales permitidas
-        'echo': False           # No mostrar SQL queries (excepto en debug)
-    },
     'PERMANENT_SESSION_LIFETIME': timedelta(hours=24),  # Reducido de 30 días a 24h por seguridad
     'SESSION_PERMANENT': False,  # Cambiar a False para permitir logout completo
     'SESSION_COOKIE_SECURE': IS_PRODUCTION,
@@ -93,7 +90,19 @@ app.config.update({
     # Desactivar cache de templates para desarrollo
     'TEMPLATES_AUTO_RELOAD': True,
     'SEND_FILE_MAX_AGE_DEFAULT': 0
-})
+}
+
+# Agregar opciones de pool SOLO para PostgreSQL (producción)
+if 'postgresql' in DATABASE_URI:
+    config_dict['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,  # Verificar conexiones antes de usar
+        'pool_recycle': 300,    # Reciclar conexiones cada 5 minutos
+        'pool_size': 10,        # Tamaño del pool de conexiones
+        'max_overflow': 20,     # Conexiones adicionales permitidas
+        'echo': False           # No mostrar SQL queries (excepto en debug)
+    }
+
+app.config.update(config_dict)
 
 # Configurar CORS - Restringido solo a dominio de producción
 if IS_PRODUCTION:
