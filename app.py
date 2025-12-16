@@ -4776,6 +4776,17 @@ def admin_reset_password():
         # Obtener usuario
         user = token_record.user
         
+        # ✨ NUEVO: Validar que la nueva contraseña sea diferente a la actual
+        if user.check_password(new_password):
+            log_security_event(
+                event_type='password_reuse_attempt',
+                severity='info',
+                user_id=user.id,
+                username=user.username,
+                description='Intento de reutilizar la misma contraseña en reset (Admin)'
+            )
+            return jsonify({'error': 'La nueva contraseña debe ser diferente a la contraseña actual'}), 400
+        
         # Actualizar contraseña
         user.set_password(new_password)
         db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
