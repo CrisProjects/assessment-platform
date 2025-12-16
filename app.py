@@ -74,6 +74,13 @@ app.config.update({
     'SECRET_KEY': SECRET_KEY,
     'SQLALCHEMY_DATABASE_URI': os.environ.get('DATABASE_URL', 'sqlite:///assessments.db').replace('postgres://', 'postgresql://', 1),
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+    'SQLALCHEMY_ENGINE_OPTIONS': {
+        'pool_pre_ping': True,  # Verificar conexiones antes de usar
+        'pool_recycle': 300,    # Reciclar conexiones cada 5 minutos
+        'pool_size': 10,        # Tamaño del pool de conexiones
+        'max_overflow': 20,     # Conexiones adicionales permitidas
+        'echo': False           # No mostrar SQL queries (excepto en debug)
+    },
     'PERMANENT_SESSION_LIFETIME': timedelta(hours=24),  # Reducido de 30 días a 24h por seguridad
     'SESSION_PERMANENT': False,  # Cambiar a False para permitir logout completo
     'SESSION_COOKIE_SECURE': IS_PRODUCTION,
@@ -4145,7 +4152,9 @@ def admin_change_password():
         # Actualizar contraseña usando el método del modelo
         admin.set_password(new_password)
         db.session.add(admin)  # Asegurar que SQLAlchemy detecte el cambio
+        db.session.flush()     # Forzar escritura inmediata a BD
         db.session.commit()
+        db.session.expire_all()  # Expirar caché de objetos
         
         # Registrar cambio exitoso
         log_password_change(admin.id, 'admin', admin.username or admin.email)
@@ -4214,7 +4223,9 @@ def coach_change_password():
         # Actualizar contraseña
         coach.set_password(new_password)
         db.session.add(coach)  # Asegurar que SQLAlchemy detecte el cambio
+        db.session.flush()     # Forzar escritura inmediata a BD
         db.session.commit()
+        db.session.expire_all()  # Expirar caché de objetos
         
         # Registrar cambio exitoso
         log_password_change(coach.id, 'coach', coach.email)
@@ -4278,13 +4289,15 @@ def coachee_change_password():
         # Validar fortaleza de la nueva contraseña
         is_valid, error_msg = validate_password_strength(new_password)
         if not is_valid:
-            return jsonify({'error': error_msg}), 400
-        
         # Actualizar contraseña
         coachee.set_password(new_password)
         db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
+        db.session.flush()     # Forzar escritura inmediata a BD
         db.session.commit()
+        db.session.expire_all()  # Expirar caché de objetos
         
+        # Registrar cambio exitoso
+        log_password_change(coachee.id, 'coachee', coachee.email)
         # Registrar cambio exitoso
         log_password_change(coachee.id, 'coachee', coachee.email)
         
@@ -4732,10 +4745,6 @@ def admin_reset_password():
             return jsonify({'error': 'Token inválido o expirado'}), 400
         
         # Obtener usuario
-        user = User.query.get(token_record.user_id)
-        if not user or user.role != 'platform_admin':
-            return jsonify({'error': 'Usuario no encontrado'}), 404
-        
         # Actualizar contraseña
         user.set_password(new_password)
         db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
@@ -4743,12 +4752,18 @@ def admin_reset_password():
         # Marcar token como usado
         token_record.used = True
         
+        db.session.flush()     # Forzar escritura inmediata a BD
         db.session.commit()
+        db.session.expire_all()  # Expirar caché de objetos
         
         # Log de seguridad
         log_security_event(
             event_type='password_reset_completed',
             severity='info',
+            user_id=user.id,
+            username=user.username,
+            description=f'Password successfully reset for admin {user.email}'
+        )   severity='info',
             user_id=user.id,
             username=user.username,
             description=f'Password successfully reset for admin {user.email}'
@@ -4877,10 +4892,6 @@ def coach_reset_password():
             return jsonify({'error': 'Token inválido o expirado'}), 400
         
         # Obtener usuario
-        user = User.query.get(token_record.user_id)
-        if not user or user.role != 'coach':
-            return jsonify({'error': 'Usuario no encontrado'}), 404
-        
         # Actualizar contraseña
         user.set_password(new_password)
         db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
@@ -4888,12 +4899,18 @@ def coach_reset_password():
         # Marcar token como usado
         token_record.used = True
         
+        db.session.flush()     # Forzar escritura inmediata a BD
         db.session.commit()
+        db.session.expire_all()  # Expirar caché de objetos
         
         # Log de seguridad
         log_security_event(
             event_type='password_reset_completed',
             severity='info',
+            user_id=user.id,
+            username=user.username,
+            description=f'Password successfully reset for coach {user.email}'
+        )   severity='info',
             user_id=user.id,
             username=user.username,
             description=f'Password successfully reset for coach {user.email}'
@@ -9710,15 +9727,17 @@ def api_coach_update_coachee(coachee_id):
                 User.email == email,
                 User.id != coachee_id
             ).first()
-            
-            if existing_email:
-                return jsonify({'error': 'Este email ya está en uso por otro usuario'}), 400
-            
-            coachee.email = email.strip()
-        
         if new_password is not None:
             if len(new_password) < 4:
                 return jsonify({'error': 'La contraseña debe tener al menos 4 caracteres'}), 400
+            coachee.set_password(new_password)
+            coachee.original_password = new_password  # Actualizar también la contraseña original visible
+            db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
+            db.session.flush()  # Forzar escritura inmediata a BD
+        
+        # Guardar cambios
+        db.session.commit()
+        db.session.expire_all()  # Expirar caché de objetosify({'error': 'La contraseña debe tener al menos 4 caracteres'}), 400
             coachee.set_password(new_password)
             coachee.original_password = new_password  # Actualizar también la contraseña original visible
             db.session.add(coachee)  # Asegurar que SQLAlchemy detecte el cambio
