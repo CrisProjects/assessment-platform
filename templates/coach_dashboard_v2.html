@@ -8212,15 +8212,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const data = await response.json();
                 
+                console.log('✅ Respuesta del servidor:', data);
+                
                 if (data.success) {
                     // Mostrar modal con información de invitación
                     const coacheeData = data.coachee;
+                    
+                    console.log('📋 Datos del coachee:', coacheeData);
+                    
+                    // Verificar que los elementos existen
+                    const modalEl = document.getElementById('invitationSuccessModal');
+                    if (!modalEl) {
+                        console.error('❌ Modal invitationSuccessModal no encontrado');
+                        showNotification('Error: Modal no encontrado', 'error');
+                        return;
+                    }
                     
                     // Poblar información en el modal
                     document.getElementById('modalCoacheeName').textContent = coacheeData.full_name;
                     document.getElementById('modalCoacheeEmail').textContent = coacheeData.email;
                     document.getElementById('modalCoacheeUsername').textContent = coacheeData.username;
                     document.getElementById('modalCoacheePassword').textContent = coacheeData.password;
+                    
+                    console.log('✅ Datos poblados en modal');
                     
                     // Crear mensaje de invitación
                     const invitationMessage = `¡Hola ${coacheeData.full_name}!
@@ -8256,8 +8270,10 @@ Tus credenciales de acceso son:
                     }
                     
                     // Mostrar modal
-                    const modal = new bootstrap.Modal(document.getElementById('invitationSuccessModal'));
+                    console.log('🎭 Intentando mostrar modal...');
+                    const modal = new bootstrap.Modal(modalEl);
                     modal.show();
+                    console.log('✅ Modal mostrado');
                     
                     // Limpiar formulario
                     inviteForm.reset();
