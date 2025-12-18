@@ -8181,6 +8181,57 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ No se encontró el pane "assign-content-pane" en el DOM');
     }
     
+    // Listener para el formulario de invitación de coachee
+    const inviteForm = document.getElementById('inviteForm');
+    if (inviteForm) {
+        inviteForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('coacheeName').value;
+            const email = document.getElementById('coacheeEmail').value;
+            const assessmentId = document.getElementById('assignedAssessment').value;
+            const customMessage = document.getElementById('customMessage').value;
+            
+            if (!name || !email) {
+                showNotification('Por favor completa todos los campos requeridos', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coach/invite-coachee', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        assessment_id: assessmentId || null,
+                        custom_message: customMessage || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('¡Coachee creado exitosamente!', 'success');
+                    
+                    // Limpiar formulario
+                    inviteForm.reset();
+                    
+                    // Recargar lista de coachees si existe
+                    if (window.coachApp && typeof window.coachApp.loadCoachees === 'function') {
+                        await window.coachApp.loadCoachees();
+                    }
+                } else {
+                    showNotification(data.error || 'Error al crear coachee', 'error');
+                }
+            } catch (error) {
+                console.error('Error al crear coachee:', error);
+                showNotification('Error al crear coachee', 'error');
+            }
+        });
+    }
+    
     // Listener para el formulario de asignación de contenido
     const assignContentForm = document.getElementById('assignContentForm');
     if (assignContentForm) {
