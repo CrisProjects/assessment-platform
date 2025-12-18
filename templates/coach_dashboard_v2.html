@@ -8198,15 +8198,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             try {
-                const response = await fetch('/api/coach/invite-coachee', {
+                const response = await fetch('/api/coach/create-invitation-v2', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
-                        name: name,
+                        full_name: name,
                         email: email,
-                        assessment_id: assessmentId || null,
-                        custom_message: customMessage || null
+                        assigned_assessment_id: assessmentId ? parseInt(assessmentId) : null,
+                        message: customMessage || ''
                     })
                 });
                 
