@@ -1533,13 +1533,19 @@ def load_current_user():
                 last_activity_time = datetime.fromisoformat(last_activity_coach)
                 if current_time - last_activity_time > inactivity_limit:
                     # Sesión de coach expirada por inactividad
-                    session.pop('coach_user_id', None)
-                    session.pop('last_activity_coach', None)
-                    logger.info(f"Coach session expired due to inactivity")
+                    coach_id = session.get('coach_user_id')
+                    session.clear()
+                    logger.info(f"Coach session expired due to inactivity (coach_id: {coach_id})")
+                    return redirect(url_for('coach_login_page'))
+                else:
+                    # Actualizar timestamp solo si no expiró
+                    session['last_activity_coach'] = current_time.isoformat()
             except (ValueError, TypeError):
-                pass
-        # Actualizar timestamp de actividad
-        session['last_activity_coach'] = current_time.isoformat()
+                # Si hay error al parsear, inicializar timestamp
+                session['last_activity_coach'] = current_time.isoformat()
+        else:
+            # Si no existe timestamp, inicializarlo
+            session['last_activity_coach'] = current_time.isoformat()
     
     # Validar sesión de coachee (independiente)
     if 'coachee_user_id' in session:
