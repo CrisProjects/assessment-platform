@@ -1501,7 +1501,7 @@ def load_current_user():
     
     # VALIDACIÓN DE ACTIVIDAD RECIENTE (2 horas de inactividad = logout automático)
     current_time = datetime.utcnow()
-    inactivity_limit = timedelta(hours=2)
+    inactivity_limit = timedelta(minutes=2)
     
     # Validar sesión de admin (Flask-Login)
     if current_user.is_authenticated and current_user.role == 'platform_admin':
