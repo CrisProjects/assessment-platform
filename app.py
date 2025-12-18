@@ -1499,9 +1499,9 @@ def load_current_user():
     # Limpiar g.current_user al inicio de cada request
     g.current_user = None
     
-    # VALIDACIÓN DE ACTIVIDAD RECIENTE (2 minutos de inactividad = logout automático - TEMPORAL PARA PRUEBAS)
+    # VALIDACIÓN DE ACTIVIDAD RECIENTE (2 horas de inactividad = logout automático)
     current_time = datetime.utcnow()
-    inactivity_limit = timedelta(minutes=2)
+    inactivity_limit = timedelta(hours=2)
     
     # Validar sesión de admin (Flask-Login)
     if current_user.is_authenticated and current_user.role == 'platform_admin':
@@ -1555,14 +1555,19 @@ def load_current_user():
                 last_activity_time = datetime.fromisoformat(last_activity_coachee)
                 if current_time - last_activity_time > inactivity_limit:
                     # Sesión de coachee expirada por inactividad
-                    session.pop('coachee_user_id', None)
-                    session.pop('coachee_user_id', None)
-                    session.pop('last_activity_coachee', None)
-                    logger.info(f"Coachee session expired due to inactivity")
+                    coachee_id = session.get('coachee_user_id')
+                    session.clear()
+                    logger.info(f"Coachee session expired due to inactivity (coachee_id: {coachee_id})")
+                    return redirect(url_for('login'))
+                else:
+                    # Actualizar timestamp solo si no expiró
+                    session['last_activity_coachee'] = current_time.isoformat()
             except (ValueError, TypeError):
-                pass
-        # Actualizar timestamp de actividad
-        session['last_activity_coachee'] = current_time.isoformat()
+                # Si hay error al parsear, inicializar timestamp
+                session['last_activity_coachee'] = current_time.isoformat()
+        else:
+            # Si no existe timestamp, inicializarlo
+            session['last_activity_coachee'] = current_time.isoformat()
     
     # No establecer g.current_user aquí para evitar conflictos.
     # Cada decorador específico (@coach_session_required, @coachee_session_required) 
