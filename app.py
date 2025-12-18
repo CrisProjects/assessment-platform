@@ -1499,9 +1499,9 @@ def load_current_user():
     # Limpiar g.current_user al inicio de cada request
     g.current_user = None
     
-    # VALIDACIÓN DE ACTIVIDAD RECIENTE (2 horas de inactividad = logout automático)
+    # VALIDACIÓN DE ACTIVIDAD RECIENTE (2 minutos de inactividad = logout automático - TEMPORAL PARA PRUEBAS)
     current_time = datetime.utcnow()
-    inactivity_limit = timedelta(hours=2)
+    inactivity_limit = timedelta(minutes=2)
     
     # Validar sesión de admin (Flask-Login)
     if current_user.is_authenticated and current_user.role == 'platform_admin':
