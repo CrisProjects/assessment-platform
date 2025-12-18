@@ -8213,7 +8213,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    showNotification('¡Coachee creado exitosamente!', 'success');
+                    // Mostrar modal con información de invitación
+                    const coacheeData = data.coachee;
+                    
+                    // Poblar información en el modal
+                    document.getElementById('modalCoacheeName').textContent = coacheeData.full_name;
+                    document.getElementById('modalCoacheeEmail').textContent = coacheeData.email;
+                    document.getElementById('modalCoacheeUsername').textContent = coacheeData.username;
+                    document.getElementById('modalCoacheePassword').textContent = coacheeData.password;
+                    
+                    // Crear mensaje de invitación
+                    const invitationMessage = `¡Hola ${coacheeData.full_name}!
+
+Has sido invitado a la plataforma InstaCoach.
+
+Tus credenciales de acceso son:
+👤 Usuario: ${coacheeData.username}
+🔑 Contraseña: ${coacheeData.password}
+
+🔗 Ingresa aquí: ${coacheeData.login_url}
+
+¡Te esperamos!`;
+                    
+                    document.getElementById('invitationMessage').textContent = invitationMessage;
+                    
+                    // Guardar datos para compartir
+                    window.currentInvitation = {
+                        name: coacheeData.full_name,
+                        email: coacheeData.email,
+                        username: coacheeData.username,
+                        password: coacheeData.password,
+                        url: coacheeData.login_url,
+                        message: invitationMessage
+                    };
+                    
+                    // Mostrar información de evaluación si fue asignada
+                    if (coacheeData.assigned_assessment) {
+                        document.getElementById('assessmentAssignedInfo').style.display = 'block';
+                        document.getElementById('assignedAssessmentName').textContent = coacheeData.assigned_assessment;
+                    } else {
+                        document.getElementById('assessmentAssignedInfo').style.display = 'none';
+                    }
+                    
+                    // Mostrar modal
+                    const modal = new bootstrap.Modal(document.getElementById('invitationSuccessModal'));
+                    modal.show();
                     
                     // Limpiar formulario
                     inviteForm.reset();
@@ -8315,6 +8359,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Funciones para el modal de invitación
+function copyInvitationToClipboard() {
+    if (!window.currentInvitation) return;
+    
+    navigator.clipboard.writeText(window.currentInvitation.message).then(() => {
+        showNotification('Invitación copiada al portapapeles', 'success');
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        showNotification('Error al copiar al portapapeles', 'error');
+    });
+}
+
+function shareViaWhatsApp() {
+    if (!window.currentInvitation) return;
+    
+    const message = encodeURIComponent(window.currentInvitation.message);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
+}
+
+function shareViaEmail() {
+    if (!window.currentInvitation) return;
+    
+    const subject = encodeURIComponent('Invitación a InstaCoach');
+    const body = encodeURIComponent(window.currentInvitation.message);
+    window.location.href = `mailto:${window.currentInvitation.email}?subject=${subject}&body=${body}`;
+}
+
+function closeInvitationModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('invitationSuccessModal'));
+    if (modal) modal.hide();
+}
 </script>
 
 <!-- Modal de Cambio de Contraseña para Coach -->
