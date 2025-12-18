@@ -1515,10 +1515,15 @@ def load_current_user():
                     logout_user()
                     session.clear()
                     return redirect(url_for('admin_login_page'))
+                else:
+                    # Actualizar timestamp solo si no expiró
+                    session['last_activity_admin'] = current_time.isoformat()
             except (ValueError, TypeError):
-                pass
-        # Actualizar timestamp de actividad
-        session['last_activity_admin'] = current_time.isoformat()
+                # Si hay error al parsear, inicializar timestamp
+                session['last_activity_admin'] = current_time.isoformat()
+        else:
+            # Si no existe timestamp, inicializarlo
+            session['last_activity_admin'] = current_time.isoformat()
     
     # Validar sesión de coach (independiente)
     if 'coach_user_id' in session:
