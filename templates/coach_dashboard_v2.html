@@ -6236,11 +6236,31 @@ function dashboardApp() {
                 if (data.success) {
                     this.assessments = data.assessments;
                     this.renderAssessments();
+                    this.populateAssessmentSelect();
                 }
             } catch (error) {
                 console.error('❌ Error loading assessments:', error);
             } finally {
                 this.loading.assessments = false;
+            }
+        },
+        
+        // Poblar select de evaluaciones en "Invitar Coachee"
+        populateAssessmentSelect() {
+            const select = document.getElementById('assignedAssessment');
+            if (!select) return;
+            
+            // Limpiar opciones existentes excepto la primera
+            select.innerHTML = '<option value="">Seleccionar evaluación...</option>';
+            
+            // Agregar evaluaciones disponibles
+            if (this.assessments && this.assessments.length > 0) {
+                this.assessments.forEach(assessment => {
+                    const option = document.createElement('option');
+                    option.value = assessment.id;
+                    option.textContent = assessment.title;
+                    select.appendChild(option);
+                });
             }
         },
         
