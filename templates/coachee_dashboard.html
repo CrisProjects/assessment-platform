@@ -9996,7 +9996,7 @@
                                         </p>
                                     </div>
                                     <div class="col-lg-4">
-                                        <button class="btn btn-light btn-lg" onclick="contactCoachForSession()" style="color: #28a745; font-weight: bold;">
+                                        <button class="btn btn-light btn-lg" onclick="contactCoachForSession(event)" style="color: #28a745; font-weight: bold;">
                                             <i class="fas fa-calendar-plus me-2"></i>
                                             Contactar Coach
                                         </button>
@@ -12971,7 +12971,7 @@
         }
 
         // Función para contactar coach para sesión gratuita
-        async function contactCoachForSession() {
+        async function contactCoachForSession(event) {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/coachee/contact-coach-session`, {
                     method: 'POST',
@@ -12991,12 +12991,14 @@
                     showToast('¡Solicitud enviada! Un coach se contactará contigo pronto para coordinar tu sesión gratuita.', 'success');
                     
                     // Actualizar el botón para mostrar que la solicitud fue enviada
-                    const button = event.target.closest('button');
-                    if (button) {
-                        button.disabled = true;
-                        button.innerHTML = '<i class="fas fa-check me-2"></i>Solicitud Enviada';
-                        button.classList.add('btn-outline-light');
-                        button.style.color = '#28a745';
+                    if (event && event.target) {
+                        const button = event.target.closest('button');
+                        if (button) {
+                            button.disabled = true;
+                            button.innerHTML = '<i class="fas fa-check me-2"></i>Solicitud Enviada';
+                            button.classList.add('btn-outline-light');
+                            button.style.color = '#28a745';
+                        }
                     }
                 } else {
                     throw new Error(data.error || 'Error enviando solicitud');
