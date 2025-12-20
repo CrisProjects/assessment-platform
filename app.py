@@ -3692,6 +3692,10 @@ def api_invite_login():
             
             return jsonify({'success': False, 'error': 'Contraseña incorrecta'}), 401
         
+        # Limpiar cualquier sesión previa de otros roles
+        session.pop('coach_user_id', None)
+        session.pop('admin_user_id', None)
+        
         # Crear sesión de coachee
         session['coachee_user_id'] = coachee.id
         session['user_id'] = coachee.id
@@ -4444,6 +4448,10 @@ def api_admin_login():
             db.session.refresh(admin_user)
         
         if admin_user and admin_user.check_password(password) and admin_user.is_active:
+            # Limpiar cualquier sesión previa de otros roles
+            session.pop('coach_user_id', None)
+            session.pop('coachee_user_id', None)
+            
             login_user(admin_user, remember=True)
             session.permanent = True
             admin_user.last_login = datetime.utcnow()
@@ -5249,9 +5257,12 @@ def api_coach_login():
             db.session.refresh(coach_user)
         
         if coach_user and coach_user.check_password(password) and coach_user.is_active:
+            # Limpiar cualquier sesión previa de otros roles
+            session.pop('coachee_user_id', None)
+            session.pop('admin_user_id', None)
+            
             # Usar sesión específica para coach
             session['coach_user_id'] = coach_user.id
-            # NO limpiar sesión de coachee para permitir sesiones independientes
             
             # NO usar login_user() para evitar conflictos entre sesiones
             session.permanent = True
