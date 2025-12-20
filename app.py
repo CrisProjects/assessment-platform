@@ -205,15 +205,15 @@ def validate_email(email):
 
 def validate_password(password):
     """
-    Valida seguridad de contraseña.
-    - Mínimo 6 caracteres (requisito actual del sistema)
+    Valida seguridad de contraseña para login.
+    - Mínimo 8 caracteres (mejorado de 6 para mayor seguridad)
     - Máximo 128 caracteres
     """
     if not password or not isinstance(password, str):
         return False, 'Contraseña es requerida'
     
-    if len(password) < 6:
-        return False, 'Contraseña debe tener al menos 6 caracteres'
+    if len(password) < 8:
+        return False, 'Contraseña debe tener al menos 8 caracteres'
     
     if len(password) > 128:
         return False, 'Contraseña no puede exceder 128 caracteres'
@@ -383,12 +383,19 @@ def log_security_event(event_type, severity='info', user_id=None, username=None,
         # No lanzar excepción para no interrumpir flujo principal
 
 def log_failed_login(username, reason='Invalid credentials'):
-    """Registra un intento de login fallido"""
+    """Registra un intento de login fallido con contexto extendido"""
+    # Obtener User-Agent para análisis de patrones
+    user_agent = request.headers.get('User-Agent', 'Unknown')
+    
+    # Extraer información básica del User-Agent
+    is_mobile = 'Mobile' in user_agent or 'Android' in user_agent or 'iPhone' in user_agent
+    device_type = 'mobile' if is_mobile else 'desktop'
+    
     log_security_event(
         event_type='login_failed',
         severity='warning',
         username=username,
-        description=f'Failed login attempt: {reason}'
+        description=f'Failed login attempt: {reason} | Device: {device_type} | UA: {user_agent[:100]}'
     )
 
 def log_successful_login(user):
@@ -459,6 +466,46 @@ def check_failed_login_threshold(ip_address, time_window_minutes=10, max_attempt
     except Exception as e:
         logger.error(f"Error checking failed login threshold: {str(e)}")
         return False  # En caso de error, no bloquear el flujo
+
+def check_account_lockout(username, time_window_minutes=15, max_attempts=5):
+    """
+    Verifica si una cuenta debe ser bloqueada temporalmente por intentos fallidos.
+    
+    Args:
+        username: Nombre de usuario a verificar
+        time_window_minutes: Ventana de tiempo en minutos (default: 15)
+        max_attempts: Máximo de intentos permitidos (default: 5)
+    
+    Returns:
+        tuple: (is_locked: bool, remaining_time_minutes: int or None, attempts: int)
+    """
+    try:
+        # Calcular timestamp de inicio de ventana
+        time_threshold = datetime.utcnow() - timedelta(minutes=time_window_minutes)
+        
+        # Contar intentos fallidos para este username en la ventana de tiempo
+        failed_attempts = SecurityLog.query.filter(
+            SecurityLog.event_type == 'login_failed',
+            SecurityLog.username == username,
+            SecurityLog.created_at >= time_threshold
+        ).order_by(SecurityLog.created_at.desc()).all()
+        
+        attempts_count = len(failed_attempts)
+        
+        if attempts_count >= max_attempts:
+            # Cuenta bloqueada: calcular tiempo restante
+            most_recent_attempt = failed_attempts[0].created_at
+            lock_expires_at = most_recent_attempt + timedelta(minutes=time_window_minutes)
+            remaining_time = (lock_expires_at - datetime.utcnow()).total_seconds() / 60
+            
+            if remaining_time > 0:
+                return (True, int(remaining_time) + 1, attempts_count)
+        
+        return (False, None, attempts_count)
+        
+    except Exception as e:
+        logger.error(f"Error checking account lockout: {str(e)}")
+        return (False, None, 0)  # En caso de error, no bloquear
 
 def send_security_alert(event_type, details):
     """
@@ -652,7 +699,7 @@ def validate_password_strength(password):
     Valida que una contraseña cumpla con los requisitos mínimos de seguridad.
     
     Requisitos:
-    - Mínimo 8 caracteres
+    - Mínimo 12 caracteres (mejorado de 8 para mayor seguridad)
     - Al menos 1 letra mayúscula
     - Al menos 1 letra minúscula
     - Al menos 1 número
@@ -667,8 +714,8 @@ def validate_password_strength(password):
     if not password or not isinstance(password, str):
         return (False, 'La contraseña es requerida')
     
-    if len(password) < 8:
-        return (False, 'La contraseña debe tener al menos 8 caracteres')
+    if len(password) < 12:
+        return (False, 'La contraseña debe tener al menos 12 caracteres')
     
     if not re.search(r'[A-Z]', password):
         return (False, 'La contraseña debe contener al menos una letra mayúscula')
@@ -4464,6 +4511,23 @@ def api_admin_login():
         username = result['username_or_email']
         password = result['password']
         
+        # SEGURIDAD: Verificar bloqueo de cuenta por intentos fallidos
+        is_locked, remaining_time, attempts = check_account_lockout(username)
+        if is_locked:
+            logger.warning(f"🔒 ADMIN ACCOUNT LOCKED: {username} - {attempts} failed attempts, {remaining_time} minutes remaining")
+            log_security_event(
+                event_type='login_blocked',
+                severity='warning',
+                username=username,
+                user_role='platform_admin',
+                description=f'Account locked: {attempts} failed attempts, {remaining_time} minutes remaining'
+            )
+            return jsonify({
+                'error': f'Cuenta temporalmente bloqueada por seguridad. Intenta nuevamente en {remaining_time} minutos.',
+                'locked': True,
+                'remaining_minutes': remaining_time
+            }), 429
+        
         admin_user = User.query.filter(User.username == username, User.role == 'platform_admin').first()  # type: ignore
         
         # Forzar recarga desde BD para evitar caché desactualizado
@@ -5273,7 +5337,18 @@ def api_coach_login():
         username = result['username_or_email']
         password = result['password']
         
-        coach_user = User.query.filter((User.username == username) | (User.email == username), User.role == 'coach').first()  # type: ignore
+        # SEGURIDAD: Verificar bloqueo de cuenta por intentos fallidos
+        is_locked, remaining_time, attempts = check_account_lockout(username)
+        if is_locked:
+            logger.warning(f"🔒 COACH ACCOUNT LOCKED: {username} - {attempts} failed attempts, {remaining_time} minutes remaining")
+            return jsonify({
+                'error': f'Cuenta temporalmente bloqueada por seguridad. Intenta nuevamente en {remaining_time} minutos.',
+                'locked': True,
+                'remaining_minutes': remaining_time
+            }), 429
+        
+        # SEGURIDAD: Solo aceptar username (no email) para reducir vector de ataque
+        coach_user = User.query.filter(User.username == username, User.role == 'coach').first()  # type: ignore
         
         # Forzar recarga desde BD para evitar caché desactualizado
         if coach_user:
