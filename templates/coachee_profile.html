@@ -490,27 +490,21 @@
         // Load user profile data
         async function loadUserProfile() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
+                // Usar endpoint específico de coachee para evitar conflictos de sesión
+                const response = await fetch(`${API_BASE_URL}/api/coachee/profile`);
                 
                 if (response.ok) {
                     const data = await response.json();
                     
-                    if (data.success && data.summary?.coachee) {
-                        document.getElementById('userName').textContent = data.summary.coachee.name || 'No disponible';
-                        document.getElementById('userEmail').textContent = data.summary.coachee.email || 'No disponible';
-                    }
-                }
-                
-                // Load username separately
-                const profileResponse = await fetch(`${API_BASE_URL}/api/user/my-profile`);
-                if (profileResponse.ok) {
-                    const profileData = await profileResponse.json();
-                    if (profileData.success && profileData.profile) {
-                        document.getElementById('userUsername').textContent = profileData.profile.username || 'No disponible';
+                    if (data.success && data.profile) {
+                        // Cargar todos los datos del perfil del coachee
+                        document.getElementById('userName').textContent = data.profile.full_name || 'No disponible';
+                        document.getElementById('userEmail').textContent = data.profile.email || 'No disponible';
+                        document.getElementById('userUsername').textContent = data.profile.username || 'No disponible';
                         
                         // Load avatar if exists
-                        if (profileData.profile.avatar_url) {
-                            showAvatar(profileData.profile.avatar_url);
+                        if (data.profile.avatar_url) {
+                            showAvatar(data.profile.avatar_url);
                         }
                     }
                 }

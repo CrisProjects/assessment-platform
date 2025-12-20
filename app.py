@@ -8922,6 +8922,7 @@ def api_coachee_profile():
             'success': True,
             'profile': {
                 'id': coachee.id,
+                'username': coachee.username,
                 'full_name': coachee.full_name,
                 'email': coachee.email,
                 'role': coachee.role,
