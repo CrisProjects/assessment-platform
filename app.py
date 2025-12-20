@@ -1458,19 +1458,42 @@ def either_session_required(f):
     def decorated_function(*args, **kwargs):
         current_user = None
         
-        # Verificar sesión de coach
-        if 'coach_user_id' in session:
-            coach_id = session['coach_user_id']
-            user = User.query.get(coach_id)
-            if user and user.role == 'coach':
-                current_user = user
+        # PRIORIDAD BASADA EN LA RUTA:
+        # Si la ruta incluye 'coachee', priorizar sesión de coachee
+        # Si la ruta incluye 'coach', priorizar sesión de coach
+        # De lo contrario, mantener prioridad coach (comportamiento anterior)
         
-        # Si no hay sesión de coach, verificar sesión de coachee
-        if not current_user and 'coachee_user_id' in session:
-            coachee_id = session['coachee_user_id']
-            user = User.query.get(coachee_id)
-            if user and user.role == 'coachee':
-                current_user = user
+        route_path = request.path
+        prioritize_coachee = '/coachee' in route_path or '/participant' in route_path
+        
+        if prioritize_coachee:
+            # PRIORIDAD 1: Verificar sesión de coachee
+            if 'coachee_user_id' in session:
+                coachee_id = session['coachee_user_id']
+                user = User.query.get(coachee_id)
+                if user and user.role == 'coachee':
+                    current_user = user
+            
+            # PRIORIDAD 2: Si no hay sesión de coachee, verificar sesión de coach
+            if not current_user and 'coach_user_id' in session:
+                coach_id = session['coach_user_id']
+                user = User.query.get(coach_id)
+                if user and user.role == 'coach':
+                    current_user = user
+        else:
+            # PRIORIDAD 1: Verificar sesión de coach
+            if 'coach_user_id' in session:
+                coach_id = session['coach_user_id']
+                user = User.query.get(coach_id)
+                if user and user.role == 'coach':
+                    current_user = user
+            
+            # PRIORIDAD 2: Si no hay sesión de coach, verificar sesión de coachee
+            if not current_user and 'coachee_user_id' in session:
+                coachee_id = session['coachee_user_id']
+                user = User.query.get(coachee_id)
+                if user and user.role == 'coachee':
+                    current_user = user
         
         if not current_user:
             return jsonify({
@@ -8880,31 +8903,30 @@ def api_coach_document_stats():
         return jsonify({'error': f'Error al obtener estadísticas: {str(e)}'}), 500
 
 @app.route('/api/coachee/profile', methods=['GET'])
-@login_required
+@coachee_session_required
 def api_coachee_profile():
     """Obtener perfil del coachee actual"""
     try:
-        # Verificar que es un coachee
-        if not current_user.is_authenticated or current_user.role != 'coachee':
-            return jsonify({'error': 'Acceso denegado. Solo coachees pueden acceder.'}), 403
+        # Usar g.current_user del decorador (no Flask-Login current_user)
+        coachee = g.current_user
         
         # Obtener información del coach asignado
         coach = None
-        if current_user.coach_id:
-            coach = User.query.get(current_user.coach_id)
+        if coachee.coach_id:
+            coach = User.query.get(coachee.coach_id)
         
         # Obtener estadísticas básicas
-        total_evaluations = AssessmentResult.query.filter_by(user_id=current_user.id).count()
+        total_evaluations = AssessmentResult.query.filter_by(user_id=coachee.id).count()
         
         return jsonify({
             'success': True,
             'profile': {
-                'id': current_user.id,
-                'full_name': current_user.full_name,
-                'email': current_user.email,
-                'role': current_user.role,
-                'avatar_url': current_user.avatar_url if hasattr(current_user, 'avatar_url') else None,
-                'created_at': current_user.created_at.isoformat() if hasattr(current_user, 'created_at') and current_user.created_at else None,
+                'id': coachee.id,
+                'full_name': coachee.full_name,
+                'email': coachee.email,
+                'role': coachee.role,
+                'avatar_url': coachee.avatar_url if hasattr(coachee, 'avatar_url') else None,
+                'created_at': coachee.created_at.isoformat() if hasattr(coachee, 'created_at') and coachee.created_at else None,
                 'coach': {
                     'id': coach.id if coach else None,
                     'name': coach.full_name if coach else None,
@@ -9030,19 +9052,18 @@ def api_coachee_dashboard_summary():
         return jsonify({'error': f'Error obteniendo resumen: {str(e)}'}), 500
 
 @app.route('/api/coachee/validate-visibility', methods=['GET'])
-@login_required
+@coachee_session_required
 def api_coachee_validate_visibility():
     """Validar que las evaluaciones sean visibles para el coachee actual"""
     try:
-        # Verificar que es un coachee
-        if not current_user.is_authenticated or current_user.role != 'coachee':
-            return jsonify({'error': 'Acceso denegado. Solo coachees pueden acceder.'}), 403
+        # Usar g.current_user del decorador (no Flask-Login current_user)
+        coachee = g.current_user
         
         # Obtener assessment_id específico si se proporciona
         assessment_id = request.args.get('assessment_id', type=int)
         
         # Ejecutar validación
-        validation_result = validate_evaluation_visibility(current_user.id, assessment_id)
+        validation_result = validate_evaluation_visibility(coachee.id, assessment_id)
         
         # Determinar código de respuesta basado en el resultado
         if validation_result['valid']:
@@ -9057,7 +9078,7 @@ def api_coachee_validate_visibility():
         return jsonify({
             'valid': False,
             'error': f'Error interno en validación: {str(e)}',
-            'details': {'user_id': current_user.id if current_user.is_authenticated else None}
+            'details': {'user_id': g.current_user.id}
         }), 500
 
 @app.route('/api/admin/validate-coachee-visibility/<int:coachee_id>', methods=['GET'])
