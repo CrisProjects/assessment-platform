@@ -6835,14 +6835,14 @@
                     this.updateDateTime();
                     setInterval(() => this.updateDateTime(), 1000);
                     
+                    // IMPORTANTE: Inicializar funciones legacy PRIMERO para exponer window.evaluationCategories
+                    this.initializeLegacyFunctions();
+                    
                     // Cargar datos iniciales
                     await this.loadUserProfile();
                     
                     // Cargar evaluaciones disponibles
                     await this.loadEvaluations();
-                    
-                    // Mantener compatibilidad con código existente
-                    this.initializeLegacyFunctions();
                 },
                 
                 // Crear partículas animadas
@@ -8357,39 +8357,8 @@
             return 'Muy Poco Asertivo';
         }
 
-        // Categories configuration
-        const evaluationCategories = {
-            'Personalidad': {
-                color: '#6f42c1',
-                icon: 'fa-user-circle',
-                keywords: ['personalidad', 'disc', 'temperamento', 'carácter']
-            },
-            'Liderazgo': {
-                color: '#fd7e14',
-                icon: 'fa-crown',
-                keywords: ['liderazgo', 'líder', 'gestión', 'dirección']
-            },
-            'Inteligencia Emocional': {
-                color: '#e83e8c',
-                icon: 'fa-heart',
-                keywords: ['emocional', 'emoción', 'sentimiento', 'asertividad']
-            },
-            'Trabajo en Equipo': {
-                color: '#20c997',
-                icon: 'fa-users',
-                keywords: ['equipo', 'colaboración', 'grupo', 'cooperación']
-            },
-            'Crecimiento Empresarial': {
-                color: '#17a2b8',
-                icon: 'fa-chart-line',
-                keywords: ['empresarial', 'negocio', 'crecer', 'crecimiento', '2026']
-            },
-            'Otros': {
-                color: '#6c757d',
-                icon: 'fa-clipboard-list',
-                keywords: []
-            }
-        };
+        // NOTA: evaluationCategories ahora se define en Alpine y se expone como window.evaluationCategories
+        // La constante local ha sido eliminada para evitar conflictos
 
         // Function to classify evaluation by category
         function classifyEvaluation(evaluation) {
@@ -8397,7 +8366,9 @@
             const description = (evaluation.description || '').toLowerCase();
             const searchText = `${title} ${description}`;
             
-            for (const [category, data] of Object.entries(evaluationCategories)) {
+            const categories = window.evaluationCategories || {};
+            
+            for (const [category, data] of Object.entries(categories)) {
                 if (category === 'Otros') continue;
                 
                 for (const keyword of data.keywords) {
