@@ -7477,10 +7477,97 @@ async function createCoacheeAndAssignEvaluation(assessmentId) {
 }
 
 // Ver detalles de solicitud de plan de desarrollo
-function viewRequestDetails(requestId) {
-    // TODO: Implementar modal con detalles completos de la solicitud
+async function viewRequestDetails(requestId) {
     console.log('👁️ VIEW-REQUEST: Ver detalles de solicitud', requestId);
-    showToast('Funcionalidad de detalles disponible próximamente', 'info');
+    
+    try {
+        // Abrir modal y mostrar loading
+        const modal = new bootstrap.Modal(document.getElementById('devPlanRequestModal'));
+        modal.show();
+        
+        document.getElementById('devPlanModalLoading').style.display = 'block';
+        document.getElementById('devPlanModalContent').style.display = 'none';
+        
+        // Obtener detalles de la solicitud
+        const response = await fetch(`/api/coach/development-plan-request/${requestId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            showToast(data.error || 'Error al cargar detalles', 'error');
+            modal.hide();
+            return;
+        }
+        
+        console.log('✅ VIEW-REQUEST: Data loaded', data);
+        
+        // Llenar información del coachee
+        document.getElementById('modalCoacheeName').textContent = data.coachee.name;
+        document.getElementById('modalCoacheeEmail').textContent = data.coachee.email;
+        document.getElementById('modalCoacheeUsername').textContent = data.coachee.username;
+        
+        const requestDate = new Date(data.task.created_at);
+        document.getElementById('modalRequestDate').textContent = requestDate.toLocaleDateString('es-CL', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Llenar información de la evaluación
+        if (data.evaluation) {
+            document.getElementById('modalEvaluationInfo').style.display = 'block';
+            document.getElementById('modalNoEvaluation').style.display = 'none';
+            
+            document.getElementById('modalEvalTitle').textContent = data.evaluation.assessment_title;
+            document.getElementById('modalEvalScore').textContent = data.evaluation.score + '%';
+            
+            if (data.evaluation.completed_at) {
+                const completedDate = new Date(data.evaluation.completed_at);
+                document.getElementById('modalEvalDate').textContent = completedDate.toLocaleDateString('es-CL', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } else {
+                document.getElementById('modalEvalDate').textContent = 'Fecha no disponible';
+            }
+            
+            // Color del badge según puntuación
+            const scoreElement = document.getElementById('modalEvalScore');
+            const score = data.evaluation.score;
+            if (score >= 80) {
+                scoreElement.className = 'badge bg-success';
+            } else if (score >= 60) {
+                scoreElement.className = 'badge bg-primary';
+            } else if (score >= 40) {
+                scoreElement.className = 'badge bg-warning';
+            } else {
+                scoreElement.className = 'badge bg-danger';
+            }
+        } else {
+            document.getElementById('modalEvaluationInfo').style.display = 'none';
+            document.getElementById('modalNoEvaluation').style.display = 'block';
+        }
+        
+        // Llenar mensaje personalizado
+        document.getElementById('modalCustomMessage').textContent = data.task.custom_message || 'Sin mensaje adicional';
+        
+        // Ocultar loading y mostrar contenido
+        document.getElementById('devPlanModalLoading').style.display = 'none';
+        document.getElementById('devPlanModalContent').style.display = 'block';
+        
+    } catch (error) {
+        console.error('❌ VIEW-REQUEST: Error loading details', error);
+        showToast('Error al cargar detalles de la solicitud', 'error');
+    }
+}
+
+// Crear plan de desarrollo (placeholder para futura implementación)
+function createDevelopmentPlan() {
+    console.log('📝 CREATE-PLAN: Creating development plan');
+    showToast('Funcionalidad de creación de plan disponible próximamente', 'info');
+    // TODO: Implementar creación de plan de desarrollo
 }
 
 // Ver detalles de evaluación pendiente
@@ -8681,6 +8768,90 @@ function closeInvitationModal() {
         <span>Salir</span>
     </button>
 </nav>
+
+<!-- Modal para Ver Detalles de Solicitud de Plan de Desarrollo -->
+<div class="modal fade" id="devPlanRequestModal" tabindex="-1" aria-labelledby="devPlanRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+                <h5 class="modal-title" id="devPlanRequestModalLabel" style="font-weight: 600; font-size: 1.25rem;">
+                    <i class="fas fa-clipboard-list me-2"></i>Detalles de Solicitud
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;" id="devPlanRequestModalBody">
+                <!-- Loading spinner -->
+                <div class="text-center py-5" id="devPlanModalLoading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Cargando detalles...</p>
+                </div>
+                
+                <!-- Content will be loaded here -->
+                <div id="devPlanModalContent" style="display: none;">
+                    <!-- Coachee Info -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fas fa-user me-2"></i>Información del Coachee
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Nombre:</strong> <span id="modalCoacheeName"></span></p>
+                                    <p class="mb-0"><strong>Email:</strong> <span id="modalCoacheeEmail"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Usuario:</strong> <span id="modalCoacheeUsername"></span></p>
+                                    <p class="mb-0"><strong>Fecha:</strong> <span id="modalRequestDate"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Evaluation Info -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fas fa-chart-bar me-2"></i>Resultado de Evaluación
+                            </h6>
+                            <div id="modalEvaluationInfo">
+                                <p class="mb-2"><strong>Evaluación:</strong> <span id="modalEvalTitle"></span></p>
+                                <p class="mb-2">
+                                    <strong>Puntuación:</strong> 
+                                    <span id="modalEvalScore" class="badge bg-primary" style="font-size: 1rem; padding: 0.5rem 1rem;"></span>
+                                </p>
+                                <p class="mb-0"><strong>Completada:</strong> <span id="modalEvalDate"></span></p>
+                            </div>
+                            <div id="modalNoEvaluation" style="display: none;">
+                                <p class="text-muted mb-0">No se encontró información de la evaluación</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Message -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fas fa-comment-dots me-2"></i>Mensaje del Coachee
+                            </h6>
+                            <div id="modalCustomMessage" style="background: #f9fafb; padding: 1rem; border-radius: 8px; white-space: pre-wrap;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1.5rem 2rem; background: #f9fafb; border-radius: 0 0 16px 16px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="padding: 0.625rem 1.5rem; border-radius: 8px;">
+                    <i class="fas fa-times me-2"></i>Cerrar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="createDevelopmentPlan()" style="padding: 0.625rem 1.5rem; border-radius: 8px;">
+                    <i class="fas fa-plus-circle me-2"></i>Crear Plan de Desarrollo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

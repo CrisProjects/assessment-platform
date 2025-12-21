@@ -6605,6 +6605,88 @@ def api_coach_development_plan_requests():
         logger.error(f"Error en api_coach_development_plan_requests: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
+@app.route('/api/coach/development-plan-request/<int:task_id>', methods=['GET'])
+@coach_session_required
+def api_coach_development_plan_request_detail(task_id):
+    """Obtener detalles completos de una solicitud de plan de desarrollo"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Obtener la tarea
+        task = Task.query.filter_by(
+            id=task_id,
+            coach_id=current_coach.id,
+            category='development_plan_request'
+        ).first()
+        
+        if not task:
+            return jsonify({'error': 'Solicitud no encontrada'}), 404
+        
+        # Obtener información del coachee
+        coachee = User.query.get(task.coachee_id)
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado'}), 404
+        
+        # Extraer evaluation_id de la descripción
+        import re
+        eval_id_match = re.search(r'Evaluación ID: (\d+)', task.description)
+        evaluation_id = int(eval_id_match.group(1)) if eval_id_match else None
+        
+        evaluation_data = None
+        if evaluation_id:
+            # Obtener resultado de la evaluación
+            evaluation = AssessmentResult.query.filter_by(
+                id=evaluation_id,
+                user_id=coachee.id
+            ).first()
+            
+            if evaluation:
+                # Obtener información del assessment
+                assessment = Assessment.query.get(evaluation.assessment_id)
+                
+                evaluation_data = {
+                    'id': evaluation.id,
+                    'assessment_id': evaluation.assessment_id,
+                    'assessment_title': assessment.title if assessment else 'Evaluación',
+                    'score': evaluation.score,
+                    'completed_at': evaluation.completed_at.isoformat() if evaluation.completed_at else None,
+                    'responses': evaluation.responses or {}
+                }
+        
+        # Extraer mensaje personalizado de la descripción
+        description_lines = task.description.split('\n')
+        custom_message = ''
+        for i, line in enumerate(description_lines):
+            if i > 0 and not line.startswith('Evaluación ID:') and not line.startswith('Score:'):
+                custom_message += line + '\n'
+        custom_message = custom_message.strip()
+        
+        return jsonify({
+            'success': True,
+            'task': {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'custom_message': custom_message,
+                'created_at': task.created_at.isoformat(),
+                'priority': task.priority
+            },
+            'coachee': {
+                'id': coachee.id,
+                'name': coachee.full_name or coachee.username,
+                'email': coachee.email,
+                'username': coachee.username
+            },
+            'evaluation': evaluation_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_development_plan_request_detail: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
 @app.route('/api/coach/pending-evaluations', methods=['GET'])
 @coach_session_required
 def api_coach_pending_evaluations():
