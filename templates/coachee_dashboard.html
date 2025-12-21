@@ -8266,11 +8266,13 @@
         // Función legacy para renderizar evaluaciones disponibles (será migrada completamente en futuras iteraciones)
         // LEGACY: Función original de renderizado de evaluaciones disponibles
         function renderAvailableEvaluationsLegacy() {
+            console.log('🔥 renderAvailableEvaluationsLegacy INICIANDO...');
+            
             const evaluationsData = window.evaluationsData;
             const container = document.getElementById('availableEvaluations');
             
-            console.log('🔍 renderAvailableEvaluationsLegacy called');
-            console.log('🔍 window.evaluationsData:', window.evaluationsData);
+            console.log('🔍 Container:', container);
+            console.log('🔍 window.evaluationsData:', evaluationsData);
             
             if (!container) {
                 console.error('❌ Container availableEvaluations no encontrado');
@@ -8317,9 +8319,17 @@
             // Clear container
             container.innerHTML = '';
             
+            console.log('🔍 Categorized evaluations:', categorizedEvaluations);
+            console.log('🔍 window.evaluationCategories:', window.evaluationCategories);
+            
             // Render each category
             Object.entries(categorizedEvaluations).forEach(([categoryName, evaluations]) => {
-                const category = evaluationCategories[categoryName];
+                const category = window.evaluationCategories ? window.evaluationCategories[categoryName] : null;
+                
+                if (!category) {
+                    console.error(`❌ Categoría ${categoryName} no encontrada`);
+                    return;
+                }
                 
                 const categorySection = document.createElement('div');
                 categorySection.className = 'assessment-category mb-4';
@@ -8507,7 +8517,12 @@
             
             // Render each category
             Object.entries(categorizedEvaluations).forEach(([categoryName, evaluations]) => {
-                const category = evaluationCategories[categoryName];
+                const category = window.evaluationCategories ? window.evaluationCategories[categoryName] : null;
+                
+                if (!category) {
+                    console.error(`❌ Categoría ${categoryName} no encontrada en renderCompletedEvaluationsLegacy`);
+                    return;
+                }
                 
                 const categorySection = document.createElement('div');
                 categorySection.className = 'assessment-category mb-4';
