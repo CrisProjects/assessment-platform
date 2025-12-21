@@ -6797,6 +6797,9 @@
                 pendingEvaluations: [],
                 pendingEvaluationsLoaded: false,
                 tasksData: [],
+                tasksLastLoaded: null,
+                isLoadingTasks: false,
+                TASKS_CACHE_DURATION: 30000, // 30 segundos
                 documentsData: [],
                 videosData: [],
                 developmentPlans: [],
@@ -7097,8 +7100,8 @@
                     
                     // Cargar contenido específico según la pestaña
                     if (tabId === 'tasks') {
-                        // Cargar tareas (con cache automático)
-                        if (typeof loadTasks === 'function') loadTasks();
+                        // 🔥 ALPINE: Cargar tareas (con cache automático)
+                        this.loadTasks();
                     } else if (tabId === 'content') {
                         // Cuando se muestra Mi Contenido, activar la pestaña de documentos
                         setTimeout(() => {
@@ -7376,6 +7379,86 @@
                     } else {
                         console.error('❌ displayPendingEvaluationsLegacy no disponible');
                     }
+                },
+                
+                // ============================================
+                // TASKS (Alpine)
+                // ============================================
+                
+                async loadTasks(forceRefresh = false) {
+                    console.log('📋 ALPINE: Loading tasks...');
+                    
+                    // Evitar carga duplicada
+                    if (this.isLoadingTasks) {
+                        console.log('⏳ Tasks already loading, skipping duplicate request');
+                        return;
+                    }
+                    
+                    // Usar cache si los datos son recientes
+                    if (!forceRefresh && this.tasksData && this.tasksData.length > 0 && this.tasksLastLoaded) {
+                        const age = Date.now() - this.tasksLastLoaded;
+                        if (age < this.TASKS_CACHE_DURATION) {
+                            console.log(`📦 Using cached tasks data (age: ${Math.round(age/1000)}s)`);
+                            this.renderTasks();
+                            return;
+                        }
+                    }
+                    
+                    this.isLoadingTasks = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (Array.isArray(data)) {
+                            this.tasksData = data;
+                            this.tasksLastLoaded = Date.now();
+                            
+                            // Exponer globalmente para legacy code
+                            window.tasksData = this.tasksData;
+                            
+                            console.log(`✅ ALPINE: Tasks loaded successfully (${data.length} tasks)`);
+                            this.renderTasks();
+                        } else {
+                            console.error('Formato de datos inesperado para tareas:', data);
+                            throw new Error('Formato de datos inesperado del servidor');
+                        }
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error cargando tareas:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Error cargando tareas: ' + error.message, 'error');
+                        }
+                        
+                        this.tasksData = [];
+                        
+                        const container = document.getElementById('tasksContainer');
+                        if (container) {
+                            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando tareas</p></div>';
+                        }
+                    } finally {
+                        this.isLoadingTasks = false;
+                    }
+                },
+                
+                renderTasks() {
+                    console.log('🔍 ALPINE: renderTasks called');
+                    
+                    // Exponer globalmente
+                    window.tasksData = this.tasksData;
+                    
+                    // Llamar función legacy
+                    if (typeof renderTasksLegacy === 'function') {
+                        renderTasksLegacy();
+                    } else {
+                        console.error('❌ renderTasksLegacy no disponible');
+                    }
                 }
             };
         }
@@ -7589,6 +7672,26 @@
             const alpineData = Alpine.$data(document.body);
             if (alpineData && typeof alpineData.displayPendingEvaluations === 'function') {
                 alpineData.displayPendingEvaluations();
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+        
+        // 🔥 PASO 6: Wrapper para loadTasks
+        async function loadTasks(forceRefresh = false) {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.loadTasks === 'function') {
+                await alpineData.loadTasks(forceRefresh);
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+        
+        // 🔥 PASO 6: Wrapper para renderTasks  
+        function renderTasks() {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.renderTasks === 'function') {
+                alpineData.renderTasks();
             } else {
                 console.error('❌ Alpine component not ready');
             }
@@ -8674,67 +8777,18 @@
             });
         }
 
-        // Load tasks data con control de carga duplicada
+        // LEGACY: Variables de control de tasks (ahora en Alpine state)
+        // Mantenidas por compatibilidad pero ya no se usan
         let isLoadingTasks = false;
         let tasksLastLoaded = null;
-        const TASKS_CACHE_DURATION = 30000; // 30 segundos
+        const TASKS_CACHE_DURATION = 30000;
         
-        async function loadTasks(forceRefresh = false) {
-            // OPTIMIZACIÓN: Evitar carga duplicada si ya se está cargando
-            if (isLoadingTasks) {
-                console.log('⏳ Tasks already loading, skipping duplicate request');
-                return;
-            }
-            
-            // OPTIMIZACIÓN: Usar cache si los datos son recientes (< 30 segundos)
-            if (!forceRefresh && tasksData && tasksData.length > 0 && tasksLastLoaded) {
-                const age = Date.now() - tasksLastLoaded;
-                if (age < TASKS_CACHE_DURATION) {
-                    console.log(`📦 Using cached tasks data (age: ${Math.round(age/1000)}s)`);
-                    renderTasks();
-                    return;
-                }
-            }
-            
-            isLoadingTasks = true;
-            
-            try {
-                console.log('🔄 Loading tasks from server...');
-                const response = await fetch(`${API_BASE_URL}/api/coachee/tasks`, {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (Array.isArray(data)) {
-                    tasksData = data; // La API devuelve directamente el array
-                    tasksLastLoaded = Date.now(); // Marcar tiempo de carga
-                    console.log(`✅ Tasks loaded successfully (${data.length} tasks)`);
-                    renderTasks();
-                } else {
-                    console.error('Formato de datos inesperado para tareas:', data);
-                    throw new Error('Formato de datos inesperado del servidor');
-                }
-            } catch (error) {
-                console.error('Error cargando tareas:', error);
-                showToast('Error cargando tareas: ' + error.message, 'error');
-                
-                // Inicializar con datos vacíos
-                tasksData = [];
-                
-                document.getElementById('tasksContainer').innerHTML = 
-                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando tareas</p></div>';
-            } finally {
-                isLoadingTasks = false;
-            }
-        }
-
-        // Render tasks
-        function renderTasks() {
+        // LEGACY: Función de carga de tasks (ahora manejada por Alpine)
+        // Esta función ya no se usa directamente, el wrapper global llama al método Alpine
+        
+        // LEGACY: Función original de renderizado de tasks
+        function renderTasksLegacy() {
+            const tasksData = window.tasksData || [];
             const container = document.getElementById('tasksContainer');
             
             if (!tasksData || tasksData.length === 0) {
