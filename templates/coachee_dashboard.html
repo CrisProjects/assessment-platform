@@ -12970,9 +12970,44 @@
             }
         }
 
-        // Función para contactar coach para sesión gratuita
+        // Función para abrir modal de contacto con coach
         async function contactCoachForSession(event) {
             try {
+                // Prellenar datos del usuario actual si están disponibles
+                if (currentUser) {
+                    document.getElementById('contactName').value = currentUser.full_name || '';
+                    document.getElementById('contactEmail').value = currentUser.email || '';
+                }
+                
+                // Mostrar el modal
+                const modal = new bootstrap.Modal(document.getElementById('contactCoachModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error opening contact coach modal:', error);
+                showToast('Error abriendo formulario de contacto', 'error');
+            }
+        }
+        
+        // Función para enviar el formulario de contacto al coach
+        async function submitContactCoachForm() {
+            try {
+                // Obtener datos del formulario
+                const name = document.getElementById('contactName').value.trim();
+                const email = document.getElementById('contactEmail').value.trim();
+                const phone = document.getElementById('contactPhone').value.trim();
+                const whatsapp = document.getElementById('contactWhatsApp').value.trim();
+                const contactMethod = document.querySelector('input[name="contactMethod"]:checked').value;
+                const availability = document.getElementById('contactAvailability').value.trim();
+                const message = document.getElementById('contactMessage').value.trim();
+                
+                // Validar campos requeridos
+                if (!name || !email || !phone) {
+                    showToast('Por favor completa todos los campos requeridos', 'error');
+                    return;
+                }
+                
+                // Enviar solicitud al backend
                 const response = await fetch(`${API_BASE_URL}/api/coachee/contact-coach-session`, {
                     method: 'POST',
                     headers: {
@@ -12981,30 +13016,44 @@
                     body: JSON.stringify({
                         evaluation_id: window.currentEvaluationId,
                         session_type: 'free_consultation',
-                        message: 'Solicito una sesión gratuita de 30 minutos para desarrollar mis habilidades de asertividad.'
+                        contact_data: {
+                            name: name,
+                            email: email,
+                            phone: phone,
+                            whatsapp: whatsapp || phone,
+                            preferred_method: contactMethod,
+                            availability: availability,
+                            message: message || 'Solicito una sesión gratuita de 30 minutos para desarrollar mis habilidades.'
+                        }
                     })
                 });
 
                 const data = await response.json();
                 
                 if (response.ok) {
+                    // Cerrar el modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('contactCoachModal'));
+                    if (modal) modal.hide();
+                    
+                    // Mostrar mensaje de éxito
                     showToast('¡Solicitud enviada! Un coach se contactará contigo pronto para coordinar tu sesión gratuita.', 'success');
                     
-                    // Actualizar el botón para mostrar que la solicitud fue enviada
-                    if (event && event.target) {
-                        const button = event.target.closest('button');
-                        if (button) {
-                            button.disabled = true;
-                            button.innerHTML = '<i class="fas fa-check me-2"></i>Solicitud Enviada';
-                            button.classList.add('btn-outline-light');
-                            button.style.color = '#28a745';
-                        }
-                    }
+                    // Limpiar el formulario
+                    document.getElementById('contactCoachForm').reset();
+                    
+                    // Opcional: Deshabilitar el botón "Contactar Coach" en los resultados
+                    const buttons = document.querySelectorAll('button[onclick*="contactCoachForSession"]');
+                    buttons.forEach(button => {
+                        button.disabled = true;
+                        button.innerHTML = '<i class="fas fa-check me-2"></i>Solicitud Enviada';
+                        button.classList.remove('btn-light');
+                        button.classList.add('btn-outline-success');
+                    });
                 } else {
                     throw new Error(data.error || 'Error enviando solicitud');
                 }
             } catch (error) {
-                console.error('Error contacting coach for session:', error);
+                console.error('Error submitting contact coach form:', error);
                 showToast('Error enviando solicitud: ' + error.message, 'error');
             }
         }
@@ -14311,6 +14360,105 @@
                     </button>
                     <button type="button" class="btn btn-primary" onclick="submitPasswordChangeCoachee()">
                         <i class="fas fa-save me-1"></i>Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Contactar Coach para Sesión -->
+    <div class="modal fade" id="contactCoachModal" tabindex="-1" aria-labelledby="contactCoachModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                    <h5 class="modal-title" id="contactCoachModalLabel">
+                        <i class="fas fa-calendar-plus me-2"></i>Solicitar Sesión con Coach
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-gift me-2"></i>
+                        <strong>¡Sesión gratuita de 30 minutos!</strong><br>
+                        <small>Completa tus datos y un coach te contactará pronto para coordinar tu sesión.</small>
+                    </div>
+                    
+                    <form id="contactCoachForm">
+                        <div class="mb-3">
+                            <label for="contactName" class="form-label">
+                                <i class="fas fa-user me-1"></i>Nombre Completo <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="contactName" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contactEmail" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" class="form-control" id="contactEmail" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contactPhone" class="form-label">
+                                <i class="fas fa-phone me-1"></i>Teléfono <span class="text-danger">*</span>
+                            </label>
+                            <input type="tel" class="form-control" id="contactPhone" placeholder="+56 9 1234 5678" required>
+                            <small class="form-text text-muted">Incluye código de país</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contactWhatsApp" class="form-label">
+                                <i class="fab fa-whatsapp me-1"></i>WhatsApp (opcional)
+                            </label>
+                            <input type="tel" class="form-control" id="contactWhatsApp" placeholder="+56 9 1234 5678">
+                            <small class="form-text text-muted">Si es diferente al teléfono principal</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-comments me-1"></i>Método de Contacto Preferido <span class="text-danger">*</span>
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="contactMethod" id="methodEmail" value="email" checked>
+                                <label class="form-check-label" for="methodEmail">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="contactMethod" id="methodPhone" value="phone">
+                                <label class="form-check-label" for="methodPhone">
+                                    <i class="fas fa-phone me-1"></i>Teléfono
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="contactMethod" id="methodWhatsApp" value="whatsapp">
+                                <label class="form-check-label" for="methodWhatsApp">
+                                    <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contactAvailability" class="form-label">
+                                <i class="fas fa-clock me-1"></i>Horario de Disponibilidad (opcional)
+                            </label>
+                            <textarea class="form-control" id="contactAvailability" rows="2" placeholder="Ej: Lunes a Viernes de 9:00 a 18:00"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contactMessage" class="form-label">
+                                <i class="fas fa-message me-1"></i>Mensaje Adicional (opcional)
+                            </label>
+                            <textarea class="form-control" id="contactMessage" rows="3" placeholder="Comparte cualquier información adicional que consideres relevante..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="submitContactCoachForm()">
+                        <i class="fas fa-paper-plane me-1"></i>Enviar Solicitud
                     </button>
                 </div>
             </div>

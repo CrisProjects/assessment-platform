@@ -10560,7 +10560,27 @@ def contact_coach_session():
         data = request.get_json()
         evaluation_id = data.get('evaluation_id')
         session_type = data.get('session_type', 'free_consultation')
-        message = data.get('message', 'Solicito una sesión gratuita de 30 minutos.')
+        
+        # Extraer contact_data (nuevo formato) o message (formato legacy)
+        contact_data = data.get('contact_data', {})
+        if contact_data:
+            # Nuevo formato con datos estructurados
+            name = contact_data.get('name', current_coachee.full_name)
+            email = contact_data.get('email', current_coachee.email)
+            phone = contact_data.get('phone', '')
+            whatsapp = contact_data.get('whatsapp', phone)
+            preferred_method = contact_data.get('preferred_method', 'email')
+            availability = contact_data.get('availability', '')
+            message = contact_data.get('message', 'Solicito una sesión gratuita de 30 minutos.')
+        else:
+            # Formato legacy (compatibilidad hacia atrás)
+            name = current_coachee.full_name
+            email = current_coachee.email
+            phone = ''
+            whatsapp = ''
+            preferred_method = 'email'
+            availability = ''
+            message = data.get('message', 'Solicito una sesión gratuita de 30 minutos.')
         
         # Verificar que la evaluación pertenece al coachee (si se proporciona)
         if evaluation_id:
@@ -10572,12 +10592,16 @@ def contact_coach_session():
             if not evaluation:
                 return jsonify({'error': 'Evaluación no encontrada'}), 404
         
-        # Loggear la solicitud de sesión gratuita
+        # Loggear la solicitud de sesión gratuita con información detallada
         logger.info(f"🎯 FREE SESSION REQUEST: Coachee {current_coachee.username} (ID: {current_coachee.id}) "
                    f"requested {session_type} session")
-        logger.info(f"🎯 SESSION MESSAGE: {message}")
+        logger.info(f"📧 CONTACT INFO: Name: {name}, Email: {email}, Phone: {phone}, WhatsApp: {whatsapp}")
+        logger.info(f"📞 PREFERRED METHOD: {preferred_method}")
+        if availability:
+            logger.info(f"🕐 AVAILABILITY: {availability}")
+        logger.info(f"💬 MESSAGE: {message}")
         if evaluation_id:
-            logger.info(f"🎯 RELATED EVALUATION: ID {evaluation_id}, Assessment ID: {evaluation.assessment_id}, Score: {evaluation.score}")
+            logger.info(f"📊 RELATED EVALUATION: ID {evaluation_id}, Assessment ID: {evaluation.assessment_id}, Score: {evaluation.score}")
         
         return jsonify({
             'success': True,
