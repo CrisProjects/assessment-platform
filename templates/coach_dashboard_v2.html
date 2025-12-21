@@ -3924,19 +3924,28 @@
 
                             <!-- Planes de Desarrollo Tab -->
                             <div class="tab-pane fade" id="planes" role="tabpanel" aria-labelledby="planes-tab">
-                                <div class="text-center text-muted" style="padding: 3rem;">
-                                    <i class="fas fa-file-alt fa-3x mb-3" style="opacity: 0.3;"></i>
-                                    <p class="mb-0">Sección disponible próximamente</p>
-                                    <small>Aquí podrás ver los planes de desarrollo completados y aprobados</small>
+                                <div class="mb-4">
+                                    <h6 style="color: #2d3748; font-weight: 600; margin: 0;">Planes Publicados</h6>
+                                    <small style="color: #718096;">Planes de desarrollo activos compartidos con coachees</small>
+                                </div>
+                                <div id="publishedPlansContainer">
+                                    <!-- Published plans will be loaded here -->
                                 </div>
                             </div>
 
                             <!-- En Construcción Tab -->
                             <div class="tab-pane fade" id="construccion" role="tabpanel" aria-labelledby="construccion-tab">
-                                <div class="text-center text-muted" style="padding: 3rem;">
-                                    <i class="fas fa-tools fa-3x mb-3" style="opacity: 0.3;"></i>
-                                    <p class="mb-0">Sección disponible próximamente</p>
-                                    <small>Aquí podrás ver los planes de desarrollo en proceso de creación</small>
+                                <div class="mb-4 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 style="color: #2d3748; font-weight: 600; margin: 0;">Planes en Borrador</h6>
+                                        <small style="color: #718096;">Planes guardados que aún no han sido publicados</small>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="openCreateNewPlan()" style="padding: 0.625rem 1.5rem; border-radius: 10px; font-weight: 600;">
+                                        <i class="fas fa-plus-circle me-2"></i>Crear Nuevo Plan
+                                    </button>
+                                </div>
+                                <div id="draftPlansContainer">
+                                    <!-- Draft plans will be loaded here -->
                                 </div>
                             </div>
                         </div>
@@ -7558,6 +7567,20 @@ async function viewRequestDetails(requestId) {
         if (modalElements.coacheeEmail) modalElements.coacheeEmail.textContent = data.coachee.email;
         if (modalElements.coacheeUsername) modalElements.coacheeUsername.textContent = data.coachee.username;
         
+        // Guardar IDs para usar en la creación del plan
+        const requestCoacheeIdEl = document.getElementById('requestCoacheeId');
+        const currentRequestIdEl = document.getElementById('currentRequestId');
+        
+        if (requestCoacheeIdEl) {
+            requestCoacheeIdEl.value = data.coachee.id;
+            console.log('✅ Coachee ID saved:', data.coachee.id);
+        }
+        
+        if (currentRequestIdEl) {
+            currentRequestIdEl.value = requestId;
+            console.log('✅ Request ID saved:', requestId);
+        }
+        
         const requestDate = new Date(data.task.created_at);
         if (modalElements.requestDate) {
             modalElements.requestDate.textContent = requestDate.toLocaleDateString('es-CL', {
@@ -8856,6 +8879,10 @@ function closeInvitationModal() {
                 
                 <!-- Content will be loaded here -->
                 <div id="devPlanModalContent" style="display: none;">
+                    <!-- Hidden fields for coachee and request IDs -->
+                    <input type="hidden" id="requestCoacheeId">
+                    <input type="hidden" id="currentRequestId">
+                    
                     <!-- Coachee Info -->
                     <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
                         <div class="card-body">
@@ -8911,13 +8938,1037 @@ function closeInvitationModal() {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="padding: 0.625rem 1.5rem; border-radius: 8px;">
                     <i class="fas fa-times me-2"></i>Cerrar
                 </button>
-                <button type="button" class="btn btn-primary" onclick="createDevelopmentPlan()" style="padding: 0.625rem 1.5rem; border-radius: 8px;">
+                <button type="button" class="btn btn-primary" onclick="openCreatePlanModal()" style="padding: 0.625rem 1.5rem; border-radius: 8px;">
                     <i class="fas fa-plus-circle me-2"></i>Crear Plan de Desarrollo
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal Wizard para Crear Plan de Desarrollo Personal -->
+<div class="modal fade" id="createDevPlanModal" tabindex="-1" aria-labelledby="createDevPlanModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);">
+            <!-- Header -->
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px 20px 0 0; padding: 2rem 2.5rem; border: none;">
+                <div>
+                    <h4 class="modal-title mb-1" id="createDevPlanModalLabel" style="font-weight: 700; font-size: 1.75rem;">
+                        <i class="fas fa-rocket me-3"></i>Crear Plan de Desarrollo Personal
+                    </h4>
+                    <p class="mb-0" style="opacity: 0.95; font-size: 0.95rem; font-weight: 400;">Diseña un camino personalizado de crecimiento</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="closeCreatePlanModal()" aria-label="Close" style="font-size: 1.2rem;"></button>
+            </div>
+            
+            <!-- Progress Indicator -->
+            <div style="background: #f8f9fa; padding: 1.5rem 2.5rem; border-bottom: 1px solid #e9ecef;">
+                <div class="d-flex justify-content-between align-items-center" style="max-width: 800px; margin: 0 auto;">
+                    <div class="wizard-step" data-step="1" style="flex: 1; text-align: center; position: relative;">
+                        <div class="step-number active" style="width: 40px; height: 40px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-weight: 600; transition: all 0.3s;">1</div>
+                        <div class="step-label" style="font-size: 0.75rem; color: #667eea; font-weight: 600;">Objetivo</div>
+                    </div>
+                    <div class="step-connector" style="flex: 0.5; height: 2px; background: #e9ecef; margin: 0 0 1.5rem;"></div>
+                    <div class="wizard-step" data-step="2" style="flex: 1; text-align: center; position: relative;">
+                        <div class="step-number" style="width: 40px; height: 40px; border-radius: 50%; background: #e9ecef; color: #6c757d; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-weight: 600; transition: all 0.3s;">2</div>
+                        <div class="step-label" style="font-size: 0.75rem; color: #6c757d; font-weight: 500;">Situación</div>
+                    </div>
+                    <div class="step-connector" style="flex: 0.5; height: 2px; background: #e9ecef; margin: 0 0 1.5rem;"></div>
+                    <div class="wizard-step" data-step="3" style="flex: 1; text-align: center; position: relative;">
+                        <div class="step-number" style="width: 40px; height: 40px; border-radius: 50%; background: #e9ecef; color: #6c757d; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-weight: 600; transition: all 0.3s;">3</div>
+                        <div class="step-label" style="font-size: 0.75rem; color: #6c757d; font-weight: 500;">Áreas</div>
+                    </div>
+                    <div class="step-connector" style="flex: 0.5; height: 2px; background: #e9ecef; margin: 0 0 1.5rem;"></div>
+                    <div class="wizard-step" data-step="4" style="flex: 1; text-align: center; position: relative;">
+                        <div class="step-number" style="width: 40px; height: 40px; border-radius: 50%; background: #e9ecef; color: #6c757d; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-weight: 600; transition: all 0.3s;">4</div>
+                        <div class="step-label" style="font-size: 0.75rem; color: #6c757d; font-weight: 500;">Acciones</div>
+                    </div>
+                    <div class="step-connector" style="flex: 0.5; height: 2px; background: #e9ecef; margin: 0 0 1.5rem;"></div>
+                    <div class="wizard-step" data-step="5" style="flex: 1; text-align: center; position: relative;">
+                        <div class="step-number" style="width: 40px; height: 40px; border-radius: 50%; background: #e9ecef; color: #6c757d; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-weight: 600; transition: all 0.3s;">5</div>
+                        <div class="step-label" style="font-size: 0.75rem; color: #6c757d; font-weight: 500;">Indicadores</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Body with Steps -->
+            <div class="modal-body" style="padding: 2.5rem; background: white;">
+                <div id="wizardContainer" style="max-width: 900px; margin: 0 auto;">
+                    
+                    <!-- Step 1: Objetivo -->
+                    <div class="wizard-content" id="step1" style="display: block;">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">🎯</div>
+                            <h5 style="color: #2d3748; font-weight: 700; margin-bottom: 0.5rem;">¿Qué quieres desarrollar o mejorar?</h5>
+                            <p style="color: #718096; font-size: 0.95rem;">Define un objetivo claro y alcanzable que guíe todo el plan</p>
+                        </div>
+                        
+                        <!-- Coachee Selector (shown if no pre-selected coachee) -->
+                        <div class="mb-4" id="coacheeSelector" style="display: none;">
+                            <label for="selectCoachee" class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 0.75rem;">
+                                Para quién es este plan <span style="color: #e53e3e;">*</span>
+                            </label>
+                            <select class="form-select" id="selectCoachee" onchange="handleCoacheeSelection()"
+                                style="border-radius: 12px; border: 2px solid #e2e8f0; padding: 1rem; font-size: 1rem;">
+                                <option value="">Selecciona un coachee...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Selected Coachee Display -->
+                        <div class="mb-4" id="selectedCoacheeDisplay" style="display: none;">
+                            <div style="background: #f0f9ff; border: 2px solid #bfdbfe; border-radius: 12px; padding: 1rem;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-circle fa-2x me-3" style="color: #3b82f6;"></i>
+                                        <div>
+                                            <p class="mb-0" style="color: #1e40af; font-weight: 600;" id="selectedCoacheeName"></p>
+                                            <small style="color: #60a5fa;">Plan para este coachee</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="objetivo" class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 0.75rem;">
+                                Tu objetivo de desarrollo <span style="color: #e53e3e;">*</span>
+                            </label>
+                            <textarea class="form-control" id="objetivo" rows="5" required
+                                placeholder="Ej: Mejorar mi capacidad para organizar mi trabajo y priorizar tareas cuando hay muchas cosas urgentes al mismo tiempo..."
+                                style="border-radius: 12px; border: 2px solid #e2e8f0; padding: 1rem; font-size: 1rem; resize: none; transition: all 0.3s;"
+                                onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)';"
+                                onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
+                            <div class="mt-2" style="background: #f7fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid #667eea;">
+                                <p class="mb-0" style="font-size: 0.9rem; color: #4a5568;">
+                                    <i class="fas fa-lightbulb me-2" style="color: #667eea;"></i>
+                                    <strong>Piensa antes de escribir:</strong> Un buen objetivo es específico, te inspira y puedes visualizar cómo sería lograrlo.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Situación Actual -->
+                    <div class="wizard-content" id="step2" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">🔍</div>
+                            <h5 style="color: #2d3748; font-weight: 700; margin-bottom: 0.5rem;">¿Cómo es tu situación hoy?</h5>
+                            <p style="color: #718096; font-size: 0.95rem;">Describe brevemente tu punto de partida (este paso es opcional)</p>
+                        </div>
+                        <div class="mb-4">
+                            <label for="situacion" class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 0.75rem;">
+                                Diagnóstico de situación actual <span style="color: #718096; font-weight: 400;">(opcional)</span>
+                            </label>
+                            <textarea class="form-control" id="situacion" rows="5"
+                                placeholder="Ej: Ahora siento que trabajo muchas horas pero sin resultados claros. Me cuesta decir que no y termino con tareas acumuladas..."
+                                style="border-radius: 12px; border: 2px solid #e2e8f0; padding: 1rem; font-size: 1rem; resize: none; transition: all 0.3s;"
+                                onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)';"
+                                onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
+                            <div class="mt-2" style="background: #fffaf0; padding: 1rem; border-radius: 8px; border-left: 4px solid #ed8936;">
+                                <p class="mb-0" style="font-size: 0.9rem; color: #4a5568;">
+                                    <i class="fas fa-info-circle me-2" style="color: #ed8936;"></i>
+                                    <strong>Reflexiona:</strong> Entender de dónde partes te ayuda a valorar tu progreso más adelante.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Áreas de Desarrollo -->
+                    <div class="wizard-content" id="step3" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">🧩</div>
+                            <h5 style="color: #2d3748; font-weight: 700; margin-bottom: 0.5rem;">¿En qué áreas te enfocarás?</h5>
+                            <p style="color: #718096; font-size: 0.95rem;">Elige entre 1 y 3 competencias para trabajar</p>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 1rem;">
+                                Selecciona las áreas <span style="color: #e53e3e;">*</span> <span style="color: #718096; font-weight: 400; font-size: 0.9rem;">(máximo 3)</span>
+                            </label>
+                            <div id="areasContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                                <!-- Área 1 -->
+                                <div class="area-card" data-area="Comunicación" onclick="toggleArea('Comunicación')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">💬</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Comunicación</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Expresar ideas con claridad</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Área 2 -->
+                                <div class="area-card" data-area="Organización" onclick="toggleArea('Organización')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">📋</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Organización</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Planificar y gestionar tiempo</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Área 3 -->
+                                <div class="area-card" data-area="Liderazgo" onclick="toggleArea('Liderazgo')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">👑</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Liderazgo</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Guiar e inspirar a otros</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Área 4 -->
+                                <div class="area-card" data-area="Trabajo en equipo" onclick="toggleArea('Trabajo en equipo')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">🤝</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Trabajo en equipo</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Colaborar efectivamente</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Área 5 -->
+                                <div class="area-card" data-area="Resolución de problemas" onclick="toggleArea('Resolución de problemas')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">🧠</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Resolución de problemas</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Analizar y encontrar soluciones</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Área 6 -->
+                                <div class="area-card" data-area="Creatividad" onclick="toggleArea('Creatividad')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">🎨</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Creatividad</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Generar ideas innovadoras</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Área 7 -->
+                                <div class="area-card" data-area="Adaptabilidad" onclick="toggleArea('Adaptabilidad')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">🔄</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Adaptabilidad</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Ajustarse a cambios</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Área 8 -->
+                                <div class="area-card" data-area="Gestión emocional" onclick="toggleArea('Gestión emocional')"
+                                    style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                    <div class="d-flex align-items-start">
+                                        <div style="font-size: 1.75rem; margin-right: 1rem;">❤️</div>
+                                        <div style="flex: 1;">
+                                            <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Gestión emocional</h6>
+                                            <p style="font-size: 0.85rem; color: #718096; margin: 0;">Manejar emociones eficazmente</p>
+                                        </div>
+                                        <div class="area-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3" style="background: #f0fff4; padding: 1rem; border-radius: 8px; border-left: 4px solid #48bb78;">
+                                <p class="mb-0" style="font-size: 0.9rem; color: #4a5568;">
+                                    <i class="fas fa-star me-2" style="color: #48bb78;"></i>
+                                    <strong>Consejo:</strong> Menos es más. Es mejor enfocarte en pocas áreas que dispersar tu energía.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Acciones de Desarrollo -->
+                    <div class="wizard-content" id="step4" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">✅</div>
+                            <h5 style="color: #2d3748; font-weight: 700; margin-bottom: 0.5rem;">¿Qué acciones concretas vas a tomar?</h5>
+                            <p style="color: #718096; font-size: 0.95rem;">Define actividades específicas con frecuencia y fecha objetivo</p>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 1rem;">
+                                Lista de acciones <span style="color: #e53e3e;">*</span> <span style="color: #718096; font-weight: 400; font-size: 0.9rem;">(mínimo 1)</span>
+                            </label>
+                            <div id="accionesContainer">
+                                <!-- Acciones se renderizan dinámicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline-primary mt-3" onclick="addAccion()" style="border-radius: 10px; padding: 0.75rem 1.5rem; border-width: 2px; font-weight: 600;">
+                                <i class="fas fa-plus-circle me-2"></i>Agregar otra acción
+                            </button>
+                            <div class="mt-3" style="background: #fff5f5; padding: 1rem; border-radius: 8px; border-left: 4px solid #f56565;">
+                                <p class="mb-0" style="font-size: 0.9rem; color: #4a5568;">
+                                    <i class="fas fa-exclamation-triangle me-2" style="color: #f56565;"></i>
+                                    <strong>Importante:</strong> Acciones realistas y medibles son la clave del éxito. Sé específico.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Indicadores -->
+                    <div class="wizard-content" id="step5" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">📊</div>
+                            <h5 style="color: #2d3748; font-weight: 700; margin-bottom: 0.5rem;">¿Cómo sabrás que estás avanzando?</h5>
+                            <p style="color: #718096; font-size: 0.95rem;">Define señales concretas que te indiquen progreso</p>
+                        </div>
+                        <div class="mb-4">
+                            <label for="indicadores" class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 0.75rem;">
+                                Indicadores de seguimiento <span style="color: #718096; font-weight: 400;">(opcional)</span>
+                            </label>
+                            <textarea class="form-control" id="indicadores" rows="5"
+                                placeholder="Ej: Menos errores en mis entregas, más foco durante el día, feedback positivo de mi equipo, sensación de control sobre mi tiempo..."
+                                style="border-radius: 12px; border: 2px solid #e2e8f0; padding: 1rem; font-size: 1rem; resize: none; transition: all 0.3s;"
+                                onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)';"
+                                onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
+                            <div class="mt-2" style="background: #ebf4ff; padding: 1rem; border-radius: 8px; border-left: 4px solid #4299e1;">
+                                <p class="mb-0" style="font-size: 0.9rem; color: #4a5568;">
+                                    <i class="fas fa-chart-line me-2" style="color: #4299e1;"></i>
+                                    <strong>Piensa en:</strong> Cambios observables, comentarios de otros, sensaciones internas. Todo cuenta.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Resumen Final -->
+                        <div class="mt-5 pt-4" style="border-top: 2px solid #e2e8f0;">
+                            <h6 style="color: #2d3748; font-weight: 700; margin-bottom: 1.5rem; text-align: center;">
+                                <i class="fas fa-clipboard-check me-2" style="color: #667eea;"></i>
+                                Resumen de tu Plan de Desarrollo
+                            </h6>
+                            <div id="planSummary" style="background: #f7fafc; padding: 1.5rem; border-radius: 12px; border: 2px solid #e2e8f0;">
+                                <!-- Summary content rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- Footer with Navigation -->
+            <div class="modal-footer" style="background: #f8f9fa; border-top: 1px solid #e9ecef; padding: 1.5rem 2.5rem; border-radius: 0 0 20px 20px;">
+                <div class="d-flex justify-content-between w-100">
+                    <button type="button" class="btn btn-outline-secondary" id="btnPrevious" onclick="previousStep()" style="display: none; padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600; border-width: 2px;">
+                        <i class="fas fa-arrow-left me-2"></i>Anterior
+                    </button>
+                    <div style="flex: 1;"></div>
+                    <button type="button" class="btn btn-light me-2" id="btnSaveDraft" onclick="saveDraft()" style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600; border: 2px solid #e2e8f0;">
+                        <i class="fas fa-save me-2"></i>Guardar Borrador
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnNext" onclick="nextStep()" style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">
+                        Siguiente<i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnPublish" onclick="publishPlan()" style="display: none; padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">
+                        <i class="fas fa-check-circle me-2"></i>Publicar Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Wizard state management
+let currentStep = 1;
+let selectedAreas = [];
+let acciones = [{descripcion: '', frecuencia: '', fecha_objetivo: ''}];
+let currentCoacheeId = null;
+let currentRequestTaskId = null;
+
+// Open wizard modal
+function openCreatePlanModal() {
+    // Get coachee ID from request details modal
+    const coacheeIdEl = document.getElementById('requestCoacheeId');
+    const requestIdEl = document.getElementById('currentRequestId');
+    
+    if (coacheeIdEl && coacheeIdEl.value) {
+        currentCoacheeId = parseInt(coacheeIdEl.value);
+        console.log('✅ Coachee ID from request:', currentCoacheeId);
+    }
+    
+    if (requestIdEl && requestIdEl.value) {
+        currentRequestTaskId = parseInt(requestIdEl.value);
+        console.log('✅ Request ID from request:', currentRequestTaskId);
+    }
+    
+    // Close request details modal
+    const requestModal = bootstrap.Modal.getInstance(document.getElementById('devPlanRequestModal'));
+    if (requestModal) {
+        requestModal.hide();
+    }
+    
+    // Reset wizard
+    resetWizard();
+    
+    // Setup coachee selection
+    setupCoacheeSelection();
+    
+    // Open wizard modal
+    const modal = new bootstrap.Modal(document.getElementById('createDevPlanModal'));
+    modal.show();
+}
+
+// Setup coachee selection
+async function setupCoacheeSelection() {
+    const coacheeSelector = document.getElementById('coacheeSelector');
+    const selectedDisplay = document.getElementById('selectedCoacheeDisplay');
+    
+    if (!coacheeSelector || !selectedDisplay) return;
+    
+    if (currentCoacheeId) {
+        // Pre-selected coachee from request
+        coacheeSelector.style.display = 'none';
+        selectedDisplay.style.display = 'block';
+        
+        // Fetch coachee name
+        try {
+            const response = await fetch('/api/coach/coachees');
+            const data = await response.json();
+            if (data.success) {
+                const selectedCoachee = data.coachees.find(c => c.id === currentCoacheeId);
+                if (selectedCoachee) {
+                    document.getElementById('selectedCoacheeName').textContent = selectedCoachee.name;
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching coachee:', error);
+        }
+    } else {
+        // No pre-selected coachee, show selector
+        coacheeSelector.style.display = 'block';
+        selectedDisplay.style.display = 'none';
+        
+        // Load coachees list
+        try {
+            const response = await fetch('/api/coach/coachees');
+            const data = await response.json();
+            
+            if (data.success) {
+                const select = document.getElementById('selectCoachee');
+                select.innerHTML = '<option value="">Selecciona un coachee...</option>';
+                
+                data.coachees.forEach(coachee => {
+                    const option = document.createElement('option');
+                    option.value = coachee.id;
+                    option.textContent = `${coachee.name} (${coachee.email})`;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading coachees:', error);
+            showToast('Error al cargar lista de coachees', 'error');
+        }
+    }
+}
+
+// Handle coachee selection
+function handleCoacheeSelection() {
+    const select = document.getElementById('selectCoachee');
+    const selectedId = parseInt(select.value);
+    
+    if (selectedId) {
+        currentCoacheeId = selectedId;
+        console.log('✅ Coachee selected:', currentCoacheeId);
+        
+        // Update display
+        const selectedDisplay = document.getElementById('selectedCoacheeDisplay');
+        const coacheeSelector = document.getElementById('coacheeSelector');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        document.getElementById('selectedCoacheeName').textContent = selectedOption.text;
+        coacheeSelector.style.display = 'none';
+        selectedDisplay.style.display = 'block';
+    }
+}
+
+// Close wizard modal
+function closeCreatePlanModal() {
+    if (confirm('¿Seguro que quieres cerrar? Se perderán los cambios no guardados.')) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('createDevPlanModal'));
+        modal.hide();
+        resetWizard();
+    }
+}
+
+// Reset wizard state
+function resetWizard() {
+    currentStep = 1;
+    selectedAreas = [];
+    acciones = [{descripcion: '', frecuencia: '', fecha_objetivo: ''}];
+    
+    document.getElementById('objetivo').value = '';
+    document.getElementById('situacion').value = '';
+    document.getElementById('indicadores').value = '';
+    
+    // Reset area cards
+    document.querySelectorAll('.area-card').forEach(card => {
+        card.classList.remove('selected');
+        card.style.borderColor = '#e2e8f0';
+        card.style.background = 'white';
+        const check = card.querySelector('.area-check');
+        check.style.background = 'transparent';
+        check.style.borderColor = '#cbd5e0';
+        check.querySelector('i').style.display = 'none';
+    });
+    
+    renderAcciones();
+    goToStep(1);
+}
+
+// Navigation
+function nextStep() {
+    if (validateStep(currentStep)) {
+        if (currentStep < 5) {
+            goToStep(currentStep + 1);
+        }
+    }
+}
+
+function previousStep() {
+    if (currentStep > 1) {
+        goToStep(currentStep - 1);
+    }
+}
+
+function goToStep(step) {
+    // Hide all steps
+    document.querySelectorAll('.wizard-content').forEach(el => el.style.display = 'none');
+    
+    // Show target step
+    document.getElementById(`step${step}`).style.display = 'block';
+    
+    // Update progress indicator
+    document.querySelectorAll('.wizard-step').forEach((el, index) => {
+        const stepNum = index + 1;
+        const stepCircle = el.querySelector('.step-number');
+        const stepLabel = el.querySelector('.step-label');
+        
+        if (stepNum < step) {
+            // Completed step
+            stepCircle.style.background = '#48bb78';
+            stepCircle.style.color = 'white';
+            stepLabel.style.color = '#48bb78';
+            stepCircle.classList.add('active');
+        } else if (stepNum === step) {
+            // Current step
+            stepCircle.style.background = '#667eea';
+            stepCircle.style.color = 'white';
+            stepLabel.style.color = '#667eea';
+            stepCircle.classList.add('active');
+        } else {
+            // Future step
+            stepCircle.style.background = '#e9ecef';
+            stepCircle.style.color = '#6c757d';
+            stepLabel.style.color = '#6c757d';
+            stepCircle.classList.remove('active');
+        }
+    });
+    
+    // Update connector lines
+    document.querySelectorAll('.step-connector').forEach((connector, index) => {
+        if (index < step - 1) {
+            connector.style.background = '#48bb78';
+        } else {
+            connector.style.background = '#e9ecef';
+        }
+    });
+    
+    // Update buttons
+    document.getElementById('btnPrevious').style.display = step > 1 ? 'inline-block' : 'none';
+    document.getElementById('btnNext').style.display = step < 5 ? 'inline-block' : 'none';
+    document.getElementById('btnPublish').style.display = step === 5 ? 'inline-block' : 'none';
+    
+    // Render summary on step 5
+    if (step === 5) {
+        renderPlanSummary();
+    }
+    
+    currentStep = step;
+}
+
+// Validation
+function validateStep(step) {
+    switch(step) {
+        case 1:
+            // Check coachee selection
+            if (!currentCoacheeId) {
+                showToast('Por favor selecciona un coachee', 'warning');
+                return false;
+            }
+            
+            const objetivo = document.getElementById('objetivo').value.trim();
+            if (!objetivo) {
+                showToast('Por favor completa el objetivo de desarrollo', 'warning');
+                return false;
+            }
+            if (objetivo.length < 20) {
+                showToast('El objetivo debe tener al menos 20 caracteres para ser significativo', 'warning');
+                return false;
+            }
+            return true;
+            
+        case 2:
+            // Optional, always valid
+            return true;
+            
+        case 3:
+            if (selectedAreas.length === 0) {
+                showToast('Selecciona al menos 1 área de desarrollo', 'warning');
+                return false;
+            }
+            return true;
+            
+        case 4:
+            const validAcciones = acciones.filter(a => 
+                a.descripcion && a.descripcion.trim().length > 0
+            );
+            if (validAcciones.length === 0) {
+                showToast('Debes definir al menos 1 acción concreta', 'warning');
+                return false;
+            }
+            // Update acciones to only valid ones
+            acciones = validAcciones;
+            return true;
+            
+        case 5:
+            // Optional, always valid
+            return true;
+            
+        default:
+            return true;
+    }
+}
+
+// Areas management
+function toggleArea(areaName) {
+    const index = selectedAreas.indexOf(areaName);
+    const card = document.querySelector(`.area-card[data-area="${areaName}"]`);
+    const check = card.querySelector('.area-check');
+    const checkIcon = check.querySelector('i');
+    
+    if (index > -1) {
+        // Remove area
+        selectedAreas.splice(index, 1);
+        card.classList.remove('selected');
+        card.style.borderColor = '#e2e8f0';
+        card.style.background = 'white';
+        check.style.background = 'transparent';
+        check.style.borderColor = '#cbd5e0';
+        checkIcon.style.display = 'none';
+    } else {
+        // Add area
+        if (selectedAreas.length >= 3) {
+            showToast('Puedes seleccionar máximo 3 áreas', 'warning');
+            return;
+        }
+        selectedAreas.push(areaName);
+        card.classList.add('selected');
+        card.style.borderColor = '#667eea';
+        card.style.background = '#f7fafc';
+        check.style.background = '#667eea';
+        check.style.borderColor = '#667eea';
+        checkIcon.style.display = 'block';
+    }
+}
+
+// Acciones management
+function addAccion() {
+    acciones.push({descripcion: '', frecuencia: '', fecha_objetivo: ''});
+    renderAcciones();
+}
+
+function removeAccion(index) {
+    if (acciones.length > 1) {
+        acciones.splice(index, 1);
+        renderAcciones();
+    } else {
+        showToast('Debe haber al menos 1 acción', 'warning');
+    }
+}
+
+function updateAccion(index, field, value) {
+    acciones[index][field] = value;
+}
+
+function renderAcciones() {
+    const container = document.getElementById('accionesContainer');
+    container.innerHTML = acciones.map((accion, index) => `
+        <div class="accion-item mb-3" style="background: #f7fafc; padding: 1.5rem; border-radius: 12px; border: 2px solid #e2e8f0;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 style="color: #2d3748; font-weight: 600; margin: 0;">Acción ${index + 1}</h6>
+                ${acciones.length > 1 ? `
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAccion(${index})" style="border-radius: 6px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : ''}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.9rem;">Descripción *</label>
+                <input type="text" class="form-control" value="${accion.descripcion}" 
+                    onchange="updateAccion(${index}, 'descripcion', this.value)"
+                    placeholder="Ej: Revisar mis prioridades cada mañana antes de empezar"
+                    style="border-radius: 8px; border: 1px solid #cbd5e0;">
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.9rem;">Frecuencia</label>
+                    <select class="form-select" onchange="updateAccion(${index}, 'frecuencia', this.value)" style="border-radius: 8px; border: 1px solid #cbd5e0;">
+                        <option value="">Seleccionar...</option>
+                        <option value="Diaria" ${accion.frecuencia === 'Diaria' ? 'selected' : ''}>Diaria</option>
+                        <option value="Semanal" ${accion.frecuencia === 'Semanal' ? 'selected' : ''}>Semanal</option>
+                        <option value="Quincenal" ${accion.frecuencia === 'Quincenal' ? 'selected' : ''}>Quincenal</option>
+                        <option value="Mensual" ${accion.frecuencia === 'Mensual' ? 'selected' : ''}>Mensual</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.9rem;">Fecha objetivo</label>
+                    <input type="date" class="form-control" value="${accion.fecha_objetivo}" 
+                        onchange="updateAccion(${index}, 'fecha_objetivo', this.value)"
+                        style="border-radius: 8px; border: 1px solid #cbd5e0;">
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Render summary
+function renderPlanSummary() {
+    const objetivo = document.getElementById('objetivo').value;
+    const situacion = document.getElementById('situacion').value;
+    const indicadores = document.getElementById('indicadores').value;
+    
+    const html = `
+        <div class="mb-3">
+            <strong style="color: #667eea;"><i class="fas fa-bullseye me-2"></i>Objetivo:</strong>
+            <p class="mb-0 mt-1" style="color: #2d3748;">${objetivo || '<em>No definido</em>'}</p>
+        </div>
+        ${situacion ? `
+            <div class="mb-3">
+                <strong style="color: #667eea;"><i class="fas fa-map-marker-alt me-2"></i>Situación Actual:</strong>
+                <p class="mb-0 mt-1" style="color: #2d3748;">${situacion}</p>
+            </div>
+        ` : ''}
+        <div class="mb-3">
+            <strong style="color: #667eea;"><i class="fas fa-puzzle-piece me-2"></i>Áreas de Desarrollo:</strong>
+            <div class="mt-1">
+                ${selectedAreas.map(area => `
+                    <span class="badge" style="background: #667eea; color: white; padding: 0.5rem 1rem; margin-right: 0.5rem; margin-bottom: 0.5rem; border-radius: 20px; font-weight: 500;">${area}</span>
+                `).join('')}
+            </div>
+        </div>
+        <div class="mb-3">
+            <strong style="color: #667eea;"><i class="fas fa-tasks me-2"></i>Acciones (${acciones.length}):</strong>
+            <ul class="mt-1 mb-0" style="color: #2d3748;">
+                ${acciones.map(a => `
+                    <li>${a.descripcion}${a.frecuencia ? ` - <em>${a.frecuencia}</em>` : ''}${a.fecha_objetivo ? ` (hasta ${a.fecha_objetivo})` : ''}</li>
+                `).join('')}
+            </ul>
+        </div>
+        ${indicadores ? `
+            <div class="mb-0">
+                <strong style="color: #667eea;"><i class="fas fa-chart-line me-2"></i>Indicadores:</strong>
+                <p class="mb-0 mt-1" style="color: #2d3748;">${indicadores}</p>
+            </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('planSummary').innerHTML = html;
+}
+
+// Save draft
+async function saveDraft() {
+    // Validate required fields
+    if (!validateStep(1) || !validateStep(3) || !validateStep(4)) {
+        showToast('Completa al menos el objetivo, áreas y acciones para guardar un borrador', 'warning');
+        return;
+    }
+    
+    await submitPlan('draft');
+}
+
+// Publish plan
+async function publishPlan() {
+    // Validate all steps
+    for (let i = 1; i <= 5; i++) {
+        if (!validateStep(i)) {
+            return;
+        }
+    }
+    
+    await submitPlan('published');
+}
+
+// Submit plan to API
+async function submitPlan(status) {
+    try {
+        const data = {
+            coachee_id: currentCoacheeId,
+            request_task_id: currentRequestTaskId,
+            objetivo: document.getElementById('objetivo').value.trim(),
+            situacion_actual: document.getElementById('situacion').value.trim() || null,
+            areas_desarrollo: selectedAreas,
+            acciones: acciones.map(a => ({
+                descripcion: a.descripcion.trim(),
+                frecuencia: a.frecuencia || null,
+                fecha_objetivo: a.fecha_objetivo || null
+            })),
+            indicadores: document.getElementById('indicadores').value.trim() || null,
+            status: status
+        };
+        
+        console.log('Submitting plan:', data);
+        
+        const response = await fetch('/api/coach/development-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            const message = status === 'draft' 
+                ? 'Borrador guardado exitosamente'
+                : 'Plan publicado exitosamente';
+            showToast(message, 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createDevPlanModal'));
+            modal.hide();
+            resetWizard();
+            
+            // Reload plans lists
+            loadDevelopmentPlans();
+            loadDraftPlans();
+            
+        } else {
+            throw new Error(result.error || 'Error al guardar el plan');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting plan:', error);
+        showToast('Error al guardar el plan: ' + error.message, 'error');
+    }
+}
+
+// Load published plans
+async function loadDevelopmentPlans() {
+    try {
+        const response = await fetch('/api/coach/development-plans?status=published');
+        const data = await response.json();
+        
+        const container = document.getElementById('publishedPlansContainer');
+        if (!container) return;
+        
+        if (!data.success || data.plans.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted" style="padding: 3rem;">
+                    <i class="fas fa-inbox fa-3x mb-3" style="opacity: 0.3;"></i>
+                    <p class="mb-0">No hay planes publicados aún</p>
+                    <small>Los planes publicados aparecerán aquí</small>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = data.plans.map(plan => {
+            const createdDate = new Date(plan.created_at);
+            const formattedDate = createdDate.toLocaleDateString('es-CL', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            return `
+                <div class="card mb-3" style="border-radius: 12px; border: 2px solid #e2e8f0; transition: all 0.3s;">
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div style="flex: 1;">
+                                <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.5rem;">
+                                    <i class="fas fa-user-circle me-2" style="color: #667eea;"></i>
+                                    ${plan.coachee_name}
+                                </h6>
+                                <p class="mb-0" style="color: #718096; font-size: 0.9rem;">
+                                    ${plan.objetivo.substring(0, 150)}${plan.objetivo.length > 150 ? '...' : ''}
+                                </p>
+                            </div>
+                            <span class="badge" style="background: #48bb78; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 500;">
+                                <i class="fas fa-check-circle me-1"></i>Publicado
+                            </span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            ${plan.areas_desarrollo.map(area => `
+                                <span class="badge" style="background: #ebf4ff; color: #2b6cb0; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 500;">
+                                    ${area}
+                                </span>
+                            `).join('')}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small style="color: #718096;">
+                                <i class="fas fa-calendar me-1"></i>Creado el ${formattedDate}
+                            </small>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewPlanDetails(${plan.id})" style="border-radius: 8px; font-weight: 600;">
+                                <i class="fas fa-eye me-1"></i>Ver Completo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading published plans:', error);
+    }
+}
+
+// Load draft plans
+async function loadDraftPlans() {
+    try {
+        const response = await fetch('/api/coach/development-plans?status=draft');
+        const data = await response.json();
+        
+        const container = document.getElementById('draftPlansContainer');
+        if (!container) return;
+        
+        if (!data.success || data.plans.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted" style="padding: 3rem;">
+                    <i class="fas fa-pencil-ruler fa-3x mb-3" style="opacity: 0.3;"></i>
+                    <p class="mb-0">No hay borradores guardados</p>
+                    <small>Los planes en borrador aparecerán aquí</small>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = data.plans.map(plan => {
+            const createdDate = new Date(plan.created_at);
+            const formattedDate = createdDate.toLocaleDateString('es-CL', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            return `
+                <div class="card mb-3" style="border-radius: 12px; border: 2px solid #fef3c7; background: #fffbeb; transition: all 0.3s;">
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div style="flex: 1;">
+                                <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.5rem;">
+                                    <i class="fas fa-user-circle me-2" style="color: #d97706;"></i>
+                                    ${plan.coachee_name}
+                                </h6>
+                                <p class="mb-0" style="color: #92400e; font-size: 0.9rem;">
+                                    ${plan.objetivo.substring(0, 150)}${plan.objetivo.length > 150 ? '...' : ''}
+                                </p>
+                            </div>
+                            <span class="badge" style="background: #fbbf24; color: #78350f; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 500;">
+                                <i class="fas fa-pencil-alt me-1"></i>Borrador
+                            </span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            ${plan.areas_desarrollo.map(area => `
+                                <span class="badge" style="background: #fef3c7; color: #92400e; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 500;">
+                                    ${area}
+                                </span>
+                            `).join('')}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small style="color: #92400e;">
+                                <i class="fas fa-calendar me-1"></i>Guardado el ${formattedDate}
+                            </small>
+                            <div>
+                                <button class="btn btn-sm btn-outline-warning me-2" onclick="editPlanDraft(${plan.id})" style="border-radius: 8px; font-weight: 600; color: #d97706; border-color: #d97706;">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="publishDraft(${plan.id})" style="border-radius: 8px; font-weight: 600;">
+                                    <i class="fas fa-check me-1"></i>Publicar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading draft plans:', error);
+    }
+}
+
+// Open wizard for new plan (without coachee context)
+async function openCreateNewPlan() {
+    currentCoacheeId = null;
+    currentRequestTaskId = null;
+    resetWizard();
+    await setupCoacheeSelection();
+    const modal = new bootstrap.Modal(document.getElementById('createDevPlanModal'));
+    modal.show();
+}
+
+// View plan details (placeholder)
+function viewPlanDetails(planId) {
+    showToast('Visualización de plan completo disponible próximamente', 'info');
+}
+
+// Edit draft plan (placeholder)
+function editPlanDraft(planId) {
+    showToast('Edición de borradores disponible próximamente', 'info');
+}
+
+// Publish draft (placeholder)
+async function publishDraft(planId) {
+    if (!confirm('¿Estás seguro de que quieres publicar este plan? El coachee podrá verlo.')) {
+        return;
+    }
+    showToast('Funcionalidad de publicación disponible próximamente', 'info');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    renderAcciones();
+    
+    // Load plans when tabs are shown
+    const planesTab = document.getElementById('planes-tab');
+    const construccionTab = document.getElementById('construccion-tab');
+    
+    if (planesTab) {
+        planesTab.addEventListener('shown.bs.tab', loadDevelopmentPlans);
+    }
+    
+    if (construccionTab) {
+        construccionTab.addEventListener('shown.bs.tab', loadDraftPlans);
+    }
+});
+</script>
 
 </body>
 </html>

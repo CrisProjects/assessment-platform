@@ -1179,6 +1179,39 @@ class TaskProgress(db.Model):
             setattr(self, key, value)
         self.created_at = kwargs.get('created_at', datetime.utcnow())
 
+class DevelopmentPlan(db.Model):
+    __tablename__ = 'development_plan'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    request_task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)  # Referencia a la solicitud
+    
+    # Contenido del plan
+    objetivo = db.Column(db.Text, nullable=False)
+    situacion_actual = db.Column(db.Text, nullable=True)
+    areas_desarrollo = db.Column(db.JSON, nullable=False)  # Array de strings
+    acciones = db.Column(db.JSON, nullable=False)  # Array de objetos {descripcion, frecuencia, fecha_objetivo}
+    indicadores = db.Column(db.Text, nullable=True)
+    
+    # Estado y metadata
+    status = db.Column(db.String(20), default='draft')  # draft, published, in_progress, completed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    published_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relaciones
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='created_development_plans')
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='development_plans')
+    request_task = db.relationship('Task', foreign_keys=[request_task_id])
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        now = datetime.utcnow()
+        self.created_at = kwargs.get('created_at', now)
+        self.updated_at = kwargs.get('updated_at', now)
+
 class Content(db.Model):
     __tablename__ = 'content'
     
@@ -6695,6 +6728,118 @@ def api_coach_development_plan_request_detail(task_id):
         
     except Exception as e:
         logger.error(f"Error en api_coach_development_plan_request_detail: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/coach/development-plan', methods=['POST'])
+@coach_session_required
+def api_coach_create_development_plan():
+    """Crear un nuevo Plan de Desarrollo Personal"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        
+        # Validar campos obligatorios
+        if not data.get('objetivo'):
+            return jsonify({'error': 'El objetivo es obligatorio'}), 400
+        
+        if not data.get('areas_desarrollo') or len(data.get('areas_desarrollo', [])) == 0:
+            return jsonify({'error': 'Debe seleccionar al menos un área de desarrollo'}), 400
+        
+        if len(data.get('areas_desarrollo', [])) > 3:
+            return jsonify({'error': 'Máximo 3 áreas de desarrollo'}), 400
+        
+        if not data.get('acciones') or len(data.get('acciones', [])) == 0:
+            return jsonify({'error': 'Debe agregar al menos una acción'}), 400
+        
+        if not data.get('coachee_id'):
+            return jsonify({'error': 'Debe especificar un coachee'}), 400
+        
+        # Verificar que el coachee pertenece al coach
+        coachee = User.query.filter_by(
+            id=data.get('coachee_id'),
+            coach_id=current_coach.id
+        ).first()
+        
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no autorizado'}), 404
+        
+        # Crear el plan
+        new_plan = DevelopmentPlan(
+            coach_id=current_coach.id,
+            coachee_id=coachee.id,
+            request_task_id=data.get('request_task_id'),
+            objetivo=data.get('objetivo'),
+            situacion_actual=data.get('situacion_actual'),
+            areas_desarrollo=data.get('areas_desarrollo'),
+            acciones=data.get('acciones'),
+            indicadores=data.get('indicadores'),
+            status=data.get('status', 'draft')  # draft o published
+        )
+        
+        if data.get('status') == 'published':
+            new_plan.published_at = datetime.utcnow()
+        
+        db.session.add(new_plan)
+        db.session.commit()
+        
+        logger.info(f"📋 DEV-PLAN-CREATE: Coach {current_coach.id} created plan {new_plan.id} for coachee {coachee.id}, status: {new_plan.status}")
+        
+        return jsonify({
+            'success': True,
+            'plan_id': new_plan.id,
+            'status': new_plan.status,
+            'message': 'Plan de desarrollo creado exitosamente' if new_plan.status == 'draft' else 'Plan de desarrollo publicado exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_create_development_plan: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/coach/development-plans', methods=['GET'])
+@coach_session_required
+def api_coach_list_development_plans():
+    """Listar planes de desarrollo del coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        status_filter = request.args.get('status')  # draft, published, in_progress, completed
+        
+        query = DevelopmentPlan.query.filter_by(coach_id=current_coach.id)
+        
+        if status_filter:
+            query = query.filter_by(status=status_filter)
+        
+        plans = query.order_by(DevelopmentPlan.created_at.desc()).all()
+        
+        plans_list = []
+        for plan in plans:
+            coachee = User.query.get(plan.coachee_id)
+            plans_list.append({
+                'id': plan.id,
+                'coachee_id': plan.coachee_id,
+                'coachee_name': coachee.full_name or coachee.username if coachee else 'N/A',
+                'objetivo': plan.objetivo,
+                'areas_desarrollo': plan.areas_desarrollo,
+                'status': plan.status,
+                'created_at': plan.created_at.isoformat(),
+                'published_at': plan.published_at.isoformat() if plan.published_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'plans': plans_list
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_list_development_plans: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/coach/pending-evaluations', methods=['GET'])
