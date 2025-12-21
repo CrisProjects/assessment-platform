@@ -6993,8 +6993,9 @@
                         }
                     };
                     
-                    // Exponer categorías globalmente para legacy code
+                    // Exponer categorías y datos globalmente para legacy code
                     window.evaluationCategories = this.evaluationCategories;
+                    window.evaluationsData = this.evaluationsData;
                     
                     // Las funciones globales existentes se mantendrán por ahora
                     // Se migrarán progresivamente en los siguientes pasos
@@ -7177,6 +7178,9 @@
                                 }
                             }
                             
+                            // Exponer globalmente para legacy code
+                            window.evaluationsData = this.evaluationsData;
+                            
                             debugLog('✅ Renderizando evaluaciones disponibles...');
                             this.renderAvailableEvaluations();
                         } else {
@@ -7245,17 +7249,17 @@
                 // ============================================
                 
                 renderCompletedEvaluationsSection() {
-                    const container = document.getElementById('completedEvaluationsSection');
-                    if (!container) return;
+                    console.log('🔍 ALPINE: renderCompletedEvaluationsSection called');
+                    console.log('🔍 evaluationsData:', this.evaluationsData);
                     
-                    if (!this.evaluationsData || !this.evaluationsData.completed || this.evaluationsData.completed.length === 0) {
-                        container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px;"><div class="empty-state-icon" style="font-size: 64px; color: #dbdbdb; margin-bottom: 16px;"><i class="fas fa-clipboard-list"></i></div><div class="empty-state-title" style="color: #262626; font-size: 18px; margin-bottom: 8px; font-weight: 600;">Sin evaluaciones completadas</div><div class="empty-state-description" style="color: #8e8e8e; font-size: 14px;">Aún no has completado ninguna evaluación</div></div>';
-                        return;
-                    }
+                    // Exponer globalmente para legacy code
+                    window.evaluationsData = this.evaluationsData;
                     
                     // Llamar a función legacy para renderizar
                     if (typeof renderCompletedEvaluationsLegacy === 'function') {
-                        renderCompletedEvaluationsLegacy(this.evaluationsData);
+                        renderCompletedEvaluationsLegacy();
+                    } else {
+                        console.error('❌ renderCompletedEvaluationsLegacy no está disponible');
                     }
                 },
                 
