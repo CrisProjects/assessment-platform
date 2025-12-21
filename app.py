@@ -6993,6 +6993,105 @@ def api_coach_delete_task(task_id):
         db.session.rollback()
         return jsonify({'error': f'Error eliminando tarea: {str(e)}'}), 500
 
+@app.route('/api/coach/assign-evaluation', methods=['POST'])
+@coach_session_required
+def api_coach_assign_evaluation():
+    """Asignar una evaluación a un coachee creando una tarea"""
+    try:
+        current_coach = g.current_user
+        app.logger.info(f"=== ASIGNAR EVALUACIÓN - Coach: {current_coach.email} ===")
+        
+        data = request.get_json()
+        app.logger.info(f"Datos recibidos: {data}")
+        
+        # Validar datos requeridos
+        assessment_id = data.get('assessment_id')
+        coachee_id = data.get('coachee_id')
+        
+        if not assessment_id or not coachee_id:
+            app.logger.error("Faltan campos requeridos: assessment_id o coachee_id")
+            return jsonify({'error': 'assessment_id y coachee_id son requeridos'}), 400
+        
+        # Verificar que el assessment existe
+        assessment = Assessment.query.get(assessment_id)
+        if not assessment:
+            app.logger.error(f"Assessment no encontrado: {assessment_id}")
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Verificar que el coachee existe y pertenece al coach
+        coachee = User.query.filter_by(
+            id=coachee_id,
+            coach_id=current_coach.id,
+            role='coachee'
+        ).first()
+        
+        if not coachee:
+            app.logger.error(f"Coachee no encontrado o no asignado: {coachee_id}")
+            return jsonify({'error': 'Coachee no encontrado o no asignado a este coach'}), 404
+        
+        app.logger.info(f"Asignando evaluación '{assessment.title}' a coachee {coachee.email}")
+        
+        # Crear una tarea para la evaluación
+        message = data.get('message', f'Por favor completa la evaluación: {assessment.title}')
+        due_date = None
+        if data.get('due_date'):
+            try:
+                due_date = datetime.fromisoformat(data['due_date']).date()
+            except ValueError:
+                app.logger.warning(f"Formato de fecha inválido: {data['due_date']}")
+        
+        # Determinar categoría basada en el título de la evaluación
+        category = 'otros'
+        title_lower = assessment.title.lower()
+        if 'disc' in title_lower or 'personalidad' in title_lower:
+            category = 'personalidad'
+        elif 'liderazgo' in title_lower:
+            category = 'liderazgo'
+        elif 'inteligencia emocional' in title_lower or 'emocional' in title_lower:
+            category = 'inteligencia_emocional'
+        elif 'trabajo en equipo' in title_lower or 'equipo' in title_lower:
+            category = 'trabajo_equipo'
+        
+        # Crear la tarea
+        new_task = Task(
+            coach_id=current_coach.id,
+            coachee_id=coachee_id,
+            title=f"Completar: {assessment.title}",
+            description=message,
+            category=category,
+            priority='high',
+            due_date=due_date
+        )
+        
+        db.session.add(new_task)
+        db.session.flush()
+        
+        # Crear entrada inicial de progreso
+        initial_progress = TaskProgress(
+            task_id=new_task.id,
+            status='pending',
+            progress_percentage=0,
+            notes='Evaluación asignada',
+            updated_by=current_coach.id
+        )
+        
+        db.session.add(initial_progress)
+        db.session.commit()
+        
+        app.logger.info(f"✅ Evaluación asignada exitosamente - Tarea ID: {new_task.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Evaluación asignada exitosamente',
+            'task_id': new_task.id
+        }), 201
+        
+    except Exception as e:
+        app.logger.error(f"❌ ERROR ASIGNANDO EVALUACIÓN: {str(e)}")
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
+        db.session.rollback()
+        return jsonify({'error': f'Error asignando evaluación: {str(e)}'}), 500
+
 @app.route('/api/coach/coachee-assessments/<int:coachee_id>', methods=['GET'])
 @coach_session_required
 def api_coach_coachee_assessments(coachee_id):
