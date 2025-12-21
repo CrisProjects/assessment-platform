@@ -7208,17 +7208,23 @@
                 },
                 
                 renderAvailableEvaluations() {
-                    const container = document.getElementById('availableEvaluations');
-                    if (!container) return;
+                    console.log('🔥 ALPINE: renderAvailableEvaluations CALLED');
                     
-                    console.log('🔍 ALPINE: renderAvailableEvaluations called');
-                    console.log('🔍 evaluationsData:', this.evaluationsData);
+                    const container = document.getElementById('availableEvaluations');
+                    if (!container) {
+                        console.error('❌ Container availableEvaluations NO ENCONTRADO');
+                        return;
+                    }
+                    
+                    console.log('✅ Container encontrado:', container);
+                    console.log('🔍 this.evaluationsData:', this.evaluationsData);
                     
                     // Exponer globalmente para legacy code
                     window.evaluationsData = this.evaluationsData;
                     
                     // Verificar mensaje específico
                     if (this.evaluationsData && this.evaluationsData.message) {
+                        console.log('⚠️ Mostrando mensaje específico:', this.evaluationsData.message);
                         container.innerHTML = `
                             <div class="empty-state">
                                 <div class="empty-state-icon">
@@ -7232,6 +7238,11 @@
                     }
                     
                     if (!this.evaluationsData || !this.evaluationsData.available || Object.keys(this.evaluationsData.available).length === 0) {
+                        console.log('⚠️ No hay evaluaciones disponibles. Data:', {
+                            exists: !!this.evaluationsData,
+                            hasAvailable: !!this.evaluationsData?.available,
+                            availableKeys: this.evaluationsData?.available ? Object.keys(this.evaluationsData.available) : []
+                        });
                         container.innerHTML = `
                             <div class="empty-state">
                                 <div class="empty-state-icon">
@@ -7245,11 +7256,14 @@
                     }
                     
                     // Llamar a función legacy de renderizado
+                    console.log('🚀 Llamando a renderAvailableEvaluationsLegacy...');
+                    console.log('🔍 typeof renderAvailableEvaluationsLegacy:', typeof renderAvailableEvaluationsLegacy);
+                    
                     if (typeof renderAvailableEvaluationsLegacy === 'function') {
-                        console.log('🔍 Llamando a renderAvailableEvaluationsLegacy...');
+                        console.log('✅ Función legacy encontrada, ejecutando...');
                         renderAvailableEvaluationsLegacy();
                     } else {
-                        console.error('❌ renderAvailableEvaluationsLegacy no está disponible');
+                        console.error('❌ renderAvailableEvaluationsLegacy NO está disponible');
                     }
                 },
                 
