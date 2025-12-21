@@ -6635,6 +6635,9 @@ def api_coach_development_plan_request_detail(task_id):
         eval_id_match = re.search(r'Evaluación ID: (\d+)', task.description)
         evaluation_id = int(eval_id_match.group(1)) if eval_id_match else None
         
+        logger.info(f"🔍 DEV-PLAN-DETAIL: Task description: {task.description}")
+        logger.info(f"🔍 DEV-PLAN-DETAIL: Extracted evaluation_id: {evaluation_id}")
+        
         evaluation_data = None
         if evaluation_id:
             # Obtener resultado de la evaluación
@@ -6643,9 +6646,13 @@ def api_coach_development_plan_request_detail(task_id):
                 user_id=coachee.id
             ).first()
             
+            logger.info(f"🔍 DEV-PLAN-DETAIL: Found evaluation: {evaluation is not None}")
+            
             if evaluation:
                 # Obtener información del assessment
                 assessment = Assessment.query.get(evaluation.assessment_id)
+                
+                logger.info(f"✅ DEV-PLAN-DETAIL: Evaluation found - ID: {evaluation.id}, Score: {evaluation.score}, Assessment: {assessment.title if assessment else 'None'}")
                 
                 evaluation_data = {
                     'id': evaluation.id,
@@ -6655,6 +6662,10 @@ def api_coach_development_plan_request_detail(task_id):
                     'completed_at': evaluation.completed_at.isoformat() if evaluation.completed_at else None,
                     'responses': evaluation.responses or {}
                 }
+            else:
+                logger.warning(f"⚠️ DEV-PLAN-DETAIL: No evaluation found with ID {evaluation_id} for coachee {coachee.id}")
+        else:
+            logger.warning(f"⚠️ DEV-PLAN-DETAIL: Could not extract evaluation_id from description")
         
         # Extraer mensaje personalizado de la descripción
         description_lines = task.description.split('\n')

@@ -7500,58 +7500,92 @@ async function viewRequestDetails(requestId) {
         
         console.log('✅ VIEW-REQUEST: Data loaded', data);
         
-        // Llenar información del coachee
-        document.getElementById('modalCoacheeName').textContent = data.coachee.name;
-        document.getElementById('modalCoacheeEmail').textContent = data.coachee.email;
-        document.getElementById('modalCoacheeUsername').textContent = data.coachee.username;
+        // Verificar que los elementos del modal existen
+        const modalElements = {
+            coacheeName: document.getElementById('modalCoacheeName'),
+            coacheeEmail: document.getElementById('modalCoacheeEmail'),
+            coacheeUsername: document.getElementById('modalCoacheeUsername'),
+            requestDate: document.getElementById('modalRequestDate'),
+            evalInfo: document.getElementById('modalEvaluationInfo'),
+            noEval: document.getElementById('modalNoEvaluation'),
+            evalTitle: document.getElementById('modalEvalTitle'),
+            evalScore: document.getElementById('modalEvalScore'),
+            evalDate: document.getElementById('modalEvalDate'),
+            customMessage: document.getElementById('modalCustomMessage')
+        };
         
-        const requestDate = new Date(data.task.created_at);
-        document.getElementById('modalRequestDate').textContent = requestDate.toLocaleDateString('es-CL', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+        // Log elementos que no se encuentran
+        Object.keys(modalElements).forEach(key => {
+            if (!modalElements[key]) {
+                console.error(`❌ Elemento no encontrado: ${key}`);
+            }
         });
         
+        // Llenar información del coachee
+        if (modalElements.coacheeName) modalElements.coacheeName.textContent = data.coachee.name;
+        if (modalElements.coacheeEmail) modalElements.coacheeEmail.textContent = data.coachee.email;
+        if (modalElements.coacheeUsername) modalElements.coacheeUsername.textContent = data.coachee.username;
+        
+        const requestDate = new Date(data.task.created_at);
+        if (modalElements.requestDate) {
+            modalElements.requestDate.textContent = requestDate.toLocaleDateString('es-CL', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
         // Llenar información de la evaluación
+        console.log('🔍 VIEW-REQUEST: Evaluation data:', data.evaluation);
+        
         if (data.evaluation) {
-            document.getElementById('modalEvaluationInfo').style.display = 'block';
-            document.getElementById('modalNoEvaluation').style.display = 'none';
+            console.log('✅ VIEW-REQUEST: Showing evaluation info');
+            if (modalElements.evalInfo) modalElements.evalInfo.style.display = 'block';
+            if (modalElements.noEval) modalElements.noEval.style.display = 'none';
             
-            document.getElementById('modalEvalTitle').textContent = data.evaluation.assessment_title;
-            document.getElementById('modalEvalScore').textContent = data.evaluation.score + '%';
+            if (modalElements.evalTitle) modalElements.evalTitle.textContent = data.evaluation.assessment_title;
+            if (modalElements.evalScore) modalElements.evalScore.textContent = data.evaluation.score + '%';
             
             if (data.evaluation.completed_at) {
                 const completedDate = new Date(data.evaluation.completed_at);
-                document.getElementById('modalEvalDate').textContent = completedDate.toLocaleDateString('es-CL', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
+                if (modalElements.evalDate) {
+                    modalElements.evalDate.textContent = completedDate.toLocaleDateString('es-CL', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
             } else {
-                document.getElementById('modalEvalDate').textContent = 'Fecha no disponible';
+                if (modalElements.evalDate) modalElements.evalDate.textContent = 'Fecha no disponible';
             }
             
             // Color del badge según puntuación
-            const scoreElement = document.getElementById('modalEvalScore');
-            const score = data.evaluation.score;
-            if (score >= 80) {
-                scoreElement.className = 'badge bg-success';
-            } else if (score >= 60) {
-                scoreElement.className = 'badge bg-primary';
-            } else if (score >= 40) {
-                scoreElement.className = 'badge bg-warning';
-            } else {
-                scoreElement.className = 'badge bg-danger';
+            if (modalElements.evalScore) {
+                const score = data.evaluation.score;
+                if (score >= 80) {
+                    modalElements.evalScore.className = 'badge bg-success';
+                } else if (score >= 60) {
+                    modalElements.evalScore.className = 'badge bg-primary';
+                } else if (score >= 40) {
+                    modalElements.evalScore.className = 'badge bg-warning';
+                } else {
+                    modalElements.evalScore.className = 'badge bg-danger';
+                }
+                modalElements.evalScore.style.fontSize = '1rem';
+                modalElements.evalScore.style.padding = '0.5rem 1rem';
             }
         } else {
-            document.getElementById('modalEvaluationInfo').style.display = 'none';
-            document.getElementById('modalNoEvaluation').style.display = 'block';
+            console.log('⚠️ VIEW-REQUEST: No evaluation data, showing message');
+            if (modalElements.evalInfo) modalElements.evalInfo.style.display = 'none';
+            if (modalElements.noEval) modalElements.noEval.style.display = 'block';
         }
         
         // Llenar mensaje personalizado
-        document.getElementById('modalCustomMessage').textContent = data.task.custom_message || 'Sin mensaje adicional';
+        if (modalElements.customMessage) {
+            modalElements.customMessage.textContent = data.task.custom_message || 'Sin mensaje adicional';
+        }
         
         // Ocultar loading y mostrar contenido
         document.getElementById('devPlanModalLoading').style.display = 'none';
