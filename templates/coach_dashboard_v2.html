@@ -9358,12 +9358,16 @@ async function setupCoacheeSelection() {
             const data = await response.json();
             console.log('📦 SETUP-COACHEE: Coachees data:', data);
             
-            if (data.success) {
+            if (data.coachees && Array.isArray(data.coachees)) {
                 const selectedCoachee = data.coachees.find(c => c.id === currentCoacheeId);
                 if (selectedCoachee) {
                     document.getElementById('selectedCoacheeName').textContent = selectedCoachee.name;
                     console.log('✅ SETUP-COACHEE: Set coachee name:', selectedCoachee.name);
+                } else {
+                    console.warn('⚠️ SETUP-COACHEE: Coachee not found in list, ID:', currentCoacheeId);
                 }
+            } else {
+                console.error('❌ SETUP-COACHEE: Invalid response format:', data);
             }
         } catch (error) {
             console.error('❌ SETUP-COACHEE: Error fetching coachee:', error);
@@ -9378,29 +9382,43 @@ async function setupCoacheeSelection() {
         try {
             console.log('🔄 SETUP-COACHEE: Fetching coachees list...');
             const response = await fetch('/api/coach/coachees');
-            const data = await response.json();
             
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
             console.log('📦 SETUP-COACHEE: Coachees response:', data);
             
-            if (data.success) {
+            if (data.coachees && Array.isArray(data.coachees)) {
                 const select = document.getElementById('selectCoachee');
                 select.innerHTML = '<option value="">Selecciona un coachee...</option>';
                 
-                data.coachees.forEach(coachee => {
+                if (data.coachees.length === 0) {
                     const option = document.createElement('option');
-                    option.value = coachee.id;
-                    option.textContent = `${coachee.name} (${coachee.email})`;
+                    option.value = '';
+                    option.textContent = 'No hay coachees disponibles';
+                    option.disabled = true;
                     select.appendChild(option);
-                });
+                    console.warn('⚠️ SETUP-COACHEE: No coachees found');
+                } else {
+                    data.coachees.forEach(coachee => {
+                        const option = document.createElement('option');
+                        option.value = coachee.id;
+                        option.textContent = `${coachee.name} (${coachee.email})`;
+                        select.appendChild(option);
+                    });
+                    console.log('✅ SETUP-COACHEE: Added', data.coachees.length, 'coachees to selector');
+                }
                 
-                console.log('✅ SETUP-COACHEE: Added', data.coachees.length, 'coachees to selector');
                 console.log('✅ SETUP-COACHEE: Selector display:', coacheeSelector.style.display);
             } else {
-                console.error('❌ SETUP-COACHEE: API returned error:', data.error);
+                console.error('❌ SETUP-COACHEE: Invalid response format:', data);
+                showToast('Error: formato de respuesta inválido', 'error');
             }
         } catch (error) {
             console.error('❌ SETUP-COACHEE: Error loading coachees:', error);
-            showToast('Error al cargar lista de coachees', 'error');
+            showToast('Error al cargar lista de coachees: ' + error.message, 'error');
         }
     }
 }
