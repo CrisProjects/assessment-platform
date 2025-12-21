@@ -9428,18 +9428,27 @@ function handleCoacheeSelection() {
     const select = document.getElementById('selectCoachee');
     const selectedId = parseInt(select.value);
     
+    console.log('👤 COACHEE-SELECT: Selected ID from dropdown:', select.value);
+    console.log('👤 COACHEE-SELECT: Parsed ID:', selectedId);
+    
     if (selectedId) {
         currentCoacheeId = selectedId;
-        console.log('✅ Coachee selected:', currentCoacheeId);
+        console.log('✅ COACHEE-SELECT: currentCoacheeId set to:', currentCoacheeId);
         
         // Update display
         const selectedDisplay = document.getElementById('selectedCoacheeDisplay');
         const coacheeSelector = document.getElementById('coacheeSelector');
         const selectedOption = select.options[select.selectedIndex];
         
+        console.log('👤 COACHEE-SELECT: Selected option text:', selectedOption.text);
+        
         document.getElementById('selectedCoacheeName').textContent = selectedOption.text;
         coacheeSelector.style.display = 'none';
         selectedDisplay.style.display = 'block';
+        
+        console.log('✅ COACHEE-SELECT: Display updated, selector hidden');
+    } else {
+        console.log('⚠️ COACHEE-SELECT: No valid ID selected');
     }
 }
 
@@ -9485,14 +9494,21 @@ function resetWizard() {
 
 // Navigation
 function nextStep() {
+    console.log('➡️ NEXT-STEP: Attempting to move from step', currentStep);
+    console.log('👤 NEXT-STEP: currentCoacheeId =', currentCoacheeId);
+    
     if (validateStep(currentStep)) {
+        console.log('✅ NEXT-STEP: Validation passed for step', currentStep);
         if (currentStep < 5) {
             goToStep(currentStep + 1);
         }
+    } else {
+        console.log('❌ NEXT-STEP: Validation failed for step', currentStep);
     }
 }
 
 function previousStep() {
+    console.log('⬅️ PREV-STEP: Moving from step', currentStep);
     if (currentStep > 1) {
         goToStep(currentStep - 1);
     }
@@ -9556,23 +9572,34 @@ function goToStep(step) {
 
 // Validation
 function validateStep(step) {
+    console.log('🔍 VALIDATE: Validating step', step);
+    
     switch(step) {
         case 1:
+            console.log('👤 VALIDATE-STEP1: currentCoacheeId =', currentCoacheeId);
+            
             // Check coachee selection
             if (!currentCoacheeId) {
+                console.log('❌ VALIDATE-STEP1: No coachee selected');
                 showToast('Por favor selecciona un coachee', 'warning');
                 return false;
             }
+            console.log('✅ VALIDATE-STEP1: Coachee selected:', currentCoacheeId);
             
             const objetivo = document.getElementById('objetivo').value.trim();
+            console.log('🎯 VALIDATE-STEP1: objetivo length =', objetivo.length);
+            
             if (!objetivo) {
+                console.log('❌ VALIDATE-STEP1: Objetivo is empty');
                 showToast('Por favor completa el objetivo de desarrollo', 'warning');
                 return false;
             }
             if (objetivo.length < 20) {
+                console.log('❌ VALIDATE-STEP1: Objetivo too short:', objetivo.length);
                 showToast('El objetivo debe tener al menos 20 caracteres para ser significativo', 'warning');
                 return false;
             }
+            console.log('✅ VALIDATE-STEP1: All validations passed');
             return true;
             
         case 2:
