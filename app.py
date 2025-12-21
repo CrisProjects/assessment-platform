@@ -5732,18 +5732,44 @@ def api_save_assessment():
                     assessment_result.coach_id = current_coachee.coach_id
                 
                 db.session.add(assessment_result)
-                # Hacer flush para asignar ID antes de guardar respuestas
-                db.session.flush()
-                logger.info(f"SAVE_ASSESSMENT: Nuevo resultado creado con ID {assessment_result.id}")
+                
+            # Hacer flush aquí, FUERA del if/else, para ambos casos
+            db.session.flush()
+            logger.info(f"SAVE_ASSESSMENT: Flush exitoso - resultado ID {assessment_result.id}")
                 
         except Exception as query_error:
             logger.error(f"❌ SAVE_ASSESSMENT: Error en query inicial: {str(query_error)}")
+            logger.error(f"❌ SAVE_ASSESSMENT: Error type: {type(query_error).__name__}")
+            logger.error(f"❌ SAVE_ASSESSMENT: Traceback: {traceback.format_exc()}")
             db.session.rollback()
-            return jsonify({
-                'success': False,
-                'error': 'Error en consulta de base de datos. Por favor, intenta nuevamente.',
-                'code': 'DATABASE_QUERY_ERROR'
-            }), 500
+            
+            # No retornar error aquí - intentar continuar con retry logic
+            # El error será manejado en el commit final
+            logger.warning(f"⚠️ SAVE_ASSESSMENT: Attempting to continue despite flush error")
+            
+            # Intentar recuperar el assessment_result si existe
+            try:
+                assessment_result = AssessmentResult.query.filter_by(
+                    user_id=current_coachee.id,
+                    assessment_id=assessment_id_int
+                ).first()
+                
+                if not assessment_result:
+                    # Si definitivamente no existe, retornar error
+                    return jsonify({
+                        'success': False,
+                        'error': 'Error en consulta de base de datos. Por favor, intenta nuevamente.',
+                        'code': 'DATABASE_QUERY_ERROR'
+                    }), 500
+                    
+                logger.info(f"✅ SAVE_ASSESSMENT: Recuperado assessment_result existente ID {assessment_result.id}")
+            except Exception as recovery_error:
+                logger.error(f"❌ SAVE_ASSESSMENT: No se pudo recuperar assessment_result: {str(recovery_error)}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Error en consulta de base de datos. Por favor, intenta nuevamente.',
+                    'code': 'DATABASE_QUERY_ERROR'
+                }), 500
         
         # Guardar respuestas individuales
         if isinstance(responses, list):
