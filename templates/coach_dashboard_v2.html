@@ -7478,21 +7478,35 @@ async function createCoacheeAndAssignEvaluation(assessmentId) {
 
 // Ver detalles de solicitud de plan de desarrollo
 async function viewRequestDetails(requestId) {
-    console.log('👁️ VIEW-REQUEST: Ver detalles de solicitud', requestId);
+    console.log('👁️ VIEW-REQUEST: Opening modal for request ID:', requestId);
     
     try {
         // Abrir modal y mostrar loading
-        const modal = new bootstrap.Modal(document.getElementById('devPlanRequestModal'));
+        const modalElement = document.getElementById('devPlanRequestModal');
+        if (!modalElement) {
+            console.error('❌ Modal element not found!');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
-        document.getElementById('devPlanModalLoading').style.display = 'block';
-        document.getElementById('devPlanModalContent').style.display = 'none';
+        const loadingEl = document.getElementById('devPlanModalLoading');
+        const contentEl = document.getElementById('devPlanModalContent');
+        
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (contentEl) contentEl.style.display = 'none';
+        
+        console.log('🔄 VIEW-REQUEST: Fetching data from API...');
         
         // Obtener detalles de la solicitud
         const response = await fetch(`/api/coach/development-plan-request/${requestId}`);
         const data = await response.json();
         
+        console.log('📦 VIEW-REQUEST: API Response:', data);
+        
         if (!data.success) {
+            console.error('❌ VIEW-REQUEST: API returned error:', data.error);
             showToast(data.error || 'Error al cargar detalles', 'error');
             modal.hide();
             return;
@@ -8849,7 +8863,7 @@ function closeInvitationModal() {
                             <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                                 <i class="fas fa-chart-bar me-2"></i>Resultado de Evaluación
                             </h6>
-                            <div id="modalEvaluationInfo">
+                            <div id="modalEvaluationInfo" style="display: none;">
                                 <p class="mb-2"><strong>Evaluación:</strong> <span id="modalEvalTitle"></span></p>
                                 <p class="mb-2">
                                     <strong>Puntuación:</strong> 
