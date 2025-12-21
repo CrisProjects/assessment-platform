@@ -5987,46 +5987,76 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action active" 
-                               onclick="showTab('evaluations'); return false;" data-tab="evaluations">
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'evaluations' }"
+                               @click.prevent="showTab('evaluations')" 
+                               data-tab="evaluations">
                                 <i class="fas fa-clipboard-list me-3"></i>Mis Evaluaciones Disponibles
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                               onclick="showTab('completed-evaluations'); return false;" data-tab="completed-evaluations"
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'completed-evaluations' }"
+                               @click.prevent="showTab('completed-evaluations')" 
+                               data-tab="completed-evaluations"
                                style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-check-circle me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mis Evaluaciones Completadas
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                               onclick="showTab('pending-evaluations'); return false;" data-tab="pending-evaluations"
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'pending-evaluations' }"
+                               @click.prevent="showTab('pending-evaluations')" 
+                               data-tab="pending-evaluations"
                                style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-clock me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mis Evaluaciones Pendientes
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" id="assessment-sidebar-item" style="display: none; border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;"
-                               onclick="showTab('assessment'); return false;" data-tab="assessment">
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'assessment' }"
+                               id="assessment-sidebar-item" 
+                               x-show="isAssessmentActive"
+                               @click.prevent="showTab('assessment')" 
+                               data-tab="assessment"
+                               style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-play-circle me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Evaluación Activa
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                               onclick="showTab('tasks'); return false;" data-tab="tasks"
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'tasks' }"
+                               @click.prevent="showTab('tasks')" 
+                               data-tab="tasks"
                                style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-tasks me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mis Acciones y Metas
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                               onclick="showTab('content'); return false;" data-tab="content"
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'content' }"
+                               @click.prevent="showTab('content')" 
+                               data-tab="content"
                                style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-folder-open me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mi Contenido
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                               onclick="showTab('progress'); return false;" data-tab="progress"
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'progress' }"
+                               @click.prevent="showTab('progress')" 
+                               data-tab="progress"
                                style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-chart-line me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mi Progreso
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                               onclick="showTab('development-plan'); return false;" data-tab="development-plan"
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'development-plan' }"
+                               @click.prevent="showTab('development-plan')" 
+                               data-tab="development-plan"
                                style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-rocket me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mi Plan de Desarrollo
                             </a>
-                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                               onclick="showTab('schedule-coach'); return false;" data-tab="schedule-coach"
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action" 
+                               :class="{ 'active': activeTab === 'schedule-coach' }"
+                               @click.prevent="showTab('schedule-coach')" 
+                               data-tab="schedule-coach"
                                style="border: none; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-calendar-plus me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Agendar Coach
                             </a>
@@ -6764,6 +6794,7 @@
                 documentsData: [],
                 videosData: [],
                 developmentPlans: [],
+                isAssessmentActive: false,
                 
                 // Estadísticas
                 stats: {
@@ -6957,6 +6988,100 @@
                     if (typeof window.openChangePasswordModalCoachee === 'function') {
                         window.openChangePasswordModalCoachee();
                     }
+                },
+                
+                // ============================================
+                // SISTEMA DE NAVEGACIÓN (Alpine)
+                // ============================================
+                
+                showTab(tabId) {
+                    console.log('🔄 ALPINE showTab called with:', tabId);
+                    
+                    // Colapsar categorías de evaluaciones disponibles ANTES de cambiar de pestaña
+                    const currentActiveTab = document.querySelector('.tab-pane.show.active');
+                    if (currentActiveTab && currentActiveTab.id === 'evaluations' && tabId !== 'evaluations') {
+                        // Estamos saliendo de la pestaña de evaluaciones
+                        const allCategories = document.querySelectorAll('#availableEvaluations .assessments-grid[data-expanded="true"]');
+                        allCategories.forEach(categoryGrid => {
+                            const categoryId = categoryGrid.id;
+                            const icon = document.getElementById(`icon-${categoryId}`);
+                            
+                            categoryGrid.style.maxHeight = '0px';
+                            categoryGrid.style.opacity = '0';
+                            categoryGrid.style.marginBottom = '0px';
+                            if (icon) {
+                                icon.style.transform = 'rotate(-90deg)';
+                            }
+                            categoryGrid.setAttribute('data-expanded', 'false');
+                        });
+                    }
+                    
+                    // Ocultar todos los tab-panes
+                    const allTabPanes = document.querySelectorAll('.tab-pane');
+                    allTabPanes.forEach(pane => {
+                        pane.classList.remove('show', 'active');
+                    });
+                    
+                    // Mostrar el tab-pane seleccionado
+                    const targetPane = document.getElementById(tabId);
+                    if (targetPane) {
+                        targetPane.classList.add('show', 'active');
+                    }
+                    
+                    // Actualizar estado reactivo
+                    this.activeTab = tabId;
+                    
+                    // 📱 MOBILE: Scroll automático hacia la sección
+                    if (window.innerWidth <= 768) {
+                        setTimeout(() => {
+                            const contentArea = document.querySelector('.col-md-9');
+                            if (contentArea) {
+                                contentArea.scrollIntoView({ 
+                                    behavior: 'smooth', 
+                                    block: 'start'
+                                });
+                                console.log('📱 Mobile: Scrolling to content area');
+                            }
+                        }, 100);
+                    }
+                    
+                    // Cargar contenido específico según la pestaña
+                    if (tabId === 'tasks') {
+                        // Cargar tareas (con cache automático)
+                        if (typeof loadTasks === 'function') loadTasks();
+                    } else if (tabId === 'content') {
+                        // Cuando se muestra Mi Contenido, activar la pestaña de documentos
+                        setTimeout(() => {
+                            const documentsTab = document.getElementById('documents-tab');
+                            if (documentsTab && !documentsTab.classList.contains('active')) {
+                                documentsTab.click();
+                            }
+                            // Cargar documentos si no están cargados
+                            if (typeof loadDocuments === 'function' && 
+                                (!window.documentsData || window.documentsData.length === 0 || 
+                                !window.lastDocumentLoad || (Date.now() - window.lastDocumentLoad > 300000))) {
+                                loadDocuments();
+                            }
+                        }, 100);
+                    } else if (tabId === 'progress') {
+                        // Cargar historial de evaluaciones
+                        if (typeof loadEvaluationHistory === 'function') loadEvaluationHistory();
+                    } else if (tabId === 'completed-evaluations') {
+                        // Cargar evaluaciones completadas
+                        if (window.evaluationsData && window.evaluationsData.completed) {
+                            if (typeof renderCompletedEvaluationsSection === 'function') {
+                                renderCompletedEvaluationsSection();
+                            }
+                        }
+                    } else if (tabId === 'pending-evaluations') {
+                        // Cargar evaluaciones pendientes
+                        if (typeof loadPendingEvaluations === 'function') loadPendingEvaluations();
+                    } else if (tabId === 'development-plan') {
+                        // Cargar planes de desarrollo
+                        if (typeof loadDevelopmentPlans === 'function') loadDevelopmentPlans();
+                    }
+                    
+                    console.log('✅ ALPINE Tab changed to:', tabId);
                 }
             };
         }
@@ -7080,6 +7205,27 @@
             }
         }
 
+        // ============================================
+        // WRAPPER FUNCTIONS PARA COMPATIBILIDAD LEGACY
+        // ============================================
+        
+        // showTab global wrapper - llama al método Alpine
+        function showTab(tabId) {
+            // Obtener la instancia de Alpine y llamar al método
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.showTab === 'function') {
+                alpineData.showTab(tabId);
+            } else {
+                console.warn('⚠️ Alpine not ready, fallback to direct manipulation');
+                // Fallback por si Alpine no está listo
+                const allTabPanes = document.querySelectorAll('.tab-pane');
+                allTabPanes.forEach(pane => pane.classList.remove('show', 'active'));
+                
+                const targetPane = document.getElementById(tabId);
+                if (targetPane) targetPane.classList.add('show', 'active');
+            }
+        }
+        
         // Función para navegar a evaluaciones completadas
         function navigateToCompletedEvaluations() {
             // Primero activar la pestaña de evaluaciones con el nuevo sistema
@@ -7174,116 +7320,6 @@
                     }, 500);
                 }
             }, 100);
-        }
-
-        // Función para cambiar de tab con el sistema de sidebar
-        function showTab(tabId) {
-            console.log('🔄 showTab called with:', tabId);
-            
-            // Colapsar categorías de evaluaciones disponibles ANTES de cambiar de pestaña
-            const currentActiveTab = document.querySelector('.tab-pane.show.active');
-            if (currentActiveTab && currentActiveTab.id === 'evaluations' && tabId !== 'evaluations') {
-                // Estamos saliendo de la pestaña de evaluaciones
-                const allCategories = document.querySelectorAll('#availableEvaluations .assessments-grid[data-expanded="true"]');
-                allCategories.forEach(categoryGrid => {
-                    const categoryId = categoryGrid.id;
-                    const icon = document.getElementById(`icon-${categoryId}`);
-                    
-                    categoryGrid.style.maxHeight = '0px';
-                    categoryGrid.style.opacity = '0';
-                    categoryGrid.style.marginBottom = '0px';
-                    if (icon) {
-                        icon.style.transform = 'rotate(-90deg)';
-                    }
-                    categoryGrid.setAttribute('data-expanded', 'false');
-                });
-            }
-            
-            // Ocultar todos los tab-panes
-            const allTabPanes = document.querySelectorAll('.tab-pane');
-            allTabPanes.forEach(pane => {
-                pane.classList.remove('show', 'active');
-            });
-            
-            // Mostrar el tab-pane seleccionado
-            const targetPane = document.getElementById(tabId);
-            if (targetPane) {
-                targetPane.classList.add('show', 'active');
-            }
-            
-            // Actualizar el estado activo en el sidebar
-            const allSidebarItems = document.querySelectorAll('.list-group-item');
-            allSidebarItems.forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Activar el item del sidebar correspondiente
-            const activeItem = document.querySelector(`[data-tab="${tabId}"]`);
-            if (activeItem) {
-                activeItem.classList.add('active');
-            }
-            
-            // 📱 MOBILE: Scroll automático hacia la sección y cerrar sidebar si está abierto
-            if (window.innerWidth <= 768) {
-                setTimeout(() => {
-                    const contentArea = document.querySelector('.col-md-9');
-                    if (contentArea) {
-                        // Scroll suave hacia el área de contenido
-                        contentArea.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'start'
-                        });
-                        console.log('📱 Mobile: Scrolling to content area');
-                    }
-                }, 100);
-            }
-            
-            // Cargar contenido específico según la pestaña
-            if (tabId === 'tasks') {
-                // Cargar tareas (con cache automático de 30 segundos)
-                loadTasks();
-            } else if (tabId === 'content') {
-                // Cuando se muestra Mi Contenido, activar la pestaña de documentos y cargar datos
-                setTimeout(() => {
-                    const documentsTab = document.getElementById('documents-tab');
-                    if (documentsTab && !documentsTab.classList.contains('active')) {
-                        documentsTab.click();
-                    }
-                    // Cargar documentos si no están cargados o si han pasado más de 5 minutos
-                    if (!documentsData || documentsData.length === 0 || 
-                        !window.lastDocumentLoad || (Date.now() - window.lastDocumentLoad > 300000)) {
-                        loadDocuments();
-                    }
-                }, 100);
-            } else if (tabId === 'progress') {
-                // Cargar historial de evaluaciones para el progreso
-                loadEvaluationHistory();
-            }
-            
-            // Cargar evaluaciones completadas cuando se muestra esa pestaña
-            if (tabId === 'completed-evaluations') {
-                if (evaluationsData && evaluationsData.completed) {
-                    renderCompletedEvaluationsSection();
-                }
-            }
-            
-            // Cargar evaluaciones pendientes cuando se muestra esa pestaña
-            if (tabId === 'pending-evaluations') {
-                loadPendingEvaluations();
-            }
-            
-            // Manejar el item especial de evaluación activa
-            if (tabId === 'assessment') {
-                const assessmentSidebarItem = document.getElementById('assessment-sidebar-item');
-                if (assessmentSidebarItem) {
-                    assessmentSidebarItem.style.display = 'block';
-                }
-            }
-            
-            // Cargar planes de desarrollo cuando se muestra esa pestaña
-            if (tabId === 'development-plan') {
-                loadDevelopmentPlans();
-            }
         }
 
         // ============================================
