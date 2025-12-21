@@ -1387,13 +1387,17 @@ def load_user(user_id):
 # Funciones auxiliares optimizadas
 def get_current_coachee():
     """Obtiene el usuario coachee actual"""
-    # PRIMERO: Verificar sesión independiente de coachee (método principal)
+    # PRIMERO: Verificar g.current_user (establecido por decoradores)
+    if hasattr(g, 'current_user') and g.current_user and g.current_user.role == 'coachee':
+        return g.current_user
+    
+    # SEGUNDO: Verificar sesión independiente de coachee (método principal)
     if coachee_user_id := session.get('coachee_user_id'):
         user = db.session.get(User, coachee_user_id)
         if user and user.role == 'coachee':
             return user
     
-    # SEGUNDO: Verificar Flask-Login (solo si es seguro acceder)
+    # TERCERO: Verificar Flask-Login (solo si es seguro acceder)
     try:
         if current_user.is_authenticated and current_user.role == 'coachee':
             return current_user
@@ -1401,7 +1405,7 @@ def get_current_coachee():
         # Si hay error accediendo a current_user, continuar con otros métodos
         pass
     
-    # TERCERO: Verificar sesión temporal de coachee
+    # CUARTO: Verificar sesión temporal de coachee
     if temp_coachee_id := session.get('temp_coachee_id'):
         return db.session.get(User, temp_coachee_id)
     return None
