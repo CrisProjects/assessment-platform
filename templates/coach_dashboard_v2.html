@@ -10056,10 +10056,38 @@ function editPlanDraft(planId) {
 
 // Publish draft (placeholder)
 async function publishDraft(planId) {
-    if (!confirm('¿Estás seguro de que quieres publicar este plan? El coachee podrá verlo.')) {
+    if (!confirm('¿Estás seguro de que quieres publicar este plan? El coachee podrá verlo inmediatamente.')) {
         return;
     }
-    showToast('Funcionalidad de publicación disponible próximamente', 'info');
+    
+    try {
+        console.log(`📤 PUBLISH-DRAFT: Publishing plan ${planId}`);
+        
+        const response = await fetch(`/api/coach/development-plan/${planId}/publish`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ PUBLISH-DRAFT: Plan published successfully');
+            showToast('Plan publicado exitosamente. El coachee ya puede verlo.', 'success');
+            
+            // Reload both lists to update UI
+            loadDraftPlans();
+            loadDevelopmentPlans();
+            
+        } else {
+            throw new Error(result.error || 'Error al publicar el plan');
+        }
+        
+    } catch (error) {
+        console.error('❌ PUBLISH-DRAFT: Error:', error);
+        showToast('Error al publicar el plan: ' + error.message, 'error');
+    }
 }
 
 // Initialize

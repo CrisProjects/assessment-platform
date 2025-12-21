@@ -6842,6 +6842,56 @@ def api_coach_list_development_plans():
         logger.error(f"Error en api_coach_list_development_plans: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
+@app.route('/api/coach/development-plan/<int:plan_id>/publish', methods=['PUT'])
+@coach_session_required
+def api_coach_publish_development_plan(plan_id):
+    """Publicar un plan de desarrollo (cambiar de draft a published)"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        logger.info(f"📤 PUBLISH-PLAN: Coach {current_coach.id} intentando publicar plan {plan_id}")
+        
+        # Buscar el plan
+        plan = DevelopmentPlan.query.filter_by(
+            id=plan_id,
+            coach_id=current_coach.id
+        ).first()
+        
+        if not plan:
+            logger.warning(f"❌ PUBLISH-PLAN: Plan {plan_id} no encontrado para coach {current_coach.id}")
+            return jsonify({'error': 'Plan no encontrado'}), 404
+        
+        # Verificar que esté en estado draft
+        if plan.status != 'draft':
+            logger.warning(f"⚠️ PUBLISH-PLAN: Plan {plan_id} no está en draft (status: {plan.status})")
+            return jsonify({'error': f'Solo se pueden publicar planes en borrador. Estado actual: {plan.status}'}), 400
+        
+        # Cambiar a published
+        plan.status = 'published'
+        plan.published_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        logger.info(f"✅ PUBLISH-PLAN: Plan {plan_id} publicado exitosamente")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Plan publicado exitosamente',
+            'plan': {
+                'id': plan.id,
+                'status': plan.status,
+                'published_at': plan.published_at.isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_publish_development_plan: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al publicar plan: {str(e)}'}), 500
+
 @app.route('/api/coachee/development-plans', methods=['GET'])
 @coachee_session_required
 def api_coachee_development_plans():
