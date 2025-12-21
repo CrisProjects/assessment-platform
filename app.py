@@ -7040,25 +7040,13 @@ def api_coach_assign_evaluation():
             except ValueError:
                 app.logger.warning(f"Formato de fecha inválido: {data['due_date']}")
         
-        # Determinar categoría basada en el título de la evaluación
-        category = 'otros'
-        title_lower = assessment.title.lower()
-        if 'disc' in title_lower or 'personalidad' in title_lower:
-            category = 'personalidad'
-        elif 'liderazgo' in title_lower:
-            category = 'liderazgo'
-        elif 'inteligencia emocional' in title_lower or 'emocional' in title_lower:
-            category = 'inteligencia_emocional'
-        elif 'trabajo en equipo' in title_lower or 'equipo' in title_lower:
-            category = 'trabajo_equipo'
-        
-        # Crear la tarea
+        # Crear la tarea con category='evaluation' para identificarla como asignación de evaluación
         new_task = Task(
             coach_id=current_coach.id,
             coachee_id=coachee_id,
             title=f"Completar: {assessment.title}",
             description=message,
-            category=category,
+            category='evaluation',
             priority='high',
             due_date=due_date
         )
