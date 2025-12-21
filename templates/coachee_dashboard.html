@@ -6790,6 +6790,8 @@
                 
                 // Datos
                 evaluationsData: null,
+                evaluationsLastLoaded: null,
+                evaluationCategories: {},
                 tasksData: [],
                 documentsData: [],
                 videosData: [],
@@ -6812,6 +6814,9 @@
                     stats: false
                 },
                 
+                // Constantes
+                EVALUATIONS_CACHE_DURATION: 30000, // 30 segundos
+                
                 // Fecha/Hora actual
                 currentDate: '',
                 currentTime: '',
@@ -6825,6 +6830,9 @@
                     
                     // Cargar datos iniciales
                     await this.loadUserProfile();
+                    
+                    // Cargar evaluaciones disponibles
+                    await this.loadEvaluations();
                     
                     // Mantener compatibilidad con código existente
                     this.initializeLegacyFunctions();
@@ -6949,6 +6957,43 @@
                 
                 // Mantener funciones legacy para compatibilidad
                 initializeLegacyFunctions() {
+                    // Inicializar categorías de evaluaciones
+                    this.evaluationCategories = {
+                        'Personalidad': {
+                            color: '#6f42c1',
+                            icon: 'fa-user-circle',
+                            keywords: ['personalidad', 'disc', 'temperamento', 'carácter']
+                        },
+                        'Liderazgo': {
+                            color: '#fd7e14',
+                            icon: 'fa-crown',
+                            keywords: ['liderazgo', 'líder', 'gestión', 'dirección']
+                        },
+                        'Inteligencia Emocional': {
+                            color: '#e83e8c',
+                            icon: 'fa-heart',
+                            keywords: ['emocional', 'emoción', 'sentimiento', 'asertividad']
+                        },
+                        'Trabajo en Equipo': {
+                            color: '#20c997',
+                            icon: 'fa-users',
+                            keywords: ['equipo', 'colaboración', 'grupo', 'cooperación']
+                        },
+                        'Crecimiento Empresarial': {
+                            color: '#17a2b8',
+                            icon: 'fa-chart-line',
+                            keywords: ['empresarial', 'negocio', 'crecer', 'crecimiento', '2026']
+                        },
+                        'Otros': {
+                            color: '#6c757d',
+                            icon: 'fa-clipboard-list',
+                            keywords: []
+                        }
+                    };
+                    
+                    // Exponer categorías globalmente para legacy code
+                    window.evaluationCategories = this.evaluationCategories;
+                    
                     // Las funciones globales existentes se mantendrán por ahora
                     // Se migrarán progresivamente en los siguientes pasos
                     console.log('✅ Funciones legacy inicializadas');
@@ -7082,6 +7127,117 @@
                     }
                     
                     console.log('✅ ALPINE Tab changed to:', tabId);
+                },
+                
+                // ============================================
+                // EVALUACIONES DISPONIBLES (Alpine)
+                // ============================================
+                
+                async loadEvaluations(forceRefresh = false) {
+                    // OPTIMIZACIÓN: Evitar carga duplicada
+                    if (this.loading.evaluations) {
+                        console.log('⏳ Evaluations already loading, skipping duplicate request');
+                        return;
+                    }
+                    
+                    // OPTIMIZACIÓN: Usar cache si los datos son recientes
+                    if (!forceRefresh && this.evaluationsData && this.evaluationsLastLoaded) {
+                        const age = Date.now() - this.evaluationsLastLoaded;
+                        if (age < this.EVALUATIONS_CACHE_DURATION) {
+                            console.log(`📦 Using cached evaluations data (age: ${Math.round(age/1000)}s)`);
+                            this.renderAvailableEvaluations();
+                            return;
+                        }
+                    }
+                    
+                    this.loading.evaluations = true;
+                    
+                    try {
+                        debugLog('🔍 ALPINE: Iniciando carga de evaluaciones...');
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/evaluations`);
+                        
+                        debugLog(`📡 Response status: ${response.status} ${response.statusText}`);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const data = await response.json();
+                        debugLog('📦 Datos de evaluaciones recibidos:', data);
+                        
+                        if (data && typeof data === 'object') {
+                            this.evaluationsData = data; // {available: {}, completed: []}
+                            this.evaluationsLastLoaded = Date.now();
+                            
+                            // Actualizar stats
+                            if (data.completed && Array.isArray(data.completed)) {
+                                this.stats.completedEvaluations = data.completed.length;
+                                if (data.completed.length > 0) {
+                                    this.stats.latestScore = data.completed[0].score + '%' || '0%';
+                                }
+                            }
+                            
+                            debugLog('✅ Renderizando evaluaciones disponibles...');
+                            this.renderAvailableEvaluations();
+                        } else {
+                            console.error('Formato de datos inesperado:', data);
+                            throw new Error('Formato de datos inesperado del servidor');
+                        }
+                    } catch (error) {
+                        debugLog('❌ Error cargando evaluaciones', error);
+                        console.error('Error cargando evaluaciones:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Error cargando evaluaciones: ' + error.message, 'error');
+                        }
+                        
+                        // Inicializar con datos vacíos
+                        this.evaluationsData = { available: {}, completed: [] };
+                        
+                        // Show error in container
+                        const container = document.getElementById('availableEvaluations');
+                        if (container) {
+                            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando mis evaluaciones disponibles</p></div>';
+                        }
+                    } finally {
+                        this.loading.evaluations = false;
+                    }
+                },
+                
+                renderAvailableEvaluations() {
+                    const container = document.getElementById('availableEvaluations');
+                    if (!container) return;
+                    
+                    // Verificar mensaje específico
+                    if (this.evaluationsData && this.evaluationsData.message) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div class="empty-state-title">Información</div>
+                                <div class="empty-state-description">${this.evaluationsData.message}</div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    if (!this.evaluationsData || !this.evaluationsData.available || Object.keys(this.evaluationsData.available).length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-inbox"></i>
+                                </div>
+                                <div class="empty-state-title">Sin evaluaciones disponibles</div>
+                                <div class="empty-state-description">No tienes evaluaciones disponibles en este momento</div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Llamar a función legacy de renderizado por ahora
+                    if (typeof renderAvailableEvaluationsLegacy === 'function') {
+                        renderAvailableEvaluationsLegacy(this.evaluationsData);
+                    }
                 }
             };
         }
@@ -7223,6 +7379,16 @@
                 
                 const targetPane = document.getElementById(tabId);
                 if (targetPane) targetPane.classList.add('show', 'active');
+            }
+        }
+        
+        // loadEvaluations wrapper - llama al método Alpine
+        async function loadEvaluations(forceRefresh = false) {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.loadEvaluations === 'function') {
+                await alpineData.loadEvaluations(forceRefresh);
+            } else {
+                console.warn('⚠️ Alpine not ready for loadEvaluations');
             }
         }
         
@@ -7987,7 +8153,9 @@
         }
 
         // Render available evaluations
-        function renderAvailableEvaluations() {
+        // Función legacy para renderizar evaluaciones disponibles (será migrada completamente en futuras iteraciones)
+        function renderAvailableEvaluationsLegacy(evaluationsDataParam) {
+            const evaluationsData = evaluationsDataParam || (Alpine.$data(document.body) ? Alpine.$data(document.body).evaluationsData : null);
             const container = document.getElementById('availableEvaluations');
             
             // Verificar si hay un mensaje específico (sin coach o sin invitación)
