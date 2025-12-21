@@ -6607,15 +6607,27 @@ def api_coach_pending_evaluations():
             if not coachee:
                 continue
             
-            # Extraer título de la evaluación del task title
-            title_match = task.title.replace('Evaluación: ', '').split(' (')[0]
-            
-            # Buscar assessment en diccionario precargado
-            assessment = None
-            for title, a in all_assessments.items():
-                if title_match in title:
-                    assessment = a
+            # Extraer título de la evaluación del task title (soporta múltiples formatos)
+            title_match = task.title
+            # Remover prefijos comunes: "Completar: ", "Evaluación: ", etc.
+            for prefix in ['Completar: ', 'Evaluación: ', 'Realizar: ', 'Hacer: ']:
+                if title_match.startswith(prefix):
+                    title_match = title_match[len(prefix):]
                     break
+            # Remover sufijos como " (Pendiente)"
+            title_match = title_match.split(' (')[0].strip()
+            
+            # Buscar assessment en diccionario precargado por coincidencia exacta o parcial
+            assessment = None
+            # Primero intentar coincidencia exacta
+            if title_match in all_assessments:
+                assessment = all_assessments[title_match]
+            else:
+                # Si no hay coincidencia exacta, buscar coincidencia parcial
+                for title, a in all_assessments.items():
+                    if title_match in title or title in title_match:
+                        assessment = a
+                        break
             
             if assessment:
                 # Verificar si fue completada DESPUÉS de ser asignada usando datos precargados
