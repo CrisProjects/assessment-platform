@@ -6568,17 +6568,31 @@ def api_coach_pending_evaluations():
         all_assessments = {a.title: a for a in Assessment.query.all()}
         
         # OPTIMIZACIÓN: Precalcular resultados completados después de asignación en una query
-        # Crear un diccionario de (user_id, assessment_id, task_created_at) -> result
+        # Crear un diccionario de (user_id, assessment_id) -> [results]
         completed_results = {}
         if eval_tasks:
             try:
                 # Obtener todos los resultados relevantes
                 assessment_ids_set = set()
                 for task in eval_tasks:
-                    title_match = task.title.replace('Evaluación: ', '').split(' (')[0]
-                    for title, assessment in all_assessments.items():
-                        if title_match in title:
-                            assessment_ids_set.add(assessment.id)
+                    # Extraer título de la evaluación del task title (usando misma lógica que abajo)
+                    title_match = task.title
+                    # Remover prefijos comunes
+                    for prefix in ['Completar: ', 'Evaluación: ', 'Realizar: ', 'Hacer: ']:
+                        if title_match.startswith(prefix):
+                            title_match = title_match[len(prefix):]
+                            break
+                    # Remover sufijos
+                    title_match = title_match.split(' (')[0].strip()
+                    
+                    # Buscar assessment
+                    if title_match in all_assessments:
+                        assessment_ids_set.add(all_assessments[title_match].id)
+                    else:
+                        for title, assessment in all_assessments.items():
+                            if title_match in title or title in title_match:
+                                assessment_ids_set.add(assessment.id)
+                                break
                 
                 if assessment_ids_set and coachee_ids:
                     results = AssessmentResult.query.filter(
