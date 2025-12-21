@@ -7479,34 +7479,55 @@ async function createCoacheeAndAssignEvaluation(assessmentId) {
 // Ver detalles de solicitud de plan de desarrollo
 async function viewRequestDetails(requestId) {
     console.log('👁️ VIEW-REQUEST: Opening modal for request ID:', requestId);
+    alert(`Abriendo detalles para solicitud ID: ${requestId}`); // DEBUG: Verificar que la función se ejecuta
     
     try {
         // Abrir modal y mostrar loading
         const modalElement = document.getElementById('devPlanRequestModal');
         if (!modalElement) {
             console.error('❌ Modal element not found!');
+            alert('ERROR: No se encontró el elemento del modal');
             return;
         }
+        
+        console.log('✅ Modal element found');
         
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
+        console.log('✅ Modal shown');
+        
         const loadingEl = document.getElementById('devPlanModalLoading');
         const contentEl = document.getElementById('devPlanModalContent');
         
-        if (loadingEl) loadingEl.style.display = 'block';
-        if (contentEl) contentEl.style.display = 'none';
+        if (loadingEl) {
+            loadingEl.style.display = 'block';
+            console.log('✅ Loading shown');
+        } else {
+            console.error('❌ Loading element not found');
+        }
+        
+        if (contentEl) {
+            contentEl.style.display = 'none';
+            console.log('✅ Content hidden');
+        } else {
+            console.error('❌ Content element not found');
+        }
         
         console.log('🔄 VIEW-REQUEST: Fetching data from API...');
         
         // Obtener detalles de la solicitud
         const response = await fetch(`/api/coach/development-plan-request/${requestId}`);
+        console.log('📡 VIEW-REQUEST: Response status:', response.status);
+        
         const data = await response.json();
         
         console.log('📦 VIEW-REQUEST: API Response:', data);
+        alert(`API Response success: ${data.success}`); // DEBUG
         
         if (!data.success) {
             console.error('❌ VIEW-REQUEST: API returned error:', data.error);
+            alert(`ERROR API: ${data.error}`);
             showToast(data.error || 'Error al cargar detalles', 'error');
             modal.hide();
             return;
