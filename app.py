@@ -6558,6 +6558,53 @@ def api_coach_my_coachees():
         logger.error(f"❌ MY-COACHEES: Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error obteniendo coachees: {str(e)}'}), 500
 
+@app.route('/api/coach/development-plan-requests', methods=['GET'])
+@coach_session_required
+def api_coach_development_plan_requests():
+    """Obtener solicitudes de planes de desarrollo de los coachees"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        logger.info(f"🔍 DEV-PLAN-REQUESTS: Request from coach {current_coach.username} (ID: {current_coach.id})")
+        
+        # Obtener todas las solicitudes de planes de desarrollo
+        requests_tasks = Task.query.filter_by(
+            coach_id=current_coach.id,
+            category='development_plan_request',
+            is_active=True
+        ).order_by(Task.created_at.desc()).all()
+        
+        logger.info(f"📊 DEV-PLAN-REQUESTS: Found {len(requests_tasks)} development plan requests")
+        
+        # Crear lista de solicitudes con información completa
+        requests_list = []
+        for task in requests_tasks:
+            coachee = User.query.get(task.coachee_id)
+            if coachee:
+                requests_list.append({
+                    'id': task.id,
+                    'title': task.title,
+                    'description': task.description,
+                    'coachee_id': coachee.id,
+                    'coachee_name': coachee.full_name or coachee.username,
+                    'coachee_email': coachee.email,
+                    'request_date': task.created_at.isoformat(),
+                    'priority': task.priority or 'high',
+                    'status': 'pending'
+                })
+        
+        return jsonify({
+            'success': True,
+            'requests': requests_list
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_development_plan_requests: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
 @app.route('/api/coach/pending-evaluations', methods=['GET'])
 @coach_session_required
 def api_coach_pending_evaluations():
@@ -10676,8 +10723,26 @@ def request_development_plan():
         if not evaluation:
             return jsonify({'error': 'Evaluación no encontrada'}), 404
         
-        # Por ahora, simplemente loggeamos la solicitud
-        # En el futuro, esto podría crear una notificación o tarea para el coach
+        # Obtener título de la evaluación
+        assessment = Assessment.query.get(evaluation.assessment_id)
+        assessment_title = assessment.title if assessment else 'Evaluación'
+        
+        # Crear tarea para el coach
+        if current_coachee.coach_id:
+            new_task = Task(
+                coach_id=current_coachee.coach_id,
+                coachee_id=current_coachee.id,
+                title=f"Plan de Desarrollo: {assessment_title}",
+                description=f"Solicitud de plan de desarrollo de {current_coachee.full_name or current_coachee.username}\n\n{message}\n\nEvaluación ID: {evaluation_id}\nScore: {evaluation.score}%",
+                category='development_plan_request',
+                priority='high',
+                is_active=True
+            )
+            db.session.add(new_task)
+            db.session.commit()
+            
+            logger.info(f"📋 DEVELOPMENT PLAN REQUEST: Created task {new_task.id} for coach {current_coachee.coach_id}")
+        
         logger.info(f"📋 DEVELOPMENT PLAN REQUEST: Coachee {current_coachee.username} (ID: {current_coachee.id}) "
                    f"requested development plan for evaluation {evaluation_id}")
         logger.info(f"📋 MESSAGE: {message}")
@@ -10690,6 +10755,7 @@ def request_development_plan():
         
     except Exception as e:
         logger.error(f"Error en request_development_plan: {str(e)}", exc_info=True)
+        db.session.rollback()
         return jsonify({'error': f'Error procesando solicitud: {str(e)}'}), 500
 
 @app.route('/api/coachee/contact-coach-session', methods=['POST'])
