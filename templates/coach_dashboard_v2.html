@@ -9336,13 +9336,19 @@ function openCreatePlanModal() {
 
 // Setup coachee selection
 async function setupCoacheeSelection() {
+    console.log('🔧 SETUP-COACHEE: Starting setup, currentCoacheeId:', currentCoacheeId);
+    
     const coacheeSelector = document.getElementById('coacheeSelector');
     const selectedDisplay = document.getElementById('selectedCoacheeDisplay');
     
-    if (!coacheeSelector || !selectedDisplay) return;
+    if (!coacheeSelector || !selectedDisplay) {
+        console.error('❌ SETUP-COACHEE: Elements not found!', { coacheeSelector, selectedDisplay });
+        return;
+    }
     
     if (currentCoacheeId) {
         // Pre-selected coachee from request
+        console.log('✅ SETUP-COACHEE: Pre-selected coachee, hiding selector');
         coacheeSelector.style.display = 'none';
         selectedDisplay.style.display = 'block';
         
@@ -9350,24 +9356,31 @@ async function setupCoacheeSelection() {
         try {
             const response = await fetch('/api/coach/coachees');
             const data = await response.json();
+            console.log('📦 SETUP-COACHEE: Coachees data:', data);
+            
             if (data.success) {
                 const selectedCoachee = data.coachees.find(c => c.id === currentCoacheeId);
                 if (selectedCoachee) {
                     document.getElementById('selectedCoacheeName').textContent = selectedCoachee.name;
+                    console.log('✅ SETUP-COACHEE: Set coachee name:', selectedCoachee.name);
                 }
             }
         } catch (error) {
-            console.error('Error fetching coachee:', error);
+            console.error('❌ SETUP-COACHEE: Error fetching coachee:', error);
         }
     } else {
         // No pre-selected coachee, show selector
+        console.log('📋 SETUP-COACHEE: No pre-selected coachee, showing selector');
         coacheeSelector.style.display = 'block';
         selectedDisplay.style.display = 'none';
         
         // Load coachees list
         try {
+            console.log('🔄 SETUP-COACHEE: Fetching coachees list...');
             const response = await fetch('/api/coach/coachees');
             const data = await response.json();
+            
+            console.log('📦 SETUP-COACHEE: Coachees response:', data);
             
             if (data.success) {
                 const select = document.getElementById('selectCoachee');
@@ -9379,9 +9392,14 @@ async function setupCoacheeSelection() {
                     option.textContent = `${coachee.name} (${coachee.email})`;
                     select.appendChild(option);
                 });
+                
+                console.log('✅ SETUP-COACHEE: Added', data.coachees.length, 'coachees to selector');
+                console.log('✅ SETUP-COACHEE: Selector display:', coacheeSelector.style.display);
+            } else {
+                console.error('❌ SETUP-COACHEE: API returned error:', data.error);
             }
         } catch (error) {
-            console.error('Error loading coachees:', error);
+            console.error('❌ SETUP-COACHEE: Error loading coachees:', error);
             showToast('Error al cargar lista de coachees', 'error');
         }
     }
@@ -9425,6 +9443,12 @@ function resetWizard() {
     document.getElementById('objetivo').value = '';
     document.getElementById('situacion').value = '';
     document.getElementById('indicadores').value = '';
+    
+    // Reset coachee selector and display
+    const coacheeSelector = document.getElementById('coacheeSelector');
+    const selectedDisplay = document.getElementById('selectedCoacheeDisplay');
+    if (coacheeSelector) coacheeSelector.style.display = 'none';
+    if (selectedDisplay) selectedDisplay.style.display = 'none';
     
     // Reset area cards
     document.querySelectorAll('.area-card').forEach(card => {
