@@ -6842,6 +6842,49 @@ def api_coach_list_development_plans():
         logger.error(f"Error en api_coach_list_development_plans: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
+@app.route('/api/coachee/development-plans', methods=['GET'])
+@coachee_session_required
+def api_coachee_development_plans():
+    """Obtener planes de desarrollo del coachee (solo publicados)"""
+    try:
+        current_coachee = getattr(g, 'current_user', None)
+        
+        if not current_coachee or current_coachee.role != 'coachee':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Solo obtener planes publicados
+        plans = DevelopmentPlan.query.filter_by(
+            coachee_id=current_coachee.id,
+            status='published'
+        ).order_by(DevelopmentPlan.published_at.desc()).all()
+        
+        plans_list = []
+        for plan in plans:
+            coach = User.query.get(plan.coach_id)
+            plans_list.append({
+                'id': plan.id,
+                'coach_name': coach.full_name or coach.username if coach else 'N/A',
+                'objetivo': plan.objetivo,
+                'situacion_actual': plan.situacion_actual,
+                'areas_desarrollo': plan.areas_desarrollo,
+                'acciones': plan.acciones,
+                'indicadores': plan.indicadores,
+                'status': plan.status,
+                'created_at': plan.created_at.isoformat(),
+                'published_at': plan.published_at.isoformat() if plan.published_at else None
+            })
+        
+        logger.info(f"📋 COACHEE-PLANS: Returning {len(plans_list)} plans for coachee {current_coachee.id}")
+        
+        return jsonify({
+            'success': True,
+            'plans': plans_list
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coachee_development_plans: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
 @app.route('/api/coach/pending-evaluations', methods=['GET'])
 @coach_session_required
 def api_coach_pending_evaluations():

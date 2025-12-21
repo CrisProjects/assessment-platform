@@ -6017,6 +6017,11 @@
                                 <i class="fas fa-chart-line me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mi Progreso
                             </a>
                             <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
+                               onclick="showTab('development-plan'); return false;" data-tab="development-plan"
+                               style="border: none; border-bottom: 1px solid #e2e8f0 !important; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
+                                <i class="fas fa-rocket me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Mi Plan de Desarrollo
+                            </a>
+                            <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
                                onclick="showTab('schedule-coach'); return false;" data-tab="schedule-coach"
                                style="border: none; padding: 1rem 1.25rem; transition: all 0.2s; font-weight: 500;">
                                 <i class="fas fa-calendar-plus me-3" style="width: 20px; text-align: center; color: #667eea;"></i>Agendar Coach
@@ -6326,6 +6331,52 @@
 
                     <div class="row">
                         <!-- Sección de historial eliminada -->
+                    </div>
+                </div>
+
+                <!-- Development Plan Tab -->
+                <div class="tab-pane fade" id="development-plan" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card sidebar-white border-secondary" style="background-color: white !important; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
+                                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
+                                    <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
+                                        <i class="fas fa-rocket me-3" style="font-size: 1.75rem;"></i>Mi Plan de Desarrollo Personal
+                                    </h5>
+                                    <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Tu hoja de ruta personalizada para crecer y alcanzar tus objetivos</p>
+                                </div>
+                                <div class="card-body" style="background-color: white !important; padding: 2rem;">
+                                    <!-- Loading -->
+                                    <div id="devPlanLoading" class="text-center py-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando plan...</span>
+                                        </div>
+                                        <p class="mt-3 text-muted">Cargando tu plan de desarrollo...</p>
+                                    </div>
+                                    
+                                    <!-- No Plan Message -->
+                                    <div id="devPlanEmpty" style="display: none;">
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-rocket" style="font-size: 4rem; color: #e2e8f0; margin-bottom: 1.5rem;"></i>
+                                            <h5 style="color: #64748b; font-weight: 600; margin-bottom: 1rem;">Aún no tienes un Plan de Desarrollo</h5>
+                                            <p style="color: #94a3b8; margin-bottom: 2rem;">Tu coach está trabajando en crear un plan personalizado para ti. Pronto verás aquí tu hoja de ruta de crecimiento.</p>
+                                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; max-width: 500px; margin: 0 auto;">
+                                                <p style="color: #475569; margin: 0; font-size: 0.95rem;">
+                                                    <i class="fas fa-lightbulb me-2" style="color: #f59e0b;"></i>
+                                                    <strong>¿Qué es un Plan de Desarrollo?</strong><br>
+                                                    <span style="font-size: 0.9rem;">Es una guía personalizada que define tus objetivos, áreas a trabajar, acciones concretas e indicadores de progreso.</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Development Plan Content -->
+                                    <div id="devPlanContent" style="display: none;">
+                                        <!-- Plans will be rendered here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -7000,6 +7051,198 @@
                     assessmentSidebarItem.style.display = 'block';
                 }
             }
+            
+            // Cargar planes de desarrollo cuando se muestra esa pestaña
+            if (tabId === 'development-plan') {
+                loadDevelopmentPlans();
+            }
+        }
+
+        // ============================================
+        // 📋 DESARROLLO DE PLANES - Funciones
+        // ============================================
+        
+        async function loadDevelopmentPlans() {
+            console.log('📋 COACHEE: Cargando planes de desarrollo...');
+            
+            const loadingEl = document.getElementById('devPlanLoading');
+            const emptyEl = document.getElementById('devPlanEmpty');
+            const contentEl = document.getElementById('devPlanContent');
+            
+            // Mostrar loading
+            loadingEl.style.display = 'block';
+            emptyEl.style.display = 'none';
+            contentEl.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/coachee/development-plans');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📋 COACHEE: Datos recibidos:', data);
+                
+                loadingEl.style.display = 'none';
+                
+                if (data.success && data.plans && data.plans.length > 0) {
+                    console.log(`📋 COACHEE: Se encontraron ${data.plans.length} planes`);
+                    renderDevelopmentPlans(data.plans);
+                    contentEl.style.display = 'block';
+                } else {
+                    console.log('📋 COACHEE: No hay planes disponibles');
+                    emptyEl.style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('❌ Error al cargar planes:', error);
+                loadingEl.style.display = 'none';
+                emptyEl.style.display = 'block';
+                showToast('Error al cargar el plan de desarrollo', 'error');
+            }
+        }
+        
+        function renderDevelopmentPlans(plans) {
+            const container = document.getElementById('devPlanContent');
+            container.innerHTML = '';
+            
+            // Mostrar el plan más reciente
+            const plan = plans[0];
+            
+            const planHTML = `
+                <div class="mb-4" style="border-bottom: 2px solid #e2e8f0; padding-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <span style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                <i class="fas fa-check-circle me-1"></i>Plan Publicado
+                            </span>
+                        </div>
+                        <div style="text-align: right; color: #64748b; font-size: 0.9rem;">
+                            <div><i class="fas fa-user-tie me-2"></i><strong>Coach:</strong> ${plan.coach_name}</div>
+                            <div class="mt-1"><i class="fas fa-calendar-check me-2"></i>${new Date(plan.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Objetivo Principal -->
+                <div class="mb-4" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%); border-left: 4px solid #667eea; border-radius: 8px; padding: 1.5rem;">
+                    <h5 style="color: #667eea; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                        <i class="fas fa-bullseye me-2"></i>Objetivo de Desarrollo
+                    </h5>
+                    <p style="color: #334155; font-size: 1.05rem; margin: 0; line-height: 1.6;">${plan.objetivo || 'No especificado'}</p>
+                </div>
+                
+                ${plan.situacion_actual ? `
+                <!-- Situación Actual -->
+                <div class="mb-4" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem;">
+                    <h6 style="color: #475569; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                        <i class="fas fa-compass me-2"></i>Situación Actual
+                    </h6>
+                    <p style="color: #64748b; margin: 0; line-height: 1.6;">${plan.situacion_actual}</p>
+                </div>
+                ` : ''}
+                
+                <!-- Áreas de Desarrollo -->
+                <div class="mb-4">
+                    <h6 style="color: #334155; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
+                        <i class="fas fa-th-large me-2" style="color: #667eea;"></i>Áreas de Desarrollo
+                    </h6>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        ${renderAreas(plan.areas_desarrollo)}
+                    </div>
+                </div>
+                
+                <!-- Acciones -->
+                <div class="mb-4">
+                    <h6 style="color: #334155; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
+                        <i class="fas fa-tasks me-2" style="color: #667eea;"></i>Acciones Específicas
+                    </h6>
+                    ${renderAcciones(plan.acciones)}
+                </div>
+                
+                <!-- Indicadores de Éxito -->
+                <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 1.5rem;">
+                    <h6 style="color: #16a34a; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                        <i class="fas fa-chart-line me-2"></i>Indicadores de Éxito
+                    </h6>
+                    <p style="color: #166534; margin: 0; line-height: 1.6; white-space: pre-wrap;">${plan.indicadores || 'No especificados'}</p>
+                </div>
+            `;
+            
+            container.innerHTML = planHTML;
+        }
+        
+        function renderAreas(areas) {
+            if (!areas || !Array.isArray(areas) || areas.length === 0) {
+                return '<span style="color: #94a3b8; font-style: italic;">No especificadas</span>';
+            }
+            
+            const colors = [
+                { bg: '#eff6ff', border: '#3b82f6', text: '#1e40af' },
+                { bg: '#f0fdf4', border: '#22c55e', text: '#166534' },
+                { bg: '#fef3c7', border: '#f59e0b', text: '#92400e' }
+            ];
+            
+            return areas.map((area, index) => {
+                const color = colors[index % colors.length];
+                return `
+                    <span style="
+                        background: ${color.bg}; 
+                        border: 2px solid ${color.border}; 
+                        color: ${color.text}; 
+                        padding: 0.5rem 1rem; 
+                        border-radius: 20px; 
+                        font-weight: 600; 
+                        font-size: 0.95rem;
+                        display: inline-block;
+                    ">
+                        ${area}
+                    </span>
+                `;
+            }).join('');
+        }
+        
+        function renderAcciones(acciones) {
+            if (!acciones || !Array.isArray(acciones) || acciones.length === 0) {
+                return '<p style="color: #94a3b8; font-style: italic;">No hay acciones definidas</p>';
+            }
+            
+            return acciones.map((accion, index) => `
+                <div style="background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 1rem;">
+                        <div style="
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-weight: 700;
+                            flex-shrink: 0;
+                        ">
+                            ${index + 1}
+                        </div>
+                        <div style="flex: 1;">
+                            <p style="color: #334155; font-weight: 600; margin-bottom: 0.5rem; font-size: 1.05rem;">${accion.descripcion}</p>
+                            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.75rem;">
+                                <span style="color: #64748b; font-size: 0.9rem;">
+                                    <i class="fas fa-sync-alt me-1" style="color: #667eea;"></i>
+                                    <strong>Frecuencia:</strong> ${accion.frecuencia || 'No especificada'}
+                                </span>
+                                ${accion.fecha_objetivo ? `
+                                <span style="color: #64748b; font-size: 0.9rem;">
+                                    <i class="fas fa-calendar-day me-1" style="color: #667eea;"></i>
+                                    <strong>Fecha objetivo:</strong> ${new Date(accion.fecha_objetivo).toLocaleDateString('es-ES')}
+                                </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         // Toast notification system
