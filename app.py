@@ -6659,8 +6659,7 @@ def api_coach_development_plan_request_detail(task_id):
                     'assessment_id': evaluation.assessment_id,
                     'assessment_title': assessment.title if assessment else 'Evaluación',
                     'score': evaluation.score,
-                    'completed_at': evaluation.completed_at.isoformat() if evaluation.completed_at else None,
-                    'responses': evaluation.responses or {}
+                    'completed_at': evaluation.completed_at.isoformat() if evaluation.completed_at else None
                 }
             else:
                 logger.warning(f"⚠️ DEV-PLAN-DETAIL: No evaluation found with ID {evaluation_id} for coachee {coachee.id}")
