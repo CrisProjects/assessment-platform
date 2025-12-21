@@ -7211,6 +7211,12 @@
                     const container = document.getElementById('availableEvaluations');
                     if (!container) return;
                     
+                    console.log('🔍 ALPINE: renderAvailableEvaluations called');
+                    console.log('🔍 evaluationsData:', this.evaluationsData);
+                    
+                    // Exponer globalmente para legacy code
+                    window.evaluationsData = this.evaluationsData;
+                    
                     // Verificar mensaje específico
                     if (this.evaluationsData && this.evaluationsData.message) {
                         container.innerHTML = `
@@ -7238,9 +7244,12 @@
                         return;
                     }
                     
-                    // Llamar a función legacy de renderizado por ahora
+                    // Llamar a función legacy de renderizado
                     if (typeof renderAvailableEvaluationsLegacy === 'function') {
-                        renderAvailableEvaluationsLegacy(this.evaluationsData);
+                        console.log('🔍 Llamando a renderAvailableEvaluationsLegacy...');
+                        renderAvailableEvaluationsLegacy();
+                    } else {
+                        console.error('❌ renderAvailableEvaluationsLegacy no está disponible');
                     }
                 },
                 
@@ -8255,9 +8264,18 @@
 
         // Render available evaluations
         // Función legacy para renderizar evaluaciones disponibles (será migrada completamente en futuras iteraciones)
-        function renderAvailableEvaluationsLegacy(evaluationsDataParam) {
-            const evaluationsData = evaluationsDataParam || (Alpine.$data(document.body) ? Alpine.$data(document.body).evaluationsData : null);
+        // LEGACY: Función original de renderizado de evaluaciones disponibles
+        function renderAvailableEvaluationsLegacy() {
+            const evaluationsData = window.evaluationsData;
             const container = document.getElementById('availableEvaluations');
+            
+            console.log('🔍 renderAvailableEvaluationsLegacy called');
+            console.log('🔍 window.evaluationsData:', window.evaluationsData);
+            
+            if (!container) {
+                console.error('❌ Container availableEvaluations no encontrado');
+                return;
+            }
             
             // Verificar si hay un mensaje específico (sin coach o sin invitación)
             if (evaluationsData && evaluationsData.message) {
