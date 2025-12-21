@@ -6794,6 +6794,8 @@
                 evaluationCategories: {},
                 evaluationHistory: null,
                 progressData: null,
+                pendingEvaluations: [],
+                pendingEvaluationsLoaded: false,
                 tasksData: [],
                 documentsData: [],
                 videosData: [],
@@ -7120,8 +7122,8 @@
                             }
                         }
                     } else if (tabId === 'pending-evaluations') {
-                        // Cargar evaluaciones pendientes
-                        if (typeof loadPendingEvaluations === 'function') loadPendingEvaluations();
+                        // 🔥 ALPINE: Cargar evaluaciones pendientes
+                        this.loadPendingEvaluations();
                     } else if (tabId === 'development-plan') {
                         // Cargar planes de desarrollo
                         if (typeof loadDevelopmentPlans === 'function') loadDevelopmentPlans();
@@ -7318,6 +7320,62 @@
                             showToast('Error cargando historial de evaluaciones', 'error');
                         }
                     }
+                },
+                
+                // ============================================
+                // EVALUACIONES PENDIENTES (Alpine)
+                // ============================================
+                
+                async loadPendingEvaluations() {
+                    console.log('📊 ALPINE: Cargando evaluaciones pendientes...');
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/pending-evaluations`);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📦 ALPINE: Evaluaciones pendientes recibidas:', data);
+                        
+                        if (data.success) {
+                            this.pendingEvaluations = data.pending_evaluations || [];
+                            this.pendingEvaluationsLoaded = true;
+                            
+                            // Exponer globalmente para legacy code
+                            window.pendingEvaluations = this.pendingEvaluations;
+                            
+                            this.displayPendingEvaluations();
+                        } else {
+                            throw new Error(data.error || 'Error desconocido');
+                        }
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error cargando evaluaciones pendientes:', error);
+                        const container = document.getElementById('pendingEvaluationsSection');
+                        if (container) {
+                            container.innerHTML = `
+                                <div class="text-center py-5">
+                                    <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
+                                    <h5 class="text-muted mb-2">Error al cargar</h5>
+                                    <p class="text-muted small">No se pudieron cargar las evaluaciones pendientes</p>
+                                </div>
+                            `;
+                        }
+                    }
+                },
+                
+                displayPendingEvaluations() {
+                    console.log('🔍 ALPINE: displayPendingEvaluations called');
+                    
+                    // Exponer globalmente
+                    window.pendingEvaluations = this.pendingEvaluations;
+                    
+                    // Llamar función legacy
+                    if (typeof displayPendingEvaluationsLegacy === 'function') {
+                        displayPendingEvaluationsLegacy();
+                    } else {
+                        console.error('❌ displayPendingEvaluationsLegacy no disponible');
+                    }
                 }
             };
         }
@@ -7511,6 +7569,26 @@
             const alpineData = Alpine.$data(document.body);
             if (alpineData && typeof alpineData.loadEvaluationHistory === 'function') {
                 await alpineData.loadEvaluationHistory();
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+
+        // 🔥 PASO 5: Wrapper para loadPendingEvaluations
+        async function loadPendingEvaluations() {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.loadPendingEvaluations === 'function') {
+                await alpineData.loadPendingEvaluations();
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+        
+        // 🔥 PASO 5: Wrapper para displayPendingEvaluations
+        function displayPendingEvaluations() {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.displayPendingEvaluations === 'function') {
+                alpineData.displayPendingEvaluations();
             } else {
                 console.error('❌ Alpine component not ready');
             }
@@ -8080,39 +8158,13 @@
             }
         }
 
-        // Función para cargar evaluaciones pendientes
-        async function loadPendingEvaluations() {
-            try {
-                console.log('📊 Cargando evaluaciones pendientes...');
-                
-                const response = await fetch(`${API_BASE_URL}/api/coachee/pending-evaluations`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                console.log('📦 Evaluaciones pendientes recibidas:', data);
-                
-                if (data.success) {
-                    displayPendingEvaluations(data.pending_evaluations);
-                } else {
-                    throw new Error(data.error || 'Error desconocido');
-                }
-            } catch (error) {
-                console.error('❌ Error cargando evaluaciones pendientes:', error);
-                document.getElementById('pendingEvaluationsSection').innerHTML = `
-                    <div class="text-center py-5">
-                        <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
-                        <h5 class="text-muted mb-2">Error al cargar</h5>
-                        <p class="text-muted small">No se pudieron cargar las evaluaciones pendientes</p>
-                    </div>
-                `;
-            }
-        }
-
+        // LEGACY: Función para cargar evaluaciones pendientes (ahora manejada por Alpine)
+        // Esta función ya no se usa directamente, el wrapper global llama al método Alpine
+        
         // Función para mostrar evaluaciones pendientes
-        function displayPendingEvaluations(pendingEvaluations) {
+        // LEGACY: Función original de display de evaluaciones pendientes
+        function displayPendingEvaluationsLegacy() {
+            const pendingEvaluations = window.pendingEvaluations || [];
             const container = document.getElementById('pendingEvaluationsSection');
             
             if (!container) {
