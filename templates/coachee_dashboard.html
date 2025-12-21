@@ -6792,6 +6792,8 @@
                 evaluationsData: null,
                 evaluationsLastLoaded: null,
                 evaluationCategories: {},
+                evaluationHistory: null,
+                progressData: null,
                 tasksData: [],
                 documentsData: [],
                 videosData: [],
@@ -7109,13 +7111,11 @@
                             }
                         }, 100);
                     } else if (tabId === 'progress') {
-                        // Cargar historial de evaluaciones
-                        if (typeof loadEvaluationHistory === 'function') loadEvaluationHistory();
+                        // 🔥 ALPINE: Cargar historial de evaluaciones
+                        this.loadEvaluationHistory();
                     } else if (tabId === 'completed-evaluations') {
-                        // Cargar evaluaciones completadas
-                        if (window.evaluationsData && window.evaluationsData.completed) {
-                            if (typeof renderCompletedEvaluationsSection === 'function') {
-                                renderCompletedEvaluationsSection();
+                        // 🔥 ALPINE: Renderizar evaluaciones completadas
+                        this.renderCompletedEvaluationsSection();
                             }
                         }
                     } else if (tabId === 'pending-evaluations') {
@@ -7237,6 +7237,59 @@
                     // Llamar a función legacy de renderizado por ahora
                     if (typeof renderAvailableEvaluationsLegacy === 'function') {
                         renderAvailableEvaluationsLegacy(this.evaluationsData);
+                    }
+                },
+                
+                // ============================================
+                // EVALUACIONES COMPLETADAS (Alpine)
+                // ============================================
+                
+                renderCompletedEvaluationsSection() {
+                    const container = document.getElementById('completedEvaluationsSection');
+                    if (!container) return;
+                    
+                    if (!this.evaluationsData || !this.evaluationsData.completed || this.evaluationsData.completed.length === 0) {
+                        container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px;"><div class="empty-state-icon" style="font-size: 64px; color: #dbdbdb; margin-bottom: 16px;"><i class="fas fa-clipboard-list"></i></div><div class="empty-state-title" style="color: #262626; font-size: 18px; margin-bottom: 8px; font-weight: 600;">Sin evaluaciones completadas</div><div class="empty-state-description" style="color: #8e8e8e; font-size: 14px;">Aún no has completado ninguna evaluación</div></div>';
+                        return;
+                    }
+                    
+                    // Llamar a función legacy para renderizar
+                    if (typeof renderCompletedEvaluationsLegacy === 'function') {
+                        renderCompletedEvaluationsLegacy(this.evaluationsData);
+                    }
+                },
+                
+                async loadEvaluationHistory() {
+                    console.log('🔍 ALPINE: Loading evaluation history...');
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
+                        const data = await response.json();
+                        
+                        console.log('🔍 ALPINE: evaluation-history response:', data);
+                        
+                        if (response.ok) {
+                            this.evaluationHistory = data.history || [];
+                            this.progressData = data.progress_data || null;
+                            
+                            console.log('🔍 DEBUG: progress_data:', data.progress_data);
+                            console.log('🔍 DEBUG: history length:', data.history?.length);
+                            
+                            // Llamar funciones de gráficos
+                            console.log('🔥 CALLING createSecondChart()...');
+                            if (typeof createSecondChart === 'function') createSecondChart();
+                            console.log('🔥 createSecondChart() called!');
+                            
+                            // Crear gráfico de progreso de Asertividad
+                            if (typeof loadAsertividadProgress === 'function') loadAsertividadProgress();
+                            
+                        } else {
+                            throw new Error(data.error);
+                        }
+                    } catch (error) {
+                        console.error('❌ Error cargando historial:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Error cargando historial de evaluaciones', 'error');
+                        }
                     }
                 }
             };
@@ -7392,6 +7445,50 @@
             }
         }
         
+        // ============================================
+        // WRAPPERS GLOBALES PARA COMPATIBILIDAD (Legacy)
+        // ============================================
+        
+        // Wrapper para showTab
+        function showTab(tabId) {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.showTab === 'function') {
+                alpineData.showTab(tabId);
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+        
+        // Wrapper para loadEvaluations
+        async function loadEvaluations(forceRefresh = false) {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.loadEvaluations === 'function') {
+                await alpineData.loadEvaluations(forceRefresh);
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+        
+        // 🔥 PASO 4: Wrapper para renderCompletedEvaluationsSection
+        function renderCompletedEvaluationsSection() {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.renderCompletedEvaluationsSection === 'function') {
+                alpineData.renderCompletedEvaluationsSection();
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+        
+        // 🔥 PASO 4: Wrapper para loadEvaluationHistory
+        async function loadEvaluationHistory() {
+            const alpineData = Alpine.$data(document.body);
+            if (alpineData && typeof alpineData.loadEvaluationHistory === 'function') {
+                await alpineData.loadEvaluationHistory();
+            } else {
+                console.error('❌ Alpine component not ready');
+            }
+        }
+
         // Función para navegar a evaluaciones completadas
         function navigateToCompletedEvaluations() {
             // Primero activar la pestaña de evaluaciones con el nuevo sistema
@@ -8350,8 +8447,8 @@
             container.innerHTML = html;
         }
 
-        // Render completed evaluations in the dedicated section
-        function renderCompletedEvaluationsSection() {
+        // LEGACY: Función original de renderizado - Renombrada para compatibilidad
+        function renderCompletedEvaluationsLegacy() {
             const container = document.getElementById('completedEvaluationsSection');
             
             if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
@@ -8598,39 +8695,9 @@
             container.innerHTML = html;
         }
 
-        // Load evaluation history for progress chart
-        async function loadEvaluationHistory() {
-            console.log('🔍 LOAD-EVALUATION-HISTORY: Function called');
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
-                const data = await response.json();
-                
-                console.log('🔍 DEBUG: loadEvaluationHistory response:', data);
-                
-                if (response.ok) {
-                    console.log('🔍 DEBUG: progress_data:', data.progress_data);
-                    console.log('🔍 DEBUG: history length:', data.history?.length);
-                    
-                    // renderProgressChart(data.progress_data, data.history); // ELIMINADO
-                    // renderTestProgressChart(); // TEST: ELIMINADO
-                    
-                    console.log('🔥 CALLING createSecondChart()...');
-                    createSecondChart(); // NUEVO: Crear segundo gráfico visible
-                    console.log('🔥 createSecondChart() called!');
-                    
-                    // Crear gráfico de progreso de Asertividad
-                    loadAsertividadProgress();
-                    
-                    // renderStatistics(data.statistics); // ELIMINADO - contenedor no existe
-                    // renderLatestEvaluationDetails(data.history); // ELIMINADO - contenedor no existe
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (error) {
-                console.error('Error cargando historial:', error);
-                showToast('Error cargando historial de evaluaciones', 'error');
-            }
-        }
+        // LEGACY: Load evaluation history - Renombrada para compatibilidad (ahora manejada por Alpine)
+        // Esta función ya no se usa directamente, el wrapper global llama al método Alpine
+        // Se mantiene por compatibilidad con código legacy que pueda referenciarla
 
         // FUNCIÓN renderProgressChart ELIMINADA POR PETICIÓN DEL USUARIO
         
