@@ -27,8 +27,10 @@
     <!-- FullCalendar CSS -->
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
     
-    <!-- Alpine.js - Framework Reactivo -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
+    <!-- Estilos para Alpine.js x-cloak -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -6243,14 +6245,18 @@
                             <!-- Pestañas para organizar el contenido -->
                             <ul class="nav nav-tabs mb-4" id="contentTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="videos-tab" data-bs-toggle="tab" 
-                                        data-bs-target="#videos-pane" type="button" role="tab">
+                                    <button class="nav-link" 
+                                        :class="{ 'active': contentTab === 'videos' }"
+                                        @click="switchContentTab('videos')"
+                                        id="videos-tab" type="button" role="tab">
                                         <i class="fas fa-play-circle me-1"></i>Videos
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="documents-tab" data-bs-toggle="tab" 
-                                        data-bs-target="#documents-pane" type="button" role="tab">
+                                    <button class="nav-link" 
+                                        :class="{ 'active': contentTab === 'documents' }"
+                                        @click="switchContentTab('documents')"
+                                        id="documents-tab" type="button" role="tab">
                                         <i class="fas fa-file-alt me-1"></i>Documentos
                                     </button>
                                 </li>
@@ -6259,9 +6265,11 @@
                             <!-- Contenido de las pestañas -->
                             <div class="tab-content" id="contentTabContent">
                                 <!-- Pestaña: Videos -->
-                                <div class="tab-pane fade show active" id="videos-pane" role="tabpanel">
+                                <div class="tab-pane fade" 
+                                    :class="{ 'show active': contentTab === 'videos' }"
+                                    id="videos-pane" role="tabpanel">
                                     <div id="contentContainer">
-                                        <div class="loading-spinner">
+                                        <div class="loading-spinner" x-show="isLoadingVideos">
                                             <div class="spinner-border spinner-border-custom" role="status">
                                                 <span class="visually-hidden">Cargando videos...</span>
                                             </div>
@@ -6270,9 +6278,11 @@
                                 </div>
                                 
                                 <!-- Pestaña: Documentos -->
-                                <div class="tab-pane fade" id="documents-pane" role="tabpanel">
+                                <div class="tab-pane fade" 
+                                    :class="{ 'show active': contentTab === 'documents' }"
+                                    id="documents-pane" role="tabpanel">
                                     <div id="documentsContainer">
-                                        <div class="loading-spinner">
+                                        <div class="loading-spinner" x-show="isLoadingDocuments">
                                             <div class="spinner-border spinner-border-custom" role="status">
                                                 <span class="visually-hidden">Cargando documentos...</span>
                                             </div>
@@ -6280,9 +6290,14 @@
                                     </div>
                                     
                                     <!-- Filtros y búsqueda para documentos -->
-                                    <div class="row mb-3" style="display: none;" id="documentFilters">
+                                    <div class="row mb-3" 
+                                        x-show="!isLoadingDocuments && documentsData.length > 0"
+                                        id="documentFilters">
                                         <div class="col-md-4">
-                                            <select class="form-select" id="categoryFilter">
+                                            <select class="form-select" 
+                                                x-model="documentFilters.category"
+                                                @change="filterDocuments()"
+                                                id="categoryFilter">
                                                 <option value="">Todas las categorías</option>
                                                 <option value="ejercicios">Ejercicios y Actividades</option>
                                                 <option value="teoria">Material Teórico</option>
@@ -6293,7 +6308,10 @@
                                             </select>
                                         </div>
                                         <div class="col-md-4">
-                                            <select class="form-select" id="priorityFilter">
+                                            <select class="form-select" 
+                                                x-model="documentFilters.priority"
+                                                @change="filterDocuments()"
+                                                id="priorityFilter">
                                                 <option value="">Todas las prioridades</option>
                                                 <option value="urgente">Urgente</option>
                                                 <option value="alta">Alta</option>
@@ -6301,8 +6319,11 @@
                                             </select>
                                         </div>
                                         <div class="col-md-4">
-                                            <input type="text" class="form-control" id="searchDocuments" 
-                                                   placeholder="Buscar documentos...">
+                                            <input type="text" class="form-control" 
+                                                x-model="documentFilters.search"
+                                                @input="filterDocuments()"
+                                                id="searchDocuments" 
+                                                placeholder="Buscar documentos...">
                                         </div>
                                     </div>
                                     
@@ -6318,43 +6339,70 @@
 
                 <!-- Progress Tab -->
                 <div class="tab-pane fade" id="progress" role="tabpanel">
-                    <!-- Gráfico de Progreso de Todas las Evaluaciones -->
+                    
+                    <!-- ========================================= -->
+                    <!-- 🆕 NUEVA SECCIÓN: Mi Progreso (Alpine.js) -->
+                    <!-- ========================================= -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <div class="card sidebar-white border-secondary" style="background-color: white !important; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; border: 2px solid #e2e8f0 !important;">
                                 <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-bottom: none !important; padding: 1.25rem;">
                                     <div>
                                         <h5 class="mb-0" style="color: white !important; font-weight: 700; font-size: 1.5rem; display: flex; align-items: center;">
-                                            <i class="fas fa-chart-line me-3" style="font-size: 1.75rem;"></i>Progreso en Todas las Evaluaciones
+                                            <i class="fas fa-chart-line me-3" style="font-size: 1.75rem;"></i>
+                                            🆕 Mi Progreso en Evaluaciones
                                         </h5>
-                                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Evolución de tu desempeño en cada tipo de evaluación</p>
+                                        <p class="mb-0 mt-2" style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;">Evolución de tu desempeño a lo largo del tiempo</p>
                                     </div>
                                 </div>
                                 <div class="card-body" style="background-color: white !important; padding: 2rem;">
-                                    <div id="asertividadChartContainer">
-                                        <div class="loading-spinner text-center py-5">
-                                            <div class="spinner-border text-success" role="status">
-                                                <span class="visually-hidden">Cargando gráfico...</span>
-                                            </div>
-                                            <p class="text-muted small mt-2 mb-0">Cargando datos de progreso...</p>
+                                    <!-- Alpine Loading Spinner -->
+                                    <div class="text-center py-5" x-show="isLoadingProgress" x-cloak>
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
                                         </div>
-                                    </div>
-                                    <div style="position: relative; height: 400px; display: none;" id="asertividadChartWrapper">
-                                        <canvas id="asertividadProgressChart"></canvas>
+                                        <p class="text-muted small mt-3 mb-0">Cargando datos de progreso...</p>
                                     </div>
                                     
-                                    <!-- Estadísticas de progreso -->
-                                    <div class="row mt-4 justify-content-center" id="asertividadStats" style="display: none;">
+                                    <!-- Alpine Empty State -->
+                                    <div class="text-center py-5" 
+                                        x-show="!isLoadingProgress && (!allAssessmentHistory || Object.keys(allAssessmentHistory || {}).length === 0)"
+                                        x-cloak>
+                                        <i class="fas fa-chart-line text-muted mb-3" style="font-size: 3rem;"></i>
+                                        <h5 class="text-muted">Sin evaluaciones registradas</h5>
+                                        <p class="text-muted small">Completa evaluaciones para ver tu progreso aquí</p>
+                                    </div>
+                                    
+                                    <!-- Alpine Chart Container -->
+                                    <div x-show="!isLoadingProgress && allAssessmentHistory && Object.keys(allAssessmentHistory || {}).length > 0"
+                                        x-cloak
+                                        style="position: relative; height: 450px;">
+                                        <canvas id="alpineProgressChart"></canvas>
+                                    </div>
+                                    
+                                    <!-- Alpine Statistics -->
+                                    <div class="row mt-4 g-3" 
+                                        x-show="!isLoadingProgress && allAssessmentHistory && Object.keys(allAssessmentHistory || {}).length > 0"
+                                        x-cloak>
                                         <div class="col-md-4">
-                                            <div class="text-center p-3 bg-light rounded">
-                                                <div class="text-muted small mb-1">Promedio General</div>
-                                                <div class="fs-4 fw-bold text-success" id="averageScore">0%</div>
+                                            <div class="text-center p-4 rounded-3" style="background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); border: 1px solid #667eea44;">
+                                                <i class="fas fa-chart-bar text-primary mb-2" style="font-size: 1.5rem;"></i>
+                                                <div class="text-muted small mb-2 fw-semibold">Total Evaluaciones</div>
+                                                <div class="fs-3 fw-bold text-primary" x-text="progressStatistics.totalEvaluations || 0"></div>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
-                                            <div class="text-center p-3 bg-light rounded">
-                                                <div class="text-muted small mb-1">Mejor Score</div>
-                                                <div class="fs-4 fw-bold text-warning" id="bestScore">0%</div>
+                                            <div class="text-center p-4 rounded-3" style="background: linear-gradient(135deg, #10b98122 0%, #059b6922 100%); border: 1px solid #10b98144;">
+                                                <i class="fas fa-chart-line text-success mb-2" style="font-size: 1.5rem;"></i>
+                                                <div class="text-muted small mb-2 fw-semibold">Promedio General</div>
+                                                <div class="fs-3 fw-bold text-success" x-text="`${(progressStatistics.averageScore || 0).toFixed(1)}%`"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-center p-4 rounded-3" style="background: linear-gradient(135deg, #f59e0b22 0%, #d9730022 100%); border: 1px solid #f59e0b44;">
+                                                <i class="fas fa-trophy text-warning mb-2" style="font-size: 1.5rem;"></i>
+                                                <div class="text-muted small mb-2 fw-semibold">Mejor Score</div>
+                                                <div class="fs-3 fw-bold text-warning" x-text="`${(progressStatistics.bestScore || 0).toFixed(1)}%`"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -6363,9 +6411,6 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <!-- Sección de historial eliminada -->
-                    </div>
                 </div>
 
                 <!-- Development Plan Tab -->
@@ -6381,7 +6426,9 @@
                                 </div>
                                 <div class="card-body" style="background-color: white !important; padding: 2rem;">
                                     <!-- Loading -->
-                                    <div id="devPlanLoading" class="text-center py-5">
+                                    <div id="devPlanLoading" 
+                                        x-show="isLoadingPlans"
+                                        class="text-center py-5">
                                         <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Cargando plan...</span>
                                         </div>
@@ -6389,7 +6436,8 @@
                                     </div>
                                     
                                     <!-- No Plan Message -->
-                                    <div id="devPlanEmpty" style="display: none;">
+                                    <div id="devPlanEmpty" 
+                                        x-show="!isLoadingPlans && developmentPlans.length === 0">
                                         <div class="text-center py-5">
                                             <i class="fas fa-rocket" style="font-size: 4rem; color: #e2e8f0; margin-bottom: 1.5rem;"></i>
                                             <h5 style="color: #64748b; font-weight: 600; margin-bottom: 1rem;">Aún no tienes un Plan de Desarrollo</h5>
@@ -6405,7 +6453,8 @@
                                     </div>
                                     
                                     <!-- Development Plan Content -->
-                                    <div id="devPlanContent" style="display: none;">
+                                    <div id="devPlanContent" 
+                                        x-show="!isLoadingPlans && developmentPlans.length > 0">
                                         <!-- Plans will be rendered here -->
                                     </div>
                                 </div>
@@ -6429,19 +6478,24 @@
                                     <!-- Pestañas para organizar el contenido -->
                                     <ul class="nav nav-tabs mb-4" id="scheduleCoachTabs" role="tablist">
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link active force-white-text" id="schedule-request-tab" data-bs-toggle="tab" 
-                                                data-bs-target="#schedule-request-pane" type="button" role="tab" 
-                                                aria-controls="schedule-request-pane" aria-selected="true"
+                                            <button class="nav-link force-white-text" 
+                                                :class="{ 'active': scheduleTab === 'request' }"
+                                                @click="switchScheduleTab('request')"
+                                                id="schedule-request-tab" type="button" role="tab"
                                                 style="color: #ffffff !important; background-color: #007bff !important; border-color: #007bff !important;">
                                                 <i class="fas fa-plus me-1"></i>Solicitar Sesión
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link position-relative force-white-text" id="my-sessions-tab" data-bs-toggle="tab" 
-                                                data-bs-target="#my-sessions-pane" type="button" role="tab"
-                                                aria-controls="my-sessions-pane" aria-selected="false">
+                                            <button class="nav-link position-relative force-white-text" 
+                                                :class="{ 'active': scheduleTab === 'sessions' }"
+                                                @click="switchScheduleTab('sessions')"
+                                                id="my-sessions-tab" type="button" role="tab">
                                                 <i class="fas fa-calendar me-1"></i>Mis Sesiones
-                                                <span class="badge bg-info rounded-pill ms-1" id="mySessionsCount" style="display: none;">0</span>
+                                                <span class="badge bg-info rounded-pill ms-1" 
+                                                    x-show="mySessions.length > 0"
+                                                    x-text="mySessions.length"
+                                                    id="mySessionsCount"></span>
                                             </button>
                                         </li>
                                     </ul>
@@ -6450,8 +6504,10 @@
                                     <div class="tab-content" id="scheduleCoachTabContent">
                                         
                                         <!-- Pestaña: Solicitar Sesión -->
-                                        <div class="tab-pane fade show active" id="schedule-request-pane" role="tabpanel" 
-                                             aria-labelledby="schedule-request-tab" tabindex="0">
+                                        <div class="tab-pane fade" 
+                                            :class="{ 'show active': scheduleTab === 'request' }"
+                                            id="schedule-request-pane" role="tabpanel" 
+                                            aria-labelledby="schedule-request-tab" tabindex="0">
                                             <div class="row">
                                                 <div class="col-lg-8">
                                                     <div class="card">
@@ -6616,8 +6672,10 @@
                                         </div>
 
                                         <!-- Pestaña: Mis Sesiones -->
-                                        <div class="tab-pane fade" id="my-sessions-pane" role="tabpanel" 
-                                             aria-labelledby="my-sessions-tab" tabindex="0">
+                                        <div class="tab-pane fade" 
+                                            :class="{ 'show active': scheduleTab === 'sessions' }"
+                                            id="my-sessions-pane" role="tabpanel" 
+                                            aria-labelledby="my-sessions-tab" tabindex="0">
                                             <div class="row">
                                                 <div class="col-12">
                                                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -6626,17 +6684,20 @@
                                                             Mis Sesiones Programadas
                                                         </h6>
                                                         <div>
-                                                            <button class="btn btn-primary btn-sm me-2" onclick="switchToRequestTab()">
+                                                            <button class="btn btn-primary btn-sm me-2" 
+                                                                @click="switchScheduleTab('request')">
                                                                 <i class="fas fa-plus me-1"></i>Solicitar Sesión
                                                             </button>
-                                                            <button class="btn btn-outline-primary btn-sm" onclick="refreshMySessions()">
+                                                            <button class="btn btn-outline-primary btn-sm" 
+                                                                @click="loadMySessions(true)"
+                                                                :disabled="isLoadingSessions">
                                                                 <i class="fas fa-sync-alt me-1"></i>Actualizar
                                                             </button>
                                                         </div>
                                                     </div>
                                                     
                                                     <div id="mySessionsList">
-                                                        <div class="text-center py-4">
+                                                        <div class="text-center py-4" x-show="isLoadingSessions">
                                                             <div class="spinner-border text-primary" role="status">
                                                                 <span class="visually-hidden">Cargando sesiones...</span>
                                                             </div>
@@ -6767,8 +6828,16 @@
         // ALPINE.JS COACHEE DASHBOARD APP - V2 REACTIVE
         // ============================================
         
+        console.log('🔧 Script principal cargando...');
+        
+        // Detectar cuando Alpine.js está listo
+        document.addEventListener('alpine:init', () => {
+            console.log('✅ Alpine.js INITIALIZED');
+        });
+        
         // API configuration
         const API_BASE_URL = window.location.origin;
+        console.log('🌐 API_BASE_URL:', API_BASE_URL);
         
         // DEBUG: Add debugging function
         function debugLog(message, data = null) {
@@ -6780,6 +6849,7 @@
         // ALPINE.JS COMPONENT
         // ============================================
         function coacheeDashboardApp() {
+            console.log('🎯 coacheeDashboardApp() function CALLED - Creating Alpine component');
             return {
                 // Estado Global
                 activeTab: 'evaluations',
@@ -6830,19 +6900,28 @@
                 
                 // Inicialización
                 async init() {
-                    console.log('🚀 Inicializando Coachee Dashboard Alpine.js V2');
-                    this.createParticles();
-                    this.updateDateTime();
-                    setInterval(() => this.updateDateTime(), 1000);
-                    
-                    // IMPORTANTE: Inicializar funciones legacy PRIMERO para exponer window.evaluationCategories
-                    this.initializeLegacyFunctions();
-                    
-                    // Cargar datos iniciales
-                    await this.loadUserProfile();
-                    
-                    // Cargar evaluaciones disponibles
-                    await this.loadEvaluations();
+                    try {
+                        console.log('🚀 Inicializando Coachee Dashboard Alpine.js V2');
+                        this.createParticles();
+                        this.updateDateTime();
+                        setInterval(() => this.updateDateTime(), 1000);
+                        
+                        // IMPORTANTE: Inicializar funciones legacy PRIMERO para exponer window.evaluationCategories
+                        this.initializeLegacyFunctions();
+                        
+                        // Cargar datos iniciales
+                        console.log('📞 Cargando perfil de usuario...');
+                        await this.loadUserProfile();
+                        console.log('✅ Perfil cargado');
+                        
+                        // Cargar evaluaciones disponibles
+                        console.log('📞 Cargando evaluaciones...');
+                        await this.loadEvaluations();
+                        console.log('✅ Evaluaciones cargadas');
+                    } catch (error) {
+                        console.error('❌ ERROR en init():', error);
+                        console.error('Stack:', error.stack);
+                    }
                 },
                 
                 // Crear partículas animadas
@@ -6883,16 +6962,19 @@
                     try {
                         console.log('👤 Cargando perfil de usuario...');
                         
-                        // Intentar obtener del endpoint de coachee
-                        const response = await fetch('/api/coachee/me');
+                        // Obtener del endpoint correcto
+                        const response = await fetch('/api/coachee/profile');
                         
                         if (response.ok) {
                             const data = await response.json();
-                            console.log('✅ Perfil cargado desde /api/coachee/me:', data);
+                            console.log('✅ Perfil cargado desde /api/coachee/profile:', data);
                             
-                            this.coacheeName = data.full_name || data.username || 'Usuario';
-                            this.coacheeEmail = data.email || '';
-                            this.coacheeId = data.id || null;
+                            // El endpoint devuelve {success: true, profile: {...}}
+                            const profile = data.profile || data;
+                            
+                            this.coacheeName = profile.full_name || profile.username || 'Usuario';
+                            this.coacheeEmail = profile.email || '';
+                            this.coacheeId = profile.id || null;
                             
                             // Actualizar welcome message
                             const welcomeEl = document.getElementById('welcomeMessage');
@@ -7099,22 +7181,16 @@
                     }
                     
                     // Cargar contenido específico según la pestaña
-                    if (tabId === 'tasks') {
+                    if (tabId === 'evaluations') {
+                        // 🔥 ALPINE: Cargar evaluaciones disponibles
+                        this.loadEvaluations();
+                    } else if (tabId === 'tasks') {
                         // 🔥 ALPINE: Cargar tareas (con cache automático)
                         this.loadTasks();
                     } else if (tabId === 'content') {
-                        // Cuando se muestra Mi Contenido, activar la pestaña de documentos
+                        // 🔥 ALPINE: Cargar contenido (videos por defecto)
                         setTimeout(() => {
-                            const documentsTab = document.getElementById('documents-tab');
-                            if (documentsTab && !documentsTab.classList.contains('active')) {
-                                documentsTab.click();
-                            }
-                            // Cargar documentos si no están cargados
-                            if (typeof loadDocuments === 'function' && 
-                                (!window.documentsData || window.documentsData.length === 0 || 
-                                !window.lastDocumentLoad || (Date.now() - window.lastDocumentLoad > 300000))) {
-                                loadDocuments();
-                            }
+                            this.switchContentTab('videos');
                         }, 100);
                     } else if (tabId === 'progress') {
                         // 🔥 ALPINE: Cargar historial de evaluaciones
@@ -7122,14 +7198,17 @@
                     } else if (tabId === 'completed-evaluations') {
                         // 🔥 ALPINE: Renderizar evaluaciones completadas
                         this.renderCompletedEvaluationsSection();
-                            }
-                        }
                     } else if (tabId === 'pending-evaluations') {
                         // 🔥 ALPINE: Cargar evaluaciones pendientes
                         this.loadPendingEvaluations();
                     } else if (tabId === 'development-plan') {
-                        // Cargar planes de desarrollo
-                        if (typeof loadDevelopmentPlans === 'function') loadDevelopmentPlans();
+                        // 🔥 ALPINE: Cargar planes de desarrollo
+                        this.loadDevelopmentPlans();
+                    } else if (tabId === 'schedule-coach') {
+                        // 🔥 ALPINE: Cargar disponibilidad del coach y sesiones
+                        setTimeout(() => {
+                            this.switchScheduleTab('request');
+                        }, 100);
                     }
                     
                     console.log('✅ ALPINE Tab changed to:', tabId);
@@ -7306,13 +7385,13 @@
                             console.log('🔍 DEBUG: progress_data:', data.progress_data);
                             console.log('🔍 DEBUG: history length:', data.history?.length);
                             
-                            // Llamar funciones de gráficos
+                            // Llamar funciones de gráficos legacy
                             console.log('🔥 CALLING createSecondChart()...');
                             if (typeof createSecondChart === 'function') createSecondChart();
                             console.log('🔥 createSecondChart() called!');
                             
-                            // Crear gráfico de progreso de Asertividad
-                            if (typeof loadAsertividadProgress === 'function') loadAsertividadProgress();
+                            // 🔥 ALPINE: Cargar gráfico de progreso completo
+                            await this.loadAllAssessmentHistory();
                             
                         } else {
                             throw new Error(data.error);
@@ -7458,6 +7537,790 @@
                         renderTasksLegacy();
                     } else {
                         console.error('❌ renderTasksLegacy no disponible');
+                    }
+                },
+                
+                // ============================================
+                // CONTENIDO (Alpine) - PASO 7
+                // ============================================
+                
+                contentTab: 'videos', // 'videos' o 'documents'
+                documentsLastLoaded: null,
+                videosLastLoaded: null,
+                isLoadingDocuments: false,
+                isLoadingVideos: false,
+                filteredDocuments: [],
+                documentFilters: {
+                    category: '',
+                    priority: '',
+                    search: ''
+                },
+                CONTENT_CACHE_DURATION: 300000, // 5 minutos
+                
+                // Cambiar tab de contenido
+                switchContentTab(tab) {
+                    console.log(`🔄 ALPINE: Switching content tab to ${tab}`);
+                    this.contentTab = tab;
+                    
+                    if (tab === 'documents') {
+                        this.loadDocuments();
+                    } else if (tab === 'videos') {
+                        this.loadVideos();
+                    }
+                },
+                
+                // Cargar documentos
+                async loadDocuments(forceRefresh = false) {
+                    console.log('📄 ALPINE: Loading documents...');
+                    
+                    // Evitar carga duplicada
+                    if (this.isLoadingDocuments) {
+                        console.log('⏳ Documents already loading');
+                        return;
+                    }
+                    
+                    // Usar cache si los datos son recientes
+                    if (!forceRefresh && this.documentsData && this.documentsData.length > 0 && this.documentsLastLoaded) {
+                        const age = Date.now() - this.documentsLastLoaded;
+                        if (age < this.CONTENT_CACHE_DURATION) {
+                            console.log(`📦 Using cached documents (age: ${Math.round(age/1000)}s)`);
+                            this.renderDocuments();
+                            return;
+                        }
+                    }
+                    
+                    this.isLoadingDocuments = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/documents`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        this.documentsData = data.documents || [];
+                        this.filteredDocuments = [...this.documentsData];
+                        this.documentsLastLoaded = Date.now();
+                        
+                        // Exponer globalmente
+                        window.documentsData = this.documentsData;
+                        window.lastDocumentLoad = this.documentsLastLoaded;
+                        
+                        console.log(`✅ ALPINE: ${this.documentsData.length} documents loaded`);
+                        this.renderDocuments();
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error loading documents:', error);
+                        this.documentsData = [];
+                        this.filteredDocuments = [];
+                    } finally {
+                        this.isLoadingDocuments = false;
+                    }
+                },
+                
+                // Renderizar documentos (llamar función legacy)
+                renderDocuments() {
+                    console.log('🔍 ALPINE: renderDocuments called');
+                    
+                    // Exponer globalmente
+                    window.documentsData = this.documentsData;
+                    window.filteredDocuments = this.filteredDocuments;
+                    
+                    // Llamar función legacy
+                    if (typeof renderDocumentsLegacy === 'function') {
+                        renderDocumentsLegacy();
+                    } else {
+                        console.error('❌ renderDocumentsLegacy no disponible');
+                    }
+                },
+                
+                // Filtrar documentos
+                filterDocuments() {
+                    console.log('🔍 ALPINE: Filtering documents', this.documentFilters);
+                    
+                    this.filteredDocuments = this.documentsData.filter(doc => {
+                        // Filtrar por categoría
+                        if (this.documentFilters.category && doc.category !== this.documentFilters.category) {
+                            return false;
+                        }
+                        
+                        // Filtrar por prioridad
+                        if (this.documentFilters.priority && doc.priority !== this.documentFilters.priority) {
+                            return false;
+                        }
+                        
+                        // Filtrar por búsqueda
+                        if (this.documentFilters.search) {
+                            const search = this.documentFilters.search.toLowerCase();
+                            const title = (doc.title || '').toLowerCase();
+                            const description = (doc.description || '').toLowerCase();
+                            return title.includes(search) || description.includes(search);
+                        }
+                        
+                        return true;
+                    });
+                    
+                    window.filteredDocuments = this.filteredDocuments;
+                    this.renderDocuments();
+                },
+                
+                // Cargar videos
+                async loadVideos(forceRefresh = false) {
+                    console.log('🎥 ALPINE: Loading videos...');
+                    
+                    // Evitar carga duplicada
+                    if (this.isLoadingVideos) {
+                        console.log('⏳ Videos already loading');
+                        return;
+                    }
+                    
+                    // Usar cache
+                    if (!forceRefresh && this.videosData && this.videosData.length > 0 && this.videosLastLoaded) {
+                        const age = Date.now() - this.videosLastLoaded;
+                        if (age < this.CONTENT_CACHE_DURATION) {
+                            console.log(`📦 Using cached videos (age: ${Math.round(age/1000)}s)`);
+                            this.renderVideos();
+                            return;
+                        }
+                    }
+                    
+                    this.isLoadingVideos = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/content`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        this.videosData = data.videos || [];
+                        this.videosLastLoaded = Date.now();
+                        
+                        // Exponer globalmente
+                        window.contentData = this.videosData;
+                        
+                        console.log(`✅ ALPINE: ${this.videosData.length} videos loaded`);
+                        this.renderVideos();
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error loading videos:', error);
+                        this.videosData = [];
+                    } finally {
+                        this.isLoadingVideos = false;
+                    }
+                },
+                
+                // Renderizar videos (llamar función legacy)
+                renderVideos() {
+                    console.log('🔍 ALPINE: renderVideos called');
+                    
+                    // Exponer globalmente
+                    window.contentData = this.videosData;
+                    
+                    // Llamar función legacy
+                    if (typeof renderContent === 'function') {
+                        renderContent();
+                    } else {
+                        console.error('❌ renderContent no disponible');
+                    }
+                },
+                
+                // ============================================
+                // PROGRESS (Alpine) - PASO 8
+                // ============================================
+                
+                allAssessmentHistory: null,
+                isLoadingProgress: false,
+                progressChart: null,
+                progressStatistics: {
+                    totalEvaluations: 0,
+                    averageScore: 0,
+                    bestScore: 0
+                },
+                
+                // Cargar historial completo de todas las evaluaciones
+                async loadAllAssessmentHistory(forceRefresh = false) {
+                    console.log('📈 ALPINE: Loading all assessment history...');
+                    
+                    if (this.isLoadingProgress) {
+                        console.log('⏳ Progress already loading');
+                        return;
+                    }
+                    
+                    this.isLoadingProgress = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/all-assessment-history`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📊 ALPINE: All assessment history received:', data);
+                        console.log('📊 ALPINE: data.history:', data.history);
+                        console.log('📊 ALPINE: Object.keys length:', data.history ? Object.keys(data.history).length : 0);
+                        
+                        if (data.success && data.history && Object.keys(data.history).length > 0) {
+                            this.allAssessmentHistory = data.history;
+                            
+                            // Convertir estadísticas de snake_case a camelCase
+                            if (data.statistics) {
+                                this.progressStatistics = {
+                                    totalEvaluations: data.statistics.total_evaluations || 0,
+                                    averageScore: data.statistics.average_score || 0,
+                                    bestScore: data.statistics.best_score || 0,
+                                    worstScore: data.statistics.worst_score || 0
+                                };
+                            }
+                            
+                            console.log('📊 ALPINE: Statistics updated:', this.progressStatistics);
+                            console.log('📊 ALPINE: allAssessmentHistory set:', this.allAssessmentHistory);
+                            console.log('📊 ALPINE: isLoadingProgress:', this.isLoadingProgress);
+                            
+                            // Exponer globalmente
+                            window.allAssessmentHistory = this.allAssessmentHistory;
+                            
+                            // Renderizar gráfico
+                            this.renderProgressChart();
+                        } else {
+                            // No hay datos
+                            console.log('⚠️ ALPINE: No history data or empty history');
+                            this.showEmptyProgressState();
+                        }
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error loading progress:', error);
+                        this.showEmptyProgressState();
+                        this.isLoadingProgress = false;
+                    }
+                },
+                
+                // Renderizar gráfico de progreso
+                renderProgressChart() {
+                    console.log('📊 ALPINE: renderProgressChart called');
+                    console.log('📊 ALPINE: allAssessmentHistory:', this.allAssessmentHistory);
+                    
+                    // Exponer globalmente
+                    window.allAssessmentHistory = this.allAssessmentHistory;
+                    
+                    // Forzar la creación inmediata del gráfico
+                    // Alpine ya debería haber actualizado el DOM en este punto
+                    this.createProgressChart();
+                },
+                
+                // Crear el gráfico de progreso con Chart.js (NUEVA VERSIÓN CON FECHAS)
+                createProgressChart() {
+                    console.log('📊 ALPINE: createProgressChart called (NEW VERSION)');
+                    try {
+                        const canvas = document.getElementById('alpineProgressChart');
+                        
+                        if (!canvas) {
+                            console.error('❌ Canvas alpineProgressChart no encontrado');
+                            this.isLoadingProgress = false;
+                            return;
+                        }
+                        
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Destruir gráfico anterior si existe
+                        if (this.progressChart) {
+                            console.log('📊 ALPINE: Destroying previous chart...');
+                            this.progressChart.destroy();
+                        }
+                        
+                        console.log('📊 ALPINE: Building datasets with dates...');
+                        
+                        // Colores para diferentes evaluaciones
+                        const colors = [
+                            { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },    // Verde
+                            { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },    // Azul
+                            { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },    // Naranja
+                            { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },     // Rojo
+                            { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },    // Púrpura
+                            { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' }     // Rosa
+                        ];
+                        
+                        // Crear datasets para cada tipo de evaluación
+                        const datasets = [];
+                        let colorIndex = 0;
+                        
+                        Object.entries(this.allAssessmentHistory).forEach(([assessmentId, assessmentData]) => {
+                            const color = colors[colorIndex % colors.length];
+                            colorIndex++;
+                            
+                            console.log(`📈 ALPINE: Creating dataset for: ${assessmentData.title}`, {
+                                dataPoints: assessmentData.data.length
+                            });
+                            
+                            datasets.push({
+                                label: assessmentData.title,
+                                data: assessmentData.data.map(item => ({
+                                    x: new Date(item.completed_at),  // Usar fecha/hora real
+                                    y: item.percentage
+                                })),
+                                borderColor: color.border,
+                                backgroundColor: color.bg,
+                                borderWidth: 3,
+                                pointRadius: 6,
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: color.border,
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 2,
+                                pointHoverBackgroundColor: color.border,
+                                pointHoverBorderColor: '#ffffff',
+                                tension: 0.4,
+                                fill: false,
+                                showLine: true,
+                                spanGaps: true,
+                                metadata: assessmentData.data
+                            });
+                        });
+                        
+                        console.log('📊 ALPINE: Creating chart with', datasets.length, 'datasets');
+                        
+                        // Crear el gráfico con eje X de tiempo
+                        this.progressChart = new Chart(ctx, {
+                            type: 'line',
+                            data: { datasets },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                interaction: {
+                                    mode: 'nearest',
+                                    intersect: false,
+                                    axis: 'x'
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'top',
+                                        labels: {
+                                            usePointStyle: true,
+                                            padding: 15,
+                                            font: {
+                                                size: 12,
+                                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                                weight: '500'
+                                            },
+                                            boxWidth: 10,
+                                            boxHeight: 10
+                                        }
+                                    },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#fff',
+                                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                                        borderWidth: 1,
+                                        padding: 12,
+                                        displayColors: true,
+                                        callbacks: {
+                                            title: function(context) {
+                                                const date = new Date(context[0].parsed.x);
+                                                const dateStr = date.toLocaleDateString('es-ES', { 
+                                                    weekday: 'short',
+                                                    day: '2-digit', 
+                                                    month: 'short',
+                                                    year: 'numeric'
+                                                });
+                                                const timeStr = date.toLocaleTimeString('es-ES', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                });
+                                                return `${dateStr} - ${timeStr}`;
+                                            },
+                                            label: function(context) {
+                                                return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                                            },
+                                            afterLabel: function(context) {
+                                                const datasetData = context.dataset.metadata;
+                                                if (datasetData && datasetData.length > 1) {
+                                                    return `Intento ${context.dataIndex + 1} de ${datasetData.length}`;
+                                                }
+                                                return '';
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: {
+                                            unit: 'hour',
+                                            displayFormats: {
+                                                hour: 'dd MMM HH:mm',
+                                                day: 'dd MMM',
+                                                minute: 'dd MMM HH:mm'
+                                            },
+                                            tooltipFormat: 'dd/MM/yyyy HH:mm'
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Fecha y Hora de Evaluación',
+                                            font: { size: 12, weight: 'bold' }
+                                        },
+                                        ticks: {
+                                            maxRotation: 45,
+                                            minRotation: 45,
+                                            autoSkip: false,
+                                            source: 'data',
+                                            font: { size: 10, weight: '500' },
+                                            callback: function(value, index, ticks) {
+                                                const date = new Date(value);
+                                                const dateStr = date.toLocaleDateString('es-ES', { 
+                                                    day: '2-digit', 
+                                                    month: 'short'
+                                                });
+                                                const timeStr = date.toLocaleTimeString('es-ES', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: false
+                                                });
+                                                return [`${dateStr}`, `${timeStr}`];
+                                            }
+                                        },
+                                        grid: { 
+                                            display: true,
+                                            color: 'rgba(0, 0, 0, 0.05)' 
+                                        }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 100,
+                                        title: {
+                                            display: true,
+                                            text: 'Porcentaje (%)',
+                                            font: { size: 12, weight: 'bold' }
+                                        },
+                                        ticks: {
+                                            callback: function(value) {
+                                                return value + '%';
+                                            },
+                                            font: { size: 11 }
+                                        },
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.05)',
+                                            drawBorder: false
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        
+                        console.log('✅ ALPINE: Progress chart created successfully with time axis');
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error creating progress chart:', error);
+                    } finally {
+                        this.isLoadingProgress = false;
+                    }
+                },
+                
+                // Mostrar estado vacío si no hay datos
+                showEmptyProgressState() {
+                    console.log('📊 ALPINE: No progress data available');
+                    // Alpine maneja la visibilidad con x-show, no necesitamos manipular el DOM
+                },
+                
+                // ============================================
+                // DEVELOPMENT PLAN (Alpine) - PASO 9
+                // ============================================
+                
+                developmentPlans: [],
+                isLoadingPlans: false,
+                selectedPlan: null,
+                
+                // Cargar planes de desarrollo
+                async loadDevelopmentPlans(forceRefresh = false) {
+                    console.log('📋 ALPINE: Loading development plans...');
+                    
+                    if (this.isLoadingPlans) {
+                        console.log('⏳ Plans already loading');
+                        return;
+                    }
+                    
+                    this.isLoadingPlans = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/development-plans`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📋 ALPINE: Development plans received:', data);
+                        
+                        if (data.success && data.plans && data.plans.length > 0) {
+                            this.developmentPlans = data.plans;
+                            this.selectedPlan = data.plans[0]; // Seleccionar el más reciente
+                            
+                            // Exponer globalmente
+                            window.developmentPlans = this.developmentPlans;
+                            
+                            console.log(`✅ ALPINE: ${this.developmentPlans.length} plans loaded`);
+                            this.renderDevelopmentPlans();
+                        } else {
+                            // No hay planes
+                            this.developmentPlans = [];
+                            this.selectedPlan = null;
+                            this.showEmptyPlansState();
+                        }
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error loading plans:', error);
+                        this.developmentPlans = [];
+                        this.selectedPlan = null;
+                        this.showEmptyPlansState();
+                        
+                        if (typeof showToast === 'function') {
+                            showToast('Error al cargar el plan de desarrollo', 'error');
+                        }
+                    } finally {
+                        this.isLoadingPlans = false;
+                    }
+                },
+                
+                // Renderizar planes (llamar función legacy)
+                renderDevelopmentPlans() {
+                    console.log('🔍 ALPINE: renderDevelopmentPlans called');
+                    
+                    // Exponer globalmente
+                    window.developmentPlans = this.developmentPlans;
+                    
+                    // Llamar función legacy
+                    if (typeof renderDevelopmentPlans === 'function') {
+                        renderDevelopmentPlans(this.developmentPlans);
+                    } else {
+                        console.error('❌ renderDevelopmentPlans no disponible');
+                    }
+                },
+                
+                // Mostrar estado vacío si no hay planes
+                showEmptyPlansState() {
+                    const loadingEl = document.getElementById('devPlanLoading');
+                    const emptyEl = document.getElementById('devPlanEmpty');
+                    const contentEl = document.getElementById('devPlanContent');
+                    
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    if (contentEl) contentEl.style.display = 'none';
+                },
+                
+                // ============================================
+                // CALENDAR/SCHEDULE (Alpine) - PASO 10
+                // ============================================
+                
+                coachAvailability: [],
+                occupiedSlots: [],
+                mySessions: [],
+                isLoadingAvailability: false,
+                isLoadingSessions: false,
+                coachName: '',
+                scheduleTab: 'request', // 'request' o 'sessions'
+                
+                // Cambiar tab de schedule
+                switchScheduleTab(tab) {
+                    console.log(`🗓️ ALPINE: Switching schedule tab to ${tab}`);
+                    this.scheduleTab = tab;
+                    
+                    if (tab === 'sessions') {
+                        this.loadMySessions();
+                    } else if (tab === 'request') {
+                        this.loadCoachAvailability();
+                    }
+                },
+                
+                // Cargar disponibilidad del coach
+                async loadCoachAvailability(forceRefresh = false) {
+                    console.log('🗓️ ALPINE: Loading coach availability...');
+                    
+                    if (this.isLoadingAvailability) {
+                        console.log('⏳ Availability already loading');
+                        return;
+                    }
+                    
+                    this.isLoadingAvailability = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/coach-availability`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('🗓️ ALPINE: Availability received:', data);
+                        
+                        if (data.success) {
+                            this.coachAvailability = data.availability || [];
+                            this.occupiedSlots = data.occupied_slots || [];
+                            this.coachName = data.coach_name || '';
+                            
+                            // Exponer globalmente
+                            window.coachAvailability = this.coachAvailability;
+                            window.occupiedSlots = this.occupiedSlots;
+                            
+                            console.log(`✅ ALPINE: Loaded ${this.coachAvailability.length} availability slots`);
+                            
+                            // Llamar función legacy para renderizar
+                            if (typeof displayCoachAvailability === 'function') {
+                                displayCoachAvailability(this.coachAvailability, this.occupiedSlots, this.coachName);
+                            }
+                        } else {
+                            this.showEmptyAvailabilityState();
+                        }
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error loading availability:', error);
+                        this.showEmptyAvailabilityState();
+                    } finally {
+                        this.isLoadingAvailability = false;
+                    }
+                },
+                
+                // Cargar mis sesiones
+                async loadMySessions(forceRefresh = false) {
+                    console.log('📅 ALPINE: Loading my sessions...');
+                    
+                    if (this.isLoadingSessions) {
+                        console.log('⏳ Sessions already loading');
+                        return;
+                    }
+                    
+                    this.isLoadingSessions = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/my-sessions`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📅 ALPINE: Sessions received:', data);
+                        
+                        if (data.success) {
+                            this.mySessions = data.sessions || [];
+                            
+                            // Exponer globalmente
+                            window.mySessions = this.mySessions;
+                            
+                            console.log(`✅ ALPINE: Loaded ${this.mySessions.length} sessions`);
+                            
+                            // Llamar función legacy para renderizar
+                            if (typeof displayMySessions === 'function') {
+                                displayMySessions(this.mySessions);
+                            }
+                            
+                            // Actualizar contador
+                            if (typeof updateMySessionsCount === 'function') {
+                                updateMySessionsCount(this.mySessions.length);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('❌ ALPINE: Error loading sessions:', error);
+                        this.mySessions = [];
+                    } finally {
+                        this.isLoadingSessions = false;
+                    }
+                },
+                
+                // Mostrar estado vacío de disponibilidad
+                showEmptyAvailabilityState() {
+                    const container = document.getElementById('coachAvailabilityInfo');
+                    if (container) {
+                        container.innerHTML = '<p class="text-muted">No se pudo cargar la disponibilidad del coach</p>';
+                    }
+                },
+                
+                // ============================================
+                // MODALS (Alpine) - PASO 11
+                // ============================================
+                
+                modals: {
+                    changePassword: false,
+                    taskProgress: false,
+                    evaluationDetails: false,
+                    contactCoach: false,
+                    assessmentResults: false
+                },
+                
+                selectedTask: null,
+                selectedEvaluation: null,
+                
+                // Abrir modal
+                openModal(modalName) {
+                    console.log(`🔓 ALPINE: Opening modal ${modalName}`);
+                    this.modals[modalName] = true;
+                    
+                    // También activar el modal Bootstrap para compatibilidad
+                    const modalId = this.getModalId(modalName);
+                    if (modalId) {
+                        const modalElement = document.getElementById(modalId);
+                        if (modalElement) {
+                            const modal = new bootstrap.Modal(modalElement);
+                            modal.show();
+                        }
+                    }
+                },
+                
+                // Cerrar modal
+                closeModal(modalName) {
+                    console.log(`🔒 ALPINE: Closing modal ${modalName}`);
+                    this.modals[modalName] = false;
+                    
+                    // También cerrar el modal Bootstrap
+                    const modalId = this.getModalId(modalName);
+                    if (modalId) {
+                        const modalElement = document.getElementById(modalId);
+                        if (modalElement) {
+                            const modal = bootstrap.Modal.getInstance(modalElement);
+                            if (modal) modal.hide();
+                        }
+                    }
+                },
+                
+                // Obtener ID del modal
+                getModalId(modalName) {
+                    const modalMap = {
+                        changePassword: 'changePasswordModalCoachee',
+                        taskProgress: 'taskProgressModal',
+                        evaluationDetails: 'evaluationDetailsModal',
+                        contactCoach: 'contactCoachModal',
+                        assessmentResults: 'assessmentResultsModal'
+                    };
+                    return modalMap[modalName];
+                },
+                
+                // Ver detalles de evaluación
+                viewEvaluationDetails(evaluationId) {
+                    console.log(`📊 ALPINE: Viewing evaluation ${evaluationId}`);
+                    this.selectedEvaluation = evaluationId;
+                    
+                    // Llamar función legacy
+                    if (typeof viewEvaluationDetails === 'function') {
+                        viewEvaluationDetails(evaluationId);
+                    }
+                },
+                
+                // Ver progreso de tarea
+                viewTaskProgress(taskId) {
+                    console.log(`📋 ALPINE: Viewing task progress ${taskId}`);
+                    this.selectedTask = taskId;
+                    
+                    // Llamar función legacy
+                    if (typeof showTaskProgress === 'function') {
+                        showTaskProgress(taskId);
                     }
                 }
             };
@@ -8216,7 +9079,7 @@
                 const age = Date.now() - evaluationsLastLoaded;
                 if (age < EVALUATIONS_CACHE_DURATION) {
                     console.log(`📦 Using cached evaluations data (age: ${Math.round(age/1000)}s)`);
-                    renderAvailableEvaluations();
+                    renderAvailableEvaluationsLegacy();
                     return;
                 }
             }
@@ -8240,7 +9103,7 @@
                     evaluationsData = data; // Ahora contiene {available: {}, completed: []}
                     evaluationsLastLoaded = Date.now();
                     debugLog('✅ Renderizando evaluaciones disponibles...');
-                    renderAvailableEvaluations();
+                    renderAvailableEvaluationsLegacy();
                 } else {
                     console.error('Formato de datos inesperado:', data);
                     throw new Error('Formato de datos inesperado del servidor');
@@ -9121,272 +9984,6 @@
                         </div>
                     `;
                 }
-            }
-        }
-
-        // Gráfico de Progreso de Todas las Evaluaciones
-        let asertividadChart = null;
-        
-        async function loadAsertividadProgress() {
-            console.log('📈 ALL-EVALUATIONS: Loading all evaluations progress chart...');
-            
-            try {
-                // Obtener datos del historial completo de TODAS las evaluaciones
-                const response = await fetch(`${API_BASE_URL}/api/coachee/all-assessment-history`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('📊 ALL-EVALUATIONS: API Response:', data);
-                
-                if (!data.success || !data.history || Object.keys(data.history).length === 0) {
-                    // Mostrar mensaje de sin datos
-                    document.getElementById('asertividadChartContainer').innerHTML = `
-                        <div class="empty-state text-center py-5">
-                            <i class="fas fa-chart-line text-muted mb-3" style="font-size: 3rem;"></i>
-                            <h5 class="text-muted">Sin evaluaciones registradas</h5>
-                            <p class="text-muted small">Completa evaluaciones para ver tu progreso</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Ocultar loading spinner y mostrar gráfico
-                document.getElementById('asertividadChartContainer').style.display = 'none';
-                document.getElementById('asertividadChartWrapper').style.display = 'block';
-                document.getElementById('asertividadStats').style.display = 'flex';
-                
-                console.log('📊 Evaluations grouped by assessment_id:', data.history);
-                
-                // Actualizar estadísticas generales
-                if (data.statistics) {
-                    document.getElementById('totalEvaluations').textContent = data.statistics.total_attempts || 0;
-                    document.getElementById('averageScore').textContent = `${data.statistics.average_score || 0}%`;
-                    document.getElementById('bestScore').textContent = `${data.statistics.best_score || 0}%`;
-                }
-                
-                // Crear gráfico
-                const canvas = document.getElementById('asertividadProgressChart');
-                const ctx = canvas.getContext('2d');
-                
-                // Destruir gráfico anterior si existe
-                if (asertividadChart) {
-                    asertividadChart.destroy();
-                }
-                
-                // Colores para diferentes evaluaciones
-                const colors = [
-                    { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },    // Verde
-                    { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },    // Azul
-                    { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },    // Naranja
-                    { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },     // Rojo
-                    { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },    // Púrpura
-                    { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' }     // Rosa
-                ];
-                
-                // Crear datasets para cada tipo de evaluación
-                const datasets = [];
-                let colorIndex = 0;
-                
-                // Iterar sobre cada assessment_id en el historial agrupado
-                Object.entries(data.history).forEach(([assessmentId, assessmentData]) => {
-                    const color = colors[colorIndex % colors.length];
-                    colorIndex++;
-                    
-                    console.log(`📈 Creating dataset for: ${assessmentData.title}`, {
-                        dataPoints: assessmentData.data.length,
-                        data: assessmentData.data.map(item => ({
-                            x: item.completed_at,
-                            y: item.percentage
-                        }))
-                    });
-                    
-                    // Crear dataset con los datos de este assessment
-                    datasets.push({
-                        label: assessmentData.title,
-                        data: assessmentData.data.map(item => ({
-                            x: new Date(item.completed_at),
-                            y: item.percentage  // Ya viene como porcentaje desde el backend
-                        })),
-                        borderColor: color.border,
-                        backgroundColor: color.bg,
-                        borderWidth: 3,
-                        pointRadius: 6,
-                        pointHoverRadius: 8,
-                        pointBackgroundColor: color.border,
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointHoverBackgroundColor: color.border,
-                        pointHoverBorderColor: '#ffffff',
-                        tension: 0.4, // Línea suavizada
-                        fill: false,
-                        showLine: true,  // ✅ FORZAR que se muestre la línea
-                        spanGaps: true,  // ✅ Conectar puntos incluso si hay gaps
-                        metadata: assessmentData.data // Guardar datos adicionales
-                    });
-                });
-                
-                console.log('📊 Created', datasets.length, 'datasets for evaluations');
-                console.log('📊 ALL DATASETS:', JSON.stringify(datasets, null, 2));
-                
-                // Crear nuevo gráfico de líneas
-                asertividadChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        datasets: datasets
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'nearest',
-                            intersect: false,
-                            axis: 'x'
-                        },
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    usePointStyle: true,
-                                    padding: 15,
-                                    font: {
-                                        size: 12,
-                                        family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-                                        weight: '500'
-                                    },
-                                    boxWidth: 10,
-                                    boxHeight: 10
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                titleColor: '#fff',
-                                bodyColor: '#fff',
-                                borderColor: 'rgba(255, 255, 255, 0.3)',
-                                borderWidth: 1,
-                                padding: 12,
-                                displayColors: true,
-                                callbacks: {
-                                    title: function(context) {
-                                        const date = new Date(context[0].parsed.x);
-                                        // Mostrar fecha y hora completa en el tooltip
-                                        const dateStr = date.toLocaleDateString('es-ES', { 
-                                            weekday: 'short',
-                                            day: '2-digit', 
-                                            month: 'short',
-                                            year: 'numeric'
-                                        });
-                                        const timeStr = date.toLocaleTimeString('es-ES', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                        return `${dateStr} - ${timeStr}`;
-                                    },
-                                    label: function(context) {
-                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
-                                    },
-                                    afterLabel: function(context) {
-                                        // Mostrar intento si hay múltiples
-                                        const datasetData = context.dataset.metadata;
-                                        if (datasetData && datasetData.length > 1) {
-                                            return `Intento ${context.dataIndex + 1} de ${datasetData.length}`;
-                                        }
-                                        return '';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: 'hour',
-                                    displayFormats: {
-                                        hour: 'dd MMM HH:mm',
-                                        day: 'dd MMM',
-                                        minute: 'dd MMM HH:mm'
-                                    },
-                                    tooltipFormat: 'dd/MM/yyyy HH:mm'
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Fecha y Hora de Evaluación',
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                },
-                                ticks: {
-                                    maxRotation: 45,
-                                    minRotation: 45,
-                                    autoSkip: false,
-                                    source: 'data',
-                                    font: {
-                                        size: 10,
-                                        weight: '500'
-                                    },
-                                    // Mostrar fecha y hora en las etiquetas del eje
-                                    callback: function(value, index, ticks) {
-                                        const date = new Date(value);
-                                        const dateStr = date.toLocaleDateString('es-ES', { 
-                                            day: '2-digit', 
-                                            month: 'short'
-                                        });
-                                        const timeStr = date.toLocaleTimeString('es-ES', {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            hour12: false
-                                        });
-                                        return [`${dateStr}`, `${timeStr}`];
-                                    }
-                                },
-                                grid: {
-                                    display: true,
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                title: {
-                                    display: true,
-                                    text: 'Porcentaje (%)',
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                },
-                                ticks: {
-                                    callback: function(value) {
-                                        return value + '%';
-                                    },
-                                    font: {
-                                        size: 11
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)',
-                                    drawBorder: false
-                                }
-                            }
-                        }
-                    }
-                });
-                
-                console.log('✅ ALL-EVALUATIONS: Chart created successfully with', datasets.length, 'evaluation types');
-                
-            } catch (error) {
-                console.error('❌ ALL-EVALUATIONS: Error loading chart:', error);
-                document.getElementById('asertividadChartContainer').innerHTML = `
-                    <div class="empty-state text-center py-5">
-                        <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
-                        <h5 class="text-muted">Error al cargar el gráfico</h5>
-                        <p class="text-muted small">${error.message}</p>
-                    </div>
-                `;
             }
         }
 
@@ -14983,7 +15580,12 @@
         // AUTO-START ASSESSMENT: This block requires server-side template rendering.
         // If using Jinja, ensure this file is processed by Flask or Django.
         // If not using a template engine, remove or replace this block with valid JavaScript.
+        
+        console.log('✅ Script principal completamente cargado - coacheeDashboardApp() definido');
     </script>
+    
+    <!-- Alpine.js - CARGAR DESPUÉS de que coacheeDashboardApp() esté definido -->
+    <script src="{{ url_for('static', filename='js/alpine.min.js') }}"></script>
     
     <!-- Script común para presentación de recomendaciones -->
     <script src="{{ url_for('static', filename='js/recommendations.js') }}"></script>
