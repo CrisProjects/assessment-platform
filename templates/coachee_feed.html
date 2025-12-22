@@ -608,8 +608,11 @@
             let feedsHTML = '';
             
             content.forEach((item, index) => {
-                const videoId = extractYouTubeVideoId(item.content_url);
-                const isYouTubeVideo = videoId && item.content_type === 'video';
+                const youtubeVideoId = extractYouTubeVideoId(item.content_url);
+                const instagramVideoId = extractInstagramVideoId(item.content_url);
+                // Mejorar detección: si tiene videoId de YouTube o Instagram, mostrarlo embebido
+                const isYouTubeVideo = youtubeVideoId !== null;
+                const isInstagramVideo = instagramVideoId !== null;
                 const isDocument = item.content_type === 'document';
                 
                 console.log('🔍 Processing content item:', {
@@ -617,14 +620,19 @@
                     type: item.content_type,
                     title: item.title,
                     url: item.content_url,
+                    youtubeVideoId: youtubeVideoId,
+                    instagramVideoId: instagramVideoId,
                     isDocument: isDocument,
-                    isYouTubeVideo: isYouTubeVideo
+                    isYouTubeVideo: isYouTubeVideo,
+                    isInstagramVideo: isInstagramVideo
                 });
                 
                 // Determinar el thumbnail/preview
                 let thumbnail;
                 if (isYouTubeVideo) {
-                    thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                    thumbnail = `https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`;
+                } else if (isInstagramVideo) {
+                    thumbnail = null; // Instagram se mostrará embebido
                 } else if (isDocument) {
                     thumbnail = null;
                 } else {
@@ -661,7 +669,7 @@
                                 <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden;">
                                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 56.25%;">
                                         <iframe id="youtube-feed-${item.id}" 
-                                            src="https://www.youtube.com/embed/${videoId}?enablejsapi=1" 
+                                            src="https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1" 
                                             title="${item.title}" 
                                             frameborder="0" 
                                             allowfullscreen
@@ -669,6 +677,17 @@
                                             style="width: 100%; height: 100%; border-radius: 0;">
                                         </iframe>
                                     </div>
+                                </div>
+                            ` : isInstagramVideo ? `
+                                <div style="position: relative; width: 100%; background: linear-gradient(135deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); overflow: hidden;">
+                                    <iframe 
+                                        src="https://www.instagram.com/p/${instagramVideoId}/embed/" 
+                                        style="width: 100%; min-height: 600px; border: none;"
+                                        frameborder="0" 
+                                        scrolling="no" 
+                                        allowtransparency="true" 
+                                        allow="encrypted-media">
+                                    </iframe>
                                 </div>
                             ` : isDocument ? `
                                 <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden;" onclick="openDocumentFeed('${item.content_url}', '${item.title}')">
@@ -711,6 +730,10 @@
                                 ${isYouTubeVideo ? `
                                     <button class="action-btn" disabled style="color: #28a745; opacity: 0.7;" title="Video embebido">
                                         <i class="fas fa-play-circle"></i>
+                                    </button>
+                                ` : isInstagramVideo ? `
+                                    <button class="action-btn" disabled style="color: #E4405F; opacity: 0.7;" title="Video de Instagram embebido">
+                                        <i class="fab fa-instagram"></i>
                                     </button>
                                 ` : isDocument ? `
                                     <button class="action-btn" onclick="openDocumentFeed('${item.content_url}', '${item.title}')" title="Abrir documento">
@@ -804,6 +827,26 @@
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
+        }
+        
+        // Función para extraer ID de Instagram
+        function extractInstagramVideoId(url) {
+            if (!url) return null;
+            
+            // Patrones para diferentes formatos de URL de Instagram
+            const patterns = [
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//,
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    return match[1];
+                }
+            }
+            
+            return null;
         }
         
         // Función para calcular tiempo relativo
