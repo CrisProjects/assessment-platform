@@ -163,6 +163,11 @@
             border: 1px solid #f3f4f6;
             overflow: hidden;
             transition: box-shadow 0.3s ease;
+            position: sticky;
+            top: 0;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+            margin-top: -1rem; /* Reducido a un tercio: de -1.5rem a -1rem */
         }
         
         .sidebar:hover {
@@ -2515,6 +2520,7 @@
         /* TAB CONTENT RESPONSIVO */
         .tab-content {
             padding: 0 !important;
+            margin-top: -1.5rem !important; /* Alineado con separación de stats cards */
         }
 
         .tab-pane {
@@ -7600,7 +7606,7 @@
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div>
                                             <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.05rem; letter-spacing: -0.3px;">
-                                                <i class="fas fa-rocket" style="font-size: 0.95rem;"></i>
+                                                <i class="fas fa-rocket" style="font-size: 0.95rem; color: #000000;"></i>
                                                 <span class="d-none d-md-inline">Mi Plan de Desarrollo</span>
                                                 <span class="d-inline d-md-none">Desarrollo</span>
                                             </h5>
@@ -10858,8 +10864,7 @@
         }
 
         // Render available evaluations
-        // Función legacy para renderizar evaluaciones disponibles (será migrada completamente en futuras iteraciones)
-        // LEGACY: Función original de renderizado de evaluaciones disponibles
+        // Función optimizada para renderizar evaluaciones disponibles con diseño moderno y compacto
         function renderAvailableEvaluationsLegacy() {
             console.log('🔥 renderAvailableEvaluationsLegacy INICIANDO...');
             
@@ -10877,12 +10882,12 @@
             // Verificar si hay un mensaje específico (sin coach o sin invitación)
             if (evaluationsData && evaluationsData.message) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
+                    <div class="empty-state" style="text-align: center; padding: 3rem 1rem;">
+                        <div style="font-size: 3rem; color: #9ca3af; margin-bottom: 1rem;">
                             <i class="fas fa-user-tie"></i>
                         </div>
-                        <div class="empty-state-title">Información</div>
-                        <div class="empty-state-description">${evaluationsData.message}</div>
+                        <div style="color: #000000; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">Información</div>
+                        <div style="color: #000000; font-size: 0.875rem;">${evaluationsData.message}</div>
                     </div>
                 `;
                 return;
@@ -10890,12 +10895,12 @@
             
             if (!evaluationsData || !evaluationsData.available || Object.keys(evaluationsData.available).length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
+                    <div class="empty-state" style="text-align: center; padding: 3rem 1rem;">
+                        <div style="font-size: 3rem; color: #9ca3af; margin-bottom: 1rem;">
                             <i class="fas fa-inbox"></i>
                         </div>
-                        <div class="empty-state-title">Sin evaluaciones disponibles</div>
-                        <div class="empty-state-description">No tienes evaluaciones disponibles en este momento</div>
+                        <div style="color: #000000; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">Sin evaluaciones disponibles</div>
+                        <div style="color: #000000; font-size: 0.875rem;">No tienes evaluaciones disponibles en este momento</div>
                     </div>
                 `;
                 return;
@@ -10927,21 +10932,33 @@
                 }
                 
                 const categorySection = document.createElement('div');
-                categorySection.className = 'assessment-category mb-4';
+                categorySection.className = 'assessment-category';
+                categorySection.style.marginBottom = '1.5rem';
                 const categoryId = `category-${categoryName.replace(/\s+/g, '-')}`;
                 
                 categorySection.innerHTML = `
-                    <div class="section-header-eval" style="margin: 30px 0 20px 0; padding: 15px; border-bottom: 2px solid ${category.color}; cursor: pointer; transition: all 0.3s ease; border-radius: 8px;" onclick="toggleCategory('${categoryId}', this)">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h4 style="color: #262626; font-size: 24px; font-weight: 600; margin: 0;">
-                                <i class="fas ${category.icon} me-2" style="color: ${category.color};"></i>
-                                ${categoryName}
-                                <span style="color: ${category.color}; font-size: 18px; font-weight: 500; margin-left: 8px;">(${evaluations.length})</span>
-                            </h4>
-                            <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease; transform: rotate(-90deg);"></i>
+                    <div class="section-header-eval" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid ${category.color};" onclick="toggleCategory('${categoryId}', this)">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
+                                <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px ${category.color}40; border: 2px solid ${category.color};">
+                                    <i class="fas ${category.icon}" style="color: ${category.color}; font-size: 1.25rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <h4 style="color: #000000; font-size: 1.0625rem; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        ${categoryName}
+                                    </h4>
+                                    <p style="color: #000000; font-size: 0.8125rem; margin: 0; font-weight: 500;">
+                                        ${evaluations.length} ${evaluations.length === 1 ? 'evaluación disponible' : 'evaluaciones disponibles'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
+                                <span style="background: ${category.color}; color: white; padding: 0.375rem 0.875rem; border-radius: 20px; font-size: 0.8125rem; font-weight: 700; box-shadow: 0 2px 4px ${category.color}50;">${evaluations.length}</span>
+                                <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 1.125rem; transition: transform 0.3s ease; transform: rotate(-90deg); filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 0px; overflow: hidden; max-height: 0px; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
+                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
                     </div>
                 `;
                 
@@ -10956,50 +10973,74 @@
                         background: white;
                         border-radius: 12px;
                         overflow: hidden;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                        transition: all 0.3s ease;
-                        border: 2px solid transparent;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        border: 1px solid #e5e7eb;
                         cursor: pointer;
+                        height: 100%;
+                        display: flex;
+                        flex-direction: column;
                     `;
                     
                     card.innerHTML = `
-                        <div class="assessment-image" style="width: 100%; height: 180px; background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 64px; color: white;">
-                            <i class="fas ${category.icon}"></i>
+                        <div style="position: relative; width: 100%; padding-top: 45%; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%); overflow: hidden; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.1);">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.02) 100%);">
+                                <i class="fas ${category.icon}" style="font-size: 2.75rem; color: ${category.color};"></i>
+                            </div>
+                            <div style="position: absolute; top: 0.75rem; right: 0.75rem; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 0.375rem 0.75rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 2px solid ${category.color};">
+                                <span style="color: ${category.color}; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.375rem;">
+                                    <i class="fas fa-question-circle"></i>
+                                    ${evaluation.total_questions} preguntas
+                                </span>
+                            </div>
                         </div>
-                        <div class="assessment-body" style="padding: 16px;">
-                            <div class="assessment-title" style="font-size: 18px; font-weight: 600; color: #262626; margin-bottom: 8px;">
+                        <div style="padding: 1.125rem; flex: 1; display: flex; flex-direction: column; background: #ffffff;">
+                            <h5 style="font-size: 1rem; font-weight: 700; color: #000000; margin: 0 0 0.625rem 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                 ${evaluation.title}
-                            </div>
-                            <div class="assessment-description" style="font-size: 14px; color: #8e8e8e; margin-bottom: 12px;">
-                                ${evaluation.description || 'Sin descripción disponible'}
-                            </div>
-                            <div class="assessment-meta" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #8e8e8e; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <i class="fas fa-question-circle" style="color: ${category.color};"></i>
-                                    <span>${evaluation.total_questions} preguntas</span>
+                            </h5>
+                            <p style="font-size: 0.8125rem; color: #000000; margin: 0 0 1rem 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1;">
+                                ${evaluation.description || 'Evaluación diseñada para medir tus competencias profesionales'}
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.625rem; padding-top: 0.875rem; border-top: 2px solid #f3f4f6;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: #000000; font-weight: 500; flex: 1; min-width: 0;">
+                                    <div style="width: 1.75rem; height: 1.75rem; background: linear-gradient(135deg, ${category.color}20 0%, ${category.color}10 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fas fa-user" style="color: ${category.color}; font-size: 0.75rem;"></i>
+                                    </div>
+                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${evaluation.coach_name || 'Coach'}</span>
                                 </div>
-                                <div class="assessment-badge" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">
-                                    ${evaluation.coach_name || 'No asignado'}
-                                </div>
+                                <button onclick="startEvaluation('${evaluation.id}')" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); border: none; padding: 0.625rem 1.125rem; border-radius: 8px; color: white; font-weight: 700; font-size: 0.8125rem; transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 2px 6px ${category.color}40; flex-shrink: 0;">
+                                    <i class="fas fa-play" style="font-size: 0.75rem; margin-right: 0.5rem;"></i>
+                                    Comenzar
+                                </button>
                             </div>
-                            <button class="unified-btn unified-btn-primary w-100" onclick="startEvaluation('${evaluation.id}')" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); border: none; padding: 12px; border-radius: 8px; color: white; font-weight: 600; transition: all 0.3s ease;">
-                                <i class="fas fa-play unified-icon-sm me-2"></i>
-                                Comenzar Evaluación
-                            </button>
                         </div>
                     `;
                     
                     // Hover effects
                     card.addEventListener('mouseenter', function() {
-                        this.style.transform = 'translateY(-4px)';
-                        this.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+                        this.style.transform = 'translateY(-6px)';
+                        this.style.boxShadow = `0 12px 32px ${category.color}35`;
                         this.style.borderColor = category.color;
                     });
                     
                     card.addEventListener('mouseleave', function() {
                         this.style.transform = 'translateY(0)';
-                        this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                        this.style.borderColor = 'transparent';
+                        this.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.08)';
+                        this.style.borderColor = '#e5e7eb';
+                    });
+                    
+                    // Button hover
+                    const button = card.querySelector('button');
+                    button.addEventListener('mouseenter', function() {
+                        this.style.transform = 'scale(1.05)';
+                        this.style.boxShadow = `0 6px 16px ${category.color}50`;
+                        this.style.filter = 'brightness(1.1)';
+                    });
+                    
+                    button.addEventListener('mouseleave', function() {
+                        this.style.transform = 'scale(1)';
+                        this.style.boxShadow = `0 2px 6px ${category.color}40`;
+                        this.style.filter = 'brightness(1)';
                     });
                     
                     grid.appendChild(card);
@@ -11079,11 +11120,23 @@
             const container = document.getElementById('completedEvaluationsSection');
             
             if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
-                container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px;"><div class="empty-state-icon" style="font-size: 64px; color: #dbdbdb; margin-bottom: 16px;"><i class="fas fa-clipboard-list"></i></div><div class="empty-state-title" style="color: #262626; font-size: 18px; margin-bottom: 8px; font-weight: 600;">Sin evaluaciones completadas</div><div class="empty-state-description" style="color: #8e8e8e; font-size: 14px;">Aún no has completado ninguna evaluación</div></div>';
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem 1.25rem;">
+                        <div style="font-size: 4rem; color: #9ca3af; margin-bottom: 1rem;">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <h3 style="color: #000000; font-size: 1.125rem; margin-bottom: 0.5rem; font-weight: 700;">
+                            Sin evaluaciones completadas
+                        </h3>
+                        <p style="color: #000000; font-size: 0.875rem;">
+                            Aún no has completado ninguna evaluación
+                        </p>
+                    </div>
+                `;
                 return;
             }
             
-            // Create categories for completed evaluations
+            // Categorize completed evaluations
             const categorizedEvaluations = {};
             evaluationsData.completed.forEach(evaluation => {
                 const title = evaluation.assessment_title || 'Evaluación completada';
@@ -11120,21 +11173,33 @@
                 }
                 
                 const categorySection = document.createElement('div');
-                categorySection.className = 'assessment-category mb-4';
+                categorySection.className = 'assessment-category';
+                categorySection.style.marginBottom = '1.5rem';
                 const categoryId = `completed-category-${categoryName.replace(/\s+/g, '-')}`;
                 
                 categorySection.innerHTML = `
-                    <div class="section-header-eval" style="margin: 30px 0 20px 0; padding: 15px; border-bottom: 2px solid ${category.color}; cursor: pointer; transition: all 0.3s ease; border-radius: 8px;" onclick="toggleCategory('${categoryId}', this)">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h4 style="color: #262626; font-size: 24px; font-weight: 600; margin: 0;">
-                                <i class="fas ${category.icon} me-2" style="color: ${category.color};"></i>
-                                ${categoryName}
-                                <span style="color: ${category.color}; font-size: 18px; font-weight: 500; margin-left: 8px;">(${evaluations.length})</span>
-                            </h4>
-                            <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease;"></i>
+                    <div class="section-header-eval" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid ${category.color};" onclick="toggleCategory('${categoryId}', this)">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
+                                <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px ${category.color}40; border: 2px solid ${category.color};">
+                                    <i class="fas ${category.icon}" style="color: ${category.color}; font-size: 1.25rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <h4 style="color: #000000; font-size: 1.0625rem; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        ${categoryName}
+                                    </h4>
+                                    <p style="color: #000000; font-size: 0.8125rem; margin: 0; font-weight: 500;">
+                                        ${evaluations.length} ${evaluations.length === 1 ? 'evaluación completada' : 'evaluaciones completadas'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
+                                <span style="background: ${category.color}; color: white; padding: 0.375rem 0.875rem; border-radius: 20px; font-size: 0.8125rem; font-weight: 700; box-shadow: 0 2px 4px ${category.color}50;">${evaluations.length}</span>
+                                <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 1.125rem; transition: transform 0.3s ease; transform: rotate(-90deg); filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="assessments-grid" id="${categoryId}" data-expanded="true" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
                     </div>
                 `;
                 
@@ -11152,50 +11217,60 @@
                         background: white;
                         border-radius: 12px;
                         overflow: hidden;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                        transition: all 0.3s ease;
-                        border: 2px solid transparent;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        border: 1px solid #e5e7eb;
                         cursor: pointer;
+                        height: 100%;
+                        display: flex;
+                        flex-direction: column;
                     `;
                     
                     card.innerHTML = `
-                        <div class="assessment-image" style="width: 100%; height: 180px; background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 64px; color: white;">
-                            <i class="fas fa-check-circle"></i>
+                        <div style="position: relative; width: 100%; padding-top: 45%; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%); overflow: hidden; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.1);">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.02) 100%);">
+                                <i class="fas fa-check-circle" style="font-size: 2.75rem; color: ${category.color};"></i>
+                            </div>
+                            <div style="position: absolute; top: 0.75rem; right: 0.75rem; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 0.375rem 0.75rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 2px solid ${category.color};">
+                                <span style="color: ${category.color}; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.375rem;">
+                                    <i class="fas fa-chart-bar"></i>
+                                    ${Math.round(score)}%
+                                </span>
+                            </div>
                         </div>
-                        <div class="assessment-body" style="padding: 16px;">
-                            <div class="assessment-title" style="font-size: 18px; font-weight: 600; color: #262626; margin-bottom: 8px;">
+                        <div style="padding: 1.125rem; flex: 1; display: flex; flex-direction: column; background: #ffffff;">
+                            <h5 style="font-size: 1rem; font-weight: 700; color: #000000; margin: 0 0 0.625rem 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                 ${assessmentTitle}
-                            </div>
-                            <div class="assessment-description" style="font-size: 14px; color: #8e8e8e; margin-bottom: 12px;">
+                            </h5>
+                            <p style="font-size: 0.8125rem; color: #000000; margin: 0 0 1rem 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1;">
                                 ${evaluation.result_text || 'Evaluación completada con éxito'}
-                            </div>
-                            <div class="assessment-meta" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #8e8e8e; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <i class="fas fa-chart-bar" style="color: ${category.color};"></i>
-                                    <span>${Math.round(score)}% Completado</span>
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.625rem; padding-top: 0.875rem; border-top: 2px solid #f3f4f6;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: #000000; font-weight: 500; flex: 1; min-width: 0;">
+                                    <div style="width: 1.75rem; height: 1.75rem; background: linear-gradient(135deg, ${category.color}20 0%, ${category.color}10 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fas fa-calendar" style="color: ${category.color}; font-size: 0.75rem;"></i>
+                                    </div>
+                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatDate(evaluation.completed_at)}</span>
                                 </div>
-                                <div class="assessment-badge" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">
-                                    ${formatDate(evaluation.completed_at)}
-                                </div>
+                                <button onclick="viewEvaluationDetails(${evaluation.id})" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); border: none; padding: 0.625rem 1.125rem; border-radius: 8px; color: white; font-weight: 700; font-size: 0.8125rem; transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 2px 6px ${category.color}40; flex-shrink: 0;">
+                                    <i class="fas fa-eye" style="font-size: 0.75rem; margin-right: 0.5rem;"></i>
+                                    Ver Detalles
+                                </button>
                             </div>
-                            <button class="unified-btn unified-btn-primary w-100" onclick="viewEvaluationDetails(${evaluation.id})" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); border: none; padding: 12px; border-radius: 8px; color: white; font-weight: 600; transition: all 0.3s ease;">
-                                <i class="fas fa-eye unified-icon-sm me-2"></i>
-                                Ver Detalles
-                            </button>
                         </div>
                     `;
                     
                     // Hover effects
                     card.addEventListener('mouseenter', function() {
-                        this.style.transform = 'translateY(-4px)';
-                        this.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+                        this.style.transform = 'translateY(-6px)';
+                        this.style.boxShadow = `0 12px 32px ${category.color}35`;
                         this.style.borderColor = category.color;
                     });
                     
                     card.addEventListener('mouseleave', function() {
                         this.style.transform = 'translateY(0)';
-                        this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                        this.style.borderColor = 'transparent';
+                        this.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.08)';
+                        this.style.borderColor = '#e5e7eb';
                     });
                     
                     grid.appendChild(card);
@@ -11298,7 +11373,7 @@
                             <div style="flex: 1; min-width: 0;">
                                 <div style="display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.375rem;">
                                     <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                        <i class="fas ${categoryIcon}" style="font-size: 0.875rem; color: white;"></i>
+                                        <i class="fas ${categoryIcon}" style="font-size: 0.875rem; color: #fbbf24;"></i>
                                     </div>
                                     <h6 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.3; letter-spacing: -0.01em;">
                                         ${task.title}

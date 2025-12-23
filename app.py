@@ -902,14 +902,14 @@ def add_security_headers(response):
 def unauthorized():
     if request.path.startswith('/api/'):
         # Determinar la URL de redirección según la ruta del API
-        redirect_url = '/login'
+        redirect_url = '/participant-login'
         
         if '/api/admin' in request.path or '/api/platform-admin' in request.path:
             redirect_url = '/admin-login'
         elif '/api/coach' in request.path:
             redirect_url = '/coach-login'
         elif '/api/coachee' in request.path:
-            redirect_url = '/login'
+            redirect_url = '/participant-login'
         
         return jsonify({
             'error': 'Sesión expirada. Por favor, inicia sesión nuevamente.',
@@ -1669,7 +1669,7 @@ def load_current_user():
                     coachee_id = session.get('coachee_user_id')
                     session.clear()
                     logger.info(f"Coachee session expired due to inactivity (coachee_id: {coachee_id})")
-                    return redirect(url_for('login'))
+                    return redirect(url_for('participant_login'))
                 else:
                     # Actualizar timestamp solo si no expiró
                     session['last_activity_coachee'] = current_time.isoformat()
