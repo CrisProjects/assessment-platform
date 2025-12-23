@@ -6726,14 +6726,14 @@
                 -webkit-overflow-scrolling: touch;
             }
             
-    #evaluationDetailsModal .modal-footer {
-        padding: 15px 15px 100px 15px; /* Padding inferior aumentado para ver botones sobre footer */
-        border-top: 1px solid #dee2e6;
-        flex-shrink: 0;
-        margin-bottom: 90px; /* Margen adicional para evitar footer principal (50% más) */
-        position: relative;
-        z-index: 10;
-    }            /* Ajustar elementos internos del modal para móvil */
+            #evaluationDetailsModal .modal-footer {
+                padding: 15px 15px 60px 15px; /* Padding inferior aumentado para ver botones */
+                border-top: 1px solid #dee2e6;
+                flex-shrink: 0;
+                margin-bottom: 20px; /* Margen adicional en el footer */
+            }
+            
+            /* Ajustar elementos internos del modal para móvil */
             #evaluationDetailsModal .modal-title {
                 font-size: 1.1rem;
                 line-height: 1.3;
@@ -13841,8 +13841,40 @@
                 </div>
                 ` : ''}
 
+                <!-- Gráfico Radar y Análisis Dimensional -->
+                <div class="row mb-4">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-chart-radar me-2"></i>${chartTitle}</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="radar-chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="radarChart" width="300" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 h-100" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-chart-bar me-2"></i>Puntuaciones por Dimensión</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="dimensionalScoresContainer">
+                                    ${generateDimensionalScoresHTML(dimensionalScores)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && !isLeadershipAssessment && isGrowthPreparationAssessment) ? 
                     generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores)) : ''}
+                
+                ${recommendations && recommendations.length > 0 ? 
+                    generateCompactRecommendationsHTML(recommendations) : ''}
                 
                 ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && !isLeadershipAssessment && isGrowthPreparationAssessment) ? `
                 <!-- Respuestas Detalladas -->
@@ -14025,7 +14057,56 @@
             return html;
         }
 
-
+        // Función compacta para mostrar recomendaciones de forma simplificada
+        function generateCompactRecommendationsHTML(recommendations) {
+            if (!recommendations || recommendations.length === 0) return '';
+            
+            let html = `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid #007bff !important;">
+                            <div class="card-header d-flex align-items-center justify-content-between" style="background: #cce7ff; color: #004085;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    <h6 class="mb-0">Plan de Desarrollo</h6>
+                                </div>
+                                <span class="badge bg-primary">${recommendations.length} items</span>
+                            </div>
+                            <div class="card-body">
+            `;
+            
+            recommendations.forEach((rec, index) => {
+                const recText = typeof rec === 'string' ? rec : rec.text || rec.description || '';
+                if (recText.trim()) {
+                    // Detectar si es un encabezado (contiene **)
+                    if (recText.includes('**')) {
+                        const cleanText = recText.replace(/\*\*/g, '');
+                        if (cleanText.includes('🎯') || cleanText.includes('🚀')) {
+                            html += `<div class="fw-bold text-primary mb-2 mt-3">${cleanText}</div>`;
+                        } else {
+                            html += `<div class="fw-bold text-dark mb-2">${cleanText}</div>`;
+                        }
+                    }
+                    // Detectar si es una acción (empieza con ✓ o •)
+                    else if (recText.startsWith('✓') || recText.startsWith('•')) {
+                        html += `<div class="ms-3 mb-2"><span class="text-success fw-bold">${recText}</span></div>`;
+                    }
+                    // Texto normal no vacío
+                    else if (recText.trim() !== '') {
+                        html += `<div class="mb-1"><small>${recText}</small></div>`;
+                    }
+                }
+            });
+            
+            html += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
 
 
 
@@ -17425,7 +17506,34 @@
                 debilidadesHTML = '<p style="color: #666; font-style: italic;">¡Excelente! Todas las competencias muestran un buen desarrollo.</p>';
             }
             
-            return '';
+            return `
+                <!-- Fortalezas y Debilidades Detectadas (Trabajo en Equipo) -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: #e9ecef; border-bottom: 1px solid #dee2e6;">
+                                <h5 style="color: #333;"><i class="fas fa-users me-2"></i>Análisis de tus Competencias de Trabajo en Equipo</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #28a745;">
+                                            <i class="fas fa-trophy me-2"></i>Tus Fortalezas Colaborativas
+                                        </h6>
+                                        ${fortalezasHTML}
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <h6 class="mb-3" style="color: #f39c12;">
+                                            <i class="fas fa-hand-holding-up me-2"></i>Competencias en Desarrollo
+                                        </h6>
+                                        ${debilidadesHTML}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         console.log('🔄 Coachee Calendar System: 2025-10-18-16:44 - Sistema de agendamiento con zona horaria Santiago');
