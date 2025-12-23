@@ -1669,7 +1669,7 @@ def load_current_user():
                     coachee_id = session.get('coachee_user_id')
                     session.clear()
                     logger.info(f"Coachee session expired due to inactivity (coachee_id: {coachee_id})")
-                    return redirect(url_for('participant_login'))
+                    return redirect(url_for('participant_access'))
                 else:
                     # Actualizar timestamp solo si no expiró
                     session['last_activity_coachee'] = current_time.isoformat()

@@ -437,10 +437,7 @@
             pointer-events: auto !important;
         }
         
-        /* Asegurar que el modal de evaluaciones sea interactivo */
-        #evaluationDetailsModal {
-            pointer-events: auto !important;
-        }        .card.bg-dark:not(.stats-card-mobile .card) {
+        .card.bg-dark:not(.stats-card-mobile .card) {
             background: white !important;
             border: 1px solid #e2e8f0 !important;
         }
@@ -4290,26 +4287,35 @@
             cursor: not-allowed;
         }
 
-        /* Evaluation Details Modal Styles - MEJORADO RESPONSIVO */
-        /* MODAL DE DETALLES DE EVALUACIÓN - DISEÑO MODERNO Y RESPONSIVO */
+        /* ========================================
+           MODAL DE DETALLES DE EVALUACIÓN - CONSOLIDADO
+           ÚNICA FUENTE DE VERDAD PARA #evaluationDetailsModal
+           ======================================== */
+        
+        /* Modal container - Z-index y pointer events */
+        #evaluationDetailsModal {
+            z-index: 9999 !important; /* Mayor que cualquier elemento de la página, incluyendo bottom navigation */
+            pointer-events: auto !important; /* Asegurar interactividad */
+        }
+        
+        /* Modal dialog - Tamaño y espaciado */
         #evaluationDetailsModal .modal-dialog {
             max-width: 900px;
-            margin: 1.75rem auto;
-            z-index: 1055 !important;
-            position: relative !important;
+            margin: 5rem auto 65px auto !important; /* Margen superior 5rem para aparecer bajo cabecera */
+            /* Sin z-index ni position para evitar crear nuevo stacking context */
         }
         
         @media (max-width: 992px) {
             #evaluationDetailsModal .modal-dialog {
                 max-width: 720px;
-                margin: 1.5rem auto;
+                margin: 4rem auto 65px auto !important; /* Margen superior 4rem en tablet */
             }
         }
         
         @media (max-width: 768px) {
             #evaluationDetailsModal .modal-dialog {
                 max-width: calc(100% - 2rem);
-                margin: 1rem;
+                margin: 5rem auto 65px auto !important; /* Margen superior 5rem en móvil */
             }
         }
         
@@ -6667,11 +6673,7 @@
         
         /* ========== OPTIMIZACIÓN MÓVIL PARA MODAL DE EVALUACIÓN ========== */
         
-        /* Modal dialog - Diseño moderno para escritorio */
-        #evaluationDetailsModal .modal-dialog {
-            max-width: 900px;
-            margin: 1.75rem auto;
-        }
+        /* NOTA: Estilos del modal #evaluationDetailsModal ya definidos arriba en línea 4295 */
         
         #evaluationDetailsModal .modal-content {
             border-radius: 12px;
@@ -6697,7 +6699,7 @@
             #evaluationDetailsModal .modal-dialog {
                 width: 100% !important;
                 max-width: 100% !important;
-                margin: 0 !important;
+                margin: 0 auto 65px auto !important;
                 height: 100% !important;
                 max-height: 100% !important;
             }
@@ -8469,7 +8471,6 @@
                         <i class="fas fa-chart-radar"></i>
                         <span>Detalles de Evaluación</span>
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body" id="evaluationDetailsContent">
                     <div class="loading-spinner">
@@ -8488,11 +8489,6 @@
                         <i class="fas fa-user-tie"></i>
                         <span class="btn-text-full">Solicitar Plan</span>
                         <span class="btn-text-short d-none">Plan</span>
-                    </button>
-                    <button type="button" class="btn btn-info btn-modal-action" onclick="printEvaluationReport()">
-                        <i class="fas fa-print"></i>
-                        <span class="btn-text-full">Imprimir</span>
-                        <span class="btn-text-short d-none">PDF</span>
                     </button>
                 </div>
             </div>
@@ -13872,9 +13868,6 @@
 
                 ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && !isLeadershipAssessment && isGrowthPreparationAssessment) ? 
                     generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores)) : ''}
-                
-                ${recommendations && recommendations.length > 0 ? 
-                    generateCompactRecommendationsHTML(recommendations) : ''}
                 
                 ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && !isLeadershipAssessment && isGrowthPreparationAssessment) ? `
                 <!-- Respuestas Detalladas -->
