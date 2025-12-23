@@ -5216,7 +5216,7 @@
 </div>
 
 <!-- Modal para ver detalles de evaluación -->
-<div class="modal fade" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
+<div class="modal" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header modal-header-dark">
@@ -5457,6 +5457,34 @@
 // ============================================
 // ALPINE.JS DASHBOARD COMPONENT - V2
 // ============================================
+
+// Interceptar todas las peticiones fetch para verificar sesiones expiradas
+(function() {
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        return originalFetch.apply(this, args)
+            .then(async response => {
+                // Verificar si hay sesión expirada en la respuesta
+                if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
+                    // Clonar la respuesta para poder leerla sin consumirla
+                    const clonedResponse = response.clone();
+                    try {
+                        const data = await clonedResponse.json();
+                        // Verificar si la sesión expiró
+                        if (data && data.session_expired && data.redirect_url) {
+                            console.log('🔒 Sesión expirada, redirigiendo a login...');
+                            window.location.href = data.redirect_url;
+                            return new Promise(() => {}); // Never resolves, ya que se redirige
+                        }
+                    } catch (e) {
+                        // Si falla el parsing, continuar con la respuesta original
+                    }
+                }
+                return response;
+            });
+    };
+})();
+
 function dashboardApp() {
     return {
         // Estado Global
@@ -7545,18 +7573,24 @@ async function viewRequestDetails(requestId) {
         }
         
         console.log('✅ VIEW-REQUEST: Data loaded', data);
+        console.log('👤 VIEW-REQUEST: Coachee data:', data.coachee);
         
         // Verificar que los elementos del modal existen
         const modalElements = {
-            coacheeName: document.getElementById('modalCoacheeName'),
-            coacheeEmail: document.getElementById('modalCoacheeEmail'),
-            coacheeUsername: document.getElementById('modalCoacheeUsername'),
-            requestDate: document.getElementById('modalRequestDate'),
+            coacheeName: document.getElementById('devPlanCoacheeName'),
+            coacheeEmail: document.getElementById('devPlanCoacheeEmail'),
+            coacheeUsername: document.getElementById('devPlanCoacheeUsername'),
+            requestDate: document.getElementById('devPlanRequestDate'),
+            priority: document.getElementById('modalPriority'),
+            priorityBadge: document.getElementById('modalPriorityBadge'),
+            focusAreas: document.getElementById('modalFocusAreas'),
             evalInfo: document.getElementById('modalEvaluationInfo'),
             noEval: document.getElementById('modalNoEvaluation'),
             evalTitle: document.getElementById('modalEvalTitle'),
             evalScore: document.getElementById('modalEvalScore'),
             evalDate: document.getElementById('modalEvalDate'),
+            goals: document.getElementById('modalGoals'),
+            goalsCard: document.getElementById('modalGoalsCard'),
             customMessage: document.getElementById('modalCustomMessage')
         };
         
@@ -7568,9 +7602,25 @@ async function viewRequestDetails(requestId) {
         });
         
         // Llenar información del coachee
-        if (modalElements.coacheeName) modalElements.coacheeName.textContent = data.coachee.name;
-        if (modalElements.coacheeEmail) modalElements.coacheeEmail.textContent = data.coachee.email;
-        if (modalElements.coacheeUsername) modalElements.coacheeUsername.textContent = data.coachee.username;
+        console.log('📝 VIEW-REQUEST: Filling coachee info - Name:', data.coachee.name, 'Email:', data.coachee.email, 'Username:', data.coachee.username);
+        if (modalElements.coacheeName) {
+            modalElements.coacheeName.textContent = data.coachee.name;
+            console.log('✅ Set coachee name:', data.coachee.name);
+        } else {
+            console.error('❌ modalCoacheeName element not found!');
+        }
+        if (modalElements.coacheeEmail) {
+            modalElements.coacheeEmail.textContent = data.coachee.email;
+            console.log('✅ Set coachee email:', data.coachee.email);
+        } else {
+            console.error('❌ modalCoacheeEmail element not found!');
+        }
+        if (modalElements.coacheeUsername) {
+            modalElements.coacheeUsername.textContent = data.coachee.username;
+            console.log('✅ Set coachee username:', data.coachee.username);
+        } else {
+            console.error('❌ modalCoacheeUsername element not found!');
+        }
         
         // Guardar IDs para usar en la creación del plan
         const requestCoacheeIdEl = document.getElementById('requestCoacheeId');
@@ -7595,6 +7645,46 @@ async function viewRequestDetails(requestId) {
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+        
+        // Mostrar prioridad
+        if (modalElements.priorityBadge && data.priority) {
+            const priorityLabels = {
+                'high': { text: 'Alta - Necesito apoyo urgente', class: 'bg-danger' },
+                'medium': { text: 'Media - Desarrollo gradual', class: 'bg-warning text-dark' },
+                'low': { text: 'Baja - Desarrollo a largo plazo', class: 'bg-info' }
+            };
+            
+            const priority = priorityLabels[data.priority] || { text: data.priority, class: 'bg-secondary' };
+            modalElements.priorityBadge.textContent = priority.text;
+            modalElements.priorityBadge.className = `badge ${priority.class}`;
+            modalElements.priorityBadge.style.fontSize = '1rem';
+            modalElements.priorityBadge.style.padding = '0.5rem 1rem';
+        }
+        
+        // Mostrar áreas de enfoque
+        if (modalElements.focusAreas && data.focus_areas && data.focus_areas.length > 0) {
+            modalElements.focusAreas.innerHTML = '';
+            
+            const focusIcons = {
+                'Comunicación Efectiva': { icon: 'fa-comments', color: '#3b82f6' },
+                'Liderazgo de Equipos': { icon: 'fa-users', color: '#10b981' },
+                'Toma de Decisiones': { icon: 'fa-sitemap', color: '#f59e0b' },
+                'Resolución de Conflictos': { icon: 'fa-handshake', color: '#06b6d4' },
+                'Inteligencia Emocional': { icon: 'fa-heart', color: '#ef4444' },
+                'Productividad Personal': { icon: 'fa-tasks', color: '#6b7280' }
+            };
+            
+            data.focus_areas.forEach(area => {
+                const areaInfo = focusIcons[area] || { icon: 'fa-check', color: '#8b5cf6' };
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.style.cssText = `background-color: ${areaInfo.color}; color: white; font-size: 0.875rem; padding: 0.5rem 0.75rem; font-weight: 500;`;
+                badge.innerHTML = `<i class="fas ${areaInfo.icon} me-1"></i>${area}`;
+                modalElements.focusAreas.appendChild(badge);
+            });
+        } else if (modalElements.focusAreas) {
+            modalElements.focusAreas.innerHTML = '<span class="text-muted">No se especificaron áreas de enfoque</span>';
         }
         
         // Llenar información de la evaluación
@@ -7642,9 +7732,30 @@ async function viewRequestDetails(requestId) {
             if (modalElements.noEval) modalElements.noEval.style.display = 'block';
         }
         
-        // Llenar mensaje personalizado
+        // Mostrar objetivos específicos
+        if (modalElements.goals && modalElements.goalsCard) {
+            if (data.goals && data.goals.trim()) {
+                modalElements.goals.textContent = data.goals;
+                modalElements.goalsCard.style.display = 'block';
+            } else {
+                modalElements.goalsCard.style.display = 'none';
+            }
+        }
+        
+        // Llenar mensaje personalizado (mensaje adicional del coachee)
         if (modalElements.customMessage) {
-            modalElements.customMessage.textContent = data.task.custom_message || 'Sin mensaje adicional';
+            // Extraer solo el mensaje adicional si existe en el formato estructurado
+            let displayMessage = data.task.custom_message || 'Sin mensaje adicional';
+            
+            // Si el mensaje tiene el formato estructurado, extraer solo la parte del mensaje adicional
+            if (displayMessage.includes('Mensaje adicional:')) {
+                const parts = displayMessage.split('Mensaje adicional:');
+                if (parts.length > 1) {
+                    displayMessage = parts[1].trim();
+                }
+            }
+            
+            modalElements.customMessage.textContent = displayMessage;
         }
         
         // Ocultar loading y mostrar contenido
@@ -8867,11 +8978,13 @@ function closeInvitationModal() {
 <div class="modal fade" id="devPlanRequestModal" tabindex="-1" aria-labelledby="devPlanRequestModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);">
-            <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
-                <h5 class="modal-title" id="devPlanRequestModalLabel" style="font-weight: 600; font-size: 1.25rem;">
-                    <i class="fas fa-clipboard-list me-2"></i>Detalles de Solicitud
+            <div class="modal-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at top left, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none;"></div>
+                <h5 class="modal-title" id="devPlanRequestModalLabel" style="font-weight: 700; font-size: 1.35rem; position: relative; z-index: 1; display: flex; align-items: center; gap: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                    <i class="fas fa-road" style="font-size: 1.5rem;"></i>
+                    <span>Solicitud de Plan de Desarrollo</span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position: relative; z-index: 1;"></button>
             </div>
             <div class="modal-body" style="padding: 2rem;" id="devPlanRequestModalBody">
                 <!-- Loading spinner -->
@@ -8889,20 +9002,44 @@ function closeInvitationModal() {
                     <input type="hidden" id="currentRequestId">
                     
                     <!-- Coachee Info -->
-                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                    <div class="card mb-3" style="border: 2px solid #8b5cf6; border-radius: 12px; background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);">
                         <div class="card-body">
-                            <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <h6 class="mb-3" style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #8b5cf6;">
                                 <i class="fas fa-user me-2"></i>Información del Coachee
                             </h6>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <p class="mb-2"><strong>Nombre:</strong> <span id="modalCoacheeName"></span></p>
-                                    <p class="mb-0"><strong>Email:</strong> <span id="modalCoacheeEmail"></span></p>
+                                    <p class="mb-2"><strong>Nombre:</strong> <span id="devPlanCoacheeName"></span></p>
+                                    <p class="mb-0"><strong>Email:</strong> <span id="devPlanCoacheeEmail"></span></p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p class="mb-2"><strong>Usuario:</strong> <span id="modalCoacheeUsername"></span></p>
-                                    <p class="mb-0"><strong>Fecha:</strong> <span id="modalRequestDate"></span></p>
+                                    <p class="mb-2"><strong>Usuario:</strong> <span id="devPlanCoacheeUsername"></span></p>
+                                    <p class="mb-0"><strong>Fecha:</strong> <span id="devPlanRequestDate"></span></p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Priority -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fas fa-flag me-2"></i>Prioridad
+                            </h6>
+                            <div id="modalPriority">
+                                <span class="badge" id="modalPriorityBadge" style="font-size: 1rem; padding: 0.5rem 1rem;"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Focus Areas -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fas fa-bullseye me-2"></i>Áreas de Enfoque Solicitadas
+                            </h6>
+                            <div id="modalFocusAreas" class="d-flex flex-wrap gap-2">
+                                <!-- Focus areas will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -8911,7 +9048,7 @@ function closeInvitationModal() {
                     <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
                         <div class="card-body">
                             <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                <i class="fas fa-chart-bar me-2"></i>Resultado de Evaluación
+                                <i class="fas fa-chart-bar me-2"></i>Resultado de Evaluación DISC
                             </h6>
                             <div id="modalEvaluationInfo" style="display: none;">
                                 <p class="mb-2"><strong>Evaluación:</strong> <span id="modalEvalTitle"></span></p>
@@ -8927,11 +9064,22 @@ function closeInvitationModal() {
                         </div>
                     </div>
                     
+                    <!-- Specific Goals -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;" id="modalGoalsCard">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fas fa-target me-2"></i>Objetivos Específicos
+                            </h6>
+                            <div id="modalGoals" style="background: #f9fafb; padding: 1rem; border-radius: 8px; white-space: pre-wrap;">
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Custom Message -->
                     <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
                         <div class="card-body">
                             <h6 class="text-muted mb-3" style="font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                <i class="fas fa-comment-dots me-2"></i>Mensaje del Coachee
+                                <i class="fas fa-comment-dots me-2"></i>Mensaje Adicional del Coachee
                             </h6>
                             <div id="modalCustomMessage" style="background: #f9fafb; padding: 1rem; border-radius: 8px; white-space: pre-wrap;">
                             </div>
@@ -8943,7 +9091,7 @@ function closeInvitationModal() {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="padding: 0.625rem 1.5rem; border-radius: 8px;">
                     <i class="fas fa-times me-2"></i>Cerrar
                 </button>
-                <button type="button" class="btn btn-primary" onclick="openCreatePlanModal()" style="padding: 0.625rem 1.5rem; border-radius: 8px;">
+                <button type="button" class="btn btn-success" onclick="openCreatePlanModal()" style="padding: 0.625rem 1.5rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
                     <i class="fas fa-plus-circle me-2"></i>Crear Plan de Desarrollo
                 </button>
             </div>

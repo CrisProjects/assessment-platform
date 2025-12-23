@@ -6667,13 +6667,49 @@ def api_coach_development_plan_request_detail(task_id):
         if not coachee:
             return jsonify({'error': 'Coachee no encontrado'}), 404
         
-        # Extraer evaluation_id de la descripción
+        # Extraer metadata JSON de la descripción
         import re
-        eval_id_match = re.search(r'Evaluación ID: (\d+)', task.description)
-        evaluation_id = int(eval_id_match.group(1)) if eval_id_match else None
+        import json
+        
+        metadata = {}
+        evaluation_id = None
+        
+        # Intentar extraer metadata JSON
+        metadata_match = re.search(r'__METADATA__\n(.*?)\n__END_METADATA__', task.description, re.DOTALL)
+        if metadata_match:
+            try:
+                metadata = json.loads(metadata_match.group(1))
+                evaluation_id = metadata.get('evaluation_id')
+                logger.info(f"✅ DEV-PLAN-DETAIL: Extracted metadata: {metadata}")
+            except json.JSONDecodeError:
+                logger.warning(f"⚠️ DEV-PLAN-DETAIL: Could not parse metadata JSON")
+        
+        # Fallback: buscar en formato antiguo
+        if not evaluation_id:
+            eval_id_match = re.search(r'Evaluación ID: (\d+)', task.description)
+            evaluation_id = int(eval_id_match.group(1)) if eval_id_match else None
+            logger.info(f"🔍 DEV-PLAN-DETAIL: Using fallback extraction, evaluation_id: {evaluation_id}")
+            
+            # Extraer focus_areas del formato antiguo
+            focus_areas_section = re.search(r'Áreas de enfoque seleccionadas:\n((?:- .+\n?)+)', task.description)
+            if focus_areas_section:
+                focus_areas_text = focus_areas_section.group(1)
+                metadata['focus_areas'] = [line.strip('- \n') for line in focus_areas_text.split('\n') if line.strip().startswith('-')]
+                logger.info(f"🔍 DEV-PLAN-DETAIL: Extracted focus_areas from old format: {metadata['focus_areas']}")
+            
+            # Extraer goals del formato antiguo
+            goals_match = re.search(r'Objetivos específicos:\n(.+?)(?:\n\n|$)', task.description, re.DOTALL)
+            if goals_match:
+                metadata['goals'] = goals_match.group(1).strip()
+                logger.info(f"🔍 DEV-PLAN-DETAIL: Extracted goals from old format: {metadata['goals']}")
+            
+            # Extraer priority si está en el task.priority
+            if task.priority:
+                metadata['priority'] = task.priority
         
         logger.info(f"🔍 DEV-PLAN-DETAIL: Task description: {task.description}")
-        logger.info(f"🔍 DEV-PLAN-DETAIL: Extracted evaluation_id: {evaluation_id}")
+        logger.info(f"🔍 DEV-PLAN-DETAIL: Final evaluation_id: {evaluation_id}")
+        logger.info(f"🔍 DEV-PLAN-DETAIL: Final metadata: {metadata}")
         
         evaluation_data = None
         if evaluation_id:
@@ -6703,8 +6739,9 @@ def api_coach_development_plan_request_detail(task_id):
         else:
             logger.warning(f"⚠️ DEV-PLAN-DETAIL: Could not extract evaluation_id from description")
         
-        # Extraer mensaje personalizado de la descripción
-        description_lines = task.description.split('\n')
+        # Extraer mensaje personalizado de la descripción (sin metadata)
+        description_clean = re.sub(r'__METADATA__.*?__END_METADATA__', '', task.description, flags=re.DOTALL)
+        description_lines = description_clean.split('\n')
         custom_message = ''
         for i, line in enumerate(description_lines):
             if i > 0 and not line.startswith('Evaluación ID:') and not line.startswith('Score:'):
@@ -6727,7 +6764,10 @@ def api_coach_development_plan_request_detail(task_id):
                 'email': coachee.email,
                 'username': coachee.username
             },
-            'evaluation': evaluation_data
+            'evaluation': evaluation_data,
+            'priority': metadata.get('priority', task.priority),
+            'focus_areas': metadata.get('focus_areas', []),
+            'goals': metadata.get('goals', '')
         })
         
     except Exception as e:
@@ -11044,6 +11084,9 @@ def request_development_plan():
         data = request.get_json()
         evaluation_id = data.get('evaluation_id')
         message = data.get('message', 'Solicito un plan de desarrollo personalizado.')
+        priority = data.get('priority', 'medium')
+        focus_areas = data.get('focus_areas', [])
+        goals = data.get('goals', '')
         
         if not evaluation_id:
             return jsonify({'error': 'ID de evaluación requerido'}), 400
@@ -11061,15 +11104,25 @@ def request_development_plan():
         assessment = Assessment.query.get(evaluation.assessment_id)
         assessment_title = assessment.title if assessment else 'Evaluación'
         
+        # Crear descripción estructurada con metadata JSON
+        import json
+        metadata = {
+            'priority': priority,
+            'focus_areas': focus_areas,
+            'goals': goals,
+            'evaluation_id': evaluation_id,
+            'score': evaluation.score
+        }
+        
         # Crear tarea para el coach
         if current_coachee.coach_id:
             new_task = Task(
                 coach_id=current_coachee.coach_id,
                 coachee_id=current_coachee.id,
                 title=f"Plan de Desarrollo: {assessment_title}",
-                description=f"Solicitud de plan de desarrollo de {current_coachee.full_name or current_coachee.username}\n\n{message}\n\nEvaluación ID: {evaluation_id}\nScore: {evaluation.score}%",
+                description=f"Solicitud de plan de desarrollo de {current_coachee.full_name or current_coachee.username}\n\n{message}\n\n__METADATA__\n{json.dumps(metadata)}\n__END_METADATA__",
                 category='development_plan_request',
-                priority='high',
+                priority=priority,
                 is_active=True
             )
             db.session.add(new_task)
@@ -11079,6 +11132,7 @@ def request_development_plan():
         
         logger.info(f"📋 DEVELOPMENT PLAN REQUEST: Coachee {current_coachee.username} (ID: {current_coachee.id}) "
                    f"requested development plan for evaluation {evaluation_id}")
+        logger.info(f"📋 PRIORITY: {priority}, FOCUS AREAS: {focus_areas}, GOALS: {goals}")
         logger.info(f"📋 MESSAGE: {message}")
         logger.info(f"📋 EVALUATION: Assessment ID: {evaluation.assessment_id}, Score: {evaluation.score}")
         

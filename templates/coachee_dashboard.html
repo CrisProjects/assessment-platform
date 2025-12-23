@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InstaCoach - Dashboard</title>
+    <title>Coach/Dashboard</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -392,7 +392,43 @@
             z-index: 2;
         }
         
-        .card.bg-dark:not(.stats-card-mobile .card) {
+        /* Estilos globales para modales */
+        .modal {
+            z-index: 1055 !important;
+        }
+
+        .modal-backdrop {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+
+        .modal.show {
+            display: block !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .modal-dialog {
+            position: relative;
+            z-index: 1055 !important;
+        }
+
+        .modal-content {
+            position: relative;
+            z-index: 1055 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Asegurar que todo el contenido del modal sea clickeable */
+        .modal-body,
+        .modal-body * {
+            pointer-events: auto !important;
+        }
+        
+        /* Asegurar que el modal de evaluaciones sea interactivo */
+        #evaluationDetailsModal {
+            pointer-events: auto !important;
+        }        .card.bg-dark:not(.stats-card-mobile .card) {
             background: white !important;
             border: 1px solid #e2e8f0 !important;
         }
@@ -724,6 +760,43 @@
                 margin-bottom: 1rem;
             }
             
+            /* SIDEBAR OPTIMIZADO PARA MÓVIL */
+            .sidebar {
+                margin-bottom: 1.5rem !important;
+            }
+            
+            .sidebar .card-header {
+                padding: 1.25rem 1rem !important;
+            }
+            
+            .sidebar .card-header h5 {
+                font-size: 1rem !important;
+            }
+            
+            .sidebar .card-header h5 i {
+                font-size: 1.1rem !important;
+                margin-right: 0.5rem !important;
+            }
+            
+            .sidebar .card-header p {
+                font-size: 0.75rem !important;
+            }
+            
+            .sidebar .card-body {
+                padding: 0.5rem 0.25rem !important;
+            }
+            
+            .list-group-item {
+                font-size: 0.875rem !important;
+                padding: 0.75rem 1rem !important;
+                margin: 0.125rem 0.25rem !important;
+            }
+            
+            .list-group-item i {
+                font-size: 0.875rem !important;
+                margin-right: 0.625rem !important;
+            }
+            
             /* Estilos de card removidos - se usan inline para mantener gradientes */
         }
             
@@ -786,6 +859,23 @@
                 flex-shrink: 0 !important;
             }
             
+            /* HEADERS DE CONTENIDO OPTIMIZADOS PARA MÓVIL */
+            .card-header:not(.stats-card-mobile .card-header) {
+                padding: 1rem 1rem !important;
+            }
+            
+            .card-header h3,
+            .card-header h4,
+            .card-header h5 {
+                font-size: 1rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+            
+            .card-header p,
+            .card-header small {
+                font-size: 0.75rem !important;
+            }
+            
             /* Tab content optimizado para móvil */
             .tab-content {
                 padding: 1rem 0 !important;
@@ -800,34 +890,202 @@
                 to { opacity: 1; transform: translateY(0); }
             }
             
+            /* SECCIONES DE TAREAS Y EVALUACIONES OPTIMIZADAS */
+            .task-item,
+            .evaluation-item {
+                padding: 0.875rem !important;
+                margin-bottom: 0.75rem !important;
+                border-radius: 0.5rem !important;
+            }
+            
+            .task-header,
+            .evaluation-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0.5rem !important;
+            }
+            
+            .task-title,
+            .evaluation-title {
+                font-size: 0.9375rem !important;
+                line-height: 1.3 !important;
+            }
+            
+            .task-description,
+            .evaluation-description {
+                font-size: 0.8125rem !important;
+                line-height: 1.4 !important;
+                margin-top: 0.5rem !important;
+            }
+            
+            .task-meta,
+            .evaluation-meta {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+                margin-top: 0.5rem !important;
+            }
+            
+            .task-badge,
+            .evaluation-badge {
+                font-size: 0.7rem !important;
+                padding: 0.25rem 0.5rem !important;
+            }
+            
+            .task-progress {
+                margin-top: 0.75rem !important;
+            }
+            
+            .progress {
+                height: 8px !important;
+                border-radius: 4px !important;
+            }
+            
+            .evaluation-score {
+                font-size: 1.25rem !important;
+                padding: 0.5rem !important;
+            }
+            
+            .evaluation-level {
+                font-size: 0.8125rem !important;
+                padding: 0.375rem 0.625rem !important;
+            }
+            
+            /* RECOMENDACIONES OPTIMIZADAS */
+            .recommendation-item {
+                padding: 0.75rem !important;
+                margin-bottom: 0.625rem !important;
+                font-size: 0.875rem !important;
+                line-height: 1.5 !important;
+            }
+            
+            .category-header {
+                padding: 0.875rem 1rem !important;
+            }
+            
+            .category-title {
+                font-size: 0.9375rem !important;
+            }
+            
+            .general-recommendations,
+            .strengths-category,
+            .final-message {
+                margin-bottom: 1rem !important;
+                border-radius: 0.75rem !important;
+            }
+            
+            /* GRÁFICOS Y VISUALIZACIONES OPTIMIZADOS */
+            .chart-container,
+            .radar-chart-container {
+                padding: 0.75rem !important;
+                height: auto !important;
+                min-height: 250px !important;
+                max-height: 300px !important;
+            }
+            
+            canvas {
+                max-height: 250px !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+            
+            /* GRUPOS DE BOTONES OPTIMIZADOS */
+            .btn-group {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+                width: 100% !important;
+            }
+            
+            .btn-group .btn {
+                flex: 1 1 auto !important;
+                min-width: 100px !important;
+                white-space: nowrap !important;
+            }
+            
+            /* Botones con texto oculto en móvil */
+            .btn .d-none.d-sm-inline {
+                display: none !important;
+            }
+            
+            @media (min-width: 576px) {
+                .btn .d-none.d-sm-inline {
+                    display: inline !important;
+                }
+            }
+            
+            /* SECCIÓN "MIS ACCIONES Y METAS" OPTIMIZADA */
+            #tasks .card-header {
+                padding: 1rem 1.25rem !important;
+            }
+            
+            #tasks .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            /* PLANES DE DESARROLLO OPTIMIZADOS */
+            #development-plan .card-header {
+                padding: 1rem 1.25rem !important;
+            }
+            
+            #development-plan .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            #development-plan .task-item {
+                padding: 0.75rem !important;
+            }
+            
             /* MODALES OPTIMIZADOS PARA MÓVIL */
             .modal-dialog {
-                margin: 0.5rem !important;
-                max-width: calc(100vw - 1rem) !important;
-                height: calc(100vh - 1rem) !important;
-                max-height: calc(100vh - 1rem) !important;
+                margin: 6rem 1rem 1rem 1rem !important;
+                max-width: calc(100vw - 2rem) !important;
+                height: auto !important;
+                max-height: calc(100vh - 7rem) !important;
+                display: flex !important;
+                align-items: flex-start !important;
             }
             
             .modal-content {
-                height: 100% !important;
-                border-radius: 1rem !important;
+                max-height: calc(100vh - 2rem) !important;
+                border-radius: 16px !important;
                 border: none !important;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05) !important;
+                display: flex !important;
+                flex-direction: column !important;
                 overflow: hidden !important;
             }
             
             .modal-header {
-                background: linear-gradient(135deg, var(--calm-primary) 0%, var(--calm-secondary) 100%) !important;
+                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
                 color: white !important;
                 border-bottom: none !important;
-                padding: 1.25rem !important;
+                padding: 1.5rem !important;
                 flex-shrink: 0 !important;
+                position: relative !important;
+            }
+            
+            .modal-header::after {
+                content: '' !important;
+                position: absolute !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                height: 3px !important;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent) !important;
             }
             
             .modal-title {
                 color: white !important;
                 font-weight: 600 !important;
-                font-size: 1.1rem !important;
+                font-size: 1.15rem !important;
+                letter-spacing: 0.3px !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.75rem !important;
+            }
+            
+            .modal-title i {
+                font-size: 1.25rem !important;
+                opacity: 0.95 !important;
             }
             
             .modal-header .btn-close {
@@ -851,52 +1109,160 @@
             }
             
             .modal-body {
-                padding: 1.25rem !important;
+                padding: 2rem 1.5rem !important;
                 overflow-y: auto !important;
-                flex: 1 !important;
+                flex: 1 1 auto !important;
                 -webkit-overflow-scrolling: touch !important;
+                max-height: calc(100vh - 24rem) !important;
+                background: #fafafa !important;
+            }
+            
+            .modal-body::-webkit-scrollbar {
+                width: 6px !important;
+            }
+            
+            .modal-body::-webkit-scrollbar-track {
+                background: transparent !important;
+            }
+            
+            .modal-body::-webkit-scrollbar-thumb {
+                background: rgba(0,0,0,0.2) !important;
+                border-radius: 3px !important;
+            }
+            
+            .modal-body::-webkit-scrollbar-thumb:hover {
+                background: rgba(0,0,0,0.3) !important;
             }
             
             .modal-footer {
-                background: #f8f9fa !important;
-                border-top: 1px solid #e9ecef !important;
-                padding: 1rem 1.25rem !important;
+                background: white !important;
+                border-top: 1px solid rgba(0,0,0,0.08) !important;
+                padding: 1rem 1.5rem !important;
                 flex-shrink: 0 !important;
                 gap: 0.75rem !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: flex-end !important;
             }
             
             .modal-footer .btn {
                 min-height: 44px !important;
-                padding: 0.75rem 1.5rem !important;
+                padding: 0.75rem 1.25rem !important;
                 font-weight: 600 !important;
-                border-radius: 0.5rem !important;
-                flex: 1 !important;
+                border-radius: 8px !important;
+                font-size: 0.875rem !important;
+                white-space: nowrap !important;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+                border: none !important;
             }
             
-            /* Modal backdrop más oscuro en móvil */
+            .modal-footer .btn:hover {
+                transform: translateY(-1px) !important;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+            }
+            
+            .modal-footer .btn:active {
+                transform: translateY(0) !important;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+            }
+            
+            .modal-footer .btn-secondary {
+                background: #f3f4f6 !important;
+                color: #374151 !important;
+            }
+            
+            .modal-footer .btn-secondary:hover {
+                background: #e5e7eb !important;
+            }
+            
+            .modal-footer .btn-success {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+                color: white !important;
+            }
+            
+            .modal-footer .btn-progress {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+                color: white !important;
+            }
+            
+            /* Modal backdrop oculto en móvil */
             .modal-backdrop {
-                background-color: rgba(0, 0, 0, 0.6) !important;
+                display: none !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
             }
             
-            /* Animación mejorada para móvil */
-            .modal.fade .modal-dialog {
+            /* Modal con fondo propio en móvil */
+            .modal.show {
+                background: rgba(0, 0, 0, 0.5) !important;
+            }
+            
+            /* Asegurar que el contenido del modal sea interactivo */
+            #evaluationDetailsModal .modal-content,
+            #evaluationDetailsModal .modal-body,
+            #evaluationDetailsModal .modal-body * {
+                pointer-events: auto !important;
+                position: relative !important;
+            }
+            
+            /* Asegurar z-index correcto para modal */
+            #evaluationDetailsModal.modal {
+                z-index: 1055 !important;
+            }
+            
+            #evaluationDetailsModal .modal-dialog {
+                z-index: 1055 !important;
+            }
+            
+            #evaluationDetailsModal .modal-content {
+                z-index: 1055 !important;
+                position: relative !important;
+            }
+            
+            /* Animación mejorada para móvil - DESACTIVADA TEMPORALMENTE */
+            /* .modal.fade .modal-dialog {
                 transform: translateY(100%) !important;
                 transition: transform 0.3s ease-out !important;
             }
             
             .modal.show .modal-dialog {
                 transform: translateY(0) !important;
-            }
+            } */
             
             /* BOTONES Y FORMULARIOS OPTIMIZADOS PARA MÓVIL */
             .btn {
-                min-height: 44px;
-                padding: 0.75rem 1rem;
+                min-height: 44px !important;
+                padding: 0.75rem 1rem !important;
+                font-size: 0.875rem !important;
             }
             
             .btn-sm {
-                min-height: 40px;
-                padding: 0.5rem 0.75rem;
+                min-height: 40px !important;
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.8125rem !important;
+            }
+            
+            /* Grupos de botones optimizados */
+            .btn-group {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+            
+            .btn-group .btn {
+                flex: 1 1 auto !important;
+                min-width: 120px !important;
+            }
+            
+            /* Botones de texto oculto en móvil - solo iconos */
+            .btn .d-none.d-sm-inline {
+                display: none !important;
+            }
+            
+            @media (min-width: 576px) {
+                .btn .d-none.d-sm-inline {
+                    display: inline !important;
+                }
             }
             
             /* FORMULARIOS OPTIMIZADOS PARA MÓVIL */
@@ -1021,6 +1387,81 @@
             }
         }
 
+        /* SECCIONES DE TAREAS Y EVALUACIONES OPTIMIZADAS MÓVIL */
+        @media (max-width: 768px) {
+            .task-item,
+            .evaluation-item {
+                padding: 0.875rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+            
+            .task-header,
+            .evaluation-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0.5rem !important;
+            }
+            
+            .task-title,
+            .evaluation-title {
+                font-size: 0.9375rem !important;
+            }
+            
+            .task-description,
+            .evaluation-description {
+                font-size: 0.8125rem !important;
+                line-height: 1.4 !important;
+            }
+            
+            .task-meta,
+            .evaluation-meta {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+            
+            .task-badge,
+            .evaluation-badge {
+                font-size: 0.7rem !important;
+                padding: 0.25rem 0.5rem !important;
+            }
+            
+            /* Barra de progreso en tareas */
+            .task-progress {
+                margin-top: 0.75rem !important;
+            }
+            
+            .progress {
+                height: 8px !important;
+            }
+            
+            /* SECCIÓN DE RECOMENDACIONES OPTIMIZADA */
+            .recommendation-item {
+                padding: 0.75rem !important;
+                margin-bottom: 0.625rem !important;
+                font-size: 0.875rem !important;
+            }
+            
+            .category-header {
+                padding: 0.875rem 1rem !important;
+            }
+            
+            .category-title {
+                font-size: 0.9375rem !important;
+            }
+            
+            /* GRÁFICOS Y VISUALIZACIONES OPTIMIZADOS */
+            .chart-container,
+            .radar-chart-container {
+                padding: 0.75rem !important;
+                height: auto !important;
+                min-height: 250px !important;
+            }
+            
+            canvas {
+                max-height: 250px !important;
+            }
+        }
+        
         /* OPTIMIZACIÓN ESPECÍFICA PARA TABLET (768px - 1024px) */
         @media (min-width: 768px) and (max-width: 1024px) {
             .container-fluid {
@@ -1709,15 +2150,15 @@
             transition: width 0.8s ease-out !important;
         }
         
-        /* Mejoras para modales */
-        .modal.fade .modal-dialog {
+        /* Mejoras para modales - DESACTIVADA TEMPORALMENTE */
+        /* .modal.fade .modal-dialog {
             transform: translateY(-50px);
             transition: transform 0.3s ease-out;
         }
         
         .modal.show .modal-dialog {
             transform: translateY(0);
-        }
+        } */
         
         /* Hover effects especiales */
         .nav-tabs .nav-link {
@@ -1997,7 +2438,7 @@
             }
         }
 
-        .card-header {
+        .card-header:not(#development-plan .card *):not(#tasks .card *) {
             background: #ffffff !important;
             padding: 1.5rem !important;
             border-bottom: 1px solid #f3f4f6 !important;
@@ -2022,18 +2463,18 @@
 
         /* CARD HEADERS MÓVIL OPTIMIZADOS */
         @media (max-width: 768px) {
-            .card-header {
+            .card-header:not(#development-plan .card *):not(#tasks .card *) {
                 padding: 1rem 1.25rem !important;
                 border-radius: 12px 12px 0 0 !important;
             }
             
-            .card-header h3 {
+            .card-header:not(#development-plan .card *):not(#tasks .card *) h3 {
                 font-size: 1.1rem !important;
                 font-weight: 700 !important;
                 line-height: 1.3 !important;
             }
             
-            .card-header i {
+            .card-header:not(#development-plan .card *):not(#tasks .card *) i {
                 font-size: 1rem !important;
                 margin-right: 0.5rem !important;
             }
@@ -2041,35 +2482,35 @@
 
         /* CARD HEADERS TABLET OPTIMIZADOS */
         @media (min-width: 768px) and (max-width: 1024px) {
-            .card-header {
+            .card-header:not(#development-plan .card *):not(#tasks .card *) {
                 padding: 1.25rem 1.5rem !important;
                 border-radius: 14px 14px 0 0 !important;
             }
             
-            .card-header h3 {
+            .card-header:not(#development-plan .card *):not(#tasks .card *) h3 {
                 font-size: 1.2rem !important;
                 font-weight: 650 !important;
             }
             
-            .card-header i {
+            .card-header:not(#development-plan .card *):not(#tasks .card *) i {
                 font-size: 1.1rem !important;
                 margin-right: 0.6rem !important;
             }
         }
 
         /* CARD BODY RESPONSIVO */
-        .card-body {
+        .card-body:not(#development-plan .card *):not(#tasks .card *) {
             padding: 1.5rem !important;
         }
 
         @media (max-width: 768px) {
-            .card-body {
+            .card-body:not(#development-plan .card *):not(#tasks .card *) {
                 padding: 1rem 1.25rem !important;
             }
         }
 
         @media (min-width: 768px) and (max-width: 1024px) {
-            .card-body {
+            .card-body:not(#development-plan .card *):not(#tasks .card *) {
                 padding: 1.25rem 1.5rem !important;
             }
         }
@@ -2165,6 +2606,84 @@
             padding: 1.5rem;
         }
 
+        /* ESTILOS PARA SECCIÓN MI CONTENIDO - TARJETAS DE VIDEO */
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            padding: 1rem;
+        }
+
+        .content-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .content-card.viewed {
+            opacity: 0.85;
+        }
+
+        .content-preview {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .content-preview .ratio {
+            background: #000;
+        }
+
+        .content-preview iframe {
+            width: 100%;
+            height: 100%;
+        }
+
+        .content-title {
+            color: #1e293b;
+            font-size: 1rem;
+        }
+
+        .content-info {
+            flex: 1;
+        }
+
+        .content-description {
+            color: #64748b;
+        }
+
+        .content-meta {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive para tarjetas de contenido */
+        @media (max-width: 768px) {
+            .content-card {
+                padding: 0.75rem;
+            }
+
+            .content-title {
+                font-size: 0.9rem;
+            }
+
+            .content-actions {
+                flex-direction: column;
+            }
+
+            .content-actions .btn {
+                width: 100%;
+            }
+        }
+
         /* Navigation tabs - MEJORADO PARA MÓVIL Y TABLET */
         .nav-tabs {
             border-bottom: 2px solid var(--calm-primary) !important;
@@ -2211,6 +2730,140 @@
             border-bottom: none !important;
             transform: translateY(-2px) !important;
             box-shadow: 0 8px 25px rgba(30, 58, 138, 0.6) !important;
+        }
+
+        /* ESTILOS PARA SECCIÓN MI CONTENIDO */
+        #contentTabs .nav-link {
+            padding: 0.625rem 1.25rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            border: 2px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            background: #ffffff !important;
+            color: #374151 !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        #contentTabs .nav-link i {
+            transition: color 0.2s ease !important;
+        }
+        
+        #contentTabs .nav-link:hover {
+            color: #1e40af !important;
+            background: #eff6ff !important;
+            border-color: #93c5fd !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15) !important;
+        }
+        
+        #contentTabs .nav-link.active,
+        #contentTabs .nav-link:active {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            border-color: #3b82f6 !important;
+            font-weight: 700 !important;
+            transform: none !important;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        #contentTabs .nav-link.active i,
+        #contentTabs .nav-link:active i {
+            color: #ffffff !important;
+        }
+        
+        /* Asegurar que los botones NO activos mantengan el texto oscuro */
+        #contentTabs .nav-link:not(.active) {
+            color: #374151 !important;
+        }
+        
+        #contentTabs .nav-link:not(.active) span {
+            color: #374151 !important;
+        }
+        
+        #contentTabs {
+            border-bottom: 2px solid #e5e7eb !important;
+            gap: 0.75rem !important;
+            background: #f9fafb !important;
+            padding: 0.5rem !important;
+            border-radius: 10px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        /* Estilos para cards de documentos */
+        .document-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+        
+        .document-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .document-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .document-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.375rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .document-meta {
+            font-size: 0.75rem;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .document-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .priority-urgente {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .priority-alta {
+            background: #fff7ed;
+            color: #ea580c;
+            border: 1px solid #fed7aa;
+        }
+        
+        .priority-normal {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
         }
 
         /* NAVEGACIÓN MÓVIL OPTIMIZADA */
@@ -3150,11 +3803,10 @@
 
         .content-preview.has-embedded-video {
             cursor: default;
-            pointer-events: none;
+            /* pointer-events removido - bloqueaba clics en iframes */
         }
 
-        .content-preview.has-embedded-video .ratio iframe {
-            pointer-events: all;
+        .content-preview.has-embedded-video iframe {
             cursor: default;
         }
 
@@ -3542,12 +4194,28 @@
         /* Evaluation Details Modal Styles */
         #evaluationDetailsModal .modal-dialog {
             max-width: 95%;
+            z-index: 1055 !important;
+            position: relative !important;
         }
         
         #evaluationDetailsModal .modal-content {
             background: #ffffff;
             border: 1px solid #dee2e6;
             color: #333;
+            z-index: 1055 !important;
+            position: relative !important;
+        }
+        
+        /* Asegurar que el modal de evaluación esté sobre el backdrop */
+        #evaluationDetailsModal.modal.show {
+            z-index: 1055 !important;
+            display: block !important;
+        }
+        
+        /* Backdrop específico para modal de evaluación */
+        #evaluationDetailsModal ~ .modal-backdrop,
+        .modal-backdrop.show {
+            z-index: 1050 !important;
         }
         
         #evaluationDetailsModal .modal-header {
@@ -3558,53 +4226,93 @@
         
         /* Header dark para evaluation details modal */
         #evaluationDetailsModal .modal-header.modal-header-dark {
-            background: var(--calm-primary) !important;
-            background-color: var(--calm-primary) !important;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+            border-bottom: none !important;
             color: #ffffff !important;
+            padding: 1.25rem 1.5rem !important;
+            position: relative !important;
+        }
+        
+        #evaluationDetailsModal .modal-header.modal-header-dark::after {
+            content: '' !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 2px !important;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent) !important;
         }
         
         #evaluationDetailsModal .modal-header.modal-header-dark .modal-title,
         #evaluationDetailsModal .modal-header.modal-header-dark h5 {
             color: #ffffff !important;
-            font-weight: 700 !important;
+            font-weight: 600 !important;
+            font-size: 1.15rem !important;
+            letter-spacing: 0.3px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+        }
+        
+        #evaluationDetailsModal .modal-header.modal-header-dark .modal-title i {
+            font-size: 1.25rem !important;
+            opacity: 0.95 !important;
         }
         
         #evaluationDetailsModal .modal-header.modal-header-dark i {
             color: #ffffff !important;
         }
         
-        /* Botones en el header */
-        #evaluationDetailsModal .modal-header .btn {
+        /* Botones en el header - Estilo minimalista moderno */
+        #evaluationDetailsModal .modal-header .btn-header-action {
+            background: rgba(255, 255, 255, 0.15) !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            color: #ffffff !important;
+            padding: 0.5rem 0.75rem !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
             font-size: 0.875rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
         }
         
-        #evaluationDetailsModal .modal-header .btn-light {
-            background: rgba(255, 255, 255, 0.9) !important;
-            color: var(--calm-primary) !important;
-        }
-        
-        #evaluationDetailsModal .modal-header .btn-outline-light {
-            background: transparent !important;
-            color: #ffffff !important;
+        #evaluationDetailsModal .modal-header .btn-header-action:hover {
+            background: rgba(255, 255, 255, 0.25) !important;
             border-color: rgba(255, 255, 255, 0.5) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
         }
         
-        #evaluationDetailsModal .modal-header .btn-outline-light:hover {
-            background: rgba(255, 255, 255, 0.1) !important;
-            color: #ffffff !important;
+        #evaluationDetailsModal .modal-header .btn-header-action:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
         }
         
-        /* Asegurar que el botón close sea blanco en evaluation details modal */
+        #evaluationDetailsModal .modal-header .btn-header-action i {
+            font-size: 1rem !important;
+            opacity: 0.9 !important;
+        }
+        
+        /* Botón close mejorado */
         #evaluationDetailsModal .modal-header .btn-close {
             filter: invert(1) !important;
             opacity: 1 !important;
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-radius: 6px !important;
+            padding: 0.5rem !important;
+            transition: all 0.2s ease !important;
         }
         
         #evaluationDetailsModal .modal-header .btn-close:hover {
             filter: invert(1) !important;
-            opacity: 0.8 !important;
+            opacity: 1 !important;
+            background: rgba(255, 255, 255, 0.25) !important;
+            transform: scale(1.05) !important;
+        }
+        
+        #evaluationDetailsModal .modal-header .btn-close:active {
+            transform: scale(0.95) !important;
         }
         
         #evaluationDetailsModal .modal-header .modal-title,
@@ -3637,6 +4345,119 @@
         /* SOLUCIÓN FINAL: MÁS ESPECÍFICO QUE LA REGLA ANTERIOR */
         #evaluationDetailsModal .general-recommendations h6.category-title {
             color: white !important;
+        }
+        
+        /* ESTILOS PARA EL MODAL DE CONTACTAR COACH */
+        .modal-header-coach {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            border-bottom: none !important;
+            color: #ffffff !important;
+            padding: 1.5rem 1.75rem !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .modal-header-coach::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 70%) !important;
+            pointer-events: none !important;
+        }
+        
+        .modal-header-coach::after {
+            content: '' !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 1.5rem !important;
+            right: 1.5rem !important;
+            height: 3px !important;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent) !important;
+        }
+        
+        .modal-header-coach .modal-title {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 1.35rem !important;
+            letter-spacing: 0.3px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 1rem !important;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        
+        .modal-header-coach .modal-title i {
+            font-size: 1.5rem !important;
+            opacity: 1 !important;
+            animation: pulse-gentle 2s ease-in-out infinite !important;
+        }
+        
+        @keyframes pulse-gentle {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+        
+        .modal-header-coach .modal-title span {
+            position: relative !important;
+        }
+        
+        /* ESTILOS PARA EL MODAL DE SOLICITAR PLAN DE DESARROLLO */
+        .modal-header-development {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+            border-bottom: none !important;
+            color: #ffffff !important;
+            padding: 1.5rem 1.75rem !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .modal-header-development::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.15) 0%, transparent 60%) !important;
+            pointer-events: none !important;
+        }
+        
+        .modal-header-development::after {
+            content: '' !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 1.5rem !important;
+            right: 1.5rem !important;
+            height: 3px !important;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent) !important;
+        }
+        
+        .modal-header-development .modal-title {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 1.35rem !important;
+            letter-spacing: 0.3px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 1rem !important;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        
+        .modal-header-development .modal-title i {
+            font-size: 1.5rem !important;
+            opacity: 1 !important;
+            animation: pulse-gentle 2s ease-in-out infinite !important;
+        }
+        
+        .modal-header-development .modal-title span {
+            position: relative !important;
         }
         
         /* ESTILOS PARA EL MODAL DE RESULTADOS DE EVALUACIÓN - MISMOS QUE EVALUATIONDETAILSMODAL */
@@ -6313,27 +7134,38 @@
 
                 <!-- Tasks Tab -->
                 <div class="tab-pane fade" id="tasks" role="tabpanel">
-                    <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
-                        <!-- Header -->
-                        <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                                <div>
-                                    <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                        <i class="fas fa-tasks"></i>
-                                        Mis Acciones y Metas
-                                    </h5>
-                                    <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
-                                        Gestiona tus acciones y metas asignadas
-                                    </p>
+                    <div class="card" style="background: #ffffff; margin-bottom: 1rem; margin-top: 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); border: none; overflow: hidden;">
+                        <!-- Header Compacto Mejorado -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem 1.25rem; border-bottom: none;">
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-bullseye" style="font-size: 1.25rem; color: #000000;"></i>
+                                    <div>
+                                        <h5 class="mb-0" style="color: #000000; font-weight: 600; font-size: 1.1rem; letter-spacing: -0.2px;">
+                                            Mis Acciones y Metas
+                                        </h5>
+                                        <p class="mb-0" style="color: #000000; font-size: 0.75rem; font-weight: 400; opacity: 0.8;">
+                                            Asignadas por tu coach
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- Contador de tareas -->
+                                <div id="tasksCounter" style="background: rgba(255,255,255,0.2); padding: 0.4rem 0.75rem; border-radius: 20px; display: none;">
+                                    <span style="color: #000000; font-size: 0.85rem; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="font-size: 0.8rem;"></i>
+                                        <span id="completedTasks">0</span>/<span id="totalTasks">0</span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Body -->
-                        <div style="padding: 1.5rem 2.5rem 2.5rem;">
-                            <div id="tasksContainer" class="loading-spinner">
-                                <div class="spinner-border spinner-border-custom" role="status">
-                                    <span class="visually-hidden">Cargando tareas...</span>
+                        <!-- Body Compacto -->
+                        <div style="padding: 0.75rem;">
+                            <div id="tasksContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -6343,39 +7175,43 @@
                 <!-- Content Tab -->
                 <div class="tab-pane fade" id="content" role="tabpanel">
                     <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
-                        <!-- Header -->
-                        <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <!-- Header Compacto -->
+                        <div style="padding: 1.25rem 1.75rem; border-bottom: 1px solid #e5e7eb; background: #ffffff;">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
-                                    <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                        <i class="fas fa-folder-open"></i>
+                                    <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 700; font-size: 1.25rem; letter-spacing: -0.3px;">
+                                        <i class="fas fa-folder-open" style="opacity: 1; color: #3b82f6;"></i>
                                         Mi Contenido
                                     </h5>
-                                    <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
-                                        Videos, documentos y recursos compartidos por tu coach
+                                    <p class="mb-0 mt-1" style="color: #6b7280; font-size: 0.875rem; font-weight: 500;">
+                                        Videos, documentos y recursos compartidos
                                     </p>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Body -->
-                        <div style="padding: 1.5rem 2.5rem 2.5rem;">
-                            <!-- Pestañas para organizar el contenido -->
-                            <ul class="nav nav-tabs mb-4" id="contentTabs" role="tablist">
+                        <!-- Body Compacto -->
+                        <div style="padding: 1.25rem 1.75rem 1.75rem; background: #ffffff;">
+                            <!-- Pestañas Modernas Compactas -->
+                            <ul class="nav nav-tabs mb-3" id="contentTabs" role="tablist" style="border-bottom: 2px solid #e5e7eb; gap: 0.75rem; background: #f9fafb; padding: 0.5rem; border-radius: 10px;">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" 
                                         :class="{ 'active': contentTab === 'videos' }"
                                         @click="switchContentTab('videos')"
-                                        id="videos-tab" type="button" role="tab">
-                                        <i class="fas fa-play-circle me-1"></i>Videos
+                                        id="videos-tab" type="button" role="tab"
+                                        style="padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 600; border: 2px solid #e5e7eb; border-radius: 8px; background: #ffffff; color: #374151; transition: all 0.2s ease;">
+                                        <i class="fas fa-play-circle me-1" style="color: #ef4444;"></i>
+                                        <span class="d-none d-sm-inline">Videos</span>
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" 
                                         :class="{ 'active': contentTab === 'documents' }"
                                         @click="switchContentTab('documents')"
-                                        id="documents-tab" type="button" role="tab">
-                                        <i class="fas fa-file-alt me-1"></i>Documentos
+                                        id="documents-tab" type="button" role="tab"
+                                        style="padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 600; border: 2px solid #e5e7eb; border-radius: 8px; background: #ffffff; color: #374151; transition: all 0.2s ease;">
+                                        <i class="fas fa-file-alt me-1" style="color: #3b82f6;"></i>
+                                        <span class="d-none d-sm-inline">Documentos</span>
                                     </button>
                                 </li>
                             </ul>
@@ -6388,7 +7224,7 @@
                                     id="videos-pane" role="tabpanel">
                                     <div id="contentContainer">
                                         <div class="loading-spinner" x-show="isLoadingVideos">
-                                            <div class="spinner-border spinner-border-custom" role="status">
+                                            <div class="spinner-border" style="width: 2rem; height: 2rem; color: #667eea;" role="status">
                                                 <span class="visually-hidden">Cargando videos...</span>
                                             </div>
                                         </div>
@@ -6399,54 +7235,62 @@
                                 <div class="tab-pane fade" 
                                     :class="{ 'show active': contentTab === 'documents' }"
                                     id="documents-pane" role="tabpanel">
+                                    <!-- Filtros Compactos -->
+                                    <div class="row g-2 mb-3" 
+                                        x-show="!isLoadingDocuments && documentsData.length > 0"
+                                        id="documentFilters">
+                                        <div class="col-lg-4 col-md-6">
+                                            <select class="form-select form-select-sm" 
+                                                x-model="documentFilters.category"
+                                                @change="filterDocuments()"
+                                                id="categoryFilter"
+                                                style="border-radius: 8px; border: 2px solid #d1d5db; font-size: 0.8125rem; padding: 0.5rem 0.75rem; background: #ffffff; font-weight: 500; color: #374151;">
+                                                <option value="">📁 Todas las categorías</option>
+                                                <option value="ejercicios">💪 Ejercicios y Actividades</option>
+                                                <option value="teoria">📚 Material Teórico</option>
+                                                <option value="evaluacion">📊 Evaluaciones</option>
+                                                <option value="recurso">🔧 Recursos de Apoyo</option>
+                                                <option value="tarea">✍️ Tareas</option>
+                                                <option value="referencias">📖 Referencias</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-3 col-md-6">
+                                            <select class="form-select form-select-sm" 
+                                                x-model="documentFilters.priority"
+                                                @change="filterDocuments()"
+                                                id="priorityFilter"
+                                                style="border-radius: 8px; border: 2px solid #d1d5db; font-size: 0.8125rem; padding: 0.5rem 0.75rem; background: #ffffff; font-weight: 500; color: #374151;">
+                                                <option value="">🎯 Todas las prioridades</option>
+                                                <option value="urgente">🔴 Urgente</option>
+                                                <option value="alta">🟠 Alta</option>
+                                                <option value="normal">🟢 Normal</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-5 col-md-12">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text" style="background: #ffffff; border: 2px solid #d1d5db; border-right: none; border-radius: 8px 0 0 8px;">
+                                                    <i class="fas fa-search" style="color: #3b82f6; font-size: 0.875rem;"></i>
+                                                </span>
+                                                <input type="text" class="form-control" 
+                                                    x-model="documentFilters.search"
+                                                    @input="filterDocuments()"
+                                                    id="searchDocuments" 
+                                                    placeholder="Buscar documentos..."
+                                                    style="border: 2px solid #d1d5db; border-left: none; border-radius: 0 8px 8px 0; font-size: 0.8125rem; padding: 0.5rem 0.75rem; background: #ffffff; font-weight: 500; color: #374151;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <div id="documentsContainer">
-                                        <div class="loading-spinner" x-show="isLoadingDocuments">
-                                            <div class="spinner-border spinner-border-custom" role="status">
+                                        <div class="loading-spinner" x-show="isLoadingDocuments" style="text-align: center; padding: 2rem 0;">
+                                            <div class="spinner-border" style="width: 2rem; height: 2rem; color: #667eea;" role="status">
                                                 <span class="visually-hidden">Cargando documentos...</span>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Filtros y búsqueda para documentos -->
-                                    <div class="row mb-3" 
-                                        x-show="!isLoadingDocuments && documentsData.length > 0"
-                                        id="documentFilters">
-                                        <div class="col-md-4">
-                                            <select class="form-select" 
-                                                x-model="documentFilters.category"
-                                                @change="filterDocuments()"
-                                                id="categoryFilter">
-                                                <option value="">Todas las categorías</option>
-                                                <option value="ejercicios">Ejercicios y Actividades</option>
-                                                <option value="teoria">Material Teórico</option>
-                                                <option value="evaluacion">Evaluaciones Complementarias</option>
-                                                <option value="recurso">Recursos de Apoyo</option>
-                                                <option value="tarea">Tareas y Asignaciones</option>
-                                                <option value="referencias">Referencias y Bibliografía</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <select class="form-select" 
-                                                x-model="documentFilters.priority"
-                                                @change="filterDocuments()"
-                                                id="priorityFilter">
-                                                <option value="">Todas las prioridades</option>
-                                                <option value="urgente">Urgente</option>
-                                                <option value="alta">Alta</option>
-                                                <option value="normal">Normal</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="text" class="form-control" 
-                                                x-model="documentFilters.search"
-                                                @input="filterDocuments()"
-                                                id="searchDocuments" 
-                                                placeholder="Buscar documentos...">
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Grid de documentos -->
-                                    <div id="documentsGrid" class="row">
+                                    <!-- Grid de documentos Compacto -->
+                                    <div id="documentsGrid" class="row g-3">
                                         <!-- Los documentos se cargarán aquí dinámicamente -->
                                     </div>
                                 </div>
@@ -6542,46 +7386,47 @@
                 <div class="tab-pane fade" id="development-plan" role="tabpanel">
                     <div class="row" style="margin-top: 0;">
                         <div class="col-12">
-                            <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
+                            <div class="card" style="background: #ffffff; margin-bottom: 1rem; margin-top: 0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
                                 <!-- Header -->
-                                <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div style="padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid #f3f4f6;">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div>
-                                            <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                                <i class="fas fa-rocket"></i>
-                                                Mi Plan de Desarrollo Personal
+                                            <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.15rem; letter-spacing: -0.3px;">
+                                                <i class="fas fa-rocket" style="font-size: 1rem;"></i>
+                                                <span class="d-none d-md-inline">Mi Plan de Desarrollo Personal</span>
+                                                <span class="d-inline d-md-none">Plan de Desarrollo</span>
                                             </h5>
-                                            <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
-                                                Tu hoja de ruta personalizada para crecer y alcanzar tus objetivos
+                                            <p class="mb-0 d-none d-sm-block" style="color: #9ca3af; font-size: 0.8rem; font-weight: 400;">
+                                                Tu hoja de ruta personalizada
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <!-- Body -->
-                                <div style="padding: 1.5rem 2.5rem 2.5rem;">
+                                <div style="padding: 1rem 1.5rem 1.5rem;">
                                     <!-- Loading -->
                                     <div id="devPlanLoading" 
                                         x-show="isLoadingPlans"
-                                        class="text-center py-5">
-                                        <div class="spinner-border text-primary" role="status">
+                                        class="text-center py-4">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
                                             <span class="visually-hidden">Cargando plan...</span>
                                         </div>
-                                        <p class="mt-3 text-muted">Cargando tu plan de desarrollo...</p>
+                                        <p class="mt-2 text-muted small">Cargando tu plan de desarrollo...</p>
                                     </div>
                                     
                                     <!-- No Plan Message -->
                                     <div id="devPlanEmpty" 
                                         x-show="!isLoadingPlans && developmentPlans.length === 0">
-                                        <div class="text-center py-5">
-                                            <i class="fas fa-rocket" style="font-size: 4rem; color: #e2e8f0; margin-bottom: 1.5rem;"></i>
-                                            <h5 style="color: #64748b; font-weight: 600; margin-bottom: 1rem;">Aún no tienes un Plan de Desarrollo</h5>
-                                            <p style="color: #94a3b8; margin-bottom: 2rem;">Tu coach está trabajando en crear un plan personalizado para ti. Pronto verás aquí tu hoja de ruta de crecimiento.</p>
-                                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; max-width: 500px; margin: 0 auto;">
-                                                <p style="color: #475569; margin: 0; font-size: 0.95rem;">
-                                                    <i class="fas fa-lightbulb me-2" style="color: #f59e0b;"></i>
+                                        <div class="text-center py-3 py-md-4">
+                                            <i class="fas fa-rocket" style="font-size: 2.5rem; color: #e2e8f0; margin-bottom: 1rem;"></i>
+                                            <h6 style="color: #64748b; font-weight: 600; margin-bottom: 0.75rem; font-size: 1rem;">Aún no tienes un Plan de Desarrollo</h6>
+                                            <p style="color: #94a3b8; margin-bottom: 1rem; font-size: 0.875rem;">Tu coach está trabajando en crear un plan personalizado para ti.</p>
+                                            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; padding: 1rem; max-width: 400px; margin: 0 auto;">
+                                                <p style="color: #475569; margin: 0; font-size: 0.85rem;">
+                                                    <i class="fas fa-lightbulb me-1" style="color: #f59e0b;"></i>
                                                     <strong>¿Qué es un Plan de Desarrollo?</strong><br>
-                                                    <span style="font-size: 0.9rem;">Es una guía personalizada que define tus objetivos, áreas a trabajar, acciones concretas e indicadores de progreso.</span>
+                                                    <span style="font-size: 0.8rem;">Una guía personalizada con objetivos, áreas a trabajar y acciones concretas.</span>
                                                 </p>
                                             </div>
                                         </div>
@@ -6927,21 +7772,14 @@
     </div>
 
     <!-- Evaluation Details Modal -->
-    <div class="modal fade" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+    <div class="modal" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header modal-header-dark">
                     <h5 class="modal-title" id="evaluationDetailsModalLabel">
-                        <i class="fas fa-chart-radar me-2"></i>
-                        Detalles de Evaluación
+                        <i class="fas fa-chart-radar"></i>
+                        <span>Detalles de Evaluación</span>
                     </h5>
-                    <div class="d-flex align-items-center justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
-                            <i class="fas fa-print me-1"></i>
-                            Imprimir
-                        </button>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
                 </div>
                 <div class="modal-body" id="evaluationDetailsContent">
                     <div class="loading-spinner">
@@ -6953,12 +7791,227 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     <button type="button" class="btn btn-success" onclick="requestDevelopmentPlan()" id="requestPlanBtn">
-                        <i class="fas fa-user-tie me-2"></i>
-                        Solicitar Plan de Desarrollo
+                        <i class="fas fa-user-tie me-1"></i>
+                        Solicitar Plan
                     </button>
                     <button type="button" class="btn btn-progress" onclick="printEvaluationReport()">
-                        <i class="fas fa-print me-2"></i>
-                        Imprimir Reporte
+                        <i class="fas fa-print me-1"></i>
+                        Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Solicitar Plan de Desarrollo -->
+    <div class="modal fade" id="requestDevelopmentPlanModal" tabindex="-1" aria-labelledby="requestDevelopmentPlanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-development">
+                    <h5 class="modal-title" id="requestDevelopmentPlanModalLabel">
+                        <i class="fas fa-road"></i>
+                        <span>Solicitar Plan de Desarrollo</span>
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Plan de Desarrollo Personalizado</strong><br>
+                        <small>Tu coach creará un plan específico basado en los resultados de tu evaluación DISC, enfocándose en tus áreas de oportunidad y fortalezas.</small>
+                    </div>
+                    
+                    <form id="requestDevelopmentPlanForm">
+                        <input type="hidden" id="planEvaluationId" />
+                        
+                        <div class="mb-3">
+                            <label for="planName" class="form-label">
+                                <i class="fas fa-user me-1"></i>Nombre Completo <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="planName" required readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="planEmail" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" class="form-control" id="planEmail" required readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-chart-radar me-1"></i>Áreas de Enfoque <span class="text-danger">*</span>
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="focusCommunication" value="communication">
+                                <label class="form-check-label" for="focusCommunication">
+                                    <i class="fas fa-comments me-1 text-primary"></i>Comunicación Efectiva
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="focusLeadership" value="leadership">
+                                <label class="form-check-label" for="focusLeadership">
+                                    <i class="fas fa-users me-1 text-success"></i>Liderazgo de Equipos
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="focusDecision" value="decision">
+                                <label class="form-check-label" for="focusDecision">
+                                    <i class="fas fa-sitemap me-1 text-warning"></i>Toma de Decisiones
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="focusConflict" value="conflict">
+                                <label class="form-check-label" for="focusConflict">
+                                    <i class="fas fa-handshake me-1 text-info"></i>Resolución de Conflictos
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="focusEmotional" value="emotional">
+                                <label class="form-check-label" for="focusEmotional">
+                                    <i class="fas fa-heart me-1 text-danger"></i>Inteligencia Emocional
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="focusProductivity" value="productivity">
+                                <label class="form-check-label" for="focusProductivity">
+                                    <i class="fas fa-tasks me-1 text-secondary"></i>Productividad Personal
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="planPriority" class="form-label">
+                                <i class="fas fa-flag me-1"></i>Prioridad <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="planPriority" required>
+                                <option value="">Selecciona una prioridad</option>
+                                <option value="low">Baja - Desarrollo a largo plazo</option>
+                                <option value="medium" selected>Media - Desarrollo gradual</option>
+                                <option value="high">Alta - Necesito apoyo urgente</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="planGoals" class="form-label">
+                                <i class="fas fa-bullseye me-1"></i>Objetivos Específicos (opcional)
+                            </label>
+                            <textarea class="form-control" id="planGoals" rows="3" placeholder="Ej: Mejorar mi capacidad de delegar tareas, fortalecer mi comunicación asertiva, desarrollar habilidades de coaching..."></textarea>
+                            <small class="form-text text-muted">Comparte qué te gustaría lograr con este plan</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="planMessage" class="form-label">
+                                <i class="fas fa-message me-1"></i>Mensaje Adicional (opcional)
+                            </label>
+                            <textarea class="form-control" id="planMessage" rows="3" placeholder="Comparte cualquier contexto adicional que pueda ayudar a tu coach..."></textarea>
+                        </div>
+                        
+                        <div class="alert alert-light border">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Tu coach revisará tu solicitud y los resultados de tu evaluación para crear un plan personalizado. 
+                                Recibirás una notificación cuando esté listo.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="submitDevelopmentPlanRequest()">
+                        <i class="fas fa-paper-plane me-1"></i>Enviar Solicitud
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Ver Detalles del Plan de Desarrollo -->
+    <div class="modal fade" id="viewDevelopmentPlanModal" tabindex="-1" aria-labelledby="viewDevelopmentPlanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.15);">
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 1.5rem; border-radius: 16px 16px 0 0; position: relative;">
+                    <h5 style="margin: 0; color: white; font-weight: 600; font-size: 1.15rem; display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="fas fa-rocket" style="font-size: 1.25rem;"></i>
+                        <span>Mi Plan de Desarrollo Personal</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 1.5rem; top: 1.5rem;"></button>
+                </div>
+                
+                <!-- Body -->
+                <div class="modal-body" style="padding: 1.5rem; background: #fafafa; max-height: 70vh; overflow-y: auto;">
+                    <!-- Plan Header Info -->
+                    <div id="modalPlanHeader" style="background: white; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; border: 1px solid #e5e7eb;">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div>
+                                <h6 style="font-size: 0.95rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">
+                                    <i class="fas fa-calendar-alt me-2" style="color: #667eea;"></i>
+                                    Plan creado el <span id="modalPlanDate"></span>
+                                </h6>
+                                <p style="font-size: 0.8rem; color: #6b7280; margin: 0;">
+                                    <i class="fas fa-user-tie me-2"></i>
+                                    Por: <strong id="modalCoachName"></strong>
+                                </p>
+                            </div>
+                            <span id="modalPlanStatus" class="badge" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Objetivo Principal -->
+                    <div id="modalPlanObjective" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; border-left: 4px solid #3b82f6;">
+                        <h6 style="font-size: 0.9rem; font-weight: 600; color: #1e40af; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-bullseye"></i>
+                            <span>Objetivo Principal</span>
+                        </h6>
+                        <p id="modalObjectiveText" style="font-size: 0.875rem; color: #1e3a8a; margin: 0; line-height: 1.6;"></p>
+                    </div>
+                    
+                    <!-- Situación Actual -->
+                    <div id="modalPlanSituation" style="background: white; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; border: 1px solid #e5e7eb;">
+                        <h6 style="font-size: 0.9rem; font-weight: 600; color: #111827; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-compass" style="color: #f59e0b;"></i>
+                            <span>Situación Actual</span>
+                        </h6>
+                        <p id="modalSituationText" style="font-size: 0.875rem; color: #4b5563; margin: 0; line-height: 1.6;"></p>
+                    </div>
+                    
+                    <!-- Áreas de Desarrollo -->
+                    <div id="modalPlanAreas" style="background: white; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; border: 1px solid #e5e7eb;">
+                        <h6 style="font-size: 0.9rem; font-weight: 600; color: #111827; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-chart-line" style="color: #10b981;"></i>
+                            <span>Áreas de Desarrollo</span>
+                        </h6>
+                        <div id="modalAreasList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                    </div>
+                    
+                    <!-- Acciones -->
+                    <div id="modalPlanActions" style="background: white; border-radius: 10px; padding: 1.25rem; border: 1px solid #e5e7eb;">
+                        <h6 style="font-size: 0.9rem; font-weight: 600; color: #111827; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-tasks" style="color: #8b5cf6;"></i>
+                            <span>Plan de Acción</span>
+                        </h6>
+                        <div id="modalActionsList"></div>
+                    </div>
+                    
+                    <!-- Indicadores de Éxito -->
+                    <div id="modalPlanIndicators" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 10px; padding: 1.25rem; margin-top: 1.25rem; border-left: 4px solid #10b981;">
+                        <h6 style="font-size: 0.9rem; font-weight: 600; color: #065f46; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-star"></i>
+                            <span>Indicadores de Éxito</span>
+                        </h6>
+                        <ul id="modalIndicatorsList" style="margin: 0; padding-left: 1.5rem; color: #047857; font-size: 0.875rem; line-height: 1.8;"></ul>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="modal-footer" style="background: white; border-top: 1px solid rgba(0,0,0,0.08); padding: 1rem 1.5rem; border-radius: 0 0 16px 16px; gap: 0.75rem;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size: 0.875rem; padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600;">
+                        <i class="fas fa-times me-1"></i>Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="printDevelopmentPlan()" style="font-size: 0.875rem; padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none;">
+                        <i class="fas fa-print me-1"></i>Imprimir Plan
                     </button>
                 </div>
             </div>
@@ -7838,7 +8891,7 @@
                         }
                         
                         const data = await response.json();
-                        this.videosData = data.videos || [];
+                        this.videosData = data.content || [];
                         this.videosLastLoaded = Date.now();
                         
                         // Exponer globalmente
@@ -8506,13 +9559,41 @@
             return description;
         }
         
+        // Verificar si la sesión expiró y redirigir automáticamente
+        function checkSessionExpired(data) {
+            if (data && data.session_expired && data.redirect_url) {
+                console.log('🔒 Sesión expirada, redirigiendo a login...');
+                window.location.href = data.redirect_url;
+                return true;
+            }
+            return false;
+        }
+        
         // DEBUG: Override fetch to log all requests
         const originalFetch = window.fetch;
         window.fetch = function(...args) {
             debugLog(`🌐 FETCH REQUEST: ${args[0]}`, args[1]);
             return originalFetch.apply(this, args)
-                .then(response => {
+                .then(async response => {
                     debugLog(`📥 FETCH RESPONSE: ${args[0]} - Status: ${response.status}`);
+                    
+                    // Intentar verificar si hay sesión expirada en la respuesta
+                    if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
+                        // Clonar la respuesta para poder leerla sin consumirla
+                        const clonedResponse = response.clone();
+                        try {
+                            const data = await clonedResponse.json();
+                            // Verificar si la sesión expiró
+                            if (checkSessionExpired(data)) {
+                                // Sesión expirada, se redirigirá automáticamente
+                                return new Promise(() => {}); // Never resolves, ya que se redirige
+                            }
+                        } catch (e) {
+                            // Si falla el parsing, continuar con la respuesta original
+                            debugLog(`⚠️ No se pudo verificar sesión en respuesta: ${e.message}`);
+                        }
+                    }
+                    
                     return response;
                 })
                 .catch(error => {
@@ -8849,62 +9930,60 @@
             const plan = plans[0];
             
             const planHTML = `
-                <div class="mb-4" style="border-bottom: 2px solid #e2e8f0; padding-bottom: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <div>
-                            <span style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                                <i class="fas fa-check-circle me-1"></i>Plan Publicado
-                            </span>
-                        </div>
-                        <div style="text-align: right; color: #64748b; font-size: 0.9rem;">
-                            <div><i class="fas fa-user-tie me-2"></i><strong>Coach:</strong> ${plan.coach_name}</div>
-                            <div class="mt-1"><i class="fas fa-calendar-check me-2"></i>${new Date(plan.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                <div class="mb-3" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.5rem; flex-wrap: wrap;">
+                        <span style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.35rem 0.85rem; border-radius: 16px; font-size: 0.75rem; font-weight: 600;">
+                            <i class="fas fa-check-circle me-1"></i>Plan Publicado
+                        </span>
+                        <div style="text-align: right; color: #64748b; font-size: 0.8rem;">
+                            <div class="d-none d-md-block"><i class="fas fa-user-tie me-1"></i><strong>Coach:</strong> ${plan.coach_name}</div>
+                            <div><i class="fas fa-calendar-check me-1"></i>${new Date(plan.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Objetivo Principal -->
-                <div class="mb-4" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%); border-left: 4px solid #667eea; border-radius: 8px; padding: 1.5rem;">
-                    <h5 style="color: #667eea; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center;">
-                        <i class="fas fa-bullseye me-2"></i>Objetivo de Desarrollo
-                    </h5>
-                    <p style="color: #334155; font-size: 1.05rem; margin: 0; line-height: 1.6;">${plan.objetivo || 'No especificado'}</p>
+                <div class="mb-3" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%); border-left: 3px solid #667eea; border-radius: 6px; padding: 1rem;">
+                    <h6 style="color: #667eea; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; font-size: 0.95rem;">
+                        <i class="fas fa-bullseye me-2" style="font-size: 0.9rem;"></i>Objetivo de Desarrollo
+                    </h6>
+                    <p style="color: #334155; font-size: 0.95rem; margin: 0; line-height: 1.5;">${plan.objetivo || 'No especificado'}</p>
                 </div>
                 
                 ${plan.situacion_actual ? `
                 <!-- Situación Actual -->
-                <div class="mb-4" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem;">
-                    <h6 style="color: #475569; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center;">
-                        <i class="fas fa-compass me-2"></i>Situación Actual
+                <div class="mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem;">
+                    <h6 style="color: #475569; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; font-size: 0.9rem;">
+                        <i class="fas fa-compass me-2" style="font-size: 0.85rem;"></i>Situación Actual
                     </h6>
-                    <p style="color: #64748b; margin: 0; line-height: 1.6;">${plan.situacion_actual}</p>
+                    <p style="color: #64748b; margin: 0; line-height: 1.5; font-size: 0.9rem;">${plan.situacion_actual}</p>
                 </div>
                 ` : ''}
                 
                 <!-- Áreas de Desarrollo -->
-                <div class="mb-4">
-                    <h6 style="color: #334155; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
-                        <i class="fas fa-th-large me-2" style="color: #667eea;"></i>Áreas de Desarrollo
+                <div class="mb-3">
+                    <h6 style="color: #334155; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; font-size: 0.9rem;">
+                        <i class="fas fa-th-large me-2" style="color: #667eea; font-size: 0.85rem;"></i>Áreas de Desarrollo
                     </h6>
-                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         ${renderAreas(plan.areas_desarrollo)}
                     </div>
                 </div>
                 
                 <!-- Acciones -->
-                <div class="mb-4">
-                    <h6 style="color: #334155; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
-                        <i class="fas fa-tasks me-2" style="color: #667eea;"></i>Acciones Específicas
+                <div class="mb-3">
+                    <h6 style="color: #334155; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; font-size: 0.9rem;">
+                        <i class="fas fa-tasks me-2" style="color: #667eea; font-size: 0.85rem;"></i>Acciones Específicas
                     </h6>
                     ${renderAcciones(plan.acciones)}
                 </div>
                 
                 <!-- Indicadores de Éxito -->
-                <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 1.5rem;">
-                    <h6 style="color: #16a34a; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center;">
-                        <i class="fas fa-chart-line me-2"></i>Indicadores de Éxito
+                <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 6px; padding: 1rem;">
+                    <h6 style="color: #16a34a; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; font-size: 0.9rem;">
+                        <i class="fas fa-chart-line me-2" style="font-size: 0.85rem;"></i>Indicadores de Éxito
                     </h6>
-                    <p style="color: #166534; margin: 0; line-height: 1.6; white-space: pre-wrap;">${plan.indicadores || 'No especificados'}</p>
+                    <p style="color: #166534; margin: 0; line-height: 1.5; white-space: pre-wrap; font-size: 0.9rem;">${plan.indicadores || 'No especificados'}</p>
                 </div>
             `;
             
@@ -8913,7 +9992,7 @@
         
         function renderAreas(areas) {
             if (!areas || !Array.isArray(areas) || areas.length === 0) {
-                return '<span style="color: #94a3b8; font-style: italic;">No especificadas</span>';
+                return '<span style="color: #94a3b8; font-style: italic; font-size: 0.85rem;">No especificadas</span>';
             }
             
             const colors = [
@@ -8927,13 +10006,14 @@
                 return `
                     <span style="
                         background: ${color.bg}; 
-                        border: 2px solid ${color.border}; 
+                        border: 1.5px solid ${color.border}; 
                         color: ${color.text}; 
-                        padding: 0.5rem 1rem; 
-                        border-radius: 20px; 
+                        padding: 0.4rem 0.75rem; 
+                        border-radius: 16px; 
                         font-weight: 600; 
-                        font-size: 0.95rem;
+                        font-size: 0.8rem;
                         display: inline-block;
+                        line-height: 1.2;
                     ">
                         ${area}
                     </span>
@@ -8943,37 +10023,38 @@
         
         function renderAcciones(acciones) {
             if (!acciones || !Array.isArray(acciones) || acciones.length === 0) {
-                return '<p style="color: #94a3b8; font-style: italic;">No hay acciones definidas</p>';
+                return '<p style="color: #94a3b8; font-style: italic; font-size: 0.85rem;">No hay acciones definidas</p>';
             }
             
             return acciones.map((accion, index) => `
-                <div style="background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
-                    <div style="display: flex; align-items: start; gap: 1rem;">
+                <div style="background: white; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 0.875rem; margin-bottom: 0.75rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
                         <div style="
                             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                             color: white;
-                            width: 32px;
-                            height: 32px;
+                            width: 26px;
+                            height: 26px;
                             border-radius: 50%;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                             font-weight: 700;
                             flex-shrink: 0;
+                            font-size: 0.85rem;
                         ">
                             ${index + 1}
                         </div>
-                        <div style="flex: 1;">
-                            <p style="color: #334155; font-weight: 600; margin-bottom: 0.5rem; font-size: 1.05rem;">${accion.descripcion}</p>
-                            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.75rem;">
-                                <span style="color: #64748b; font-size: 0.9rem;">
-                                    <i class="fas fa-sync-alt me-1" style="color: #667eea;"></i>
+                        <div style="flex: 1; min-width: 0;">
+                            <p style="color: #334155; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; line-height: 1.4;">${accion.descripcion}</p>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                                <span style="color: #64748b; font-size: 0.8rem;">
+                                    <i class="fas fa-sync-alt me-1" style="color: #667eea; font-size: 0.75rem;"></i>
                                     <strong>Frecuencia:</strong> ${accion.frecuencia || 'No especificada'}
                                 </span>
                                 ${accion.fecha_objetivo ? `
-                                <span style="color: #64748b; font-size: 0.9rem;">
-                                    <i class="fas fa-calendar-day me-1" style="color: #667eea;"></i>
-                                    <strong>Fecha objetivo:</strong> ${new Date(accion.fecha_objetivo).toLocaleDateString('es-ES')}
+                                <span style="color: #64748b; font-size: 0.8rem;">
+                                    <i class="fas fa-calendar-day me-1" style="color: #667eea; font-size: 0.75rem;"></i>
+                                    <strong>Fecha:</strong> ${new Date(accion.fecha_objetivo).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                                 </span>
                                 ` : ''}
                             </div>
@@ -9391,14 +10472,22 @@
             const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
             
             if (isExpanded) {
-                categoryGrid.style.maxHeight = '0px';
+                // Colapsar: primero opacity, luego display none
                 categoryGrid.style.opacity = '0';
+                categoryGrid.style.maxHeight = '0px';
+                setTimeout(() => {
+                    categoryGrid.style.display = 'none';
+                }, 300); // Esperar a que termine la transición
                 categoryGrid.style.marginBottom = '0px';
                 icon.style.transform = 'rotate(-90deg)';
                 categoryGrid.setAttribute('data-expanded', 'false');
             } else {
-                categoryGrid.style.maxHeight = '5000px';
-                categoryGrid.style.opacity = '1';
+                // Expandir: primero display, luego opacity
+                categoryGrid.style.display = 'grid';
+                setTimeout(() => {
+                    categoryGrid.style.maxHeight = '5000px';
+                    categoryGrid.style.opacity = '1';
+                }, 10); // Pequeño delay para que la transición funcione
                 categoryGrid.style.marginBottom = '30px';
                 icon.style.transform = 'rotate(0deg)';
                 categoryGrid.setAttribute('data-expanded', 'true');
@@ -9415,8 +10504,11 @@
                 const categoryId = grid.id;
                 const icon = document.getElementById(`icon-${categoryId}`);
                 
-                grid.style.maxHeight = '5000px';
-                grid.style.opacity = '1';
+                grid.style.display = 'grid';
+                setTimeout(() => {
+                    grid.style.maxHeight = '5000px';
+                    grid.style.opacity = '1';
+                }, 10);
                 grid.style.marginBottom = '30px';
                 if (icon) icon.style.transform = 'rotate(0deg)';
                 grid.setAttribute('data-expanded', 'true');
@@ -9433,8 +10525,11 @@
                 const categoryId = grid.id;
                 const icon = document.getElementById(`icon-${categoryId}`);
                 
-                grid.style.maxHeight = '0px';
                 grid.style.opacity = '0';
+                grid.style.maxHeight = '0px';
+                setTimeout(() => {
+                    grid.style.display = 'none';
+                }, 300);
                 grid.style.marginBottom = '0px';
                 if (icon) icon.style.transform = 'rotate(-90deg)';
                 grid.setAttribute('data-expanded', 'false');
@@ -9525,7 +10620,7 @@
                             <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease; transform: rotate(-90deg);"></i>
                         </div>
                     </div>
-                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 0px; overflow: hidden; max-height: 0px; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
+                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 0px; overflow: hidden; max-height: 0px; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
                     </div>
                 `;
                 
@@ -9715,10 +10810,10 @@
                                 ${categoryName}
                                 <span style="color: ${category.color}; font-size: 18px; font-weight: 500; margin-left: 8px;">(${evaluations.length})</span>
                             </h4>
-                            <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease; transform: rotate(-90deg);"></i>
+                            <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 20px; transition: transform 0.3s ease;"></i>
                         </div>
                     </div>
-                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 0px; overflow: hidden; max-height: 0px; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
+                    <div class="assessments-grid" id="${categoryId}" data-expanded="true" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
                     </div>
                 `;
                 
@@ -9802,56 +10897,156 @@
             const container = document.getElementById('tasksContainer');
             
             if (!tasksData || tasksData.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>No tienes tareas asignadas</p></div>';
+                container.innerHTML = `
+                    <div class="text-center py-5" style="color: #94a3b8;">
+                        <i class="fas fa-clipboard-list" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                        <p class="mb-0" style="font-size: 0.95rem; font-weight: 500;">No hay acciones asignadas</p>
+                        <small style="font-size: 0.8rem; color: #cbd5e1;">Tu coach aún no ha creado tareas para ti</small>
+                    </div>
+                `;
                 return;
             }
             
-            let html = '';
+            // Definir colores para prioridades
+            const priorityColors = {
+                high: { bg: '#fef2f2', color: '#dc2626', icon: 'fa-exclamation-circle' },
+                medium: { bg: '#fffbeb', color: '#f59e0b', icon: 'fa-clock' },
+                low: { bg: '#f0f9ff', color: '#0284c7', icon: 'fa-info-circle' }
+            };
+            
+            // Definir colores para estados
+            const statusColors = {
+                pending: { bg: '#f8fafc', color: '#64748b', label: 'Pendiente' },
+                in_progress: { bg: '#eff6ff', color: '#3b82f6', label: 'En progreso' },
+                completed: { bg: '#f0fdf4', color: '#10b981', label: 'Completada' },
+                blocked: { bg: '#fef2f2', color: '#ef4444', label: 'Bloqueada' }
+            };
+            
+            // Definir iconos para categorías
+            const categoryIcons = {
+                desarrollo_personal: 'fa-user-plus',
+                proyecto: 'fa-project-diagram',
+                aprendizaje: 'fa-graduation-cap',
+                comunicacion: 'fa-comments',
+                liderazgo: 'fa-crown',
+                default: 'fa-tasks'
+            };
+            
+            // Actualizar contador de tareas
+            const completedCount = tasksData.filter(t => t.status === 'completed').length;
+            const totalCount = tasksData.length;
+            
+            document.getElementById('completedTasks').textContent = completedCount;
+            document.getElementById('totalTasks').textContent = totalCount;
+            document.getElementById('tasksCounter').style.display = 'block';
+            
+            let html = '<div style="display: grid; gap: 1rem;">';
+            
             tasksData.forEach(task => {
-                const priorityClass = `priority-${task.priority}`;
-                const statusClass = `status-${task.status}`;
-                const progressClass = task.progress_percentage >= 75 ? 'high' : 
-                                     task.progress_percentage >= 25 ? 'medium' : 'low';
+                const priority = priorityColors[task.priority] || priorityColors.low;
+                const status = statusColors[task.status] || statusColors.pending;
+                const categoryIcon = categoryIcons[task.category] || categoryIcons.default;
+                const progress = Math.round(task.progress_percentage || 0);
+                
+                // Calcular días restantes
+                let daysInfo = '';
+                if (task.due_date) {
+                    const today = new Date();
+                    const dueDate = new Date(task.due_date);
+                    const diffTime = dueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays < 0) {
+                        daysInfo = `<span style="color: #dc2626; font-size: 0.75rem; font-weight: 600;"><i class="fas fa-exclamation-triangle"></i> Vencida</span>`;
+                    } else if (diffDays === 0) {
+                        daysInfo = `<span style="color: #f59e0b; font-size: 0.75rem; font-weight: 600;"><i class="fas fa-clock"></i> Vence hoy</span>`;
+                    } else if (diffDays <= 3) {
+                        daysInfo = `<span style="color: #f59e0b; font-size: 0.75rem; font-weight: 600;"><i class="fas fa-hourglass-half"></i> ${diffDays} días</span>`;
+                    } else {
+                        daysInfo = `<span style="color: #64748b; font-size: 0.75rem;"><i class="fas fa-calendar"></i> ${diffDays} días</span>`;
+                    }
+                }
                 
                 html += `
-                    <div class="task-item">
-                        <div class="task-header">
-                            <div class="flex-grow-1">
-                                <h5 class="task-title">${task.title}</h5>
-                                <p class="task-description">${task.description}</p>
+                    <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-left: 4px solid ${priority.color}; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" 
+                         onmouseover="this.style.boxShadow='0 8px 20px rgba(102, 126, 234, 0.15)'; this.style.transform='translateY(-4px)'; this.style.borderLeftWidth='5px';" 
+                         onmouseout="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.05)'; this.style.transform='translateY(0)'; this.style.borderLeftWidth='4px';">
+                        
+                        <!-- Header: Título y Badges -->
+                        <div style="display: flex; align-items: start; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.375rem;">
+                                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fas ${categoryIcon}" style="font-size: 0.875rem; color: white;"></i>
+                                    </div>
+                                    <h6 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.3; letter-spacing: -0.01em;">
+                                        ${task.title}
+                                    </h6>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+                                <span style="background: ${priority.bg}; color: ${priority.color}; padding: 0.3rem 0.625rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; white-space: nowrap; letter-spacing: 0.02em; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    <i class="fas ${priority.icon}" style="font-size: 0.65rem;"></i>
+                                    ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                </span>
                             </div>
                         </div>
                         
-                        <div class="task-meta">
-                            <span class="task-badge ${priorityClass}">
-                                <i class="fas fa-flag me-1"></i>
-                                ${task.priority}
-                            </span>
-                            <span class="task-badge ${statusClass}">
-                                <i class="fas fa-circle me-1"></i>
-                                ${getStatusLabel(task.status)}
-                            </span>
-                            ${task.category ? `<span class="task-badge"><i class="fas fa-tag me-1"></i>${task.category}</span>` : ''}
-                            ${task.due_date ? `<span class="task-badge"><i class="fas fa-calendar me-1"></i>${formatDate(task.due_date)}</span>` : ''}
+                        <!-- Descripción -->
+                        ${task.description ? `
+                        <p style="margin: 0 0 1rem 0; padding-left: 2.5rem; font-size: 0.875rem; color: #475569; line-height: 1.6; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                            ${task.description}
+                        </p>
+                        ` : ''}
+                        
+                        <!-- Progreso Simple con Verde -->
+                        <div style="margin-bottom: 1rem; padding: 0.875rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.8125rem; color: #6b7280; font-weight: 600;">
+                                    Progreso
+                                </span>
+                                <span style="font-size: 0.875rem; font-weight: 700; color: #10b981;">
+                                    ${progress}%
+                                </span>
+                            </div>
+                            <!-- Barra de progreso verde simple -->
+                            <div style="height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                                <div style="width: ${progress}%; height: 100%; background: #10b981 !important; border-radius: 4px; transition: width 0.6s ease;"></div>
+                            </div>
+                        </div>
+                            <!-- Indicadores de milestone -->
+                            <div style="display: flex; justify-content: space-between; margin-top: 0.375rem; padding: 0 2px;">
+                                <span style="font-size: 0.65rem; color: ${progress >= 25 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
+                                    ${progress >= 25 ? '✓' : '○'} 25%
+                                </span>
+                                <span style="font-size: 0.65rem; color: ${progress >= 50 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
+                                    ${progress >= 50 ? '✓' : '○'} 50%
+                                </span>
+                                <span style="font-size: 0.65rem; color: ${progress >= 75 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
+                                    ${progress >= 75 ? '✓' : '○'} 75%
+                                </span>
+                                <span style="font-size: 0.65rem; color: ${progress === 100 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
+                                    ${progress === 100 ? '✓' : '○'} 100%
+                                </span>
+                            </div>
                         </div>
                         
-                        <div class="progress-container">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>Progreso</small>
-                                <small>${Math.round(task.progress_percentage)}%</small>
+                        <!-- Footer: Metadata y Acción -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.75rem; color: #64748b;">
+                                <span style="background: ${status.bg}; color: ${status.color}; padding: 0.3rem 0.5rem; border-radius: 5px; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.4rem;"></i>
+                                    ${status.label}
+                                </span>
+                                ${daysInfo}
+                                ${task.coach?.name ? `<span style="display: flex; align-items: center; gap: 0.375rem;"><i class="fas fa-user-tie" style="font-size: 0.7rem; color: #667eea;"></i> ${task.coach.name.split(' ')[0]}</span>` : ''}
                             </div>
-                            <div class="progress-bar-custom">
-                                <div class="progress-fill ${progressClass}" style="width: ${task.progress_percentage}%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted">
-                                Coach: ${task.coach.name}
-                                ${task.last_update ? `• Actualizado: ${formatDate(task.last_update)}` : ''}
-                            </small>
-                            <button class="btn btn-sm btn-task" onclick="openTaskProgressModal(${task.id})">
-                                <i class="fas fa-edit me-1"></i>
+                            <button type="button" class="btn btn-sm" 
+                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); letter-spacing: 0.01em;"
+                                    onmouseover="this.style.background='linear-gradient(135deg, #5568d3 0%, #6a3e9a 100%)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
+                                    onmouseout="this.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(102, 126, 234, 0.3)';"
+                                    onclick="event.stopPropagation(); openTaskProgressModal(${task.id});">
+                                <i class="fas fa-pen" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
                                 Actualizar
                             </button>
                         </div>
@@ -9859,6 +11054,7 @@
                 `;
             });
             
+            html += '</div>';
             container.innerHTML = html;
         }
 
@@ -10174,14 +11370,18 @@
             renderContentCallCount++;
             const container = document.getElementById('contentContainer');
             
+            // Usar window.contentData si está disponible (Alpine.js), sino usar contentData local
+            const dataSource = window.contentData || contentData;
+            
             debugLog(`🎥 RENDER-CONTENT: Iniciando renderizado #${renderContentCallCount}`, {
-                contentData: contentData,
-                itemCount: contentData?.length || 0,
+                contentData: dataSource,
+                itemCount: dataSource?.length || 0,
                 containerExists: !!container,
-                containerCurrentHTML: container?.innerHTML?.substring(0, 100) + '...'
+                containerCurrentHTML: container?.innerHTML?.substring(0, 100) + '...',
+                usingWindowData: !!window.contentData
             });
             
-            if (!contentData || contentData.length === 0) {
+            if (!dataSource || dataSource.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-video"></i><p>No tienes contenido asignado</p></div>';
                 return;
             }
@@ -10193,11 +11393,11 @@
             let html = '<div class="row">';
             
             debugLog('🎥 RENDER-CONTENT: Procesando items', {
-                count: contentData.length,
-                items: contentData.map(c => ({id: c.id, title: c.title, description: c.description}))
+                count: dataSource.length,
+                items: dataSource.map(c => ({id: c.id, title: c.title, description: c.description}))
             });
             
-            contentData.forEach((content, index) => {
+            dataSource.forEach((content, index) => {
                 debugLog(`🎥 RENDER-ITEM ${index}:`, {
                     id: content.id,
                     title: content.title,
@@ -10219,49 +11419,108 @@
                     '<span class="badge bg-success ms-2"><i class="fas fa-check"></i> Visto</span>' : 
                     '<span class="badge bg-secondary ms-2"><i class="fas fa-eye"></i> Pendiente</span>';
                 
-                // Extraer video ID para embebido si es YouTube
+                // Extraer video ID para embebido (LÓGICA IDÉNTICA AL FEED)
+                const isVideo = content.content_type === 'video';
+                const isDocument = content.content_type === 'document';
+                
+                // Detectar YouTube video ID
+                let youtubeVideoId = null;
+                if (content.content_url) {
+                    if (content.content_url.includes('youtube.com/watch?v=')) {
+                        youtubeVideoId = content.content_url.split('v=')[1]?.split('&')[0];
+                    } else if (content.content_url.includes('youtu.be/')) {
+                        youtubeVideoId = content.content_url.split('youtu.be/')[1]?.split('?')[0];
+                    }
+                }
+                
+                // Detectar Instagram video ID (Reels)
+                let instagramVideoId = null;
+                if (content.content_url) {
+                    const instagramPatterns = [
+                        /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+                        /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//
+                    ];
+                    
+                    for (const pattern of instagramPatterns) {
+                        const match = content.content_url.match(pattern);
+                        if (match && match[1]) {
+                            instagramVideoId = match[1];
+                            break;
+                        }
+                    }
+                }
+                
+                const isYouTubeVideo = youtubeVideoId !== null;
+                const isInstagramVideo = instagramVideoId !== null;
+                
+                console.log(`🎬 RENDER: Processing content ${content.id}:`, {
+                    type: content.content_type,
+                    url: content.content_url,
+                    youtubeVideoId: youtubeVideoId,
+                    instagramVideoId: instagramVideoId,
+                    isYouTubeVideo: isYouTubeVideo,
+                    isInstagramVideo: isInstagramVideo
+                });
+                
+                // Generar preview HTML (EXACTAMENTE COMO EN EL FEED)
                 let embedContent = '';
                 let hasEmbeddedPlayer = false;
-                const isVideo = content.content_type === 'video';
                 
-                if (isVideo && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be'))) {
-                    let videoId = '';
-                    if (content.content_url.includes('youtube.com/watch?v=')) {
-                        videoId = content.content_url.split('v=')[1].split('&')[0];
-                    } else if (content.content_url.includes('youtu.be/')) {
-                        videoId = content.content_url.split('youtu.be/')[1].split('?')[0];
-                    }
-                    
-                    if (videoId) {
-                        hasEmbeddedPlayer = true;
-                        console.log(`🎬 RENDER: Creating embedded iframe for content ${content.id} with videoId=${videoId}`);
-                        embedContent = `
-                            <div class="ratio ratio-16x9">
+                if (isYouTubeVideo) {
+                    // VIDEO DE YOUTUBE - IFRAME EMBEBIDO
+                    hasEmbeddedPlayer = true;
+                    embedContent = `
+                        <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden; border-radius: 8px;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
                                 <iframe id="youtube-${content.id}" 
-                                    src="https://www.youtube.com/embed/${videoId}?enablejsapi=1" 
+                                    src="https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1" 
                                     title="${escapeHtml(cleanVideoTitle(content.title))}" 
                                     frameborder="0" 
                                     allowfullscreen
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    style="border-radius: 8px;"
-                                    onload="setupVideoTracking(${content.id})">
+                                    style="width: 100%; height: 100%; border: none;">
                                 </iframe>
                             </div>
-                        `;
-                        console.log(`✅ RENDER: Embedded iframe created for content ${content.id}`);
-                    }
-                }
-                
-                // Si no es un video de YouTube, usar imagen thumbnail o placeholder
-                if (!embedContent) {
-                    const thumbnailUrl = content.thumbnail_url || 'https://via.placeholder.com/320x180/e9ecef/6c757d?text=Contenido';
+                        </div>
+                    `;
+                    console.log(`✅ RENDER: YouTube iframe created for content ${content.id}`);
+                } else if (isInstagramVideo) {
+                    // VIDEO DE INSTAGRAM (REEL) - IFRAME EMBEBIDO
+                    hasEmbeddedPlayer = true;
+                    embedContent = `
+                        <div style="position: relative; width: 100%; background: linear-gradient(135deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); overflow: hidden; border-radius: 8px;">
+                            <iframe 
+                                src="https://www.instagram.com/p/${instagramVideoId}/embed/" 
+                                style="width: 100%; min-height: 600px; border: none;"
+                                frameborder="0" 
+                                scrolling="no" 
+                                allowtransparency="true" 
+                                allow="encrypted-media">
+                            </iframe>
+                        </div>
+                    `;
+                    console.log(`✅ RENDER: Instagram iframe created for content ${content.id}`);
+                } else if (isVideo && content.content_url) {
+                    // VIDEO NO-YOUTUBE - HTML5 PLAYER
                     embedContent = `
                         <div class="ratio ratio-16x9">
-                            <div style="background-image: url('${thumbnailUrl}'); background-size: cover; background-position: center; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <div style="background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 6px;">
-                                    <i class="fas fa-${isVideo ? 'play' : 'file-alt'} me-2"></i>
-                                    ${isVideo ? 'Ver Contenido' : 'Abrir Documento'}
-                                </div>
+                            <video controls style="width: 100%; height: 100%; border-radius: 8px; background: #000;">
+                                <source src="${content.content_url}" type="video/mp4">
+                                Tu navegador no soporta la reproducción de video.
+                            </video>
+                        </div>
+                    `;
+                } else {
+                    // FALLBACK - THUMBNAIL CON BOTÓN
+                    const thumbnailUrl = content.thumbnail_url || 'https://via.placeholder.com/320x180/e9ecef/6c757d?text=Video';
+                    embedContent = `
+                        <div onclick="openContent(${content.id}, '${content.content_url}', '${escapeHtml(content.title)}')" style="position: relative; cursor: pointer;">
+                            <img src="${thumbnailUrl}" 
+                                 alt="${escapeHtml(content.title)}" 
+                                 style="width: 100%; height: auto; border-radius: 8px;">
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 15px 20px; border-radius: 8px; text-align: center;">
+                                <i class="fas fa-${isVideo ? 'play' : 'file-alt'}" style="font-size: 2rem; margin-bottom: 8px;"></i>
+                                <div style="font-weight: 600;">${isVideo ? 'Ver Video' : 'Abrir Documento'}</div>
                             </div>
                         </div>
                     `;
@@ -10687,19 +11946,95 @@
 
         // Open task progress modal
         function openTaskProgressModal(taskId) {
-            const task = tasksData.find(t => t.id === taskId);
-            if (!task) return;
+            const task = (window.tasksData || []).find(t => t.id === taskId);
+            if (!task) {
+                console.error('Task not found:', taskId, 'Available tasks:', window.tasksData);
+                showToast('Error: Tarea no encontrada', 'error');
+                return;
+            }
             
-            document.getElementById('taskId').value = taskId;
-            document.getElementById('taskStatus').value = task.status;
-            document.getElementById('taskProgress').value = task.progress_percentage;
-            document.getElementById('progressValue').textContent = Math.round(task.progress_percentage) + '%';
-            document.getElementById('taskNotes').value = '';
+            // Actualizar título del modal con información de la tarea
+            const modalTitle = document.getElementById('taskProgressModalLabel');
+            if (modalTitle) {
+                modalTitle.innerHTML = `
+                    <i class="fas fa-tasks me-2"></i>
+                    Actualizar Progreso
+                `;
+            }
+            
+            // Mostrar información de la tarea en el modal
+            const modalBody = document.querySelector('#taskProgressModal .modal-body');
+            const formHtml = `
+                <!-- Información de la tarea -->
+                <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem; border-left: 3px solid #667eea;">
+                    <h6 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; font-weight: 600; color: #1e293b;">
+                        <i class="fas fa-clipboard-list" style="color: #667eea; margin-right: 0.5rem;"></i>
+                        ${task.title}
+                    </h6>
+                    ${task.description ? `<p style="margin: 0; font-size: 0.8rem; color: #64748b; line-height: 1.4;">${task.description}</p>` : ''}
+                </div>
+                
+                <form id="taskProgressForm">
+                    <input type="hidden" id="taskId" value="${taskId}" />
+                    
+                    <div class="mb-3">
+                        <label for="taskStatus" class="form-label" style="font-weight: 600; color: #334155; font-size: 0.9rem;">
+                            <i class="fas fa-flag" style="margin-right: 0.5rem; color: #667eea;"></i>
+                            Estado de la Tarea
+                        </label>
+                        <select class="form-select" id="taskStatus" required style="font-size: 0.9rem;">
+                            <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Pendiente</option>
+                            <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔄 En Progreso</option>
+                            <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✅ Completada</option>
+                            <option value="blocked" ${task.status === 'blocked' ? 'selected' : ''}>🚫 Bloqueada</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="taskProgress" class="form-label" style="font-weight: 600; color: #334155; font-size: 0.9rem;">
+                            <i class="fas fa-chart-line" style="margin-right: 0.5rem; color: #667eea;"></i>
+                            Progreso
+                        </label>
+                        <input type="range" class="form-range" id="taskProgress" min="0" max="100" value="${task.progress_percentage || 0}" 
+                               style="height: 8px; cursor: pointer;">
+                        <div class="d-flex justify-content-between" style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">
+                            <span>0%</span>
+                            <span id="progressValue" style="font-weight: 600; font-size: 1rem; color: #667eea;">${Math.round(task.progress_percentage || 0)}%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="taskNotes" class="form-label" style="font-weight: 600; color: #334155; font-size: 0.9rem;">
+                            <i class="fas fa-sticky-note" style="margin-right: 0.5rem; color: #667eea;"></i>
+                            Notas sobre tu progreso
+                        </label>
+                        <textarea class="form-control" id="taskNotes" rows="3" 
+                                  placeholder="Comparte tus avances, desafíos o comentarios..."
+                                  style="font-size: 0.9rem; resize: none;"></textarea>
+                        <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                            💡 Tu coach podrá ver estos comentarios
+                        </small>
+                    </div>
+                </form>
+            `;
+            
+            modalBody.innerHTML = formHtml;
             
             // Update progress display when slider changes
             const progressSlider = document.getElementById('taskProgress');
             progressSlider.oninput = function() {
-                document.getElementById('progressValue').textContent = this.value + '%';
+                const value = this.value;
+                document.getElementById('progressValue').textContent = value + '%';
+                // Cambiar color según progreso
+                const progressValueEl = document.getElementById('progressValue');
+                if (value >= 75) {
+                    progressValueEl.style.color = '#10b981';
+                } else if (value >= 25) {
+                    progressValueEl.style.color = '#f59e0b';
+                } else {
+                    progressValueEl.style.color = '#667eea';
+                }
             };
             
             const modal = new bootstrap.Modal(document.getElementById('taskProgressModal'));
@@ -14515,33 +15850,112 @@
         // Función para solicitar plan de desarrollo al coach
         async function requestDevelopmentPlan() {
             try {
+                // Prellenar datos del usuario actual
+                if (currentUser) {
+                    document.getElementById('planName').value = currentUser.full_name || '';
+                    document.getElementById('planEmail').value = currentUser.email || '';
+                }
+                
+                // Guardar el ID de evaluación actual
+                document.getElementById('planEvaluationId').value = window.currentEvaluationId;
+                
+                // Cerrar el modal de detalles de evaluación
+                const detailsModal = bootstrap.Modal.getInstance(document.getElementById('evaluationDetailsModal'));
+                if (detailsModal) {
+                    detailsModal.hide();
+                }
+                
+                // Abrir el nuevo modal de solicitud de plan
+                setTimeout(() => {
+                    const planModal = new bootstrap.Modal(document.getElementById('requestDevelopmentPlanModal'));
+                    planModal.show();
+                }, 300);
+                
+            } catch (error) {
+                console.error('Error opening development plan modal:', error);
+                showToast('Error abriendo formulario de solicitud', 'error');
+            }
+        }
+        
+        // Función para enviar la solicitud de plan de desarrollo
+        async function submitDevelopmentPlanRequest() {
+            try {
+                // Obtener datos del formulario
+                const evaluationId = document.getElementById('planEvaluationId').value;
+                const name = document.getElementById('planName').value.trim();
+                const email = document.getElementById('planEmail').value.trim();
+                const priority = document.getElementById('planPriority').value;
+                const goals = document.getElementById('planGoals').value.trim();
+                const message = document.getElementById('planMessage').value.trim();
+                
+                // Obtener áreas de enfoque seleccionadas
+                const focusAreas = [];
+                if (document.getElementById('focusCommunication').checked) focusAreas.push('Comunicación Efectiva');
+                if (document.getElementById('focusLeadership').checked) focusAreas.push('Liderazgo de Equipos');
+                if (document.getElementById('focusDecision').checked) focusAreas.push('Toma de Decisiones');
+                if (document.getElementById('focusConflict').checked) focusAreas.push('Resolución de Conflictos');
+                if (document.getElementById('focusEmotional').checked) focusAreas.push('Inteligencia Emocional');
+                if (document.getElementById('focusProductivity').checked) focusAreas.push('Productividad Personal');
+                
+                // Validar campos requeridos
+                if (!priority) {
+                    showToast('Por favor selecciona una prioridad', 'error');
+                    return;
+                }
+                
+                if (focusAreas.length === 0) {
+                    showToast('Por favor selecciona al menos un área de enfoque', 'error');
+                    return;
+                }
+                
+                // Preparar mensaje completo
+                let fullMessage = `Solicitud de Plan de Desarrollo\n\n`;
+                fullMessage += `Áreas de enfoque seleccionadas:\n${focusAreas.map(a => `- ${a}`).join('\n')}\n\n`;
+                if (goals) fullMessage += `Objetivos específicos:\n${goals}\n\n`;
+                if (message) fullMessage += `Mensaje adicional:\n${message}`;
+                
+                // Enviar solicitud al servidor
                 const response = await fetch(`${API_BASE_URL}/api/coachee/request-development-plan`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        evaluation_id: window.currentEvaluationId,
-                        message: 'Solicito un plan de desarrollo personalizado basado en los resultados de mi evaluación.'
+                        evaluation_id: evaluationId,
+                        priority: priority,
+                        focus_areas: focusAreas,
+                        goals: goals,
+                        message: fullMessage
                     })
                 });
 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showToast('Solicitud enviada exitosamente. Tu coach te contactará pronto.', 'success');
+                    showToast('¡Solicitud enviada exitosamente! Tu coach te contactará pronto.', 'success');
                     
-                    // Deshabilitar el botón temporalmente
+                    // Cerrar el modal
+                    const planModal = bootstrap.Modal.getInstance(document.getElementById('requestDevelopmentPlanModal'));
+                    if (planModal) {
+                        planModal.hide();
+                    }
+                    
+                    // Limpiar formulario
+                    document.getElementById('requestDevelopmentPlanForm').reset();
+                    
+                    // Deshabilitar el botón en el modal de detalles si está visible
                     const btn = document.getElementById('requestPlanBtn');
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-check me-2"></i>Solicitud Enviada';
-                    btn.classList.remove('btn-success');
-                    btn.classList.add('btn-outline-success');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-check me-1"></i>Solicitud Enviada';
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-success');
+                    }
                 } else {
                     throw new Error(data.error || 'Error enviando solicitud');
                 }
             } catch (error) {
-                console.error('Error requesting development plan:', error);
+                console.error('Error submitting development plan request:', error);
                 showToast('Error enviando solicitud: ' + error.message, 'error');
             }
         }
@@ -15951,11 +17365,11 @@
     <div class="modal fade" id="contactCoachModal" tabindex="-1" aria-labelledby="contactCoachModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                <div class="modal-header modal-header-coach">
                     <h5 class="modal-title" id="contactCoachModalLabel">
-                        <i class="fas fa-calendar-plus me-2"></i>Solicitar Sesión con Coach
+                        <i class="fas fa-user-tie"></i>
+                        <span>Solicitar Sesión con Coach</span>
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info mb-4">
