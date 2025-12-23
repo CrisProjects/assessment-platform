@@ -2641,8 +2641,7 @@
             box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15) !important;
         }
         
-        #contentTabs .nav-link.active,
-        #contentTabs .nav-link:active {
+        #contentTabs .nav-link.active {
             color: #ffffff !important;
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
             border-color: #3b82f6 !important;
@@ -2651,9 +2650,17 @@
             box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
         }
         
-        #contentTabs .nav-link.active i,
-        #contentTabs .nav-link:active i {
+        #contentTabs .nav-link.active i {
             color: #ffffff !important;
+        }
+        
+        /* Eliminar efecto :active al hacer clic */
+        #contentTabs .nav-link:active {
+            color: inherit !important;
+            background: inherit !important;
+            border-color: inherit !important;
+            transform: none !important;
+            box-shadow: none !important;
         }
         
         /* Asegurar que los botones NO activos mantengan el texto oscuro */
@@ -7609,7 +7616,7 @@
                 <!-- Tab Content -->
                 <div class="tab-content" id="mainTabContent" style="margin-top: 0;">
                 <!-- Evaluations Tab -->
-                <div class="tab-pane fade show active" id="evaluations" role="tabpanel">
+                <div class="tab-pane fade" id="evaluations" role="tabpanel">
                     <div class="row" style="margin-top: 0;">
                         <!-- Available Evaluations -->
                         <div class="col-12">
@@ -7864,126 +7871,34 @@
 
                 <!-- Content Tab -->
                 <div class="tab-pane fade" id="content" role="tabpanel">
-                    <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
-                        <!-- Header Compacto -->
-                        <div style="padding: 1.25rem 1.75rem; border-bottom: 1px solid #e5e7eb; background: #ffffff;">
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <div>
-                                    <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 700; font-size: 1.25rem; letter-spacing: -0.3px;">
-                                        <i class="fas fa-folder-open" style="opacity: 1; color: #3b82f6;"></i>
-                                        Mi Contenido
-                                    </h5>
-                                    <p class="mb-0 mt-1" style="color: #6b7280; font-size: 0.875rem; font-weight: 500;">
-                                        Videos, documentos y recursos compartidos
-                                    </p>
-                                </div>
-                            </div>
+                    <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
+                        <!-- Header -->
+                        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid #e5e7eb;">
+                            <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 700; font-size: 1.25rem;">
+                                <i class="fas fa-folder-open" style="color: #000000;"></i>
+                                Mi Contenido
+                            </h5>
+                            <p class="mb-0 mt-1" style="color: #6b7280; font-size: 0.875rem;">
+                                Videos y documentos compartidos por tu coach
+                            </p>
                         </div>
                         
-                        <!-- Body Compacto -->
-                        <div style="padding: 1.25rem 1.75rem 1.75rem; background: #ffffff;">
-                            <!-- Pestañas Modernas Compactas -->
-                            <ul class="nav nav-tabs mb-3" id="contentTabs" role="tablist" style="border-bottom: 2px solid #e5e7eb; gap: 0.75rem; background: #f9fafb; padding: 0.5rem; border-radius: 10px;">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" 
-                                        :class="{ 'active': contentTab === 'videos' }"
-                                        @click="switchContentTab('videos')"
-                                        id="videos-tab" type="button" role="tab"
-                                        style="padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 600; border: 2px solid #e5e7eb; border-radius: 8px; background: #ffffff; color: #374151; transition: all 0.2s ease;">
-                                        <i class="fas fa-play-circle me-1" style="color: #ef4444;"></i>
-                                        <span class="d-none d-sm-inline">Videos</span>
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" 
-                                        :class="{ 'active': contentTab === 'documents' }"
-                                        @click="switchContentTab('documents')"
-                                        id="documents-tab" type="button" role="tab"
-                                        style="padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 600; border: 2px solid #e5e7eb; border-radius: 8px; background: #ffffff; color: #374151; transition: all 0.2s ease;">
-                                        <i class="fas fa-file-alt me-1" style="color: #3b82f6;"></i>
-                                        <span class="d-none d-sm-inline">Documentos</span>
-                                    </button>
-                                </li>
-                            </ul>
-
-                            <!-- Contenido de las pestañas -->
-                            <div class="tab-content" id="contentTabContent">
-                                <!-- Pestaña: Videos -->
-                                <div class="tab-pane fade" 
-                                    :class="{ 'show active': contentTab === 'videos' }"
-                                    id="videos-pane" role="tabpanel">
-                                    <div id="contentContainer">
-                                        <div class="loading-spinner" x-show="isLoadingVideos">
-                                            <div class="spinner-border" style="width: 2rem; height: 2rem; color: #667eea;" role="status">
-                                                <span class="visually-hidden">Cargando videos...</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <!-- Body con videos -->
+                        <div style="padding: 1.5rem 2rem;">
+                            <!-- Loading -->
+                            <div id="contentLoading" class="text-center py-4" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
                                 </div>
-                                
-                                <!-- Pestaña: Documentos -->
-                                <div class="tab-pane fade" 
-                                    :class="{ 'show active': contentTab === 'documents' }"
-                                    id="documents-pane" role="tabpanel">
-                                    <!-- Filtros Compactos -->
-                                    <div class="row g-2 mb-3" 
-                                        x-show="!isLoadingDocuments && documentsData.length > 0"
-                                        id="documentFilters">
-                                        <div class="col-lg-4 col-md-6">
-                                            <select class="form-select form-select-sm" 
-                                                x-model="documentFilters.category"
-                                                @change="filterDocuments()"
-                                                id="categoryFilter"
-                                                style="border-radius: 8px; border: 2px solid #d1d5db; font-size: 0.8125rem; padding: 0.5rem 0.75rem; background: #ffffff; font-weight: 500; color: #374151;">
-                                                <option value="">📁 Todas las categorías</option>
-                                                <option value="ejercicios">💪 Ejercicios y Actividades</option>
-                                                <option value="teoria">📚 Material Teórico</option>
-                                                <option value="evaluacion">📊 Evaluaciones</option>
-                                                <option value="recurso">🔧 Recursos de Apoyo</option>
-                                                <option value="tarea">✍️ Tareas</option>
-                                                <option value="referencias">📖 Referencias</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-lg-3 col-md-6">
-                                            <select class="form-select form-select-sm" 
-                                                x-model="documentFilters.priority"
-                                                @change="filterDocuments()"
-                                                id="priorityFilter"
-                                                style="border-radius: 8px; border: 2px solid #d1d5db; font-size: 0.8125rem; padding: 0.5rem 0.75rem; background: #ffffff; font-weight: 500; color: #374151;">
-                                                <option value="">🎯 Todas las prioridades</option>
-                                                <option value="urgente">🔴 Urgente</option>
-                                                <option value="alta">🟠 Alta</option>
-                                                <option value="normal">🟢 Normal</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-lg-5 col-md-12">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text" style="background: #ffffff; border: 2px solid #d1d5db; border-right: none; border-radius: 8px 0 0 8px;">
-                                                    <i class="fas fa-search" style="color: #3b82f6; font-size: 0.875rem;"></i>
-                                                </span>
-                                                <input type="text" class="form-control" 
-                                                    x-model="documentFilters.search"
-                                                    @input="filterDocuments()"
-                                                    id="searchDocuments" 
-                                                    placeholder="Buscar documentos..."
-                                                    style="border: 2px solid #d1d5db; border-left: none; border-radius: 0 8px 8px 0; font-size: 0.8125rem; padding: 0.5rem 0.75rem; background: #ffffff; font-weight: 500; color: #374151;">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div id="documentsContainer">
-                                        <div class="loading-spinner" x-show="isLoadingDocuments" style="text-align: center; padding: 2rem 0;">
-                                            <div class="spinner-border" style="width: 2rem; height: 2rem; color: #667eea;" role="status">
-                                                <span class="visually-hidden">Cargando documentos...</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Grid de documentos Compacto -->
-                                    <div id="documentsGrid" class="row g-3">
-                                        <!-- Los documentos se cargarán aquí dinámicamente -->
-                                    </div>
-                                </div>
+                            </div>
+                            
+                            <!-- Grid de videos -->
+                            <div id="contentGrid" class="row g-3" style="display: none;"></div>
+                            
+                            <!-- Empty state -->
+                            <div id="contentEmpty" class="text-center py-5" style="display: none;">
+                                <i class="fas fa-folder-open" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+                                <p style="color: #6b7280;">No hay contenido disponible</p>
                             </div>
                         </div>
                     </div>
@@ -8016,7 +7931,15 @@
                                 <!-- Body -->
                                 <div style="padding: 1.5rem 2.5rem 2.5rem;">
                                     <!-- Alpine Loading Spinner -->
-                                    <div class="text-center py-5" x-show="isLoadingProgress" x-cloak>
+                                    <div class="text-center py-5" 
+                                        x-show="isLoadingProgress" 
+                                        x-transition:enter="transition ease-out duration-150"
+                                        x-transition:enter-start="opacity-0"
+                                        x-transition:enter-end="opacity-100"
+                                        x-transition:leave="transition ease-in duration-150"
+                                        x-transition:leave-start="opacity-100"
+                                        x-transition:leave-end="opacity-0"
+                                        x-cloak>
                                         <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Cargando...</span>
                                         </div>
@@ -8032,38 +7955,45 @@
                                         <p class="text-muted small">Completa evaluaciones para ver tu progreso aquí</p>
                                     </div>
                                     
-                                    <!-- Alpine Chart Container -->
-                                    <div x-show="!isLoadingProgress && allAssessmentHistory && Object.keys(allAssessmentHistory || {}).length > 0"
+                                    <!-- Alpine Statistics - Movidas arriba del gráfico -->
+                                    <div class="row mb-3 g-2" 
+                                        x-show="!isLoadingProgress && allAssessmentHistory && Object.keys(allAssessmentHistory || {}).length > 0"
+                                        x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 transform translate-y-4"
+                                        x-transition:enter-end="opacity-100 transform translate-y-0"
                                         x-cloak
-                                        style="position: relative; height: 450px;">
-                                        <canvas id="alpineProgressChart"></canvas>
+                                        style="transition: all 0.3s ease;">
+                                        <div class="col-md-4">
+                                            <div class="text-center p-2 rounded-3" style="background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); border: 1px solid #667eea44;">
+                                                <i class="fas fa-chart-bar text-primary mb-1" style="font-size: 1rem;"></i>
+                                                <div class="text-muted" style="font-size: 0.7rem; font-weight: 600;">Total Evaluaciones</div>
+                                                <div class="fs-5 fw-bold text-primary" x-text="progressStatistics.totalEvaluations || 0"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-center p-2 rounded-3" style="background: linear-gradient(135deg, #10b98122 0%, #059b6922 100%); border: 1px solid #10b98144;">
+                                                <i class="fas fa-chart-line text-success mb-1" style="font-size: 1rem;"></i>
+                                                <div class="text-muted" style="font-size: 0.7rem; font-weight: 600;">Promedio General</div>
+                                                <div class="fs-5 fw-bold text-success" x-text="`${(progressStatistics.averageScore || 0).toFixed(1)}%`"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-center p-2 rounded-3" style="background: linear-gradient(135deg, #f59e0b22 0%, #d9730022 100%); border: 1px solid #f59e0b44;">
+                                                <i class="fas fa-trophy text-warning mb-1" style="font-size: 1rem;"></i>
+                                                <div class="text-muted" style="font-size: 0.7rem; font-weight: 600;">Mejor Score</div>
+                                                <div class="fs-5 fw-bold text-warning" x-text="`${(progressStatistics.bestScore || 0).toFixed(1)}%`"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <!-- Alpine Statistics -->
-                                    <div class="row mt-4 g-3" 
-                                        x-show="!isLoadingProgress && allAssessmentHistory && Object.keys(allAssessmentHistory || {}).length > 0"
-                                        x-cloak>
-                                        <div class="col-md-4">
-                                            <div class="text-center p-4 rounded-3" style="background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); border: 1px solid #667eea44;">
-                                                <i class="fas fa-chart-bar text-primary mb-2" style="font-size: 1.5rem;"></i>
-                                                <div class="text-muted small mb-2 fw-semibold">Total Evaluaciones</div>
-                                                <div class="fs-3 fw-bold text-primary" x-text="progressStatistics.totalEvaluations || 0"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="text-center p-4 rounded-3" style="background: linear-gradient(135deg, #10b98122 0%, #059b6922 100%); border: 1px solid #10b98144;">
-                                                <i class="fas fa-chart-line text-success mb-2" style="font-size: 1.5rem;"></i>
-                                                <div class="text-muted small mb-2 fw-semibold">Promedio General</div>
-                                                <div class="fs-3 fw-bold text-success" x-text="`${(progressStatistics.averageScore || 0).toFixed(1)}%`"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="text-center p-4 rounded-3" style="background: linear-gradient(135deg, #f59e0b22 0%, #d9730022 100%); border: 1px solid #f59e0b44;">
-                                                <i class="fas fa-trophy text-warning mb-2" style="font-size: 1.5rem;"></i>
-                                                <div class="text-muted small mb-2 fw-semibold">Mejor Score</div>
-                                                <div class="fs-3 fw-bold text-warning" x-text="`${(progressStatistics.bestScore || 0).toFixed(1)}%`"></div>
-                                            </div>
-                                        </div>
+                                    <!-- Alpine Chart Container -->
+                                    <div x-show="!isLoadingProgress && allAssessmentHistory && Object.keys(allAssessmentHistory || {}).length > 0"
+                                        x-transition:enter="transition ease-out duration-300 delay-75"
+                                        x-transition:enter-start="opacity-0 transform translate-y-4"
+                                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                                        x-cloak
+                                        style="position: relative; height: 450px; transition: all 0.3s ease;">
+                                        <canvas id="alpineProgressChart"></canvas>
                                     </div>
                                 </div>
                             </div>
@@ -8731,7 +8661,7 @@
             console.log('🎯 coacheeDashboardApp() function CALLED - Creating Alpine component');
             return {
                 // Estado Global
-                activeTab: 'evaluations',
+                activeTab: '', // Vacío por defecto - solo mostrar tarjetas estadísticas
                 coacheeName: '',
                 coacheeEmail: '',
                 coacheeId: null,
@@ -9068,12 +8998,11 @@
                         this.loadTasks();
                     } else if (tabId === 'content') {
                         // 🔥 ALPINE: Cargar contenido (videos por defecto)
-                        setTimeout(() => {
-                            this.switchContentTab('videos');
-                        }, 100);
+                        this.contentTab = 'videos';
+                        this.loadVideos();
                     } else if (tabId === 'progress') {
-                        // 🔥 ALPINE: Cargar historial de evaluaciones
-                        this.loadEvaluationHistory();
+                        // 🔥 ALPINE: Cargar progreso directamente (evitar duplicación)
+                        this.loadAllAssessmentHistory();
                     } else if (tabId === 'completed-evaluations') {
                         // 🔥 ALPINE: Renderizar evaluaciones completadas
                         this.renderCompletedEvaluationsSection();
@@ -9415,138 +9344,21 @@
                 },
                 
                 // ============================================
-                // CONTENIDO (Alpine) - PASO 7
+                // CONTENIDO (Alpine) - SIMPLIFICADO
                 // ============================================
                 
-                contentTab: 'videos', // 'videos' o 'documents'
-                documentsLastLoaded: null,
+                videosData: [],
                 videosLastLoaded: null,
-                isLoadingDocuments: false,
                 isLoadingVideos: false,
-                filteredDocuments: [],
-                documentFilters: {
-                    category: '',
-                    priority: '',
-                    search: ''
-                },
                 CONTENT_CACHE_DURATION: 300000, // 5 minutos
                 
-                // Cambiar tab de contenido
-                switchContentTab(tab) {
-                    console.log(`🔄 ALPINE: Switching content tab to ${tab}`);
-                    this.contentTab = tab;
-                    
-                    if (tab === 'documents') {
-                        this.loadDocuments();
-                    } else if (tab === 'videos') {
-                        this.loadVideos();
-                    }
-                },
-                
-                // Cargar documentos
-                async loadDocuments(forceRefresh = false) {
-                    console.log('📄 ALPINE: Loading documents...');
-                    
-                    // Evitar carga duplicada
-                    if (this.isLoadingDocuments) {
-                        console.log('⏳ Documents already loading');
-                        return;
-                    }
-                    
-                    // Usar cache si los datos son recientes
-                    if (!forceRefresh && this.documentsData && this.documentsData.length > 0 && this.documentsLastLoaded) {
-                        const age = Date.now() - this.documentsLastLoaded;
-                        if (age < this.CONTENT_CACHE_DURATION) {
-                            console.log(`📦 Using cached documents (age: ${Math.round(age/1000)}s)`);
-                            this.renderDocuments();
-                            return;
-                        }
-                    }
-                    
-                    this.isLoadingDocuments = true;
-                    
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/api/coachee/documents`, {
-                            credentials: 'include'
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                        
-                        const data = await response.json();
-                        this.documentsData = data.documents || [];
-                        this.filteredDocuments = [...this.documentsData];
-                        this.documentsLastLoaded = Date.now();
-                        
-                        // Exponer globalmente
-                        window.documentsData = this.documentsData;
-                        window.lastDocumentLoad = this.documentsLastLoaded;
-                        
-                        console.log(`✅ ALPINE: ${this.documentsData.length} documents loaded`);
-                        this.renderDocuments();
-                    } catch (error) {
-                        console.error('❌ ALPINE: Error loading documents:', error);
-                        this.documentsData = [];
-                        this.filteredDocuments = [];
-                    } finally {
-                        this.isLoadingDocuments = false;
-                    }
-                },
-                
-                // Renderizar documentos (llamar función legacy)
-                renderDocuments() {
-                    console.log('🔍 ALPINE: renderDocuments called');
-                    
-                    // Exponer globalmente
-                    window.documentsData = this.documentsData;
-                    window.filteredDocuments = this.filteredDocuments;
-                    
-                    // Llamar función legacy
-                    if (typeof renderDocumentsLegacy === 'function') {
-                        renderDocumentsLegacy();
-                    } else {
-                        console.error('❌ renderDocumentsLegacy no disponible');
-                    }
-                },
-                
-                // Filtrar documentos
-                filterDocuments() {
-                    console.log('🔍 ALPINE: Filtering documents', this.documentFilters);
-                    
-                    this.filteredDocuments = this.documentsData.filter(doc => {
-                        // Filtrar por categoría
-                        if (this.documentFilters.category && doc.category !== this.documentFilters.category) {
-                            return false;
-                        }
-                        
-                        // Filtrar por prioridad
-                        if (this.documentFilters.priority && doc.priority !== this.documentFilters.priority) {
-                            return false;
-                        }
-                        
-                        // Filtrar por búsqueda
-                        if (this.documentFilters.search) {
-                            const search = this.documentFilters.search.toLowerCase();
-                            const title = (doc.title || '').toLowerCase();
-                            const description = (doc.description || '').toLowerCase();
-                            return title.includes(search) || description.includes(search);
-                        }
-                        
-                        return true;
-                    });
-                    
-                    window.filteredDocuments = this.filteredDocuments;
-                    this.renderDocuments();
-                },
-                
-                // Cargar videos
+                // Cargar videos y documentos
                 async loadVideos(forceRefresh = false) {
-                    console.log('🎥 ALPINE: Loading videos...');
+                    console.log('🎥 ALPINE: Loading content...');
                     
                     // Evitar carga duplicada
                     if (this.isLoadingVideos) {
-                        console.log('⏳ Videos already loading');
+                        console.log('⏳ Content already loading');
                         return;
                     }
                     
@@ -9554,8 +9366,7 @@
                     if (!forceRefresh && this.videosData && this.videosData.length > 0 && this.videosLastLoaded) {
                         const age = Date.now() - this.videosLastLoaded;
                         if (age < this.CONTENT_CACHE_DURATION) {
-                            console.log(`📦 Using cached videos (age: ${Math.round(age/1000)}s)`);
-                            this.renderVideos();
+                            console.log(`📦 Using cached content (age: ${Math.round(age/1000)}s)`);
                             return;
                         }
                     }
@@ -9575,31 +9386,48 @@
                         this.videosData = data.content || [];
                         this.videosLastLoaded = Date.now();
                         
-                        // Exponer globalmente
-                        window.contentData = this.videosData;
-                        
-                        console.log(`✅ ALPINE: ${this.videosData.length} videos loaded`);
-                        this.renderVideos();
+                        console.log(`✅ ALPINE: ${this.videosData.length} items loaded`);
                     } catch (error) {
-                        console.error('❌ ALPINE: Error loading videos:', error);
+                        console.error('❌ ALPINE: Error loading content:', error);
                         this.videosData = [];
                     } finally {
                         this.isLoadingVideos = false;
                     }
                 },
                 
-                // Renderizar videos (llamar función legacy)
-                renderVideos() {
-                    console.log('🔍 ALPINE: renderVideos called');
+                // Marcar contenido como visto
+                async markContentAsViewed(contentId) {
+                    console.log('📝 ALPINE: Marking content as viewed:', contentId);
                     
-                    // Exponer globalmente
-                    window.contentData = this.videosData;
-                    
-                    // Llamar función legacy
-                    if (typeof renderContent === 'function') {
-                        renderContent();
-                    } else {
-                        console.error('❌ renderContent no disponible');
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/coachee/content/${contentId}/mark-viewed`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                        // Actualizar el estado local
+                        const item = this.videosData.find(v => v.id === contentId);
+                        if (item) {
+                            item.is_viewed = true;
+                        }
+                        
+                        console.log('✅ Content marked as viewed');
+                        
+                        if (typeof showToast === 'function') {
+                            showToast('Contenido marcado como visto', 'success');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error marking content as viewed:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Error al marcar contenido', 'error');
+                        }
                     }
                 },
                 
@@ -9610,6 +9438,7 @@
                 allAssessmentHistory: null,
                 isLoadingProgress: false,
                 progressChart: null,
+                progressDataLoaded: false, // Cache flag para evitar recargas
                 progressStatistics: {
                     totalEvaluations: 0,
                     averageScore: 0,
@@ -9619,6 +9448,12 @@
                 // Cargar historial completo de todas las evaluaciones
                 async loadAllAssessmentHistory(forceRefresh = false) {
                     console.log('📈 ALPINE: Loading all assessment history...');
+                    
+                    // Si ya se cargó y no se fuerza refresh, no volver a cargar
+                    if (this.progressDataLoaded && !forceRefresh && this.allAssessmentHistory) {
+                        console.log('✅ Progress data already loaded, skipping...');
+                        return;
+                    }
                     
                     if (this.isLoadingProgress) {
                         console.log('⏳ Progress already loading');
@@ -9643,6 +9478,7 @@
                         
                         if (data.success && data.history && Object.keys(data.history).length > 0) {
                             this.allAssessmentHistory = data.history;
+                            this.progressDataLoaded = true; // Marcar como cargado
                             
                             // Convertir estadísticas de snake_case a camelCase
                             if (data.statistics) {
@@ -12157,77 +11993,8 @@
         // Variables globales para debugging
         let renderContentCallCount = 0;
         let isLoadingContent = false;
-        async function loadContent() {
-            // Evitar llamadas concurrentes
-            if (isLoadingContent) {
-                debugLog('⏳ LoadContent ya en progreso, omitiendo llamada duplicada');
-                return;
-            }
-            
-            isLoadingContent = true;
-            debugLog('🎥 LOAD-CONTENT: Iniciando carga de contenido...');
-            
-            try {
-                debugLog('🎥 Cargando contenido asignado...');
-                
-                const response = await fetch('/api/coachee/content', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                debugLog('✅ Contenido cargado:', data);
-                
-                if (data.success) {
-                    contentData = data.content || [];
-                    
-                    // FILTRAR DUPLICADOS POR ID
-                    const uniqueContent = [];
-                    const seenIds = new Set();
-                    
-                    contentData.forEach(item => {
-                        if (!seenIds.has(item.id)) {
-                            seenIds.add(item.id);
-                            uniqueContent.push(item);
-                        } else {
-                            debugLog('⚠️ DUPLICADO DETECTADO Y REMOVIDO:', item);
-                        }
-                    });
-                    
-                    contentData = uniqueContent;
-                    
-                    debugLog('🎥 LOAD-CONTENT: Datos procesados', {
-                        originalCount: (data.content || []).length,
-                        uniqueCount: contentData.length,
-                        titles: contentData.map(c => c.title),
-                        ids: contentData.map(c => c.id)
-                    });
-                    renderContent();
-                } else {
-                    throw new Error(data.error || 'Error desconocido cargando contenido');
-                }
-                
-            } catch (error) {
-                console.error('Error cargando contenido:', error);
-                showToast('Error cargando contenido: ' + error.message, 'error');
-                
-                // Inicializar con datos vacíos
-                contentData = [];
-                
-                document.getElementById('contentContainer').innerHTML = 
-                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando contenido</p></div>';
-            } finally {
-                isLoadingContent = false;
-            }
-        }
-
-        // Render content
+        
+        // Definir renderContent PRIMERO para que esté disponible inmediatamente
         function renderContent() {
             renderContentCallCount++;
             const container = document.getElementById('contentContainer');
@@ -12312,138 +12079,89 @@
                     }
                 }
                 
-                const isYouTubeVideo = youtubeVideoId !== null;
-                const isInstagramVideo = instagramVideoId !== null;
-                
-                console.log(`🎬 RENDER: Processing content ${content.id}:`, {
-                    type: content.content_type,
-                    url: content.content_url,
-                    youtubeVideoId: youtubeVideoId,
-                    instagramVideoId: instagramVideoId,
-                    isYouTubeVideo: isYouTubeVideo,
-                    isInstagramVideo: isInstagramVideo
+                debugLog(`🎥 VIDEO IDs detectados:`, {
+                    youtubeId: youtubeVideoId,
+                    instagramId: instagramVideoId
                 });
                 
-                // Generar preview HTML (EXACTAMENTE COMO EN EL FEED)
-                let embedContent = '';
-                let hasEmbeddedPlayer = false;
+                // CONSTRUIR CARD CON VIDEO EMBEBIDO SI ES POSIBLE
+                const cleanTitle = cleanVideoTitle(content.title);
+                const cleanDescription = cleanVideoDescription(content.description);
                 
-                if (isYouTubeVideo) {
-                    // VIDEO DE YOUTUBE - IFRAME EMBEBIDO
-                    hasEmbeddedPlayer = true;
-                    embedContent = `
-                        <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden; border-radius: 8px;">
-                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
-                                <iframe id="youtube-${content.id}" 
-                                    src="https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1" 
-                                    title="${escapeHtml(cleanVideoTitle(content.title))}" 
+                let videoEmbedHTML = '';
+                
+                if (isVideo && (youtubeVideoId || instagramVideoId)) {
+                    if (youtubeVideoId) {
+                        videoEmbedHTML = `
+                        <div class="content-preview has-embedded-video">
+                            <div class="ratio ratio-16x9" style="position: relative;">
+                                <iframe 
+                                    src="https://www.youtube.com/embed/${youtubeVideoId}?rel=0&modestbranding=1" 
+                                    title="${cleanTitle}"
                                     frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                                     allowfullscreen
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    style="width: 100%; height: 100%; border: none;">
+                                    style="border-radius: 8px; width: 100%; height: 100%;">
                                 </iframe>
+                                ${duration ? `<span class="duration-badge">${duration}</span>` : ''}
                             </div>
                         </div>
-                    `;
-                    console.log(`✅ RENDER: YouTube iframe created for content ${content.id}`);
-                } else if (isInstagramVideo) {
-                    // VIDEO DE INSTAGRAM (REEL) - IFRAME EMBEBIDO
-                    hasEmbeddedPlayer = true;
-                    embedContent = `
-                        <div style="position: relative; width: 100%; background: linear-gradient(135deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); overflow: hidden; border-radius: 8px;">
-                            <iframe 
-                                src="https://www.instagram.com/p/${instagramVideoId}/embed/" 
-                                style="width: 100%; min-height: 600px; border: none;"
-                                frameborder="0" 
-                                scrolling="no" 
-                                allowtransparency="true" 
-                                allow="encrypted-media">
-                            </iframe>
-                        </div>
-                    `;
-                    console.log(`✅ RENDER: Instagram iframe created for content ${content.id}`);
-                } else if (isVideo && content.content_url) {
-                    // VIDEO NO-YOUTUBE - HTML5 PLAYER
-                    embedContent = `
-                        <div class="ratio ratio-16x9">
-                            <video controls style="width: 100%; height: 100%; border-radius: 8px; background: #000;">
-                                <source src="${content.content_url}" type="video/mp4">
-                                Tu navegador no soporta la reproducción de video.
-                            </video>
-                        </div>
-                    `;
-                } else {
-                    // FALLBACK - THUMBNAIL CON BOTÓN
-                    const thumbnailUrl = content.thumbnail_url || 'https://via.placeholder.com/320x180/e9ecef/6c757d?text=Video';
-                    embedContent = `
-                        <div onclick="openContent(${content.id}, '${content.content_url}', '${escapeHtml(content.title)}')" style="position: relative; cursor: pointer;">
-                            <img src="${thumbnailUrl}" 
-                                 alt="${escapeHtml(content.title)}" 
-                                 style="width: 100%; height: auto; border-radius: 8px;">
-                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 15px 20px; border-radius: 8px; text-align: center;">
-                                <i class="fas fa-${isVideo ? 'play' : 'file-alt'}" style="font-size: 2rem; margin-bottom: 8px;"></i>
-                                <div style="font-weight: 600;">${isVideo ? 'Ver Video' : 'Abrir Documento'}</div>
+                        `;
+                    } else if (instagramVideoId) {
+                        videoEmbedHTML = `
+                        <div class="content-preview has-embedded-video">
+                            <div class="ratio ratio-9x16" style="position: relative;">
+                                <iframe 
+                                    src="https://www.instagram.com/p/${instagramVideoId}/embed" 
+                                    title="${cleanTitle}"
+                                    frameborder="0" 
+                                    scrolling="no" 
+                                    allowtransparency="true"
+                                    style="border-radius: 8px; width: 100%; height: 100%;">
+                                </iframe>
+                                ${duration ? `<span class="duration-badge">${duration}</span>` : ''}
                             </div>
                         </div>
-                    `;
+                        `;
+                    }
                 }
                 
                 html += `
-                    <div class="col-lg-6 col-xl-4 mb-3">
-                        <div class="content-card ${content.is_viewed ? 'viewed' : ''}">
-                            <!-- Vista previa del contenido (estilo coach dashboard) -->
-                            <div class="content-preview mb-3 ${hasEmbeddedPlayer ? 'has-embedded-video' : ''}">
-                                ${embedContent}
-                            </div>
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="content-card ${content.is_viewed ? 'viewed' : ''}" data-content-id="${content.id}">
+                            ${videoEmbedHTML}
                             
-                            <div class="content-header" style="padding: 0;">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="content-info flex-grow-1">
-                                        <h6 class="content-title mb-1" style="font-weight: 600; line-height: 1.3;">${escapeHtml(cleanVideoTitle(content.title))}</h6>
-                                        <small class="text-muted">Por ${escapeHtml(content.coach_name)}</small>
-                                        ${duration ? `<div class="mt-1"><span class="badge bg-light text-dark"><i class="fas fa-clock me-1"></i>${duration}</span></div>` : ''}
+                            <div class="content-info mt-3">
+                                <div class="content-header">
+                                    <div class="content-type-icon">
+                                        <i class="fas ${isVideo ? 'fa-play-circle' : 'fa-file-pdf'}"></i>
                                     </div>
-                                    ${viewedBadge}
-                                </div>
-                            </div>
-                            
-                            ${content.description ? `
-                                <div class="content-description" style="padding: 0; margin-top: 8px;">
-                                    <p class="text-muted small mb-2" style="line-height: 1.4;">${escapeHtml(cleanVideoDescription(content.description))}</p>
-                                </div>
-                            ` : ''}
-                            
-                            <div class="content-meta" style="padding: 0; margin-top: 8px;">
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>
-                                    Asignado: ${formattedDate}
-                                </small>
-                            </div>
-                            
-                            <div class="content-actions" style="padding: 0; margin-top: 12px; border-top: 1px solid #e9ecef; padding-top: 12px;">
-                                ${hasEmbeddedPlayer ? `
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-success">
-                                            <i class="fas fa-play-circle me-1"></i>
-                                            Video listo para reproducir
-                                        </small>
-                                        <small class="text-muted">
-                                            <i class="fas fa-eye me-1"></i>
-                                            ${content.view_count || 0} vistas
-                                        </small>
+                                    <div class="flex-grow-1">
+                                        <h5 class="content-title mb-1">${cleanTitle}</h5>
+                                        ${cleanDescription ? `
+                                        <div class="content-description">
+                                            <p class="mb-0">${cleanDescription}</p>
+                                        </div>
+                                        ` : ''}
+                                        <div class="content-meta">
+                                            <span><i class="far fa-calendar"></i> ${formattedDate}</span>
+                                            ${duration ? `<span><i class="far fa-clock"></i> ${duration}</span>` : ''}
+                                            ${viewedBadge}
+                                        </div>
                                     </div>
-                                ` : `
-                                    <button class="btn btn-primary btn-sm" onclick="openContent(${content.id}, '${content.content_url}', '${content.title}')">
-                                        <i class="fas fa-play me-1"></i>
-                                        ${content.content_type === 'video' ? 'Ver Video' : 'Abrir Contenido'}
-                                    </button>
-                                    ${!content.is_viewed ? `
-                                        <button class="btn btn-outline-success btn-sm ms-2" onclick="markContentAsViewed(${content.id})">
-                                            <i class="fas fa-check me-1"></i>
-                                            Marcar como Visto
-                                        </button>
+                                </div>
+                                <div class="content-actions mt-3">
+                                    ${content.content_url ? `
+                                    <a href="${content.content_url}" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="fas ${isVideo ? 'fa-play' : 'fa-download'}"></i>
+                                        ${isVideo ? 'Ver video' : 'Descargar'}
+                                    </a>
                                     ` : ''}
-                                `}
+                                    <button class="btn btn-sm btn-outline-success" onclick="markContentAsViewed(${content.id}, ${content.is_viewed})">
+                                        <i class="fas fa-check"></i>
+                                        ${content.is_viewed ? 'Visto' : 'Marcar como visto'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -12451,28 +12169,86 @@
             });
             
             html += '</div>';
-            
-            debugLog('🎥 RENDER-CONTENT: HTML generado', {
-                htmlLength: html.length,
-                finalHTML: html.substring(0, 200) + '...',
-                aboutToSetInnerHTML: true
-            });
-            
-            // Verificar estado antes de setear innerHTML
-            debugLog('🔍 PRE-SET: Container state', {
-                currentHTML: container.innerHTML.substring(0, 100) + '...',
-                currentHTMLLength: container.innerHTML.length
-            });
-            
             container.innerHTML = html;
-            
-            // Verificar estado después de setear innerHTML  
-            debugLog('✅ POST-SET: Container updated', {
-                newHTML: container.innerHTML.substring(0, 100) + '...',
-                newHTMLLength: container.innerHTML.length,
-                childCount: container.children.length
-            });
+            debugLog('✅ RENDER-CONTENT: Renderizado completo');
         }
+        
+        // Registrar globalmente para que Alpine.js pueda usarla
+        window.renderContent = renderContent;
+        console.log('✅ renderContent registrada globalmente');
+        
+        async function loadContent() {
+            // Evitar llamadas concurrentes
+            if (isLoadingContent) {
+                debugLog('⏳ LoadContent ya en progreso, omitiendo llamada duplicada');
+                return;
+            }
+            
+            isLoadingContent = true;
+            debugLog('🎥 LOAD-CONTENT: Iniciando carga de contenido...');
+            
+            try {
+                debugLog('🎥 Cargando contenido asignado...');
+                
+                const response = await fetch('/api/coachee/content', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                debugLog('✅ Contenido cargado:', data);
+                
+                if (data.success) {
+                    contentData = data.content || [];
+                    
+                    // FILTRAR DUPLICADOS POR ID
+                    const uniqueContent = [];
+                    const seenIds = new Set();
+                    
+                    contentData.forEach(item => {
+                        if (!seenIds.has(item.id)) {
+                            seenIds.add(item.id);
+                            uniqueContent.push(item);
+                        } else {
+                            debugLog('⚠️ DUPLICADO DETECTADO Y REMOVIDO:', item);
+                        }
+                    });
+                    
+                    contentData = uniqueContent;
+                    
+                    debugLog('🎥 LOAD-CONTENT: Datos procesados', {
+                        originalCount: (data.content || []).length,
+                        uniqueCount: contentData.length,
+                        titles: contentData.map(c => c.title),
+                        ids: contentData.map(c => c.id)
+                    });
+                    renderContent();
+                } else {
+                    throw new Error(data.error || 'Error desconocido cargando contenido');
+                }
+                
+            } catch (error) {
+                console.error('Error cargando contenido:', error);
+                showToast('Error cargando contenido: ' + error.message, 'error');
+                
+                // Inicializar con datos vacíos
+                contentData = [];
+                
+                document.getElementById('contentContainer').innerHTML = 
+                    '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error cargando contenido</p></div>';
+            } finally {
+                isLoadingContent = false;
+            }
+        }
+
+        // renderContent() ya está definida más arriba y registrada globalmente
+        // No duplicar la definición aquí
 
         // Open content (video or document)
         function openContent(contentId, contentUrl, title) {
@@ -18033,6 +17809,98 @@
         // AUTO-START ASSESSMENT: This block requires server-side template rendering.
         // If using Jinja, ensure this file is processed by Flask or Django.
         // If not using a template engine, remove or replace this block with valid JavaScript.
+        
+        // ============================================
+        // FUNCIÓN PARA CARGAR VIDEOS EN MI CONTENIDO
+        // ============================================
+        function loadContentVideos() {
+            const loading = document.getElementById('contentLoading');
+            const grid = document.getElementById('contentGrid');
+            const empty = document.getElementById('contentEmpty');
+            
+            if (!loading || !grid || !empty) return;
+            
+            loading.style.display = 'block';
+            grid.style.display = 'none';
+            empty.style.display = 'none';
+            
+            fetch('/api/coachee/content', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                const videos = data.content || [];
+                
+                if (videos.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+                
+                grid.innerHTML = '';
+                videos.forEach(video => {
+                    const thumbnail = getYouTubeThumbnail(video.content_url);
+                    
+                    const col = document.createElement('div');
+                    col.className = 'col-12 col-md-6 col-lg-4';
+                    
+                    col.innerHTML = `
+                        <div class="card" style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; cursor: pointer;">
+                            <img src="${thumbnail}" 
+                                 alt="${video.title}"
+                                 style="width: 100%; height: 200px; object-fit: cover;"
+                                 onclick="window.open('${video.content_url}', '_blank')">
+                            <div style="padding: 1rem;">
+                                <h6 style="font-size: 0.9375rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">${video.title}</h6>
+                                <p style="font-size: 0.8125rem; color: #6b7280; margin-bottom: 0;">Por ${video.coach_name}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    grid.appendChild(col);
+                });
+                
+                grid.style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('Error loading videos:', error);
+                loading.style.display = 'none';
+                empty.style.display = 'block';
+            });
+        }
+        
+        function getYouTubeThumbnail(url) {
+            if (!url) return 'https://via.placeholder.com/320x180?text=Video';
+            
+            let videoId = null;
+            
+            if (url.includes('youtube.com/watch?v=')) {
+                videoId = url.split('v=')[1].split('&')[0];
+            } else if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1].split('?')[0];
+            }
+            
+            if (videoId) {
+                return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+            }
+            
+            return 'https://via.placeholder.com/320x180?text=Video';
+        }
+        
+        // Cargar videos cuando se hace clic en la pestaña Mi Contenido
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentTab = document.querySelector('button[data-bs-target="#content"]');
+            if (contentTab) {
+                contentTab.addEventListener('shown.bs.tab', function() {
+                    loadContentVideos();
+                });
+            }
+        });
         
         console.log('✅ Script principal completamente cargado - coacheeDashboardApp() definido');
     </script>
