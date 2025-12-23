@@ -6730,7 +6730,7 @@
                 padding: 15px 15px 100px 15px; /* Padding inferior aumentado para ver botones sobre footer */
                 border-top: 1px solid #dee2e6;
                 flex-shrink: 0;
-                margin-bottom: 40px; /* Margen adicional para evitar footer principal */
+                margin-bottom: 60px; /* Margen adicional para evitar footer principal */
                 position: relative;
                 z-index: 10;
             }
@@ -13875,9 +13875,6 @@
                 ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && !isLeadershipAssessment && isGrowthPreparationAssessment) ? 
                     generateDetailedAnalysisHTML(detailedAnalysis || generateAnalysisFromScores(dimensionalScores)) : ''}
                 
-                ${recommendations && recommendations.length > 0 ? 
-                    generateCompactRecommendationsHTML(recommendations) : ''}
-                
                 ${(!isDiscAssessment && !isEmotionalIntelligenceAssessment && !isTeamworkAssessment && !isLeadershipAssessment && isGrowthPreparationAssessment) ? `
                 <!-- Respuestas Detalladas -->
                 <div class="row">
@@ -14059,56 +14056,7 @@
             return html;
         }
 
-        // Función compacta para mostrar recomendaciones de forma simplificada
-        function generateCompactRecommendationsHTML(recommendations) {
-            if (!recommendations || recommendations.length === 0) return '';
-            
-            let html = `
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card border-0" style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid #007bff !important;">
-                            <div class="card-header d-flex align-items-center justify-content-between" style="background: #cce7ff; color: #004085;">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-lightbulb me-2"></i>
-                                    <h6 class="mb-0">Plan de Desarrollo</h6>
-                                </div>
-                                <span class="badge bg-primary">${recommendations.length} items</span>
-                            </div>
-                            <div class="card-body">
-            `;
-            
-            recommendations.forEach((rec, index) => {
-                const recText = typeof rec === 'string' ? rec : rec.text || rec.description || '';
-                if (recText.trim()) {
-                    // Detectar si es un encabezado (contiene **)
-                    if (recText.includes('**')) {
-                        const cleanText = recText.replace(/\*\*/g, '');
-                        if (cleanText.includes('🎯') || cleanText.includes('🚀')) {
-                            html += `<div class="fw-bold text-primary mb-2 mt-3">${cleanText}</div>`;
-                        } else {
-                            html += `<div class="fw-bold text-dark mb-2">${cleanText}</div>`;
-                        }
-                    }
-                    // Detectar si es una acción (empieza con ✓ o •)
-                    else if (recText.startsWith('✓') || recText.startsWith('•')) {
-                        html += `<div class="ms-3 mb-2"><span class="text-success fw-bold">${recText}</span></div>`;
-                    }
-                    // Texto normal no vacío
-                    else if (recText.trim() !== '') {
-                        html += `<div class="mb-1"><small>${recText}</small></div>`;
-                    }
-                }
-            });
-            
-            html += `
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            return html;
-        }
+
 
 
 
