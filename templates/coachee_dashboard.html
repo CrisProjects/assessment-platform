@@ -13849,9 +13849,20 @@
                 const html = generateGrowthPreparationLayout(data, evaluation, dimensionalScores);
                 container.innerHTML = html;
                 
+                // FORZAR SCROLL AL INICIO DEL MODAL (especialmente importante en móvil)
+                const modalBody = document.querySelector('#evaluationDetailsModal .modal-body');
+                if (modalBody) {
+                    modalBody.scrollTop = 0;
+                }
+                
                 // Crear el gráfico radar específico para crecimiento
                 setTimeout(() => {
                     createGrowthRadarChart(dimensionalScores);
+                    
+                    // ASEGURAR SCROLL AL INICIO después de crear gráfico también
+                    if (modalBody) {
+                        modalBody.scrollTop = 0;
+                    }
                 }, 100);
                 
                 return;
@@ -14011,6 +14022,13 @@
             
             container.innerHTML = html;
             
+            // FORZAR SCROLL AL INICIO DEL MODAL (especialmente importante en móvil)
+            // Hacer scroll al tope del modal-body inmediatamente
+            const modalBody = document.querySelector('#evaluationDetailsModal .modal-body');
+            if (modalBody) {
+                modalBody.scrollTop = 0;
+            }
+            
             // Crear el gráfico radar después de insertar el HTML
             setTimeout(() => {
                 console.log('🎯 CALLING RADAR: About to call createRadarChart with:', {
@@ -14022,6 +14040,11 @@
                     assessmentTitle
                 });
                 createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isLeadershipAssessment, isTeamworkAssessment);
+                
+                // ASEGURAR SCROLL AL INICIO después de crear gráfico también
+                if (modalBody) {
+                    modalBody.scrollTop = 0;
+                }
             }, 100);
         }
 
