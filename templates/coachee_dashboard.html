@@ -398,7 +398,14 @@
         
         /* Estilos globales para modales */
         .modal {
-            z-index: 1055 !important;
+            z-index: 1060 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
         }
 
         .modal-backdrop {
@@ -414,12 +421,13 @@
 
         .modal-dialog {
             position: relative;
-            z-index: 1055 !important;
+            z-index: 1060 !important;
+            margin: 1.75rem auto !important;
         }
 
         .modal-content {
             position: relative;
-            z-index: 1055 !important;
+            z-index: 1060 !important;
             pointer-events: auto !important;
         }
 
@@ -2152,8 +2160,9 @@
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--calm-border);
-            position: relative;
-            z-index: 2;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
             box-shadow: 0 1px 20px rgba(90, 103, 216, 0.06); /* Softer shadow with new blue */
         }
 
@@ -6673,6 +6682,17 @@
         
         @media (max-width: 768px) {
             /* Modal de evaluación a pantalla completa en móvil */
+            #evaluationDetailsModal {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                z-index: 1060 !important;
+            }
+            
             #evaluationDetailsModal .modal-dialog {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -6684,7 +6704,7 @@
             #evaluationDetailsModal .modal-content {
                 height: 100vh !important;
                 max-height: 100vh !important;
-                border-radius: 0;
+                border-radius: 0 !important;
                 border: none;
                 display: flex;
                 flex-direction: column;
@@ -6694,6 +6714,8 @@
                 padding: 15px;
                 border-bottom: 1px solid #dee2e6;
                 flex-shrink: 0;
+                position: relative;
+                z-index: 1061 !important;
             }
             
             #evaluationDetailsModal .modal-body {
