@@ -1489,8 +1489,19 @@ def coach_session_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         coach_user_id = session.get('coach_user_id')
+        
+        # Detectar si es petición de API (JSON) o HTML
+        is_api_request = request.path.startswith('/api/') or request.headers.get('Accept', '').find('application/json') != -1
+        
         if not coach_user_id:
             log_unauthorized_access(required_role='coach')
+            
+            # Si es petición HTML, redirigir al login
+            if not is_api_request:
+                flash('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'warning')
+                return redirect(url_for('coach_login_page'))
+            
+            # Si es API, retornar JSON
             return jsonify({
                 'error': 'Sesión de coach expirada. Por favor, inicia sesión nuevamente.',
                 'redirect_url': '/coach-login',
@@ -1502,6 +1513,13 @@ def coach_session_required(f):
         if not coach_user or coach_user.role != 'coach':
             log_unauthorized_access(user_id=coach_user_id, required_role='coach')
             session.pop('coach_user_id', None)
+            
+            # Si es petición HTML, redirigir al login
+            if not is_api_request:
+                flash('Usuario de coach inválido. Por favor, inicia sesión nuevamente.', 'warning')
+                return redirect(url_for('coach_login_page'))
+            
+            # Si es API, retornar JSON
             return jsonify({
                 'error': 'Usuario de coach inválido.',
                 'redirect_url': '/coach-login',
@@ -1518,7 +1536,17 @@ def coachee_session_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         coachee_user_id = session.get('coachee_user_id')
+        
+        # Detectar si es petición de API (JSON) o HTML
+        is_api_request = request.path.startswith('/api/') or request.headers.get('Accept', '').find('application/json') != -1
+        
         if not coachee_user_id:
+            # Si es petición HTML, redirigir al login
+            if not is_api_request:
+                flash('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'warning')
+                return redirect(url_for('login_page', role='coachee'))
+            
+            # Si es API, retornar JSON
             return jsonify({
                 'error': 'Sesión de coachee expirada. Por favor, inicia sesión nuevamente.',
                 'redirect_url': '/login',
@@ -1529,6 +1557,13 @@ def coachee_session_required(f):
         coachee_user = User.query.get(coachee_user_id)
         if not coachee_user or coachee_user.role != 'coachee':
             session.pop('coachee_user_id', None)
+            
+            # Si es petición HTML, redirigir al login
+            if not is_api_request:
+                flash('Usuario de coachee inválido. Por favor, inicia sesión nuevamente.', 'warning')
+                return redirect(url_for('login_page', role='coachee'))
+            
+            # Si es API, retornar JSON
             return jsonify({
                 'error': 'Usuario de coachee inválido.',
                 'redirect_url': '/login',
@@ -2254,10 +2289,10 @@ def get_dashboard_url(role):
     """Retorna la URL del dashboard según el rol"""
     urls = {
         'platform_admin': '/platform-admin-dashboard',
-        'coach': '/coach/dashboard-v2',
-        'coachee': '/coachee-dashboard'  # Dashboard principal con auto-start de evaluaciones
+        'coach': '/coach-feed',
+        'coachee': '/coachee-feed'  # Feed principal del coachee
     }
-    return urls.get(role, '/coachee-dashboard')
+    return urls.get(role, '/coachee-feed')
 
 def validate_required_fields(data, required_fields):
     """Valida campos requeridos en los datos"""
@@ -3838,9 +3873,9 @@ def api_invite_login():
         # if invitation.assessment_id:
         #     redirect_url = f'/coachee-dashboard?auto_start={invitation.assessment_id}'
         # else:
-        if True:  # Siempre redirigir al dashboard normal
-            # Si no hay evaluación asignada, ir al dashboard normal
-            redirect_url = '/coachee-dashboard'
+        if True:  # Siempre redirigir al feed
+            # Si no hay evaluación asignada, ir al feed
+            redirect_url = '/coachee-feed'
         
         return jsonify({
             'success': True,
@@ -6884,6 +6919,55 @@ def api_coach_list_development_plans():
         
     except Exception as e:
         logger.error(f"Error en api_coach_list_development_plans: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/coach/development-plans/<int:plan_id>', methods=['GET'])
+@coach_session_required
+def api_coach_get_development_plan(plan_id):
+    """Obtener un plan de desarrollo específico del coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        logger.info(f"📋 GET-PLAN: Request for plan {plan_id} from coach {current_coach.id if current_coach else 'None'}")
+        
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"❌ GET-PLAN: Access denied for plan {plan_id}")
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Buscar el plan
+        plan = DevelopmentPlan.query.filter_by(
+            id=plan_id,
+            coach_id=current_coach.id
+        ).first()
+        
+        if not plan:
+            logger.warning(f"❌ GET-PLAN: Plan {plan_id} not found for coach {current_coach.id}")
+            return jsonify({'error': 'Plan no encontrado'}), 404
+        
+        logger.info(f"✅ GET-PLAN: Plan {plan_id} found - Status: {plan.status}")
+        
+        # Obtener información del coachee
+        coachee = User.query.get(plan.coachee_id)
+        
+        return jsonify({
+            'success': True,
+            'plan': {
+                'id': plan.id,
+                'coachee_id': plan.coachee_id,
+                'coachee_name': coachee.full_name or coachee.username if coachee else 'N/A',
+                'objetivo': plan.objetivo,
+                'situacion_actual': plan.situacion_actual,
+                'areas_desarrollo': plan.areas_desarrollo,
+                'acciones': plan.acciones,
+                'indicadores': plan.indicadores,
+                'status': plan.status,
+                'created_at': plan.created_at.isoformat(),
+                'published_at': plan.published_at.isoformat() if plan.published_at else None
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_get_development_plan: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/coach/development-plan/<int:plan_id>/publish', methods=['PUT'])
@@ -10034,16 +10118,62 @@ def api_coachee_get_content():
         content_list = []
         for content in content_items:
             coach = User.query.get(content.coach_id)
+            
+            # Mapear tipos de contenido a categorías estándar
+            content_type = content.content_type.lower() if content.content_type else 'video'
+            normalized_type = 'video'  # Por defecto video
+            
+            if content_type in ['document', 'pdf', 'doc', 'docx']:
+                normalized_type = 'document'
+            elif content_type in ['video', 'youtube', 'vimeo', 'instagram']:
+                normalized_type = 'video'
+            
+            # Extraer video_id y detectar plataforma si es un video
+            video_id = None
+            video_platform = None
+            if normalized_type == 'video' and content.content_url:
+                import re
+                
+                # Detectar Instagram
+                instagram_patterns = [
+                    r'instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)',
+                ]
+                for pattern in instagram_patterns:
+                    match = re.search(pattern, content.content_url)
+                    if match:
+                        video_id = match.group(1)
+                        video_platform = 'instagram'
+                        break
+                
+                # Detectar YouTube si no es Instagram
+                if not video_id:
+                    youtube_patterns = [
+                        r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)',
+                        r'youtube\.com\/embed\/([^&\n?#]+)',
+                    ]
+                    for pattern in youtube_patterns:
+                        match = re.search(pattern, content.content_url)
+                        if match:
+                            video_id = match.group(1)
+                            video_platform = 'youtube'
+                            break
+            
             content_data = {
                 'id': content.id,
                 'title': content.title,
                 'description': content.description,
-                'content_type': content.content_type,
+                'type': normalized_type,  # 'video' o 'document'
+                'content_type': content.content_type,  # Mantener original por compatibilidad
                 'content_url': content.content_url,
+                'file_path': content.content_url,  # Alias para documentos
+                'video_id': video_id,  # ID extraído de YouTube o Instagram
+                'video_platform': video_platform,  # 'youtube' o 'instagram'
+                'youtube_id': video_id if video_platform == 'youtube' else None,  # Mantener por compatibilidad
                 'thumbnail_url': content.thumbnail_url,
                 'duration': content.duration,
                 'is_viewed': content.is_viewed,
                 'viewed_at': content.viewed_at.isoformat() if content.viewed_at else None,
+                'created_at': content.assigned_at.isoformat() if content.assigned_at else None,
                 'assigned_at': content.assigned_at.isoformat() if content.assigned_at else None,
                 'coach_name': coach.full_name if coach else 'Coach no encontrado'
             }
@@ -10187,11 +10317,17 @@ def api_coach_get_assigned_content():
         if coachee_filter:
             query = query.filter_by(coachee_id=coachee_filter)
         
+        # LOG: Ver TODOS los Content antes de aplicar ORDER BY
+        all_content_in_db = Content.query.filter_by(coach_id=current_coach.id).all()
+        logger.info(f"🔍 DEBUG-QUERY: Total Content para coach {current_coach.id} en DB (sin filtros): {len(all_content_in_db)}")
+        for c in all_content_in_db:
+            logger.info(f"  - ID={c.id}, Type={c.content_type}, Title={c.title}, Active={c.is_active}")
+        
         # Obtener contenido ordenado por fecha de asignación
         content_items = query.order_by(Content.assigned_at.desc()).all()
         
         logger.info(f"🔍 COACH-CONTENT: Coach {current_coach.id} solicitando contenido - view_mode: {view_mode}, coachee_filter: {coachee_filter}")
-        logger.info(f"📊 RAW-DATA: Encontrados {len(content_items)} items de contenido")
+        logger.info(f"📊 RAW-DATA: Encontrados {len(content_items)} items de contenido (después del filtro is_active=True)")
         
         # Log detalles de los primeros items para debug
         for i, item in enumerate(content_items[:3]):

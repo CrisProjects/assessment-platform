@@ -2810,7 +2810,7 @@
             border-radius: 8px !important;
             font-size: 0.875rem !important;
             min-width: 100px !important;
-            transition: all 0.2s ease !important;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
         }
         
         #taskProgressModal .btn-secondary {
@@ -2821,17 +2821,16 @@
         
         #taskProgressModal .btn-secondary:hover {
             background: #e5e7eb !important;
-            transform: translateY(-1px) !important;
         }
         
         #taskProgressModal .btn-task {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             color: white !important;
             border: none !important;
+            will-change: box-shadow;
         }
         
         #taskProgressModal .btn-task:hover {
-            transform: translateY(-1px) !important;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
         }
         
@@ -2877,7 +2876,6 @@
             
             #taskProgressModal textarea {
                 min-height: 60px !important;
-                rows: 2 !important;
             }
             
             #taskProgressModal #progressValue {
@@ -7415,6 +7413,20 @@
         [data-theme="dark"] .nav-item.active {
             color: #0a66c2;
         }
+        
+        /* Estilos para las tarjetas de contenido */
+        .content-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .content-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12) !important;
+        }
+        
+        .content-card:active {
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body x-data="coacheeDashboardApp()" x-init="init()">
@@ -7595,7 +7607,7 @@
                 <!-- Tab Content -->
                 <div class="tab-content" id="mainTabContent" style="margin-top: 0;">
                 <!-- Evaluations Tab -->
-                <div class="tab-pane fade" id="evaluations" role="tabpanel">
+                <div class="tab-pane fade show active" id="evaluations" role="tabpanel" x-show="activeTab === 'evaluations'">
                     <div class="row" style="margin-top: 0;">
                         <!-- Available Evaluations -->
                         <div class="col-12">
@@ -7654,7 +7666,7 @@
                 </div>
 
                 <!-- Completed Evaluations Tab -->
-                <div class="tab-pane fade" id="completed-evaluations" role="tabpanel">
+                <div class="tab-pane fade" id="completed-evaluations" role="tabpanel" x-show="activeTab === 'completed-evaluations'">
                     <div class="row" style="margin-top: 0;">
                         <div class="col-12">
                             <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
@@ -7712,7 +7724,7 @@
                 </div>
 
                 <!-- Pending Evaluations Tab -->
-                <div class="tab-pane fade" id="pending-evaluations" role="tabpanel">
+                <div class="tab-pane fade" id="pending-evaluations" role="tabpanel" x-show="activeTab === 'pending-evaluations'">
                     <div class="row" style="margin-top: 0;">
                         <div class="col-12">
                             <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
@@ -7809,7 +7821,7 @@
                 </div>
 
                 <!-- Tasks Tab -->
-                <div class="tab-pane fade" id="tasks" role="tabpanel">
+                <div class="tab-pane fade" id="tasks" role="tabpanel" x-show="activeTab === 'tasks'">
                     <div class="card" style="background: #ffffff; margin-bottom: 1rem; margin-top: 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); border: none; overflow: hidden;">
                         <!-- Header Compacto Mejorado -->
                         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem 1.25rem; border-bottom: none;">
@@ -7849,42 +7861,211 @@
                 </div>
 
                 <!-- Content Tab -->
-                <div class="tab-pane fade" id="content" role="tabpanel">
-                    <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
-                        <!-- Header -->
-                        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid #e5e7eb;">
-                            <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 700; font-size: 1.25rem;">
-                                <i class="fas fa-folder-open" style="color: #000000;"></i>
-                                Mi Contenido
-                            </h5>
-                            <p class="mb-0 mt-1" style="color: #6b7280; font-size: 0.875rem;">
-                                Videos y documentos compartidos por tu coach
-                            </p>
-                        </div>
-                        
-                        <!-- Body con videos -->
+                <div class="tab-pane fade" id="content" role="tabpanel" x-show="activeTab === 'content'">
+                    <!-- Header con filtros -->
+                    <div class="card mb-3" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
                         <div style="padding: 1.5rem 2rem;">
-                            <!-- Loading -->
-                            <div id="contentLoading" class="text-center py-4" style="display: none;">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                <div>
+                                    <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 700; font-size: 1.25rem;">
+                                        <i class="fas fa-folder-open" style="color: #000000;"></i>
+                                        Mi Contenido
+                                    </h5>
+                                    <p class="mb-0 mt-1" style="color: #6b7280; font-size: 0.875rem;">
+                                        <span x-text="videosData.length"></span> documentos y videos compartidos
+                                    </p>
+                                </div>
+                                
+                                <!-- Filtros por categoría -->
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button @click="contentFilter = 'all'" 
+                                        :class="contentFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
+                                        <i class="fas fa-th-large me-1"></i>
+                                        <span>Todos</span>
+                                    </button>
+                                    <button @click="contentFilter = 'video'" 
+                                        :class="contentFilter === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
+                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
+                                        <i class="fas fa-video me-1"></i>
+                                        <span>Videos</span>
+                                    </button>
+                                    <button @click="contentFilter = 'document'" 
+                                        :class="contentFilter === 'document' ? 'btn-primary' : 'btn-outline-secondary'"
+                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
+                                        <i class="fas fa-file-pdf me-1"></i>
+                                        <span>Documentos</span>
+                                    </button>
                                 </div>
                             </div>
-                            
-                            <!-- Grid de videos -->
-                            <div id="contentGrid" class="row g-3" style="display: none;"></div>
-                            
-                            <!-- Empty state -->
-                            <div id="contentEmpty" class="text-center py-5" style="display: none;">
-                                <i class="fas fa-folder-open" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
-                                <p style="color: #6b7280;">No hay contenido disponible</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Layout de 2 columnas: Lista + Vista Previa -->
+                    <div class="row g-3">
+                        <!-- Columna izquierda: Lista de contenidos -->
+                        <div class="col-lg-8">
+                            <div class="card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
+                                <div style="padding: 1.5rem 2rem;">
+                                    <!-- Loading -->
+                                    <div x-show="isLoadingVideos" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="text-muted mt-2" style="font-size: 0.875rem;">Cargando contenido...</p>
+                                    </div>
+                                    
+                                    <!-- Lista de contenidos -->
+                                    <div x-show="!isLoadingVideos && filteredContent.length > 0" class="list-group list-group-flush" style="margin: -1.5rem -2rem;">
+                                        <template x-for="item in filteredContent" :key="item.id">
+                                            <div class="list-group-item"
+                                                 :class="selectedContent?.id === item.id ? 'active' : ''"
+                                                 style="border-left: none; border-right: none; transition: all 0.2s;">
+                                                <div class="d-flex align-items-start gap-3">
+                                                    <!-- Thumbnail pequeño -->
+                                                    <div @click="selectContentForPreview(item)" 
+                                                         style="flex-shrink: 0; width: 100px; height: 60px; border-radius: 8px; overflow: hidden; position: relative; cursor: pointer;">
+                                                        <!-- YouTube thumbnail -->
+                                                        <template x-if="item.type === 'video' && item.video_platform === 'youtube' && item.video_id">
+                                                            <img :src="`https://img.youtube.com/vi/${item.video_id}/mqdefault.jpg`" 
+                                                                 :alt="item.title"
+                                                                 style="width: 100%; height: 100%; object-fit: cover;">
+                                                        </template>
+                                                        <!-- Instagram thumbnail (gradiente con icono) -->
+                                                        <template x-if="item.type === 'video' && item.video_platform === 'instagram'">
+                                                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);">
+                                                                <i class="fab fa-instagram" style="font-size: 2rem; color: white;"></i>
+                                                            </div>
+                                                        </template>
+                                                        <!-- Document preview -->
+                                                        <template x-if="item.type === 'document'">
+                                                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                                                <i class="fas fa-file-pdf" style="font-size: 1.5rem; color: white;"></i>
+                                                            </div>
+                                                        </template>
+                                                        <!-- Play icon overlay -->
+                                                        <template x-if="item.type === 'video'">
+                                                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; height: 30px; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="fas fa-play" style="font-size: 0.75rem; color: white; margin-left: 2px;"></i>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                    
+                                                    <!-- Info del contenido -->
+                                                    <div style="flex: 1; min-width: 0;">
+                                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                                            <h6 class="mb-1" style="font-weight: 600; font-size: 0.9375rem; line-height: 1.4;" x-text="item.title"></h6>
+                                                            <div class="d-flex gap-2 align-items-center" style="flex-shrink: 0;">
+                                                                <template x-if="!item.is_viewed">
+                                                                    <span class="badge bg-danger" style="font-size: 0.625rem;">NUEVO</span>
+                                                                </template>
+                                                                <template x-if="item.is_viewed">
+                                                                    <span class="badge bg-success" style="font-size: 0.625rem;">
+                                                                        <i class="fas fa-check me-1"></i>Visto
+                                                                    </span>
+                                                                </template>
+                                                                <!-- Botón Vista Previa para videos -->
+                                                                <template x-if="item.type === 'video'">
+                                                                    <button @click="selectContentForPreview(item)" 
+                                                                            class="btn btn-sm btn-primary" 
+                                                                            style="font-size: 0.625rem; padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                                                        <i class="fas fa-play me-1"></i>Vista Previa
+                                                                    </button>
+                                                                </template>
+                                                                <!-- Botón Vista Previa para documentos -->
+                                                                <template x-if="item.type === 'document'">
+                                                                    <button @click="selectContentForPreview(item)" 
+                                                                            class="btn btn-sm btn-secondary" 
+                                                                            style="font-size: 0.625rem; padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                                                        <i class="fas fa-file-pdf me-1"></i>Vista Previa
+                                                                    </button>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                        <template x-if="item.description">
+                                                            <p class="mb-1 text-muted" style="font-size: 0.8125rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" x-text="item.description"></p>
+                                                        </template>
+                                                        <div class="text-muted" style="font-size: 0.75rem;">
+                                                            <i class="far fa-calendar me-1"></i>
+                                                            <span x-text="formatDate(item.created_at)"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    
+                                    <!-- Empty state -->
+                                    <div x-show="!isLoadingVideos && filteredContent.length === 0" class="text-center py-5">
+                                        <i class="fas fa-folder-open" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+                                        <h6 style="color: #6b7280; font-weight: 600;">No hay contenido disponible</h6>
+                                        <p style="color: #9ca3af; font-size: 0.875rem;" x-show="contentFilter !== 'all'">Intenta cambiar el filtro para ver más contenido</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Columna derecha: Vista Previa -->
+                        <div class="col-lg-4">
+                            <div class="card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; position: sticky; top: 20px;">
+                                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 16px 16px 0 0; padding: 1rem 1.5rem;">
+                                    <h6 class="mb-0" style="font-weight: 600; font-size: 0.9375rem;">
+                                        <i class="fas fa-eye me-2"></i>
+                                        Vista Previa
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 0;">
+                                    <!-- Placeholder cuando no hay selección -->
+                                    <div x-show="!selectedContent" class="text-center text-muted" style="padding: 3rem 2rem;">
+                                        <i class="fas fa-hand-pointer fa-3x mb-3" style="color: #d1d5db;"></i>
+                                        <p style="font-size: 0.875rem; color: #6b7280;">Selecciona un contenido de la lista para ver la vista previa aquí</p>
+                                    </div>
+                                    
+                                    <!-- Mensaje cuando hay video seleccionado pero sin ID -->
+                                    <div x-show="selectedContent?.type === 'video' && !selectedContent?.video_id" class="text-center text-muted" style="padding: 3rem 2rem;">
+                                        <i class="fas fa-exclamation-circle fa-3x mb-3" style="color: #f59e0b;"></i>
+                                        <p style="font-size: 0.875rem; color: #6b7280;">No se pudo cargar la vista previa de este video</p>
+                                    </div>
+                                    
+                <!-- Vista previa de video -->
+                                <div x-show="selectedContent?.type === 'video' && selectedContent?.video_id" id="videoPreviewContainer" style="position: relative; width: 100%; padding-top: 56.25%; background: #000;">
+                                    <!-- El iframe se insertará aquí dinámicamente -->
+                                </div>
+                                
+                                <!-- Vista previa de documento PDF -->
+                                <div x-show="selectedContent?.type === 'document' && selectedContent?.file_path" 
+                                     style="position: relative; width: 100%; height: 300px; background: #f3f4f6; border-radius: 8px; overflow: hidden;">
+                                    <!-- Usar embed para mejor compatibilidad con PDFs -->
+                                    <embed :src="selectedContent.file_path + '#view=FitH'" 
+                                           type="application/pdf"
+                                           style="width: 100%; height: 100%; border: none;">
+                                </div>
+                                
+                                <!-- Mensaje cuando hay documento sin file_path -->
+                                <div x-show="selectedContent?.type === 'document' && !selectedContent?.file_path" 
+                                     style="padding: 3rem 2rem; text-align: center;">
+                                    <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                                    <h6 style="font-weight: 600; margin-bottom: 0.5rem;">Documento no disponible</h6>
+                                    <p class="text-muted" style="font-size: 0.875rem;">No se pudo cargar la vista previa de este documento</p>
+                                </div>
+                            </div>
+                                <!-- Footer con info del contenido seleccionado -->
+                                <div x-show="selectedContent" class="card-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem;">
+                                    <div style="font-size: 0.8125rem;">
+                                        <div class="mb-2" style="font-weight: 600; color: #111827;" x-text="selectedContent?.title"></div>
+                                        <div class="text-muted">
+                                            <i class="far fa-calendar me-1"></i>
+                                            <span x-text="formatDate(selectedContent?.created_at)"></span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Progress Tab -->
-                <div class="tab-pane fade" id="progress" role="tabpanel">
+                <div class="tab-pane fade" id="progress" role="tabpanel" x-show="activeTab === 'progress'">
                     
                     <!-- ========================================= -->
                     <!-- 🆕 NUEVA SECCIÓN: Mi Progreso (Alpine.js) -->
@@ -7982,7 +8163,7 @@
                 </div>
 
                 <!-- Development Plan Tab -->
-                <div class="tab-pane fade" id="development-plan" role="tabpanel">
+                <div class="tab-pane fade" id="development-plan" role="tabpanel" x-show="activeTab === 'development-plan'">
                     <div class="row" style="margin-top: 0;">
                         <div class="col-12">
                             <div class="card" style="background: #ffffff; margin-bottom: 1rem; margin-top: 0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
@@ -8032,7 +8213,7 @@
                 </div>
 
                 <!-- Schedule Coach Tab -->
-                <div class="tab-pane fade" id="schedule-coach" role="tabpanel">
+                <div class="tab-pane fade" id="schedule-coach" role="tabpanel" x-show="activeTab === 'schedule-coach'">
                     <div class="row" style="margin-top: 0;">
                         <div class="col-12">
                             <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
@@ -8638,7 +8819,7 @@
             console.log('🎯 coacheeDashboardApp() function CALLED - Creating Alpine component');
             return {
                 // Estado Global
-                activeTab: '', // Vacío por defecto - solo mostrar tarjetas estadísticas
+                activeTab: 'evaluations', // Mostrar evaluaciones por defecto
                 coacheeName: '',
                 coacheeEmail: '',
                 coacheeId: null,
@@ -8660,6 +8841,10 @@
                 videosData: [],
                 developmentPlans: [],
                 isAssessmentActive: false,
+                
+                // Filtro de contenido
+                contentFilter: 'all', // 'all', 'video', 'document'
+                selectedContent: null, // Para el modal de vista previa
                 
                 // Estadísticas
                 stats: {
@@ -8684,10 +8869,42 @@
                 currentDate: '',
                 currentTime: '',
                 
+                // Propiedad computada para filtrar contenido
+                get filteredContent() {
+                    if (this.contentFilter === 'all') {
+                        return this.videosData;
+                    }
+                    return this.videosData.filter(item => item.type === this.contentFilter);
+                },
+                
                 // Inicialización
                 async init() {
                     try {
                         console.log('🚀 Inicializando Coachee Dashboard Alpine.js V2');
+                        
+                        // Restaurar pestaña activa desde localStorage si existe
+                        const savedTab = localStorage.getItem('coachee_activeTab');
+                        if (savedTab) {
+                            this.activeTab = savedTab;
+                            console.log('📍 Restaurando pestaña:', savedTab);
+                            
+                            // Aplicar clases show/active al tab-pane restaurado
+                            setTimeout(() => {
+                                // Ocultar todos los tab-panes primero
+                                const allTabPanes = document.querySelectorAll('.tab-pane');
+                                allTabPanes.forEach(pane => {
+                                    pane.classList.remove('show', 'active');
+                                });
+                                
+                                // Mostrar el tab-pane restaurado
+                                const restoredPane = document.getElementById(savedTab);
+                                if (restoredPane) {
+                                    restoredPane.classList.add('show', 'active');
+                                    console.log('✅ Tab-pane restaurado visualmente:', savedTab);
+                                }
+                            }, 100);
+                        }
+                        
                         this.createParticles();
                         this.updateDateTime();
                         setInterval(() => this.updateDateTime(), 1000);
@@ -8704,6 +8921,22 @@
                         console.log('📞 Cargando evaluaciones...');
                         await this.loadEvaluations();
                         console.log('✅ Evaluaciones cargadas');
+                        
+                        // Si la pestaña restaurada es completed-evaluations, renderizarla
+                        if (savedTab === 'completed-evaluations') {
+                            console.log('🔄 Renderizando evaluaciones completadas después de init...');
+                            setTimeout(() => {
+                                this.renderCompletedEvaluationsSection();
+                            }, 150);
+                        }
+                        
+                        // Si la pestaña restaurada es content, cargar videos
+                        if (savedTab === 'content') {
+                            console.log('🔄 Cargando contenido después de init...');
+                            setTimeout(() => {
+                                this.loadVideos(false); // Usar cache si está disponible
+                            }, 150);
+                        }
                     } catch (error) {
                         console.error('❌ ERROR en init():', error);
                         console.error('Stack:', error.stack);
@@ -8952,6 +9185,10 @@
                     // Actualizar estado reactivo
                     this.activeTab = tabId;
                     
+                    // Guardar pestaña activa en localStorage
+                    localStorage.setItem('coachee_activeTab', tabId);
+                    console.log('💾 Pestaña guardada en localStorage:', tabId);
+                    
                     // 📱 MOBILE: Scroll automático hacia la sección
                     if (window.innerWidth <= 768) {
                         setTimeout(() => {
@@ -8986,8 +9223,7 @@
                         // 🔥 ALPINE: Cargar tareas (con cache automático)
                         this.loadTasks();
                     } else if (tabId === 'content') {
-                        // 🔥 ALPINE: Cargar contenido (videos por defecto)
-                        this.contentTab = 'videos';
+                        // 🔥 ALPINE: Cargar contenido (con cache automático)
                         this.loadVideos();
                     } else if (tabId === 'progress') {
                         // 🔥 ALPINE: Cargar progreso directamente (evitar duplicación)
@@ -9151,16 +9387,50 @@
                 // ============================================
                 // EVALUACIONES COMPLETADAS (Alpine)
                 // ============================================
+                // EVALUACIONES COMPLETADAS (Alpine)
+                // ============================================
                 
                 renderCompletedEvaluationsSection() {
                     console.log('🔍 ALPINE: renderCompletedEvaluationsSection called');
-                    console.log('🔍 evaluationsData:', this.evaluationsData);
                     
-                    // Exponer globalmente para legacy code
+                    const container = document.getElementById('completedEvaluationsSection');
+                    if (!container) {
+                        console.error('❌ Container completedEvaluationsSection NO ENCONTRADO');
+                        return;
+                    }
+                    
+                    console.log('✅ Container encontrado:', container);
+                    console.log('🔍 this.evaluationsData:', this.evaluationsData);
+                    
+                    // Exponer globalmente para legacy code (ambas formas)
                     window.evaluationsData = this.evaluationsData;
+                    evaluationsData = this.evaluationsData;
+                    
+                    // Si no hay datos, mostrar estado vacío
+                    if (!this.evaluationsData || !this.evaluationsData.completed || this.evaluationsData.completed.length === 0) {
+                        console.log('⚠️ No hay evaluaciones completadas');
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 3rem 1.25rem;">
+                                <div style="font-size: 4rem; color: #9ca3af; margin-bottom: 1rem;">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <h3 style="color: #000000; font-size: 1.125rem; margin-bottom: 0.5rem; font-weight: 700;">
+                                    Sin evaluaciones completadas
+                                </h3>
+                                <p style="color: #000000; font-size: 0.875rem;">
+                                    Aún no has completado ninguna evaluación
+                                </p>
+                            </div>
+                        `;
+                        return;
+                    }
                     
                     // Llamar a función legacy para renderizar
+                    console.log('🚀 Llamando a renderCompletedEvaluationsLegacy...');
+                    console.log('🔍 typeof renderCompletedEvaluationsLegacy:', typeof renderCompletedEvaluationsLegacy);
+                    
                     if (typeof renderCompletedEvaluationsLegacy === 'function') {
+                        console.log('✅ Función legacy encontrada, ejecutando...');
                         renderCompletedEvaluationsLegacy();
                     } else {
                         console.error('❌ renderCompletedEvaluationsLegacy no está disponible');
@@ -9376,10 +9646,23 @@
                         this.videosLastLoaded = Date.now();
                         
                         console.log(`✅ ALPINE: ${this.videosData.length} items loaded`);
+                        
+                        // Forzar actualización del estado de carga
+                        this.isLoadingVideos = false;
+                        
+                        // Seleccionar automáticamente el primer contenido si existe
+                        if (this.videosData.length > 0 && !this.selectedContent) {
+                            const firstContent = this.videosData[0];
+                            console.log('🎯 Auto-selecting first content:', firstContent.title);
+                            
+                            // Usar setTimeout para asegurarse de que el DOM está listo
+                            setTimeout(() => {
+                                this.selectContentForPreview(firstContent);
+                            }, 100);
+                        }
                     } catch (error) {
                         console.error('❌ ALPINE: Error loading content:', error);
                         this.videosData = [];
-                    } finally {
                         this.isLoadingVideos = false;
                     }
                 },
@@ -9417,6 +9700,105 @@
                         if (typeof showToast === 'function') {
                             showToast('Error al marcar contenido', 'error');
                         }
+                    }
+                },
+                
+                // Seleccionar contenido para vista previa
+                selectContentForPreview(item) {
+                    console.log('👁️ Selecting content for preview:', item);
+                    console.log('📄 Content type:', item.type);
+                    console.log('📄 File path:', item.file_path);
+                    console.log('📄 Content URL:', item.content_url);
+                    
+                    // Marcar como visto si no lo está
+                    if (!item.is_viewed) {
+                        this.markContentAsViewed(item.id);
+                    }
+                    
+                    // Guardar el contenido seleccionado
+                    this.selectedContent = item;
+                    
+                    console.log('📄 Selected content saved:', this.selectedContent);
+                    
+                    // Si es video, actualizar la vista previa
+                    if (item.type === 'video' && item.video_id) {
+                        this.updateVideoPreview(item.video_id, item.video_platform);
+                    }
+                    
+                    // Si es documento, asegurarse de que Alpine.js actualice la vista
+                    if (item.type === 'document') {
+                        console.log('📄 Document selected - Alpine should update iframe with:', item.file_path);
+                        // Forzar actualización de Alpine
+                        this.$nextTick(() => {
+                            console.log('📄 After nextTick - selectedContent:', this.selectedContent);
+                        });
+                    }
+                },
+                
+                // Actualizar vista previa de video con iframe
+                updateVideoPreview(videoId, platform = 'youtube') {
+                    const container = document.getElementById('videoPreviewContainer');
+                    if (!container) return;
+                    
+                    console.log('🎬 Updating video preview:', videoId, 'platform:', platform);
+                    
+                    // Limpiar contenido previo
+                    container.innerHTML = '';
+                    
+                    // Crear iframe según la plataforma
+                    const iframe = document.createElement('iframe');
+                    iframe.style.position = 'absolute';
+                    iframe.style.top = '0';
+                    iframe.style.left = '0';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.frameBorder = '0';
+                    iframe.allowFullscreen = true;
+                    
+                    if (platform === 'instagram') {
+                        // Instagram embed
+                        iframe.src = `https://www.instagram.com/p/${videoId}/embed/`;
+                        iframe.allow = 'encrypted-media';
+                        iframe.setAttribute('scrolling', 'no');
+                        iframe.setAttribute('allowtransparency', 'true');
+                        // Para Instagram, ajustar el contenedor
+                        container.style.paddingTop = '125%'; // Instagram es más alto
+                    } else {
+                        // YouTube embed (default) - sin autoplay
+                        iframe.src = `https://www.youtube.com/embed/${videoId}?rel=0`;
+                        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                        container.style.paddingTop = '56.25%'; // 16:9 ratio
+                    }
+                    
+                    container.appendChild(iframe);
+                },
+                
+                // Formatear fecha
+                formatDate(dateString) {
+                    if (!dateString) return 'Sin fecha';
+                    
+                    try {
+                        const date = new Date(dateString);
+                        const now = new Date();
+                        const diffTime = Math.abs(now - date);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays === 0) {
+                            return 'Hoy';
+                        } else if (diffDays === 1) {
+                            return 'Ayer';
+                        } else if (diffDays < 7) {
+                            return `Hace ${diffDays} días`;
+                        } else {
+                            return date.toLocaleDateString('es-ES', { 
+                                day: '2-digit', 
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error formateando fecha:', error);
+                        return 'Sin fecha';
                     }
                 },
                 
@@ -10139,6 +10521,10 @@
                 logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cerrando...';
                 logoutBtn.disabled = true;
 
+                // Limpiar localStorage antes de cerrar sesión
+                localStorage.removeItem('coachee_activeTab');
+                console.log('🧹 localStorage limpiado al cerrar sesión');
+
                 // Call logout API específico para coachee
                 const response = await fetch(`${API_BASE_URL}/api/coachee/logout`, {
                     method: 'POST',
@@ -10153,6 +10539,8 @@
                 
             } catch (error) {
                 console.error('Error during logout:', error);
+                // Limpiar localStorage incluso si hay error
+                localStorage.removeItem('coachee_activeTab');
                 // Even if there's an error, redirect to participant access page
                 window.location.href = '/participant-access';
             }
@@ -11408,9 +11796,15 @@
 
         // LEGACY: Función original de renderizado - Renombrada para compatibilidad
         function renderCompletedEvaluationsLegacy() {
+            console.log('🎨 renderCompletedEvaluationsLegacy: INICIANDO');
+            console.log('📦 evaluationsData recibido:', evaluationsData);
+            console.log('📦 window.evaluationsData:', window.evaluationsData);
+            
             const container = document.getElementById('completedEvaluationsSection');
+            console.log('📦 Container encontrado:', container);
             
             if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
+                console.log('⚠️ No hay evaluaciones completadas para mostrar');
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem 1.25rem;">
                         <div style="font-size: 4rem; color: #9ca3af; margin-bottom: 1rem;">
@@ -12618,7 +13012,7 @@
                         </label>
                         <textarea class="form-control" id="taskNotes" rows="3" 
                                   placeholder="Comparte tus avances, desafíos o comentarios..."
-                                  style="font-size: 0.9rem; resize: none;"></textarea>
+                                  style="font-size: 1rem; resize: none;"></textarea>
                         <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 0.25rem;">
                             💡 Tu coach podrá ver estos comentarios
                         </small>
@@ -12715,13 +13109,29 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // Close modal
+                    // Close modal first to avoid any flicker
                     const modal = bootstrap.Modal.getInstance(document.getElementById('taskProgressModal'));
-                    modal.hide();
+                    if (modal) {
+                        modal.hide();
+                    }
                     
-                    // Refresh tasks (forzar recarga porque hubo cambios)
-                    await loadTasks(true);
-                    await loadDashboardSummary();
+                    // Update task in local data immediately to avoid visual delay
+                    if (window.tasksData) {
+                        const taskIndex = window.tasksData.findIndex(t => t.id === parseInt(taskId));
+                        if (taskIndex !== -1) {
+                            window.tasksData[taskIndex].status = status;
+                            window.tasksData[taskIndex].progress_percentage = progress;
+                        }
+                    }
+                    
+                    // Show success message
+                    showToast('Progreso actualizado exitosamente', 'success');
+                    
+                    // Refresh tasks and summary in background without blocking UI
+                    setTimeout(async () => {
+                        await loadTasks(true);
+                        await loadDashboardSummary();
+                    }, 100);
                 } else {
                     throw new Error(data.error);
                 }
