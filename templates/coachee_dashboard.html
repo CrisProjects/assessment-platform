@@ -17881,17 +17881,23 @@
                                     </iframe>
                                 </div>
                             ` : isDocument ? `
-                                <div class="document-preview-container" style="position: relative; height: 280px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                    <div style="width: 100%; height: 280px; overflow-y: auto;">
+                                <div class="document-preview-container" id="doc-container-${item.id}" style="position: relative; height: 280px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: height 0.3s ease;">
+                                    <div id="doc-content-${item.id}" style="width: 100%; height: 100%; overflow-y: auto;">
                                         <canvas id="doc-preview-${item.id}"
                                                 width="1200"
                                                 height="1000"
                                                 style="width: 100%; height: auto; border-radius: 8px; display: block;">
                                         </canvas>
                                     </div>
-                                    <div class="document-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
-                                         onclick="openDocumentFeed('${item.content_url}', '${item.title}')">
-                                        <i class="fas fa-file-alt" style="color: white; font-size: 16px;"></i>
+                                    <div class="document-controls" style="position: absolute; top: 10px; right: 10px; display: flex; gap: 8px;">
+                                        <div class="document-overlay" style="background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                             onclick="toggleDocumentExpand(${item.id}, '${item.content_url}')" title="Expandir/Contraer documento">
+                                            <i id="expand-icon-${item.id}" class="fas fa-expand" style="color: white; font-size: 14px;"></i>
+                                        </div>
+                                        <div class="document-overlay" style="background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                             onclick="openDocumentFeed('${item.content_url}', '${item.title}')" title="Abrir en nueva pestaña">
+                                            <i class="fas fa-external-link-alt" style="color: white; font-size: 14px;"></i>
+                                        </div>
                                     </div>
                                 </div>
                             ` : `
@@ -18038,17 +18044,80 @@
             showToast('¡Funcionalidad de compartir próximamente!', 'info');
         }
         
-        // Función para abrir documento
+        // Función para abrir documento en nueva pestaña
         function openDocumentFeed(url, title) {
             console.log('📄 Opening document from feed:', url);
-            // Crear enlace temporal para descarga
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = title || 'documento.pdf';
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            window.open(url, '_blank');
+        }
+        
+        // Función para expandir/contraer documento en la vista
+        function toggleDocumentExpand(itemId, url) {
+            const container = document.getElementById(`doc-container-${itemId}`);
+            const content = document.getElementById(`doc-content-${itemId}`);
+            const icon = document.getElementById(`expand-icon-${itemId}`);
+            
+            if (!container) return;
+            
+            const isExpanded = container.getAttribute('data-expanded') === 'true';
+            
+            if (isExpanded) {
+                // Contraer
+                container.style.height = '280px';
+                container.setAttribute('data-expanded', 'false');
+                icon.className = 'fas fa-expand';
+            } else {
+                // Expandir
+                container.style.height = '600px';
+                container.setAttribute('data-expanded', 'true');
+                icon.className = 'fas fa-compress';
+                
+                // Si aún no se ha cargado el PDF completo, cargarlo ahora
+                const canvas = document.getElementById(`doc-preview-${itemId}`);
+                if (canvas && !canvas.getAttribute('data-full-loaded')) {
+                    generateFullDocumentPreview(url, `doc-preview-${itemId}`);
+                    canvas.setAttribute('data-full-loaded', 'true');
+                }
+            }
+        }
+        
+        // Función para generar vista completa del documento
+        async function generateFullDocumentPreview(url, canvasId) {
+            console.log('📄 [FULL PDF] Loading full document:', url);
+            
+            if (typeof pdfjsLib === 'undefined') {
+                console.error('❌ [FULL PDF] PDF.js not loaded');
+                return;
+            }
+            
+            try {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                
+                const loadingTask = pdfjsLib.getDocument(url);
+                const pdf = await loadingTask.promise;
+                
+                console.log('📄 [FULL PDF] PDF loaded, total pages:', pdf.numPages);
+                
+                // Renderizar la primera página con mejor calidad
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 2.0 }); // Mayor escala para mejor calidad
+                
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                await page.render({
+                    canvasContext: ctx,
+                    viewport: viewport
+                }).promise;
+                
+                console.log('✅ [FULL PDF] Document rendered successfully');
+            } catch (error) {
+                console.error('❌ [FULL PDF] Error loading document:', error);
+            }
         }
         
         // Funciones de PDF.js para preview de documentos
