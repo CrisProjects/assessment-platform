@@ -8035,7 +8035,7 @@
                                     <!-- Vista Previa de Documento -->
                                     <div class="card-body" style="padding: 0;" x-show="item.type === 'document' && item.file_path">
                                         <div style="position: relative; width: 100%; height: 300px; background: #f3f4f6; overflow: hidden;">
-                                            <embed :src="item.file_path + '#view=FitH'" 
+                                            <embed :src="item.file_path + '?t=' + Date.now() + '#view=FitH'" 
                                                    type="application/pdf"
                                                    style="width: 100%; height: 100%; border: none;">
                                         </div>
@@ -8952,6 +8952,26 @@
                                 this.loadVideos(false); // Usar cache si está disponible
                             }, 150);
                         }
+                        
+                        // 🔥 WATCHER: Recargar PDFs cuando se vuelve a la pestaña de contenido
+                        this.$watch('activeTab', (newTab, oldTab) => {
+                            if (newTab === 'content' && oldTab !== 'content') {
+                                console.log('🔄 Volviendo a Mi Contenido - recargando PDFs...');
+                                // Esperar a que el DOM se actualice
+                                this.$nextTick(() => {
+                                    // Forzar recarga de todos los PDFs
+                                    const pdfEmbeds = document.querySelectorAll('embed[type="application/pdf"]');
+                                    pdfEmbeds.forEach(embed => {
+                                        const currentSrc = embed.src;
+                                        // Remover timestamp anterior y agregar uno nuevo
+                                        const baseSrc = currentSrc.split('?')[0];
+                                        const newSrc = `${baseSrc}?t=${Date.now()}#view=FitH`;
+                                        console.log('📄 Recargando PDF:', newSrc);
+                                        embed.src = newSrc;
+                                    });
+                                });
+                            }
+                        });
                     } catch (error) {
                         console.error('❌ ERROR en init():', error);
                         console.error('Stack:', error.stack);
