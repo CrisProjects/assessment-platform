@@ -2897,6 +2897,62 @@
             }
         }
         
+        /* RESPONSIVE PARA MI CONTENIDO - MÓVILES */
+        @media (max-width: 991.98px) {
+            /* Vista previa en móviles - altura mayor para PDFs */
+            .document-preview-container {
+                height: 400px !important;
+            }
+            
+            /* Eliminar sticky en móviles para mejor scroll */
+            #content .col-lg-4 .card {
+                position: static !important;
+            }
+        }
+        
+        @media (max-width: 767.98px) {
+            /* Reducir aún más espacios en móviles */
+            #content .card {
+                border-radius: 8px !important;
+            }
+            
+            #content .list-group-item {
+                padding: 0.5rem 0.875rem !important;
+            }
+            
+            /* Thumbnails más pequeños en móvil */
+            #content .list-group-item > div > div:first-child {
+                width: 70px !important;
+                height: 44px !important;
+            }
+            
+            /* Vista previa altura reducida en móviles pequeños */
+            .document-preview-container {
+                height: 350px !important;
+            }
+        }
+        
+        @media (max-width: 575.98px) {
+            /* Ultra compacto para móviles pequeños */
+            #content .card-header {
+                padding: 0.625rem 0.875rem !important;
+            }
+            
+            #content .card-header h6 {
+                font-size: 0.8125rem !important;
+            }
+            
+            /* Vista previa más pequeña en móviles muy pequeños */
+            .document-preview-container {
+                height: 300px !important;
+            }
+            
+            /* Ocultar descripción en móviles muy pequeños */
+            #content .d-none.d-md-block {
+                display: none !important;
+            }
+        }
+        
         /* RESPONSIVE PARA TABLET */
         @media (min-width: 769px) and (max-width: 1024px) {
             #taskProgressModal .modal-dialog {
@@ -7863,38 +7919,39 @@
                 <!-- Content Tab -->
                 <div class="tab-pane fade" id="content" role="tabpanel" x-show="activeTab === 'content'">
                     <!-- Header con filtros -->
-                    <div class="card mb-3" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
-                        <div style="padding: 1.5rem 2rem;">
-                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div class="card mb-2 mb-md-3" style="background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
+                        <div style="padding: 0.875rem 1rem; padding-top: 1rem;">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                                 <div>
-                                    <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 700; font-size: 1.25rem;">
-                                        <i class="fas fa-folder-open" style="color: #000000;"></i>
-                                        Mi Contenido
+                                    <h5 class="mb-0 d-flex align-items-center gap-2" style="color: #111827; font-weight: 700; font-size: 1.125rem;">
+                                        <i class="fas fa-folder-open" style="color: #000000; font-size: 1rem;"></i>
+                                        <span class="d-none d-sm-inline">Mi Contenido</span>
+                                        <span class="d-sm-none">Contenido</span>
                                     </h5>
-                                    <p class="mb-0 mt-1" style="color: #6b7280; font-size: 0.875rem;">
-                                        <span x-text="videosData.length"></span> documentos y videos compartidos
+                                    <p class="mb-0 mt-1" style="color: #6b7280; font-size: 0.75rem;">
+                                        <span x-text="videosData.length"></span> <span class="d-none d-sm-inline">documentos y videos</span><span class="d-sm-none">items</span>
                                     </p>
                                 </div>
                                 
                                 <!-- Filtros por categoría -->
-                                <div class="d-flex gap-2 flex-wrap">
+                                <div class="d-flex gap-1 flex-wrap">
                                     <button @click="contentFilter = 'all'" 
                                         :class="contentFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
-                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
-                                        <i class="fas fa-th-large me-1"></i>
-                                        <span>Todos</span>
+                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.375rem 0.625rem; font-size: 0.75rem;">
+                                        <i class="fas fa-th-large" style="font-size: 0.75rem;"></i>
+                                        <span class="d-none d-sm-inline ms-1">Todos</span>
                                     </button>
                                     <button @click="contentFilter = 'video'" 
                                         :class="contentFilter === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
-                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
-                                        <i class="fas fa-video me-1"></i>
-                                        <span>Videos</span>
+                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.375rem 0.625rem; font-size: 0.75rem;">
+                                        <i class="fas fa-video" style="font-size: 0.75rem;"></i>
+                                        <span class="d-none d-sm-inline ms-1">Videos</span>
                                     </button>
                                     <button @click="contentFilter = 'document'" 
                                         :class="contentFilter === 'document' ? 'btn-primary' : 'btn-outline-secondary'"
-                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
-                                        <i class="fas fa-file-pdf me-1"></i>
-                                        <span>Documentos</span>
+                                        class="btn btn-sm" style="border-radius: 8px; font-weight: 500; padding: 0.375rem 0.625rem; font-size: 0.75rem;">
+                                        <i class="fas fa-file-pdf" style="font-size: 0.75rem;"></i>
+                                        <span class="d-none d-sm-inline ms-1">Docs</span>
                                     </button>
                                 </div>
                             </div>
@@ -7902,11 +7959,11 @@
                     </div>
                     
                     <!-- Layout de 2 columnas: Lista + Vista Previa -->
-                    <div class="row g-3">
+                    <div class="row g-2 g-md-3">
                         <!-- Columna izquierda: Lista de contenidos -->
-                        <div class="col-lg-8">
-                            <div class="card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
-                                <div style="padding: 1.5rem 2rem;">
+                        <div class="col-12 col-lg-8">
+                            <div class="card" style="background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
+                                <div style="padding: 0.75rem 1rem;">
                                     <!-- Loading -->
                                     <div x-show="isLoadingVideos" class="text-center py-4">
                                         <div class="spinner-border text-primary" role="status">
@@ -7916,15 +7973,15 @@
                                     </div>
                                     
                                     <!-- Lista de contenidos -->
-                                    <div x-show="!isLoadingVideos && filteredContent.length > 0" class="list-group list-group-flush" style="margin: -1.5rem -2rem;">
+                                    <div x-show="!isLoadingVideos && filteredContent.length > 0" class="list-group list-group-flush" style="margin: -0.75rem -1rem;">
                                         <template x-for="item in filteredContent" :key="item.id">
                                             <div class="list-group-item"
                                                  :class="selectedContent?.id === item.id ? 'active' : ''"
-                                                 style="border-left: none; border-right: none; transition: all 0.2s;">
-                                                <div class="d-flex align-items-start gap-3">
+                                                 style="border-left: none; border-right: none; transition: all 0.2s; padding: 0.625rem 1rem;">
+                                                <div class="d-flex align-items-start gap-2">
                                                     <!-- Thumbnail pequeño -->
                                                     <div @click="selectContentForPreview(item)" 
-                                                         style="flex-shrink: 0; width: 100px; height: 60px; border-radius: 8px; overflow: hidden; position: relative; cursor: pointer;">
+                                                         style="flex-shrink: 0; width: 80px; height: 50px; border-radius: 6px; overflow: hidden; position: relative; cursor: pointer;">
                                                         <!-- YouTube thumbnail -->
                                                         <template x-if="item.type === 'video' && item.video_platform === 'youtube' && item.video_id">
                                                             <img :src="`https://img.youtube.com/vi/${item.video_id}/mqdefault.jpg`" 
@@ -7934,59 +7991,62 @@
                                                         <!-- Instagram thumbnail (gradiente con icono) -->
                                                         <template x-if="item.type === 'video' && item.video_platform === 'instagram'">
                                                             <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);">
-                                                                <i class="fab fa-instagram" style="font-size: 2rem; color: white;"></i>
+                                                                <i class="fab fa-instagram" style="font-size: 1.5rem; color: white;"></i>
                                                             </div>
                                                         </template>
                                                         <!-- Document preview -->
                                                         <template x-if="item.type === 'document'">
                                                             <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                                                                <i class="fas fa-file-pdf" style="font-size: 1.5rem; color: white;"></i>
+                                                                <i class="fas fa-file-pdf" style="font-size: 1.25rem; color: white;"></i>
                                                             </div>
                                                         </template>
                                                         <!-- Play icon overlay -->
                                                         <template x-if="item.type === 'video'">
-                                                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; height: 30px; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                                <i class="fas fa-play" style="font-size: 0.75rem; color: white; margin-left: 2px;"></i>
+                                                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="fas fa-play" style="font-size: 0.625rem; color: white; margin-left: 1px;"></i>
                                                             </div>
                                                         </template>
                                                     </div>
                                                     
                                                     <!-- Info del contenido -->
                                                     <div style="flex: 1; min-width: 0;">
-                                                        <div class="d-flex align-items-start justify-content-between gap-2">
-                                                            <h6 class="mb-1" style="font-weight: 600; font-size: 0.9375rem; line-height: 1.4;" x-text="item.title"></h6>
-                                                            <div class="d-flex gap-2 align-items-center" style="flex-shrink: 0;">
+                                                        <div class="d-flex align-items-start justify-content-between gap-1">
+                                                            <h6 class="mb-1" style="font-weight: 600; font-size: 0.8125rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" x-text="item.title"></h6>
+                                                            <div class="d-flex gap-1 align-items-start" style="flex-shrink: 0;">
                                                                 <template x-if="!item.is_viewed">
-                                                                    <span class="badge bg-danger" style="font-size: 0.625rem;">NUEVO</span>
+                                                                    <span class="badge bg-danger" style="font-size: 0.5625rem; padding: 0.125rem 0.375rem;">NUEVO</span>
                                                                 </template>
                                                                 <template x-if="item.is_viewed">
-                                                                    <span class="badge bg-success" style="font-size: 0.625rem;">
-                                                                        <i class="fas fa-check me-1"></i>Visto
+                                                                    <span class="badge bg-success" style="font-size: 0.5625rem; padding: 0.125rem 0.375rem;">
+                                                                        <i class="fas fa-check" style="font-size: 0.5rem;"></i>
+                                                                        <span class="d-none d-sm-inline ms-1">Visto</span>
                                                                     </span>
                                                                 </template>
                                                                 <!-- Botón Vista Previa para videos -->
                                                                 <template x-if="item.type === 'video'">
                                                                     <button @click="selectContentForPreview(item)" 
                                                                             class="btn btn-sm btn-primary" 
-                                                                            style="font-size: 0.625rem; padding: 0.25rem 0.5rem; border-radius: 4px;">
-                                                                        <i class="fas fa-play me-1"></i>Vista Previa
+                                                                            style="font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 4px; line-height: 1.2;">
+                                                                        <i class="fas fa-play" style="font-size: 0.5rem;"></i>
+                                                                        <span class="d-none d-sm-inline ms-1">Vista</span>
                                                                     </button>
                                                                 </template>
                                                                 <!-- Botón Vista Previa para documentos -->
                                                                 <template x-if="item.type === 'document'">
                                                                     <button @click="selectContentForPreview(item)" 
                                                                             class="btn btn-sm btn-secondary" 
-                                                                            style="font-size: 0.625rem; padding: 0.25rem 0.5rem; border-radius: 4px;">
-                                                                        <i class="fas fa-file-pdf me-1"></i>Vista Previa
+                                                                            style="font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 4px; line-height: 1.2;">
+                                                                        <i class="fas fa-file-pdf" style="font-size: 0.5rem;"></i>
+                                                                        <span class="d-none d-sm-inline ms-1">Vista</span>
                                                                     </button>
                                                                 </template>
                                                             </div>
                                                         </div>
                                                         <template x-if="item.description">
-                                                            <p class="mb-1 text-muted" style="font-size: 0.8125rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" x-text="item.description"></p>
+                                                            <p class="mb-1 text-muted d-none d-md-block" style="font-size: 0.75rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" x-text="item.description"></p>
                                                         </template>
-                                                        <div class="text-muted" style="font-size: 0.75rem;">
-                                                            <i class="far fa-calendar me-1"></i>
+                                                        <div class="text-muted" style="font-size: 0.6875rem;">
+                                                            <i class="far fa-calendar me-1" style="font-size: 0.625rem;"></i>
                                                             <span x-text="formatDate(item.created_at)"></span>
                                                         </div>
                                                     </div>
@@ -8006,25 +8066,25 @@
                         </div>
                         
                         <!-- Columna derecha: Vista Previa -->
-                        <div class="col-lg-4">
-                            <div class="card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; position: sticky; top: 20px;">
-                                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 16px 16px 0 0; padding: 1rem 1.5rem;">
-                                    <h6 class="mb-0" style="font-weight: 600; font-size: 0.9375rem;">
-                                        <i class="fas fa-eye me-2"></i>
+                        <div class="col-12 col-lg-4">
+                            <div class="card" style="background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; position: sticky; top: 20px;">
+                                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px 12px 0 0; padding: 0.75rem 1rem;">
+                                    <h6 class="mb-0" style="font-weight: 600; font-size: 0.875rem;">
+                                        <i class="fas fa-eye me-1" style="font-size: 0.75rem;"></i>
                                         Vista Previa
                                     </h6>
                                 </div>
                                 <div class="card-body" style="padding: 0;">
                                     <!-- Placeholder cuando no hay selección -->
-                                    <div x-show="!selectedContent" class="text-center text-muted" style="padding: 3rem 2rem;">
-                                        <i class="fas fa-hand-pointer fa-3x mb-3" style="color: #d1d5db;"></i>
-                                        <p style="font-size: 0.875rem; color: #6b7280;">Selecciona un contenido de la lista para ver la vista previa aquí</p>
+                                    <div x-show="!selectedContent" class="text-center text-muted" style="padding: 2rem 1rem;">
+                                        <i class="fas fa-hand-pointer mb-2" style="color: #d1d5db; font-size: 2rem;"></i>
+                                        <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Selecciona un contenido para ver la vista previa</p>
                                     </div>
                                     
                                     <!-- Mensaje cuando hay video seleccionado pero sin ID -->
-                                    <div x-show="selectedContent?.type === 'video' && !selectedContent?.video_id" class="text-center text-muted" style="padding: 3rem 2rem;">
-                                        <i class="fas fa-exclamation-circle fa-3x mb-3" style="color: #f59e0b;"></i>
-                                        <p style="font-size: 0.875rem; color: #6b7280;">No se pudo cargar la vista previa de este video</p>
+                                    <div x-show="selectedContent?.type === 'video' && !selectedContent?.video_id" class="text-center text-muted" style="padding: 2rem 1rem;">
+                                        <i class="fas fa-exclamation-circle mb-2" style="color: #f59e0b; font-size: 2rem;"></i>
+                                        <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">No se pudo cargar la vista previa de este video</p>
                                     </div>
                                     
                 <!-- Vista previa de video -->
@@ -8034,7 +8094,8 @@
                                 
                                 <!-- Vista previa de documento PDF -->
                                 <div x-show="selectedContent?.type === 'document' && selectedContent?.file_path" 
-                                     style="position: relative; width: 100%; height: 300px; background: #f3f4f6; border-radius: 8px; overflow: hidden;">
+                                     class="document-preview-container"
+                                     style="position: relative; width: 100%; height: 250px; background: #f3f4f6; overflow: hidden;">
                                     <!-- Usar embed para mejor compatibilidad con PDFs -->
                                     <embed :src="selectedContent.file_path + '#view=FitH'" 
                                            type="application/pdf"
@@ -8043,18 +8104,18 @@
                                 
                                 <!-- Mensaje cuando hay documento sin file_path -->
                                 <div x-show="selectedContent?.type === 'document' && !selectedContent?.file_path" 
-                                     style="padding: 3rem 2rem; text-align: center;">
-                                    <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444; margin-bottom: 1rem;"></i>
-                                    <h6 style="font-weight: 600; margin-bottom: 0.5rem;">Documento no disponible</h6>
-                                    <p class="text-muted" style="font-size: 0.875rem;">No se pudo cargar la vista previa de este documento</p>
+                                     style="padding: 2rem 1rem; text-align: center;">
+                                    <i class="fas fa-file-pdf" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 0.5rem;"></i>
+                                    <h6 style="font-weight: 600; margin-bottom: 0.25rem; font-size: 0.875rem;">Documento no disponible</h6>
+                                    <p class="text-muted" style="font-size: 0.75rem; margin: 0;">No se pudo cargar la vista previa</p>
                                 </div>
                             </div>
                                 <!-- Footer con info del contenido seleccionado -->
-                                <div x-show="selectedContent" class="card-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem;">
-                                    <div style="font-size: 0.8125rem;">
-                                        <div class="mb-2" style="font-weight: 600; color: #111827;" x-text="selectedContent?.title"></div>
-                                        <div class="text-muted">
-                                            <i class="far fa-calendar me-1"></i>
+                                <div x-show="selectedContent" class="card-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 0.75rem 1rem;">
+                                    <div style="font-size: 0.75rem;">
+                                        <div class="mb-1" style="font-weight: 600; color: #111827; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" x-text="selectedContent?.title"></div>
+                                        <div class="text-muted" style="font-size: 0.6875rem;">
+                                            <i class="far fa-calendar me-1" style="font-size: 0.625rem;"></i>
                                             <span x-text="formatDate(selectedContent?.created_at)"></span>
                                         </div>
                                     </div>
@@ -17820,16 +17881,16 @@
                                     </iframe>
                                 </div>
                             ` : isDocument ? `
-                                <div class="document-preview-container" style="position: relative; height: 280px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
-                                     onclick="openDocumentFeed('${item.content_url}', '${item.title}')">
+                                <div class="document-preview-container" style="position: relative; height: 280px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                     <div style="width: 100%; height: 280px; overflow-y: auto;">
                                         <canvas id="doc-preview-${item.id}"
                                                 width="1200"
                                                 height="1000"
-                                                style="width: 100%; height: auto; border-radius: 8px; pointer-events: none; display: block;">
+                                                style="width: 100%; height: auto; border-radius: 8px; display: block;">
                                         </canvas>
                                     </div>
-                                    <div class="document-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                                    <div class="document-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                         onclick="openDocumentFeed('${item.content_url}', '${item.title}')">
                                         <i class="fas fa-file-alt" style="color: white; font-size: 16px;"></i>
                                     </div>
                                 </div>
