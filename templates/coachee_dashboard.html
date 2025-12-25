@@ -2860,7 +2860,7 @@
         /* RESPONSIVE PARA MÓVIL */
         @media (max-width: 768px) {
             #taskProgressModal .modal-dialog {
-                margin: 1rem 0.5rem 0.5rem 0.5rem !important;
+                margin: 0.5rem !important;
                 max-width: calc(100vw - 1rem) !important;
             }
             
@@ -2871,41 +2871,57 @@
             }
             
             #taskProgressModal .modal-header {
-                padding: 1.25rem 1.5rem !important;
+                padding: 0.75rem 1rem !important;
                 flex-shrink: 0 !important;
             }
             
             #taskProgressModal .modal-title {
-                font-size: 1.125rem !important;
+                font-size: 0.9375rem !important;
             }
             
             #taskProgressModal .modal-body {
-                padding: 1.25rem 1.5rem !important;
+                padding: 0.75rem 1rem !important;
                 overflow-y: auto !important;
                 flex: 1 1 auto !important;
                 -webkit-overflow-scrolling: touch !important;
             }
             
             #taskProgressModal .form-label {
-                font-size: 0.875rem !important;
+                font-size: 0.75rem !important;
+                margin-bottom: 0.25rem !important;
             }
             
             #taskProgressModal .form-select,
             #taskProgressModal .form-control {
-                font-size: 0.9375rem !important;
-                padding: 0.625rem !important;
+                font-size: 0.8125rem !important;
+                padding: 0.5rem !important;
+            }
+            
+            #taskProgressModal .mb-2 {
+                margin-bottom: 0.75rem !important;
+            }
+            
+            #taskProgressModal textarea {
+                min-height: 60px !important;
+                rows: 2 !important;
+            }
+            
+            #taskProgressModal #progressValue {
+                font-size: 0.875rem !important;
             }
             
             #taskProgressModal .modal-footer {
-                padding: 1rem 1.5rem !important;
+                padding: 0.75rem 1rem !important;
                 flex-shrink: 0 !important;
-                flex-wrap: wrap !important;
+                flex-wrap: nowrap !important;
+                gap: 0.5rem !important;
             }
             
             #taskProgressModal .modal-footer .btn {
                 flex: 1 1 auto !important;
-                min-width: 100px !important;
-                padding: 0.625rem 1rem !important;
+                min-width: auto !important;
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.8125rem !important;
             }
         }
         
@@ -8978,13 +8994,25 @@
                     // 📱 MOBILE: Scroll automático hacia la sección
                     if (window.innerWidth <= 768) {
                         setTimeout(() => {
-                            const contentArea = document.querySelector('.col-md-9');
-                            if (contentArea) {
-                                contentArea.scrollIntoView({ 
-                                    behavior: 'smooth', 
-                                    block: 'start'
-                                });
-                                console.log('📱 Mobile: Scrolling to content area');
+                            // Para tareas, hacer scroll al contenedor específico para mostrar el título
+                            if (tabId === 'tasks') {
+                                const tasksPane = document.getElementById('tasks');
+                                if (tasksPane) {
+                                    tasksPane.scrollIntoView({ 
+                                        behavior: 'smooth', 
+                                        block: 'start'
+                                    });
+                                    console.log('📱 Mobile: Scrolling to tasks section with title');
+                                }
+                            } else {
+                                const contentArea = document.querySelector('.col-md-9');
+                                if (contentArea) {
+                                    contentArea.scrollIntoView({ 
+                                        behavior: 'smooth', 
+                                        block: 'start'
+                                    });
+                                    console.log('📱 Mobile: Scrolling to content area');
+                                }
                             }
                         }, 100);
                     }
@@ -11708,45 +11736,28 @@
                                 </span>
                             </div>
                             <!-- Barra de progreso verde simple -->
-                            <div style="height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                            <div style="height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;">
                                 <div style="width: ${progress}%; height: 100%; background: #10b981 !important; border-radius: 4px; transition: width 0.6s ease;"></div>
                             </div>
-                        </div>
-                            <!-- Indicadores de milestone -->
-                            <div style="display: flex; justify-content: space-between; margin-top: 0.375rem; padding: 0 2px;">
-                                <span style="font-size: 0.65rem; color: ${progress >= 25 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
-                                    ${progress >= 25 ? '✓' : '○'} 25%
-                                </span>
-                                <span style="font-size: 0.65rem; color: ${progress >= 50 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
-                                    ${progress >= 50 ? '✓' : '○'} 50%
-                                </span>
-                                <span style="font-size: 0.65rem; color: ${progress >= 75 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
-                                    ${progress >= 75 ? '✓' : '○'} 75%
-                                </span>
-                                <span style="font-size: 0.65rem; color: ${progress === 100 ? '#10b981' : '#94a3b8'}; font-weight: 600;">
-                                    ${progress === 100 ? '✓' : '○'} 100%
-                                </span>
+                            <!-- Metadata y Acción -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.75rem; color: #64748b;">
+                                    <span style="background: ${status.bg}; color: ${status.color}; padding: 0.3rem 0.5rem; border-radius: 5px; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
+                                        <i class="fas fa-circle" style="font-size: 0.4rem;"></i>
+                                        ${status.label}
+                                    </span>
+                                    ${daysInfo}
+                                    ${task.coach?.name ? `<span style="display: flex; align-items: center; gap: 0.375rem;"><i class="fas fa-user-tie" style="font-size: 0.7rem; color: #667eea;"></i> ${task.coach.name.split(' ')[0]}</span>` : ''}
+                                </div>
+                                <button type="button" class="btn btn-sm" 
+                                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); letter-spacing: 0.01em;"
+                                        onmouseover="this.style.background='linear-gradient(135deg, #5568d3 0%, #6a3e9a 100%)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
+                                        onmouseout="this.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(102, 126, 234, 0.3)';"
+                                        onclick="event.stopPropagation(); openTaskProgressModal(${task.id});">
+                                    <i class="fas fa-pen" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
+                                    Actualizar
+                                </button>
                             </div>
-                        </div>
-                        
-                        <!-- Footer: Metadata y Acción -->
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.75rem; color: #64748b;">
-                                <span style="background: ${status.bg}; color: ${status.color}; padding: 0.3rem 0.5rem; border-radius: 5px; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                                    <i class="fas fa-circle" style="font-size: 0.4rem;"></i>
-                                    ${status.label}
-                                </span>
-                                ${daysInfo}
-                                ${task.coach?.name ? `<span style="display: flex; align-items: center; gap: 0.375rem;"><i class="fas fa-user-tie" style="font-size: 0.7rem; color: #667eea;"></i> ${task.coach.name.split(' ')[0]}</span>` : ''}
-                            </div>
-                            <button type="button" class="btn btn-sm" 
-                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); letter-spacing: 0.01em;"
-                                    onmouseover="this.style.background='linear-gradient(135deg, #5568d3 0%, #6a3e9a 100%)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)';"
-                                    onmouseout="this.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(102, 126, 234, 0.3)';"
-                                    onclick="event.stopPropagation(); openTaskProgressModal(${task.id});">
-                                <i class="fas fa-pen" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
-                                Actualizar
-                            </button>
                         </div>
                     </div>
                 `;
