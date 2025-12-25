@@ -2720,7 +2720,11 @@
         /* ESTILOS OPTIMIZADOS PARA MODAL DE PROGRESO DE TAREAS */
         #taskProgressModal .modal-dialog {
             max-width: 600px !important;
-            margin: 5rem auto 1.75rem auto !important;
+            margin: auto !important;
+            position: absolute !important;
+            top: 67.5% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
         }
         
         #taskProgressModal .modal-content {
@@ -2730,34 +2734,8 @@
             overflow: hidden !important;
         }
         
-        #taskProgressModal .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-            padding: 1.25rem 1.75rem !important;
-            border-bottom: none !important;
-        }
-        
-        #taskProgressModal .modal-title {
-            font-size: 1.125rem !important;
-            font-weight: 600 !important;
-            color: white !important;
-        }
-        
-        #taskProgressModal .modal-title i {
-            opacity: 0.9 !important;
-        }
-        
-        #taskProgressModal .btn-close {
-            filter: brightness(0) invert(1) !important;
-            opacity: 0.8 !important;
-        }
-        
-        #taskProgressModal .btn-close:hover {
-            opacity: 1 !important;
-        }
-        
         #taskProgressModal .modal-body {
-            padding: 1rem 1.75rem !important;
+            padding: 1.5rem 1.75rem !important;
             background: #fafafa !important;
         }
         
@@ -2826,7 +2804,7 @@
             gap: 0.75rem !important;
         }
         
-        #taskProgressModal .modal-footer .btn {
+        #taskProgressModal .btn {
             padding: 0.625rem 1.25rem !important;
             font-weight: 600 !important;
             border-radius: 8px !important;
@@ -2862,6 +2840,11 @@
             #taskProgressModal .modal-dialog {
                 margin: 0.5rem !important;
                 max-width: calc(100vw - 1rem) !important;
+                width: calc(100vw - 1rem) !important;
+                position: absolute !important;
+                top: 67.5% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
             }
             
             #taskProgressModal .modal-content {
@@ -2870,17 +2853,8 @@
                 flex-direction: column !important;
             }
             
-            #taskProgressModal .modal-header {
-                padding: 0.75rem 1rem !important;
-                flex-shrink: 0 !important;
-            }
-            
-            #taskProgressModal .modal-title {
-                font-size: 0.9375rem !important;
-            }
-            
             #taskProgressModal .modal-body {
-                padding: 0.75rem 1rem !important;
+                padding: 1rem 1rem !important;
                 overflow-y: auto !important;
                 flex: 1 1 auto !important;
                 -webkit-overflow-scrolling: touch !important;
@@ -2934,17 +2908,6 @@
             
             #taskProgressModal .modal-body {
                 padding: 1.75rem !important;
-            }
-            
-            #taskProgressModal .modal-footer {
-                padding: 1.25rem 1.75rem !important;
-            }
-            #taskProgressModal .modal-body {
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
             }
         }
         
@@ -8349,12 +8312,6 @@
     <div class="modal fade" id="taskProgressModal" tabindex="-1" aria-labelledby="taskProgressModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="taskProgressModalLabel">
-                        <i class="fas fa-tasks me-2"></i>
-                        Actualizar Progreso de Tarea
-                    </h5>
-                </div>
                 <div class="modal-body">
                     <form id="taskProgressForm">
                         <input type="hidden" id="taskId" />
@@ -8384,7 +8341,7 @@
                             </div>
                         </div>
                         
-                        <div class="mb-0">
+                        <div class="mb-2">
                             <label for="taskNotes" class="form-label">
                                 <i class="fas fa-sticky-note"></i>
                                 Notas (Opcional)
@@ -8395,14 +8352,18 @@
                                 Tu coach verá estos comentarios
                             </small>
                         </div>
+                        
+                        <!-- Botones dentro del modal-body -->
+                        <div style="display: flex !important; gap: 0.5rem !important; margin-top: 1.5rem !important; visibility: visible !important; opacity: 1 !important;">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="flex: 1 !important; padding: 0.625rem 1.25rem !important; font-weight: 600 !important; border-radius: 8px !important; font-size: 0.875rem !important; background: #f3f4f6 !important; color: #374151 !important; border: 1px solid #e5e7eb !important; display: block !important;">
+                                Cancelar
+                            </button>
+                            <button type="button" class="btn btn-task" onclick="saveTaskProgress()" style="flex: 1 !important; padding: 0.625rem 1.25rem !important; font-weight: 600 !important; border-radius: 8px !important; font-size: 0.875rem !important; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; color: white !important; border: none !important; display: block !important;">
+                                <i class="fas fa-save me-2"></i>
+                                Guardar Progreso
+                            </button>
+                        </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-task" onclick="saveTaskProgress()">
-                        <i class="fas fa-save me-2"></i>
-                        Guardar Progreso
-                    </button>
                 </div>
             </div>
         </div>
@@ -12602,18 +12563,15 @@
                 return;
             }
             
-            // Actualizar título del modal con información de la tarea
-            const modalTitle = document.getElementById('taskProgressModalLabel');
-            if (modalTitle) {
-                modalTitle.innerHTML = `
-                    <i class="fas fa-tasks me-2"></i>
-                    Actualizar Progreso
-                `;
-            }
-            
             // Mostrar información de la tarea en el modal
             const modalBody = document.querySelector('#taskProgressModal .modal-body');
             const formHtml = `
+                <!-- Título del modal -->
+                <h5 style="margin: 0 0 1.25rem 0; font-size: 1.125rem; font-weight: 600; color: #1e293b; display: flex; align-items: center;">
+                    <i class="fas fa-tasks" style="margin-right: 0.5rem; color: #667eea;"></i>
+                    Actualizar Progreso
+                </h5>
+                
                 <!-- Información de la tarea -->
                 <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem; border-left: 3px solid #667eea;">
                     <h6 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; font-weight: 600; color: #1e293b;">
@@ -12664,6 +12622,19 @@
                         <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 0.25rem;">
                             💡 Tu coach podrá ver estos comentarios
                         </small>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" 
+                                style="flex: 1; padding: 0.625rem 1.25rem; font-weight: 600; border-radius: 8px; font-size: 0.875rem; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-task" onclick="saveTaskProgress()" 
+                                style="flex: 1; padding: 0.625rem 1.25rem; font-weight: 600; border-radius: 8px; font-size: 0.875rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                            <i class="fas fa-save me-2"></i>
+                            Guardar Progreso
+                        </button>
                     </div>
                 </form>
             `;
