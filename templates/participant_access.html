@@ -337,6 +337,28 @@
             font-size: 0.85rem;
         }
     }
+
+    /* Forgot Password Link */
+    .forgot-password-link {
+        display: inline-block;
+        color: #3B82F6 !important;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .forgot-password-link:hover {
+        color: #2563EB !important;
+        background: rgba(59, 130, 246, 0.2);
+        border-color: #3B82F6;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        transform: translateY(-1px);
+    }
 </style>
 {% endblock %}
 
@@ -392,6 +414,12 @@
                                 <label for="password"><i class="fas fa-lock me-2"></i>Contraseña</label>
                             </div>
                             
+                            <div class="text-center mb-3">
+                                <a href="#" id="forgotPasswordLink" class="forgot-password-link">
+                                    <i class="fas fa-question-circle me-1"></i>¿Olvidaste tu contraseña?
+                                </a>
+                            </div>
+                            
                             <button type="submit" class="login-btn">
                                 <i class="fas fa-sign-in-alt me-2"></i>
                                 Acceder como Coachee
@@ -406,6 +434,54 @@
                     </div>
                 </div>
                 
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Recuperación de Contraseña -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; padding: 2rem;">
+                <h5 class="modal-title w-100 text-center text-white" id="forgotPasswordModalLabel" style="font-family: 'Lobster Two', cursive; font-size: 2rem;">
+                    <i class="fas fa-key me-2"></i>
+                    Recuperar Contraseña
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="forgotPasswordStep1">
+                    <p class="text-center mb-4 text-muted">
+                        Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.
+                    </p>
+                    <form id="forgotPasswordForm">
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="forgotPasswordEmail" placeholder="Email" required>
+                            <label for="forgotPasswordEmail"><i class="fas fa-envelope me-2"></i>Email</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="padding: 0.75rem; border-radius: 10px; font-weight: 600;">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            Enviar enlace de recuperación
+                        </button>
+                    </form>
+                </div>
+                
+                <div id="forgotPasswordStep2" style="display: none;">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="mb-3">¡Email enviado!</h5>
+                        <p class="text-muted">
+                            Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.<br>
+                            <small>Revisa tu bandeja de entrada y spam.</small>
+                        </p>
+                        <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -506,6 +582,70 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 5000);
     }
+    
+    // Manejo del modal de recuperación de contraseña
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const forgotPasswordModal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    
+    // Abrir modal al hacer click en "¿Olvidaste tu contraseña?"
+    forgotPasswordLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        forgotPasswordModal.show();
+    });
+    
+    // Manejar envío del formulario
+    forgotPasswordForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const emailInput = document.getElementById('forgotPasswordEmail');
+        const submitBtn = forgotPasswordForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Deshabilitar botón y mostrar loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+        
+        try {
+            const response = await fetch('/api/coachee/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: emailInput.value
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Mostrar paso 2 (confirmación)
+                document.getElementById('forgotPasswordStep1').style.display = 'none';
+                document.getElementById('forgotPasswordStep2').style.display = 'block';
+            } else {
+                // Mostrar error
+                alert(result.error || 'Error al procesar la solicitud');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión. Intenta nuevamente.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+    
+    // Resetear modal al cerrarlo
+    document.getElementById('forgotPasswordModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('forgotPasswordStep1').style.display = 'block';
+        document.getElementById('forgotPasswordStep2').style.display = 'none';
+        document.getElementById('forgotPasswordEmail').value = '';
+        const submitBtn = forgotPasswordForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar enlace de recuperación';
+    });
 });
 </script>
 {% endblock %}

@@ -1004,9 +1004,13 @@ class Assessment(db.Model):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_active = db.Column(db.Boolean, default=True)
+    status = db.Column(db.String(20), default='published')  # 'draft' o 'published'
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Coach creador
+    category = db.Column(db.String(100), nullable=True)  # Categoría de la evaluación
     
     questions = db.relationship('Question', backref='assessment', lazy=True, cascade='all, delete-orphan')
     results = db.relationship('AssessmentResult', backref='assessment_ref', lazy=True)
+    creator = db.relationship('User', backref='created_assessments', foreign_keys=[coach_id])
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -2998,6 +3002,120 @@ def calculate_growth_preparation_score(responses):
     
     # Retornar total_score (suma de respuestas) para consistencia con otras evaluaciones
     return total_score, result_text, dimensional_scores
+
+
+def calculate_custom_assessment_score(responses, assessment_id):
+    """Calcula puntuación para evaluaciones personalizadas creadas por coaches"""
+    logger.info(f"🎯 CALCULATE_CUSTOM: Starting calculation for assessment {assessment_id} with {len(responses) if responses else 0} responses")
+    
+    if not responses:
+        return 0, "Sin respuestas disponibles", None
+    
+    # Convertir respuestas a diccionario si es necesario
+    if isinstance(responses, list):
+        response_dict = {str(r['question_id']): r['selected_option'] for r in responses}
+    else:
+        response_dict = responses
+    
+    try:
+        # Obtener preguntas de la evaluación
+        questions = Question.query.filter_by(
+            assessment_id=assessment_id,
+            is_active=True
+        ).order_by(Question.order).all()
+        
+        if not questions:
+            logger.warning(f"🎯 CALCULATE_CUSTOM: No questions found for assessment {assessment_id}")
+            return 0, "Evaluación sin preguntas configuradas", None
+        
+        logger.info(f"🎯 CALCULATE_CUSTOM: Found {len(questions)} questions")
+        
+        # Crear mapeo de question_id a dimensión
+        question_dimensions = {}
+        dimensions_set = set()
+        
+        for question in questions:
+            question_dimensions[question.id] = question.dimension
+            if question.dimension:
+                dimensions_set.add(question.dimension)
+        
+        logger.info(f"🎯 CALCULATE_CUSTOM: Dimensions found: {dimensions_set}")
+        
+        # Si no hay dimensiones definidas, usar cálculo simple
+        if not dimensions_set or all(d is None for d in dimensions_set):
+            logger.info(f"🎯 CALCULATE_CUSTOM: No dimensions defined, using simple calculation")
+            total_score = sum(int(v) for v in response_dict.values())
+            max_possible = len(response_dict) * 5  # Asumiendo escala Likert 1-5
+            percentage_score = (total_score / max_possible * 100) if max_possible > 0 else 0
+            
+            result_text = f"Puntuación obtenida: {percentage_score:.0f}%"
+            
+            # Agregar interpretación básica
+            if percentage_score >= 80:
+                result_text += " - Excelente desempeño"
+            elif percentage_score >= 60:
+                result_text += " - Buen desempeño"
+            elif percentage_score >= 40:
+                result_text += " - Desempeño moderado"
+            else:
+                result_text += " - Área de oportunidad"
+            
+            return total_score, result_text, None
+        
+        # Calcular scores por dimensión
+        dimension_responses = {}
+        
+        for question_id_str, response_value in response_dict.items():
+            question_id = int(question_id_str)
+            if question_id in question_dimensions:
+                dimension = question_dimensions[question_id]
+                if dimension:  # Solo si tiene dimensión asignada
+                    if dimension not in dimension_responses:
+                        dimension_responses[dimension] = []
+                    dimension_responses[dimension].append(int(response_value))
+        
+        logger.info(f"🎯 CALCULATE_CUSTOM: Dimension responses: {dimension_responses}")
+        
+        # Calcular puntaje promedio por dimensión (escala 0-100)
+        dimensional_scores = {}
+        for dimension, responses_list in dimension_responses.items():
+            avg_response = sum(responses_list) / len(responses_list)
+            # Convertir de escala 1-5 a 0-100
+            dimension_score = ((avg_response - 1) / 4) * 100
+            dimensional_scores[dimension] = round(dimension_score, 1)
+        
+        logger.info(f"🎯 CALCULATE_CUSTOM: Dimensional scores: {dimensional_scores}")
+        
+        # Calcular puntaje total
+        total_score = sum(int(v) for v in response_dict.values())
+        max_possible = len(response_dict) * 5
+        overall_percentage = (total_score / max_possible * 100) if max_possible > 0 else 0
+        
+        # Generar texto de resultado con análisis por dimensión
+        result_text = f"Puntuación general: {overall_percentage:.0f}%\n\n"
+        result_text += "Análisis por dimensión:\n"
+        
+        for dimension, score in sorted(dimensional_scores.items(), key=lambda x: x[1], reverse=True):
+            if score >= 75:
+                level = "Excelente"
+            elif score >= 60:
+                level = "Bueno"
+            elif score >= 40:
+                level = "Moderado"
+            else:
+                level = "Área de mejora"
+            
+            result_text += f"• {dimension}: {score:.0f}% ({level})\n"
+        
+        logger.info(f"🎯 CALCULATE_CUSTOM: Total score: {total_score}, Overall: {overall_percentage:.0f}%")
+        
+        return total_score, result_text, dimensional_scores
+        
+    except Exception as e:
+        logger.error(f"❌ CALCULATE_CUSTOM: Error calculating score: {str(e)}", exc_info=True)
+        # Fallback a cálculo simple
+        total_score = sum(int(v) for v in response_dict.values())
+        return total_score, "Evaluación completada", None
 
 
 def generate_disc_recommendations(disc_scores, overall_score):
@@ -5143,6 +5261,149 @@ def coach_reset_password():
 
 # Endpoint de cambio de contraseña de admin eliminado (duplicado) - usar el de línea 3818
 
+# === ENDPOINTS DE RECUPERACIÓN DE CONTRASEÑA PARA COACHEES ===
+
+@app.route('/api/coachee/forgot-password', methods=['POST'])
+def coachee_forgot_password():
+    """Endpoint para solicitar recuperación de contraseña del coachee"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'error': 'Email requerido'}), 400
+        
+        # Buscar usuario coachee con ese email
+        coachee_user = User.query.filter(
+            User.email == email,
+            User.role == 'coachee',
+            User.active == True
+        ).first()
+        
+        # Por seguridad, siempre devolver el mismo mensaje
+        # (no revelar si el email existe o no)
+        if coachee_user:
+            # Invalidar tokens anteriores del usuario
+            PasswordResetToken.query.filter_by(
+                user_id=coachee_user.id,
+                used=False
+            ).update({'used': True})
+            db.session.commit()
+            
+            # Generar nuevo token
+            reset_token = generate_reset_token()
+            token_record = PasswordResetToken(
+                user_id=coachee_user.id,
+                token=reset_token,
+                expires_at=datetime.utcnow() + timedelta(hours=1)
+            )
+            
+            db.session.add(token_record)
+            db.session.commit()
+            
+            # Enviar email
+            send_password_reset_email(email, reset_token, 'coachee')
+            
+            # Log de seguridad
+            log_security_event(
+                event_type='password_reset_requested',
+                severity='info',
+                user_id=coachee_user.id,
+                username=coachee_user.username,
+                description=f'Password reset requested for coachee {coachee_user.email}'
+            )
+        
+        # Siempre devolver éxito (seguridad)
+        return jsonify({
+            'success': True,
+            'message': 'Si el email existe, recibirás instrucciones para restablecer tu contraseña.'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in coachee forgot password: {str(e)}")
+        return jsonify({'error': 'Error procesando solicitud'}), 500
+
+@app.route('/reset-password/coachee/<token>')
+def coachee_reset_password_page(token):
+    """Página para restablecer contraseña del coachee con token"""
+    try:
+        # Verificar que el token existe y es válido
+        token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+        
+        if not token_record:
+            logger.warning(f"Token not found in database: {token}")
+            return render_template('password_reset_invalid.html', role='coachee', reason='not_found')
+        
+        if not token_record.is_valid():
+            logger.warning(f"Token expired or used: {token}")
+            return render_template('password_reset_invalid.html', role='coachee', reason='expired')
+        
+        logger.info(f"Valid token accessed: {token} for user_id: {token_record.user_id}")
+        return render_template('password_reset_form.html', token=token, role='coachee')
+        
+    except Exception as e:
+        logger.error(f"Error in coachee_reset_password_page: {str(e)}")
+        logger.error(f"Token received: {token}")
+        return render_template('password_reset_invalid.html', role='coachee', reason='error', error_message=str(e))
+
+@app.route('/api/coachee/reset-password', methods=['POST'])
+def coachee_reset_password():
+    """Endpoint para restablecer contraseña del coachee con token"""
+    try:
+        data = request.get_json()
+        token = data.get('token', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        if not all([token, new_password, confirm_password]):
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'error': 'Las contraseñas no coinciden'}), 400
+        
+        # Validar fortaleza de contraseña
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # Verificar token
+        token_record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+        
+        if not token_record or not token_record.is_valid():
+            return jsonify({'error': 'Token inválido o expirado'}), 400
+        
+        # Obtener usuario
+        user = token_record.user
+        
+        # Actualizar contraseña
+        user.set_password(new_password)
+        db.session.add(user)  # Asegurar que SQLAlchemy detecte el cambio
+        
+        # Marcar token como usado
+        token_record.used = True
+        
+        db.session.flush()     # Forzar escritura inmediata a BD
+        db.session.commit()    # Confirmar cambios
+        db.session.expire_all()  # Expirar caché DESPUÉS del commit
+        
+        # Log de seguridad
+        log_security_event(
+            event_type='password_reset_completed',
+            severity='info',
+            user_id=user.id,
+            username=user.username,
+            description=f'Password successfully reset for coachee {user.email}'
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña restablecida correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error resetting coachee password: {str(e)}")
+        return jsonify({'error': 'Error al restablecer contraseña'}), 500
+
 @app.route('/api/admin/create-coach', methods=['POST'])
 @admin_required
 def api_admin_create_coach():
@@ -5741,9 +6002,12 @@ def api_save_assessment():
         elif assessment_id_int == 6:  # Evaluación Preparación para crecer 2026
             logger.info("🎯 SAVE_ASSESSMENT: Using calculate_growth_preparation_score function")
             score, result_text, dimensional_scores = calculate_growth_preparation_score(responses)
-        else:  # Evaluación de Asertividad (ID=1) o cualquier otra
-            logger.info(f"🎯 SAVE_ASSESSMENT: Using calculate_assertiveness_score function for assessment_id={assessment_id_int}")
+        elif assessment_id_int == 1:  # Evaluación de Asertividad
+            logger.info(f"🎯 SAVE_ASSESSMENT: Using calculate_assertiveness_score function")
             score, result_text, dimensional_scores = calculate_assertiveness_score(responses)
+        else:  # Evaluaciones personalizadas creadas por coaches
+            logger.info(f"🎯 SAVE_ASSESSMENT: Using calculate_custom_assessment_score for assessment_id={assessment_id_int}")
+            score, result_text, dimensional_scores = calculate_custom_assessment_score(responses, assessment_id_int)
         
         # Determinar número de respuestas
         num_responses = len(responses) if isinstance(responses, list) else len(responses)
@@ -7062,6 +7326,393 @@ def api_coachee_development_plans():
     except Exception as e:
         logger.error(f"Error en api_coachee_development_plans: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error: {str(e)}'}), 500
+
+# ============================================
+# 📝 ENDPOINTS DE CREACIÓN DE EVALUACIONES
+# ============================================
+
+@app.route('/api/coach/assessments/create', methods=['POST'])
+@coach_session_required
+def api_coach_create_assessment():
+    """Crear una nueva evaluación (borrador o publicada)"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        if not data.get('title'):
+            return jsonify({'error': 'El título es requerido'}), 400
+        
+        if not data.get('questions') or not isinstance(data['questions'], list) or len(data['questions']) == 0:
+            return jsonify({'error': 'Debe incluir al menos una pregunta'}), 400
+        
+        logger.info(f"📝 CREATE-ASSESSMENT: Coach {current_coach.username} creando evaluación '{data.get('title')}'")
+        
+        # Crear evaluación
+        status = data.get('status', 'draft')  # Por defecto es borrador
+        assessment = Assessment(
+            title=data['title'],
+            description=data.get('description', ''),
+            category=data.get('category', 'Otros'),
+            status=status,
+            coach_id=current_coach.id,
+            is_active=(status == 'published')  # Solo activa si está publicada
+        )
+        
+        db.session.add(assessment)
+        db.session.flush()  # Para obtener el ID
+        
+        # Crear preguntas
+        for idx, q_data in enumerate(data['questions']):
+            if not q_data.get('text'):
+                continue
+                
+            question = Question(
+                assessment_id=assessment.id,
+                text=q_data['text'],
+                question_type=q_data.get('type', 'likert'),
+                dimension=q_data.get('dimension', ''),
+                order=idx + 1,
+                is_active=True
+            )
+            db.session.add(question)
+        
+        db.session.commit()
+        
+        logger.info(f"✅ CREATE-ASSESSMENT: Evaluación {assessment.id} creada exitosamente (status: {status})")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Evaluación {"guardada como borrador" if status == "draft" else "publicada"} exitosamente',
+            'assessment': {
+                'id': assessment.id,
+                'title': assessment.title,
+                'status': assessment.status,
+                'category': assessment.category,
+                'questions_count': len(data['questions'])
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_create_assessment: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al crear evaluación: {str(e)}'}), 500
+
+@app.route('/api/coach/assessments/drafts', methods=['GET'])
+@coach_session_required
+def api_coach_get_draft_assessments():
+    """Obtener evaluaciones en borrador del coach"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Obtener borradores
+        drafts = Assessment.query.filter_by(
+            coach_id=current_coach.id,
+            status='draft'
+        ).order_by(Assessment.created_at.desc()).all()
+        
+        drafts_list = []
+        for assessment in drafts:
+            questions_count = Question.query.filter_by(assessment_id=assessment.id).count()
+            drafts_list.append({
+                'id': assessment.id,
+                'title': assessment.title,
+                'description': assessment.description,
+                'category': assessment.category,
+                'questions_count': questions_count,
+                'created_at': assessment.created_at.isoformat()
+            })
+        
+        logger.info(f"📋 DRAFT-ASSESSMENTS: Returning {len(drafts_list)} drafts for coach {current_coach.id}")
+        
+        return jsonify({
+            'success': True,
+            'drafts': drafts_list
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_get_draft_assessments: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/coach/assessments/<int:assessment_id>/publish', methods=['PUT'])
+@coach_session_required
+def api_coach_publish_assessment(assessment_id):
+    """Publicar una evaluación (cambiar de draft a published)"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        logger.info(f"📤 PUBLISH-ASSESSMENT: Coach {current_coach.id} publicando evaluación {assessment_id}")
+        
+        # Buscar la evaluación
+        assessment = Assessment.query.filter_by(
+            id=assessment_id,
+            coach_id=current_coach.id
+        ).first()
+        
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        if assessment.status != 'draft':
+            return jsonify({'error': 'Solo se pueden publicar evaluaciones en borrador'}), 400
+        
+        # Verificar que tenga preguntas
+        questions_count = Question.query.filter_by(assessment_id=assessment_id).count()
+        if questions_count == 0:
+            return jsonify({'error': 'No se puede publicar una evaluación sin preguntas'}), 400
+        
+        # Cambiar a publicada
+        assessment.status = 'published'
+        assessment.is_active = True
+        
+        db.session.commit()
+        
+        logger.info(f"✅ PUBLISH-ASSESSMENT: Evaluación {assessment_id} publicada exitosamente")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Evaluación publicada exitosamente',
+            'assessment': {
+                'id': assessment.id,
+                'title': assessment.title,
+                'status': assessment.status
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_publish_assessment: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al publicar evaluación: {str(e)}'}), 500
+
+@app.route('/api/coach/assessments/<int:assessment_id>', methods=['DELETE'])
+@coach_session_required
+def api_coach_delete_assessment(assessment_id):
+    """Eliminar una evaluación borrador"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Buscar la evaluación
+        assessment = Assessment.query.filter_by(
+            id=assessment_id,
+            coach_id=current_coach.id,
+            status='draft'
+        ).first()
+        
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada o no se puede eliminar'}), 404
+        
+        db.session.delete(assessment)
+        db.session.commit()
+        
+        logger.info(f"🗑️ DELETE-ASSESSMENT: Evaluación {assessment_id} eliminada por coach {current_coach.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Evaluación eliminada exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_delete_assessment: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al eliminar evaluación: {str(e)}'}), 500
+
+@app.route('/api/coach/assessments/<int:assessment_id>/details', methods=['GET'])
+@coach_session_required
+def api_coach_get_assessment_details(assessment_id):
+    """Obtener detalles completos de una evaluación borrador para edición"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Buscar la evaluación
+        assessment = Assessment.query.filter_by(
+            id=assessment_id,
+            coach_id=current_coach.id,
+            status='draft'
+        ).first()
+        
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada o no es un borrador'}), 404
+        
+        # Obtener preguntas
+        questions = Question.query.filter_by(
+            assessment_id=assessment_id
+        ).order_by(Question.order).all()
+        
+        questions_list = []
+        for q in questions:
+            questions_list.append({
+                'id': q.id,
+                'text': q.text,
+                'dimension': q.dimension,
+                'question_type': q.question_type,
+                'order': q.order
+            })
+        
+        logger.info(f"📖 GET-ASSESSMENT-DETAILS: Obteniendo detalles de evaluación {assessment_id}")
+        
+        return jsonify({
+            'success': True,
+            'assessment': {
+                'id': assessment.id,
+                'title': assessment.title,
+                'description': assessment.description,
+                'category': assessment.category,
+                'status': assessment.status,
+                'questions': questions_list
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_get_assessment_details: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al obtener detalles: {str(e)}'}), 500
+
+@app.route('/api/coach/assessments/<int:assessment_id>/update', methods=['PUT'])
+@coach_session_required
+def api_coach_update_assessment(assessment_id):
+    """Actualizar una evaluación borrador"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        if not data.get('title'):
+            return jsonify({'error': 'El título es requerido'}), 400
+        
+        if not data.get('questions') or not isinstance(data['questions'], list) or len(data['questions']) == 0:
+            return jsonify({'error': 'Debe incluir al menos una pregunta'}), 400
+        
+        # Buscar la evaluación
+        assessment = Assessment.query.filter_by(
+            id=assessment_id,
+            coach_id=current_coach.id,
+            status='draft'
+        ).first()
+        
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada o no se puede editar'}), 404
+        
+        logger.info(f"📝 UPDATE-ASSESSMENT: Coach {current_coach.username} actualizando evaluación {assessment_id}")
+        
+        # Actualizar campos
+        assessment.title = data['title']
+        assessment.description = data.get('description')
+        assessment.category = data.get('category')
+        
+        # Eliminar preguntas anteriores
+        Question.query.filter_by(assessment_id=assessment_id).delete()
+        
+        # Agregar nuevas preguntas
+        for q_data in data['questions']:
+            question = Question(
+                assessment_id=assessment.id,
+                text=q_data['text'],
+                dimension=q_data.get('dimension'),
+                question_type=q_data.get('question_type', 'likert'),
+                order=q_data.get('order', 1)
+            )
+            db.session.add(question)
+        
+        db.session.commit()
+        
+        logger.info(f"✅ UPDATE-ASSESSMENT: Evaluación {assessment_id} actualizada exitosamente")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Evaluación actualizada exitosamente',
+            'assessment': {
+                'id': assessment.id,
+                'title': assessment.title,
+                'status': assessment.status,
+                'category': assessment.category,
+                'questions_count': len(data['questions'])
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_update_assessment: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al actualizar evaluación: {str(e)}'}), 500
+
+@app.route('/api/coach/assessments/<int:assessment_id>/delete-published', methods=['DELETE'])
+@coach_session_required
+def api_coach_delete_published_assessment(assessment_id):
+    """Eliminar una evaluación publicada (solo si no tiene resultados)"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Buscar la evaluación
+        assessment = Assessment.query.get(assessment_id)
+        
+        if not assessment:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        
+        # Verificar que es del coach o que puede ser eliminada
+        # Permitir eliminar si: es del coach Y no tiene resultados
+        # O si no tiene coach_id (evaluaciones del sistema con permiso especial)
+        if assessment.coach_id and assessment.coach_id != current_coach.id:
+            return jsonify({'error': 'No tienes permiso para eliminar esta evaluación'}), 403
+        
+        # Verificar si tiene resultados
+        results_count = AssessmentResult.query.filter_by(assessment_id=assessment_id).count()
+        if results_count > 0:
+            return jsonify({
+                'error': f'No se puede eliminar. Esta evaluación tiene {results_count} resultado(s) asociado(s).'
+            }), 400
+        
+        # Verificar si está asignada a coachees
+        tasks_count = Task.query.filter(
+            Task.title.like(f'%{assessment.title}%'),
+            Task.category == 'evaluation',
+            Task.is_active == True
+        ).count()
+        
+        if tasks_count > 0:
+            return jsonify({
+                'error': f'No se puede eliminar. Esta evaluación está asignada a {tasks_count} coachee(s).'
+            }), 400
+        
+        logger.info(f"🗑️ DELETE-PUBLISHED-ASSESSMENT: Eliminando evaluación {assessment_id} por coach {current_coach.id}")
+        
+        # Eliminar preguntas asociadas
+        Question.query.filter_by(assessment_id=assessment_id).delete()
+        
+        # Eliminar la evaluación
+        db.session.delete(assessment)
+        db.session.commit()
+        
+        logger.info(f"✅ DELETE-PUBLISHED-ASSESSMENT: Evaluación {assessment_id} eliminada exitosamente")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Evaluación eliminada exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_delete_published_assessment: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al eliminar evaluación: {str(e)}'}), 500
 
 @app.route('/api/coach/pending-evaluations', methods=['GET'])
 @coach_session_required

@@ -4185,100 +4185,128 @@
                 </div>
             </div>
 
-            <!-- Crear o Cargar Evaluaciones Module -->
+            <!-- Crear Evaluaciones Module -->
             <div id="crear-cargar-evaluaciones" class="module-content" style="display: none; scroll-margin-top: 80px;">
-                <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
-                    <!-- Header -->
-                    <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                            <div>
-                                <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                    <i class="fas fa-file-upload"></i>
-                                    Crear Nueva Evaluación (En Proceso)
+                <!-- Tabs para Nueva Evaluación y Borradores -->
+                <ul class="nav nav-tabs mb-4" style="border-bottom: 2px solid #e5e7eb;">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="nueva-eval-tab" data-bs-toggle="tab" data-bs-target="#nueva-eval-pane" type="button" role="tab"
+                                style="font-weight: 600; color: #6b7280; border: none; padding: 0.75rem 1.5rem;">
+                            <i class="fas fa-plus-circle me-2"></i>Nueva Evaluación
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="borradores-eval-tab" data-bs-toggle="tab" data-bs-target="#borradores-eval-pane" type="button" role="tab"
+                                style="font-weight: 600; color: #6b7280; border: none; padding: 0.75rem 1.5rem;">
+                            <i class="fas fa-file-alt me-2"></i>Borradores
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab: Nueva Evaluación -->
+                    <div class="tab-pane fade show active" id="nueva-eval-pane" role="tabpanel">
+                        <div class="card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
+                            <div style="padding: 1.5rem 2rem;">
+                                <h5 class="mb-3" style="color: #111827; font-weight: 600; font-size: 1.125rem;">
+                                    <i class="fas fa-clipboard-list me-2" style="color: #667eea;"></i>Crear Nueva Evaluación
                                 </h5>
-                                <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
-                                    Sube un archivo con las evaluaciones en formato compatible
-                                </p>
+
+                                <form id="createAssessmentForm">
+                                    <!-- Información Básica -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-8">
+                                            <label class="form-label" style="font-weight: 600; font-size: 0.875rem; color: #374151;">
+                                                <i class="fas fa-heading me-1"></i>Título de la Evaluación *
+                                            </label>
+                                            <input type="text" class="form-control" id="assessmentTitle" required
+                                                   placeholder="Ej: Evaluación de Competencias de Liderazgo"
+                                                   style="border-radius: 8px; border: 1.5px solid #e5e7eb;">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-weight: 600; font-size: 0.875rem; color: #374151;">
+                                                <i class="fas fa-tag me-1"></i>Categoría *
+                                            </label>
+                                            <select class="form-select" id="assessmentCategory" required
+                                                    style="border-radius: 8px; border: 1.5px solid #e5e7eb;">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="Personalidad">Personalidad</option>
+                                                <option value="Liderazgo">Liderazgo</option>
+                                                <option value="Inteligencia Emocional">Inteligencia Emocional</option>
+                                                <option value="Trabajo en Equipo">Trabajo en Equipo</option>
+                                                <option value="Crecimiento Empresarial">Crecimiento Empresarial</option>
+                                                <option value="Otros">Otros</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label" style="font-weight: 600; font-size: 0.875rem; color: #374151;">
+                                            <i class="fas fa-align-left me-1"></i>Descripción
+                                        </label>
+                                        <textarea class="form-control" id="assessmentDescription" rows="2"
+                                                  placeholder="Breve descripción de la evaluación..."
+                                                  style="border-radius: 8px; border: 1.5px solid #e5e7eb;"></textarea>
+                                    </div>
+
+                                    <!-- Sección de Preguntas -->
+                                    <div class="mb-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <label class="form-label mb-0" style="font-weight: 600; font-size: 0.875rem; color: #374151;">
+                                                <i class="fas fa-question-circle me-1"></i>Preguntas de la Evaluación *
+                                            </label>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestion()"
+                                                    style="border-radius: 8px; font-weight: 600;">
+                                                <i class="fas fa-plus me-1"></i>Agregar Pregunta
+                                            </button>
+                                        </div>
+
+                                        <div id="questionsContainer" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+                                            <!-- Las preguntas se agregarán aquí dinámicamente -->
+                                            <div class="text-center py-4" id="noQuestionsMessage" style="color: #9ca3af;">
+                                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                                <p class="mb-0">No hay preguntas agregadas aún</p>
+                                                <small>Haz clic en "Agregar Pregunta" para comenzar</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Botones de Acción -->
+                                    <div class="d-flex gap-2 justify-content-end" style="border-top: 1px solid #f3f4f6; padding-top: 1.5rem;">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="resetAssessmentForm()"
+                                                style="border-radius: 8px; padding: 0.625rem 1.25rem; font-weight: 600;">
+                                            <i class="fas fa-times me-1"></i>Cancelar
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="saveAssessmentDraft()"
+                                                style="border-radius: 8px; padding: 0.625rem 1.25rem; font-weight: 600;">
+                                            <i class="fas fa-save me-1"></i>Guardar Borrador
+                                        </button>
+                                        <button type="submit" class="btn btn-primary"
+                                                style="border-radius: 8px; padding: 0.625rem 1.25rem; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                                            <i class="fas fa-check-circle me-1"></i>Publicar Evaluación
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Body -->
-                    <div style="padding: 1.5rem 2.5rem 2.5rem;">
-                        <!-- Formulario de carga -->
-                        <div class="mb-4">
-                            <label class="form-label text-dark small fw-bold">
-                                <i class="fas fa-file-import me-2 text-primary"></i>Seleccionar archivo de evaluación
-                            </label>
-                            <p class="text-muted small mb-3">
-                                Formatos aceptados: JSON, CSV, Excel (.xlsx, .xls)
-                            </p>
-                            <div class="input-group">
-                                <input type="file" class="form-control border-secondary" id="evaluationFile" 
-                                       accept=".json,.csv,.xlsx,.xls"
-                                       style="background-color: white; color: #212529; border-radius: 8px 0 0 8px; border: 2px solid #e2e8f0;">
-                                <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('evaluationFile').value = ''" style="border-radius: 0 8px 8px 0; border: 2px solid #e2e8f0;">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
 
-                        <!-- Información del formato -->
-                        <div class="alert alert-info" role="alert">
-                            <h6 class="alert-heading">
-                                <i class="fas fa-info-circle me-2"></i>Formato del archivo
-                            </h6>
-                            <p class="mb-2 small">El archivo debe contener la siguiente estructura:</p>
-                            <ul class="small mb-2">
-                                <li><strong>Título:</strong> Nombre de la evaluación</li>
-                                <li><strong>Descripción:</strong> Breve descripción</li>
-                                <li><strong>Categoría:</strong> Personalidad, Liderazgo, Inteligencia Emocional, Trabajo en Equipo, Crecimiento Empresarial, u Otros</li>
-                                <li><strong>Preguntas:</strong> Lista de preguntas con sus opciones y respuestas correctas</li>
-                            </ul>
-                            <button class="btn btn-sm btn-outline-info" onclick="downloadEvaluationTemplate()">
-                                <i class="fas fa-download me-1"></i>Descargar plantilla de ejemplo
-                            </button>
-                        </div>
+                    <!-- Tab: Borradores -->
+                    <div class="tab-pane fade" id="borradores-eval-pane" role="tabpanel">
+                        <div class="card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
+                            <div style="padding: 1.5rem 2rem;">
+                                <h5 class="mb-3" style="color: #111827; font-weight: 600; font-size: 1.125rem;">
+                                    <i class="fas fa-file-alt me-2" style="color: #f59e0b;"></i>Evaluaciones en Borrador
+                                </h5>
 
-                        <!-- Vista previa del archivo -->
-                        <div id="filePreview" style="display: none;" class="mb-4">
-                            <h6 class="text-dark mb-3">
-                                <i class="fas fa-eye me-2 text-primary"></i>Vista previa
-                            </h6>
-                            <div class="card border-secondary">
-                                <div class="card-body" style="background-color: #f8f9fa;">
-                                    <div id="previewContent" class="small">
-                                        <!-- Preview content will be populated here -->
+                                <div id="draftsContainer">
+                                    <div class="text-center py-5" id="noDraftsMessage" style="color: #9ca3af;">
+                                        <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                        <p class="mb-0" style="font-size: 1rem; font-weight: 500;">No tienes borradores guardados</p>
+                                        <small>Los borradores que guardes aparecerán aquí</small>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Botones de acción -->
-                        <div class="d-flex gap-2 justify-content-end">
-                            <button class="btn btn-outline-secondary" onclick="cancelUpload()" style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 600;">
-                                <i class="fas fa-times me-1"></i>Cancelar
-                            </button>
-                            <button class="btn btn-primary" onclick="uploadEvaluation()" id="uploadBtn" disabled style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
-                                <i class="fas fa-upload me-1"></i>Cargar Evaluación
-                            </button>
-                        </div>
-
-                        <!-- Estado de carga -->
-                        <div id="uploadProgress" style="display: none;" class="mt-4">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="small text-muted">Cargando evaluación...</span>
-                                <span class="small text-muted" id="uploadPercent">0%</span>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" style="width: 0%" id="uploadProgressBar"></div>
-                            </div>
-                        </div>
-
-                        <!-- Resultado de la carga -->
-                        <div id="uploadResult" style="display: none;" class="mt-4">
-                            <!-- Success or error message will be shown here -->
                         </div>
                     </div>
                 </div>
@@ -6788,6 +6816,11 @@ function dashboardApp() {
                                                     onclick="event.stopPropagation(); viewAssessmentQuestions(${assessment.id}, '${assessment.title.replace(/'/g, "\\'")}')">
                                                 <i class="fas fa-eye me-1"></i>Ver
                                             </button>
+                                            <button class="btn btn-sm" style="background: white; color: #dc3545; border: 2px solid #dc3545; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; transition: all 0.2s;" 
+                                                    onclick="event.stopPropagation(); deleteAssessment(${assessment.id}, '${assessment.title.replace(/'/g, "\\'")}')" 
+                                                    title="Eliminar evaluación">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -7384,6 +7417,50 @@ function dashboardApp() {
             document.body.appendChild(container);
             return container;
         }
+    }
+}
+
+// Función global para eliminar evaluación
+async function deleteAssessment(assessmentId, assessmentTitle) {
+    console.log('🗑️ DELETE-ASSESSMENT: Intentando eliminar evaluación', assessmentId);
+    
+    // Confirmación con el usuario
+    if (!confirm(`¿Estás seguro de que deseas eliminar la evaluación "${assessmentTitle}"?\n\nEsta acción no se puede deshacer. Solo se pueden eliminar evaluaciones sin resultados ni asignaciones activas.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/coach/assessments/${assessmentId}/delete-published`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ DELETE-ASSESSMENT: Evaluación eliminada exitosamente');
+            showNotification('Evaluación eliminada exitosamente', 'success');
+            
+            // Recargar la lista de evaluaciones
+            if (typeof dashboardApp === 'function') {
+                const app = dashboardApp();
+                if (app.loadAvailableAssessments) {
+                    await app.loadAvailableAssessments();
+                }
+            } else {
+                // Fallback: recargar página
+                setTimeout(() => location.reload(), 1000);
+            }
+            
+        } else {
+            throw new Error(result.error || 'Error al eliminar evaluación');
+        }
+        
+    } catch (error) {
+        console.error('❌ DELETE-ASSESSMENT: Error:', error);
+        showNotification(error.message, 'error');
     }
 }
 
@@ -10777,7 +10854,607 @@ document.addEventListener('DOMContentLoaded', function() {
     if (construccionTab) {
         construccionTab.addEventListener('shown.bs.tab', loadDraftPlans);
     }
+    
+    // Initialize assessment creation form
+    const createAssessmentForm = document.getElementById('createAssessmentForm');
+    if (createAssessmentForm) {
+        createAssessmentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveAssessmentDraft(true); // true = publicar directamente
+        });
+    }
+    
+    // Load drafts when tab is shown
+    const borradoresTab = document.getElementById('borradores-eval-tab');
+    if (borradoresTab) {
+        borradoresTab.addEventListener('shown.bs.tab', loadDraftAssessments);
+    }
 });
+
+// ============================================
+// ASSESSMENT CREATION FUNCTIONS
+// ============================================
+
+let questionCounter = 0;
+let editingAssessmentId = null; // Track if we're editing an existing draft
+
+/**
+ * Agrega una nueva pregunta al formulario
+ */
+function addQuestion() {
+    questionCounter++;
+    const container = document.getElementById('questionsContainer');
+    const noQuestionsMsg = document.getElementById('noQuestionsMessage');
+    
+    if (noQuestionsMsg) {
+        noQuestionsMsg.style.display = 'none';
+    }
+    
+    const questionHTML = `
+        <div class="card mb-3 question-item" data-question-id="${questionCounter}" 
+             style="border-radius: 12px; border: 1.5px solid #e5e7eb; transition: all 0.2s;">
+            <div class="card-body" style="padding: 1.25rem;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h6 class="mb-0" style="color: #374151; font-weight: 600; font-size: 0.9rem;">
+                        <i class="fas fa-question-circle me-2" style="color: #667eea;"></i>Pregunta #${questionCounter}
+                    </h6>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(${questionCounter})"
+                            style="border-radius: 6px; padding: 0.25rem 0.5rem;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #4b5563;">
+                        Texto de la pregunta *
+                    </label>
+                    <textarea class="form-control question-text" rows="2" required
+                              placeholder="Escribe la pregunta aquí..."
+                              style="border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 0.875rem;"></textarea>
+                </div>
+                
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #4b5563;">
+                            Dimensión / Categoría
+                        </label>
+                        <input type="text" class="form-control question-dimension"
+                               placeholder="Ej: Dominancia, Comunicación..."
+                               style="border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 0.875rem;">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #4b5563;">
+                            Tipo de pregunta
+                        </label>
+                        <select class="form-select question-type"
+                                style="border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 0.875rem;">
+                            <option value="likert">Escala Likert</option>
+                            <option value="multiple_choice">Opción Múltiple</option>
+                            <option value="text">Texto Abierto</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', questionHTML);
+}
+
+/**
+ * Elimina una pregunta del formulario
+ */
+function removeQuestion(questionId) {
+    const questionElement = document.querySelector(`[data-question-id="${questionId}"]`);
+    if (questionElement) {
+        questionElement.remove();
+        
+        // Check if there are no more questions
+        const remainingQuestions = document.querySelectorAll('.question-item');
+        if (remainingQuestions.length === 0) {
+            const noQuestionsMsg = document.getElementById('noQuestionsMessage');
+            if (noQuestionsMsg) {
+                noQuestionsMsg.style.display = 'block';
+            }
+        }
+    }
+}
+
+/**
+ * Valida el formulario de creación de evaluación
+ */
+function validateAssessmentForm() {
+    const title = document.getElementById('assessmentTitle').value.trim();
+    const category = document.getElementById('assessmentCategory').value;
+    const questions = document.querySelectorAll('.question-item');
+    
+    if (!title) {
+        showToast('Por favor ingresa un título para la evaluación', 'error');
+        return false;
+    }
+    
+    if (!category) {
+        showToast('Por favor selecciona una categoría', 'error');
+        return false;
+    }
+    
+    if (questions.length === 0) {
+        showToast('Debes agregar al menos una pregunta', 'error');
+        return false;
+    }
+    
+    // Validate each question has text
+    let allQuestionsValid = true;
+    questions.forEach((questionCard, index) => {
+        const questionText = questionCard.querySelector('.question-text').value.trim();
+        if (!questionText) {
+            showToast(`La pregunta #${index + 1} necesita un texto`, 'error');
+            allQuestionsValid = false;
+        }
+    });
+    
+    return allQuestionsValid;
+}
+
+/**
+ * Recopila los datos del formulario
+ */
+function collectAssessmentData(status = 'draft') {
+    const title = document.getElementById('assessmentTitle').value.trim();
+    const description = document.getElementById('assessmentDescription').value.trim();
+    const category = document.getElementById('assessmentCategory').value;
+    
+    const questions = [];
+    const questionCards = document.querySelectorAll('.question-item');
+    
+    questionCards.forEach((card, index) => {
+        const text = card.querySelector('.question-text').value.trim();
+        const dimension = card.querySelector('.question-dimension').value.trim();
+        const type = card.querySelector('.question-type').value;
+        
+        questions.push({
+            text: text,
+            dimension: dimension || null,
+            question_type: type,
+            order: index + 1
+        });
+    });
+    
+    return {
+        title: title,
+        description: description || null,
+        category: category,
+        status: status,
+        questions: questions
+    };
+}
+
+/**
+ * Guarda la evaluación como borrador o la publica
+ */
+async function saveAssessmentDraft(publish = false) {
+    console.log(`📝 ${publish ? 'PUBLISH' : 'SAVE-DRAFT'}-ASSESSMENT: Iniciando...`);
+    
+    if (!validateAssessmentForm()) {
+        return;
+    }
+    
+    // Si estamos editando, usar endpoint de actualización
+    if (editingAssessmentId && !publish) {
+        await updateExistingAssessment();
+        return;
+    }
+    
+    const status = publish ? 'published' : 'draft';
+    const data = collectAssessmentData(status);
+    
+    console.log(`📤 ${publish ? 'PUBLISH' : 'SAVE-DRAFT'}-ASSESSMENT: Datos:`, data);
+    
+    try {
+        const response = await fetch('/api/coach/assessments/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log(`✅ ${publish ? 'PUBLISH' : 'SAVE-DRAFT'}-ASSESSMENT: Éxito`);
+            const message = publish 
+                ? 'Evaluación publicada exitosamente. Ya está disponible para asignar a coachees.'
+                : 'Borrador guardado exitosamente. Puedes publicarlo cuando esté listo.';
+            showToast(message, 'success');
+            
+            // Reset form
+            resetAssessmentForm();
+            
+            // Reload drafts if saved as draft
+            if (!publish) {
+                loadDraftAssessments();
+                // Switch to drafts tab
+                const borradoresTab = document.getElementById('borradores-eval-tab');
+                if (borradoresTab) {
+                    borradoresTab.click();
+                }
+            }
+            
+        } else {
+            throw new Error(result.error || 'Error al guardar la evaluación');
+        }
+        
+    } catch (error) {
+        console.error(`❌ ${publish ? 'PUBLISH' : 'SAVE-DRAFT'}-ASSESSMENT: Error:`, error);
+        showToast('Error al guardar: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Resetea el formulario de creación
+ */
+function resetAssessmentForm() {
+    document.getElementById('assessmentTitle').value = '';
+    document.getElementById('assessmentDescription').value = '';
+    document.getElementById('assessmentCategory').value = '';
+    
+    // Remove all questions
+    const questionsContainer = document.getElementById('questionsContainer');
+    questionsContainer.innerHTML = `
+        <div class="text-center py-4" id="noQuestionsMessage" style="color: #9ca3af;">
+            <i class="fas fa-inbox fa-2x mb-2"></i>
+            <p class="mb-0">No hay preguntas agregadas aún</p>
+            <small>Haz clic en "Agregar Pregunta" para comenzar</small>
+        </div>
+    `;
+    
+    questionCounter = 0;
+    editingAssessmentId = null; // Reset editing mode
+}
+
+/**
+ * Carga los borradores de evaluación
+ */
+async function loadDraftAssessments() {
+    console.log('📥 LOAD-DRAFTS: Cargando borradores...');
+    
+    try {
+        const response = await fetch('/api/coach/assessments/drafts');
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ LOAD-DRAFTS: Borradores cargados:', result.drafts.length);
+            renderDraftAssessments(result.drafts);
+        } else {
+            throw new Error(result.error || 'Error al cargar borradores');
+        }
+        
+    } catch (error) {
+        console.error('❌ LOAD-DRAFTS: Error:', error);
+        showToast('Error al cargar borradores: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Renderiza la lista de borradores
+ */
+function renderDraftAssessments(drafts) {
+    const container = document.getElementById('draftsContainer');
+    const noDraftsMsg = document.getElementById('noDraftsMessage');
+    
+    if (drafts.length === 0) {
+        if (noDraftsMsg) {
+            noDraftsMsg.style.display = 'block';
+        }
+        container.innerHTML = noDraftsMsg ? noDraftsMsg.outerHTML : '<p class="text-center text-muted">No hay borradores</p>';
+        return;
+    }
+    
+    if (noDraftsMsg) {
+        noDraftsMsg.style.display = 'none';
+    }
+    
+    let html = '<div class="row g-3">';
+    
+    drafts.forEach(draft => {
+        const createdDate = new Date(draft.created_at).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        html += `
+            <div class="col-md-6">
+                <div class="card h-100" style="border-radius: 12px; border: 1.5px solid #e5e7eb; transition: all 0.2s; cursor: pointer;"
+                     onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; this.style.borderColor='#667eea';"
+                     onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e5e7eb';">
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1rem;">
+                                ${draft.title}
+                            </h6>
+                            <span class="badge bg-warning text-dark" style="font-size: 0.75rem;">Borrador</span>
+                        </div>
+                        
+                        ${draft.description ? `
+                            <p class="mb-3" style="color: #6b7280; font-size: 0.875rem; line-height: 1.5;">
+                                ${draft.description.substring(0, 100)}${draft.description.length > 100 ? '...' : ''}
+                            </p>
+                        ` : ''}
+                        
+                        <div class="d-flex gap-2 mb-3" style="flex-wrap: wrap;">
+                            ${draft.category ? `
+                                <span style="background: #eff6ff; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500;">
+                                    <i class="fas fa-tag me-1"></i>${draft.category}
+                                </span>
+                            ` : ''}
+                            <span style="background: #f3f4f6; color: #4b5563; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500;">
+                                <i class="fas fa-question-circle me-1"></i>${draft.questions_count} pregunta${draft.questions_count !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        
+                        <div style="border-top: 1px solid #f3f4f6; padding-top: 1rem;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small style="color: #9ca3af; font-size: 0.8rem;">
+                                    <i class="fas fa-calendar-alt me-1"></i>${createdDate}
+                                </small>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-primary" onclick="editDraftAssessment(${draft.id})"
+                                            style="border-radius: 6px; padding: 0.375rem 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-edit me-1"></i>Editar
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="publishDraftAssessment(${draft.id})"
+                                            style="border-radius: 6px; padding: 0.375rem 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-check me-1"></i>Publicar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDraftAssessment(${draft.id})"
+                                            style="border-radius: 6px; padding: 0.375rem 0.75rem;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/**
+ * Publica un borrador de evaluación
+ */
+async function publishDraftAssessment(assessmentId) {
+    console.log('📤 PUBLISH-DRAFT: Publicando borrador ID:', assessmentId);
+    
+    if (!confirm('¿Estás seguro de que deseas publicar esta evaluación? Una vez publicada, estará disponible para asignar a coachees.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/coach/assessments/${assessmentId}/publish`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ PUBLISH-DRAFT: Evaluación publicada');
+            showToast('Evaluación publicada exitosamente. Ya está disponible para asignar.', 'success');
+            
+            // Reload drafts
+            loadDraftAssessments();
+            
+        } else {
+            throw new Error(result.error || 'Error al publicar la evaluación');
+        }
+        
+    } catch (error) {
+        console.error('❌ PUBLISH-DRAFT: Error:', error);
+        showToast('Error al publicar: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Carga un borrador para edición
+ */
+async function editDraftAssessment(assessmentId) {
+    console.log('✏️ EDIT-DRAFT: Cargando borrador ID:', assessmentId);
+    
+    try {
+        const response = await fetch(`/api/coach/assessments/${assessmentId}/details`);
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ EDIT-DRAFT: Borrador cargado:', result.assessment);
+            
+            // Cargar datos en el formulario
+            document.getElementById('assessmentTitle').value = result.assessment.title || '';
+            document.getElementById('assessmentDescription').value = result.assessment.description || '';
+            document.getElementById('assessmentCategory').value = result.assessment.category || '';
+            
+            // Limpiar preguntas existentes
+            const questionsContainer = document.getElementById('questionsContainer');
+            questionsContainer.innerHTML = '';
+            questionCounter = 0;
+            
+            // Cargar preguntas
+            if (result.assessment.questions && result.assessment.questions.length > 0) {
+                const noQuestionsMsg = document.getElementById('noQuestionsMessage');
+                if (noQuestionsMsg) {
+                    noQuestionsMsg.style.display = 'none';
+                }
+                
+                result.assessment.questions.forEach((question, index) => {
+                    questionCounter++;
+                    const questionHTML = `
+                        <div class="card mb-3 question-item" data-question-id="${questionCounter}" 
+                             style="border-radius: 12px; border: 1.5px solid #e5e7eb; transition: all 0.2s;">
+                            <div class="card-body" style="padding: 1.25rem;">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h6 class="mb-0" style="color: #374151; font-weight: 600; font-size: 0.9rem;">
+                                        <i class="fas fa-question-circle me-2" style="color: #667eea;"></i>Pregunta #${questionCounter}
+                                    </h6>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(${questionCounter})"
+                                            style="border-radius: 6px; padding: 0.25rem 0.5rem;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #4b5563;">
+                                        Texto de la pregunta *
+                                    </label>
+                                    <textarea class="form-control question-text" rows="2" required
+                                              placeholder="Escribe la pregunta aquí..."
+                                              style="border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 0.875rem;">${question.text}</textarea>
+                                </div>
+                                
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #4b5563;">
+                                            Dimensión / Categoría
+                                        </label>
+                                        <input type="text" class="form-control question-dimension"
+                                               placeholder="Ej: Dominancia, Comunicación..."
+                                               value="${question.dimension || ''}"
+                                               style="border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 0.875rem;">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #4b5563;">
+                                            Tipo de pregunta
+                                        </label>
+                                        <select class="form-select question-type"
+                                                style="border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 0.875rem;">
+                                            <option value="likert" ${question.question_type === 'likert' ? 'selected' : ''}>Escala Likert</option>
+                                            <option value="multiple_choice" ${question.question_type === 'multiple_choice' ? 'selected' : ''}>Opción Múltiple</option>
+                                            <option value="text" ${question.question_type === 'text' ? 'selected' : ''}>Texto Abierto</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    questionsContainer.insertAdjacentHTML('beforeend', questionHTML);
+                });
+            }
+            
+            // Marcar como modo edición
+            editingAssessmentId = assessmentId;
+            
+            // Cambiar a tab de Nueva Evaluación
+            const nuevaEvalTab = document.getElementById('nueva-eval-tab');
+            if (nuevaEvalTab) {
+                nuevaEvalTab.click();
+            }
+            
+            // Scroll al formulario
+            document.getElementById('crear-cargar-evaluaciones').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            showToast('Borrador cargado para edición', 'success');
+            
+        } else {
+            throw new Error(result.error || 'Error al cargar borrador');
+        }
+        
+    } catch (error) {
+        console.error('❌ EDIT-DRAFT: Error:', error);
+        showToast('Error al cargar borrador: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Actualiza una evaluación existente
+ */
+async function updateExistingAssessment() {
+    console.log('🔄 UPDATE-ASSESSMENT: Actualizando evaluación ID:', editingAssessmentId);
+    
+    if (!editingAssessmentId) {
+        showToast('Error: No hay evaluación en modo edición', 'error');
+        return;
+    }
+    
+    const data = collectAssessmentData('draft');
+    
+    try {
+        const response = await fetch(`/api/coach/assessments/${editingAssessmentId}/update`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ UPDATE-ASSESSMENT: Evaluación actualizada');
+            showToast('Borrador actualizado exitosamente', 'success');
+            
+            // Reset form and reload drafts
+            resetAssessmentForm();
+            loadDraftAssessments();
+            
+            // Switch to drafts tab
+            const borradoresTab = document.getElementById('borradores-eval-tab');
+            if (borradoresTab) {
+                borradoresTab.click();
+            }
+            
+        } else {
+            throw new Error(result.error || 'Error al actualizar evaluación');
+        }
+        
+    } catch (error) {
+        console.error('❌ UPDATE-ASSESSMENT: Error:', error);
+        showToast('Error al actualizar: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Elimina un borrador de evaluación
+ */
+async function deleteDraftAssessment(assessmentId) {
+    console.log('🗑️ DELETE-DRAFT: Eliminando borrador ID:', assessmentId);
+    
+    if (!confirm('¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/coach/assessments/${assessmentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ DELETE-DRAFT: Borrador eliminado');
+            showToast('Borrador eliminado exitosamente', 'success');
+            
+            // Reload drafts
+            loadDraftAssessments();
+            
+        } else {
+            throw new Error(result.error || 'Error al eliminar el borrador');
+        }
+        
+    } catch (error) {
+        console.error('❌ DELETE-DRAFT: Error:', error);
+        showToast('Error al eliminar: ' + error.message, 'error');
+    }
+}
+
 </script>
 
 <!-- Modal: Ver Detalles del Plan de Desarrollo (Coach View) -->
