@@ -8513,9 +8513,9 @@ def api_coach_available_assessments():
         # Verificar que las tablas existen y obtener evaluaciones
         try:
             # Obtener todas las evaluaciones activas
-            # Usar filter() en lugar de filter_by() para manejar correctamente valores booleanos
+            # PostgreSQL: usar solo True (no 1, causa error de tipo)
             assessments = Assessment.query.filter(
-                or_(Assessment.is_active == True, Assessment.is_active == 1)
+                Assessment.is_active == True
             ).all()
             app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: Found {len(assessments)} active assessments")
             
@@ -8528,7 +8528,7 @@ def api_coach_available_assessments():
             try:
                 create_additional_assessments()
                 assessments = Assessment.query.filter(
-                    or_(Assessment.is_active == True, Assessment.is_active == 1)
+                    Assessment.is_active == True
                 ).all()
                 app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: After creation attempt, found {len(assessments)} assessments")
             except Exception as create_error:
@@ -9171,7 +9171,17 @@ def api_coachee_evaluation_history():
         expanded_history = []  # Historial expandido con todos los intentos
         
         for result in results:
-            assessment = Assessment.query.get(result.assessment_id)
+            # Intentar obtener assessment, manejar columnas faltantes
+            try:
+                assessment = Assessment.query.get(result.assessment_id)
+            except Exception as e:
+                logger.warning(f"⚠️ Error loading assessment {result.assessment_id}: {e}")
+                # Crear objeto dummy si falla
+                class DummyAssessment:
+                    title = 'Evaluación'
+                    description = None
+                assessment = DummyAssessment()
+            
             invitation = result.invitation
             
             # Información básica del resultado actual
