@@ -71,7 +71,19 @@ if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable is required in production")
 
 # Configurar DATABASE_URI
-DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///assessments.db').replace('postgres://', 'postgresql://', 1)
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+if DATABASE_URL:
+    # Railway/Heroku usan postgres:// pero SQLAlchemy necesita postgresql://
+    DATABASE_URI = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    logger.info(f"✅ Using PostgreSQL database (length: {len(DATABASE_URI)} chars)")
+else:
+    # Local development usa SQLite
+    DATABASE_URI = 'sqlite:///assessments.db'
+    logger.info("✅ Using local SQLite database")
+
+# Validar que DATABASE_URI no esté vacía
+if not DATABASE_URI or DATABASE_URI.strip() == '':
+    raise ValueError("DATABASE_URI is empty! Check DATABASE_URL environment variable.")
 
 # Configuración base
 config_dict = {
