@@ -6776,7 +6776,7 @@ function dashboardApp() {
                 });
                 
                 // Renderizar categorías como cards
-                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 24px;">';
+                let html = '<div class="assessments-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 24px;">';
                 
                 Object.keys(categories).forEach(categoryName => {
                     const category = categories[categoryName];
@@ -6872,27 +6872,148 @@ function dashboardApp() {
                 html += '</div>';
                 container.innerHTML = html;
                 
-                // Add CSS for scrollbar styling
+                // Add CSS for scrollbar styling and mobile responsiveness
                 const style = document.createElement('style');
                 style.textContent = `
-                    .category-card::-webkit-scrollbar {
+                    /* Grid responsivo para evaluaciones */
+                    .assessments-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+                        gap: 24px;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .assessments-grid {
+                            grid-template-columns: 1fr !important;
+                            gap: 16px;
+                            padding: 0 !important;
+                        }
+                    }
+                    
+                    /* Category cards responsive */
+                    .category-card {
+                        background: white;
+                        border-radius: 16px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        transition: all 0.3s ease;
+                        border: 1px solid #f3f4f6;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .category-card {
+                            border-radius: 12px;
+                            margin: 0;
+                        }
+                    }
+                    
+                    /* Mini assessment cards responsive */
+                    .mini-assessment-card {
+                        background: var(--bg-light);
+                        border: 2px solid var(--border-color);
+                        border-radius: 12px;
+                        padding: 16px;
+                        margin-bottom: 12px;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .mini-assessment-card {
+                            padding: 12px;
+                            border-radius: 10px;
+                        }
+                        
+                        .mini-assessment-card > div {
+                            flex-direction: column;
+                            gap: 12px;
+                        }
+                        
+                        .mini-assessment-card > div > div:first-child {
+                            width: 40px !important;
+                            height: 40px !important;
+                            flex-shrink: 0;
+                        }
+                        
+                        .mini-assessment-card > div > div:first-child i {
+                            font-size: 18px !important;
+                        }
+                        
+                        .mini-assessment-card h5 {
+                            font-size: 14px !important;
+                            line-height: 1.3 !important;
+                        }
+                        
+                        .mini-assessment-card p {
+                            font-size: 12px !important;
+                        }
+                        
+                        .mini-assessment-card > div > div:last-child > div:nth-child(3) {
+                            flex-direction: column;
+                            gap: 8px;
+                        }
+                        
+                        .mini-assessment-card > div > div:last-child > div:nth-child(3) button {
+                            width: 100% !important;
+                            flex: none !important;
+                            justify-content: center;
+                        }
+                        
+                        .mini-assessment-card > div > div:last-child > div:nth-child(2) {
+                            flex-wrap: wrap;
+                            gap: 8px;
+                        }
+                        
+                        .mini-assessment-card > div > div:last-child > div:nth-child(2) span {
+                            font-size: 11px !important;
+                        }
+                    }
+                    
+                    /* Category header responsive */
+                    @media (max-width: 768px) {
+                        .category-card > div:first-child {
+                            padding: 16px !important;
+                        }
+                        
+                        .category-card > div:first-child > div > div {
+                            gap: 10px !important;
+                        }
+                        
+                        .category-card > div:first-child > div > div > div:first-child {
+                            width: 40px !important;
+                            height: 40px !important;
+                        }
+                        
+                        .category-card > div:first-child > div > div > div:first-child i {
+                            font-size: 20px !important;
+                        }
+                        
+                        .category-card > div:first-child h4 {
+                            font-size: 16px !important;
+                        }
+                        
+                        .category-card > div:first-child p {
+                            font-size: 12px !important;
+                        }
+                        
+                        .category-card > div:last-child {
+                            padding: 12px !important;
+                            max-height: none !important;
+                        }
+                    }
+                    
+                    /* Scrollbar styling */
+                    .category-card > div:last-child::-webkit-scrollbar {
                         width: 6px;
                     }
-                    .category-card::-webkit-scrollbar-track {
+                    .category-card > div:last-child::-webkit-scrollbar-track {
                         background: #f1f1f1;
                         border-radius: 10px;
                     }
-                    .category-card::-webkit-scrollbar-thumb {
+                    .category-card > div:last-child::-webkit-scrollbar-thumb {
                         background: #d1d5db;
                         border-radius: 10px;
                     }
-                    .category-card::-webkit-scrollbar-thumb:hover {
+                    .category-card > div:last-child::-webkit-scrollbar-thumb:hover {
                         background: #9ca3af;
-                    }
-                    @media (max-width: 768px) {
-                        #assessments-list > div {
-                            grid-template-columns: 1fr !important;
-                        }
                     }
                 `;
                 if (!document.getElementById('assessment-category-cards-style')) {
