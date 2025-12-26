@@ -949,6 +949,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default='coachee', index=True)
     active = db.Column(db.Boolean, default=True, index=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    coach_notes = db.Column(db.Text, nullable=True)  # Notas del coach sobre el coachee
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     last_login = db.Column(db.DateTime, index=True)
     
@@ -6886,7 +6887,8 @@ def api_coach_my_coachees():
                 'last_evaluation': last_evaluations.get(coachee.id),
                 'avg_score': avg_scores.get(coachee.id),
                 'password': coachee.original_password,  # ✅ Incluir contraseña original para que el coach pueda verla
-                'avatar_url': coachee.avatar_url  # ✅ Incluir URL del avatar
+                'avatar_url': coachee.avatar_url,  # ✅ Incluir URL del avatar
+                'coach_notes': coachee.coach_notes  # ✅ Incluir notas del coach
             }
             coachees_data.append(coachee_data)
             logger.info(f"✅ MY-COACHEES: Processed coachee {coachee.full_name} with data: {coachee_data}")
@@ -11295,6 +11297,50 @@ def api_coach_update_coachee(coachee_id):
         logger.error(f"Error en api_coach_update_coachee: {str(e)}", exc_info=True)
         db.session.rollback()
         return jsonify({'error': f'Error actualizando coachee: {str(e)}'}), 500
+
+@app.route('/api/coach/coachee-notes/<int:coachee_id>', methods=['POST'])
+@coach_session_required
+def api_coach_save_coachee_notes(coachee_id):
+    """Guardar notas del coach sobre un coachee"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        logger.info(f"📝 SAVE_NOTES: Coach {current_coach.username if current_coach else 'Unknown'} saving notes for coachee {coachee_id}")
+        
+        # Verificar que es un coach
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"❌ SAVE_NOTES: Access denied for user {current_coach.username if current_coach else 'None'}")
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden guardar notas.'}), 403
+        
+        # Buscar el coachee y verificar que pertenece al coach actual
+        coachee = User.query.filter_by(
+            id=coachee_id, 
+            coach_id=current_coach.id, 
+            role='coachee'
+        ).first()
+        
+        if not coachee:
+            logger.warning(f"❌ SAVE_NOTES: Coachee {coachee_id} not found or doesn't belong to coach {current_coach.id}")
+            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+        
+        data = request.get_json()
+        notes = data.get('notes', '')
+        
+        # Guardar notas (asumiendo que existe el campo coach_notes en User)
+        coachee.coach_notes = notes
+        db.session.commit()
+        
+        logger.info(f"✅ SAVE_NOTES: Notes saved for coachee {coachee_id} (length: {len(notes)} chars)")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notas guardadas exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_save_coachee_notes: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error guardando notas: {str(e)}'}), 500
 
 # ================================
 # COACH CALENDAR APIs
