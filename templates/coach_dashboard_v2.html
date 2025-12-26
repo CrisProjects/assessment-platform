@@ -6626,13 +6626,19 @@ function dashboardApp() {
         async loadAvailableAssessments() {
             this.loading.assessments = true;
             try {
+                console.log('🔍 Cargando evaluaciones disponibles...');
                 const response = await fetch('/api/coach/available-assessments');
+                console.log('📡 Response status:', response.status);
                 const data = await response.json();
+                console.log('📊 Data received:', data);
                 
                 if (data.success) {
+                    console.log(`✅ ${data.assessments.length} evaluaciones cargadas`);
                     this.assessments = data.assessments;
                     this.renderAssessments();
                     this.populateAssessmentSelect();
+                } else {
+                    console.error('❌ Response success=false:', data);
                 }
             } catch (error) {
                 console.error('❌ Error loading assessments:', error);
@@ -6662,24 +6668,37 @@ function dashboardApp() {
         
         // Renderizar evaluaciones
             renderAssessments() {
+                console.log('🎨 Renderizando evaluaciones...');
                 const container = document.getElementById('assessments-list');
                 const loadingElement = document.getElementById('assessments-loading');
                 const errorElement = document.getElementById('assessments-error');
                 const noAssessmentsElement = document.getElementById('no-assessments');
+                
+                console.log('📦 Elementos:', {
+                    container: !!container,
+                    loadingElement: !!loadingElement,
+                    errorElement: !!errorElement,
+                    noAssessmentsElement: !!noAssessmentsElement
+                });
                 
                 // Ocultar loading y error
                 if (loadingElement) loadingElement.style.display = 'none';
                 if (errorElement) errorElement.style.display = 'none';
                 if (noAssessmentsElement) noAssessmentsElement.style.display = 'none';
                 
-                if (!container) return;
+                if (!container) {
+                    console.error('❌ Container #assessments-list no encontrado');
+                    return;
+                }
                 
                 if (!this.assessments || this.assessments.length === 0) {
+                    console.warn('⚠️ No hay evaluaciones para mostrar');
                     if (noAssessmentsElement) noAssessmentsElement.style.display = 'block';
                     container.style.display = 'none';
                     return;
                 }
                 
+                console.log(`✅ Renderizando ${this.assessments.length} evaluaciones`);
                 container.style.display = 'block';
                 
                 // Categorías con configuración

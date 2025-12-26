@@ -8501,14 +8501,23 @@ def api_coach_available_assessments():
         # Verificar que las tablas existen y obtener evaluaciones
         try:
             # Obtener todas las evaluaciones activas
-            assessments = Assessment.query.filter_by(is_active=True).all()
+            # Usar filter() en lugar de filter_by() para manejar correctamente valores booleanos
+            assessments = Assessment.query.filter(
+                or_(Assessment.is_active == True, Assessment.is_active == 1)
+            ).all()
             app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: Found {len(assessments)} active assessments")
+            
+            # Log detallado de las evaluaciones encontradas
+            for assessment in assessments:
+                app.logger.info(f"  • Assessment ID {assessment.id}: {assessment.title} (is_active={assessment.is_active}, status={assessment.status})")
         except Exception as db_error:
             app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Database query failed: {str(db_error)}")
             # Intentar crear evaluaciones si no existen
             try:
                 create_additional_assessments()
-                assessments = Assessment.query.filter_by(is_active=True).all()
+                assessments = Assessment.query.filter(
+                    or_(Assessment.is_active == True, Assessment.is_active == 1)
+                ).all()
                 app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: After creation attempt, found {len(assessments)} assessments")
             except Exception as create_error:
                 app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Could not create assessments: {str(create_error)}")
