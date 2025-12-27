@@ -50,40 +50,8 @@ try:
     # Variable para gunicorn
     application = app
     
-    # Inicializar base de datos en Railway (modo no-bloqueante)
-    if not hasattr(app, '_railway_initialized'):
-        try:
-            logger.info("🔧 RAILWAY: Inicializando base de datos...")
-            with app.app_context():
-                # Importar db y verificar conexión primero
-                from app import db
-                
-                # Verificar conexión con timeout corto
-                import time
-                from sqlalchemy import text
-                
-                logger.info("🔍 RAILWAY: Verificando conexión a base de datos...")
-                db.session.execute(text("SELECT 1"))
-                db.session.commit()
-                logger.info("✅ RAILWAY: Conexión a base de datos verificada")
-                
-                # Crear tablas si no existen (sin timeout largo)
-                logger.info("🔧 RAILWAY: Creando tablas...")
-                db.create_all()
-                logger.info("✅ RAILWAY: Tablas creadas/verificadas")
-                
-                app._railway_initialized = True
-                logger.info("✅ RAILWAY: Base de datos inicializada correctamente")
-                
-                # Inicialización completa en segundo plano (NO bloqueante)
-                logger.info("📋 RAILWAY: Datos de ejemplo se crearán en el primer request")
-                
-        except Exception as init_error:
-            logger.error(f"❌ RAILWAY: Error inicializando base de datos: {init_error}")
-            logger.warning("⚠️ RAILWAY: Continuando sin inicialización completa")
-            # NO fallar, permitir que la app arranque
-    
     logger.info("✅ RAILWAY: WSGI configurado correctamente")
+    logger.info("📋 RAILWAY: La inicialización de DB se hará en el endpoint /health")
 
 except Exception as e:
     logger.error(f"❌ RAILWAY: Error crítico en WSGI: {e}")

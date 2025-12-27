@@ -3539,38 +3539,56 @@ def api_status():
 @app.route('/health')
 def health_check():
     """Health check endpoint para Railway y monitoreo"""
+    health_status = {
+        'status': 'healthy',
+        'database': 'unknown',
+        'environment': os.environ.get('FLASK_ENV', 'unknown'),
+        'timestamp': datetime.now(SANTIAGO_TZ).isoformat()
+    }
+    
     try:
         # Verificar conexión a base de datos
-        from sqlalchemy import text
         db.session.execute(text("SELECT 1"))
-        db_status = 'healthy'
-    except Exception as e:
-        logger.error(f"Health check DB error: {e}")
-        db_status = 'unhealthy'
-    
-    # Lazy initialization en primer health check
-    if not hasattr(app, '_data_initialized'):
+        health_status['database'] = 'connected'
+        
+        # Crear tablas si no existen
         try:
-            with app.app_context():
+            db.create_all()
+            health_status['tables'] = 'ready'
+        except Exception as table_error:
+            logger.warning(f"⚠️ HEALTH: Error creando tablas: {table_error}")
+            health_status['tables'] = 'error'
+        
+        # Lazy initialization de datos en primer health check
+        if not hasattr(app, '_data_initialized'):
+            try:
                 # Verificar si hay usuarios
                 user_count = User.query.count()
                 if user_count == 0:
                     logger.info("🔧 HEALTH: Ejecutando inicialización de datos...")
                     auto_initialize_database()
                     app._data_initialized = True
+                    health_status['initialization'] = 'completed'
                     logger.info("✅ HEALTH: Datos inicializados")
                 else:
                     app._data_initialized = True
+                    health_status['initialization'] = 'already_done'
+                    health_status['users'] = user_count
                     logger.info(f"✅ HEALTH: {user_count} usuarios encontrados")
-        except Exception as e:
-            logger.warning(f"⚠️ HEALTH: Error en lazy init: {e}")
+            except Exception as init_error:
+                logger.warning(f"⚠️ HEALTH: Error en lazy init: {init_error}")
+                health_status['initialization'] = 'error'
+                health_status['init_error'] = str(init_error)
+        else:
+            health_status['initialization'] = 'previously_completed'
+            
+    except Exception as e:
+        logger.error(f"❌ HEALTH: Error en health check: {e}")
+        health_status['status'] = 'unhealthy'
+        health_status['database'] = 'error'
+        health_status['error'] = str(e)
     
-    return jsonify({
-        'status': 'healthy',
-        'database': db_status,
-        'environment': os.environ.get('FLASK_ENV', 'unknown'),
-        'timestamp': datetime.now(SANTIAGO_TZ).isoformat()
-    })
+    return jsonify(health_status)
 
 @app.route('/api/railway-debug')
 @admin_required
