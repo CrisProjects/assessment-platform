@@ -12525,6 +12525,25 @@
                         </div>
                         `;
                     }
+                } else if (isDocument && content.content_url) {
+                    videoEmbedHTML = `
+                        <div class="content-preview">
+                            <div style="width: 100%; height: 400px; background: #f5f5f5; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; position: relative; border-radius: 8px;">
+                                <canvas id="doc-preview-content-${content.id}"
+                                        width="1200"
+                                        height="1000"
+                                        style="width: 100%; height: auto; display: block; cursor: pointer;"
+                                        onclick="window.open('${content.content_url}', '_blank')">
+                                </canvas>
+                                <div id="doc-loading-content-${content.id}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6c757d; pointer-events: none;">
+                                    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-2">Cargando documento...</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 }
                 
                 html += `
@@ -12572,6 +12591,17 @@
             html += '</div>';
             container.innerHTML = html;
             debugLog('✅ RENDER-CONTENT: Renderizado completo');
+            
+            // Renderizar PDFs de documentos después de cargar el HTML
+            contentList.forEach(content => {
+                if (content.content_type === 'document' && content.content_url) {
+                    const canvasId = 'doc-preview-content-' + content.id;
+                    const canvas = document.getElementById(canvasId);
+                    if (canvas) {
+                        generateDocumentPreview(content.content_url, canvasId);
+                    }
+                }
+            });
         }
         
         // Registrar globalmente para que Alpine.js pueda usarla

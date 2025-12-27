@@ -571,12 +571,24 @@
                             
                             // Generar previews de documentos después de renderizar
                             setTimeout(() => {
+                                console.log('🔍 Iniciando renderizado de documentos en coach feed...');
+                                const documentCount = this.content.filter(item => item.content_type === 'document' && item.content_url).length;
+                                console.log(`📄 Total documentos a renderizar: ${documentCount}`);
+                                
                                 this.content.forEach(item => {
-                                    if (item.content_type === 'document') {
-                                        this.generateDocumentPreview(item.content_url, `doc-preview-${item.id}`);
+                                    if (item.content_type === 'document' && item.content_url) {
+                                        const canvasId = `doc-preview-${item.id}`;
+                                        console.log(`📄 Intentando renderizar documento ID ${item.id}, Canvas: ${canvasId}, URL: ${item.content_url}`);
+                                        const canvas = document.getElementById(canvasId);
+                                        if (canvas) {
+                                            console.log(`✅ Canvas ${canvasId} encontrado, llamando generateDocumentPreview...`);
+                                            this.generateDocumentPreview(item.content_url, canvasId);
+                                        } else {
+                                            console.error(`❌ Canvas ${canvasId} NO encontrado en el DOM`);
+                                        }
                                     }
                                 });
-                            }, 500);
+                            }, 200);
                         }
                     } catch (error) {
                         console.error('❌ Error loading content:', error);
@@ -628,20 +640,12 @@
                         `;
                     } else if (isDocument) {
                         return `
-                            <div style="width: 100%; height: 600px; background: #f5f5f5; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; position: relative;">
-                                <canvas id="doc-preview-${item.id}"
-                                        width="1200"
-                                        height="1000"
-                                        style="width: 100%; height: auto; display: block; cursor: pointer;"
-                                        onclick="window.open('${item.content_url}', '_blank')">
-                                </canvas>
-                                <div id="doc-loading-${item.id}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6c757d; pointer-events: none;">
-                                    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem;">
-                                        <span class="visually-hidden">Cargando...</span>
-                                    </div>
-                                    <p class="mt-2">Cargando documento...</p>
-                                </div>
-                            </div>
+                            <canvas id="doc-preview-${item.id}"
+                                    width="1200"
+                                    height="1000"
+                                    style="width: 100%; height: auto; display: block; background: white; cursor: pointer;"
+                                    onclick="window.open('${item.content_url}', '_blank')">
+                            </canvas>
                         `;
                     } else {
                         return this.renderFallback(item);
@@ -709,64 +713,86 @@
                 
                 // Preview de documentos
                 async generateDocumentPreview(url, canvasId) {
-                    const canvas = document.getElementById(canvasId);
-                    const loadingDiv = document.getElementById(`doc-loading-${canvasId.split('-').pop()}`);
+                    console.log('📄 [DOC PREVIEW] Iniciando con URL:', url);
+                    console.log('📄 [DOC PREVIEW] URL en minúsculas:', url.toLowerCase());
+                    console.log('📄 [DOC PREVIEW] Contiene .pdf?', url.toLowerCase().includes('.pdf'));
+                    console.log('📄 [DOC PREVIEW] Contiene content_type=document?', url.includes('content_type=document'));
+                    console.log('📄 [DOC PREVIEW] Contiene /download?', url.includes('/download'));
+                    console.log('📄 [DOC PREVIEW] Contiene /view?', url.includes('/view'));
                     
-                    if (!canvas) return;
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas) {
+                        console.error('❌ [DOC PREVIEW] Canvas no encontrado:', canvasId);
+                        return;
+                    }
 
                     const ctx = canvas.getContext('2d');
                     canvas.width = 1200;
                     canvas.height = 1000;
                     
-                    // Verificar si es PDF y usar endpoint correcto
-                    if (url.includes('/view') || url.includes('/download') || url.toLowerCase().includes('.pdf')) {
-                        try {
-                            await this.generatePDFPreview(url, canvasId, 1200, 1000);
-                            // Ocultar loading después de cargar exitosamente
-                            if (loadingDiv) loadingDiv.style.display = 'none';
-                        } catch (error) {
-                            console.error('❌ PDF preview failed:', error);
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(0, 0, 1200, 1000);
-                            ctx.fillStyle = '#dc3545';
-                            ctx.font = '32px Arial';
-                            ctx.textAlign = 'center';
-                            ctx.fillText('Error al cargar PDF', 600, 400);
-                            ctx.fillStyle = '#6c757d';
-                            ctx.font = '96px Arial';
-                            ctx.fillText('📄', 600, 600);
-                            // Ocultar loading en caso de error también
-                            if (loadingDiv) loadingDiv.style.display = 'none';
-                        }
+                    // Mostrar estado de carga inicial
+                    ctx.fillStyle = '#f8f9fa';
+                    ctx.fillRect(0, 0, 1200, 1000);
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '24px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Cargando documento...', 600, 500);
+                    
+                    // Verificar si es PDF con criterios ampliados
+                    if (url.toLowerCase().includes('.pdf') || 
+                        url.includes('content_type=document') || 
+                        url.includes('/download') || 
+                        url.includes('/view')) {
+                        console.log('✅ [DOC PREVIEW] Detectado como PDF, llamando generatePDFPreview');
+                        await this.generatePDFPreview(url, canvasId, 1200, 1000);
                     } else {
+                        console.log('⚠️ [DOC PREVIEW] No detectado como PDF, mostrando icono genérico');
+                        // Mostrar icono genérico de documento
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, 1200, 1000);
                         ctx.fillStyle = '#495057';
                         ctx.font = '96px Arial';
-                        ctx.textAlign = 'center';
                         ctx.fillText('📄', 600, 500);
                         ctx.fillStyle = '#6c757d';
                         ctx.font = '32px Arial';
                         ctx.fillText('Documento', 600, 700);
-                        if (loadingDiv) loadingDiv.style.display = 'none';
                     }
                 },
                 
                 async generatePDFPreview(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
+                    console.log('🔍 [PDF PREVIEW] Iniciando generatePDFPreview...');
+                    
                     if (typeof pdfjsLib === 'undefined') {
-                        console.error('❌ PDF.js not loaded');
+                        console.error('❌ [PDF PREVIEW] PDF.js no está cargado');
+                        const canvas = document.getElementById(canvasId);
+                        if (canvas) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, maxWidth, maxHeight);
+                            ctx.fillStyle = '#dc3545';
+                            ctx.font = '32px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('Error: PDF.js no disponible', maxWidth / 2, maxHeight / 2);
+                        }
                         return;
                     }
                     
                     try {
                         const canvas = document.getElementById(canvasId);
-                        if (!canvas) return;
+                        if (!canvas) {
+                            console.error('❌ [PDF PREVIEW] Canvas no encontrado:', canvasId);
+                            return;
+                        }
                         
                         const ctx = canvas.getContext('2d');
                         canvas.width = maxWidth;
                         canvas.height = maxHeight;
+                        
+                        // Fondo blanco inicial
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, maxWidth, maxHeight);
+                        
+                        console.log('📥 [PDF PREVIEW] Cargando PDF desde:', url);
                         
                         const loadingTask = pdfjsLib.getDocument({
                             url: url,
@@ -776,29 +802,59 @@
                         });
                         
                         const pdf = await loadingTask.promise;
+                        console.log('✅ [PDF PREVIEW] PDF cargado, obteniendo primera página...');
+                        
                         const page = await pdf.getPage(1);
                         const viewport = page.getViewport({ scale: 1 });
                         
+                        // Calcular escala para ajustar al canvas
                         const scaleX = maxWidth / viewport.width;
                         const scaleY = maxHeight / viewport.height;
                         const scale = Math.min(scaleX, scaleY);
                         
                         const scaledViewport = page.getViewport({ scale });
+                        console.log('📐 [PDF PREVIEW] Viewport escalado:', scaledViewport.width, 'x', scaledViewport.height);
+                        
+                        // Usar tempCanvas pattern para renderizado
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = scaledViewport.width;
+                        tempCanvas.height = scaledViewport.height;
+                        
+                        console.log('🎨 [PDF PREVIEW] Renderizando en canvas temporal...');
+                        
+                        await page.render({
+                            canvasContext: tempCtx,
+                            viewport: scaledViewport
+                        }).promise;
+                        
+                        console.log('✅ [PDF PREVIEW] Página renderizada en tempCanvas');
+                        
+                        // Limpiar y centrar en el canvas principal
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, maxWidth, maxHeight);
+                        
                         const offsetX = (maxWidth - scaledViewport.width) / 2;
                         const offsetY = (maxHeight - scaledViewport.height) / 2;
                         
-                        const renderContext = {
-                            canvasContext: ctx,
-                            viewport: scaledViewport,
-                            transform: [1, 0, 0, 1, offsetX, offsetY]
-                        };
-                        
-                        await page.render(renderContext).promise;
-                        console.log('✅ PDF preview generated successfully');
+                        ctx.drawImage(tempCanvas, offsetX, offsetY);
+                        console.log('✅ [PDF PREVIEW] Vista previa completada exitosamente');
                         
                     } catch (error) {
-                        console.error('❌ Error generating PDF preview:', error);
-                        throw error;
+                        console.error('❌ [PDF PREVIEW] Error generando vista previa:', error);
+                        const canvas = document.getElementById(canvasId);
+                        if (canvas) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, maxWidth, maxHeight);
+                            ctx.fillStyle = '#dc3545';
+                            ctx.font = '32px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('Error al cargar PDF', maxWidth / 2, maxHeight / 2 - 50);
+                            ctx.fillStyle = '#6c757d';
+                            ctx.font = '96px Arial';
+                            ctx.fillText('📄', maxWidth / 2, maxHeight / 2 + 100);
+                        }
                     }
                 }
             }

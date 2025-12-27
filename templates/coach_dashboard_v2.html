@@ -4649,47 +4649,22 @@
                                 
                                 <div id="assignedContentList">
                                     <!-- Loading State -->
-                                    <div x-show="loading.content" class="text-center py-4">
+                                    <div id="contentLoadingState" class="text-center py-4" style="display: none;">
                                         <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Cargando contenido...</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Empty State -->
-                                    <div x-show="!loading.content && assignedContent.length === 0" class="text-center py-5">
+                                    <div id="contentEmptyState" class="text-center py-5" style="display: none;">
                                         <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                         <p class="text-muted">No hay contenido asignado aún</p>
                                         <p class="text-muted small">Usa las pestañas superiores para asignar videos o subir documentos</p>
                                     </div>
                                     
-                                    <!-- Content List -->
-                                    <div x-show="!loading.content && assignedContent.length > 0" class="row g-3">
-                                        <template x-for="content in assignedContent" :key="content.id">
-                                            <div class="col-md-6 col-lg-4">
-                                                <div class="card h-100" style="border: 1px solid #e5e7eb; border-radius: 12px;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0" x-text="content.title"></h6>
-                                                            <span class="badge" 
-                                                                  :class="content.is_viewed ? 'bg-success' : 'bg-warning'"
-                                                                  x-text="content.is_viewed ? 'Visto' : 'Pendiente'">
-                                                            </span>
-                                                        </div>
-                                                        <p class="card-text small text-muted" x-text="content.description"></p>
-                                                        <div class="d-flex justify-content-between align-items-center mt-3">
-                                                            <small class="text-muted">
-                                                                <i class="fas fa-user me-1"></i>
-                                                                <span x-text="content.coachee_name"></span>
-                                                            </small>
-                                                            <button class="btn btn-sm btn-outline-danger" 
-                                                                    @click="deleteContent(content.id)">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
+                                    <!-- Content List Container -->
+                                    <div id="contentListContainer" class="row g-3">
+                                        <!-- Se renderizará dinámicamente con JavaScript -->
                                     </div>
                                 </div>
                             </div>
@@ -7452,7 +7427,14 @@ function dashboardApp() {
         // Cargar contenido asignado
         async loadAssignedContent() {
             try {
-                this.loading.content = true;
+                // Mostrar loading
+                const loadingState = document.getElementById('contentLoadingState');
+                const emptyState = document.getElementById('contentEmptyState');
+                const container = document.getElementById('contentListContainer');
+                
+                if (loadingState) loadingState.style.display = 'block';
+                if (emptyState) emptyState.style.display = 'none';
+                if (container) container.innerHTML = '';
                 
                 // Cargar lista de coachees y llenar los selectores
                 await this.populateCoacheeSelectors();
@@ -7464,36 +7446,229 @@ function dashboardApp() {
                 if (data.success) {
                     this.assignedContent = data.content || [];
                     console.log('✅ Contenido asignado cargado:', this.assignedContent.length, 'items');
+                    
+                    // Ocultar loading
+                    if (loadingState) loadingState.style.display = 'none';
+                    
+                    // Renderizar contenido
+                    this.renderAssignedContent(this.assignedContent);
+                } else {
+                    if (loadingState) loadingState.style.display = 'none';
+                    if (emptyState) emptyState.style.display = 'block';
                 }
-                
-                // Inicializar listeners de video DIRECTAMENTE AQUÍ
-                await this.$nextTick();
-                setTimeout(() => {
-                    const videoUrlInput = document.getElementById('videoUrl');
-                    if (videoUrlInput) {
-                        console.log('✅ Agregando listeners directamente desde Alpine.js');
-                        
-                        videoUrlInput.addEventListener('input', function(e) {
-                            const url = e.target.value.trim();
-                            console.log('⌨️ INPUT:', url);
-                            if (url) updateVideoPreview(url);
-                        });
-                        
-                        videoUrlInput.addEventListener('paste', function(e) {
-                            console.log('📋 PASTE detectado');
-                            setTimeout(() => {
-                                const url = e.target.value.trim();
-                                if (url) updateVideoPreview(url);
-                            }, 100);
-                        });
-                    }
-                }, 300);
             } catch (error) {
                 console.error('❌ Error loading assigned content:', error);
-                this.assignedContent = [];
-            } finally {
-                this.loading.content = false;
+                const loadingState = document.getElementById('contentLoadingState');
+                const emptyState = document.getElementById('contentEmptyState');
+                if (loadingState) loadingState.style.display = 'none';
+                if (emptyState) emptyState.style.display = 'block';
             }
+        },
+        
+        // Renderizar contenido asignado (igual que Mi Contenido del coachee)
+        renderAssignedContent(contentList) {
+            const container = document.getElementById('contentListContainer');
+            const emptyState = document.getElementById('contentEmptyState');
+            
+            if (!container) return;
+            
+            if (!contentList || contentList.length === 0) {
+                container.innerHTML = '';
+                if (emptyState) emptyState.style.display = 'block';
+                return;
+            }
+            
+            if (emptyState) emptyState.style.display = 'none';
+            
+            let html = '';
+            
+            contentList.forEach(content => {
+                const isVideo = content.content_type === 'video';
+                const isDocument = content.content_type === 'document';
+                
+                // Detectar YouTube
+                let youtubeVideoId = null;
+                if (content.content_url) {
+                    if (content.content_url.includes('youtube.com/watch?v=')) {
+                        youtubeVideoId = content.content_url.split('v=')[1]?.split('&')[0];
+                    } else if (content.content_url.includes('youtu.be/')) {
+                        youtubeVideoId = content.content_url.split('youtu.be/')[1]?.split('?')[0];
+                    }
+                }
+                
+                // Detectar Instagram
+                let instagramVideoId = null;
+                if (content.content_url) {
+                    const instagramPatterns = [
+                        /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+                        /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//
+                    ];
+                    for (const pattern of instagramPatterns) {
+                        const match = content.content_url.match(pattern);
+                        if (match && match[1]) {
+                            instagramVideoId = match[1];
+                            break;
+                        }
+                    }
+                }
+                
+                // Construir HTML de vista previa
+                let videoEmbedHTML = '';
+                
+                if (isVideo && (youtubeVideoId || instagramVideoId)) {
+                    if (youtubeVideoId) {
+                        videoEmbedHTML = `
+                        <div class="content-preview has-embedded-video">
+                            <div class="ratio ratio-16x9" style="position: relative; border-radius: 8px; overflow: hidden;">
+                                <iframe 
+                                    src="https://www.youtube.com/embed/${youtubeVideoId}?rel=0&modestbranding=1" 
+                                    title="${content.title || 'Video'}"
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    allowfullscreen
+                                    style="border-radius: 8px; width: 100%; height: 100%;">
+                                </iframe>
+                            </div>
+                        </div>
+                        `;
+                    } else if (instagramVideoId) {
+                        videoEmbedHTML = `
+                        <div class="content-preview has-embedded-video">
+                            <div class="ratio ratio-9x16" style="position: relative; border-radius: 8px; overflow: hidden;">
+                                <iframe 
+                                    src="https://www.instagram.com/p/${instagramVideoId}/embed" 
+                                    title="${content.title || 'Video'}"
+                                    frameborder="0" 
+                                    scrolling="no" 
+                                    allowtransparency="true"
+                                    style="border-radius: 8px; width: 100%; height: 100%;">
+                                </iframe>
+                            </div>
+                        </div>
+                        `;
+                    }
+                } else if (isDocument && content.content_url) {
+                    videoEmbedHTML = `
+                        <div class="content-preview">
+                            <div style="width: 100%; height: 300px; background: #f5f5f5; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; position: relative; border-radius: 8px;">
+                                <canvas id="doc-preview-assigned-${content.id}"
+                                        width="1200"
+                                        height="1000"
+                                        style="width: 100%; height: auto; display: block; cursor: pointer;"
+                                        onclick="window.open('${content.content_url}', '_blank')">
+                                </canvas>
+                                <div id="doc-loading-assigned-${content.id}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6c757d; pointer-events: none;">
+                                    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-2">Cargando documento...</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                const viewedBadge = content.is_viewed 
+                    ? '<span class="badge bg-success ms-2"><i class="fas fa-check"></i> Visto</span>'
+                    : '<span class="badge bg-warning ms-2"><i class="fas fa-eye"></i> Pendiente</span>';
+                
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                            ${videoEmbedHTML}
+                            
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title mb-1">${content.title || 'Sin título'}</h6>
+                                        ${viewedBadge}
+                                    </div>
+                                </div>
+                                ${content.description ? `<p class="card-text small text-muted mb-2">${content.description}</p>` : ''}
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        ${content.coachee_name || 'Sin asignar'}
+                                    </small>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteContentCoach(${content.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Renderizar PDFs después de cargar el HTML
+            setTimeout(() => {
+                contentList.forEach(content => {
+                    if (content.content_type === 'document' && content.content_url) {
+                        const canvasId = 'doc-preview-assigned-' + content.id;
+                        const canvas = document.getElementById(canvasId);
+                        if (canvas && window.pdfjsLib) {
+                            this.generatePDFPreviewForCanvas(content.content_url, canvasId);
+                        }
+                    }
+                });
+            }, 200);
+        },
+        
+        // Generar vista previa PDF para canvas
+        generatePDFPreviewForCanvas(url, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            const loadingId = canvasId.replace('doc-preview-assigned-', 'doc-loading-assigned-');
+            const loadingDiv = document.getElementById(loadingId);
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1200;
+            canvas.height = 1000;
+            
+            pdfjsLib.getDocument({ url: url }).promise.then(pdf => {
+                pdf.getPage(1).then(page => {
+                    const viewport = page.getViewport({ scale: 1 });
+                    const scaleX = 1200 / viewport.width;
+                    const scaleY = 1000 / viewport.height;
+                    const scale = Math.min(scaleX, scaleY);
+                    const scaledViewport = page.getViewport({ scale });
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = scaledViewport.width;
+                    tempCanvas.height = scaledViewport.height;
+                    
+                    page.render({ canvasContext: tempCtx, viewport: scaledViewport }).promise.then(() => {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, 1200, 1000);
+                        const offsetX = (1200 - scaledViewport.width) / 2;
+                        const offsetY = (1000 - scaledViewport.height) / 2;
+                        ctx.drawImage(tempCanvas, offsetX, offsetY);
+                        if (loadingDiv) loadingDiv.style.display = 'none';
+                    }).catch(err => {
+                        console.error('Error rendering PDF:', err);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, 1200, 1000);
+                        ctx.fillStyle = '#dc3545';
+                        ctx.font = '32px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Error al cargar PDF', 600, 400);
+                        if (loadingDiv) loadingDiv.style.display = 'none';
+                    });
+                });
+            }).catch(err => {
+                console.error('Error loading PDF:', err);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 1200, 1000);
+                ctx.fillStyle = '#dc3545';
+                ctx.font = '32px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error al cargar PDF', 600, 400);
+                if (loadingDiv) loadingDiv.style.display = 'none';
+            });
         },
         
         // Poblar selectores de coachees en el módulo de contenido
@@ -7568,6 +7743,99 @@ function dashboardApp() {
                 console.error('Error eliminando contenido:', error);
                 showNotification('❌ Error de conexión', 'error');
             }
+        },
+        
+        // Renderizar vista previa de video (YouTube/Instagram)
+        renderVideoPreview(url, title) {
+            if (!url) return '';
+            
+            // Detectar YouTube
+            let youtubeId = null;
+            if (url.includes('youtube.com/watch?v=')) {
+                youtubeId = url.split('v=')[1]?.split('&')[0];
+            } else if (url.includes('youtu.be/')) {
+                youtubeId = url.split('youtu.be/')[1]?.split('?')[0];
+            }
+            
+            if (youtubeId) {
+                return `
+                    <div class="ratio ratio-16x9" style="position: relative; border-radius: 8px; overflow: hidden;">
+                        <iframe 
+                            src="https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1" 
+                            title="${title || 'Video'}"
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowfullscreen
+                            style="border-radius: 8px; width: 100%; height: 100%;">
+                        </iframe>
+                    </div>
+                `;
+            }
+            
+            // Detectar Instagram
+            const instagramPatterns = [
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//
+            ];
+            
+            let instagramId = null;
+            for (const pattern of instagramPatterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    instagramId = match[1];
+                    break;
+                }
+            }
+            
+            if (instagramId) {
+                return `
+                    <div class="ratio ratio-9x16" style="position: relative; border-radius: 8px; overflow: hidden;">
+                        <iframe 
+                            src="https://www.instagram.com/p/${instagramId}/embed" 
+                            title="${title || 'Video'}"
+                            frameborder="0" 
+                            scrolling="no" 
+                            allowtransparency="true"
+                            style="border-radius: 8px; width: 100%; height: 100%;">
+                        </iframe>
+                    </div>
+                `;
+            }
+            
+            // Fallback para otros videos
+            return `
+                <div class="ratio ratio-16x9" style="border-radius: 8px; overflow: hidden; background: #000;">
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #222; position: relative;">
+                        <i class="fas fa-video" style="font-size: 3rem; color: #fff; opacity: 0.5;"></i>
+                        <a href="${url}" target="_blank" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;"></a>
+                    </div>
+                </div>
+            `;
+        },
+        
+        // Extraer YouTube ID
+        getYouTubeId(url) {
+            if (!url) return null;
+            if (url.includes('youtube.com/watch?v=')) {
+                return url.split('v=')[1]?.split('&')[0];
+            } else if (url.includes('youtu.be/')) {
+                return url.split('youtu.be/')[1]?.split('?')[0];
+            }
+            return null;
+        },
+        
+        // Extraer Instagram ID
+        getInstagramId(url) {
+            if (!url) return null;
+            const patterns = [
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//
+            ];
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) return match[1];
+            }
+            return null;
         },
         
         // Logout
@@ -9583,29 +9851,58 @@ Tus credenciales de acceso son:
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             const page = await pdf.getPage(1);
             
-            const scale = 0.4;
-            const viewport = page.getViewport({ scale });
+            // Dimensiones máximas del canvas (como en coach_feed y coachee_dashboard)
+            const maxWidth = 800;
+            const maxHeight = 600;
             
+            // Obtener viewport original
+            const viewport = page.getViewport({ scale: 1 });
+            
+            // Calcular escala para ajustar al contenedor
+            const scaleX = maxWidth / viewport.width;
+            const scaleY = maxHeight / viewport.height;
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Crear viewport escalado
+            const scaledViewport = page.getViewport({ scale });
+            
+            // Crear canvas con dimensiones fijas
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+            canvas.width = maxWidth;
+            canvas.height = maxHeight;
             
+            // Fondo blanco
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, maxWidth, maxHeight);
+            
+            // Centrar el PDF en el canvas
+            const offsetX = (maxWidth - scaledViewport.width) / 2;
+            const offsetY = (maxHeight - scaledViewport.height) / 2;
+            
+            // Renderizar con offset para centrar
             await page.render({
                 canvasContext: context,
-                viewport: viewport
+                viewport: scaledViewport,
+                transform: [1, 0, 0, 1, offsetX, offsetY]
             }).promise;
             
-            container.innerHTML = '<div style="max-height: 400px; overflow-y: auto;">' +
-                '<canvas id="documentPreviewCanvas"></canvas>' +
+            // Aplicar estilo responsive al canvas
+            canvas.style.width = '100%';
+            canvas.style.height = 'auto';
+            canvas.style.maxWidth = maxWidth + 'px';
+            canvas.style.display = 'block';
+            canvas.style.margin = '0 auto';
+            
+            container.innerHTML = '<div style="max-height: 600px; overflow-y: auto; text-align: center;">' +
                 '</div>' +
-                '<p class="small text-muted mt-2">' +
+                '<p class="small text-muted mt-2 text-center">' +
                 '<i class="fas fa-file-pdf text-danger me-1"></i>' +
                 file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)' +
                 '</p>';
             
-            const canvasContainer = container.querySelector('#documentPreviewCanvas');
-            canvasContainer.replaceWith(canvas);
+            const canvasDiv = container.querySelector('div');
+            canvasDiv.appendChild(canvas);
             
             console.log('✅ Vista previa de PDF renderizada');
         } catch (error) {
@@ -9630,12 +9927,12 @@ Tus credenciales de acceso son:
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            container.innerHTML = '<div style="max-height: 400px; overflow-y: auto;">' +
+            container.innerHTML = '<div style="max-height: 600px; overflow-y: auto; text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">' +
                 '<img src="' + e.target.result + '" ' +
                 'alt="Vista previa" ' +
-                'style="max-width: 100%; height: auto; border-radius: 8px;">' +
+                'style="max-width: 100%; max-height: 550px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">' +
                 '</div>' +
-                '<p class="small text-muted mt-2">' +
+                '<p class="small text-muted mt-2 text-center">' +
                 '<i class="fas fa-image text-info me-1"></i>' +
                 file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)' +
                 '</p>';
@@ -9891,6 +10188,35 @@ function refreshContentList() {
         if (app && app.loadAssignedContent) {
             app.loadAssignedContent();
         }
+    }
+}
+
+// Función global para eliminar contenido (llamada desde HTML renderizado)
+async function deleteContentCoach(contentId) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este contenido?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/coach/content/${contentId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('✅ Contenido eliminado correctamente', 'success');
+            // Recargar la lista
+            const app = document.querySelector('[x-data]')?.__x?.$data;
+            if (app && app.loadAssignedContent) {
+                await app.loadAssignedContent();
+            }
+        } else {
+            showNotification('❌ ' + (data.error || 'Error al eliminar contenido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error eliminando contenido:', error);
+        showNotification('❌ Error de conexión', 'error');
     }
 }
 </script>

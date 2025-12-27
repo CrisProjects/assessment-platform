@@ -690,18 +690,11 @@
                                     </iframe>
                                 </div>
                             ` : isDocument ? `
-                                <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden;" onclick="openDocumentFeed('${item.content_url}', '${item.title}')">
-                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 56.25%; overflow-y: auto; background: white; border-radius: 8px;">
-                                        <canvas id="doc-preview-${item.id}"
-                                                width="1200"
-                                                height="1000"
-                                                style="width: 100%; height: auto; pointer-events: none; display: block;">
-                                        </canvas>
-                                    </div>
-                                    <div class="document-overlay" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); background: rgba(0,0,0,0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
-                                        <i class="fas fa-file-alt" style="color: white; font-size: 16px;"></i>
-                                    </div>
-                                </div>
+                                <canvas id="doc-preview-${item.id}"
+                                        width="1200"
+                                        height="1000"
+                                        style="width: 100%; height: auto; display: block; background: white;">
+                                </canvas>
                             ` : `
                                 <div onclick="openVideoFeed('${item.content_url}')" style="position: relative; cursor: pointer;">
                                     <img src="${thumbnail}" 
@@ -773,18 +766,26 @@
             container.innerHTML = feedsHTML;
             console.log(`✅ Displayed ${content.length} Instagram-style feeds`);
             
-            // Generar previews de documentos
-            content.forEach(item => {
-                if (item.content_type === 'document') {
-                    const canvasId = `doc-preview-${item.id}`;
-                    setTimeout(() => {
+            // Generar previews de documentos después de cargar el HTML
+            setTimeout(() => {
+                console.log('🔍 Iniciando renderizado de documentos...');
+                const documentCount = content.filter(item => item.content_type === 'document' && item.content_url).length;
+                console.log(`📄 Total documentos a renderizar: ${documentCount}`);
+                
+                content.forEach(item => {
+                    if (item.content_type === 'document' && item.content_url) {
+                        const canvasId = `doc-preview-${item.id}`;
+                        console.log(`📄 Intentando renderizar documento ID ${item.id}, Canvas: ${canvasId}, URL: ${item.content_url}`);
                         const canvas = document.getElementById(canvasId);
                         if (canvas) {
+                            console.log(`✅ Canvas ${canvasId} encontrado, llamando generateDocumentPreview...`);
                             generateDocumentPreview(item.content_url, canvasId);
+                        } else {
+                            console.error(`❌ Canvas ${canvasId} NO encontrado en el DOM`);
                         }
-                    }, 500);
-                }
-            });
+                    }
+                });
+            }, 200);
         }
         
         // Función para mostrar cuando no hay feeds
@@ -903,8 +904,17 @@
         
         // Función para generar preview de documento
         async function generateDocumentPreview(url, canvasId) {
+            console.log('📄 [DOC PREVIEW] Iniciando con URL:', url);
+            console.log('📄 [DOC PREVIEW] URL en minúsculas:', url.toLowerCase());
+            console.log('📄 [DOC PREVIEW] Contiene .pdf?', url.toLowerCase().includes('.pdf'));
+            console.log('📄 [DOC PREVIEW] Contiene content_type=document?', url.includes('content_type=document'));
+            console.log('📄 [DOC PREVIEW] Contiene /download?', url.includes('/download'));
+            
             const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
+            if (!canvas) {
+                console.error('❌ [DOC PREVIEW] Canvas not found:', canvasId);
+                return;
+            }
 
             const ctx = canvas.getContext('2d');
             canvas.width = 1200;
@@ -917,11 +927,12 @@
             ctx.textAlign = 'center';
             ctx.fillText('Cargando documento...', 600, 500);
             
-            if (url.toLowerCase().includes('.pdf') || url.includes('content_type=document') || url.includes('/download')) {
+            if (url.toLowerCase().includes('.pdf') || url.includes('content_type=document') || url.includes('/download') || url.includes('/view')) {
+                console.log('✅ [DOC PREVIEW] Detectado como PDF, llamando generatePDFPreview');
                 try {
                     await generatePDFPreview(url, canvasId, 1200, 1000);
                 } catch (error) {
-                    console.error('❌ PDF preview failed:', error);
+                    console.error('❌ [DOC PREVIEW] PDF preview failed:', error);
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(0, 0, 1200, 1000);
                     ctx.fillStyle = '#dc3545';
@@ -946,13 +957,16 @@
         // Función para generar preview de PDF
         async function generatePDFPreview(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
             if (typeof pdfjsLib === 'undefined') {
-                console.error('❌ PDF.js not loaded');
+                console.error('❌ [PDF PREVIEW] PDF.js not loaded');
                 return;
             }
             
             try {
                 const canvas = document.getElementById(canvasId);
-                if (!canvas) return;
+                if (!canvas) {
+                    console.error('❌ [PDF PREVIEW] Canvas element not found:', canvasId);
+                    return;
+                }
                 
                 const ctx = canvas.getContext('2d');
                 canvas.width = maxWidth;
@@ -976,21 +990,62 @@
                 const scale = Math.min(scaleX, scaleY);
                 
                 const scaledViewport = page.getViewport({ scale });
+                
+                // Centrar la página en el canvas
                 const offsetX = (maxWidth - scaledViewport.width) / 2;
                 const offsetY = (maxHeight - scaledViewport.height) / 2;
                 
+                // Crear canvas temporal para renderizar la página
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = scaledViewport.width;
+                tempCanvas.height = scaledViewport.height;
+                
+                // Renderizar página en canvas temporal
                 const renderContext = {
-                    canvasContext: ctx,
-                    viewport: scaledViewport,
-                    transform: [1, 0, 0, 1, offsetX, offsetY]
+                    canvasContext: tempCtx,
+                    viewport: scaledViewport
                 };
                 
                 await page.render(renderContext).promise;
-                console.log('✅ PDF preview generated successfully');
+                
+                // Limpiar canvas principal con fondo blanco
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, maxWidth, maxHeight);
+                
+                // Dibujar página centrada en canvas principal
+                ctx.drawImage(tempCanvas, offsetX, offsetY);
+                
+                console.log('✅ [PDF PREVIEW] PDF renderizado exitosamente');
+                
+                // Ocultar spinner después de renderizar
+                const loadingId = canvasId.replace('doc-preview-', 'doc-loading-feed-');
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                    console.log('✅ Spinner ocultado:', loadingId);
+                }
                 
             } catch (error) {
                 console.error('❌ Error generating PDF preview:', error);
-                throw error;
+                // Mostrar icono de error en el canvas
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = maxWidth;
+                    canvas.height = maxHeight;
+                    
+                    // Fondo gris claro
+                    ctx.fillStyle = '#f8f9fa';
+                    ctx.fillRect(0, 0, maxWidth, maxHeight);
+                    
+                    // Dibujar texto de error
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Vista previa no disponible', maxWidth/2, maxHeight/2 - 10);
+                    ctx.fillText('📄 Documento PDF', maxWidth/2, maxHeight/2 + 10);
+                }
             }
         }
         
