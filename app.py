@@ -4055,11 +4055,7 @@ def api_invite_login():
             
             return jsonify({'success': False, 'error': 'Contraseña incorrecta'}), 401
         
-        # Limpiar cualquier sesión previa de otros roles
-        session.pop('coach_user_id', None)
-        session.pop('admin_user_id', None)
-        
-        # Crear sesión de coachee
+        # Crear sesión de coachee (sin limpiar otras sesiones)
         session['coachee_user_id'] = coachee.id
         session['user_id'] = coachee.id
         session['username'] = coachee.username
@@ -4323,8 +4319,7 @@ def api_admin_logout():
     try:
         # Verificar que el usuario sea admin
         if not current_user.is_authenticated or current_user.role != 'platform_admin':
-            # Incluso si no está autenticado, limpiar sesión por si acaso
-            session.clear()
+            # No hay sesión de admin, no hacer nada
             return jsonify({'error': 'No hay sesión de administrador activa'}), 400
         
         admin_id = current_user.id
@@ -4343,8 +4338,10 @@ def api_admin_logout():
         # Limpiar completamente la sesión de Flask-Login
         logout_user()
         
-        # Limpiar todas las variables de sesión
-        session.clear()
+        # Limpiar solo variables de admin/flask-login (preservar coach/coachee)
+        session.pop('_user_id', None)
+        session.pop('_fresh', None)
+        session.pop('_id', None)
         
         # Forzar regeneración de session ID (previene session fixation)
         session.modified = True
@@ -4369,10 +4366,12 @@ def api_admin_logout():
         
     except Exception as e:
         logger.error(f"Error during admin logout: {str(e)}")
-        # En caso de error, forzar limpieza de sesión
+        # En caso de error, forzar limpieza selectiva de sesión de admin
         try:
             logout_user()
-            session.clear()
+            session.pop('_user_id', None)
+            session.pop('_fresh', None)
+            session.pop('_id', None)
         except:
             pass
         
@@ -4837,10 +4836,7 @@ def api_admin_login():
             db.session.refresh(admin_user)
         
         if admin_user and admin_user.check_password(password) and admin_user.is_active:
-            # Limpiar cualquier sesión previa de otros roles
-            session.pop('coach_user_id', None)
-            session.pop('coachee_user_id', None)
-            
+            # Crear sesión de admin (sin limpiar otras sesiones)
             login_user(admin_user, remember=True)
             session.permanent = True
             admin_user.last_login = datetime.utcnow()
@@ -5800,11 +5796,7 @@ def api_coach_login():
             db.session.refresh(coach_user)
         
         if coach_user and coach_user.check_password(password) and coach_user.is_active:
-            # Limpiar cualquier sesión previa de otros roles
-            session.pop('coachee_user_id', None)
-            session.pop('admin_user_id', None)
-            
-            # Usar sesión específica para coach
+            # Usar sesión específica para coach (sin limpiar otras sesiones)
             session['coach_user_id'] = coach_user.id
             
             # NO usar login_user() para evitar conflictos entre sesiones
