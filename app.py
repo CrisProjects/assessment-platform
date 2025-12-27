@@ -3552,20 +3552,36 @@ def health_check():
         health_status['database'] = 'connected'
         
         # Ejecutar migraciones necesarias ANTES de crear tablas
+        migrations_applied = []
         try:
-            # Migración: Agregar columna coach_notes si no existe
-            try:
-                db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS coach_notes TEXT"))
-                db.session.commit()
-                health_status['migration_coach_notes'] = 'applied'
-                logger.info("✅ HEALTH: Migración coach_notes aplicada")
-            except Exception as migration_error:
-                db.session.rollback()
-                logger.warning(f"⚠️ HEALTH: Migración coach_notes: {migration_error}")
-                health_status['migration_coach_notes'] = 'skipped'
+            # Lista de migraciones de columnas faltantes en la tabla user
+            user_migrations = [
+                ("original_password", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS original_password VARCHAR(120)"),
+                ("avatar_url", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)"),
+                ("coach_notes", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS coach_notes TEXT"),
+                ("last_login", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS last_login TIMESTAMP"),
+            ]
+            
+            for column_name, migration_sql in user_migrations:
+                try:
+                    db.session.execute(text(migration_sql))
+                    db.session.commit()
+                    migrations_applied.append(column_name)
+                    logger.info(f"✅ HEALTH: Migración {column_name} aplicada")
+                except Exception as migration_error:
+                    db.session.rollback()
+                    logger.warning(f"⚠️ HEALTH: Migración {column_name}: {migration_error}")
+            
+            if migrations_applied:
+                health_status['migrations_applied'] = migrations_applied
+                logger.info(f"✅ HEALTH: Migraciones aplicadas: {migrations_applied}")
+            else:
+                health_status['migrations_applied'] = 'none_needed'
+                
         except Exception as migration_error:
             logger.warning(f"⚠️ HEALTH: Error en migraciones: {migration_error}")
             health_status['migrations'] = 'error'
+            health_status['migration_error'] = str(migration_error)
         
         # Crear tablas si no existen
         try:
@@ -4222,11 +4238,15 @@ def api_coach_logout():
             except Exception as e:
                 logger.error(f"Error logging security event: {str(e)}")
         
-        # Cerrar sesión de Flask-Login
-        logout_user()
+        # Solo cerrar sesión de coach, preservar coachee
+        session.pop('coach_user_id', None)
+        session.pop('last_activity_coach', None)
         
-        # Limpiar completamente la sesión
-        session.clear()
+        # Solo usar logout_user() si no hay sesión de coachee activa
+        if 'coachee_user_id' not in session:
+            logout_user()
+            session.pop('_user_id', None)
+            session.pop('_fresh', None)
         
         # Marcar sesión como modificada para forzar actualización
         session.modified = True
@@ -4252,10 +4272,15 @@ def api_coach_logout():
         
     except Exception as e:
         logger.error(f"❌ Error during coach logout: {str(e)}")
-        # En caso de error, forzar limpieza de sesión
+        # En caso de error, forzar limpieza selectiva de sesión de coach
         try:
-            logout_user()
-            session.clear()
+            session.pop('coach_user_id', None)
+            session.pop('last_activity_coach', None)
+            # Solo usar logout_user() si no hay sesión de coachee
+            if 'coachee_user_id' not in session:
+                logout_user()
+                session.pop('_user_id', None)
+                session.pop('_fresh', None)
         except:
             pass
         
