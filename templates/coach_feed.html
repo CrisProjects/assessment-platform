@@ -569,6 +569,21 @@
                             this.content = data.content;
                             console.log(`✅ Loaded ${this.content.length} content items`);
                             
+                            // Log completo del contenido recibido para diagnosticar
+                            console.log('📦 [COACH-FEED] Contenido completo recibido:', JSON.stringify(data.content, null, 2));
+                            
+                            // Verificar cuántos son documentos
+                            const documents = this.content.filter(item => item.content_type === 'document');
+                            console.log(`📄 [COACH-FEED] Total documentos con content_type='document': ${documents.length}`);
+                            documents.forEach((doc, index) => {
+                                console.log(`📄 [COACH-FEED] Documento ${index + 1}:`, {
+                                    id: doc.id,
+                                    title: doc.title,
+                                    content_type: doc.content_type,
+                                    content_url: doc.content_url
+                                });
+                            });
+                            
                             // Generar previews de documentos después de renderizar
                             setTimeout(() => {
                                 console.log('🔍 Iniciando renderizado de documentos en coach feed...');
