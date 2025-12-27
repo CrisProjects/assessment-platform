@@ -3648,9 +3648,6 @@
                                             <th style="color: #6b7280; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">
                                                 Email
                                             </th>
-                                            <th style="color: #6b7280; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">
-                                                Contraseña
-                                            </th>
                                             <th style="color: #6b7280; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; border: none;">
                                                 Acciones
                                             </th>
@@ -5460,6 +5457,118 @@
     </div>
 </div>
 
+<!-- Modal para Notas del Coach -->
+<div class="modal fade" id="coachNotesModal" tabindex="-1" aria-labelledby="coachNotesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-height: 90vh;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 12px 12px 0 0; border: none; padding: 1rem 1.25rem;">
+                <h5 class="modal-title text-white" id="coachNotesModalLabel" style="font-size: 1rem; font-weight: 600;">
+                    <i class="fas fa-sticky-note me-2"></i>
+                    <span class="d-none d-sm-inline">Notas - </span><span id="notesCoacheeName"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" style="padding: 1rem 1.25rem;">
+                <!-- Lista de notas existentes -->
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <i class="fas fa-history me-1"></i>Historial
+                    </h6>
+                    <div id="notesList" style="max-height: 220px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem; background: #fafbfc;">
+                        <!-- Las notas se cargarán aquí dinámicamente -->
+                        <p class="text-muted text-center mb-0" style="font-size: 0.813rem;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Sin notas
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Formulario para nueva nota -->
+                <div style="border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+                    <h6 class="text-muted mb-2" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <i class="fas fa-plus-circle me-1"></i>Nueva Nota
+                    </h6>
+                    <div class="mb-2">
+                        <label for="noteDate" class="form-label" style="font-weight: 500; color: #374151; font-size: 0.813rem; margin-bottom: 0.375rem;">
+                            <i class="fas fa-calendar me-1"></i>Fecha
+                        </label>
+                        <input type="date" class="form-control form-control-sm" id="noteDate" style="border-radius: 6px; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem;">
+                    </div>
+                    <div class="mb-0">
+                        <label for="noteText" class="form-label" style="font-weight: 500; color: #374151; font-size: 0.813rem; margin-bottom: 0.375rem;">
+                            <i class="fas fa-pencil-alt me-1"></i>Nota
+                        </label>
+                        <textarea class="form-control form-control-sm" id="noteText" rows="3" 
+                            placeholder="Observaciones, temas, avances..."
+                            style="border-radius: 6px; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem; line-height: 1.5; resize: vertical;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="background-color: #f9fafb; border-top: 1px solid #e5e7eb; padding: 0.75rem 1.25rem; border-radius: 0 0 12px 12px; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" @click="saveCoachNote()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 6px; padding: 0.5rem 1rem; font-weight: 500; font-size: 0.875rem;">
+                    <i class="fas fa-save me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos responsive para el modal de notas */
+@media (max-width: 576px) {
+    #coachNotesModal .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    #coachNotesModal .modal-content {
+        max-height: calc(100vh - 1rem);
+    }
+    
+    #coachNotesModal .modal-header {
+        padding: 0.875rem 1rem;
+    }
+    
+    #coachNotesModal .modal-title {
+        font-size: 0.938rem;
+    }
+    
+    #coachNotesModal .modal-body {
+        padding: 0.875rem 1rem;
+    }
+    
+    #coachNotesModal #notesList {
+        max-height: 180px;
+        padding: 0.625rem;
+    }
+    
+    #coachNotesModal .modal-footer {
+        padding: 0.625rem 1rem;
+        flex-wrap: nowrap;
+    }
+    
+    #coachNotesModal .modal-footer .btn {
+        font-size: 0.813rem;
+        padding: 0.5rem 0.875rem;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    #coachNotesModal .modal-dialog {
+        max-width: 90%;
+    }
+}
+
+@media (min-width: 769px) {
+    #coachNotesModal .modal-dialog {
+        max-width: 600px;
+    }
+}
+</style>
+
 <!-- Modal para ver detalles de evaluación -->
 <div class="modal" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -5780,6 +5889,8 @@ function dashboardApp() {
         currentEvaluation: null,
         currentInvitationData: null,
         selectedCoacheeForEdit: null,
+        currentNotesCoacheeId: null,
+        currentNotesCoacheeName: '',
         
         // Calendario
         calendar: null,
@@ -6037,27 +6148,22 @@ function dashboardApp() {
                         <td style="padding: 1.25rem 1.5rem; color: #6b7280; font-size: 0.875rem; border: none;">
                             ${coachee.email}
                         </td>
-                        <td style="padding: 1.25rem 1.5rem; border: none;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <code style="background: #f9fafb; padding: 0.375rem 0.75rem; border-radius: 6px; color: #4b5563; font-size: 0.8125rem; border: 1px solid #e5e7eb;">${coachee.password || '••••••••'}</code>
-                                <button class="btn btn-sm" @click="copyPassword('${coachee.password}')" style="background: #f9fafb; border: 1px solid #e5e7eb; color: #6b7280; padding: 0.375rem 0.625rem; border-radius: 6px; transition: all 0.2s ease;">
-                                    <i class="fas fa-copy" style="font-size: 0.8125rem;"></i>
-                                </button>
-                            </div>
-                        </td>
                         <td style="padding: 1.25rem 1.5rem; text-align: center; border: none;">
                             <div style="display: inline-flex; gap: 0.375rem;">
                                 <button class="btn btn-sm btn-hover-primary" @click="viewCoacheeDetails(${coachee.id})">
                                     <i class="fas fa-chart-line" style="font-size: 0.75rem;"></i>
+                                    <span style="margin-left: 0.25rem;">Ver</span>
                                 </button>
-                                <button class="btn btn-sm btn-hover-warning" @click="editCoachee(${coachee.id})">
-                                    <i class="fas fa-edit" style="font-size: 0.75rem;"></i>
+                                <button class="btn btn-sm btn-hover-warning" @click="openCoachNotes(${coachee.id}, '${coachee.full_name || coachee.name}')">
+                                    <i class="fas fa-sticky-note" style="font-size: 0.75rem;"></i>
+                                    <span style="margin-left: 0.25rem;">Notas</span>
                                 </button>
-                                <button class="btn btn-sm btn-hover-success" @click="showAssignedAssessments(${coachee.id}, '${coachee.full_name || coachee.name}')">
-                                    <i class="fas fa-tasks" style="font-size: 0.75rem;"></i>
-                                </button>
-                                <button class="btn btn-sm btn-hover-danger" @click="deleteCoachee(${coachee.id}, '${coachee.full_name || coachee.name}')">
-                                    <i class="fas fa-trash" style="font-size: 0.75rem;"></i>
+                                <button class="btn btn-sm" 
+                                        :class="${coachee.is_active} ? 'btn-success' : 'btn-secondary'"
+                                        style="font-size: 0.7rem; padding: 0.25rem 0.5rem; cursor: default;"
+                                        disabled>
+                                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                                    <span>${coachee.is_active ? 'Activo' : 'Inactivo'}</span>
                                 </button>
                             </div>
                         </td>
@@ -6088,10 +6194,6 @@ function dashboardApp() {
                                     <span>${coachee.email}</span>
                                 </div>
                                 <div class="meta-item">
-                                    <i class="fas fa-key"></i>
-                                    <span class="password-text">${coachee.password || '••••••••'}</span>
-                                </div>
-                                <div class="meta-item">
                                     <i class="fas fa-chart-bar"></i>
                                     <span>${coachee.evaluations_count || 0} evaluaciones</span>
                                 </div>
@@ -6102,8 +6204,15 @@ function dashboardApp() {
                                 <button class="unified-btn-sm unified-btn-primary" @click="viewCoacheeDetails(${coachee.id})">
                                     <i class="fas fa-chart-line"></i> Ver
                                 </button>
-                                <button class="unified-btn-sm unified-btn-secondary" @click="editCoachee(${coachee.id})">
-                                    <i class="fas fa-edit"></i> Editar
+                                <button class="unified-btn-sm unified-btn-warning" @click="openCoachNotes(${coachee.id}, '${coachee.full_name || coachee.name}')">
+                                    <i class="fas fa-sticky-note"></i> Notas
+                                </button>
+                                <button class="unified-btn-sm" 
+                                        :class="${coachee.is_active} ? 'unified-btn-success' : 'unified-btn-secondary'"
+                                        style="cursor: default;"
+                                        disabled>
+                                    <i class="fas fa-circle" style="font-size: 0.6rem;"></i>
+                                    <span>${coachee.is_active ? 'Activo' : 'Inactivo'}</span>
                                 </button>
                             </div>
                         </div>
@@ -6544,28 +6653,132 @@ function dashboardApp() {
             }
         },
         
-        // Eliminar coachee
-        async deleteCoachee(coacheeId, coacheeName) {
-            if (!confirm(`¿Estás seguro de eliminar a ${coacheeName}?`)) return;
+        // Función deleteCoachee eliminada - se reemplazó con indicador de estado activo/inactivo
+        
+        // ========== NOTAS DEL COACH ==========
+        
+        // Abrir modal de notas
+        async openCoachNotes(coacheeId, coacheeName) {
+            this.currentNotesCoacheeId = coacheeId;
+            this.currentNotesCoacheeName = coacheeName;
             
+            document.getElementById('notesCoacheeName').textContent = coacheeName;
+            document.getElementById('noteText').value = '';
+            document.getElementById('noteDate').valueAsDate = new Date();
+            
+            // Cargar notas existentes
             try {
-                const response = await fetch(`/api/coach/coachee/${coacheeId}`, {
-                    method: 'DELETE'
-                });
-                
+                const response = await fetch(`/api/coach/coachee-notes/${coacheeId}`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    this.showNotification('Coachee eliminado correctamente', 'success');
-                    await this.loadCoachees();
-                    await this.loadStats();
-                } else {
-                    this.showNotification(data.error || 'Error al eliminar coachee', 'error');
+                    this.renderNotesList(data.notes || []);
                 }
             } catch (error) {
-                console.error('❌ Error deleting coachee:', error);
+                console.error('Error loading notes:', error);
+            }
+            
+            // Abrir modal
+            const modal = new bootstrap.Modal(document.getElementById('coachNotesModal'));
+            modal.show();
+        },
+        
+        // Renderizar lista de notas
+        renderNotesList(notes) {
+            const notesList = document.getElementById('notesList');
+            
+            if (!notes || notes.length === 0) {
+                notesList.innerHTML = `
+                    <p class="text-muted text-center mb-0" style="font-size: 0.875rem;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        No hay notas registradas aún
+                    </p>
+                `;
+                return;
+            }
+            
+            // Ordenar por fecha descendente
+            notes.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            notesList.innerHTML = notes.map(note => `
+                <div class="note-item" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600; color: #f59e0b; font-size: 0.875rem;">
+                            <i class="fas fa-calendar-alt me-1"></i>${new Date(note.date).toLocaleDateString('es-CL')}
+                        </span>
+                    </div>
+                    <p style="margin: 0; color: #374151; font-size: 0.9375rem; line-height: 1.6; white-space: pre-wrap;">${note.text}</p>
+                </div>
+            `).join('');
+        },
+        
+        // Guardar nota del coach
+        async saveCoachNote() {
+            const noteText = document.getElementById('noteText').value.trim();
+            const noteDate = document.getElementById('noteDate').value;
+            
+            if (!noteText) {
+                this.showNotification('Por favor escribe una nota', 'warning');
+                return;
+            }
+            
+            if (!noteDate) {
+                this.showNotification('Por favor selecciona una fecha', 'warning');
+                return;
+            }
+            
+            try {
+                const coacheeId = this.currentNotesCoacheeId;
+                
+                if (!coacheeId) {
+                    this.showNotification('Error: ID de coachee no encontrado', 'error');
+                    return;
+                }
+                
+                // Cargar notas existentes
+                const getResponse = await fetch(`/api/coach/coachee-notes/${coacheeId}`);
+                const getData = await getResponse.json();
+                
+                let notes = [];
+                if (getData.success && getData.notes) {
+                    notes = getData.notes;
+                }
+                
+                // Agregar nueva nota
+                notes.push({
+                    date: noteDate,
+                    text: noteText,
+                    created_at: new Date().toISOString()
+                });
+                
+                // Guardar todas las notas
+                const saveResponse = await fetch(`/api/coach/coachee-notes/${coacheeId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notes: notes })
+                });
+                
+                const saveData = await saveResponse.json();
+                
+                if (saveData.success) {
+                    this.showNotification('Nota guardada exitosamente', 'success');
+                    
+                    // Limpiar formulario
+                    document.getElementById('noteText').value = '';
+                    document.getElementById('noteDate').valueAsDate = new Date();
+                    
+                    // Actualizar lista de notas
+                    this.renderNotesList(saveData.notes);
+                } else {
+                    this.showNotification(saveData.error || 'Error al guardar nota', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving note:', error);
+                this.showNotification('Error de conexión al guardar nota', 'error');
             }
         },
+        
+        // ========== FIN NOTAS DEL COACH ==========
         
         // Cargar tareas
         async loadTasks() {
@@ -9322,6 +9535,220 @@ Tus credenciales de acceso son:
         });
     }
 
+    // Función para actualizar vista previa de documentos
+    function updateDocumentPreview(file) {
+        console.log('📄 updateDocumentPreview llamada con archivo:', file.name);
+        
+        const previewContainer = document.getElementById('documentPreviewContainer');
+        if (!previewContainer) {
+            console.error('❌ No se encontró el elemento documentPreviewContainer');
+            return;
+        }
+        
+        console.log('✅ Contenedor de preview encontrado');
+        
+        const fileType = file.type;
+        const fileName = file.name;
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+        
+        console.log('🔍 Tipo de archivo:', fileType, 'Extensión:', fileExtension);
+        
+        // Actualizar contadores
+        updateDocumentStats(fileType, fileExtension);
+        
+        // Vista previa según tipo de archivo
+        if (fileType === 'application/pdf' || fileExtension === 'pdf') {
+            renderPDFPreview(file, previewContainer);
+        } else if (fileType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+            renderImagePreview(file, previewContainer);
+        } else {
+            // Para otros tipos de archivos (doc, docx, etc.)
+            renderDocumentIcon(file, previewContainer);
+        }
+    }
+    
+    // Función para renderizar vista previa de PDF
+    async function renderPDFPreview(file, container) {
+        console.log('📕 Renderizando vista previa de PDF');
+        
+        container.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-2" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="small">Cargando vista previa del PDF...</p>
+            </div>
+        `;
+        
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const page = await pdf.getPage(1);
+            
+            const scale = 0.4;
+            const viewport = page.getViewport({ scale });
+            
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+            
+            container.innerHTML = `
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <canvas id="documentPreviewCanvas"></canvas>
+                </div>
+                <p class="small text-muted mt-2">
+                    <i class="fas fa-file-pdf text-danger me-1"></i>
+                    ${file.name} (${(file.size / 1024).toFixed(2)} KB)
+                </p>
+            `;
+            
+            const canvasContainer = container.querySelector('#documentPreviewCanvas');
+            canvasContainer.replaceWith(canvas);
+            
+            console.log('✅ Vista previa de PDF renderizada');
+        } catch (error) {
+            console.error('❌ Error renderizando PDF:', error);
+            container.innerHTML = `
+                <i class="fas fa-file-pdf text-danger fa-3x mb-2"></i>
+                <p class="small">Error al cargar vista previa del PDF</p>
+                <p class="small text-muted">${file.name}</p>
+            `;
+        }
+    }
+    
+    // Función para renderizar vista previa de imagen
+    function renderImagePreview(file, container) {
+        console.log('🖼️ Renderizando vista previa de imagen');
+        
+        container.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-2" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="small">Cargando imagen...</p>
+            </div>
+        `;
+        
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            container.innerHTML = `
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <img src="${e.target.result}" 
+                         alt="Vista previa" 
+                         style="max-width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <p class="small text-muted mt-2">
+                    <i class="fas fa-image text-info me-1"></i>
+                    ${file.name} (${(file.size / 1024).toFixed(2)} KB)
+                </p>
+            `;
+            console.log('✅ Vista previa de imagen renderizada');
+        };
+        
+        reader.onerror = function() {
+            console.error('❌ Error leyendo imagen');
+            container.innerHTML = `
+                <i class="fas fa-image text-info fa-3x mb-2"></i>
+                <p class="small">Error al cargar vista previa de la imagen</p>
+                <p class="small text-muted">${file.name}</p>
+            `;
+        };
+        
+        reader.readAsDataURL(file);
+    }
+    
+    // Función para mostrar icono de documento
+    function renderDocumentIcon(file, container) {
+        console.log('📝 Mostrando icono de documento');
+        
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        let iconClass = 'fa-file';
+        let iconColor = 'text-secondary';
+        
+        if (['doc', 'docx'].includes(fileExtension)) {
+            iconClass = 'fa-file-word';
+            iconColor = 'text-primary';
+        }
+        
+        container.innerHTML = `
+            <i class="fas ${iconClass} ${iconColor} fa-3x mb-2"></i>
+            <p class="small">${file.name}</p>
+            <p class="small text-muted">${(file.size / 1024).toFixed(2)} KB</p>
+        `;
+    }
+    
+    // Función para actualizar contadores de estadísticas
+    function updateDocumentStats(fileType, fileExtension) {
+        console.log('📊 Actualizando estadísticas');
+        
+        const pdfCount = document.getElementById('pdfCount');
+        const imageCount = document.getElementById('imageCount');
+        const docCount = document.getElementById('docCount');
+        
+        if (!pdfCount || !imageCount || !docCount) {
+            console.warn('⚠️ No se encontraron elementos de estadísticas');
+            return;
+        }
+        
+        // Resetear contadores
+        pdfCount.textContent = '0';
+        imageCount.textContent = '0';
+        docCount.textContent = '0';
+        
+        // Incrementar el contador apropiado
+        if (fileType === 'application/pdf' || fileExtension === 'pdf') {
+            pdfCount.textContent = '1';
+        } else if (fileType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+            imageCount.textContent = '1';
+        } else {
+            docCount.textContent = '1';
+        }
+        
+        console.log('✅ Estadísticas actualizadas');
+    }
+    
+    // Event listener para cambio de archivo
+    const documentFileInput = document.getElementById('documentFile');
+    if (documentFileInput) {
+        documentFileInput.addEventListener('change', function(e) {
+            console.log('📂 Archivo seleccionado');
+            const file = e.target.files[0];
+            
+            if (file) {
+                console.log('📄 Archivo:', file.name, 'Tamaño:', file.size, 'Tipo:', file.type);
+                updateDocumentPreview(file);
+            } else {
+                console.log('⚠️ No se seleccionó archivo');
+                // Resetear vista previa
+                const previewContainer = document.getElementById('documentPreviewContainer');
+                if (previewContainer) {
+                    previewContainer.innerHTML = `
+                        <div class="text-muted">
+                            <i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>
+                            <p>Selecciona un archivo para ver la vista previa</p>
+                        </div>
+                    `;
+                }
+                
+                // Resetear contadores
+                const pdfCount = document.getElementById('pdfCount');
+                const imageCount = document.getElementById('imageCount');
+                const docCount = document.getElementById('docCount');
+                
+                if (pdfCount) pdfCount.textContent = '0';
+                if (imageCount) imageCount.textContent = '0';
+                if (docCount) docCount.textContent = '0';
+            }
+        });
+    }
+
     // Manejador del formulario de subida de documentos
     const uploadDocumentForm = document.getElementById('uploadDocumentForm');
     if (uploadDocumentForm) {
@@ -9393,6 +9820,26 @@ Tus credenciales de acceso son:
                 if (data.success) {
                     showNotification('✅ Documento subido correctamente', 'success');
                     uploadDocumentForm.reset();
+                    
+                    // Resetear vista previa
+                    const previewContainer = document.getElementById('documentPreviewContainer');
+                    if (previewContainer) {
+                        previewContainer.innerHTML = `
+                            <div class="text-muted">
+                                <i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>
+                                <p>Selecciona un archivo para ver la vista previa</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Resetear contadores
+                    const pdfCount = document.getElementById('pdfCount');
+                    const imageCount = document.getElementById('imageCount');
+                    const docCount = document.getElementById('docCount');
+                    
+                    if (pdfCount) pdfCount.textContent = '0';
+                    if (imageCount) imageCount.textContent = '0';
+                    if (docCount) docCount.textContent = '0';
                     
                     // Recargar la lista de contenido asignado
                     refreshContentList();

@@ -949,6 +949,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default='coachee', index=True)
     active = db.Column(db.Boolean, default=True, index=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    coach_notes = db.Column(db.Text, nullable=True)  # Notas del coach sobre el coachee (JSON array)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     last_login = db.Column(db.DateTime, index=True)
     
@@ -6776,6 +6777,27 @@ def api_coach_coachees():
         logger.error(f"❌ COACHEES: Error loading coachees: {str(e)}")
         return jsonify({'coachees': []}), 200
 
+def is_coachee_active(coachee, last_evaluation):
+    """Determina si un coachee está activo (actividad en último mes)"""
+    from datetime import timedelta
+    one_month_ago = datetime.now() - timedelta(days=30)
+    
+    # Verificar última evaluación
+    if last_evaluation and last_evaluation.get('completed_at'):
+        try:
+            eval_date_str = last_evaluation['completed_at'].replace('Z', '+00:00')
+            eval_date = datetime.fromisoformat(eval_date_str)
+            if eval_date > one_month_ago:
+                return True
+        except (ValueError, AttributeError):
+            pass
+    
+    # Verificar último login
+    if coachee.last_login and coachee.last_login > one_month_ago:
+        return True
+    
+    return False
+
 @app.route('/api/coach/my-coachees', methods=['GET'])
 @coach_session_required
 def api_coach_my_coachees():
@@ -6874,6 +6896,7 @@ def api_coach_my_coachees():
         # Construir respuesta usando datos precargados
         coachees_data = []
         for coachee in coachees:
+            last_eval = last_evaluations.get(coachee.id)
             coachee_data = {
                 'id': coachee.id,
                 'username': coachee.username,
@@ -6881,12 +6904,15 @@ def api_coach_my_coachees():
                 'full_name': coachee.full_name,
                 'name': coachee.full_name,  # ✅ Agregar campo 'name' para compatibilidad
                 'created_at': coachee.created_at.isoformat() if coachee.created_at else None,
-                'is_active': coachee.is_active,
+                'is_active': is_coachee_active(coachee, last_eval),  # ✅ Estado de actividad calculado
+                'account_active': coachee.is_active,  # ✅ Estado de cuenta (activo/desactivado)
                 'evaluations_count': evaluations_counts.get(coachee.id, 0),
-                'last_evaluation': last_evaluations.get(coachee.id),
+                'last_evaluation': last_eval,
                 'avg_score': avg_scores.get(coachee.id),
                 'password': coachee.original_password,  # ✅ Incluir contraseña original para que el coach pueda verla
-                'avatar_url': coachee.avatar_url  # ✅ Incluir URL del avatar
+                'avatar_url': coachee.avatar_url,  # ✅ Incluir URL del avatar
+                'coach_notes': coachee.coach_notes,  # ✅ Incluir notas del coach
+                'last_login': coachee.last_login.isoformat() if coachee.last_login else None  # ✅ Último login
             }
             coachees_data.append(coachee_data)
             logger.info(f"✅ MY-COACHEES: Processed coachee {coachee.full_name} with data: {coachee_data}")
@@ -10234,8 +10260,8 @@ def api_coach_upload_document():
         db.session.add(document_file)
         
         # NUEVO: Crear también un registro en la tabla Content para que aparezca en "Contenido Asignado"
-        # Usar endpoint específico para coachees para acceso a documentos asignados
-        content_url = f"/api/coachee/assigned-documents/{document.id}/download"
+        # Usar endpoint de vista previa del coach para que funcione en feed y con PDF.js
+        content_url = f"/api/coach/documents/{document.id}/view"
         content = Content(
             coach_id=current_coach.id,
             coachee_id=coachee_id,
@@ -11296,6 +11322,64 @@ def api_coach_update_coachee(coachee_id):
         db.session.rollback()
         return jsonify({'error': f'Error actualizando coachee: {str(e)}'}), 500
 
+@app.route('/api/coach/coachee-notes/<int:coachee_id>', methods=['GET', 'POST'])
+@coach_session_required
+def api_coach_coachee_notes(coachee_id):
+    """Gestionar notas del coach sobre un coachee"""
+    try:
+        current_coach = g.current_user
+        
+        # Verificar que el coachee pertenece al coach
+        coachee = User.query.filter_by(
+            id=coachee_id,
+            coach_id=current_coach.id,
+            role='coachee'
+        ).first()
+        
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+        
+        if request.method == 'GET':
+            # Retornar notas existentes
+            import json
+            notes = []
+            if coachee.coach_notes:
+                try:
+                    notes = json.loads(coachee.coach_notes)
+                except:
+                    notes = []
+            
+            return jsonify({
+                'success': True,
+                'notes': notes,
+                'coachee_name': coachee.full_name
+            })
+        
+        elif request.method == 'POST':
+            # Guardar nueva nota o actualizar todas
+            import json
+            data = request.get_json()
+            notes = data.get('notes', [])
+            
+            # Validar formato de notas
+            if not isinstance(notes, list):
+                return jsonify({'error': 'Formato de notas inválido'}), 400
+            
+            # Guardar como JSON
+            coachee.coach_notes = json.dumps(notes, ensure_ascii=False)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Notas guardadas exitosamente',
+                'notes': notes
+            })
+    
+    except Exception as e:
+        logger.error(f"Error en api_coach_coachee_notes: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error gestionando notas: {str(e)}'}), 500
+
 # ================================
 # COACH CALENDAR APIs
 # ================================
@@ -12224,6 +12308,64 @@ def api_coach_document_download(document_id):
     except Exception as e:
         logger.error(f"Error descargando documento: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error al descargar archivo: {str(e)}'}), 500
+
+@app.route('/api/coach/documents/<int:document_id>/view', methods=['GET'])
+@coach_session_required
+def api_coach_document_view(document_id):
+    """Vista previa de documento para coaches - Para usar con PDF.js en feed"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Verificar que el documento pertenece al coach
+        document = Document.query.filter_by(
+            id=document_id,
+            coach_id=current_coach.id,
+            is_active=True
+        ).first()
+        
+        if not document:
+            return jsonify({'error': 'Documento no encontrado'}), 404
+        
+        # Obtener el archivo (asumiendo que hay uno por documento)
+        doc_file = DocumentFile.query.filter_by(
+            document_id=document_id
+        ).first()
+        
+        if not doc_file:
+            return jsonify({'error': 'Archivo no encontrado'}), 404
+        
+        # Obtener archivo desde S3 o sistema de archivos local
+        if USE_S3 and doc_file.file_path.startswith('https://'):
+            # Redirigir a la URL de S3 con headers CORS
+            from flask import redirect
+            return redirect(doc_file.file_path)
+        else:
+            # Verificar que el archivo existe localmente
+            if not os.path.exists(doc_file.file_path):
+                return jsonify({'error': 'Archivo no encontrado en el servidor'}), 404
+            
+            logger.info(f"Coach {current_coach.id} viendo preview de documento {document_id}")
+            
+            # Devolver el archivo para preview (no descarga)
+            response = send_file(
+                doc_file.file_path,
+                mimetype=doc_file.mime_type,
+                as_attachment=False,  # Preview en navegador
+                download_name=doc_file.original_filename
+            )
+            
+            # Agregar headers CORS para permitir carga desde PDF.js
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            
+            return response
+        
+    except Exception as e:
+        logger.error(f"Error viendo preview de documento: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error al cargar archivo: {str(e)}'}), 500
 
 @app.route('/api/coachee/assigned-documents/<int:document_id>/download', methods=['GET'])
 @coachee_session_required
