@@ -3536,6 +3536,42 @@ def api_status():
         'available_endpoints': ['/coachee-dashboard', '/coach-dashboard', '/admin-dashboard']
     })
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint para Railway y monitoreo"""
+    try:
+        # Verificar conexión a base de datos
+        from sqlalchemy import text
+        db.session.execute(text("SELECT 1"))
+        db_status = 'healthy'
+    except Exception as e:
+        logger.error(f"Health check DB error: {e}")
+        db_status = 'unhealthy'
+    
+    # Lazy initialization en primer health check
+    if not hasattr(app, '_data_initialized'):
+        try:
+            with app.app_context():
+                # Verificar si hay usuarios
+                user_count = User.query.count()
+                if user_count == 0:
+                    logger.info("🔧 HEALTH: Ejecutando inicialización de datos...")
+                    auto_initialize_database()
+                    app._data_initialized = True
+                    logger.info("✅ HEALTH: Datos inicializados")
+                else:
+                    app._data_initialized = True
+                    logger.info(f"✅ HEALTH: {user_count} usuarios encontrados")
+        except Exception as e:
+            logger.warning(f"⚠️ HEALTH: Error en lazy init: {e}")
+    
+    return jsonify({
+        'status': 'healthy',
+        'database': db_status,
+        'environment': os.environ.get('FLASK_ENV', 'unknown'),
+        'timestamp': datetime.now(SANTIAGO_TZ).isoformat()
+    })
+
 @app.route('/api/railway-debug')
 @admin_required
 def api_railway_debug():
