@@ -50,6 +50,45 @@ try:
     # Variable para gunicorn
     application = app
     
+    # Ejecutar migraciones críticas al arrancar (ANTES de cualquier request)
+    logger.info("🔧 RAILWAY: Ejecutando migraciones de schema...")
+    try:
+        with app.app_context():
+            from app import db
+            from sqlalchemy import text
+            
+            # Migraciones de columnas faltantes en tabla user
+            migrations = [
+                ("original_password", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS original_password VARCHAR(120)"),
+                ("avatar_url", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)"),
+                ("coach_notes", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS coach_notes TEXT"),
+                ("last_login", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS last_login TIMESTAMP"),
+            ]
+            
+            migrations_applied = []
+            for column_name, migration_sql in migrations:
+                try:
+                    db.session.execute(text(migration_sql))
+                    db.session.commit()
+                    migrations_applied.append(column_name)
+                    logger.info(f"✅ RAILWAY: Migración {column_name} aplicada")
+                except Exception as migration_error:
+                    db.session.rollback()
+                    logger.warning(f"⚠️ RAILWAY: Migración {column_name} ya existe o error: {migration_error}")
+            
+            if migrations_applied:
+                logger.info(f"✅ RAILWAY: {len(migrations_applied)} migraciones aplicadas: {migrations_applied}")
+            else:
+                logger.info("✅ RAILWAY: Todas las columnas ya existen")
+                
+            # Crear tablas faltantes
+            db.create_all()
+            logger.info("✅ RAILWAY: Tablas verificadas/creadas")
+            
+    except Exception as migration_error:
+        logger.error(f"❌ RAILWAY: Error en migraciones: {migration_error}")
+        # Continuar de todas formas - la app debe arrancar
+    
     logger.info("✅ RAILWAY: WSGI configurado correctamente")
     logger.info("📋 RAILWAY: La inicialización de DB se hará en el endpoint /health")
 
