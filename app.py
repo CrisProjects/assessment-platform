@@ -3551,6 +3551,22 @@ def health_check():
         db.session.execute(text("SELECT 1"))
         health_status['database'] = 'connected'
         
+        # Ejecutar migraciones necesarias ANTES de crear tablas
+        try:
+            # Migración: Agregar columna coach_notes si no existe
+            try:
+                db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS coach_notes TEXT"))
+                db.session.commit()
+                health_status['migration_coach_notes'] = 'applied'
+                logger.info("✅ HEALTH: Migración coach_notes aplicada")
+            except Exception as migration_error:
+                db.session.rollback()
+                logger.warning(f"⚠️ HEALTH: Migración coach_notes: {migration_error}")
+                health_status['migration_coach_notes'] = 'skipped'
+        except Exception as migration_error:
+            logger.warning(f"⚠️ HEALTH: Error en migraciones: {migration_error}")
+            health_status['migrations'] = 'error'
+        
         # Crear tablas si no existen
         try:
             db.create_all()
