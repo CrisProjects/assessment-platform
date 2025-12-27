@@ -9571,14 +9571,12 @@ Tus credenciales de acceso son:
     async function renderPDFPreview(file, container) {
         console.log('📕 Renderizando vista previa de PDF');
         
-        container.innerHTML = `
-            <div class="text-center">
-                <div class="spinner-border text-primary mb-2" role="status">
-                    <span class="visually-hidden">Cargando...</span>
-                </div>
-                <p class="small">Cargando vista previa del PDF...</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="text-center">' +
+            '<div class="spinner-border text-primary mb-2" role="status">' +
+            '<span class="visually-hidden">Cargando...</span>' +
+            '</div>' +
+            '<p class="small">Cargando vista previa del PDF...</p>' +
+            '</div>';
         
         try {
             const arrayBuffer = await file.arrayBuffer();
@@ -9598,15 +9596,13 @@ Tus credenciales de acceso son:
                 viewport: viewport
             }).promise;
             
-            container.innerHTML = `
-                <div style="max-height: 400px; overflow-y: auto;">
-                    <canvas id="documentPreviewCanvas"></canvas>
-                </div>
-                <p class="small text-muted mt-2">
-                    <i class="fas fa-file-pdf text-danger me-1"></i>
-                    ${file.name} (${(file.size / 1024).toFixed(2)} KB)
-                </p>
-            `;
+            container.innerHTML = '<div style="max-height: 400px; overflow-y: auto;">' +
+                '<canvas id="documentPreviewCanvas"></canvas>' +
+                '</div>' +
+                '<p class="small text-muted mt-2">' +
+                '<i class="fas fa-file-pdf text-danger me-1"></i>' +
+                file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)' +
+                '</p>';
             
             const canvasContainer = container.querySelector('#documentPreviewCanvas');
             canvasContainer.replaceWith(canvas);
@@ -9614,11 +9610,9 @@ Tus credenciales de acceso son:
             console.log('✅ Vista previa de PDF renderizada');
         } catch (error) {
             console.error('❌ Error renderizando PDF:', error);
-            container.innerHTML = `
-                <i class="fas fa-file-pdf text-danger fa-3x mb-2"></i>
-                <p class="small">Error al cargar vista previa del PDF</p>
-                <p class="small text-muted">${file.name}</p>
-            `;
+            container.innerHTML = '<i class="fas fa-file-pdf text-danger fa-3x mb-2"></i>' +
+                '<p class="small">Error al cargar vista previa del PDF</p>' +
+                '<p class="small text-muted">' + file.name + '</p>';
         }
     }
     
@@ -9626,39 +9620,33 @@ Tus credenciales de acceso son:
     function renderImagePreview(file, container) {
         console.log('🖼️ Renderizando vista previa de imagen');
         
-        container.innerHTML = `
-            <div class="text-center">
-                <div class="spinner-border text-primary mb-2" role="status">
-                    <span class="visually-hidden">Cargando...</span>
-                </div>
-                <p class="small">Cargando imagen...</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="text-center">' +
+            '<div class="spinner-border text-primary mb-2" role="status">' +
+            '<span class="visually-hidden">Cargando...</span>' +
+            '</div>' +
+            '<p class="small">Cargando imagen...</p>' +
+            '</div>';
         
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            container.innerHTML = `
-                <div style="max-height: 400px; overflow-y: auto;">
-                    <img src="${e.target.result}" 
-                         alt="Vista previa" 
-                         style="max-width: 100%; height: auto; border-radius: 8px;">
-                </div>
-                <p class="small text-muted mt-2">
-                    <i class="fas fa-image text-info me-1"></i>
-                    ${file.name} (${(file.size / 1024).toFixed(2)} KB)
-                </p>
-            `;
+            container.innerHTML = '<div style="max-height: 400px; overflow-y: auto;">' +
+                '<img src="' + e.target.result + '" ' +
+                'alt="Vista previa" ' +
+                'style="max-width: 100%; height: auto; border-radius: 8px;">' +
+                '</div>' +
+                '<p class="small text-muted mt-2">' +
+                '<i class="fas fa-image text-info me-1"></i>' +
+                file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)' +
+                '</p>';
             console.log('✅ Vista previa de imagen renderizada');
         };
         
         reader.onerror = function() {
             console.error('❌ Error leyendo imagen');
-            container.innerHTML = `
-                <i class="fas fa-image text-info fa-3x mb-2"></i>
-                <p class="small">Error al cargar vista previa de la imagen</p>
-                <p class="small text-muted">${file.name}</p>
-            `;
+            container.innerHTML = '<i class="fas fa-image text-info fa-3x mb-2"></i>' +
+                '<p class="small">Error al cargar vista previa de la imagen</p>' +
+                '<p class="small text-muted">' + file.name + '</p>';
         };
         
         reader.readAsDataURL(file);
@@ -9677,11 +9665,9 @@ Tus credenciales de acceso son:
             iconColor = 'text-primary';
         }
         
-        container.innerHTML = `
-            <i class="fas ${iconClass} ${iconColor} fa-3x mb-2"></i>
-            <p class="small">${file.name}</p>
-            <p class="small text-muted">${(file.size / 1024).toFixed(2)} KB</p>
-        `;
+        container.innerHTML = '<i class="fas ' + iconClass + ' ' + iconColor + ' fa-3x mb-2"></i>' +
+            '<p class="small">' + file.name + '</p>' +
+            '<p class="small text-muted">' + (file.size / 1024).toFixed(2) + ' KB</p>';
     }
     
     // Función para actualizar contadores de estadísticas
@@ -9729,12 +9715,10 @@ Tus credenciales de acceso son:
                 // Resetear vista previa
                 const previewContainer = document.getElementById('documentPreviewContainer');
                 if (previewContainer) {
-                    previewContainer.innerHTML = `
-                        <div class="text-muted">
-                            <i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>
-                            <p>Selecciona un archivo para ver la vista previa</p>
-                        </div>
-                    `;
+                    previewContainer.innerHTML = '<div class="text-muted">' +
+                        '<i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>' +
+                        '<p>Selecciona un archivo para ver la vista previa</p>' +
+                        '</div>';
                 }
                 
                 // Resetear contadores
@@ -9824,12 +9808,10 @@ Tus credenciales de acceso son:
                     // Resetear vista previa
                     const previewContainer = document.getElementById('documentPreviewContainer');
                     if (previewContainer) {
-                        previewContainer.innerHTML = `
-                            <div class="text-muted">
-                                <i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>
-                                <p>Selecciona un archivo para ver la vista previa</p>
-                            </div>
-                        `;
+                        previewContainer.innerHTML = '<div class="text-muted">' +
+                            '<i class="fas fa-file-alt" style="font-size: 48px; opacity: 0.3;"></i>' +
+                            '<p>Selecciona un archivo para ver la vista previa</p>' +
+                            '</div>';
                     }
                     
                     // Resetear contadores
