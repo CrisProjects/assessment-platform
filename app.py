@@ -1561,12 +1561,12 @@ def coachee_session_required(f):
             # Si es petición HTML, redirigir al login
             if not is_api_request:
                 flash('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'warning')
-                return redirect(url_for('login_page', role='coachee'))
+                return redirect(url_for('participant_access'))
             
             # Si es API, retornar JSON
             return jsonify({
                 'error': 'Sesión de coachee expirada. Por favor, inicia sesión nuevamente.',
-                'redirect_url': '/login',
+                'redirect_url': '/participant-access',
                 'session_expired': True
             }), 401
         
@@ -1578,12 +1578,12 @@ def coachee_session_required(f):
             # Si es petición HTML, redirigir al login
             if not is_api_request:
                 flash('Usuario de coachee inválido. Por favor, inicia sesión nuevamente.', 'warning')
-                return redirect(url_for('login_page', role='coachee'))
+                return redirect(url_for('participant_access'))
             
             # Si es API, retornar JSON
             return jsonify({
                 'error': 'Usuario de coachee inválido.',
-                'redirect_url': '/login',
+                'redirect_url': '/participant-access',
                 'session_expired': True
             }), 401
         
