@@ -3602,21 +3602,9 @@
                             <span>Contenido</span>
                         </a>
                         <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('agenda', true)" data-module="agenda">
+                           @click.prevent="showModule('contenido-prueba', true)" data-module="contenido-prueba">
                             <i class="fas fa-calendar-alt"></i>
                             <span>Mi Agenda</span>
-                        </a>
-                        <a href="javascript:void(0)" class="list-group-item list-group-item-action position-relative" 
-                           @click.prevent="showModule('solicitudes-sesion', true)" data-module="solicitudes-sesion">
-                            <i class="fas fa-inbox"></i>
-                            <span>Solicitudes de Sesión</span>
-                            <span class="badge bg-danger rounded-pill position-absolute" id="sessionRequestsBadge" 
-                                  style="display: none; top: 50%; right: 15px; transform: translateY(-50%); font-size: 0.7rem;">0</span>
-                        </a>
-                        <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
-                           @click.prevent="showModule('gestion', true)" data-module="gestion">
-                            <i class="fas fa-calendar-check"></i>
-                            <span>Gestión</span>
                         </a>
                     </div>
                 </div>
@@ -4685,7 +4673,592 @@
                 </div>
             </div>
 
-            <!-- Agenda Module -->
+            <!-- Contenido Prueba Module -->
+            <div id="contenido-prueba" class="module-content" style="display: none; scroll-margin-top: 80px;">
+                <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
+                    <!-- Header -->
+                    <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div>
+                                <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
+                                    <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
+                                    Mi Agenda
+                                </h5>
+                                <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
+                                    Gestiona tus solicitudes, calendario y disponibilidad
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Body -->
+                    <div style="padding: 1.5rem 2.5rem 2.5rem;">
+                        
+                        <!-- Pestañas principales -->
+                        <ul class="nav nav-pills mb-4" id="contenidoPruebaTabs" role="tablist" style="background: #f9fafb; padding: 0.5rem; border-radius: 12px; gap: 0.5rem;">
+                            <li class="nav-item" role="presentation" style="flex: 1;">
+                                <button class="nav-link active w-100" id="solicitudes-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#solicitudes-pane" type="button" role="tab"
+                                    style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem; transition: all 0.2s;">
+                                    <i class="fas fa-inbox me-2"></i>Solicitudes
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" style="flex: 1;">
+                                <button class="nav-link w-100" id="gestion-calendario-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#gestion-calendario-pane" type="button" role="tab"
+                                    style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem; transition: all 0.2s;">
+                                    <i class="fas fa-calendar-check me-2"></i>Gestión
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" style="flex: 1;">
+                                <button class="nav-link w-100" id="calendario-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#calendario-pane" type="button" role="tab"
+                                    style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem; transition: all 0.2s;">
+                                    <i class="fas fa-calendar me-2"></i>Calendario
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" style="flex: 1;">
+                                <button class="nav-link w-100" id="disponibilidad-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#disponibilidad-pane" type="button" role="tab"
+                                    style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem; transition: all 0.2s;">
+                                    <i class="fas fa-clock me-2"></i>Disponibilidad
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <style>
+                            #contenidoPruebaTabs .nav-link {
+                                color: #6b7280;
+                                background: transparent;
+                                border: none;
+                            }
+                            #contenidoPruebaTabs .nav-link:hover {
+                                color: #667eea;
+                                background: rgba(102, 126, 234, 0.1);
+                            }
+                            #contenidoPruebaTabs .nav-link.active {
+                                color: white;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                            }
+                        </style>
+                        
+                        <!-- Contenido de las pestañas -->
+                        <div class="tab-content" id="contenidoPruebaTabContent">
+                            
+                            <!-- Tab: Solicitudes de Sesión -->
+                            <div class="tab-pane fade show active" id="solicitudes-pane" role="tabpanel">
+                                <div class="card" style="border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                            <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 1.25rem; border: none;">
+                                <h6 class="mb-0 text-white" style="font-weight: 600; font-size: 1.1rem;">
+                                    <i class="fas fa-inbox me-2"></i>Solicitudes Pendientes
+                                </h6>
+                            </div>
+                            <div class="card-body" style="padding: 2rem;">
+                                <!-- Estado de carga -->
+                                <div id="requestsLoadingState" class="text-center py-5" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Cargando solicitudes...</p>
+                                </div>
+                                
+                                <!-- Estado vacío -->
+                                <div id="requestsEmptyState" style="display: none;">
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-inbox" style="font-size: 4rem; color: #e5e7eb;"></i>
+                                        <p class="mt-3 text-muted mb-0" style="font-size: 1.1rem; font-weight: 500;">
+                                            No hay solicitudes pendientes
+                                        </p>
+                                        <p class="text-muted" style="font-size: 0.875rem;">
+                                            Las nuevas solicitudes de tus coachees aparecerán aquí
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Contenedor de solicitudes -->
+                                <div id="sessionRequestsContainer"></div>
+                            </div>
+                        </div>
+                            </div>
+                            
+                            <!-- Tab: Gestión de Calendario -->
+                            <div class="tab-pane fade" id="gestion-calendario-pane" role="tabpanel">
+                                <div class="card" style="border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                            <div class="card-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 1.25rem; border: none;">
+                                <h6 class="mb-0 text-white" style="font-weight: 600; font-size: 1.1rem;">
+                                    <i class="fas fa-calendar-check me-2"></i>Gestión de Calendario
+                                </h6>
+                                <p class="mb-0 text-white" style="font-size: 0.85rem; opacity: 0.9;">
+                                    Bloquea tiempo personal o agenda citas directamente con tus coachees
+                                </p>
+                            </div>
+                            <div class="card-body" style="padding: 2rem;">
+                                <ul class="nav nav-pills mb-4" id="gestionTabs" role="tablist" style="gap: 0.5rem;">
+                                    <li class="nav-item" role="presentation" style="flex: 1;">
+                                        <button class="nav-link active w-100" id="block-time-tab" data-bs-toggle="pill" 
+                                            data-bs-target="#block-time-pane" type="button" role="tab"
+                                            style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem;">
+                                            <i class="fas fa-user-clock me-2"></i>Autoagendar Tiempo
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation" style="flex: 1;">
+                                        <button class="nav-link w-100" id="direct-appointment-tab" data-bs-toggle="pill" 
+                                            data-bs-target="#direct-appointment-pane" type="button" role="tab"
+                                            style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem;">
+                                            <i class="fas fa-calendar-plus me-2"></i>Agendar Cita Directa
+                                        </button>
+                                    </li>
+                                </ul>
+
+                                <style>
+                                    #gestionTabs .nav-link {
+                                        color: #6b7280;
+                                        background: transparent;
+                                        border: 1px solid #e5e7eb;
+                                    }
+                                    #gestionTabs .nav-link:hover {
+                                        color: #8b5cf6;
+                                        background: rgba(139, 92, 246, 0.1);
+                                        border-color: #8b5cf6;
+                                    }
+                                    #gestionTabs .nav-link.active {
+                                        color: white;
+                                        background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+                                        border-color: #8b5cf6;
+                                        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+                                    }
+                                </style>
+
+                                <div class="tab-content" id="gestionTabContent">
+                                    <!-- Tab: Autoagendar Tiempo Personal -->
+                                    <div class="tab-pane fade show active" id="block-time-pane" role="tabpanel">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-user-clock me-2 text-success"></i>
+                                                    Bloquear Tiempo Personal
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="text-muted mb-4">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Reserva tiempo en tu calendario para actividades personales, preparación de sesiones, descansos, etc.
+                                                </p>
+                                                
+                                                <form id="blockTimeForm" onsubmit="submitBlockTime(event)">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label for="blockActivityTitle" class="form-label">
+                                                                <i class="fas fa-tag me-1"></i>Título de la Actividad *
+                                                            </label>
+                                                            <input type="text" class="form-control" id="blockActivityTitle" 
+                                                                placeholder="Ej: Preparación de sesiones, Almuerzo..." required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="blockActivityType" class="form-label">
+                                                                <i class="fas fa-list me-1"></i>Tipo de Actividad *
+                                                            </label>
+                                                            <select class="form-select" id="blockActivityType" required>
+                                                                <option value="">Seleccionar tipo...</option>
+                                                                <option value="preparation">Preparación de Sesiones</option>
+                                                                <option value="admin">Tareas Administrativas</option>
+                                                                <option value="break">Descanso/Almuerzo</option>
+                                                                <option value="training">Formación/Capacitación</option>
+                                                                <option value="meeting">Reunión</option>
+                                                                <option value="personal">Tiempo Personal</option>
+                                                                <option value="other">Otro</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="blockDate" class="form-label">
+                                                                <i class="fas fa-calendar me-1"></i>Fecha *
+                                                            </label>
+                                                            <input type="date" class="form-control" id="blockDate" required>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="blockStartTime" class="form-label">
+                                                                <i class="fas fa-clock me-1"></i>Hora de Inicio *
+                                                            </label>
+                                                            <select class="form-select" id="blockStartTime" required>
+                                                                <option value="07:00">07:00</option>
+                                                                <option value="08:00">08:00</option>
+                                                                <option value="09:00">09:00</option>
+                                                                <option value="10:00">10:00</option>
+                                                                <option value="11:00">11:00</option>
+                                                                <option value="12:00" selected>12:00</option>
+                                                                <option value="13:00">13:00</option>
+                                                                <option value="14:00">14:00</option>
+                                                                <option value="15:00">15:00</option>
+                                                                <option value="16:00">16:00</option>
+                                                                <option value="17:00">17:00</option>
+                                                                <option value="18:00">18:00</option>
+                                                                <option value="19:00">19:00</option>
+                                                                <option value="20:00">20:00</option>
+                                                                <option value="21:00">21:00</option>
+                                                                <option value="22:00">22:00</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="blockEndTime" class="form-label">
+                                                                <i class="fas fa-clock me-1"></i>Hora de Fin *
+                                                            </label>
+                                                            <select class="form-select" id="blockEndTime" required>
+                                                                <option value="08:00">08:00</option>
+                                                                <option value="09:00">09:00</option>
+                                                                <option value="10:00">10:00</option>
+                                                                <option value="11:00">11:00</option>
+                                                                <option value="12:00">12:00</option>
+                                                                <option value="13:00" selected>13:00</option>
+                                                                <option value="14:00">14:00</option>
+                                                                <option value="15:00">15:00</option>
+                                                                <option value="16:00">16:00</option>
+                                                                <option value="17:00">17:00</option>
+                                                                <option value="18:00">18:00</option>
+                                                                <option value="19:00">19:00</option>
+                                                                <option value="20:00">20:00</option>
+                                                                <option value="21:00">21:00</option>
+                                                                <option value="22:00">22:00</option>
+                                                                <option value="23:00">23:00</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <label for="blockDescription" class="form-label">
+                                                                <i class="fas fa-align-left me-1"></i>Descripción (opcional)
+                                                            </label>
+                                                            <textarea class="form-control" id="blockDescription" rows="3" 
+                                                                placeholder="Detalles adicionales sobre la actividad..."></textarea>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <button type="submit" class="btn btn-success">
+                                                                <i class="fas fa-calendar-plus me-2"></i>Bloquear Tiempo
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="document.getElementById('blockTimeForm').reset()">
+                                                                <i class="fas fa-times me-2"></i>Limpiar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tab: Agendar Cita Directa -->
+                                    <div class="tab-pane fade" id="direct-appointment-pane" role="tabpanel">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-calendar-plus me-2 text-primary"></i>
+                                                    Agendar Cita Directa con Coachee
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="text-muted mb-4">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Crea una cita directamente con un coachee. Se bloqueará en tu calendario y el coachee recibirá una notificación para aceptar o rechazar.
+                                                </p>
+                                                
+                                                <form id="directAppointmentForm" onsubmit="submitDirectAppointment(event)">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label for="directCoacheeId" class="form-label">
+                                                                <i class="fas fa-user me-1"></i>Seleccionar Coachee *
+                                                            </label>
+                                                            <select class="form-select" id="directCoacheeId" required>
+                                                                <option value="">Cargando coachees...</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="directTitle" class="form-label">
+                                                                <i class="fas fa-heading me-1"></i>Título de la Sesión *
+                                                            </label>
+                                                            <input type="text" class="form-control" id="directTitle" 
+                                                                placeholder="Ej: Sesión de seguimiento" required>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="directDate" class="form-label">
+                                                                <i class="fas fa-calendar me-1"></i>Fecha *
+                                                            </label>
+                                                            <input type="date" class="form-control" id="directDate" required>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="directStartTime" class="form-label">
+                                                                <i class="fas fa-clock me-1"></i>Hora de Inicio *
+                                                            </label>
+                                                            <select class="form-select" id="directStartTime" required>
+                                                                <option value="08:00">08:00</option>
+                                                                <option value="09:00">09:00</option>
+                                                                <option value="10:00" selected>10:00</option>
+                                                                <option value="11:00">11:00</option>
+                                                                <option value="12:00">12:00</option>
+                                                                <option value="13:00">13:00</option>
+                                                                <option value="14:00">14:00</option>
+                                                                <option value="15:00">15:00</option>
+                                                                <option value="16:00">16:00</option>
+                                                                <option value="17:00">17:00</option>
+                                                                <option value="18:00">18:00</option>
+                                                                <option value="19:00">19:00</option>
+                                                                <option value="20:00">20:00</option>
+                                                                <option value="21:00">21:00</option>
+                                                                <option value="22:00">22:00</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="directEndTime" class="form-label">
+                                                                <i class="fas fa-clock me-1"></i>Hora de Fin *
+                                                            </label>
+                                                            <select class="form-select" id="directEndTime" required>
+                                                                <option value="09:00">09:00</option>
+                                                                <option value="10:00">10:00</option>
+                                                                <option value="11:00" selected>11:00</option>
+                                                                <option value="12:00">12:00</option>
+                                                                <option value="13:00">13:00</option>
+                                                                <option value="14:00">14:00</option>
+                                                                <option value="15:00">15:00</option>
+                                                                <option value="16:00">16:00</option>
+                                                                <option value="17:00">17:00</option>
+                                                                <option value="18:00">18:00</option>
+                                                                <option value="19:00">19:00</option>
+                                                                <option value="20:00">20:00</option>
+                                                                <option value="21:00">21:00</option>
+                                                                <option value="22:00">22:00</option>
+                                                                <option value="23:00">23:00</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="directLocation" class="form-label">
+                                                                <i class="fas fa-map-marker-alt me-1"></i>Ubicación/Modalidad
+                                                            </label>
+                                                            <input type="text" class="form-control" id="directLocation" 
+                                                                placeholder="Ej: Zoom, Presencial, Google Meet..." value="Zoom">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label d-block">
+                                                                <i class="fas fa-bell me-1"></i>Notificación
+                                                            </label>
+                                                            <div class="form-check form-switch" style="padding-top: 0.5rem;">
+                                                                <input class="form-check-input" type="checkbox" id="directSendNotification" checked>
+                                                                <label class="form-check-label" for="directSendNotification">
+                                                                    Enviar notificación al coachee
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <label for="directDescription" class="form-label">
+                                                                <i class="fas fa-align-left me-1"></i>Descripción de la Sesión
+                                                            </label>
+                                                            <textarea class="form-control" id="directDescription" rows="2" 
+                                                                placeholder="Objetivo de la sesión, temas a tratar..."></textarea>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <label for="directNotificationMessage" class="form-label">
+                                                                <i class="fas fa-envelope me-1"></i>Mensaje Personalizado (opcional)
+                                                            </label>
+                                                            <textarea class="form-control" id="directNotificationMessage" rows="2" 
+                                                                placeholder="Mensaje que acompañará la notificación al coachee..."></textarea>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <button type="submit" class="btn btn-primary">
+                                                                <i class="fas fa-paper-plane me-2"></i>Enviar Cita al Coachee
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="document.getElementById('directAppointmentForm').reset()">
+                                                                <i class="fas fa-times me-2"></i>Limpiar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                            </div>
+                            
+                            <!-- Tab: Calendario -->
+                            <div class="tab-pane fade" id="calendario-pane" role="tabpanel">
+                                <div class="card" style="border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.25rem; border: none;">
+                                        <h6 class="mb-0 text-white" style="font-weight: 600; font-size: 1.1rem;">
+                                            <i class="fas fa-calendar-week me-2"></i>Vista del Calendario
+                                        </h6>
+                                    </div>
+                                    <div class="card-body" style="padding: 2rem;">
+                                        <div id="calendar" style="border-radius: 8px; overflow: hidden;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Disponibilidad -->
+                            <div class="tab-pane fade" id="disponibilidad-pane" role="tabpanel">
+                                <div class="card" style="border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                                    <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 1.25rem; border: none;">
+                                        <h6 class="mb-0 text-white" style="font-weight: 600; font-size: 1.1rem;">
+                                            <i class="fas fa-clock me-2"></i>Configurar Horarios Disponibles
+                                        </h6>
+                                    </div>
+                                    <div class="card-body" style="padding: 2rem;">
+                                        <div class="row">
+                                            <div class="col-lg-8">
+                                                <form id="availabilityForm">
+                                                    <div class="row g-3">
+                                                        <!-- Días de la semana -->
+                                                        <div class="col-12">
+                                                            <label class="form-label fw-bold mb-3" style="color: #111827; font-size: 1rem;">
+                                                                <i class="fas fa-calendar-week me-2" style="color: #667eea;"></i>Días Disponibles
+                                                            </label>
+                                                            <div class="row g-3 days-selector">
+                                                                <div class="col-6 col-sm-4 col-lg-3">
+                                                                    <div class="form-check" style="background: #f9fafb; padding: 0.75rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
+                                                                        <input class="form-check-input" type="checkbox" id="day1" value="1" style="cursor: pointer;">
+                                                                        <label class="form-check-label" for="day1" style="cursor: pointer; font-weight: 500;">Lunes</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-6 col-sm-4 col-lg-3">
+                                                                    <div class="form-check" style="background: #f9fafb; padding: 0.75rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
+                                                                        <input class="form-check-input" type="checkbox" id="day2" value="2" style="cursor: pointer;">
+                                                                        <label class="form-check-label" for="day2" style="cursor: pointer; font-weight: 500;">Martes</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-6 col-sm-4 col-lg-3">
+                                                                    <div class="form-check" style="background: #f9fafb; padding: 0.75rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
+                                                                        <input class="form-check-input" type="checkbox" id="day3" value="3" style="cursor: pointer;">
+                                                                        <label class="form-check-label" for="day3" style="cursor: pointer; font-weight: 500;">Miércoles</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-6 col-sm-4 col-lg-3">
+                                                                    <div class="form-check" style="background: #f9fafb; padding: 0.75rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
+                                                                        <input class="form-check-input" type="checkbox" id="day4" value="4" style="cursor: pointer;">
+                                                                        <label class="form-check-label" for="day4" style="cursor: pointer; font-weight: 500;">Jueves</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-6 col-sm-4 col-lg-3">
+                                                                    <div class="form-check" style="background: #f9fafb; padding: 0.75rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
+                                                                        <input class="form-check-input" type="checkbox" id="day5" value="5" style="cursor: pointer;">
+                                                                        <label class="form-check-label" for="day5" style="cursor: pointer; font-weight: 500;">Viernes</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-6 col-sm-4 col-lg-3">
+                                                                    <div class="form-check" style="background: #f9fafb; padding: 0.75rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
+                                                                        <input class="form-check-input" type="checkbox" id="day6" value="6" style="cursor: pointer;">
+                                                                        <label class="form-check-label" for="day6" style="cursor: pointer; font-weight: 500;">Sábado</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-6 col-sm-4 col-lg-3">
+                                                                    <div class="form-check" style="background: #f9fafb; padding: 0.75rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
+                                                                        <input class="form-check-input" type="checkbox" id="day0" value="0" style="cursor: pointer;">
+                                                                        <label class="form-check-label" for="day0" style="cursor: pointer; font-weight: 500;">Domingo</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <style>
+                                                                .days-selector .form-check:hover {
+                                                                    border-color: #667eea !important;
+                                                                    background: #f3f4f6 !important;
+                                                                }
+                                                                .days-selector .form-check input:checked + label {
+                                                                    color: #667eea;
+                                                                }
+                                                            </style>
+                                                        </div>
+                                                
+                                                <!-- Horarios -->
+                                                <div class="col-md-6">
+                                                    <label for="startTime" class="form-label">Hora de Inicio</label>
+                                                    <select class="form-select time-select-24h" id="startTime">
+                                                        <option value="00:00">00:00</option>
+                                                        <option value="01:00">01:00</option>
+                                                        <option value="02:00">02:00</option>
+                                                        <option value="03:00">03:00</option>
+                                                        <option value="04:00">04:00</option>
+                                                        <option value="05:00">05:00</option>
+                                                        <option value="06:00">06:00</option>
+                                                        <option value="07:00">07:00</option>
+                                                        <option value="08:00">08:00</option>
+                                                        <option value="09:00" selected>09:00</option>
+                                                        <option value="10:00">10:00</option>
+                                                        <option value="11:00">11:00</option>
+                                                        <option value="12:00">12:00</option>
+                                                        <option value="13:00">13:00</option>
+                                                        <option value="14:00">14:00</option>
+                                                        <option value="15:00">15:00</option>
+                                                        <option value="16:00">16:00</option>
+                                                        <option value="17:00">17:00</option>
+                                                        <option value="18:00">18:00</option>
+                                                        <option value="19:00">19:00</option>
+                                                        <option value="20:00">20:00</option>
+                                                        <option value="21:00">21:00</option>
+                                                        <option value="22:00">22:00</option>
+                                                        <option value="23:00">23:00</option>
+                                                        <option value="24:00">24:00</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="endTime" class="form-label">Hora de Fin</label>
+                                                    <select class="form-select time-select-24h" id="endTime">
+                                                        <option value="00:00">00:00</option>
+                                                        <option value="01:00">01:00</option>
+                                                        <option value="02:00">02:00</option>
+                                                        <option value="03:00">03:00</option>
+                                                        <option value="04:00">04:00</option>
+                                                        <option value="05:00">05:00</option>
+                                                        <option value="06:00">06:00</option>
+                                                        <option value="07:00">07:00</option>
+                                                        <option value="08:00">08:00</option>
+                                                        <option value="09:00">09:00</option>
+                                                        <option value="10:00">10:00</option>
+                                                        <option value="11:00">11:00</option>
+                                                        <option value="12:00">12:00</option>
+                                                        <option value="13:00">13:00</option>
+                                                        <option value="14:00">14:00</option>
+                                                        <option value="15:00">15:00</option>
+                                                        <option value="16:00">16:00</option>
+                                                        <option value="17:00" selected>17:00</option>
+                                                        <option value="18:00">18:00</option>
+                                                        <option value="19:00">19:00</option>
+                                                        <option value="20:00">20:00</option>
+                                                        <option value="21:00">21:00</option>
+                                                        <option value="22:00">22:00</option>
+                                                        <option value="23:00">23:00</option>
+                                                        <option value="24:00">24:00</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-save me-2"></i>Guardar Disponibilidad
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    
+                                    <div class="col-lg-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-info-circle me-2"></i>Disponibilidad Actual
+                                                </h6>
+                                            </div>
+                                            <div class="card-body" id="currentAvailability">
+                                                <div class="text-center py-3">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Cargando...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agenda Module (mantener oculto como fallback) -->
             <div id="agenda" class="module-content" style="display: none; scroll-margin-top: 80px;">
                 <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
                     <!-- Header -->
@@ -4937,355 +5510,6 @@
     </div><!-- Cierre de row -->
 </div><!-- Cierre de container-fluid -->
 
-            <!-- Solicitudes de Sesión Module -->
-            <div id="solicitudes-sesion" class="module-content" style="display: none; scroll-margin-top: 80px;">
-                <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
-                    <!-- Header -->
-                    <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                            <div>
-                                <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                    <i class="fas fa-inbox" style="color: #f59e0b;"></i>
-                                    Solicitudes de Sesión
-                                </h5>
-                                <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
-                                    Gestiona las solicitudes pendientes de tus coachees
-                                </p>
-                            </div>
-                            <button class="btn btn-sm btn-outline-primary" @click="loadSessionRequests()" style="border-radius: 8px;">
-                                <i class="fas fa-sync-alt me-1"></i>Refrescar
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Body -->
-                    <div style="padding: 2rem 2.5rem;">
-                        <!-- Estado de carga -->
-                        <div id="requestsLoadingState" style="display: none; text-center: py-5;">
-                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                <span class="visually-hidden">Cargando...</span>
-                            </div>
-                            <p class="mt-3 text-muted">Cargando solicitudes...</p>
-                        </div>
-                        
-                        <!-- Estado vacío -->
-                        <div id="requestsEmptyState" style="display: none;">
-                            <div class="text-center py-5">
-                                <i class="fas fa-inbox" style="font-size: 4rem; color: #e5e7eb;"></i>
-                                <p class="mt-3 text-muted mb-0" style="font-size: 1.1rem; font-weight: 500;">
-                                    No hay solicitudes pendientes
-                                </p>
-                                <p class="text-muted" style="font-size: 0.875rem;">
-                                    Las nuevas solicitudes de tus coachees aparecerán aquí
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <!-- Contenedor de solicitudes -->
-                        <div id="sessionRequestsContainer"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gestión Module -->
-            <div id="gestion" class="module-content" style="display: none; scroll-margin-top: 80px;">
-                <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
-                    <!-- Header -->
-                    <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                        <div>
-                            <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                <i class="fas fa-calendar-check" style="color: #8b5cf6;"></i>
-                                Gestión de Calendario
-                            </h5>
-                            <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
-                                Bloquea tiempo personal o agenda citas directamente con tus coachees
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <!-- Body con tabs -->
-                    <div style="padding: 2rem 2.5rem;">
-                        <ul class="nav nav-pills mb-4" id="gestionTabs" role="tablist" style="gap: 0.5rem;">
-                            <li class="nav-item" role="presentation" style="flex: 1;">
-                                <button class="nav-link active w-100" id="block-time-tab" data-bs-toggle="pill" 
-                                    data-bs-target="#block-time-pane" type="button" role="tab"
-                                    style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem;">
-                                    <i class="fas fa-user-clock me-2"></i>Autoagendar Tiempo
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation" style="flex: 1;">
-                                <button class="nav-link w-100" id="direct-appointment-tab" data-bs-toggle="pill" 
-                                    data-bs-target="#direct-appointment-pane" type="button" role="tab"
-                                    style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem;">
-                                    <i class="fas fa-calendar-plus me-2"></i>Agendar Cita Directa
-                                </button>
-                            </li>
-                        </ul>
-
-                        <style>
-                            #gestionTabs .nav-link {
-                                color: #6b7280;
-                                background: transparent;
-                                border: 1px solid #e5e7eb;
-                            }
-                            #gestionTabs .nav-link:hover {
-                                color: #8b5cf6;
-                                background: rgba(139, 92, 246, 0.1);
-                                border-color: #8b5cf6;
-                            }
-                            #gestionTabs .nav-link.active {
-                                color: white;
-                                background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-                                border-color: #8b5cf6;
-                                box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-                            }
-                        </style>
-
-                        <div class="tab-content" id="gestionTabContent">
-                            <!-- Tab: Autoagendar Tiempo Personal -->
-                            <div class="tab-pane fade show active" id="block-time-pane" role="tabpanel">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-header bg-light">
-                                        <h6 class="mb-0">
-                                            <i class="fas fa-user-clock me-2 text-success"></i>
-                                            Bloquear Tiempo Personal
-                                        </h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <p class="text-muted mb-4">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            Reserva tiempo en tu calendario para actividades personales, preparación de sesiones, descansos, etc.
-                                        </p>
-                                        
-                                        <form id="blockTimeForm" onsubmit="submitBlockTime(event)">
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label for="blockActivityTitle" class="form-label">
-                                                        <i class="fas fa-tag me-1"></i>Título de la Actividad *
-                                                    </label>
-                                                    <input type="text" class="form-control" id="blockActivityTitle" 
-                                                        placeholder="Ej: Preparación de sesiones, Almuerzo..." required>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="blockActivityType" class="form-label">
-                                                        <i class="fas fa-list me-1"></i>Tipo de Actividad *
-                                                    </label>
-                                                    <select class="form-select" id="blockActivityType" required>
-                                                        <option value="">Seleccionar tipo...</option>
-                                                        <option value="preparation">Preparación de Sesiones</option>
-                                                        <option value="admin">Tareas Administrativas</option>
-                                                        <option value="break">Descanso/Almuerzo</option>
-                                                        <option value="training">Formación/Capacitación</option>
-                                                        <option value="meeting">Reunión</option>
-                                                        <option value="personal">Tiempo Personal</option>
-                                                        <option value="other">Otro</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="blockDate" class="form-label">
-                                                        <i class="fas fa-calendar me-1"></i>Fecha *
-                                                    </label>
-                                                    <input type="date" class="form-control" id="blockDate" required>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="blockStartTime" class="form-label">
-                                                        <i class="fas fa-clock me-1"></i>Hora de Inicio *
-                                                    </label>
-                                                    <select class="form-select" id="blockStartTime" required>
-                                                        <option value="07:00">07:00</option>
-                                                        <option value="08:00">08:00</option>
-                                                        <option value="09:00">09:00</option>
-                                                        <option value="10:00">10:00</option>
-                                                        <option value="11:00">11:00</option>
-                                                        <option value="12:00" selected>12:00</option>
-                                                        <option value="13:00">13:00</option>
-                                                        <option value="14:00">14:00</option>
-                                                        <option value="15:00">15:00</option>
-                                                        <option value="16:00">16:00</option>
-                                                        <option value="17:00">17:00</option>
-                                                        <option value="18:00">18:00</option>
-                                                        <option value="19:00">19:00</option>
-                                                        <option value="20:00">20:00</option>
-                                                        <option value="21:00">21:00</option>
-                                                        <option value="22:00">22:00</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="blockEndTime" class="form-label">
-                                                        <i class="fas fa-clock me-1"></i>Hora de Fin *
-                                                    </label>
-                                                    <select class="form-select" id="blockEndTime" required>
-                                                        <option value="08:00">08:00</option>
-                                                        <option value="09:00">09:00</option>
-                                                        <option value="10:00">10:00</option>
-                                                        <option value="11:00">11:00</option>
-                                                        <option value="12:00">12:00</option>
-                                                        <option value="13:00" selected>13:00</option>
-                                                        <option value="14:00">14:00</option>
-                                                        <option value="15:00">15:00</option>
-                                                        <option value="16:00">16:00</option>
-                                                        <option value="17:00">17:00</option>
-                                                        <option value="18:00">18:00</option>
-                                                        <option value="19:00">19:00</option>
-                                                        <option value="20:00">20:00</option>
-                                                        <option value="21:00">21:00</option>
-                                                        <option value="22:00">22:00</option>
-                                                        <option value="23:00">23:00</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label for="blockDescription" class="form-label">
-                                                        <i class="fas fa-align-left me-1"></i>Descripción (opcional)
-                                                    </label>
-                                                    <textarea class="form-control" id="blockDescription" rows="3" 
-                                                        placeholder="Detalles adicionales sobre la actividad..."></textarea>
-                                                </div>
-                                                <div class="col-12">
-                                                    <button type="submit" class="btn btn-success">
-                                                        <i class="fas fa-calendar-plus me-2"></i>Bloquear Tiempo
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="document.getElementById('blockTimeForm').reset()">
-                                                        <i class="fas fa-times me-2"></i>Limpiar
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tab: Agendar Cita Directa -->
-                            <div class="tab-pane fade" id="direct-appointment-pane" role="tabpanel">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-header bg-light">
-                                        <h6 class="mb-0">
-                                            <i class="fas fa-calendar-plus me-2 text-primary"></i>
-                                            Agendar Cita Directa con Coachee
-                                        </h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <p class="text-muted mb-4">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            Crea una cita directamente con un coachee. Se bloqueará en tu calendario y el coachee recibirá una notificación para aceptar o rechazar.
-                                        </p>
-                                        
-                                        <form id="directAppointmentForm" onsubmit="submitDirectAppointment(event)">
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label for="directCoacheeId" class="form-label">
-                                                        <i class="fas fa-user me-1"></i>Seleccionar Coachee *
-                                                    </label>
-                                                    <select class="form-select" id="directCoacheeId" required>
-                                                        <option value="">Cargando coachees...</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="directTitle" class="form-label">
-                                                        <i class="fas fa-heading me-1"></i>Título de la Sesión *
-                                                    </label>
-                                                    <input type="text" class="form-control" id="directTitle" 
-                                                        placeholder="Ej: Sesión de seguimiento" required>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="directDate" class="form-label">
-                                                        <i class="fas fa-calendar me-1"></i>Fecha *
-                                                    </label>
-                                                    <input type="date" class="form-control" id="directDate" required>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="directStartTime" class="form-label">
-                                                        <i class="fas fa-clock me-1"></i>Hora de Inicio *
-                                                    </label>
-                                                    <select class="form-select" id="directStartTime" required>
-                                                        <option value="08:00">08:00</option>
-                                                        <option value="09:00">09:00</option>
-                                                        <option value="10:00" selected>10:00</option>
-                                                        <option value="11:00">11:00</option>
-                                                        <option value="12:00">12:00</option>
-                                                        <option value="13:00">13:00</option>
-                                                        <option value="14:00">14:00</option>
-                                                        <option value="15:00">15:00</option>
-                                                        <option value="16:00">16:00</option>
-                                                        <option value="17:00">17:00</option>
-                                                        <option value="18:00">18:00</option>
-                                                        <option value="19:00">19:00</option>
-                                                        <option value="20:00">20:00</option>
-                                                        <option value="21:00">21:00</option>
-                                                        <option value="22:00">22:00</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="directEndTime" class="form-label">
-                                                        <i class="fas fa-clock me-1"></i>Hora de Fin *
-                                                    </label>
-                                                    <select class="form-select" id="directEndTime" required>
-                                                        <option value="09:00">09:00</option>
-                                                        <option value="10:00">10:00</option>
-                                                        <option value="11:00" selected>11:00</option>
-                                                        <option value="12:00">12:00</option>
-                                                        <option value="13:00">13:00</option>
-                                                        <option value="14:00">14:00</option>
-                                                        <option value="15:00">15:00</option>
-                                                        <option value="16:00">16:00</option>
-                                                        <option value="17:00">17:00</option>
-                                                        <option value="18:00">18:00</option>
-                                                        <option value="19:00">19:00</option>
-                                                        <option value="20:00">20:00</option>
-                                                        <option value="21:00">21:00</option>
-                                                        <option value="22:00">22:00</option>
-                                                        <option value="23:00">23:00</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="directLocation" class="form-label">
-                                                        <i class="fas fa-map-marker-alt me-1"></i>Ubicación/Modalidad
-                                                    </label>
-                                                    <input type="text" class="form-control" id="directLocation" 
-                                                        placeholder="Ej: Zoom, Presencial, Google Meet..." value="Zoom">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label d-block">
-                                                        <i class="fas fa-bell me-1"></i>Notificación
-                                                    </label>
-                                                    <div class="form-check form-switch" style="padding-top: 0.5rem;">
-                                                        <input class="form-check-input" type="checkbox" id="directSendNotification" checked>
-                                                        <label class="form-check-label" for="directSendNotification">
-                                                            Enviar notificación al coachee
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label for="directDescription" class="form-label">
-                                                        <i class="fas fa-align-left me-1"></i>Descripción de la Sesión
-                                                    </label>
-                                                    <textarea class="form-control" id="directDescription" rows="2" 
-                                                        placeholder="Objetivo de la sesión, temas a tratar..."></textarea>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label for="directNotificationMessage" class="form-label">
-                                                        <i class="fas fa-envelope me-1"></i>Mensaje Personalizado (opcional)
-                                                    </label>
-                                                    <textarea class="form-control" id="directNotificationMessage" rows="2" 
-                                                        placeholder="Mensaje que acompañará la notificación al coachee..."></textarea>
-                                                </div>
-                                                <div class="col-12">
-                                                    <button type="submit" class="btn btn-primary">
-                                                        <i class="fas fa-paper-plane me-2"></i>Enviar Cita al Coachee
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="document.getElementById('directAppointmentForm').reset()">
-                                                        <i class="fas fa-times me-2"></i>Limpiar
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
 <!-- Modal para proponer nuevo horario -->
 <div class="modal fade" id="proposeTimeModal" tabindex="-1">
     <div class="modal-dialog">
@@ -5412,55 +5636,79 @@
 <!-- Modal para Notas del Coach -->
 <div class="modal fade" id="coachNotesModal" tabindex="-1" aria-labelledby="coachNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-height: 90vh;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 12px 12px 0 0; border: none; padding: 1rem 1.25rem;">
-                <h5 class="modal-title text-white" id="coachNotesModalLabel" style="font-size: 1rem; font-weight: 600;">
-                    <i class="fas fa-sticky-note me-2"></i>
-                    <span class="d-none d-sm-inline">Notas - </span><span id="notesCoacheeName"></span>
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden;">
+            <!-- Header con diseño mejorado -->
+            <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; padding: 1rem 1.25rem; position: relative;">
+                <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-sticky-note" style="font-size: 1.125rem; color: white;"></i>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                        <h5 class="modal-title text-white mb-0" id="coachNotesModalLabel" style="font-size: 1rem; font-weight: 600; line-height: 1.2;">
+                            Notas de Coaching
+                        </h5>
+                        <p class="text-white mb-0" style="font-size: 0.813rem; opacity: 0.9; line-height: 1.2;" id="notesCoacheeName"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);"></button>
             </div>
-            <div class="modal-body" style="padding: 1rem 1.25rem;">
-                <!-- Lista de notas existentes -->
+            
+            <!-- Body optimizado -->
+            <div class="modal-body" style="padding: 1.25rem; background: #fafbfc;">
+                <!-- Lista de notas existentes con diseño mejorado -->
                 <div class="mb-3">
-                    <h6 class="text-muted mb-2" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-history me-1"></i>Historial
-                    </h6>
-                    <div id="notesList" style="max-height: 220px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem; background: #fafbfc;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="mb-0" style="font-size: 0.813rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-history me-1" style="color: #f59e0b;"></i>Historial
+                        </h6>
+                    </div>
+                    <div id="notesList" style="max-height: 200px; overflow-y: auto; border: 2px solid #e5e7eb; border-radius: 10px; padding: 0.75rem; background: white;">
                         <!-- Las notas se cargarán aquí dinámicamente -->
-                        <p class="text-muted text-center mb-0" style="font-size: 0.813rem;">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Sin notas
-                        </p>
+                        <div class="text-center py-3">
+                            <i class="fas fa-inbox" style="font-size: 2rem; color: #d1d5db; margin-bottom: 0.5rem;"></i>
+                            <p class="text-muted mb-0" style="font-size: 0.813rem;">Sin notas registradas</p>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Formulario para nueva nota -->
-                <div style="border-top: 1px solid #e5e7eb; padding-top: 1rem;">
-                    <h6 class="text-muted mb-2" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-plus-circle me-1"></i>Nueva Nota
-                    </h6>
-                    <div class="mb-2">
-                        <label for="noteDate" class="form-label" style="font-weight: 500; color: #374151; font-size: 0.813rem; margin-bottom: 0.375rem;">
-                            <i class="fas fa-calendar me-1"></i>Fecha
-                        </label>
-                        <input type="date" class="form-control form-control-sm" id="noteDate" style="border-radius: 6px; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem;">
+                <!-- Formulario para nueva nota con diseño mejorado -->
+                <div style="background: white; border-radius: 10px; padding: 1rem; border: 2px solid #e5e7eb;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-plus" style="font-size: 0.875rem; color: white;"></i>
+                        </div>
+                        <h6 class="mb-0" style="font-size: 0.813rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Nueva Nota
+                        </h6>
                     </div>
-                    <div class="mb-0">
-                        <label for="noteText" class="form-label" style="font-weight: 500; color: #374151; font-size: 0.813rem; margin-bottom: 0.375rem;">
-                            <i class="fas fa-pencil-alt me-1"></i>Nota
-                        </label>
-                        <textarea class="form-control form-control-sm" id="noteText" rows="3" 
-                            placeholder="Observaciones, temas, avances..."
-                            style="border-radius: 6px; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem; line-height: 1.5; resize: vertical;"></textarea>
+                    
+                    <div class="row g-2">
+                        <div class="col-12 col-sm-5">
+                            <label for="noteDate" class="form-label" style="font-weight: 600; color: #6b7280; font-size: 0.75rem; margin-bottom: 0.375rem; text-transform: uppercase; letter-spacing: 0.3px;">
+                                <i class="fas fa-calendar me-1"></i>Fecha
+                            </label>
+                            <input type="date" class="form-control" id="noteDate" style="border-radius: 8px; border: 2px solid #e5e7eb; padding: 0.625rem 0.75rem; font-size: 0.875rem; transition: all 0.2s;" onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#e5e7eb'">
+                        </div>
+                        <div class="col-12 col-sm-7">
+                            <label for="noteText" class="form-label" style="font-weight: 600; color: #6b7280; font-size: 0.75rem; margin-bottom: 0.375rem; text-transform: uppercase; letter-spacing: 0.3px;">
+                                <i class="fas fa-pencil-alt me-1"></i>Nota
+                            </label>
+                            <textarea class="form-control" id="noteText" rows="1" 
+                                placeholder="Escribe tu nota aquí..."
+                                style="border-radius: 8px; border: 2px solid #e5e7eb; padding: 0.625rem 0.75rem; font-size: 0.875rem; line-height: 1.4; resize: none; transition: all 0.2s;" 
+                                onfocus="this.style.borderColor='#f59e0b'; this.rows=3;" 
+                                onblur="this.style.borderColor='#e5e7eb'; if(!this.value) this.rows=1;"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="background-color: #f9fafb; border-top: 1px solid #e5e7eb; padding: 0.75rem 1.25rem; border-radius: 0 0 12px 12px; gap: 0.5rem;">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.875rem;">
-                    <i class="fas fa-times me-1"></i>Cancelar
+            
+            <!-- Footer con diseño mejorado -->
+            <div class="modal-footer" style="background: white; border-top: 2px solid #e5e7eb; padding: 1rem 1.25rem; gap: 0.625rem;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border: 2px solid #e5e7eb; border-radius: 8px; padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 600; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-times me-1"></i><span class="d-none d-sm-inline">Cancelar</span><span class="d-inline d-sm-none">✕</span>
                 </button>
-                <button type="button" class="btn btn-primary btn-sm" @click="saveCoachNote()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 6px; padding: 0.5rem 1rem; font-weight: 500; font-size: 0.875rem;">
+                <button type="button" class="btn btn-primary" @click="saveCoachNote()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 600; font-size: 0.875rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.2s;">
                     <i class="fas fa-save me-1"></i>Guardar
                 </button>
             </div>
@@ -5469,54 +5717,122 @@
 </div>
 
 <style>
-/* Estilos responsive para el modal de notas */
+/* Estilos mejorados y responsive para el modal de notas */
+#coachNotesModal .modal-dialog {
+    margin: 1.75rem auto;
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 3.5rem);
+}
+
+#coachNotesModal .modal-content {
+    max-height: calc(100vh - 3.5rem);
+    width: 100%;
+}
+
+/* Scrollbar personalizado para lista de notas */
+#notesList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notesList::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+}
+
+#notesList::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+#notesList::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Animaciones de hover para inputs */
+#coachNotesModal input:focus,
+#coachNotesModal textarea:focus {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    outline: none;
+}
+
+#coachNotesModal .btn-light:hover {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+#coachNotesModal .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+}
+
+/* Responsividad móvil optimizada */
 @media (max-width: 576px) {
     #coachNotesModal .modal-dialog {
-        margin: 0.5rem;
+        margin: 0.5rem auto;
         max-width: calc(100% - 1rem);
+        min-height: calc(100% - 1rem);
     }
     
     #coachNotesModal .modal-content {
         max-height: calc(100vh - 1rem);
+        border-radius: 12px;
     }
     
     #coachNotesModal .modal-header {
         padding: 0.875rem 1rem;
     }
     
-    #coachNotesModal .modal-title {
-        font-size: 0.938rem;
-    }
-    
     #coachNotesModal .modal-body {
-        padding: 0.875rem 1rem;
+        padding: 1rem;
     }
     
     #coachNotesModal #notesList {
-        max-height: 180px;
-        padding: 0.625rem;
+        max-height: 160px;
     }
     
     #coachNotesModal .modal-footer {
-        padding: 0.625rem 1rem;
-        flex-wrap: nowrap;
+        padding: 0.875rem 1rem;
+        gap: 0.5rem;
     }
     
     #coachNotesModal .modal-footer .btn {
+        flex: 1;
+        padding: 0.625rem 0.875rem;
         font-size: 0.813rem;
-        padding: 0.5rem 0.875rem;
     }
 }
 
+/* Tablets */
 @media (min-width: 577px) and (max-width: 768px) {
     #coachNotesModal .modal-dialog {
         max-width: 90%;
     }
 }
 
+/* Desktop */
 @media (min-width: 769px) {
     #coachNotesModal .modal-dialog {
-        max-width: 600px;
+        max-width: 540px;
+    }
+}
+
+/* Modo landscape en móvil */
+@media (max-height: 600px) and (orientation: landscape) {
+    #coachNotesModal .modal-content {
+        max-height: calc(100vh - 1rem);
+    }
+    
+    #coachNotesModal #notesList {
+        max-height: 120px;
+    }
+    
+    #coachNotesModal .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    #coachNotesModal .modal-body {
+        padding: 0.875rem 1rem;
     }
 }
 </style>
@@ -6048,6 +6364,17 @@ function dashboardApp() {
                         console.log('⏰ setTimeout ejecutándose...');
                         console.log('  - initializeCalendar:', typeof this.initializeCalendar);
                         console.log('  - loadMyAvailability:', typeof this.loadMyAvailability);
+                        this.initializeCalendar();
+                        this.loadMyAvailability();
+                    }, 100);
+                    break;
+                case 'contenido-prueba':
+                    console.log('📅 Módulo Mi Agenda activado');
+                    // Cargar solicitudes inicialmente (tab activo por defecto)
+                    await this.loadSessionRequests();
+                    // Inicializar calendario en segundo plano para que esté listo
+                    setTimeout(() => {
+                        console.log('📅 Inicializando calendario en segundo plano...');
                         this.initializeCalendar();
                         this.loadMyAvailability();
                     }, 100);
@@ -9865,6 +10192,71 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         console.error('❌ No se encontró el tab "requests-tab" en el DOM');
+    }
+    
+    // Listener para el tab de solicitudes dentro de Mi Agenda
+    const solicitudesTab = document.getElementById('solicitudes-tab');
+    if (solicitudesTab) {
+        console.log('✅ Tab "solicitudes-tab" encontrado en Mi Agenda, agregando listener...');
+        solicitudesTab.addEventListener('shown.bs.tab', function(event) {
+            console.log('📋 Pestaña "Solicitudes" de Mi Agenda mostrada');
+            if (window.coachDashboard && typeof window.coachDashboard.loadSessionRequests === 'function') {
+                console.log('🔄 Llamando a loadSessionRequests...');
+                window.coachDashboard.loadSessionRequests();
+            } else {
+                console.error('❌ window.coachDashboard.loadSessionRequests no disponible');
+            }
+        });
+        
+        solicitudesTab.addEventListener('click', function(e) {
+            console.log('🖱️ Click en tab Solicitudes de Mi Agenda');
+            setTimeout(() => {
+                if (window.coachDashboard && typeof window.coachDashboard.loadSessionRequests === 'function') {
+                    console.log('🔄 Cargando solicitudes después del click...');
+                    window.coachDashboard.loadSessionRequests();
+                }
+            }, 50);
+        });
+    } else {
+        console.log('ℹ️ Tab "solicitudes-tab" no encontrado (normal si módulo no está activo)');
+    }
+    
+    // Listener para el tab de calendario dentro de Mi Agenda
+    const calendarioTab = document.getElementById('calendario-tab');
+    if (calendarioTab) {
+        console.log('✅ Tab "calendario-tab" encontrado en Mi Agenda, agregando listener...');
+        calendarioTab.addEventListener('shown.bs.tab', function(event) {
+            console.log('📅 Pestaña "Calendario" de Mi Agenda mostrada');
+            if (window.coachDashboard) {
+                console.log('🔄 Inicializando calendario...');
+                setTimeout(() => {
+                    // Inicializar el calendario si no existe
+                    if (!window.coachDashboard.calendar) {
+                        window.coachDashboard.initializeCalendar();
+                    } else {
+                        // Si ya existe, forzar actualización de tamaño y vista
+                        window.coachDashboard.calendar.updateSize();
+                        window.coachDashboard.calendar.refetchEvents();
+                        // Asegurar que esté en vista de mes
+                        window.coachDashboard.calendar.changeView('dayGridMonth');
+                    }
+                    window.coachDashboard.loadMyAvailability();
+                }, 150);
+            }
+        });
+    }
+    
+    // Listener para el tab de disponibilidad dentro de Mi Agenda
+    const disponibilidadTab = document.getElementById('disponibilidad-tab');
+    if (disponibilidadTab) {
+        console.log('✅ Tab "disponibilidad-tab" encontrado en Mi Agenda, agregando listener...');
+        disponibilidadTab.addEventListener('shown.bs.tab', function(event) {
+            console.log('⏰ Pestaña "Disponibilidad" de Mi Agenda mostrada');
+            if (window.coachDashboard && typeof window.coachDashboard.loadMyAvailability === 'function') {
+                console.log('🔄 Cargando disponibilidad...');
+                window.coachDashboard.loadMyAvailability();
+            }
+        });
     }
     
     // Listener para cuando se muestre la pestaña de asignar contenido
