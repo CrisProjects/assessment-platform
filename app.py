@@ -17,7 +17,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import func, desc, inspect, text, and_, or_
 from logging.handlers import RotatingFileHandler
-import os, secrets, re, logging, string, traceback
+import os, secrets, re, logging, string, traceback, json
 import pytz
 import boto3
 from botocore.exceptions import ClientError
@@ -4130,7 +4130,9 @@ def logout_page():
             
     elif 'coachee_user_id' in session:
         user_type = 'coachee'
-        coachee_id = session['coachee_user_id']
+        coachee_id = session.get('coachee_user_id')
+        if not coachee_id:
+            return redirect(url_for('participant_access'))
         user_info = f"coachee (ID: {coachee_id})"
         logger.info(f"Logout for {user_info} - preserving coach session")
         
@@ -4178,7 +4180,9 @@ def api_logout():
         
     elif 'coachee_user_id' in session:
         user_type = 'coachee'
-        coachee_id = session['coachee_user_id']
+        coachee_id = session.get('coachee_user_id')
+        if not coachee_id:
+            return jsonify({'error': 'Sesión expirada'}), 401
         user_info = f"coachee (ID: {coachee_id})"
         logger.info(f"API logout for {user_info} - preserving coach session")
         
@@ -4295,10 +4299,9 @@ def api_coach_logout():
 @app.route('/api/coachee/logout', methods=['POST'])
 def api_coachee_logout():
     """Logout específico para coachees - solo cierra sesión de coachee"""
-    if 'coachee_user_id' not in session:
+    coachee_id = session.get('coachee_user_id')
+    if not coachee_id:
         return jsonify({'error': 'No hay sesión de coachee activa'}), 400
-    
-    coachee_id = session['coachee_user_id']
     logger.info(f"Coachee logout (ID: {coachee_id}) - preserving coach session")
     
     # Solo cerrar sesión de coachee, preservar coach
@@ -4678,7 +4681,9 @@ def coachee_change_password():
             return jsonify({'error': 'Las contraseñas nuevas no coinciden'}), 400
         
         # Obtener coachee (es un User con role='coachee')
-        coachee_id = session['coachee_user_id']
+        coachee_id = session.get('coachee_user_id')
+        if not coachee_id:
+            return jsonify({'error': 'Sesión expirada. Por favor, inicie sesión nuevamente.', 'session_expired': True}), 401
         coachee = User.query.filter_by(id=coachee_id, role='coachee').first()
         if not coachee:
             return jsonify({'error': 'Coachee no encontrado'}), 404
@@ -11485,14 +11490,33 @@ def api_coach_availability():
                 is_active=True
             ).order_by(CoachAvailability.day_of_week, CoachAvailability.start_time).all()
             
-            availability_data = []
+            if not availability:
+                return jsonify({
+                    'success': True,
+                    'availability': []
+                }), 200
+            
+            # Agrupar por horario (start_time, end_time)
+            # Asumimos que todos tienen el mismo horario y agrupamos los días
+            time_groups = {}
             for slot in availability:
+                time_key = f"{slot.start_time.strftime('%H:%M')}-{slot.end_time.strftime('%H:%M')}"
+                if time_key not in time_groups:
+                    time_groups[time_key] = {
+                        'start_time': slot.start_time.strftime('%H:%M'),
+                        'end_time': slot.end_time.strftime('%H:%M'),
+                        'days': []
+                    }
+                time_groups[time_key]['days'].append(slot.day_of_week)
+            
+            # Convertir a formato esperado por el frontend
+            availability_data = []
+            for time_key, group_data in time_groups.items():
                 availability_data.append({
-                    'id': slot.id,
-                    'day_of_week': slot.day_of_week,
-                    'start_time': slot.start_time.strftime('%H:%M'),
-                    'end_time': slot.end_time.strftime('%H:%M'),
-                    'is_active': slot.is_active
+                    'available_days': json.dumps(sorted(group_data['days'])),  # JSON string con días ordenados
+                    'start_time': group_data['start_time'],
+                    'end_time': group_data['end_time'],
+                    'is_active': True
                 })
             
             return jsonify({
@@ -11503,23 +11527,45 @@ def api_coach_availability():
         elif request.method == 'POST':
             # Crear/actualizar disponibilidad
             data = request.get_json()
-            availability_slots = data.get('availability', [])
+            
+            # El frontend envía: available_days (JSON string con array de días), start_time, end_time
+            available_days_str = data.get('available_days', '[]')
+            start_time_str = data.get('start_time')
+            end_time_str = data.get('end_time')
+            
+            if not start_time_str or not end_time_str:
+                return jsonify({'error': 'Horarios de inicio y fin son requeridos'}), 400
+            
+            # Parsear días disponibles
+            try:
+                available_days = json.loads(available_days_str) if isinstance(available_days_str, str) else available_days_str
+            except:
+                available_days = []
+            
+            if not available_days:
+                return jsonify({'error': 'Debes seleccionar al menos un día'}), 400
+            
+            # Parsear horarios
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
             
             # Eliminar disponibilidad existente
             CoachAvailability.query.filter_by(coach_id=current_coach.id).delete()
             
-            # Crear nueva disponibilidad
-            for slot_data in availability_slots:
+            # Crear nueva disponibilidad (un slot por cada día seleccionado)
+            for day in available_days:
                 new_slot = CoachAvailability(
                     coach_id=current_coach.id,
-                    day_of_week=slot_data['day_of_week'],
-                    start_time=datetime.strptime(slot_data['start_time'], '%H:%M').time(),
-                    end_time=datetime.strptime(slot_data['end_time'], '%H:%M').time(),
+                    day_of_week=int(day),
+                    start_time=start_time,
+                    end_time=end_time,
                     is_active=True
                 )
                 db.session.add(new_slot)
             
             db.session.commit()
+            
+            logger.info(f"✅ Disponibilidad guardada para coach {current_coach.id}: {len(available_days)} días, {start_time_str}-{end_time_str}")
             
             return jsonify({
                 'success': True,
@@ -11534,7 +11580,7 @@ def api_coach_availability():
 @app.route('/api/coach/sessions', methods=['GET'])
 @coach_session_required
 def api_coach_sessions():
-    """Obtener todas las sesiones del coach"""
+    """Obtener todas las sesiones del coach (SOLO confirmadas, NO pending)"""
     try:
         current_coach = g.current_user
         
@@ -11542,7 +11588,12 @@ def api_coach_sessions():
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         
-        query = CoachingSession.query.filter_by(coach_id=current_coach.id)
+        # IMPORTANTE: Excluir sesiones 'pending' y 'cancelled'
+        # Pending van a Solicitudes, cancelled no se muestran en calendario
+        # Solo mostrar: confirmed (incluye self_activity), completed, proposed
+        query = CoachingSession.query.filter_by(coach_id=current_coach.id).filter(
+            CoachingSession.status.in_(['confirmed', 'completed', 'proposed'])
+        )
         
         if start_date:
             # Extraer solo la fecha del formato ISO de FullCalendar (2025-09-28T00:00:00-03:00)
@@ -11555,18 +11606,23 @@ def api_coach_sessions():
         
         sessions = query.order_by(CoachingSession.session_date, CoachingSession.start_time).all()
         
+        logger.info(f"📅 CALENDARIO: Coach {current_coach.id} - {len(sessions)} sesiones (excluye pending y cancelled)")
+        
         sessions_data = []
         for session in sessions:
             sessions_data.append({
                 'id': session.id,
                 'coachee_id': session.coachee_id,
-                'coachee_name': session.coachee_name,
+                'coachee_name': session.coachee_name if session.coachee_id else 'Tiempo Personal',
                 'session_date': session.session_date.isoformat(),
                 'start_time': session.start_time.strftime('%H:%M'),
                 'end_time': session.end_time.strftime('%H:%M'),
                 'status': session.status,
-                'title': session.title or f'Sesión con {session.coachee_name}',
-                'description': session.description,
+                'session_type': session.session_type,
+                'activity_type': session.activity_type,
+                'activity_title': session.activity_title,
+                'title': session.title or session.activity_title or f'Sesión con {session.coachee_name if session.coachee_id else "Tiempo Personal"}',
+                'description': session.description or session.activity_description,
                 'location': session.location,
                 'start': session.session_datetime.isoformat(),
                 'end': session.session_end_datetime.isoformat(),
@@ -11596,20 +11652,32 @@ def api_coach_session_requests():
                 status='pending'
             ).order_by(CoachingSession.created_at.desc()).all()
             
+            logger.info(f"📋 SOLICITUDES: Coach {current_coach.id} tiene {len(requests)} solicitudes pendientes")
+            
             requests_data = []
             for req in requests:
-                requests_data.append({
+                # Obtener el nombre del coachee de forma segura
+                coachee_name = 'Sin nombre'
+                if req.coachee_id:
+                    coachee = User.query.get(req.coachee_id)
+                    if coachee:
+                        coachee_name = coachee.full_name
+                
+                request_item = {
                     'id': req.id,
                     'coachee_id': req.coachee_id,
-                    'coachee_name': req.coachee_name,
+                    'coachee_name': coachee_name,
                     'session_date': req.session_date.isoformat(),
+                    'preferred_date': req.session_date.isoformat(),  # Alias para frontend
                     'start_time': req.start_time.strftime('%H:%M'),
                     'end_time': req.end_time.strftime('%H:%M'),
-                    'title': req.title,
-                    'description': req.description,
-                    'location': req.location,
+                    'title': req.title or 'Sesión de Coaching',
+                    'description': req.description or '',
+                    'location': req.location or 'Por definir',
                     'created_at': req.created_at.isoformat()
-                })
+                }
+                requests_data.append(request_item)
+                logger.info(f"  📌 Solicitud {req.id}: {coachee_name} - {req.session_date} {req.start_time}")
             
             return jsonify({
                 'success': True,
@@ -11711,6 +11779,345 @@ def api_coach_session_requests():
         logger.error(f"Error en api_coach_session_requests: {str(e)}", exc_info=True)
         db.session.rollback()
         return jsonify({'error': f'Error gestionando solicitudes: {str(e)}'}), 500
+
+@app.route('/api/coach/session-requests/<int:request_id>/accept', methods=['POST'])
+@coach_session_required
+def api_coach_accept_session_request(request_id):
+    """Aceptar una solicitud de sesión"""
+    try:
+        current_coach = g.current_user
+        
+        # Buscar la solicitud pendiente
+        session = CoachingSession.query.filter_by(
+            id=request_id,
+            coach_id=current_coach.id,
+            status='pending'
+        ).first()
+        
+        if not session:
+            logger.warning(f"❌ ACEPTAR: Solicitud {request_id} no encontrada o no está pendiente")
+            return jsonify({'error': 'Solicitud no encontrada'}), 404
+        
+        # Cambiar status a confirmed
+        session.status = 'confirmed'
+        db.session.commit()
+        
+        logger.info(f"✅ ACEPTADA: Solicitud {request_id} confirmada para {session.session_date} {session.start_time}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Sesión confirmada para {session.session_date.strftime("%d/%m/%Y")} a las {session.start_time.strftime("%H:%M")}'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_accept_session_request: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error aceptando solicitud: {str(e)}'}), 500
+
+@app.route('/api/coach/session-requests/<int:request_id>/reject', methods=['POST'])
+@coach_session_required
+def api_coach_reject_session_request(request_id):
+    """Rechazar una solicitud de sesión"""
+    try:
+        current_coach = g.current_user
+        data = request.get_json() or {}
+        reason = data.get('reason', 'Sin motivo especificado')
+        
+        # Buscar la solicitud pendiente
+        session = CoachingSession.query.filter_by(
+            id=request_id,
+            coach_id=current_coach.id,
+            status='pending'
+        ).first()
+        
+        if not session:
+            logger.warning(f"❌ RECHAZAR: Solicitud {request_id} no encontrada o no está pendiente")
+            return jsonify({'error': 'Solicitud no encontrada'}), 404
+        
+        # Cambiar status a cancelled y guardar el motivo
+        session.status = 'cancelled'
+        session.notes = f"Rechazada por coach: {reason}"
+        db.session.commit()
+        
+        logger.info(f"❌ RECHAZADA: Solicitud {request_id} rechazada. Motivo: {reason}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Solicitud rechazada correctamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_reject_session_request: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error rechazando solicitud: {str(e)}'}), 500
+
+@app.route('/api/coach/block-time', methods=['POST'])
+@coach_session_required
+def api_coach_block_time():
+    """Bloquear tiempo personal en el calendario del coach"""
+    try:
+        current_coach = g.current_user
+        data = request.get_json() or {}
+        
+        # Validar datos requeridos
+        activity_title = data.get('activity_title')
+        activity_type = data.get('activity_type')
+        session_date_str = data.get('session_date')
+        start_time_str = data.get('start_time')
+        end_time_str = data.get('end_time')
+        description = data.get('description', '')
+        
+        if not all([activity_title, activity_type, session_date_str, start_time_str, end_time_str]):
+            return jsonify({'error': 'Faltan datos requeridos'}), 400
+        
+        # Parsear fecha y horas
+        from datetime import datetime as dt
+        session_date = dt.strptime(session_date_str, '%Y-%m-%d').date()
+        start_time = dt.strptime(start_time_str, '%H:%M').time()
+        end_time = dt.strptime(end_time_str, '%H:%M').time()
+        
+        # Validar que la fecha no sea en el pasado
+        santiago_today = get_santiago_today()
+        if session_date < santiago_today:
+            return jsonify({'error': 'No se puede bloquear tiempo en fechas pasadas'}), 400
+        
+        # Validar que la hora de fin sea posterior a la de inicio
+        if end_time <= start_time:
+            return jsonify({'error': 'La hora de fin debe ser posterior a la hora de inicio'}), 400
+        
+        # Verificar que no haya conflictos de horario
+        conflicts = CoachingSession.query.filter_by(
+            coach_id=current_coach.id,
+            session_date=session_date
+        ).filter(
+            CoachingSession.status.in_(['confirmed', 'pending']),
+            db.or_(
+                db.and_(
+                    CoachingSession.start_time < end_time,
+                    CoachingSession.end_time > start_time
+                )
+            )
+        ).all()
+        
+        if conflicts:
+            return jsonify({'error': 'Ya tienes una sesión o bloqueo en ese horario'}), 400
+        
+        # Crear el bloqueo de tiempo
+        block = CoachingSession(
+            coach_id=current_coach.id,
+            coachee_id=None,  # Sin coachee, es actividad personal
+            session_date=session_date,
+            start_time=start_time,
+            end_time=end_time,
+            status='confirmed',  # Los bloqueos personales se confirman automáticamente
+            session_type='self_activity',
+            activity_type=activity_type,
+            activity_title=activity_title,
+            activity_description=description,
+            created_by_coach=True
+        )
+        
+        db.session.add(block)
+        db.session.commit()
+        
+        logger.info(f"✅ BLOQUEO PERSONAL: Coach {current_coach.id} bloqueó {activity_type} el {session_date} de {start_time} a {end_time}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tiempo bloqueado exitosamente',
+            'session_id': block.id
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': f'Formato de fecha/hora inválido: {str(e)}'}), 400
+    except Exception as e:
+        logger.error(f"Error en api_coach_block_time: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error bloqueando tiempo: {str(e)}'}), 500
+
+@app.route('/api/coach/direct-appointment', methods=['POST'])
+@coach_session_required
+def api_coach_direct_appointment():
+    """Crear una cita directa con un coachee"""
+    try:
+        current_coach = g.current_user
+        data = request.get_json() or {}
+        
+        # Validar datos requeridos
+        coachee_id = data.get('coachee_id')
+        title = data.get('title')
+        session_date_str = data.get('session_date')
+        start_time_str = data.get('start_time')
+        end_time_str = data.get('end_time')
+        location = data.get('location', 'Por definir')
+        description = data.get('description', '')
+        notification_message = data.get('notification_message', '')
+        send_notification = data.get('send_notification', True)
+        
+        if not all([coachee_id, title, session_date_str, start_time_str, end_time_str]):
+            return jsonify({'error': 'Faltan datos requeridos'}), 400
+        
+        logger.info(f"🔍 DIRECT-APPOINTMENT: Validando coachee_id={coachee_id} (tipo: {type(coachee_id)}) para coach {current_coach.id}")
+        
+        # Validar que el coachee existe y es del coach
+        coachee = User.query.filter(
+            User.id == coachee_id,
+            User.coach_id == current_coach.id,
+            User.role == 'coachee'
+        ).first()
+        
+        if not coachee:
+            # Debug: buscar el coachee sin filtros para ver qué pasa
+            coachee_any = User.query.filter(User.id == coachee_id).first()
+            if coachee_any:
+                logger.warning(f"❌ DIRECT-APPOINTMENT: Coachee {coachee_id} existe pero NO cumple condiciones: coach_id={coachee_any.coach_id} (esperado: {current_coach.id}, match={coachee_any.coach_id == current_coach.id}), role={coachee_any.role} (match={coachee_any.role == 'coachee'}), is_active={coachee_any.is_active}")
+            else:
+                logger.warning(f"❌ DIRECT-APPOINTMENT: Coachee {coachee_id} NO existe en la base de datos")
+            return jsonify({'error': 'Coachee no encontrado o no es tu coachee'}), 404
+        
+        logger.info(f"✅ DIRECT-APPOINTMENT: Coachee {coachee.username} (ID: {coachee.id}) validado correctamente")
+        
+        # Parsear fecha y horas
+        from datetime import datetime as dt
+        session_date = dt.strptime(session_date_str, '%Y-%m-%d').date()
+        start_time = dt.strptime(start_time_str, '%H:%M').time()
+        end_time = dt.strptime(end_time_str, '%H:%M').time()
+        
+        # Validar que la fecha no sea en el pasado
+        santiago_today = get_santiago_today()
+        if session_date < santiago_today:
+            return jsonify({'error': 'No se puede agendar en fechas pasadas'}), 400
+        
+        # Validar que la hora de fin sea posterior a la de inicio
+        if end_time <= start_time:
+            return jsonify({'error': 'La hora de fin debe ser posterior a la hora de inicio'}), 400
+        
+        # Verificar que no haya conflictos de horario para el coach
+        conflicts = CoachingSession.query.filter_by(
+            coach_id=current_coach.id,
+            session_date=session_date
+        ).filter(
+            CoachingSession.status.in_(['confirmed', 'pending']),
+            db.or_(
+                db.and_(
+                    CoachingSession.start_time < end_time,
+                    CoachingSession.end_time > start_time
+                )
+            )
+        ).all()
+        
+        if conflicts:
+            return jsonify({'error': 'Ya tienes una sesión o bloqueo en ese horario'}), 400
+        
+        # Crear la cita directa
+        appointment = CoachingSession(
+            coach_id=current_coach.id,
+            coachee_id=coachee_id,
+            session_date=session_date,
+            start_time=start_time,
+            end_time=end_time,
+            status='pending',  # Pendiente de aceptación del coachee
+            session_type='direct_appointment',
+            title=title,
+            description=description,
+            location=location,
+            notification_message=notification_message,
+            created_by_coach=True
+        )
+        
+        db.session.add(appointment)
+        db.session.commit()
+        
+        logger.info(f"✅ CITA DIRECTA: Coach {current_coach.id} agendó cita con coachee {coachee_id} para {session_date} de {start_time} a {end_time}")
+        
+        # TODO: Aquí se puede agregar lógica para enviar notificación al coachee
+        # if send_notification:
+        #     send_appointment_notification(coachee, appointment, notification_message)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cita enviada a {coachee.full_name}',
+            'session_id': appointment.id
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': f'Formato de fecha/hora inválido: {str(e)}'}), 400
+    except Exception as e:
+        logger.error(f"Error en api_coach_direct_appointment: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error creando cita: {str(e)}'}), 500
+
+@app.route('/api/coach/session-requests/<int:request_id>/propose', methods=['POST'])
+@coach_session_required
+def api_coach_propose_session_time(request_id):
+    """Proponer un horario alternativo para una solicitud de sesión"""
+    try:
+        current_coach = g.current_user
+        data = request.get_json() or {}
+        
+        # Buscar la solicitud original
+        original_session = CoachingSession.query.filter_by(
+            id=request_id,
+            coach_id=current_coach.id,
+            status='pending'
+        ).first()
+        
+        if not original_session:
+            logger.warning(f"❌ PROPONER: Solicitud {request_id} no encontrada o no está pendiente")
+            return jsonify({'error': 'Solicitud no encontrada'}), 404
+        
+        # Obtener datos de la propuesta
+        proposed_date_str = data.get('proposed_date')
+        proposed_start_time_str = data.get('proposed_start_time')
+        proposed_end_time_str = data.get('proposed_end_time')
+        message = data.get('message', '')
+        
+        if not all([proposed_date_str, proposed_start_time_str, proposed_end_time_str]):
+            return jsonify({'error': 'Faltan datos requeridos'}), 400
+        
+        # Parsear fecha y horas
+        from datetime import datetime as dt
+        proposed_date = dt.strptime(proposed_date_str, '%Y-%m-%d').date()
+        proposed_start_time = dt.strptime(proposed_start_time_str, '%H:%M').time()
+        proposed_end_time = dt.strptime(proposed_end_time_str, '%H:%M').time()
+        
+        # Crear nueva sesión con status='proposed'
+        proposed_session = CoachingSession(
+            coach_id=current_coach.id,
+            coachee_id=original_session.coachee_id,
+            session_date=proposed_date,
+            start_time=proposed_start_time,
+            end_time=proposed_end_time,
+            status='proposed',
+            title=original_session.title,
+            description=original_session.description,
+            location=original_session.location,
+            original_session_id=request_id,
+            proposed_by='coach',
+            proposal_message=message or f'El coach propone un nuevo horario: {proposed_date_str} de {proposed_start_time_str} a {proposed_end_time_str}'
+        )
+        
+        db.session.add(proposed_session)
+        
+        # Cambiar status de la sesión original a 'proposed' para indicar que hay una propuesta pendiente
+        original_session.status = 'proposed'
+        original_session.notes = f"Coach propuso nuevo horario: {proposed_date_str} {proposed_start_time_str}-{proposed_end_time_str}"
+        
+        db.session.commit()
+        
+        logger.info(f"📅 PROPUESTA: Coach {current_coach.id} propuso horario alternativo para sesión {request_id}")
+        logger.info(f"  Nueva sesión ID: {proposed_session.id}, Fecha: {proposed_date}, Hora: {proposed_start_time}-{proposed_end_time}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Propuesta enviada al coachee',
+            'proposed_session_id': proposed_session.id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_propose_session_time: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al proponer horario: {str(e)}'}), 500
 
 @app.route('/api/coach/session/<int:session_id>', methods=['PUT', 'DELETE'])
 @coach_session_required
@@ -11816,6 +12223,7 @@ def api_coachee_coach_availability():
         ).order_by(CoachAvailability.day_of_week, CoachAvailability.start_time).all()
         
         # Obtener sesiones existentes para bloquear horarios ocupados (solo futuras)
+        # IMPORTANTE: Incluye self_activity (bloqueos personales) y todas las sesiones confirmed/pending
         today = get_santiago_today()
         future_date = today + timedelta(days=7)  # Próximos 7 días
         
@@ -11828,7 +12236,7 @@ def api_coachee_coach_availability():
         ).order_by(CoachingSession.session_date, CoachingSession.start_time).all()
         
         logger.info(f"🗓️ DISPONIBILIDAD: Coach {current_coachee.coach_id}, período {today} a {future_date}")
-        logger.info(f"📅 DISPONIBILIDAD: {len(availability)} horarios generales, {len(occupied_sessions)} sesiones ocupadas")
+        logger.info(f"📅 DISPONIBILIDAD: {len(availability)} horarios generales, {len(occupied_sessions)} sesiones ocupadas (incluye bloqueos personales)")
         
         availability_data = []
         for slot in availability:
@@ -11937,6 +12345,10 @@ def api_coachee_request_session():
         db.session.add(new_session)
         db.session.commit()
         
+        logger.info(f"✅ SOLICITUD CREADA: Coachee {current_coachee.id} ({current_coachee.full_name}) → Coach {current_coachee.coach_id}")
+        logger.info(f"   Fecha: {requested_date}, Hora: {start_time_obj}-{end_time_obj}")
+        logger.info(f"   Título: {title}, ID: {new_session.id}")
+        
         return jsonify({
             'success': True,
             'message': f'Solicitud enviada para {session_date} a las {start_time}',
@@ -11993,7 +12405,9 @@ def api_coachee_my_sessions():
                 'created_at': session.created_at.isoformat(),
                 'original_session_id': session.original_session_id,
                 'proposed_by': session.proposed_by,
-                'proposal_message': session.proposal_message
+                'proposal_message': session.proposal_message,
+                'created_by_coach': session.created_by_coach or False,
+                'notification_message': session.notification_message
             })
         
         return jsonify({
@@ -12021,7 +12435,7 @@ def api_coachee_session_detail(session_id):
             return jsonify({'error': 'Sesión no encontrada'}), 404
         
         data = request.get_json()
-        action = data.get('action')  # 'accept_proposal', 'reject_proposal'
+        action = data.get('action')  # 'accept_proposal', 'reject_proposal', 'accept_direct', 'reject_direct'
         
         if action == 'accept_proposal' and session.status == 'proposed':
             # Aceptar propuesta del coach
@@ -12046,6 +12460,18 @@ def api_coachee_session_detail(session_id):
                     original.status = 'pending'
             
             message = 'Propuesta rechazada.'
+        
+        elif action == 'accept_direct' and session.status == 'pending' and session.created_by_coach:
+            # Aceptar cita directa creada por el coach
+            session.status = 'confirmed'
+            logger.info(f"✅ CITA-DIRECTA: Coachee {current_coachee.id} aceptó cita {session_id} del coach {session.coach_id}")
+            message = 'Cita aceptada y confirmada en tu calendario.'
+        
+        elif action == 'reject_direct' and session.status == 'pending' and session.created_by_coach:
+            # Rechazar cita directa creada por el coach
+            session.status = 'cancelled'
+            logger.info(f"❌ CITA-DIRECTA: Coachee {current_coachee.id} rechazó cita {session_id} del coach {session.coach_id}")
+            message = 'Cita rechazada.'
         
         else:
             return jsonify({'error': 'Acción no válida o estado incorrecto'}), 400
@@ -12744,4 +13170,5 @@ def api_testpersonal_calculate():
 if __name__ == '__main__':
     with app.app_context():
         auto_initialize_database()
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5002)), debug=not IS_PRODUCTION)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5002)), debug=False, use_reloader=False)
+

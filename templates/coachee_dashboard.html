@@ -8232,44 +8232,50 @@
                     <div class="row" style="margin-top: 0;">
                         <div class="col-12">
                             <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
-                                <!-- Header -->
-                                <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <!-- Header - Compacto en móvil -->
+                                <div style="padding: 1.25rem 1rem 1rem; border-bottom: 1px solid #f3f4f6;">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div>
-                                            <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                                <i class="fas fa-calendar-alt"></i>
+                                            <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: clamp(1.125rem, 4vw, 1.375rem); letter-spacing: -0.3px;">
+                                                <i class="fas fa-calendar-alt" style="font-size: clamp(1rem, 3.5vw, 1.25rem);"></i>
                                                 Agendar Coach
                                             </h5>
-                                            <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
+                                            <p class="mb-0" style="color: #9ca3af; font-size: clamp(0.8125rem, 2.5vw, 0.875rem); font-weight: 400;">
                                                 Agenda una sesión con tu coach
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <!-- Body -->
-                                <div style="padding: 1.5rem 2.5rem 2.5rem;">
-                                    <!-- Pestañas para organizar el contenido -->
-                                    <ul class="nav nav-tabs mb-4" id="scheduleCoachTabs" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link force-white-text" 
+                                <!-- Body - Padding adaptativo -->
+                                <div style="padding: 1rem;">
+                                    <!-- Pestañas modernas y compactas para móvil -->
+                                    <ul class="nav nav-tabs mb-3" id="scheduleCoachTabs" role="tablist" style="border-bottom: 2px solid #e5e7eb;">
+                                        <li class="nav-item" role="presentation" style="flex: 1;">
+                                            <button class="nav-link force-white-text w-100" 
                                                 :class="{ 'active': scheduleTab === 'request' }"
                                                 @click="switchScheduleTab('request')"
                                                 id="schedule-request-tab" type="button" role="tab"
-                                                style="color: #ffffff !important; background-color: #007bff !important; border-color: #007bff !important;">
-                                                <i class="fas fa-plus me-1"></i>Solicitar Sesión
+                                                style="color: #6b7280 !important; background-color: transparent !important; border: none !important; border-bottom: 3px solid transparent !important; padding: 0.75rem 0.5rem; font-size: clamp(0.8125rem, 2.8vw, 0.9375rem); font-weight: 500; transition: all 0.2s ease;"
+                                                :style="scheduleTab === 'request' ? 'color: #2563eb !important; border-bottom-color: #2563eb !important; background-color: #eff6ff !important;' : ''">
+                                                <i class="fas fa-plus" style="font-size: clamp(0.75rem, 2.5vw, 0.875rem);"></i>
+                                                <span class="d-none d-sm-inline ms-1">Solicitar</span>
                                             </button>
                                         </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link position-relative force-white-text" 
+                                        <li class="nav-item" role="presentation" style="flex: 1;">
+                                            <button class="nav-link position-relative force-white-text w-100" 
                                                 :class="{ 'active': scheduleTab === 'sessions' }"
                                                 @click="switchScheduleTab('sessions')"
-                                                id="my-sessions-tab" type="button" role="tab">
-                                                <i class="fas fa-calendar me-1"></i>Mis Sesiones
-                                                <span class="badge bg-info rounded-pill ms-1" 
+                                                id="my-sessions-tab" type="button" role="tab"
+                                                style="color: #6b7280 !important; background-color: transparent !important; border: none !important; border-bottom: 3px solid transparent !important; padding: 0.75rem 0.5rem; font-size: clamp(0.8125rem, 2.8vw, 0.9375rem); font-weight: 500; transition: all 0.2s ease;"
+                                                :style="scheduleTab === 'sessions' ? 'color: #2563eb !important; border-bottom-color: #2563eb !important; background-color: #eff6ff !important;' : ''">
+                                                <i class="fas fa-calendar" style="font-size: clamp(0.75rem, 2.5vw, 0.875rem);"></i>
+                                                <span class="d-none d-sm-inline ms-1">Mis Sesiones</span>
+                                                <span class="badge bg-primary rounded-pill ms-1" 
                                                     x-show="mySessions.length > 0"
                                                     x-text="mySessions.length"
-                                                    id="mySessionsCount"></span>
+                                                    id="mySessionsCount"
+                                                    style="font-size: 0.625rem; padding: 0.2rem 0.4rem; position: absolute; top: 0.25rem; right: 0.25rem;"></span>
                                             </button>
                                         </li>
                                     </ul>
@@ -8282,26 +8288,28 @@
                                             :class="{ 'show active': scheduleTab === 'request' }"
                                             id="schedule-request-pane" role="tabpanel" 
                                             aria-labelledby="schedule-request-tab" tabindex="0">
-                                            <div class="row">
+                                            <div class="row g-3">
                                                 <div class="col-lg-8">
-                                                    <div class="card">
-                                                        <div class="card-header">
-                                                            <h6 class="mb-0">
+                                                    <div class="card" style="border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                        <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0; padding: 0.875rem 1rem; border: none;">
+                                                            <h6 class="mb-0" style="color: #ffffff; font-size: clamp(0.875rem, 3vw, 1rem); font-weight: 600;">
                                                                 <i class="fas fa-calendar-plus me-2"></i>
                                                                 Nueva Solicitud de Sesión
                                                             </h6>
                                                         </div>
-                                                        <div class="card-body">
+                                                        <div class="card-body" style="padding: 1rem;">
                                                             <form id="sessionRequestForm">
                                                                 <div class="row g-3">
                                                                     <div class="col-12">
-                                                                        <label for="sessionDate" class="form-label">Fecha Preferida</label>
-                                                                        <input type="date" class="form-control" id="sessionDate" required>
+                                                                        <label for="sessionDate" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem;">Fecha Preferida</label>
+                                                                        <input type="date" class="form-control" id="sessionDate" required 
+                                                                            style="border-radius: 8px; border: 1px solid #d1d5db; padding: 0.625rem 0.75rem; font-size: 0.9375rem;">
                                                                     </div>
-                                                                    <div class="col-md-6">
-                                                                        <label for="sessionStartTime" class="form-label">Hora de Inicio</label>
-                                                                        <select class="form-select time-select-24h" id="sessionStartTime" required>
-                                                                            <option value="">Seleccionar hora</option>
+                                                                    <div class="col-6">
+                                                                        <label for="sessionStartTime" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem;">Hora Inicio</label>
+                                                                        <select class="form-select time-select-24h" id="sessionStartTime" required
+                                                                            style="border-radius: 8px; border: 1px solid #d1d5db; padding: 0.625rem 0.75rem; font-size: 0.9375rem;">
+                                                                            <option value="">Seleccionar</option>
                                                                             <option value="08:00">08:00</option>
                                                                             <option value="08:30">08:30</option>
                                                                             <option value="09:00">09:00</option>
@@ -8328,12 +8336,13 @@
                                                                             <option value="19:30">19:30</option>
                                                                             <option value="20:00">20:00</option>
                                                                         </select>
-                                                                        <div class="form-text">Horario disponible: 08:00 - 20:00</div>
+                                                                        <div class="form-text" style="font-size: 0.75rem; color: #6b7280;">08:00 - 20:00</div>
                                                                     </div>
-                                                                    <div class="col-md-6">
-                                                                        <label for="sessionEndTime" class="form-label">Hora de Fin</label>
-                                                                        <select class="form-select time-select-24h" id="sessionEndTime" required>
-                                                                            <option value="">Seleccionar hora</option>
+                                                                    <div class="col-6">
+                                                                        <label for="sessionEndTime" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem;">Hora Fin</label>
+                                                                        <select class="form-select time-select-24h" id="sessionEndTime" required
+                                                                            style="border-radius: 8px; border: 1px solid #d1d5db; padding: 0.625rem 0.75rem; font-size: 0.9375rem;">
+                                                                            <option value="">Seleccionar</option>
                                                                             <option value="08:30">08:30</option>
                                                                             <option value="09:00">09:00</option>
                                                                             <option value="09:30">09:30</option>
@@ -8360,21 +8369,24 @@
                                                                             <option value="20:00">20:00</option>
                                                                             <option value="20:30">20:30</option>
                                                                         </select>
-                                                                        <div class="form-text">Horario disponible: 08:30 - 20:30</div>
+                                                                        <div class="form-text" style="font-size: 0.75rem; color: #6b7280;">08:30 - 20:30</div>
                                                                     </div>
                                                                     <div class="col-12">
-                                                                        <label for="sessionTitle" class="form-label">Título de la Sesión</label>
+                                                                        <label for="sessionTitle" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem;">Título de la Sesión</label>
                                                                         <input type="text" class="form-control" id="sessionTitle" 
-                                                                            placeholder="Ej: Sesión de desarrollo personal" value="Sesión de Coaching">
+                                                                            placeholder="Ej: Sesión de desarrollo personal" value="Sesión de Coaching"
+                                                                            style="border-radius: 8px; border: 1px solid #d1d5db; padding: 0.625rem 0.75rem; font-size: 0.9375rem;">
                                                                     </div>
                                                                     <div class="col-12">
-                                                                        <label for="sessionDescription" class="form-label">Descripción (opcional)</label>
+                                                                        <label for="sessionDescription" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem;">Descripción (opcional)</label>
                                                                         <textarea class="form-control" id="sessionDescription" rows="3" 
-                                                                            placeholder="Describe brevemente el tema que te gustaría trabajar..."></textarea>
+                                                                            placeholder="Describe brevemente el tema que te gustaría trabajar..."
+                                                                            style="border-radius: 8px; border: 1px solid #d1d5db; padding: 0.625rem 0.75rem; font-size: 0.9375rem;"></textarea>
                                                                     </div>
                                                                     <div class="col-12">
-                                                                        <label for="sessionLocation" class="form-label">Modalidad Preferida</label>
-                                                                        <select class="form-select" id="sessionLocation">
+                                                                        <label for="sessionLocation" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem;">Modalidad Preferida</label>
+                                                                        <select class="form-select" id="sessionLocation"
+                                                                            style="border-radius: 8px; border: 1px solid #d1d5db; padding: 0.625rem 0.75rem; font-size: 0.9375rem;">
                                                                             <option value="Virtual - Zoom">Virtual - Zoom</option>
                                                                             <option value="Virtual - Teams">Virtual - Teams</option>
                                                                             <option value="Virtual - Meet">Virtual - Google Meet</option>
@@ -8383,10 +8395,12 @@
                                                                         </select>
                                                                     </div>
                                                                     <div class="col-12">
-                                                                        <button type="submit" class="btn btn-primary">
+                                                                        <button type="submit" class="btn btn-primary w-100 w-sm-auto" 
+                                                                            style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem;">
                                                                             <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
                                                                         </button>
-                                                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetSessionForm()">
+                                                                        <button type="button" class="btn btn-outline-secondary w-100 w-sm-auto mt-2 mt-sm-0 ms-sm-2" onclick="resetSessionForm()"
+                                                                            style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem;">
                                                                             <i class="fas fa-undo me-2"></i>Limpiar
                                                                         </button>
                                                                     </div>
@@ -8397,46 +8411,46 @@
                                                 </div>
                                                 
                                                 <div class="col-lg-4">
-                                                    <div class="card">
-                                                        <div class="card-header">
-                                                            <h6 class="mb-0">
-                                                                <i class="fas fa-info-circle me-2"></i>
+                                                    <div class="card" style="border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                        <div class="card-header" style="background: #f9fafb; border-radius: 12px 12px 0 0; padding: 0.875rem 1rem; border-bottom: 1px solid #e5e7eb;">
+                                                            <h6 class="mb-0" style="font-size: 0.875rem; font-weight: 600; color: #374151;">
+                                                                <i class="fas fa-info-circle me-2" style="color: #3b82f6;"></i>
                                                                 Disponibilidad del Coach
                                                             </h6>
                                                         </div>
-                                                        <div class="card-body" id="coachAvailabilityInfo">
+                                                        <div class="card-body" id="coachAvailabilityInfo" style="padding: 1rem;">
                                                             <div class="text-center py-3">
-                                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                                <div class="spinner-border spinner-border-sm" role="status" style="color: #3b82f6;">
                                                                     <span class="visually-hidden">Cargando disponibilidad...</span>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     
-                                                    <div class="card mt-3">
-                                                        <div class="card-header">
-                                                            <h6 class="mb-0">
-                                                                <i class="fas fa-lightbulb me-2"></i>
+                                                    <div class="card mt-3" style="border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                        <div class="card-header" style="background: #f9fafb; border-radius: 12px 12px 0 0; padding: 0.875rem 1rem; border-bottom: 1px solid #e5e7eb;">
+                                                            <h6 class="mb-0" style="font-size: 0.875rem; font-weight: 600; color: #374151;">
+                                                                <i class="fas fa-lightbulb me-2" style="color: #f59e0b;"></i>
                                                                 Tips para Agendar
                                                             </h6>
                                                         </div>
-                                                        <div class="card-body">
-                                                            <ul class="list-unstyled mb-0">
-                                                                <li class="mb-2">
-                                                                    <i class="fas fa-check text-success me-2"></i>
-                                                                    Planifica con al menos 24 horas de anticipación
+                                                        <div class="card-body" style="padding: 1rem;">
+                                                            <ul class="list-unstyled mb-0" style="font-size: 0.8125rem; line-height: 1.5;">
+                                                                <li class="mb-2" style="display: flex; align-items: start; gap: 0.5rem;">
+                                                                    <i class="fas fa-check-circle" style="color: #10b981; margin-top: 0.125rem; flex-shrink: 0;"></i>
+                                                                    <span>Planifica con 24h de anticipación</span>
                                                                 </li>
-                                                                <li class="mb-2">
-                                                                    <i class="fas fa-check text-success me-2"></i>
-                                                                    Describe el tema que quieres trabajar
+                                                                <li class="mb-2" style="display: flex; align-items: start; gap: 0.5rem;">
+                                                                    <i class="fas fa-check-circle" style="color: #10b981; margin-top: 0.125rem; flex-shrink: 0;"></i>
+                                                                    <span>Describe el tema que quieres trabajar</span>
                                                                 </li>
-                                                                <li class="mb-2">
-                                                                    <i class="fas fa-check text-success me-2"></i>
-                                                                    Verifica tu disponibilidad antes de solicitar
+                                                                <li class="mb-2" style="display: flex; align-items: start; gap: 0.5rem;">
+                                                                    <i class="fas fa-check-circle" style="color: #10b981; margin-top: 0.125rem; flex-shrink: 0;"></i>
+                                                                    <span>Verifica tu disponibilidad antes</span>
                                                                 </li>
-                                                                <li class="mb-0">
-                                                                    <i class="fas fa-check text-success me-2"></i>
-                                                                    Tu coach responderá en máximo 24 horas
+                                                                <li class="mb-0" style="display: flex; align-items: start; gap: 0.5rem;">
+                                                                    <i class="fas fa-check-circle" style="color: #10b981; margin-top: 0.125rem; flex-shrink: 0;"></i>
+                                                                    <span>Tu coach responderá en máx. 24h</span>
                                                                 </li>
                                                             </ul>
                                                         </div>
@@ -8452,29 +8466,32 @@
                                             aria-labelledby="my-sessions-tab" tabindex="0">
                                             <div class="row">
                                                 <div class="col-12">
-                                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                                        <h6 class="mb-0">
-                                                            <i class="fas fa-calendar me-2"></i>
+                                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
+                                                        <h6 class="mb-0" style="font-size: clamp(0.9375rem, 3vw, 1rem); font-weight: 600; color: #111827;">
+                                                            <i class="fas fa-calendar me-2" style="color: #3b82f6;"></i>
                                                             Mis Sesiones Programadas
                                                         </h6>
-                                                        <div>
-                                                            <button class="btn btn-primary btn-sm me-2" 
-                                                                @click="switchScheduleTab('request')">
-                                                                <i class="fas fa-plus me-1"></i>Solicitar Sesión
+                                                        <div class="d-flex gap-2 w-100 w-sm-auto">
+                                                            <button class="btn btn-primary btn-sm flex-grow-1 flex-sm-grow-0" 
+                                                                @click="switchScheduleTab('request')"
+                                                                style="border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500;">
+                                                                <i class="fas fa-plus me-1"></i>Nueva Sesión
                                                             </button>
                                                             <button class="btn btn-outline-primary btn-sm" 
                                                                 @click="loadMySessions(true)"
-                                                                :disabled="isLoadingSessions">
-                                                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                                                :disabled="isLoadingSessions"
+                                                                style="border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500;">
+                                                                <i class="fas fa-sync-alt" :class="{ 'fa-spin': isLoadingSessions }"></i>
                                                             </button>
                                                         </div>
                                                     </div>
                                                     
                                                     <div id="mySessionsList">
                                                         <div class="text-center py-4" x-show="isLoadingSessions">
-                                                            <div class="spinner-border text-primary" role="status">
+                                                            <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
                                                                 <span class="visually-hidden">Cargando sesiones...</span>
                                                             </div>
+                                                            <p class="mt-2 mb-0 text-muted" style="font-size: 0.875rem;">Cargando sesiones...</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -16751,6 +16768,7 @@
                 
                 const sessionDate = new Date(session.session_date + 'T12:00:00');
                 const isProposal = session.status === 'proposed' && session.original_session_id;
+                const isDirectAppointment = session.created_by_coach && session.status === 'pending';
                 
                 return `
                     <div class="card mb-3">
@@ -16782,6 +16800,12 @@
                                             <strong>Mensaje del coach:</strong> ${session.proposal_message}
                                         </div>` : ''
                                     }
+                                    ${isDirectAppointment && session.notification_message ? 
+                                        `<div class="alert alert-primary alert-sm mt-2 mb-0">
+                                            <i class="fas fa-envelope me-1"></i>
+                                            <strong>Mensaje del coach:</strong> ${session.notification_message}
+                                        </div>` : ''
+                                    }
                                 </div>
                                 <div class="col-md-4 text-end">
                                     <span class="badge bg-${statusColors[session.status]} mb-2 d-block">
@@ -16793,6 +16817,16 @@
                                                 <i class="fas fa-check me-1"></i>Aceptar
                                             </button>
                                             <button class="btn btn-danger btn-sm" onclick="respondToProposal(${session.id}, 'reject_proposal')">
+                                                <i class="fas fa-times me-1"></i>Rechazar
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                    ${isDirectAppointment ? `
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button class="btn btn-success btn-sm" onclick="respondToProposal(${session.id}, 'accept_direct')">
+                                                <i class="fas fa-check me-1"></i>Aceptar
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="respondToProposal(${session.id}, 'reject_direct')">
                                                 <i class="fas fa-times me-1"></i>Rechazar
                                             </button>
                                         </div>
@@ -16820,9 +16854,23 @@
         }
 
         function respondToProposal(sessionId, action) {
-            const actionText = action === 'accept_proposal' ? 'aceptar' : 'rechazar';
+            let actionText, confirmMsg;
             
-            if (!confirm(`¿Estás seguro de que quieres ${actionText} esta propuesta?`)) {
+            if (action === 'accept_proposal') {
+                actionText = 'aceptar esta propuesta';
+                confirmMsg = '¿Estás seguro de que quieres aceptar esta propuesta de cambio de horario?';
+            } else if (action === 'reject_proposal') {
+                actionText = 'rechazar esta propuesta';
+                confirmMsg = '¿Estás seguro de que quieres rechazar esta propuesta? La sesión original se mantendrá.';
+            } else if (action === 'accept_direct') {
+                actionText = 'aceptar esta cita';
+                confirmMsg = '¿Estás seguro de que quieres aceptar esta cita? Se confirmará en tu calendario.';
+            } else if (action === 'reject_direct') {
+                actionText = 'rechazar esta cita';
+                confirmMsg = '¿Estás seguro de que quieres rechazar esta cita del coach?';
+            }
+            
+            if (!confirm(confirmMsg)) {
                 return;
             }
             
