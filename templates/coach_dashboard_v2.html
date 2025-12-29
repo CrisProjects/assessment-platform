@@ -5659,6 +5659,24 @@
     }
 }
 
+/* ESTILOS CRÍTICOS PARA MODALES - Asegurar visibilidad */
+#coacheeEvaluationsModal,
+#coachNotesModal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1060 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+#coacheeEvaluationsModal.show,
+#coachNotesModal.show {
+    display: block !important;
+}
+
 /* Tablets */
 @media (min-width: 577px) and (max-width: 768px) {
     #coachNotesModal .modal-dialog {
@@ -6511,7 +6529,12 @@ function dashboardApp() {
                 </div>
             `;
             
-            const modal = new bootstrap.Modal(document.getElementById('coacheeEvaluationsModal'));
+            // Force modal to be appended to body and ensure visibility
+            const modalEl = document.getElementById('coacheeEvaluationsModal');
+            if (modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+            const modal = new bootstrap.Modal(modalEl);
             modal.show();
             
             try {
@@ -6943,8 +6966,12 @@ function dashboardApp() {
                 console.error('Error loading notes:', error);
             }
             
-            // Abrir modal
-            const modal = new bootstrap.Modal(document.getElementById('coachNotesModal'));
+            // Force modal to be appended to body and ensure visibility
+            const modalEl = document.getElementById('coachNotesModal');
+            if (modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+            const modal = new bootstrap.Modal(modalEl);
             modal.show();
         },
         

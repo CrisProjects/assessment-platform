@@ -1883,35 +1883,6 @@
             box-shadow: none !important;
         }
         
-        /* Estilos de tabs Agendar Coach */
-        #scheduleCoachTabs .nav-link {
-            color: #6b7280;
-            background: transparent;
-            border: none;
-        }
-        #scheduleCoachTabs .nav-link:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-        #scheduleCoachTabs .nav-link.active {
-            color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-        #scheduleCoachTabs .nav-link.active .badge {
-            background: white !important;
-            color: #667eea !important;
-        }
-        @media (max-width: 768px) {
-            #scheduleCoachTabs {
-                flex-direction: column;
-            }
-            #scheduleCoachTabs .nav-item {
-                flex: none !important;
-                width: 100%;
-            }
-        }
-        
         /* Animación de entrada para cards */
         @keyframes fadeInUp {
             from {
@@ -8201,37 +8172,29 @@
                                 
                                 <!-- Body - Padding adaptativo -->
                                 <div style="padding: 1rem;">
-                                    <!-- Pestañas modernas y compactas para móvil -->
-                                    <ul class="nav nav-pills mb-4" id="scheduleCoachTabs" role="tablist" style="background: #f9fafb; padding: 0.5rem; border-radius: 12px; gap: 0.5rem;">
-                                        <li class="nav-item" role="presentation" style="flex: 1;">
-                                            <button class="nav-link w-100" 
-                                                :style="scheduleTab === 'request' ? 'color: white; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);' : 'color: #6b7280; background: transparent;'"
-                                                @click="switchScheduleTab('request')"
-                                                id="schedule-request-tab" type="button" role="tab"
-                                                style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem; transition: all 0.2s; border: none;">
-                                                <i class="fas fa-plus me-2"></i>
-                                                <span>Solicitar</span>
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation" style="flex: 1;">
-                                            <button class="nav-link position-relative w-100" 
-                                                :style="scheduleTab === 'sessions' ? 'color: white; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);' : 'color: #6b7280; background: transparent;'"
-                                                @click="switchScheduleTab('sessions')"
-                                                id="my-sessions-tab" type="button" role="tab"
-                                                style="border-radius: 8px; font-weight: 500; padding: 0.75rem 1rem; transition: all 0.2s; border: none;">
-                                                <i class="fas fa-calendar me-2"></i>
-                                                <span>Mis Sesiones</span>
-                                                <span class="badge rounded-pill ms-1" 
-                                                    :style="scheduleTab === 'sessions' ? 'background: white; color: #667eea;' : 'background: #e5e7eb; color: #6b7280;'"
-                                                    x-show="mySessions.length > 0"
-                                                    x-text="mySessions.length"
-                                                    id="mySessionsCount"
-                                                    style="font-size: 0.625rem; padding: 0.2rem 0.4rem;"></span>
-                                            </button>
-                                        </li>
-                                    </ul>
-
-                                    <!-- Contenido de las pestañas -->
+                                <!-- Pestañas modernas y compactas para móvil -->
+                                <ul class="nav nav-tabs mb-4" id="scheduleCoachTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" 
+                                            @click="switchScheduleTab('request')"
+                                            id="schedule-request-tab" type="button" role="tab">
+                                            <i class="fas fa-plus me-2"></i>
+                                            <span>Solicitar</span>
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link position-relative" 
+                                            @click="switchScheduleTab('sessions')"
+                                            id="my-sessions-tab" type="button" role="tab">
+                                            <i class="fas fa-calendar me-2"></i>
+                                            <span>Mis Sesiones</span>
+                                            <span class="badge bg-primary rounded-pill ms-1" 
+                                                x-show="mySessions.length > 0"
+                                                x-text="mySessions.length"
+                                                id="mySessionsCount"></span>
+                                        </button>
+                                    </li>
+                                </ul>                                    <!-- Contenido de las pestañas -->
                                     <div class="tab-content" id="scheduleCoachTabContent">
                                         
                                         <!-- Pestaña: Solicitar Sesión -->
