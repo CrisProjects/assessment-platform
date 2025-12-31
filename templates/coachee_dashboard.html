@@ -27,15 +27,150 @@
     <!-- FullCalendar CSS -->
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
     
-    <!-- Estilos para Alpine.js x-cloak -->
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
-    
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
+        /* ============================================
+           🎨 PREMIUM ANIMATIONS & MICRO-INTERACTIONS
+           ============================================ */
+        
+        /* Pulse animation for loading states */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(0.98);
+            }
+        }
+        
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Slide up animation */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Scale in animation */
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* Smooth transitions */
+        .transition-all {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .transition-transform {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .transition-colors {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        
+        /* Focus visible for accessibility */
+        *:focus-visible {
+            outline: 2px solid #10b981;
+            outline-offset: 2px;
+            border-radius: 0.5rem;
+        }
+        
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Card hover effects */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* Button ripple effect */
+        .btn-ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-ripple::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-ripple:active::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Skeleton loading */
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+        
+        .skeleton {
+            animation: shimmer 2s infinite linear;
+            background: linear-gradient(
+                to right,
+                #f0f0f0 0%,
+                #e0e0e0 20%,
+                #f0f0f0 40%,
+                #f0f0f0 100%
+            );
+            background-size: 1000px 100%;
+        }
+        
+        /* Alpine.js x-cloak */
+        [x-cloak] { display: none !important; }
+        
+        /* ============================================
+           🎨 EXISTING STYLES
+           ============================================ */
+        
         /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACH */
         :root {
             --calm-primary: #1E3A8A;        /* Deep Blue */
@@ -7586,57 +7721,507 @@
                 <!-- Tab Content -->
                 <div class="tab-content" id="mainTabContent" style="margin-top: 0;">
                 <!-- Evaluations Tab -->
-                <div class="tab-pane fade show active" id="evaluations" role="tabpanel" x-show="activeTab === 'evaluations'">
+                <div class="tab-pane fade show active" id="evaluations" role="tabpanel" aria-labelledby="evaluations-tab" x-show="activeTab === 'evaluations'">
                     <div class="row" style="margin-top: 0;">
                         <!-- Available Evaluations -->
                         <div class="col-12">
-                            <div class="card" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none;">
-                                <!-- Header -->
-                                <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f3f4f6;">
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                                        <div>
-                                            <h5 class="mb-1 d-flex align-items-center gap-2" style="color: #111827; font-weight: 600; font-size: 1.375rem; letter-spacing: -0.3px;">
-                                                <i class="fas fa-clipboard-list"></i>
-                                                Mis Evaluaciones Disponibles
-                                            </h5>
-                                            <p class="mb-0" style="color: #9ca3af; font-size: 0.875rem; font-weight: 400;">
-                                                Comienza las evaluaciones asignadas por tu coach
-                                            </p>
+                            <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 1.5rem; background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);">
+                                <!-- Header with gradient accent -->
+                                <div class="position-relative" style="padding: 2rem 2.5rem 1.75rem; background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important; border-bottom: 4px solid #10b981; overflow: hidden;">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3" style="position: relative; z-index: 2;">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <!-- Icon badge -->
+                                            <div class="d-flex align-items-center justify-content-center flex-shrink-0" 
+                                                 style="width: 3.5rem; height: 3.5rem; background: #10b981 !important; border-radius: 1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                                                <i class="fas fa-clipboard-list" style="color: #1e293b !important; font-size: 1.5rem;"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-1" style="color: #ffffff !important; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.025em; line-height: 1.2;">
+                                                    Mis Evaluaciones Disponibles
+                                                </h5>
+                                                <p class="mb-0" style="color: #e2e8f0 !important; font-size: 0.875rem; font-weight: 500;">
+                                                    Comienza las evaluaciones asignadas por tu coach
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
+                                    <!-- Decorative element - removed for better clarity -->
                                 </div>
                                 
                                 <!-- Body -->
-                                <div style="padding: 1.5rem 2.5rem 2.5rem;">
-                                    <!-- Filtros y acciones -->
+                                <div style="padding: 2rem 2.5rem;">
+                                    <!-- Action bar -->
                                     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
                                         <div class="d-flex gap-2">
-                                            <button class="btn btn-sm" onclick="expandAllCategories('availableEvaluations')" 
-                                                style="background: #f9fafb; border: 1px solid #e5e7eb; color: #6b7280; border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
-                                                <i class="fas fa-chevron-down me-1"></i>
+                                            <button type="button" 
+                                                    onclick="expandAllCategories('availableEvaluations')" 
+                                                    class="btn btn-sm d-inline-flex align-items-center gap-2 transition-all"
+                                                    style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 0.75rem; font-weight: 600; padding: 0.625rem 1.25rem; font-size: 0.875rem; transition: all 0.2s ease;"
+                                                    onmouseenter="this.style.background='#e2e8f0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                                                    onmouseleave="this.style.background='#f1f5f9'; this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                                                    aria-label="Expandir todas las categorías">
+                                                <i class="fas fa-chevron-down"></i>
                                                 <span class="d-none d-sm-inline">Expandir todo</span>
                                             </button>
-                                            <button class="btn btn-sm" onclick="collapseAllCategories('availableEvaluations')" 
-                                                style="background: #f9fafb; border: 1px solid #e5e7eb; color: #6b7280; border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
-                                                <i class="fas fa-chevron-up me-1"></i>
+                                            <button type="button"
+                                                    onclick="collapseAllCategories('availableEvaluations')" 
+                                                    class="btn btn-sm d-inline-flex align-items-center gap-2 transition-all"
+                                                    style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 0.75rem; font-weight: 600; padding: 0.625rem 1.25rem; font-size: 0.875rem; transition: all 0.2s ease;"
+                                                    onmouseenter="this.style.background='#e2e8f0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                                                    onmouseleave="this.style.background='#f1f5f9'; this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                                                    aria-label="Contraer todas las categorías">
+                                                <i class="fas fa-chevron-up"></i>
                                                 <span class="d-none d-sm-inline">Contraer todo</span>
                                             </button>
                                         </div>
-                                        <button class="btn btn-sm" onclick="location.reload()" title="Actualizar evaluaciones" 
-                                            style="background: #f9fafb; border: 1px solid #e5e7eb; color: #6b7280; border-radius: 8px; font-weight: 500; padding: 0.5rem 1rem;">
-                                            <i class="fas fa-sync-alt me-1"></i>
+                                        <button type="button"
+                                                onclick="location.reload()" 
+                                                class="btn btn-sm d-inline-flex align-items-center gap-2"
+                                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #ffffff; border-radius: 0.75rem; font-weight: 600; padding: 0.625rem 1.25rem; font-size: 0.875rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); transition: all 0.2s ease;"
+                                                onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.35)';"
+                                                onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.25)';"
+                                                title="Actualizar evaluaciones"
+                                                aria-label="Actualizar evaluaciones disponibles">
+                                            <i class="fas fa-sync-alt"></i>
                                             <span class="d-none d-sm-inline">Actualizar</span>
                                         </button>
                                     </div>
                                     
-                                    <!-- Loading state -->
-                                    <div id="availableEvaluations">
+                                    <!-- Content container -->
+                                    <div id="availableEvaluations" role="region" aria-label="Evaluaciones disponibles" aria-live="polite">
+                                        <!-- Loading state with modern spinner -->
                                         <div class="text-center py-5">
-                                            <div class="spinner-border text-primary mb-3" role="status" style="width: 2rem; height: 2rem;">
-                                                <span class="visually-hidden">Cargando...</span>
+                                            <div class="d-inline-flex align-items-center justify-content-center mb-3" 
+                                                 style="width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">
+                                                <div class="spinner-border" role="status" style="width: 2rem; height: 2rem; color: #0284c7; border-width: 3px;">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
                                             </div>
-                                            <p class="text-muted" style="font-size: 0.875rem;">Cargando evaluaciones disponibles...</p>
+                                            <p class="mb-0" style="color: #64748b; font-size: 0.9375rem; font-weight: 500;">Cargando evaluaciones disponibles...</p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================= -->
+                <!-- MIS EVALUACIONES DISPONIBLES V2 (PREVIEW DEL NUEVO DISEÑO PREMIUM) -->
+                <!-- ========================================= -->
+                <div class="tab-pane fade" id="available-evaluations-v2" role="tabpanel">
+                    <div class="row" style="margin-top: 0;">
+                        <div class="col-12">
+                            <div class="card animate-fadeIn" style="background: #ffffff; margin-bottom: 2rem; margin-top: 0; border-radius: 1.25rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); border: none; overflow: hidden;">
+                                
+                                <!-- HEADER PREMIUM CON GRADIENTE OSCURO -->
+                                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important; 
+                                           padding: 2rem 2.5rem; 
+                                           border-bottom: 4px solid #10b981; 
+                                           position: relative;
+                                           overflow: hidden;">
+                                    
+                                    <!-- Elemento decorativo de fondo -->
+                                    <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; 
+                                               background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%); 
+                                               border-radius: 50%; pointer-events: none;"></div>
+                                    
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3" style="position: relative; z-index: 1;">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <!-- Badge con icono -->
+                                            <div class="d-flex align-items-center justify-content-center animate-pulse-slow" 
+                                                 style="width: 4rem; 
+                                                       height: 4rem; 
+                                                       background: #10b981 !important; 
+                                                       border-radius: 1.25rem; 
+                                                       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                                                <i class="fas fa-clipboard-list" style="color: #1e293b !important; font-size: 1.5rem;"></i>
+                                            </div>
+                                            
+                                            <!-- Títulos -->
+                                            <div>
+                                                <h5 class="mb-1" style="color: #ffffff !important; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.3px;">
+                                                    Mis Evaluaciones Disponibles V2
+                                                </h5>
+                                                <p class="mb-0" style="color: #e2e8f0 !important; font-size: 0.875rem; font-weight: 400;">
+                                                    🎨 Preview del nuevo diseño premium / SaaS moderno
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Contador de evaluaciones -->
+                                        <div class="d-flex align-items-center gap-2 px-4 py-2" 
+                                             style="background: rgba(255, 255, 255, 0.1); 
+                                                   backdrop-filter: blur(10px); 
+                                                   border-radius: 1rem; 
+                                                   border: 1px solid rgba(255, 255, 255, 0.2);">
+                                            <i class="fas fa-tasks" style="color: #10b981; font-size: 1rem;"></i>
+                                            <span style="color: #ffffff; font-weight: 700; font-size: 1.125rem;">
+                                                <span id="availableCountV2">0</span> disponibles
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- BODY CON CONTENIDO -->
+                                <div style="padding: 2rem 2.5rem;">
+                                    
+                                    <!-- Barra de acciones premium -->
+                                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                                        <div class="d-flex gap-2">
+                                            <button type="button" 
+                                                    class="btn btn-sm d-inline-flex align-items-center gap-2"
+                                                    style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 0.75rem; font-weight: 600; padding: 0.625rem 1.25rem; font-size: 0.875rem; transition: all 0.2s ease;"
+                                                    onmouseenter="this.style.background='#e2e8f0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                                                    onmouseleave="this.style.background='#f1f5f9'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                                                <i class="fas fa-chevron-down"></i>
+                                                <span>Expandir todo</span>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-sm d-inline-flex align-items-center gap-2"
+                                                    style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 0.75rem; font-weight: 600; padding: 0.625rem 1.25rem; font-size: 0.875rem; transition: all 0.2s ease;"
+                                                    onmouseenter="this.style.background='#e2e8f0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                                                    onmouseleave="this.style.background='#f1f5f9'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                                                <i class="fas fa-chevron-up"></i>
+                                                <span>Contraer todo</span>
+                                            </button>
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-sm d-inline-flex align-items-center gap-2"
+                                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #ffffff; border-radius: 0.75rem; font-weight: 600; padding: 0.625rem 1.25rem; font-size: 0.875rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); transition: all 0.2s ease;"
+                                                onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.35)';"
+                                                onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.25)';">
+                                            <i class="fas fa-sync-alt"></i>
+                                            <span>Actualizar</span>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- CATEGORÍAS DE EVALUACIONES -->
+                                    <div id="availableEvaluationsV2">
+                                        
+                                        <!-- CATEGORÍA: LIDERAZGO (Ejemplo con 2 evaluaciones) -->
+                                        <div class="mb-4 animate-slideUp">
+                                            <!-- Header de categoría -->
+                                            <div class="d-flex align-items-center justify-content-between p-4 mb-3 cursor-pointer"
+                                                 style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
+                                                       border-radius: 1rem; 
+                                                       border-left: 4px solid #fd7e14;
+                                                       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                                                       transition: all 0.2s ease;"
+                                                 onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)';"
+                                                 onmouseleave="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)';">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <!-- Badge del icono -->
+                                                    <div class="d-flex align-items-center justify-content-center" 
+                                                         style="width: 3.5rem; 
+                                                               height: 3.5rem; 
+                                                               background: #fd7e14; 
+                                                               border-radius: 1rem; 
+                                                               box-shadow: 0 4px 12px rgba(253, 126, 20, 0.4);">
+                                                        <i class="fas fa-crown" style="color: #ffffff !important; font-size: 1.5rem;"></i>
+                                                    </div>
+                                                    
+                                                    <!-- Título y descripción -->
+                                                    <div>
+                                                        <h4 class="mb-0" style="color: #1e293b !important; font-size: 1.125rem; font-weight: 700;">
+                                                            Liderazgo
+                                                        </h4>
+                                                        <p class="mb-0" style="color: #64748b !important; font-size: 0.875rem;">
+                                                            2 evaluaciones disponibles
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Badge contador -->
+                                                <span class="d-flex align-items-center justify-content-center" 
+                                                      style="background: #fd7e14; 
+                                                            color: #ffffff !important; 
+                                                            padding: 0.5rem 1rem; 
+                                                            border-radius: 0.75rem; 
+                                                            font-weight: 700; 
+                                                            font-size: 0.875rem;
+                                                            box-shadow: 0 2px 8px rgba(253, 126, 20, 0.4);">
+                                                    2
+                                                </span>
+                                            </div>
+                                            
+                                            <!-- Cards de evaluaciones -->
+                                            <div class="row g-3">
+                                                
+                                                <!-- CARD 1: Evaluación de Habilidades de Liderazgo -->
+                                                <div class="col-12 col-md-6">
+                                                    <div class="card h-100 card-hover animate-scaleIn" 
+                                                         style="border: 2px solid #fd7e14 !important; 
+                                                               border-radius: 1rem; 
+                                                               box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); 
+                                                               background: white !important; 
+                                                               overflow: hidden; 
+                                                               transition: all 0.3s ease;">
+                                                        
+                                                        <!-- Header con icono grande -->
+                                                        <div class="p-4 text-center" style="background: rgba(253, 126, 20, 0.15) !important;">
+                                                            <i class="fas fa-crown" style="font-size: 3.5rem; color: #fd7e14 !important; opacity: 0.9;"></i>
+                                                        </div>
+                                                        
+                                                        <!-- Body del card -->
+                                                        <div class="card-body p-4">
+                                                            <h5 class="card-title mb-3" style="color: #1e293b; font-weight: 700; font-size: 1.125rem; line-height: 1.4;">
+                                                                Evaluación de Habilidades de Liderazgo
+                                                            </h5>
+                                                            
+                                                            <!-- Metadata -->
+                                                            <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                                                                <div class="d-flex align-items-center gap-2 px-3 py-1" 
+                                                                     style="background: #ffffff !important; 
+                                                                           border: 2px solid #fd7e14 !important; 
+                                                                           border-radius: 0.75rem;">
+                                                                    <i class="fas fa-question-circle" style="color: #fd7e14 !important; font-size: 0.875rem;"></i>
+                                                                    <span style="color: #fd7e14 !important; font-weight: 600; font-size: 0.875rem;">10 preguntas</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center gap-2 px-3 py-1" 
+                                                                     style="background: #ffffff !important; 
+                                                                           border: 2px solid #fd7e14 !important; 
+                                                                           border-radius: 0.75rem;">
+                                                                    <i class="fas fa-clock" style="color: #fd7e14 !important; font-size: 0.875rem;"></i>
+                                                                    <span style="color: #fd7e14 !important; font-weight: 600; font-size: 0.875rem;">~15 min</span>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Coach info -->
+                                                            <div class="d-flex align-items-center gap-2 p-2 mb-3" 
+                                                                 style="background: rgba(253, 126, 20, 0.15) !important; 
+                                                                       border-radius: 0.75rem; 
+                                                                       border: 1px solid #fd7e14;">
+                                                                <div style="width: 2.25rem; height: 2.25rem; border-radius: 50%; background: #e2e8f0; overflow: hidden;">
+                                                                    <img src="https://i.pravatar.cc/300?img=3" alt="Coach" style="width: 100%; height: 100%; object-fit: cover;">
+                                                                </div>
+                                                                <div style="flex: 1;">
+                                                                    <p class="mb-0" style="font-size: 0.75rem; color: #64748b; font-weight: 500;">Asignada por</p>
+                                                                    <p class="mb-0" style="font-size: 0.875rem; color: #1e293b; font-weight: 600;">Cristian Galdames</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Botón de acción premium -->
+                                                            <button class="btn w-100 d-inline-flex align-items-center justify-content-center gap-2" 
+                                                                    style="background: #fd7e14 !important; 
+                                                                          border: none !important; 
+                                                                          padding: 0.75rem 1.5rem !important; 
+                                                                          border-radius: 0.75rem !important; 
+                                                                          color: #ffffff !important; 
+                                                                          font-weight: 700 !important; 
+                                                                          font-size: 0.875rem !important; 
+                                                                          box-shadow: 0 4px 16px rgba(253, 126, 20, 0.3) !important; 
+                                                                          transition: all 0.2s ease !important;"
+                                                                    onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(253, 126, 20, 0.4)';"
+                                                                    onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(253, 126, 20, 0.3)';">
+                                                                <i class="fas fa-play" style="font-size: 0.75rem !important; color: #ffffff !important;"></i>
+                                                                <span style="color: #ffffff !important;">Comenzar Evaluación</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- CARD 2: Evaluación de Competencias de Liderazgo -->
+                                                <div class="col-12 col-md-6">
+                                                    <div class="card h-100 card-hover animate-scaleIn" 
+                                                         style="border: 2px solid #fd7e14 !important; 
+                                                               border-radius: 1rem; 
+                                                               box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); 
+                                                               background: white !important; 
+                                                               overflow: hidden; 
+                                                               transition: all 0.3s ease;">
+                                                        
+                                                        <!-- Header con icono grande -->
+                                                        <div class="p-4 text-center" style="background: rgba(253, 126, 20, 0.15) !important;">
+                                                            <i class="fas fa-crown" style="font-size: 3.5rem; color: #fd7e14 !important; opacity: 0.9;"></i>
+                                                        </div>
+                                                        
+                                                        <!-- Body del card -->
+                                                        <div class="card-body p-4">
+                                                            <h5 class="card-title mb-3" style="color: #1e293b; font-weight: 700; font-size: 1.125rem; line-height: 1.4;">
+                                                                Evaluación de Competencias de Liderazgo
+                                                            </h5>
+                                                            
+                                                            <!-- Metadata -->
+                                                            <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                                                                <div class="d-flex align-items-center gap-2 px-3 py-1" 
+                                                                     style="background: #ffffff !important; 
+                                                                           border: 2px solid #fd7e14 !important; 
+                                                                           border-radius: 0.75rem;">
+                                                                    <i class="fas fa-question-circle" style="color: #fd7e14 !important; font-size: 0.875rem;"></i>
+                                                                    <span style="color: #fd7e14 !important; font-weight: 600; font-size: 0.875rem;">8 preguntas</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center gap-2 px-3 py-1" 
+                                                                     style="background: #ffffff !important; 
+                                                                           border: 2px solid #fd7e14 !important; 
+                                                                           border-radius: 0.75rem;">
+                                                                    <i class="fas fa-clock" style="color: #fd7e14 !important; font-size: 0.875rem;"></i>
+                                                                    <span style="color: #fd7e14 !important; font-weight: 600; font-size: 0.875rem;">~12 min</span>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Coach info -->
+                                                            <div class="d-flex align-items-center gap-2 p-2 mb-3" 
+                                                                 style="background: rgba(253, 126, 20, 0.15) !important; 
+                                                                       border-radius: 0.75rem; 
+                                                                       border: 1px solid #fd7e14;">
+                                                                <div style="width: 2.25rem; height: 2.25rem; border-radius: 50%; background: #e2e8f0; overflow: hidden;">
+                                                                    <img src="https://i.pravatar.cc/300?img=3" alt="Coach" style="width: 100%; height: 100%; object-fit: cover;">
+                                                                </div>
+                                                                <div style="flex: 1;">
+                                                                    <p class="mb-0" style="font-size: 0.75rem; color: #64748b; font-weight: 500;">Asignada por</p>
+                                                                    <p class="mb-0" style="font-size: 0.875rem; color: #1e293b; font-weight: 600;">Cristian Galdames</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Botón de acción premium -->
+                                                            <button class="btn w-100 d-inline-flex align-items-center justify-content-center gap-2" 
+                                                                    style="background: #fd7e14 !important; 
+                                                                          border: none !important; 
+                                                                          padding: 0.75rem 1.5rem !important; 
+                                                                          border-radius: 0.75rem !important; 
+                                                                          color: #ffffff !important; 
+                                                                          font-weight: 700 !important; 
+                                                                          font-size: 0.875rem !important; 
+                                                                          box-shadow: 0 4px 16px rgba(253, 126, 20, 0.3) !important; 
+                                                                          transition: all 0.2s ease !important;"
+                                                                    onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(253, 126, 20, 0.4)';"
+                                                                    onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(253, 126, 20, 0.3)';">
+                                                                <i class="fas fa-play" style="font-size: 0.75rem !important; color: #ffffff !important;"></i>
+                                                                <span style="color: #ffffff !important;">Comenzar Evaluación</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- CATEGORÍA: INTELIGENCIA EMOCIONAL (Ejemplo con 1 evaluación) -->
+                                        <div class="mb-4 animate-slideUp">
+                                            <!-- Header de categoría -->
+                                            <div class="d-flex align-items-center justify-content-between p-4 mb-3 cursor-pointer"
+                                                 style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
+                                                       border-radius: 1rem; 
+                                                       border-left: 4px solid #e83e8c;
+                                                       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                                                       transition: all 0.2s ease;"
+                                                 onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)';"
+                                                 onmouseleave="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)';">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <!-- Badge del icono -->
+                                                    <div class="d-flex align-items-center justify-content-center" 
+                                                         style="width: 3.5rem; 
+                                                               height: 3.5rem; 
+                                                               background: #e83e8c; 
+                                                               border-radius: 1rem; 
+                                                               box-shadow: 0 4px 12px rgba(232, 62, 140, 0.4);">
+                                                        <i class="fas fa-heart" style="color: #ffffff !important; font-size: 1.5rem;"></i>
+                                                    </div>
+                                                    
+                                                    <!-- Título y descripción -->
+                                                    <div>
+                                                        <h4 class="mb-0" style="color: #1e293b !important; font-size: 1.125rem; font-weight: 700;">
+                                                            Inteligencia Emocional
+                                                        </h4>
+                                                        <p class="mb-0" style="color: #64748b !important; font-size: 0.875rem;">
+                                                            1 evaluación disponible
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Badge contador -->
+                                                <span class="d-flex align-items-center justify-content-center" 
+                                                      style="background: #e83e8c; 
+                                                            color: #ffffff !important; 
+                                                            padding: 0.5rem 1rem; 
+                                                            border-radius: 0.75rem; 
+                                                            font-weight: 700; 
+                                                            font-size: 0.875rem;
+                                                            box-shadow: 0 2px 8px rgba(232, 62, 140, 0.4);">
+                                                    1
+                                                </span>
+                                            </div>
+                                            
+                                            <!-- Cards de evaluaciones -->
+                                            <div class="row g-3">
+                                                
+                                                <!-- CARD: Evaluación de Inteligencia Emocional -->
+                                                <div class="col-12 col-md-6">
+                                                    <div class="card h-100 card-hover animate-scaleIn" 
+                                                         style="border: 2px solid #e83e8c !important; 
+                                                               border-radius: 1rem; 
+                                                               box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); 
+                                                               background: white !important; 
+                                                               overflow: hidden; 
+                                                               transition: all 0.3s ease;">
+                                                        
+                                                        <!-- Header con icono grande -->
+                                                        <div class="p-4 text-center" style="background: rgba(232, 62, 140, 0.15) !important;">
+                                                            <i class="fas fa-heart" style="font-size: 3.5rem; color: #e83e8c !important; opacity: 0.9;"></i>
+                                                        </div>
+                                                        
+                                                        <!-- Body del card -->
+                                                        <div class="card-body p-4">
+                                                            <h5 class="card-title mb-3" style="color: #1e293b; font-weight: 700; font-size: 1.125rem; line-height: 1.4;">
+                                                                Evaluación de Inteligencia Emocional
+                                                            </h5>
+                                                            
+                                                            <!-- Metadata -->
+                                                            <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                                                                <div class="d-flex align-items-center gap-2 px-3 py-1" 
+                                                                     style="background: #ffffff !important; 
+                                                                           border: 2px solid #e83e8c !important; 
+                                                                           border-radius: 0.75rem;">
+                                                                    <i class="fas fa-question-circle" style="color: #e83e8c !important; font-size: 0.875rem;"></i>
+                                                                    <span style="color: #e83e8c !important; font-weight: 600; font-size: 0.875rem;">12 preguntas</span>
+                                                                </div>
+                                                                <div class="d-flex align-items-center gap-2 px-3 py-1" 
+                                                                     style="background: #ffffff !important; 
+                                                                           border: 2px solid #e83e8c !important; 
+                                                                           border-radius: 0.75rem;">
+                                                                    <i class="fas fa-clock" style="color: #e83e8c !important; font-size: 0.875rem;"></i>
+                                                                    <span style="color: #e83e8c !important; font-weight: 600; font-size: 0.875rem;">~18 min</span>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Coach info -->
+                                                            <div class="d-flex align-items-center gap-2 p-2 mb-3" 
+                                                                 style="background: rgba(232, 62, 140, 0.15) !important; 
+                                                                       border-radius: 0.75rem; 
+                                                                       border: 1px solid #e83e8c;">
+                                                                <div style="width: 2.25rem; height: 2.25rem; border-radius: 50%; background: #e2e8f0; overflow: hidden;">
+                                                                    <img src="https://i.pravatar.cc/300?img=3" alt="Coach" style="width: 100%; height: 100%; object-fit: cover;">
+                                                                </div>
+                                                                <div style="flex: 1;">
+                                                                    <p class="mb-0" style="font-size: 0.75rem; color: #64748b; font-weight: 500;">Asignada por</p>
+                                                                    <p class="mb-0" style="font-size: 0.875rem; color: #1e293b; font-weight: 600;">Cristian Galdames</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Botón de acción premium -->
+                                                            <button class="btn w-100 d-inline-flex align-items-center justify-content-center gap-2" 
+                                                                    style="background: #e83e8c !important; 
+                                                                          border: none !important; 
+                                                                          padding: 0.75rem 1.5rem !important; 
+                                                                          border-radius: 0.75rem !important; 
+                                                                          color: #ffffff !important; 
+                                                                          font-weight: 700 !important; 
+                                                                          font-size: 0.875rem !important; 
+                                                                          box-shadow: 0 4px 16px rgba(232, 62, 140, 0.3) !important; 
+                                                                          transition: all 0.2s ease !important;"
+                                                                    onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(232, 62, 140, 0.4)';"
+                                                                    onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(232, 62, 140, 0.3)';">
+                                                                <i class="fas fa-play" style="font-size: 0.75rem !important; color: #ffffff !important;"></i>
+                                                                <span style="color: #ffffff !important;">Comenzar Evaluación</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -11416,6 +12001,16 @@
         // NOTA: evaluationCategories ahora se define en Alpine y se expone como window.evaluationCategories
         // La constante local ha sido eliminada para evitar conflictos
 
+        // Utility: Convert hex color to rgba with alpha transparency
+        // Reusable across all rendering functions
+        function hexToRgba(hex, alpha) {
+            if (!hex || hex.length < 7) return `rgba(100, 116, 139, ${alpha})`;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         // Function to classify evaluation by category
         function classifyEvaluation(evaluation) {
             const title = evaluation.title.toLowerCase();
@@ -11437,32 +12032,310 @@
             return 'Otros';
         }
 
-        // Toggle category function
+        // Create category header element with proper semantic structure
+        // Returns a DOM element ready to append to container
+        function createCategoryHeader(categoryName, category, evaluations, categoryId) {
+            const categorySection = document.createElement('section');
+            categorySection.className = 'assessment-category';
+            categorySection.style.marginBottom = '1.5rem';
+            categorySection.setAttribute('aria-labelledby', `header-${categoryId}`);
+            
+            categorySection.innerHTML = `
+                <header class="section-header-eval" 
+                     id="header-${categoryId}"
+                     role="button"
+                     tabindex="0"
+                     aria-expanded="false"
+                     aria-controls="${categoryId}"
+                     style="background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important; 
+                            padding: 1.25rem 1.5rem; 
+                            border-radius: 1rem; 
+                            margin-bottom: 1.25rem; 
+                            cursor: pointer; 
+                            transition: all 0.2s ease; 
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
+                            border-left: 4px solid ${category.color};
+                            border: 1px solid #cbd5e1 !important;" 
+                     onclick="toggleCategory('${categoryId}', this)"
+                     onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleCategory('${categoryId}', this); }"
+                     onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
+                     onmouseleave="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'; this.style.transform='translateY(0)';">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
+                            <div role="img" aria-label="${categoryName} icono" style="width: 3.5rem; 
+                                       height: 3.5rem; 
+                                       background: ${category.color} !important; 
+                                       border-radius: 1rem; 
+                                       display: flex; 
+                                       align-items: center; 
+                                       justify-content: center; 
+                                       flex-shrink: 0; 
+                                       box-shadow: 0 4px 12px ${hexToRgba(category.color, 0.4)} !important;">
+                                <i class="fas ${category.icon}" aria-hidden="true" style="color: #ffffff !important; font-size: 1.5rem;"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <h3 style="color: #1e293b !important; 
+                                           font-size: 1.125rem; 
+                                           font-weight: 700; 
+                                           margin: 0 0 0.25rem 0; 
+                                           white-space: nowrap; 
+                                           overflow: hidden; 
+                                           text-overflow: ellipsis;">
+                                    ${categoryName}
+                                </h3>
+                                <p style="color: #64748b !important; 
+                                          font-size: 0.875rem; 
+                                          margin: 0; 
+                                          font-weight: 500;">
+                                    ${evaluations.length} ${evaluations.length === 1 ? 'evaluación disponible' : 'evaluaciones disponibles'}
+                                </p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem; flex-shrink: 0;">
+                            <span role="status" aria-label="${evaluations.length} evaluaciones" style="background: ${category.color} !important; 
+                                         color: #ffffff !important; 
+                                         padding: 0.5rem 1rem; 
+                                         border-radius: 0.75rem; 
+                                         font-size: 0.875rem; 
+                                         font-weight: 700; 
+                                         box-shadow: 0 2px 8px ${hexToRgba(category.color, 0.4)} !important;
+                                         min-width: 2.5rem;
+                                         text-align: center;">
+                                ${evaluations.length}
+                            </span>
+                            <i class="fas fa-chevron-down" 
+                               id="icon-${categoryId}" 
+                               aria-hidden="true"
+                               style="color: ${category.color} !important; 
+                                      font-size: 1.25rem; 
+                                      transition: transform 0.3s ease; 
+                                      transform: rotate(-90deg);"></i>
+                        </div>
+                    </div>
+                </header>
+                <div class="assessments-grid" 
+                     id="${categoryId}" 
+                     role="region"
+                     aria-label="${categoryName} evaluaciones"
+                     data-expanded="false" 
+                     style="display: grid; 
+                            grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); 
+                            gap: 1.25rem; 
+                            margin-bottom: 0; 
+                            overflow: hidden; 
+                            max-height: 0; 
+                            opacity: 0; 
+                            transition: max-height 0.5s ease, opacity 0.3s ease;">
+                </div>
+            `;
+            
+            return categorySection;
+        }
+
+        // Create evaluation card element with proper semantic structure
+        // Returns a DOM element ready to append to grid
+        function createEvaluationCard(evaluation, category) {
+            const card = document.createElement('article');
+            card.className = 'assessment-card';
+            card.setAttribute('aria-label', `${evaluation.title} - ${evaluation.total_questions} preguntas`);
+            
+            const bgLight = hexToRgba(category.color, 0.15);
+            const shadow = hexToRgba(category.color, 0.3);
+            const borderColor = category.color || '#e5e7eb';
+            
+            card.style.cssText = `
+                background: white !important;
+                border-radius: 1rem !important;
+                overflow: hidden !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                border: 2px solid ${borderColor} !important;
+                cursor: pointer !important;
+                height: 100% !important;
+                display: flex !important;
+                flex-direction: column !important;
+            `;
+            
+            card.innerHTML = `
+                <div class="card-header-visual" role="img" aria-label="${category.icon} ${evaluation.title}" style="position: relative; 
+                            width: 100%; 
+                            padding-top: 40%; 
+                            background: ${bgLight} !important; 
+                            overflow: hidden;">
+                    <div style="position: absolute; 
+                               top: 0; 
+                               left: 0; 
+                               width: 100%; 
+                               height: 100%; 
+                               display: flex; 
+                               align-items: center; 
+                               justify-content: center;">
+                        <i class="fas ${category.icon}" aria-hidden="true" style="font-size: 3.5rem; color: ${category.color} !important; opacity: 0.9;"></i>
+                    </div>
+                    <div style="position: absolute; 
+                               top: 1rem; 
+                               right: 1rem; 
+                               background: #ffffff !important; 
+                               backdrop-filter: blur(8px); 
+                               padding: 0.5rem 0.875rem; 
+                               border-radius: 0.75rem; 
+                               box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+                               border: 2px solid ${category.color} !important;">
+                        <span style="color: ${category.color} !important; 
+                                     font-size: 0.8125rem; 
+                                     font-weight: 700; 
+                                     display: flex; 
+                                     align-items: center; 
+                                     gap: 0.375rem;">
+                            <i class="fas fa-question-circle" aria-hidden="true" style="color: ${category.color} !important;"></i>
+                            ${evaluation.total_questions} preguntas
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body-content" style="padding: 1.25rem; 
+                            flex: 1; 
+                            display: flex; 
+                            flex-direction: column; 
+                            background: #ffffff !important;">
+                    <h4 style="font-size: 1.0625rem; 
+                               font-weight: 700; 
+                               color: #1e293b !important; 
+                               margin: 0 0 0.75rem 0; 
+                               line-height: 1.4; 
+                               display: -webkit-box; 
+                               -webkit-line-clamp: 2; 
+                               -webkit-box-orient: vertical; 
+                               overflow: hidden;
+                               min-height: 2.8rem;">
+                        ${evaluation.title}
+                    </h4>
+                    <p style="font-size: 0.875rem; 
+                              color: #64748b !important; 
+                              margin: 0 0 1.25rem 0; 
+                              line-height: 1.6; 
+                              display: -webkit-box; 
+                              -webkit-line-clamp: 2; 
+                              -webkit-box-orient: vertical; 
+                              overflow: hidden; 
+                              flex: 1;">
+                        ${evaluation.description || 'Evaluación diseñada para medir tus competencias profesionales'}
+                    </p>
+                    <footer style="display: flex; 
+                               align-items: center; 
+                               justify-content: space-between; 
+                               gap: 0.75rem; 
+                               padding-top: 1rem; 
+                               border-top: 2px solid #f1f5f9;">
+                        <div style="display: flex; 
+                                   align-items: center; 
+                                   gap: 0.625rem; 
+                                   font-size: 0.875rem; 
+                                   color: #64748b !important; 
+                                   font-weight: 600; 
+                                   flex: 1; 
+                                   min-width: 0;">
+                            <div role="img" aria-label="Coach ${evaluation.coach_name || 'Coach'}" style="width: 2.25rem; 
+                                       height: 2.25rem; 
+                                       background: ${bgLight} !important; 
+                                       border-radius: 0.5rem; 
+                                       display: flex; 
+                                       align-items: center; 
+                                       justify-content: center; 
+                                       flex-shrink: 0;
+                                       border: 1px solid ${category.color} !important;">
+                                <i class="fas fa-user" aria-hidden="true" style="color: ${category.color} !important; font-size: 0.875rem;"></i>
+                            </div>
+                            <span style="white-space: nowrap; 
+                                         overflow: hidden; 
+                                         text-overflow: ellipsis;
+                                         color: #1e293b !important;
+                                         font-weight: 600;">
+                                ${evaluation.coach_name || 'Coach'}
+                            </span>
+                        </div>
+                        <button onclick="startEvaluation('${evaluation.id}')" 
+                                data-eval-btn
+                                aria-label="Comenzar evaluación ${evaluation.title}"
+                                style="background: ${category.color} !important; 
+                                       border: none !important; 
+                                       padding: 0.75rem 1.5rem !important; 
+                                       border-radius: 0.75rem !important; 
+                                       color: #ffffff !important; 
+                                       font-weight: 700 !important; 
+                                       font-size: 0.875rem !important; 
+                                       transition: all 0.2s ease !important; 
+                                       white-space: nowrap !important; 
+                                       box-shadow: 0 4px 16px ${shadow} !important; 
+                                       flex-shrink: 0 !important;
+                                       cursor: pointer !important;
+                                       display: inline-flex !important;
+                                       align-items: center !important;
+                                       gap: 0.5rem !important;
+                                       min-height: auto !important;">
+                            <i class="fas fa-play" aria-hidden="true" style="font-size: 0.75rem !important; color: #ffffff !important;"></i>
+                            <span style="color: #ffffff !important;">Comenzar</span>
+                        </button>
+                    </footer>
+                </div>
+            `;
+            
+            // Add hover effects
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-6px) !important';
+                this.style.boxShadow = `0 12px 32px ${hexToRgba(category.color, 0.35)} !important`;
+                this.style.borderColor = `${category.color} !important`;
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) !important';
+                this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08) !important';
+                this.style.borderColor = `${borderColor} !important`;
+            });
+            
+            // Button hover effects
+            const button = card.querySelector('button');
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px) !important';
+                this.style.boxShadow = `0 8px 20px ${hexToRgba(category.color, 0.4)} !important`;
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) !important';
+                this.style.boxShadow = `0 4px 16px ${shadow} !important`;
+            });
+            
+            return card;
+        }
+
+        // Toggle category function with improved accessibility
         function toggleCategory(categoryId, headerElement) {
             const categoryGrid = document.getElementById(categoryId);
+            const header = document.getElementById(`header-${categoryId}`);
             const icon = document.getElementById(`icon-${categoryId}`);
             const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
             
             if (isExpanded) {
-                // Colapsar: primero opacity, luego display none
+                // Collapse: fade out then hide
                 categoryGrid.style.opacity = '0';
                 categoryGrid.style.maxHeight = '0px';
                 setTimeout(() => {
                     categoryGrid.style.display = 'none';
-                }, 300); // Esperar a que termine la transición
+                }, 300);
                 categoryGrid.style.marginBottom = '0px';
                 icon.style.transform = 'rotate(-90deg)';
                 categoryGrid.setAttribute('data-expanded', 'false');
+                if (header) header.setAttribute('aria-expanded', 'false');
             } else {
-                // Expandir: primero display, luego opacity
+                // Expand: show then fade in
                 categoryGrid.style.display = 'grid';
                 setTimeout(() => {
                     categoryGrid.style.maxHeight = '5000px';
                     categoryGrid.style.opacity = '1';
-                }, 10); // Pequeño delay para que la transición funcione
+                }, 10);
                 categoryGrid.style.marginBottom = '30px';
                 icon.style.transform = 'rotate(0deg)';
                 categoryGrid.setAttribute('data-expanded', 'true');
+                if (header) header.setAttribute('aria-expanded', 'true');
             }
         }
 
@@ -11527,12 +12400,13 @@
             // Verificar si hay un mensaje específico (sin coach o sin invitación)
             if (evaluationsData && evaluationsData.message) {
                 container.innerHTML = `
-                    <div class="empty-state" style="text-align: center; padding: 3rem 1rem;">
-                        <div style="font-size: 3rem; color: #9ca3af; margin-bottom: 1rem;">
-                            <i class="fas fa-user-tie"></i>
+                    <div class="text-center" style="padding: 4rem 2rem; animation: fadeIn 0.6s ease;">
+                        <div class="d-inline-flex align-items-center justify-content-center mb-4" 
+                             style="width: 5rem; height: 5rem; border-radius: 1.5rem; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);">
+                            <i class="fas fa-user-tie" style="font-size: 2.5rem; color: #3b82f6;"></i>
                         </div>
-                        <div style="color: #000000; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">Información</div>
-                        <div style="color: #000000; font-size: 0.875rem;">${evaluationsData.message}</div>
+                        <h3 class="mb-2" style="color: #1e293b; font-size: 1.5rem; font-weight: 700;">Información</h3>
+                        <p class="mb-0" style="color: #64748b; font-size: 1rem; font-weight: 500; max-width: 400px; margin: 0 auto; line-height: 1.6;">${evaluationsData.message}</p>
                     </div>
                 `;
                 return;
@@ -11540,12 +12414,24 @@
             
             if (!evaluationsData || !evaluationsData.available || Object.keys(evaluationsData.available).length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state" style="text-align: center; padding: 3rem 1rem;">
-                        <div style="font-size: 3rem; color: #9ca3af; margin-bottom: 1rem;">
-                            <i class="fas fa-inbox"></i>
+                    <div class="text-center" style="padding: 4rem 2rem; animation: fadeIn 0.6s ease;">
+                        <div class="d-inline-flex align-items-center justify-content-center mb-4" 
+                             style="width: 5rem; height: 5rem; border-radius: 1.5rem; background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); box-shadow: 0 10px 30px rgba(100, 116, 139, 0.15);">
+                            <i class="fas fa-inbox" style="font-size: 2.5rem; color: #64748b;"></i>
                         </div>
-                        <div style="color: #000000; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">Sin evaluaciones disponibles</div>
-                        <div style="color: #000000; font-size: 0.875rem;">No tienes evaluaciones disponibles en este momento</div>
+                        <h3 class="mb-2" style="color: #1e293b; font-size: 1.5rem; font-weight: 700;">Sin evaluaciones disponibles</h3>
+                        <p class="mb-4" style="color: #64748b; font-size: 1rem; font-weight: 500; max-width: 400px; margin: 0 auto 1.5rem; line-height: 1.6;">
+                            No tienes evaluaciones disponibles en este momento
+                        </p>
+                        <button type="button" onclick="location.reload()" 
+                                class="btn d-inline-flex align-items-center gap-2"
+                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #ffffff; border-radius: 0.75rem; font-weight: 600; padding: 0.75rem 1.5rem; font-size: 0.9375rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); transition: all 0.2s ease;"
+                                onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.35)';"
+                                onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.25)';"
+                                aria-label="Actualizar evaluaciones">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Actualizar</span>
+                        </button>
                     </div>
                 `;
                 return;
@@ -11567,7 +12453,7 @@
             console.log('🔍 Categorized evaluations:', categorizedEvaluations);
             console.log('🔍 window.evaluationCategories:', window.evaluationCategories);
             
-            // Render each category
+            // Render each category using extracted functions
             Object.entries(categorizedEvaluations).forEach(([categoryName, evaluations]) => {
                 const category = window.evaluationCategories ? window.evaluationCategories[categoryName] : null;
                 
@@ -11576,118 +12462,18 @@
                     return;
                 }
                 
-                const categorySection = document.createElement('div');
-                categorySection.className = 'assessment-category';
-                categorySection.style.marginBottom = '1.5rem';
                 const categoryId = `category-${categoryName.replace(/\s+/g, '-')}`;
                 
-                categorySection.innerHTML = `
-                    <div class="section-header-eval" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid ${category.color};" onclick="toggleCategory('${categoryId}', this)">
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
-                            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
-                                <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px ${category.color}40; border: 2px solid ${category.color};">
-                                    <i class="fas ${category.icon}" style="color: ${category.color}; font-size: 1.25rem;"></i>
-                                </div>
-                                <div style="flex: 1; min-width: 0;">
-                                    <h4 style="color: #000000; font-size: 1.0625rem; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                        ${categoryName}
-                                    </h4>
-                                    <p style="color: #000000; font-size: 0.8125rem; margin: 0; font-weight: 500;">
-                                        ${evaluations.length} ${evaluations.length === 1 ? 'evaluación disponible' : 'evaluaciones disponibles'}
-                                    </p>
-                                </div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
-                                <span style="background: ${category.color}; color: white; padding: 0.375rem 0.875rem; border-radius: 20px; font-size: 0.8125rem; font-weight: 700; box-shadow: 0 2px 4px ${category.color}50;">${evaluations.length}</span>
-                                <i class="fas fa-chevron-down" id="icon-${categoryId}" style="color: ${category.color}; font-size: 1.125rem; transition: transform 0.3s ease; transform: rotate(-90deg); filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
-                    </div>
-                `;
-                
+                // Create category header using extracted function
+                const categorySection = createCategoryHeader(categoryName, category, evaluations, categoryId);
                 container.appendChild(categorySection);
                 
+                // Get grid element to append cards
                 const grid = document.getElementById(categoryId);
                 
+                // Create and append each evaluation card
                 evaluations.forEach(evaluation => {
-                    const card = document.createElement('div');
-                    card.className = 'assessment-card';
-                    card.style.cssText = `
-                        background: white;
-                        border-radius: 12px;
-                        overflow: hidden;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        border: 1px solid #e5e7eb;
-                        cursor: pointer;
-                        height: 100%;
-                        display: flex;
-                        flex-direction: column;
-                    `;
-                    
-                    card.innerHTML = `
-                        <div style="position: relative; width: 100%; padding-top: 45%; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%); overflow: hidden; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.1);">
-                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.02) 100%);">
-                                <i class="fas ${category.icon}" style="font-size: 2.75rem; color: ${category.color};"></i>
-                            </div>
-                            <div style="position: absolute; top: 0.75rem; right: 0.75rem; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 0.375rem 0.75rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 2px solid ${category.color};">
-                                <span style="color: ${category.color}; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.375rem;">
-                                    <i class="fas fa-question-circle"></i>
-                                    ${evaluation.total_questions} preguntas
-                                </span>
-                            </div>
-                        </div>
-                        <div style="padding: 1.125rem; flex: 1; display: flex; flex-direction: column; background: #ffffff;">
-                            <h5 style="font-size: 1rem; font-weight: 700; color: #000000; margin: 0 0 0.625rem 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                ${evaluation.title}
-                            </h5>
-                            <p style="font-size: 0.8125rem; color: #000000; margin: 0 0 1rem 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1;">
-                                ${evaluation.description || 'Evaluación diseñada para medir tus competencias profesionales'}
-                            </p>
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.625rem; padding-top: 0.875rem; border-top: 2px solid #f3f4f6;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: #000000; font-weight: 500; flex: 1; min-width: 0;">
-                                    <div style="width: 1.75rem; height: 1.75rem; background: linear-gradient(135deg, ${category.color}20 0%, ${category.color}10 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                        <i class="fas fa-user" style="color: ${category.color}; font-size: 0.75rem;"></i>
-                                    </div>
-                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${evaluation.coach_name || 'Coach'}</span>
-                                </div>
-                                <button onclick="startEvaluation('${evaluation.id}')" style="background: linear-gradient(135deg, ${category.color} 0%, ${category.color}dd 100%); border: none; padding: 0.625rem 1.125rem; border-radius: 8px; color: white; font-weight: 700; font-size: 0.8125rem; transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 2px 6px ${category.color}40; flex-shrink: 0;">
-                                    <i class="fas fa-play" style="font-size: 0.75rem; margin-right: 0.5rem;"></i>
-                                    Comenzar
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Hover effects
-                    card.addEventListener('mouseenter', function() {
-                        this.style.transform = 'translateY(-6px)';
-                        this.style.boxShadow = `0 12px 32px ${category.color}35`;
-                        this.style.borderColor = category.color;
-                    });
-                    
-                    card.addEventListener('mouseleave', function() {
-                        this.style.transform = 'translateY(0)';
-                        this.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.08)';
-                        this.style.borderColor = '#e5e7eb';
-                    });
-                    
-                    // Button hover
-                    const button = card.querySelector('button');
-                    button.addEventListener('mouseenter', function() {
-                        this.style.transform = 'scale(1.05)';
-                        this.style.boxShadow = `0 6px 16px ${category.color}50`;
-                        this.style.filter = 'brightness(1.1)';
-                    });
-                    
-                    button.addEventListener('mouseleave', function() {
-                        this.style.transform = 'scale(1)';
-                        this.style.boxShadow = `0 2px 6px ${category.color}40`;
-                        this.style.filter = 'brightness(1)';
-                    });
-                    
+                    const card = createEvaluationCard(evaluation, category);
                     grid.appendChild(card);
                 });
             });
