@@ -12087,48 +12087,59 @@
                      aria-expanded="false"
                      aria-controls="${categoryId}"
                      style="background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important; 
-                            padding: 1.25rem 1.5rem; 
-                            border-radius: 1rem; 
-                            margin-bottom: 1.25rem; 
+                            padding: 1rem; 
+                            border-radius: 0.875rem; 
+                            margin-bottom: 1rem; 
                             cursor: pointer; 
                             transition: all 0.2s ease; 
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
-                            border-left: 4px solid ${category.color};
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.06); 
+                            border-left: 3px solid ${category.color};
                             border: 1px solid #cbd5e1 !important;" 
                      onclick="toggleCategory('${categoryId}', this)"
                      onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleCategory('${categoryId}', this); }"
-                     onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
-                     onmouseleave="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'; this.style.transform='translateY(0)';">
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                        <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
-                            <div role="img" aria-label="${categoryName} icono" style="width: 3.5rem; 
-                                       height: 3.5rem; 
+                     onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
+                     onmouseleave="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.06)'; this.style.transform='translateY(0)';">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0;">
+                            <div role="img" aria-label="${categoryName} icono" style="width: 2.75rem; 
+                                       height: 2.75rem; 
                                        background: ${category.color} !important; 
-                                       border-radius: 1rem; 
+                                       border-radius: 0.75rem; 
                                        display: flex; 
                                        align-items: center; 
                                        justify-content: center; 
                                        flex-shrink: 0; 
-                                       box-shadow: 0 4px 12px ${hexToRgba(category.color, 0.4)} !important;">
-                                <i class="fas ${category.icon}" aria-hidden="true" style="color: #ffffff !important; font-size: 1.5rem;"></i>
+                                       box-shadow: 0 2px 8px ${hexToRgba(category.color, 0.4)} !important;">
+                                <i class="fas ${category.icon}" aria-hidden="true" style="color: #ffffff !important; font-size: 1.25rem;"></i>
                             </div>
                             <div style="flex: 1; min-width: 0;">
-                                <h3 style="color: #1e293b !important; 
-                                           font-size: 1.125rem; 
+                                <h3 class="category-title-responsive" style="color: #1e293b !important; 
+                                           font-size: 1rem; 
                                            font-weight: 700; 
                                            margin: 0 0 0.25rem 0; 
-                                           white-space: nowrap; 
-                                           overflow: hidden; 
-                                           text-overflow: ellipsis;">
+                                           line-height: 1.3;
+                                           word-wrap: break-word;
+                                           overflow-wrap: break-word;">
                                     ${categoryName}
                                 </h3>
                                 <p style="color: #64748b !important; 
-                                          font-size: 0.875rem; 
+                                          font-size: 0.8125rem; 
                                           margin: 0; 
                                           font-weight: 500;">
-                                    ${evaluations.length} ${evaluations.length === 1 ? 'evaluación disponible' : 'evaluaciones disponibles'}
+                                    ${evaluations.length} ${evaluations.length === 1 ? 'evaluación' : 'evaluaciones'}
                                 </p>
                             </div>
+                            
+                            <style>
+                                @media (min-width: 768px) {
+                                    .category-title-responsive {
+                                        font-size: 1.25rem !important;
+                                        white-space: nowrap !important;
+                                        overflow: hidden !important;
+                                        text-overflow: ellipsis !important;
+                                    }
+                                }
+                            </style>
                         </div>
                         <div style="display: flex; align-items: center; gap: 1rem; flex-shrink: 0;">
                             <span role="status" aria-label="${evaluations.length} evaluaciones" style="background: ${category.color} !important; 
@@ -12151,6 +12162,31 @@
                                       transform: rotate(-90deg);"></i>
                         </div>
                     </div>
+                    
+                    <style>
+                        @media (min-width: 768px) {
+                            .section-header-eval {
+                                padding: 1.25rem 1.5rem !important;
+                                border-radius: 1rem !important;
+                                margin-bottom: 1.25rem !important;
+                                border-left-width: 4px !important;
+                            }
+                            .section-header-eval > div {
+                                gap: 1rem !important;
+                            }
+                            .section-header-eval > div > div:first-child {
+                                gap: 1rem !important;
+                            }
+                            .section-header-eval [role="img"] {
+                                width: 3.5rem !important;
+                                height: 3.5rem !important;
+                                border-radius: 1rem !important;
+                            }
+                            .section-header-eval [role="img"] i {
+                                font-size: 1.5rem !important;
+                            }
+                        }
+                    </style>
                 </header>
                 <div class="assessments-grid" 
                      id="${categoryId}" 
