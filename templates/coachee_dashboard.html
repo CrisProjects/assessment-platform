@@ -14797,8 +14797,8 @@
                             box-shadow: 0 2px 6px rgba(0,0,0,0.06); 
                             border-left: 3px solid ${category.color};
                             border: 1px solid #cbd5e1 !important;" 
-                     onclick="toggleCategory('${categoryId}', this)"
-                     onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleCategory('${categoryId}', this); }"
+                     onclick="toggleCategory('${categoryId}', this, event)"
+                     onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleCategory('${categoryId}', this, event); }"
                      onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
                      onmouseleave="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.06)'; this.style.transform='translateY(0)';">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
@@ -15118,15 +15118,38 @@
             return card;
         }
 
-        // Toggle category function with improved accessibility
-        function toggleCategory(categoryId, headerElement) {
+        // Toggle category function with improved accessibility and debounce protection
+        let toggleCategoryTimeout = null;
+        function toggleCategory(categoryId, headerElement, event) {
+            // 🔍 LOG: Detectar llamadas duplicadas
+            console.log('🔍 toggleCategory CALLED:', categoryId, 'timestamp:', Date.now());
+            
+            // Prevenir propagación de eventos para evitar múltiples llamadas
+            if (event) {
+                event.stopPropagation();
+                console.log('🛑 Event propagation stopped');
+            }
+            
+            // Debounce: Ignorar clicks rápidos consecutivos (< 100ms)
+            if (toggleCategoryTimeout) {
+                console.log('⚠️ DEBOUNCED: Ignorando click duplicado rápido');
+                return;
+            }
+            
+            toggleCategoryTimeout = setTimeout(() => {
+                toggleCategoryTimeout = null;
+            }, 100);
+            
             const categoryGrid = document.getElementById(categoryId);
             const header = document.getElementById(`header-${categoryId}`);
             const icon = document.getElementById(`icon-${categoryId}`);
             const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
             
+            console.log('📊 Estado actual:', isExpanded ? 'EXPANDED' : 'COLLAPSED');
+            
             if (isExpanded) {
                 // Collapse: fade out then hide
+                console.log('➖ Cerrando categoría:', categoryId);
                 categoryGrid.style.opacity = '0';
                 categoryGrid.style.maxHeight = '0px';
                 setTimeout(() => {
@@ -15138,6 +15161,7 @@
                 if (header) header.setAttribute('aria-expanded', 'false');
             } else {
                 // Expand: show then fade in
+                console.log('➕ Abriendo categoría:', categoryId);
                 categoryGrid.style.display = 'grid';
                 setTimeout(() => {
                     categoryGrid.style.maxHeight = '5000px';
@@ -15428,7 +15452,7 @@
                 categorySection.innerHTML = `
                     <div class="section-header-eval" style="padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid ${category.color};" 
                          data-theme-bg="light"
-                         onclick="toggleCategory('${categoryId}', this)">
+                         onclick="toggleCategory('${categoryId}', this, event)">
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
                             <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
                                 <div style="width: 3rem; height: 3rem; background: ${category.color} !important; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px ${category.color}60, 0 0 0 2px rgba(255, 255, 255, 0.2) !important; filter: saturate(1.2) brightness(1.1);">
