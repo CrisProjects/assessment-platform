@@ -10321,8 +10321,8 @@ def api_coach_upload_document():
             file_url = upload_file_to_s3(file, unique_filename)
             file_path = file_url  # Guardar URL de S3
         else:
-            # Guardar localmente
-            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            # Guardar localmente con ruta absoluta
+            file_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, unique_filename))
             file.save(file_path)
         
         # Crear registro de documento
@@ -10350,10 +10350,11 @@ def api_coach_upload_document():
         )
         
         db.session.add(document_file)
+        db.session.flush()  # Para obtener el ID del archivo
         
         # NUEVO: Crear también un registro en la tabla Content para que aparezca en "Contenido Asignado"
-        # Usar endpoint de vista previa del coach para que funcione en feed y con PDF.js
-        content_url = f"/api/coach/documents/{document.id}/view"
+        # Usar endpoint de coachee para que funcione independientemente de la sesión del coach
+        content_url = f"/api/coachee/documents/{document.id}/files/{document_file.id}/preview"
         content = Content(
             coach_id=current_coach.id,
             coachee_id=coachee_id,
