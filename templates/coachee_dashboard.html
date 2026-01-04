@@ -10799,7 +10799,7 @@
                     
                     @media (min-width: 768px) {
                         .evaluations-header {
-                            padding: 2rem 2rem 1.75rem;
+                            padding: 1.25rem 2rem;
                             border-bottom-width: 4px;
                         }
                         
@@ -11141,7 +11141,7 @@
                     /* Tablets grandes y pequeños desktop (768px - 1023px) */
                     @media (min-width: 768px) {
                         .completed-evaluations-header {
-                            padding: 1.5rem 1.25rem;
+                            padding: 1.25rem;
                             border-bottom-width: 4px;
                         }
                         
@@ -11189,7 +11189,7 @@
                     /* Desktop grande (>= 1024px) */
                     @media (min-width: 1024px) {
                         .completed-evaluations-header {
-                            padding: 2rem;
+                            padding: 1.25rem 2rem;
                         }
                         
                         .completed-evaluations-icon-badge {
@@ -12478,6 +12478,10 @@
                     
                     // 📱 Scroll to tab header (not body) for better visibility
                     setTimeout(() => {
+                        // Solo hacer scroll en móvil
+                        const isMobile = window.innerWidth <= 768;
+                        if (!isMobile) return; // No hacer scroll en desktop
+                        
                         // Buscar el header del tab activo
                         const activeTabPane = document.getElementById(tabId);
                         if (activeTabPane) {
@@ -12485,31 +12489,25 @@
                             const tabHeader = activeTabPane.querySelector('.evaluations-header, .completed-evaluations-header, header');
                             
                             if (tabHeader) {
-                                // Scroll al header del tab con offset dinámico
+                                // Scroll al header del tab con offset móvil
                                 const headerTop = tabHeader.getBoundingClientRect().top + window.pageYOffset;
-                                const isMobile = window.innerWidth <= 768;
-                                const offset = isMobile 
-                                    ? window.innerHeight * 0.2  // 20% en móvil
-                                    : window.innerHeight * 0.1; // 10% en desktop
+                                const offset = window.innerHeight * 0.2;  // 20% en móvil
                                 
                                 window.scrollTo({
                                     top: headerTop - offset,
                                     behavior: 'smooth'
                                 });
-                                console.log(`📱 Scrolling to ${tabId} header with offset`);
+                                console.log(`📱 Scrolling to ${tabId} header with offset (mobile only)`);
                             } else {
-                                // Fallback: scroll al tab-pane completo con offset dinámico
+                                // Fallback: scroll al tab-pane completo con offset móvil
                                 const paneTop = activeTabPane.getBoundingClientRect().top + window.pageYOffset;
-                                const isMobile = window.innerWidth <= 768;
-                                const offset = isMobile 
-                                    ? window.innerHeight * 0.2 
-                                    : window.innerHeight * 0.1;
+                                const offset = window.innerHeight * 0.2;
                                 
                                 window.scrollTo({
                                     top: paneTop - offset,
                                     behavior: 'smooth'
                                 });
-                                console.log(`📱 Scrolling to ${tabId} pane (no header found)`);
+                                console.log(`📱 Scrolling to ${tabId} pane (no header found, mobile only)`);
                             }
                         }
                     }, 150);
@@ -14000,12 +13998,15 @@
             // Primero activar la pestaña de evaluaciones con el nuevo sistema
             showTab('evaluations');
             
-            // Hacer scroll hacia la sección de evaluaciones completadas
+            // Hacer scroll hacia la sección de evaluaciones completadas (solo en móvil)
             setTimeout(() => {
+                const isMobile = window.innerWidth <= 768;
+                if (!isMobile) return; // No hacer scroll en desktop
+                
                 const completedSection = document.getElementById('completedEvaluations');
                 if (completedSection) {
                     const elementPosition = completedSection.getBoundingClientRect().top + window.pageYOffset;
-                    const offsetPosition = elementPosition - (window.innerHeight * 0.1);
+                    const offsetPosition = elementPosition - (window.innerHeight * 0.2);
                     window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
                     
                     // Destacar brevemente la sección
@@ -14024,12 +14025,15 @@
             // Primero activar la pestaña de tareas con el nuevo sistema
             showTab('tasks');
             
-            // Hacer scroll hacia la sección de tareas
+            // Hacer scroll hacia la sección de tareas (solo en móvil)
             setTimeout(() => {
+                const isMobile = window.innerWidth <= 768;
+                if (!isMobile) return; // No hacer scroll en desktop
+                
                 const tasksSection = document.getElementById('tasks');
                 if (tasksSection) {
                     const elementPosition = tasksSection.getBoundingClientRect().top + window.pageYOffset;
-                    const offsetPosition = elementPosition - (window.innerHeight * 0.1);
+                    const offsetPosition = elementPosition - (window.innerHeight * 0.2);
                     window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
                     
                     // Destacar brevemente la sección
@@ -14048,12 +14052,15 @@
             // Primero activar la pestaña de tareas con el nuevo sistema
             showTab('tasks');
             
-            // Hacer scroll hacia la sección de tareas
+            // Hacer scroll hacia la sección de tareas (solo en móvil)
             setTimeout(() => {
+                const isMobile = window.innerWidth <= 768;
+                if (!isMobile) return; // No hacer scroll en desktop
+                
                 const tasksSection = document.getElementById('tasks');
                 if (tasksSection) {
                     const elementPosition = tasksSection.getBoundingClientRect().top + window.pageYOffset;
-                    const offsetPosition = elementPosition - (window.innerHeight * 0.1);
+                    const offsetPosition = elementPosition - (window.innerHeight * 0.2);
                     window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
                     
                     // Destacar brevemente la sección con color rojo (danger)
