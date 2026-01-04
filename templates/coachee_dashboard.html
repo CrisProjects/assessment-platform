@@ -12021,7 +12021,16 @@
         // ============================================
         function coacheeDashboardApp() {
             console.log('🎯 coacheeDashboardApp() function CALLED - Creating Alpine component');
-            return {
+            
+            // 🛡️ BOOT GUARD: Prevent double initialization
+            if (window.__coacheeDashboardBooted) {
+                console.warn('⚠️ Dashboard already booted, returning existing instance');
+                return window.__dashboardInstance;
+            }
+            window.__coacheeDashboardBooted = true;
+            console.log('✅ First boot - proceeding with initialization');
+            
+            const dashboardInstance = {
                 // Estado Global
                 activeTab: 'evaluations', // Mostrar evaluaciones por defecto
                 coacheeName: '',
@@ -13747,6 +13756,12 @@
                     }
                 }
             };
+            
+            // 🛡️ Store instance globally for boot guard
+            window.__dashboardInstance = dashboardInstance;
+            console.log('✅ Dashboard instance stored globally');
+            
+            return dashboardInstance;
         }
         
         // ============================================
@@ -15350,6 +15365,28 @@
                 console.error('❌ Container availableEvaluations no encontrado');
                 return;
             }
+            
+            // 🛡️ CONTENT GUARD: Skip re-render if content exists (preserves toggle state)
+            // Only skip if we have actual evaluation content (not just a message)
+            if (container.children.length > 0 && !window.__forceEvaluationsRender) {
+                const hasEvaluationContent = container.querySelector('.category-grid');
+                if (hasEvaluationContent) {
+                    console.log('✅ Evaluation content already rendered, skipping to preserve state');
+                    return;
+                }
+            }
+            window.__forceEvaluationsRender = false; // Reset flag
+            
+            // 🛡️ CONTENT GUARD: Skip re-render if content exists (preserves toggle state)
+            // Only skip if we have actual evaluation content (not just a message)
+            if (container.children.length > 0 && !window.__forceEvaluationsRender) {
+                const hasEvaluationContent = container.querySelector('.category-grid');
+                if (hasEvaluationContent) {
+                    console.log('✅ Evaluation content already rendered, skipping to preserve state');
+                    return;
+                }
+            }
+            window.__forceEvaluationsRender = false; // Reset flag
             
             // Verificar si hay un mensaje específico (sin coach o sin invitación)
             if (evaluationsData && evaluationsData.message) {
