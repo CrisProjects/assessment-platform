@@ -15137,16 +15137,33 @@
         // CATEGORY TOGGLE - DELEGACIÓN DE EVENTOS
         // ============================================
         
+        // ============================================
+        // DIAGNÓSTICO EXHAUSTIVO - PRODUCCIÓN
+        // ============================================
+        
+        // Contador de llamadas por categoría
+        window.__toggleCallCount = window.__toggleCallCount || {};
+        window.__mutationObservers = window.__mutationObservers || {};
+        
         // Guard para evitar doble inicialización en producción
         if (!window.__categoryToggleInitialized) {
             window.__categoryToggleInitialized = true;
             
             console.log('🎯 Inicializando delegación de eventos para category toggle');
+            console.log('🕒 Timestamp de inicialización:', Date.now());
+            console.trace('📍 STACK DE INICIALIZACIÓN');
             
             // Un solo listener global para clicks
             document.addEventListener('click', function(event) {
                 const header = event.target.closest('.section-header-eval[data-category-id]');
                 if (!header) return;
+                
+                console.log('═══════════════════════════════════════');
+                console.log('🖱️ CLICK EVENT CAPTURED');
+                console.log('Event phase:', event.eventPhase === 1 ? 'CAPTURE' : event.eventPhase === 2 ? 'TARGET' : 'BUBBLE');
+                console.log('Event target:', event.target);
+                console.log('Header element:', header);
+                console.trace('📍 STACK DEL CLICK');
                 
                 event.preventDefault();
                 event.stopPropagation();
@@ -15154,6 +15171,7 @@
                 const categoryId = header.getAttribute('data-category-id');
                 console.log('🔍 Click en categoría:', categoryId);
                 toggleCategoryPure(categoryId, header);
+                console.log('═══════════════════════════════════════');
             }, { passive: false });
             
             // Un solo listener global para teclado
@@ -15167,40 +15185,118 @@
                     }
                     event.stopPropagation();
                     
+                    console.log('═══════════════════════════════════════');
+                    console.log('⌨️ KEYBOARD EVENT CAPTURED:', event.key);
+                    console.trace('📍 STACK DEL TECLADO');
+                    
                     const categoryId = header.getAttribute('data-category-id');
                     console.log('⌨️ Teclado en categoría:', categoryId);
                     toggleCategoryPure(categoryId, header);
+                    console.log('═══════════════════════════════════════');
                 }
             }, { passive: false });
         }
         
-        // Función de toggle pura - solo cambia data-expanded, CSS hace el resto
+        // Función de toggle pura con DIAGNÓSTICO EXHAUSTIVO
         function toggleCategoryPure(categoryId, header) {
-            console.log('🔄 toggleCategoryPure CALLED:', categoryId, 'timestamp:', Date.now());
+            // CONTADOR DE LLAMADAS
+            if (!window.__toggleCallCount[categoryId]) {
+                window.__toggleCallCount[categoryId] = 0;
+            }
+            window.__toggleCallCount[categoryId]++;
+            
+            const callNumber = window.__toggleCallCount[categoryId];
+            
+            console.log('');
+            console.log('╔═══════════════════════════════════════╗');
+            console.log('║   toggleCategoryPure LLAMADA #' + callNumber + '      ║');
+            console.log('╚═══════════════════════════════════════╝');
+            console.log('🔄 CategoryId:', categoryId);
+            console.log('🕒 Timestamp:', Date.now());
+            console.log('📞 Call count:', callNumber);
+            console.trace('📍 STACK COMPLETO DE toggleCategoryPure');
             
             const categoryGrid = document.getElementById(categoryId);
             const icon = document.getElementById(`icon-${categoryId}`);
             
             if (!categoryGrid) {
                 console.error('❌ No se encontró categoryGrid:', categoryId);
+                console.trace('📍 STACK DEL ERROR');
                 return;
+            }
+            
+            // VERIFICAR IDs DUPLICADOS
+            const allElementsWithId = document.querySelectorAll(`#${categoryId}`);
+            if (allElementsWithId.length > 1) {
+                console.error('🚨 ID DUPLICADO DETECTADO:', categoryId);
+                console.error('Cantidad de elementos:', allElementsWithId.length);
+                console.error('Elementos:', allElementsWithId);
+                console.trace('📍 STACK DE ID DUPLICADO');
             }
             
             const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
             const newState = !isExpanded;
             
-            console.log('📊 Estado:', isExpanded ? 'EXPANDED → COLLAPSED' : 'COLLAPSED → EXPANDED');
+            console.log('📊 Estado ANTES:', isExpanded ? 'EXPANDED' : 'COLLAPSED');
+            console.log('📊 Estado DESPUÉS:', newState ? 'EXPANDED' : 'COLLAPSED');
+            console.log('🎨 Estilos actuales del grid:');
+            console.log('  - display:', window.getComputedStyle(categoryGrid).display);
+            console.log('  - maxHeight:', window.getComputedStyle(categoryGrid).maxHeight);
+            console.log('  - opacity:', window.getComputedStyle(categoryGrid).opacity);
+            console.log('  - marginBottom:', window.getComputedStyle(categoryGrid).marginBottom);
+            
+            // INSTALAR MUTATIONOBSERVER SI NO EXISTE
+            if (!window.__mutationObservers[categoryId]) {
+                console.log('🔬 Instalando MutationObserver para:', categoryId);
+                
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes') {
+                            console.log('');
+                            console.log('🔔 MUTATION DETECTED en', categoryId);
+                            console.log('  Atributo cambiado:', mutation.attributeName);
+                            console.log('  Valor anterior:', mutation.oldValue);
+                            console.log('  Valor nuevo:', mutation.target.getAttribute(mutation.attributeName));
+                            console.log('  Timestamp:', Date.now());
+                            console.trace('📍 STACK DE LA MUTACIÓN');
+                            console.log('');
+                        }
+                    });
+                });
+                
+                observer.observe(categoryGrid, {
+                    attributes: true,
+                    attributeOldValue: true,
+                    attributeFilter: ['data-expanded', 'style', 'class']
+                });
+                
+                window.__mutationObservers[categoryId] = observer;
+                console.log('✅ MutationObserver instalado');
+            }
             
             // Cambiar estado - CSS hace toda la animación
+            console.log('🔧 Cambiando data-expanded a:', newState.toString());
             categoryGrid.setAttribute('data-expanded', newState.toString());
+            
+            console.log('🔧 Cambiando aria-expanded a:', newState.toString());
             if (header) header.setAttribute('aria-expanded', newState.toString());
             
             // Rotar icono
             if (icon) {
+                console.log('🔧 Rotando icono a:', newState ? '0deg' : '-90deg');
                 icon.style.transform = newState ? 'rotate(0deg)' : 'rotate(-90deg)';
             }
             
             console.log('✅ Toggle completado, nuevo estado:', newState);
+            console.log('╚═══════════════════════════════════════╝');
+            console.log('');
+            
+            // Warning si se llama más de una vez
+            if (callNumber > 1) {
+                console.warn('⚠️⚠️⚠️ ATENCIÓN: toggleCategoryPure llamado ' + callNumber + ' veces para ' + categoryId);
+                console.warn('⚠️⚠️⚠️ Esto indica DOBLE EJECUCIÓN - revisar el stack anterior');
+                console.trace('📍 STACK DE LLAMADA MÚLTIPLE');
+            }
         }
 
         // Expand all categories - CSS puro
