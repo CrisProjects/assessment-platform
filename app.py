@@ -11309,12 +11309,24 @@ def api_coach_get_my_content():
         for content in content_items:
             key = f"{content.title}_{content.content_url}"
             if key not in unique_content:
+                # Transformar URL de documento para que funcione en el feed del coach
+                content_url = content.content_url
+                if content.content_type == 'document' and '/api/coachee/documents/' in content_url:
+                    # Extraer document_id de la URL del coachee: /api/coachee/documents/{doc_id}/files/{file_id}/preview
+                    import re
+                    match = re.search(r'/api/coachee/documents/(\d+)/', content_url)
+                    if match:
+                        document_id = match.group(1)
+                        # Convertir a URL del coach: /api/coach/documents/{doc_id}/view
+                        content_url = f"/api/coach/documents/{document_id}/view"
+                        logger.info(f"📄 Transformando URL de documento de {content.content_url} a {content_url}")
+                
                 unique_content[key] = {
                     'id': content.id,
                     'title': content.title,
                     'description': content.description,
                     'content_type': content.content_type,
-                    'content_url': content.content_url,
+                    'content_url': content_url,
                     'thumbnail_url': content.thumbnail_url,
                     'created_at': content.assigned_at.isoformat() if content.assigned_at else None,
                     'assigned_count': 0
