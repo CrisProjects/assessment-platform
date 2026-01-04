@@ -15118,8 +15118,10 @@
             return card;
         }
 
-        // Toggle category function with lock protection
+        // Toggle category function with lock protection and timeout management
         let toggleCategoryLocks = {};
+        let toggleCategoryTimeouts = {};
+        
         function toggleCategory(categoryId, headerElement, event) {
             console.log('🔍 toggleCategory CALLED:', categoryId, 'timestamp:', Date.now());
             
@@ -15138,6 +15140,13 @@
                 event.preventDefault();
                 event.stopPropagation();
                 console.log('🛑 Event propagation stopped');
+            }
+            
+            // LIMPIEZA CRÍTICA: Cancelar cualquier timeout pendiente de esta categoría
+            if (toggleCategoryTimeouts[categoryId]) {
+                clearTimeout(toggleCategoryTimeouts[categoryId]);
+                toggleCategoryTimeouts[categoryId] = null;
+                console.log('🧹 Timeout pendiente cancelado para:', categoryId);
             }
             
             // Activar lock INMEDIATAMENTE
@@ -15169,10 +15178,12 @@
                 categoryGrid.style.marginBottom = '0px';
                 if (icon) icon.style.transform = 'rotate(-90deg)';
                 
-                // Ocultar después de animación
-                setTimeout(() => {
+                // Ocultar después de animación COMPLETA (max-height 0.5s + margen)
+                toggleCategoryTimeouts[categoryId] = setTimeout(() => {
                     categoryGrid.style.display = 'none';
-                }, 300);
+                    toggleCategoryTimeouts[categoryId] = null;
+                    console.log('🙈 Display none aplicado para:', categoryId);
+                }, 520);
                 
             } else {
                 // Expand: cambiar estado primero, luego animar
@@ -15192,11 +15203,11 @@
                 });
             }
             
-            // Liberar lock después de la animación completa
+            // Liberar lock después de la animación completa (sincronizado con max-height 0.5s)
             setTimeout(() => {
                 toggleCategoryLocks[categoryId] = false;
                 console.log('🔓 Lock liberado para:', categoryId);
-            }, 350);
+            }, 550);
             
             return false;
         }
@@ -15500,7 +15511,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
+                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: none; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
                     </div>
                 `;
                 
