@@ -11007,6 +11007,30 @@
                         color: #cbd5e1;
                     }
                     
+                    /* ============================================
+                       CATEGORY GRID - ANIMACIÓN CSS PURA
+                       ============================================ */
+                    .category-grid {
+                        display: grid;
+                        overflow: hidden;
+                        margin-bottom: 0;
+                        max-height: 0;
+                        opacity: 0;
+                        transition: max-height 0.5s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
+                    }
+                    
+                    .category-grid[data-expanded="true"] {
+                        max-height: 10000px;
+                        opacity: 1;
+                        margin-bottom: 30px;
+                    }
+                    
+                    /* Hover en header */
+                    .section-header-eval:hover {
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+                        transform: translateY(-2px);
+                    }
+                    
                     /* Grid responsivo para evaluaciones completadas */
                     .assessments-grid {
                         display: grid;
@@ -14784,6 +14808,7 @@
             categorySection.innerHTML = `
                 <header class="section-header-eval" 
                      id="header-${categoryId}"
+                     data-category-id="${categoryId}"
                      role="button"
                      tabindex="0"
                      aria-expanded="false"
@@ -14796,11 +14821,7 @@
                             transition: all 0.2s ease; 
                             box-shadow: 0 2px 6px rgba(0,0,0,0.06); 
                             border-left: 3px solid ${category.color};
-                            border: 1px solid #cbd5e1 !important;" 
-                     onclick="return toggleCategory('${categoryId}', this, event);"
-                     onkeydown="if(event.key === 'Enter' || event.key === ' ') { return toggleCategory('${categoryId}', this, event); }"
-                     onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)';"
-                     onmouseleave="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.06)'; this.style.transform='translateY(0)';">
+                            border: 1px solid #cbd5e1 !important;">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
                         <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0;">
                             <div role="img" aria-label="${categoryName} icono" style="width: 2.75rem; 
@@ -14881,19 +14902,13 @@
                         }
                     </style>
                 </header>
-                <div class="assessments-grid" 
+                <div class="assessments-grid category-grid" 
                      id="${categoryId}" 
                      role="region"
                      aria-label="${categoryName} evaluaciones"
                      data-expanded="false" 
-                     style="display: none; 
-                            grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); 
-                            gap: 1rem; 
-                            margin-bottom: 0; 
-                            overflow: hidden; 
-                            max-height: 0; 
-                            opacity: 0; 
-                            transition: max-height 0.5s ease, opacity 0.3s ease;">
+                     style="grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); 
+                            gap: 1rem;">
                 </div>
             `;
             
@@ -15118,139 +15133,109 @@
             return card;
         }
 
-        // Toggle category function with lock protection and timeout management
-        let toggleCategoryLocks = {};
-        let toggleCategoryTimeouts = {};
+        // ============================================
+        // CATEGORY TOGGLE - DELEGACIÓN DE EVENTOS
+        // ============================================
         
-        function toggleCategory(categoryId, headerElement, event) {
-            console.log('🔍 toggleCategory CALLED:', categoryId, 'timestamp:', Date.now());
+        // Guard para evitar doble inicialización en producción
+        if (!window.__categoryToggleInitialized) {
+            window.__categoryToggleInitialized = true;
             
-            // BLOQUEO INMEDIATO: Si ya está en proceso, ignorar
-            if (toggleCategoryLocks[categoryId]) {
-                console.log('🔒 BLOQUEADO: Toggle ya en proceso para', categoryId);
-                if (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                return false;
-            }
+            console.log('🎯 Inicializando delegación de eventos para category toggle');
             
-            // Prevenir propagación de eventos
-            if (event) {
+            // Un solo listener global para clicks
+            document.addEventListener('click', function(event) {
+                const header = event.target.closest('.section-header-eval[data-category-id]');
+                if (!header) return;
+                
                 event.preventDefault();
                 event.stopPropagation();
-                console.log('🛑 Event propagation stopped');
-            }
+                
+                const categoryId = header.getAttribute('data-category-id');
+                console.log('🔍 Click en categoría:', categoryId);
+                toggleCategoryPure(categoryId, header);
+            }, { passive: false });
             
-            // LIMPIEZA CRÍTICA: Cancelar cualquier timeout pendiente de esta categoría
-            if (toggleCategoryTimeouts[categoryId]) {
-                clearTimeout(toggleCategoryTimeouts[categoryId]);
-                toggleCategoryTimeouts[categoryId] = null;
-                console.log('🧹 Timeout pendiente cancelado para:', categoryId);
-            }
-            
-            // Activar lock INMEDIATAMENTE
-            toggleCategoryLocks[categoryId] = true;
-            console.log('🔐 Lock activado para:', categoryId);
+            // Un solo listener global para teclado
+            document.addEventListener('keydown', function(event) {
+                const header = event.target.closest('.section-header-eval[data-category-id]');
+                if (!header) return;
+                
+                if (event.key === 'Enter' || event.key === ' ') {
+                    if (event.key === ' ') {
+                        event.preventDefault(); // Prevenir scroll en Space
+                    }
+                    event.stopPropagation();
+                    
+                    const categoryId = header.getAttribute('data-category-id');
+                    console.log('⌨️ Teclado en categoría:', categoryId);
+                    toggleCategoryPure(categoryId, header);
+                }
+            }, { passive: false });
+        }
+        
+        // Función de toggle pura - solo cambia data-expanded, CSS hace el resto
+        function toggleCategoryPure(categoryId, header) {
+            console.log('🔄 toggleCategoryPure CALLED:', categoryId, 'timestamp:', Date.now());
             
             const categoryGrid = document.getElementById(categoryId);
-            const header = document.getElementById(`header-${categoryId}`);
             const icon = document.getElementById(`icon-${categoryId}`);
             
             if (!categoryGrid) {
                 console.error('❌ No se encontró categoryGrid:', categoryId);
-                toggleCategoryLocks[categoryId] = false;
-                return false;
+                return;
             }
             
             const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
-            console.log('📊 Estado actual:', isExpanded ? 'EXPANDED' : 'COLLAPSED');
+            const newState = !isExpanded;
             
-            if (isExpanded) {
-                // Collapse: cambiar estado primero, luego animar
-                console.log('➖ Cerrando categoría:', categoryId);
-                categoryGrid.setAttribute('data-expanded', 'false');
-                if (header) header.setAttribute('aria-expanded', 'false');
-                
-                // Animar cierre
-                categoryGrid.style.opacity = '0';
-                categoryGrid.style.maxHeight = '0px';
-                categoryGrid.style.marginBottom = '0px';
-                if (icon) icon.style.transform = 'rotate(-90deg)';
-                
-                // Ocultar después de animación COMPLETA (max-height 0.5s + margen)
-                toggleCategoryTimeouts[categoryId] = setTimeout(() => {
-                    categoryGrid.style.display = 'none';
-                    toggleCategoryTimeouts[categoryId] = null;
-                    console.log('🙈 Display none aplicado para:', categoryId);
-                }, 520);
-                
-            } else {
-                // Expand: cambiar estado primero, luego animar
-                console.log('➕ Abriendo categoría:', categoryId);
-                categoryGrid.setAttribute('data-expanded', 'true');
-                if (header) header.setAttribute('aria-expanded', 'true');
-                
-                // Mostrar y animar apertura
-                categoryGrid.style.display = 'grid';
-                categoryGrid.style.marginBottom = '30px';
-                if (icon) icon.style.transform = 'rotate(0deg)';
-                
-                // Pequeño delay para que el display:grid tome efecto antes de animar
-                requestAnimationFrame(() => {
-                    categoryGrid.style.maxHeight = '5000px';
-                    categoryGrid.style.opacity = '1';
-                });
+            console.log('📊 Estado:', isExpanded ? 'EXPANDED → COLLAPSED' : 'COLLAPSED → EXPANDED');
+            
+            // Cambiar estado - CSS hace toda la animación
+            categoryGrid.setAttribute('data-expanded', newState.toString());
+            if (header) header.setAttribute('aria-expanded', newState.toString());
+            
+            // Rotar icono
+            if (icon) {
+                icon.style.transform = newState ? 'rotate(0deg)' : 'rotate(-90deg)';
             }
             
-            // Liberar lock después de la animación completa (sincronizado con max-height 0.5s)
-            setTimeout(() => {
-                toggleCategoryLocks[categoryId] = false;
-                console.log('🔓 Lock liberado para:', categoryId);
-            }, 550);
-            
-            return false;
+            console.log('✅ Toggle completado, nuevo estado:', newState);
         }
 
-        // Expand all categories
+        // Expand all categories - CSS puro
         function expandAllCategories(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
             
-            const allCategories = container.querySelectorAll('.assessments-grid[data-expanded="false"]');
+            const allCategories = container.querySelectorAll('.category-grid[data-expanded="false"]');
             allCategories.forEach(grid => {
                 const categoryId = grid.id;
                 const icon = document.getElementById(`icon-${categoryId}`);
+                const header = document.getElementById(`header-${categoryId}`);
                 
-                grid.style.display = 'grid';
-                setTimeout(() => {
-                    grid.style.maxHeight = '5000px';
-                    grid.style.opacity = '1';
-                }, 10);
-                grid.style.marginBottom = '30px';
-                if (icon) icon.style.transform = 'rotate(0deg)';
+                // Solo cambiar atributo - CSS hace el resto
                 grid.setAttribute('data-expanded', 'true');
+                if (header) header.setAttribute('aria-expanded', 'true');
+                if (icon) icon.style.transform = 'rotate(0deg)';
             });
         }
 
-        // Collapse all categories
+        // Collapse all categories - CSS puro
         function collapseAllCategories(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
             
-            const allCategories = container.querySelectorAll('.assessments-grid[data-expanded="true"]');
+            const allCategories = container.querySelectorAll('.category-grid[data-expanded="true"]');
             allCategories.forEach(grid => {
                 const categoryId = grid.id;
                 const icon = document.getElementById(`icon-${categoryId}`);
+                const header = document.getElementById(`header-${categoryId}`);
                 
-                grid.style.opacity = '0';
-                grid.style.maxHeight = '0px';
-                setTimeout(() => {
-                    grid.style.display = 'none';
-                }, 300);
-                grid.style.marginBottom = '0px';
-                if (icon) icon.style.transform = 'rotate(-90deg)';
+                // Solo cambiar atributo - CSS hace el resto
                 grid.setAttribute('data-expanded', 'false');
+                if (header) header.setAttribute('aria-expanded', 'false');
+                if (icon) icon.style.transform = 'rotate(-90deg)';
             });
         }
 
@@ -15488,9 +15473,15 @@
                 const categoryId = `completed-category-${categoryName.replace(/\s+/g, '-')}`;
                 
                 categorySection.innerHTML = `
-                    <div class="section-header-eval" style="padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid ${category.color};" 
-                         data-theme-bg="light"
-                         onclick="return toggleCategory('${categoryId}', this, event);">
+                    <div class="section-header-eval" 
+                         id="header-${categoryId}"
+                         data-category-id="${categoryId}"
+                         role="button"
+                         tabindex="0"
+                         aria-expanded="false"
+                         aria-controls="${categoryId}"
+                         style="padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid ${category.color};" 
+                         data-theme-bg="light">
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
                             <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
                                 <div style="width: 3rem; height: 3rem; background: ${category.color} !important; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px ${category.color}60, 0 0 0 2px rgba(255, 255, 255, 0.2) !important; filter: saturate(1.2) brightness(1.1);">
@@ -15511,7 +15502,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="assessments-grid" id="${categoryId}" data-expanded="false" style="display: none; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.5s ease, opacity 0.3s ease;">
+                    <div class="assessments-grid category-grid" id="${categoryId}" data-expanded="false" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
                     </div>
                 `;
                 
