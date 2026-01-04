@@ -12485,9 +12485,12 @@
                             const tabHeader = activeTabPane.querySelector('.evaluations-header, .completed-evaluations-header, header');
                             
                             if (tabHeader) {
-                                // Scroll al header del tab con offset dinámico (10% del viewport)
+                                // Scroll al header del tab con offset dinámico
                                 const headerTop = tabHeader.getBoundingClientRect().top + window.pageYOffset;
-                                const offset = window.innerHeight * 0.1; // 10% del viewport
+                                const isMobile = window.innerWidth <= 768;
+                                const offset = isMobile 
+                                    ? window.innerHeight * 0.3  // 30% en móvil
+                                    : window.innerHeight * 0.1; // 10% en desktop
                                 
                                 window.scrollTo({
                                     top: headerTop - offset,
@@ -12497,8 +12500,13 @@
                             } else {
                                 // Fallback: scroll al tab-pane completo con offset dinámico
                                 const paneTop = activeTabPane.getBoundingClientRect().top + window.pageYOffset;
+                                const isMobile = window.innerWidth <= 768;
+                                const offset = isMobile 
+                                    ? window.innerHeight * 0.3 
+                                    : window.innerHeight * 0.1;
+                                
                                 window.scrollTo({
-                                    top: paneTop - (window.innerHeight * 0.1),
+                                    top: paneTop - offset,
                                     behavior: 'smooth'
                                 });
                                 console.log(`📱 Scrolling to ${tabId} pane (no header found)`);
