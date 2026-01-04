@@ -56,6 +56,8 @@
             background: #f8fafc !important;
             color: #1e293b !important;
             transition: all 0.3s ease;
+            position: relative;
+            padding-bottom: 80px !important; /* Espacio para bottom-navigation */
         }
 
         /* Container principal con z-index para aparecer sobre partículas */
@@ -2890,18 +2892,19 @@
 
     /* === BOTTOM NAVIGATION BAR === */
     .bottom-navigation {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 60px;
-        background: white;
-        border-top: 1px solid #dbdbdb;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 1000;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        height: 60px !important;
+        background: white !important;
+        border-top: 1px solid #dbdbdb !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        z-index: 10500 !important;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05) !important;
     }
     
     .nav-item {
@@ -3463,6 +3466,30 @@
     </style>
 </head>
 <body x-data="dashboardApp()" x-init="init()">
+    
+    <!-- Navegación inferior (Bottom Navigation) - MOVIDO AL INICIO -->
+    <nav class="bottom-navigation" x-data>
+        <a href="/coach-feed" class="nav-item" @click.prevent="window.location.href = '/coach-feed'">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        
+        <a href="/coach-comunidad" class="nav-item" @click.prevent="window.location.href = '/coach-comunidad'">
+            <i class="fas fa-users"></i>
+            <span>Comunidad</span>
+        </a>
+        
+        <a href="/coach/dashboard-v2" class="nav-item active" @click.prevent="window.location.reload()">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <button class="nav-item" @click="if(confirm('¿Estás seguro que deseas salir?')) { window.location.href='/coach-login'; }">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
+        </button>
+    </nav>
+    
     <!-- Header -->
     <div class="feed-header">
         <div>
@@ -10991,29 +11018,6 @@ async function deleteContentCoach(contentId) {
         </div>
     </div>
 </div>
-
-<!-- Navegación inferior (Bottom Navigation) -->
-<nav class="bottom-navigation" x-data>
-    <a href="/coach-feed" class="nav-item" @click.prevent="window.location.href = '/coach-feed'">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
-    </a>
-    
-    <a href="/coach-comunidad" class="nav-item" @click.prevent="window.location.href = '/coach-comunidad'">
-        <i class="fas fa-users"></i>
-        <span>Comunidad</span>
-    </a>
-    
-    <a href="/coach/dashboard-v2" class="nav-item active" @click.prevent="window.location.reload()">
-        <i class="fas fa-chart-line"></i>
-        <span>Dashboard</span>
-    </a>
-    
-    <button class="nav-item" @click="if(confirm('¿Estás seguro que deseas salir?')) { window.location.href='/coach-login'; }">
-        <i class="fas fa-sign-out-alt"></i>
-        <span>Salir</span>
-    </button>
-</nav>
 
 <!-- Modal para Ver Detalles de Solicitud de Plan de Desarrollo -->
 <div class="modal fade" id="devPlanRequestModal" tabindex="-1" aria-labelledby="devPlanRequestModalLabel" aria-hidden="true">
