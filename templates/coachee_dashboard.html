@@ -14886,7 +14886,7 @@
                      role="region"
                      aria-label="${categoryName} evaluaciones"
                      data-expanded="false" 
-                     style="display: grid; 
+                     style="display: none; 
                             grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); 
                             gap: 1rem; 
                             margin-bottom: 0; 
@@ -15118,33 +15118,29 @@
             return card;
         }
 
-        // Toggle category function with improved accessibility and debounce protection
+        // Toggle category function with lock protection
         let toggleCategoryLocks = {};
         function toggleCategory(categoryId, headerElement, event) {
-            // 🔍 LOG: Detectar llamadas
-            const timestamp = Date.now();
-            console.log('🔍 toggleCategory CALLED:', categoryId, 'timestamp:', timestamp);
+            console.log('🔍 toggleCategory CALLED:', categoryId, 'timestamp:', Date.now());
             
-            // BLOQUEO INMEDIATO: Si ya está en proceso, ignorar completamente
+            // BLOQUEO INMEDIATO: Si ya está en proceso, ignorar
             if (toggleCategoryLocks[categoryId]) {
                 console.log('🔒 BLOQUEADO: Toggle ya en proceso para', categoryId);
                 if (event) {
                     event.preventDefault();
                     event.stopPropagation();
-                    event.stopImmediatePropagation();
                 }
                 return false;
             }
             
-            // Prevenir propagación de eventos para evitar múltiples llamadas
+            // Prevenir propagación de eventos
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
-                event.stopImmediatePropagation();
                 console.log('🛑 Event propagation stopped');
             }
             
-            // Activar bloqueo INMEDIATAMENTE
+            // Activar lock INMEDIATAMENTE
             toggleCategoryLocks[categoryId] = true;
             console.log('🔐 Lock activado para:', categoryId);
             
@@ -15161,34 +15157,42 @@
             const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
             console.log('📊 Estado actual:', isExpanded ? 'EXPANDED' : 'COLLAPSED');
             
-            // Cambiar estado INMEDIATAMENTE para prevenir doble ejecución
-            categoryGrid.setAttribute('data-expanded', (!isExpanded).toString());
-            
             if (isExpanded) {
-                // Collapse: fade out then hide
+                // Collapse: cambiar estado primero, luego animar
                 console.log('➖ Cerrando categoría:', categoryId);
+                categoryGrid.setAttribute('data-expanded', 'false');
+                if (header) header.setAttribute('aria-expanded', 'false');
+                
+                // Animar cierre
                 categoryGrid.style.opacity = '0';
                 categoryGrid.style.maxHeight = '0px';
+                categoryGrid.style.marginBottom = '0px';
+                if (icon) icon.style.transform = 'rotate(-90deg)';
+                
+                // Ocultar después de animación
                 setTimeout(() => {
                     categoryGrid.style.display = 'none';
                 }, 300);
-                categoryGrid.style.marginBottom = '0px';
-                if (icon) icon.style.transform = 'rotate(-90deg)';
-                if (header) header.setAttribute('aria-expanded', 'false');
+                
             } else {
-                // Expand: show then fade in
+                // Expand: cambiar estado primero, luego animar
                 console.log('➕ Abriendo categoría:', categoryId);
+                categoryGrid.setAttribute('data-expanded', 'true');
+                if (header) header.setAttribute('aria-expanded', 'true');
+                
+                // Mostrar y animar apertura
                 categoryGrid.style.display = 'grid';
-                setTimeout(() => {
-                    categoryGrid.style.maxHeight = '5000px';
-                    categoryGrid.style.opacity = '1';
-                }, 10);
                 categoryGrid.style.marginBottom = '30px';
                 if (icon) icon.style.transform = 'rotate(0deg)';
-                if (header) header.setAttribute('aria-expanded', 'true');
+                
+                // Pequeño delay para que el display:grid tome efecto antes de animar
+                requestAnimationFrame(() => {
+                    categoryGrid.style.maxHeight = '5000px';
+                    categoryGrid.style.opacity = '1';
+                });
             }
             
-            // Liberar bloqueo después de la animación
+            // Liberar lock después de la animación completa
             setTimeout(() => {
                 toggleCategoryLocks[categoryId] = false;
                 console.log('🔓 Lock liberado para:', categoryId);
