@@ -11169,12 +11169,23 @@ def api_coach_get_assigned_content():
             content_list = []
             for key, data in unique_content.items():
                 content = data['content']
+                
+                # Transformar URL de documento para que funcione con sesión de coach
+                content_url = content.content_url
+                if content.content_type == 'document' and '/api/coachee/documents/' in content_url:
+                    import re
+                    match = re.search(r'/api/coachee/documents/(\d+)/', content_url)
+                    if match:
+                        document_id = match.group(1)
+                        content_url = f"/api/coach/documents/{document_id}/view"
+                        logger.info(f"✅ TRANSFORM-UNIQUE: Content ID {content.id} - Transformado a {content_url}")
+                
                 content_data = {
                     'id': content.id,
                     'title': content.title,
                     'description': content.description,
                     'content_type': content.content_type,
-                    'content_url': content.content_url,
+                    'content_url': content_url,
                     'thumbnail_url': content.thumbnail_url,
                     'duration': content.duration,
                     'assignments': data['assignments'],
@@ -11190,12 +11201,31 @@ def api_coach_get_assigned_content():
             content_list = []
             for content in content_items:
                 coachee = User.query.get(content.coachee_id)
+                
+                # Transformar URL de documento para que funcione con sesión de coach
+                content_url = content.content_url
+                logger.info(f"🔎 TRANSFORM-CHECK: Content ID={content.id}, Type={content.content_type}, URL original={content_url}")
+                
+                if content.content_type == 'document' and '/api/coachee/documents/' in content_url:
+                    # Extraer document_id de la URL del coachee: /api/coachee/documents/{doc_id}/files/{file_id}/preview
+                    import re
+                    match = re.search(r'/api/coachee/documents/(\d+)/', content_url)
+                    if match:
+                        document_id = match.group(1)
+                        # Convertir a URL del coach: /api/coach/documents/{doc_id}/view
+                        content_url = f"/api/coach/documents/{document_id}/view"
+                        logger.info(f"✅ TRANSFORM: Content ID {content.id} - Transformado de {content.content_url} a {content_url}")
+                    else:
+                        logger.warning(f"⚠️  TRANSFORM: Content ID {content.id} - No se pudo extraer document_id de URL: {content_url}")
+                else:
+                    logger.info(f"⏭️  TRANSFORM: Content ID {content.id} - No requiere transformación (type={content.content_type}, has_coachee_url={'/api/coachee/documents/' in content_url})")
+                
                 content_data = {
                     'id': content.id,
                     'title': content.title,
                     'description': content.description,
                     'content_type': content.content_type,
-                    'content_url': content.content_url,
+                    'content_url': content_url,
                     'thumbnail_url': content.thumbnail_url,
                     'duration': content.duration,
                     'is_viewed': content.is_viewed,
@@ -12844,15 +12874,56 @@ def api_coach_document_view(document_id):
         if not current_coach or current_coach.role != 'coach':
             return jsonify({'error': 'Acceso denegado'}), 403
         
-        # Verificar que el documento pertenece al coach
+        # Verificar que el documento pertenece al coach O está asignado a un coachee del coach
         document = Document.query.filter_by(
             id=document_id,
-            coach_id=current_coach.id,
             is_active=True
         ).first()
         
         if not document:
+            logger.error(f"❌ Documento {document_id} no existe o no está activo")
             return jsonify({'error': 'Documento no encontrado'}), 404
+        
+        logger.info(f"📄 Coach {current_coach.id} intentando acceder a documento {document_id} (coach_id={document.coach_id}, coachee_id={document.coachee_id})")
+        
+        # Verificar permisos: el coach debe ser el dueño O el documento debe estar en un Content asignado por el coach
+        has_permission = False
+        
+        if document.coach_id == current_coach.id:
+            # El coach es el dueño del documento
+            has_permission = True
+            logger.info(f"✅ Coach {current_coach.id} es el dueño del documento {document_id}")
+        else:
+            # Verificar si el documento está en algún Content asignado por este coach
+            content_with_doc = Content.query.filter(
+                Content.coach_id == current_coach.id,
+                Content.content_type == 'document',
+                Content.content_url.like(f'%/documents/{document_id}/%'),
+                Content.is_active == True
+            ).first()
+            
+            if content_with_doc:
+                has_permission = True
+                logger.info(f"✅ Coach {current_coach.id} tiene acceso al documento {document_id} vía Content ID {content_with_doc.id}")
+            else:
+                # También verificar por coachee_id
+                if document.coachee_id:
+                    coachee = User.query.filter_by(
+                        id=document.coachee_id,
+                        coach_id=current_coach.id,
+                        role='coachee'
+                    ).first()
+                    if coachee:
+                        has_permission = True
+                        logger.info(f"✅ Coach {current_coach.id} accediendo a documento {document_id} de su coachee {document.coachee_id}")
+                    else:
+                        logger.warning(f"❌ El coachee {document.coachee_id} del documento {document_id} NO pertenece al coach {current_coach.id}")
+                else:
+                    logger.warning(f"❌ Documento {document_id} no tiene coachee_id asignado y el coach {current_coach.id} no es el dueño")
+        
+        if not has_permission:
+            logger.warning(f"❌ PERMISO DENEGADO: Coach {current_coach.id} sin permisos para documento {document_id}")
+            return jsonify({'error': 'No tienes permisos para ver este documento'}), 403
         
         # Obtener el archivo (asumiendo que hay uno por documento)
         doc_file = DocumentFile.query.filter_by(

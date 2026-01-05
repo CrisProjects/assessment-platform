@@ -4623,51 +4623,68 @@
                             <!-- Pestaña: Contenido Asignado -->
                             <div class="tab-pane fade" id="manage-content-pane" role="tabpanel">
                                 <!-- Controles de filtrado -->
-                                <div class="card mb-3">
+                                <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 12px;">
                                     <div class="card-body">
-                                        <h6 class="card-title mb-3">
-                                            <i class="fas fa-filter me-2"></i>Filtros y Opciones de Vista
-                                        </h6>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-filter me-2" style="color: #667eea;"></i>Filtros y Opciones de Vista
+                                            </h6>
+                                            <span class="badge bg-primary" id="contentResultsCount" style="font-size: 0.875rem;">
+                                                0 resultados
+                                            </span>
+                                        </div>
                                         <div class="row g-3">
                                             <div class="col-md-3">
-                                                <label for="coacheeFilter" class="form-label small">Filtrar por Coachee</label>
+                                                <label for="coacheeFilter" class="form-label small fw-semibold">
+                                                    <i class="fas fa-user me-1"></i>Coachee
+                                                </label>
                                                 <select class="form-select" id="coacheeFilter">
                                                     <option value="">Todos los coachees</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="viewModeFilter" class="form-label small">Modo de Vista</label>
+                                                <label for="viewModeFilter" class="form-label small fw-semibold">
+                                                    <i class="fas fa-eye me-1"></i>Modo de Vista
+                                                </label>
                                                 <select class="form-select" id="viewModeFilter">
                                                     <option value="all">Todas las asignaciones</option>
                                                     <option value="unique">Contenido único</option>
                                                 </select>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    <span id="viewModeHint">Vista detallada de todas las asignaciones</span>
+                                                </small>
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="statusFilter" class="form-label small">Estado</label>
+                                                <label for="statusFilter" class="form-label small fw-semibold">
+                                                    <i class="fas fa-check-circle me-1"></i>Estado
+                                                </label>
                                                 <select class="form-select" id="statusFilter">
                                                     <option value="">Todos los estados</option>
-                                                    <option value="viewed">Solo vistos</option>
-                                                    <option value="pending">Solo pendientes</option>
+                                                    <option value="viewed">✅ Solo vistos</option>
+                                                    <option value="pending">⏳ Solo pendientes</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="contentSearch" class="form-label small">Buscar</label>
+                                                <label for="contentSearch" class="form-label small fw-semibold">
+                                                    <i class="fas fa-search me-1"></i>Buscar
+                                                </label>
                                                 <div class="input-group">
                                                     <input type="text" class="form-control" id="contentSearch" 
-                                                        placeholder="Buscar contenido...">
-                                                    <button class="btn btn-outline-primary" onclick="applyContentFilters()">
+                                                        placeholder="Título, descripción...">
+                                                    <button class="btn btn-outline-primary" onclick="applyContentFilters()" title="Buscar">
                                                         <i class="fas fa-search"></i>
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row mt-2">
+                                        <div class="row mt-3">
                                             <div class="col-12">
                                                 <button class="btn btn-sm btn-outline-secondary me-2" onclick="clearContentFilters()">
                                                     <i class="fas fa-times me-1"></i>Limpiar Filtros
                                                 </button>
                                                 <button class="btn btn-sm btn-outline-primary" onclick="refreshContentList()">
-                                                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                                    <i class="fas fa-sync-alt me-1"></i>Actualizar Lista
                                                 </button>
                                             </div>
                                         </div>
@@ -8021,11 +8038,17 @@ function dashboardApp() {
                 await this.populateCoacheeSelectors();
                 
                 // Cargar contenido asignado
-                const response = await fetch('/api/coach/content');
+                const response = await fetch('/api/coach/content', {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 const data = await response.json();
                 
                 if (data.success) {
                     this.assignedContent = data.content || [];
+                    this.originalAssignedContent = [...this.assignedContent]; // Guardar copia original
                     console.log('✅ Contenido asignado cargado:', this.assignedContent.length, 'items');
                     
                     // Ocultar loading
@@ -8056,10 +8079,25 @@ function dashboardApp() {
             if (!contentList || contentList.length === 0) {
                 container.innerHTML = '';
                 if (emptyState) emptyState.style.display = 'block';
+                
+                // Actualizar contador
+                const resultsCount = document.getElementById('contentResultsCount');
+                if (resultsCount) {
+                    resultsCount.textContent = '0 resultados';
+                    resultsCount.className = 'badge bg-secondary';
+                }
                 return;
             }
             
             if (emptyState) emptyState.style.display = 'none';
+            
+            // Actualizar contador
+            const resultsCount = document.getElementById('contentResultsCount');
+            if (resultsCount) {
+                const label = contentList.length === 1 ? 'resultado' : 'resultados';
+                resultsCount.textContent = `${contentList.length} ${label}`;
+                resultsCount.className = 'badge bg-primary';
+            }
             
             let html = '';
             
@@ -8096,38 +8134,36 @@ function dashboardApp() {
                 // Construir HTML de vista previa
                 let videoEmbedHTML = '';
                 
-                if (isVideo && (youtubeVideoId || instagramVideoId)) {
-                    if (youtubeVideoId) {
-                        videoEmbedHTML = `
-                        <div class="content-preview has-embedded-video">
-                            <div class="ratio ratio-16x9" style="position: relative; border-radius: 8px; overflow: hidden;">
-                                <iframe 
-                                    src="https://www.youtube.com/embed/${youtubeVideoId}?rel=0&modestbranding=1" 
-                                    title="${content.title || 'Video'}"
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                    allowfullscreen
-                                    style="border-radius: 8px; width: 100%; height: 100%;">
-                                </iframe>
-                            </div>
+                if (youtubeVideoId) {
+                    videoEmbedHTML = `
+                    <div class="content-preview has-embedded-video">
+                        <div class="ratio ratio-16x9" style="position: relative; border-radius: 8px; overflow: hidden;">
+                            <iframe 
+                                src="https://www.youtube.com/embed/${youtubeVideoId}?rel=0&modestbranding=1" 
+                                title="${content.title || 'Video'}"
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                allowfullscreen
+                                style="border-radius: 8px; width: 100%; height: 100%;">
+                            </iframe>
                         </div>
-                        `;
-                    } else if (instagramVideoId) {
-                        videoEmbedHTML = `
-                        <div class="content-preview has-embedded-video">
-                            <div class="ratio ratio-9x16" style="position: relative; border-radius: 8px; overflow: hidden;">
-                                <iframe 
-                                    src="https://www.instagram.com/p/${instagramVideoId}/embed" 
-                                    title="${content.title || 'Video'}"
-                                    frameborder="0" 
-                                    scrolling="no" 
-                                    allowtransparency="true"
-                                    style="border-radius: 8px; width: 100%; height: 100%;">
-                                </iframe>
-                            </div>
+                    </div>
+                    `;
+                } else if (instagramVideoId) {
+                    videoEmbedHTML = `
+                    <div class="content-preview has-embedded-video">
+                        <div class="ratio ratio-9x16" style="position: relative; border-radius: 8px; overflow: hidden;">
+                            <iframe 
+                                src="https://www.instagram.com/p/${instagramVideoId}/embed" 
+                                title="${content.title || 'Video'}"
+                                frameborder="0" 
+                                scrolling="no" 
+                                allowtransparency="true"
+                                style="border-radius: 8px; width: 100%; height: 100%;">
+                            </iframe>
                         </div>
-                        `;
-                    }
+                    </div>
+                    `;
                 } else if (isDocument && content.content_url) {
                     videoEmbedHTML = `
                         <div class="content-preview">
@@ -8185,71 +8221,24 @@ function dashboardApp() {
             
             // Renderizar PDFs después de cargar el HTML
             setTimeout(() => {
+                console.log('🔍 [ASSIGNED] Iniciando renderizado de documentos en contenido asignado...');
+                const documentCount = contentList.filter(c => c.content_type === 'document' && c.content_url).length;
+                console.log(`📄 [ASSIGNED] Total documentos a renderizar: ${documentCount}`);
+                
                 contentList.forEach(content => {
                     if (content.content_type === 'document' && content.content_url) {
                         const canvasId = 'doc-preview-assigned-' + content.id;
+                        console.log(`📄 [ASSIGNED] Intentando renderizar documento ID ${content.id}, Canvas: ${canvasId}, URL: ${content.content_url}`);
                         const canvas = document.getElementById(canvasId);
-                        if (canvas && window.pdfjsLib) {
-                            this.generatePDFPreviewForCanvas(content.content_url, canvasId);
+                        if (canvas) {
+                            console.log(`✅ [ASSIGNED] Canvas ${canvasId} encontrado, llamando generateDocumentPreviewAssigned...`);
+                            generateDocumentPreviewAssigned(content.content_url, canvasId);
+                        } else {
+                            console.error(`❌ [ASSIGNED] Canvas ${canvasId} NO encontrado en el DOM`);
                         }
                     }
                 });
             }, 200);
-        },
-        
-        // Generar vista previa PDF para canvas
-        generatePDFPreviewForCanvas(url, canvasId) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-            
-            const loadingId = canvasId.replace('doc-preview-assigned-', 'doc-loading-assigned-');
-            const loadingDiv = document.getElementById(loadingId);
-            
-            const ctx = canvas.getContext('2d');
-            canvas.width = 1200;
-            canvas.height = 1000;
-            
-            pdfjsLib.getDocument({ url: url }).promise.then(pdf => {
-                pdf.getPage(1).then(page => {
-                    const viewport = page.getViewport({ scale: 1 });
-                    const scaleX = 1200 / viewport.width;
-                    const scaleY = 1000 / viewport.height;
-                    const scale = Math.min(scaleX, scaleY);
-                    const scaledViewport = page.getViewport({ scale });
-                    
-                    const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = scaledViewport.width;
-                    tempCanvas.height = scaledViewport.height;
-                    
-                    page.render({ canvasContext: tempCtx, viewport: scaledViewport }).promise.then(() => {
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, 1200, 1000);
-                        const offsetX = (1200 - scaledViewport.width) / 2;
-                        const offsetY = (1000 - scaledViewport.height) / 2;
-                        ctx.drawImage(tempCanvas, offsetX, offsetY);
-                        if (loadingDiv) loadingDiv.style.display = 'none';
-                    }).catch(err => {
-                        console.error('Error rendering PDF:', err);
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, 1200, 1000);
-                        ctx.fillStyle = '#dc3545';
-                        ctx.font = '32px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('Error al cargar PDF', 600, 400);
-                        if (loadingDiv) loadingDiv.style.display = 'none';
-                    });
-                });
-            }).catch(err => {
-                console.error('Error loading PDF:', err);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 1200, 1000);
-                ctx.fillStyle = '#dc3545';
-                ctx.font = '32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Error al cargar PDF', 600, 400);
-                if (loadingDiv) loadingDiv.style.display = 'none';
-            });
         },
         
         // Poblar selectores de coachees en el módulo de contenido
@@ -10899,24 +10888,336 @@ function closeInvitationModal() {
 }
 
 // Funciones para filtros de contenido
-function applyContentFilters() {
-    console.log('Aplicando filtros de contenido...');
-    // Implementar filtros si es necesario
+async function applyContentFilters() {
+    console.log('🔍 [FILTER] Aplicando filtros de contenido...');
+    
+    // Obtener valores de filtros
+    const coacheeFilter = document.getElementById('coacheeFilter')?.value || '';
+    const viewModeFilter = document.getElementById('viewModeFilter')?.value || 'all';
+    const statusFilter = document.getElementById('statusFilter')?.value || '';
+    const searchQuery = document.getElementById('contentSearch')?.value?.toLowerCase().trim() || '';
+    
+    console.log('📊 [FILTER] Valores:', {
+        coachee: coacheeFilter,
+        viewMode: viewModeFilter,
+        status: statusFilter,
+        search: searchQuery
+    });
+    
+    // Actualizar hint del modo de vista
+    const viewModeHint = document.getElementById('viewModeHint');
+    if (viewModeHint) {
+        viewModeHint.textContent = viewModeFilter === 'unique' 
+            ? 'Agrupa contenido por título (muestra estadísticas)' 
+            : 'Vista detallada de todas las asignaciones';
+    }
+    
+    // Mostrar loading
+    const loadingState = document.getElementById('contentLoadingState');
+    const container = document.getElementById('contentListContainer');
+    if (loadingState) loadingState.style.display = 'block';
+    if (container) container.innerHTML = '';
+    
+    try {
+        // Construir URL con parámetros
+        let url = `/api/coach/content?view_mode=${viewModeFilter}`;
+        if (coacheeFilter) {
+            url += `&coachee_id=${coacheeFilter}`;
+        }
+        
+        console.log('🌐 [FILTER] Fetching:', url);
+        
+        // Fetch con credenciales
+        const response = await fetch(url, {
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 [FILTER] Data received:', data);
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Error al cargar contenido');
+        }
+        
+        let content = data.content || [];
+        console.log(`📊 [FILTER] Total items desde servidor: ${content.length}`);
+        
+        // Aplicar filtros locales
+        
+        // 1. Filtrar por estado (viewed/pending)
+        if (statusFilter === 'viewed') {
+            content = content.filter(c => c.is_viewed);
+            console.log(`✅ [FILTER] Filtrado por "vistos": ${content.length} items`);
+        } else if (statusFilter === 'pending') {
+            content = content.filter(c => !c.is_viewed);
+            console.log(`⏳ [FILTER] Filtrado por "pendientes": ${content.length} items`);
+        }
+        
+        // 2. Filtrar por búsqueda de texto
+        if (searchQuery) {
+            content = content.filter(c => {
+                const title = (c.title || '').toLowerCase();
+                const description = (c.description || '').toLowerCase();
+                const coacheeName = (c.coachee_name || '').toLowerCase();
+                const matchesSearch = title.includes(searchQuery) || 
+                       description.includes(searchQuery) || 
+                       coacheeName.includes(searchQuery);
+                
+                if (matchesSearch) {
+                    console.log(`🔍 [FILTER] Match encontrado: "${c.title}"`);
+                }
+                
+                return matchesSearch;
+            });
+            console.log(`🔎 [FILTER] Después de búsqueda "${searchQuery}": ${content.length} items`);
+        }
+        
+        console.log('📋 [FILTER] Contenido final:', content.length, 'items');
+        
+        // Actualizar contador
+        const resultsCount = document.getElementById('contentResultsCount');
+        if (resultsCount) {
+            const label = content.length === 1 ? 'resultado' : 'resultados';
+            resultsCount.textContent = `${content.length} ${label}`;
+            resultsCount.className = content.length > 0 ? 'badge bg-primary' : 'badge bg-secondary';
+        }
+        
+        // Ocultar loading
+        if (loadingState) loadingState.style.display = 'none';
+        
+        // Obtener app de Alpine.js y renderizar
+        const appElement = document.querySelector('[x-data]');
+        if (appElement && appElement.__x && appElement.__x.$data) {
+            const app = appElement.__x.$data;
+            console.log('✅ [FILTER] Alpine.js encontrado, renderizando...');
+            app.renderAssignedContent(content);
+        } else {
+            console.error('❌ [FILTER] No se pudo acceder a Alpine.js, renderizando directamente...');
+            // Fallback: renderizar sin Alpine.js
+            renderContentDirectly(content);
+        }
+        
+    } catch (error) {
+        console.error('❌ [FILTER] Error:', error);
+        if (loadingState) loadingState.style.display = 'none';
+        if (container) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error al aplicar filtros: ${error.message}
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// Función fallback para renderizar sin Alpine.js
+function renderContentDirectly(contentList) {
+    const container = document.getElementById('contentListContainer');
+    const emptyState = document.getElementById('contentEmptyState');
+    
+    if (!container) {
+        console.error('❌ Container contentListContainer no encontrado');
+        return;
+    }
+    
+    if (!contentList || contentList.length === 0) {
+        container.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    
+    if (emptyState) emptyState.style.display = 'none';
+    
+    // Construir HTML completo con vistas previas (igual que renderAssignedContent)
+    let html = '';
+    
+    contentList.forEach(content => {
+        const isVideo = content.content_type === 'video';
+        const isDocument = content.content_type === 'document';
+        
+        // Detectar YouTube
+        let youtubeVideoId = null;
+        if (content.content_url) {
+            if (content.content_url.includes('youtube.com/watch?v=')) {
+                youtubeVideoId = content.content_url.split('v=')[1]?.split('&')[0];
+            } else if (content.content_url.includes('youtu.be/')) {
+                youtubeVideoId = content.content_url.split('youtu.be/')[1]?.split('?')[0];
+            }
+        }
+        
+        // Detectar Instagram
+        let instagramVideoId = null;
+        if (content.content_url) {
+            const instagramPatterns = [
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/,
+                /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)\//
+            ];
+            for (const pattern of instagramPatterns) {
+                const match = content.content_url.match(pattern);
+                if (match && match[1]) {
+                    instagramVideoId = match[1];
+                    break;
+                }
+            }
+        }
+        
+        // Construir HTML de vista previa
+        let videoEmbedHTML = '';
+        
+        if (youtubeVideoId) {
+            videoEmbedHTML = `
+            <div class="content-preview has-embedded-video">
+                <div class="ratio ratio-16x9" style="position: relative; border-radius: 8px; overflow: hidden;">
+                    <iframe 
+                        src="https://www.youtube.com/embed/${youtubeVideoId}?rel=0&modestbranding=1" 
+                        title="${content.title || 'Video'}"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen
+                        style="border-radius: 8px; width: 100%; height: 100%;">
+                    </iframe>
+                </div>
+            </div>
+            `;
+        } else if (instagramVideoId) {
+            videoEmbedHTML = `
+            <div class="content-preview has-embedded-video">
+                <div class="ratio ratio-9x16" style="position: relative; border-radius: 8px; overflow: hidden;">
+                    <iframe 
+                        src="https://www.instagram.com/p/${instagramVideoId}/embed" 
+                        title="${content.title || 'Video'}"
+                        frameborder="0" 
+                        scrolling="no" 
+                        allowtransparency="true"
+                        style="border-radius: 8px; width: 100%; height: 100%;">
+                    </iframe>
+                </div>
+            </div>
+            `;
+        } else if (isDocument && content.content_url) {
+            videoEmbedHTML = `
+                <div class="content-preview">
+                    <div style="width: 100%; height: 300px; background: #f5f5f5; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; position: relative; border-radius: 8px;">
+                        <canvas id="doc-preview-assigned-${content.id}"
+                                width="1200"
+                                height="1000"
+                                style="width: 100%; height: auto; display: block; cursor: pointer;"
+                                onclick="window.open('${content.content_url}', '_blank')">
+                        </canvas>
+                        <div id="doc-loading-assigned-${content.id}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6c757d; pointer-events: none;">
+                            <div class="spinner-border" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2">Cargando documento...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        const viewedBadge = content.is_viewed 
+            ? '<span class="badge bg-success ms-2"><i class="fas fa-check"></i> Visto</span>'
+            : '<span class="badge bg-warning ms-2"><i class="fas fa-eye"></i> Pendiente</span>';
+        
+        html += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                    ${videoEmbedHTML}
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title mb-1">${content.title || 'Sin título'}</h6>
+                                ${viewedBadge}
+                            </div>
+                        </div>
+                        ${content.description ? `<p class="card-text small text-muted mb-2">${content.description}</p>` : ''}
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                ${content.coachee_name || 'Sin asignar'}
+                            </small>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteContentCoach(${content.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    console.log('✅ [FILTER] Contenido renderizado directamente con vistas previas');
+    
+    // Renderizar PDFs después de cargar el HTML
+    setTimeout(() => {
+        console.log('🔍 [FILTER-DIRECT] Iniciando renderizado de documentos...');
+        const documentCount = contentList.filter(c => c.content_type === 'document' && c.content_url).length;
+        console.log(`📄 [FILTER-DIRECT] Total documentos a renderizar: ${documentCount}`);
+        
+        contentList.forEach(content => {
+            if (content.content_type === 'document' && content.content_url) {
+                const canvasId = 'doc-preview-assigned-' + content.id;
+                console.log(`📄 [FILTER-DIRECT] Intentando renderizar documento ID ${content.id}, Canvas: ${canvasId}`);
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                    console.log(`✅ [FILTER-DIRECT] Canvas ${canvasId} encontrado, llamando generateDocumentPreviewAssigned...`);
+                    generateDocumentPreviewAssigned(content.content_url, canvasId);
+                } else {
+                    console.error(`❌ [FILTER-DIRECT] Canvas ${canvasId} NO encontrado en el DOM`);
+                }
+            }
+        });
+    }, 200);
 }
 
 function clearContentFilters() {
-    document.getElementById('coacheeFilter').value = '';
-    document.getElementById('viewModeFilter').value = 'all';
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('contentSearch').value = '';
+    console.log('🧹 Limpiando filtros...');
+    
+    const coacheeFilter = document.getElementById('coacheeFilter');
+    const viewModeFilter = document.getElementById('viewModeFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const contentSearch = document.getElementById('contentSearch');
+    
+    if (coacheeFilter) coacheeFilter.value = '';
+    if (viewModeFilter) viewModeFilter.value = 'all';
+    if (statusFilter) statusFilter.value = '';
+    if (contentSearch) contentSearch.value = '';
+    
+    // Actualizar hint
+    const viewModeHint = document.getElementById('viewModeHint');
+    if (viewModeHint) {
+        viewModeHint.textContent = 'Vista detallada de todas las asignaciones';
+    }
+    
+    // Recargar contenido sin filtros
+    refreshContentList();
 }
 
 function refreshContentList() {
-    if (window.Alpine && window.Alpine.store) {
-        const app = document.querySelector('[x-data]')?.__x?.$data;
-        if (app && app.loadAssignedContent) {
+    console.log('🔄 Refrescando lista de contenido...');
+    const appElement = document.querySelector('[x-data]');
+    if (appElement && appElement.__x) {
+        const app = appElement.__x.$data;
+        if (app && typeof app.loadAssignedContent === 'function') {
+            console.log('✅ Llamando a loadAssignedContent()...');
             app.loadAssignedContent();
+        } else {
+            console.error('❌ loadAssignedContent no está disponible');
         }
+    } else {
+        console.error('❌ No se encontró Alpine.js');
     }
 }
 
@@ -13497,6 +13798,184 @@ function proposeAlternative(requestId) {
     openProposeModal(requestId, coacheeName);
 }
 
+// ============================================
+// FUNCIONES GLOBALES PARA PREVIEW DE DOCUMENTOS - CONTENIDO ASIGNADO
+// ============================================
+
+// Función para generar preview de documento (wrapper que detecta tipo)
+async function generateDocumentPreviewAssigned(url, canvasId) {
+    console.log('📄 [DOC PREVIEW ASSIGNED] Starting preview generation for:', url);
+    console.log('📄 [DOC PREVIEW ASSIGNED] Canvas ID:', canvasId);
+    
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('❌ [DOC PREVIEW ASSIGNED] Canvas not found:', canvasId);
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1200;
+    canvas.height = 1000;
+    
+    // Mostrar indicador de carga inicial
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, 1200, 1000);
+    ctx.fillStyle = '#6c757d';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Cargando documento...', 600, 500);
+    
+    // Verificar si es PDF - detecta /view, /download, /preview
+    if (url.toLowerCase().includes('.pdf') || 
+        url.includes('content_type=document') || 
+        url.includes('/download') || 
+        url.includes('/view') || 
+        url.includes('/preview')) {
+        console.log('📄 [DOC PREVIEW ASSIGNED] Detected as PDF, generating PDF preview');
+        try {
+            await generatePDFPreviewAssigned(url, canvasId, 1200, 1000);
+        } catch (error) {
+            console.error('❌ [DOC PREVIEW ASSIGNED] PDF preview failed:', error);
+            // Mostrar icono de error
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 1200, 1000);
+            ctx.fillStyle = '#dc3545';
+            ctx.font = '32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Error al cargar PDF', 600, 400);
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '96px Arial';
+            ctx.fillText('📄', 600, 700);
+        }
+    } else {
+        console.log('📄 [DOC PREVIEW ASSIGNED] Non-PDF document, showing generic icon');
+        // Para otros tipos de documento, mostrar icono genérico
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 1200, 1000);
+        ctx.fillStyle = '#495057';
+        ctx.font = '96px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('📄', 600, 500);
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '32px Arial';
+        ctx.fillText('Documento', 600, 700);
+    }
+    
+    // Ocultar loading div si existe
+    const loadingId = canvasId.replace('doc-preview-assigned-', 'doc-loading-assigned-');
+    const loadingDiv = document.getElementById(loadingId);
+    if (loadingDiv) loadingDiv.style.display = 'none';
+}
+
+// Función para generar preview de PDF
+async function generatePDFPreviewAssigned(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
+    console.log('📄 [PDF PREVIEW ASSIGNED] Starting PDF preview generation for:', url);
+    console.log('📄 [PDF PREVIEW ASSIGNED] PDF.js available:', typeof pdfjsLib !== 'undefined');
+    
+    if (typeof pdfjsLib === 'undefined') {
+        console.error('❌ [PDF PREVIEW ASSIGNED] PDF.js not loaded');
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, maxWidth, maxHeight);
+            ctx.fillStyle = '#dc3545';
+            ctx.font = '32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Error: PDF.js no disponible', maxWidth / 2, maxHeight / 2);
+        }
+        return;
+    }
+    
+    try {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            console.error('❌ [PDF PREVIEW ASSIGNED] Canvas element not found:', canvasId);
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Configurar canvas con fondo blanco
+        canvas.width = maxWidth;
+        canvas.height = maxHeight;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, maxWidth, maxHeight);
+        
+        console.log('📄 [PDF PREVIEW ASSIGNED] Loading PDF document...');
+        
+        // Cargar PDF con configuración para CORS
+        const loadingTask = pdfjsLib.getDocument({
+            url: url,
+            disableWorker: false,
+            disableAutoFetch: false,
+            disableStream: false
+        });
+        
+        const pdf = await loadingTask.promise;
+        console.log('📄 [PDF PREVIEW ASSIGNED] PDF loaded successfully, pages:', pdf.numPages);
+        
+        // Obtener primera página
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1 });
+        
+        // Calcular escala para ajustar al canvas manteniendo aspect ratio
+        const scaleX = maxWidth / viewport.width;
+        const scaleY = maxHeight / viewport.height;
+        const scale = Math.min(scaleX, scaleY);
+        
+        const scaledViewport = page.getViewport({ scale });
+        
+        // Centrar la página en el canvas
+        const offsetX = (maxWidth - scaledViewport.width) / 2;
+        const offsetY = (maxHeight - scaledViewport.height) / 2;
+        
+        // Crear canvas temporal para renderizar la página
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = scaledViewport.width;
+        tempCanvas.height = scaledViewport.height;
+        
+        // Renderizar página en canvas temporal
+        const renderContext = {
+            canvasContext: tempCtx,
+            viewport: scaledViewport
+        };
+        
+        await page.render(renderContext).promise;
+        
+        // Limpiar canvas principal con fondo blanco
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, maxWidth, maxHeight);
+        
+        // Dibujar página centrada en canvas principal
+        ctx.drawImage(tempCanvas, offsetX, offsetY);
+        
+        console.log('✅ [PDF PREVIEW ASSIGNED] PDF preview generated successfully for:', url);
+        
+    } catch (error) {
+        console.error('❌ [PDF PREVIEW ASSIGNED] Error generating PDF preview:', error);
+        // Mostrar icono de error en el canvas
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = maxWidth;
+            canvas.height = maxHeight;
+            
+            // Fondo gris claro
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, maxWidth, maxHeight);
+            
+            // Dibujar texto de error
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Vista previa no disponible', maxWidth/2, maxHeight/2 - 10);
+            ctx.fillText('📄 Documento PDF', maxWidth/2, maxHeight/2 + 10);
+        }
+    }
+}
+
 </script>
 
 <!-- Modal: Ver Detalles del Plan de Desarrollo (Coach View) -->
@@ -13589,6 +14068,85 @@ function proposeAlternative(requestId) {
         </div>
     </div>
 </div>
+
+<script>
+// Llamar a la función cuando se cargue la pestaña de contenido asignado
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // ============================================
+    // LISTENERS PARA FILTROS DE CONTENIDO ASIGNADO
+    // ============================================
+    console.log('🎯 Configurando listeners para filtros de contenido...');
+    
+    // Esperar a que Alpine.js esté completamente cargado
+    setTimeout(() => {
+        // Aplicar filtros automáticamente cuando cambien los selectores
+        const coacheeFilter = document.getElementById('coacheeFilter');
+        const viewModeFilter = document.getElementById('viewModeFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const contentSearch = document.getElementById('contentSearch');
+        
+        if (coacheeFilter) {
+            console.log('✅ Configurando listener para coacheeFilter');
+            coacheeFilter.addEventListener('change', () => {
+                console.log('🔄 Cambió filtro de coachee:', coacheeFilter.value);
+                applyContentFilters();
+            });
+        } else {
+            console.warn('⚠️ No se encontró coacheeFilter');
+        }
+        
+        if (viewModeFilter) {
+            console.log('✅ Configurando listener para viewModeFilter');
+            viewModeFilter.addEventListener('change', () => {
+                console.log('🔄 Cambió modo de vista:', viewModeFilter.value);
+                applyContentFilters();
+            });
+        } else {
+            console.warn('⚠️ No se encontró viewModeFilter');
+        }
+        
+        if (statusFilter) {
+            console.log('✅ Configurando listener para statusFilter');
+            statusFilter.addEventListener('change', () => {
+                console.log('🔄 Cambió filtro de estado:', statusFilter.value);
+                applyContentFilters();
+            });
+        } else {
+            console.warn('⚠️ No se encontró statusFilter');
+        }
+        
+        if (contentSearch) {
+            console.log('✅ Configurando listeners para contentSearch');
+            // Aplicar filtro al presionar Enter
+            contentSearch.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    console.log('🔍 Búsqueda activada (Enter):', contentSearch.value);
+                    applyContentFilters();
+                }
+            });
+            
+            // También aplicar filtro con un pequeño delay al escribir
+            let searchTimeout;
+            contentSearch.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (contentSearch.value.length >= 2 || contentSearch.value.length === 0) {
+                        console.log('🔍 Búsqueda en tiempo real:', contentSearch.value);
+                        applyContentFilters();
+                    }
+                }, 500); // 500ms de delay después de dejar de escribir
+            });
+        } else {
+            console.warn('⚠️ No se encontró contentSearch');
+        }
+        
+        console.log('✅ Listeners de filtros configurados correctamente');
+    }, 1000); // Esperar 1 segundo para asegurar que Alpine.js está listo
+});
+
+</script>
 
 </body>
 </html>
