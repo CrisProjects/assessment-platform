@@ -5418,92 +5418,167 @@
             opacity: 0.5;
         }
 
-        /* Assessment specific styles */
+        /* Assessment specific styles - MODERNIZADO */
         .question-card {
-            background: var(--surface-elevated);
-            border-radius: 12px;
-            padding: 2rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            padding: 1.75rem;
             margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        [data-theme="dark"] .question-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(102, 126, 234, 0.2);
         }
 
         .question-title {
             font-weight: 600;
-            color: var(--text-primary);
-            font-size: 1.1rem;
+            color: #667eea;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
         }
 
         .question-text {
-            color: #0f172a !important; /* Dark text for light mode */
-            font-size: 1.1rem;
+            color: #1e293b !important;
+            font-size: 1.25rem;
             line-height: 1.6;
+            font-weight: 600;
+            margin-top: 1.25rem;
         }
 
         [data-theme="dark"] .question-text {
-            color: #f1f5f9 !important; /* Light text for dark mode */
+            color: #f1f5f9 !important;
         }
 
         .option-item {
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid var(--border-color) !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        [data-theme="dark"] .option-item {
+            background: #0f172a;
+            border-color: #334155 !important;
+        }
+
+        .option-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .option-item:hover::before {
+            left: 100%;
         }
 
         .option-item .form-check-label {
-            color: #0f172a !important; /* Dark text for light mode */
+            color: #334155 !important;
             font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
         }
 
         [data-theme="dark"] .option-item .form-check-label {
-            color: #f1f5f9 !important; /* Light text for dark mode */
+            color: #cbd5e1 !important;
         }
 
         .option-item:hover {
             border-color: #667eea !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateX(4px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
         }
 
         .option-item.bg-primary {
             border-color: #667eea !important;
-            background: var(--primary-gradient) !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            transform: translateX(4px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
         }
 
         .option-item.bg-primary .form-check-label {
-            color: white !important; /* White text when selected */
+            color: white !important;
+            font-weight: 600;
         }
 
         .option-item .form-check-input {
             margin-top: 0.125rem;
         }
         
-        /* Auto-advance enhancements for assessment */
+        /* Auto-advance enhancements for assessment - MODERNIZADO */
         .auto-advance-option {
             cursor: pointer;
-            transition: all 0.2s ease;
-            border: 2px solid var(--calm-border-light) !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        [data-theme="dark"] .auto-advance-option {
+            background: #0f172a;
+            border-color: #334155 !important;
+        }
+
+        .auto-advance-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .auto-advance-option:hover::before {
+            left: 100%;
         }
 
         .auto-advance-option .form-check-label {
-            color: #0f172a !important; /* Dark text for light mode */
+            color: #334155 !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
         }
 
         [data-theme="dark"] .auto-advance-option .form-check-label {
-            color: #f1f5f9 !important; /* Light text for dark mode */
+            color: #cbd5e1 !important;
         }
         
         .auto-advance-option:hover {
-            border-color: var(--calm-primary) !important;
-            background-color: var(--calm-primary-ultra-light) !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(98, 130, 227, 0.15);
+            border-color: #667eea !important;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            transform: translateX(4px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
         }
         
         .auto-advance-option.selected {
-            border-color: var(--calm-primary) !important;
-            background-color: var(--calm-primary) !important;
+            border-color: #667eea !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             color: white !important;
-            transform: scale(1);
-            box-shadow: 0 6px 16px rgba(98, 130, 227, 0.3);
+            transform: translateX(4px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
         }
         
         .auto-advance-option.selected .form-check-label {
@@ -15548,6 +15623,14 @@
             console.log('🔧 Cambiando data-expanded a:', newState.toString());
             categoryGrid.setAttribute('data-expanded', newState.toString());
             
+            // CRÍTICO: Limpiar estilos inline que pueden sobrescribir CSS
+            if (newState) {
+                // Si se está expandiendo, remover estilos inline restrictivos
+                categoryGrid.style.maxHeight = '';
+                categoryGrid.style.opacity = '';
+                categoryGrid.style.marginBottom = '';
+            }
+            
             console.log('🔧 Cambiando aria-expanded a:', newState.toString());
             if (header) header.setAttribute('aria-expanded', newState.toString());
             
@@ -17425,26 +17508,33 @@
                 hasStoredAnswer: answers[question.id] !== undefined
             });
             
-            // Create question HTML
+            // Create question HTML - MODERNIZADO
             document.getElementById('questionContainer').innerHTML = `
                 <div class="question-card">
-                    <div class="question-title mb-3">
-                        <i class="fas fa-question-circle me-2"></i>
-                        Pregunta ${question.order} de ${questions.length}
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="question-title">
+                            <i class="fas fa-question-circle"></i>
+                            Pregunta ${question.order} de ${questions.length}
+                        </span>
+                        <span style="font-size: 0.875rem; color: #64748b; font-weight: 500;">
+                            <i class="fas fa-clock me-1"></i>
+                            ${Math.ceil((questions.length - currentQuestionIndex) * 0.5)} min restantes
+                        </span>
                     </div>
                     <div class="question-text mb-4">${question.text}</div>
-                    <div class="options-container mb-4">
+                    <div class="options-container" style="display: grid; gap: 12px;">
                         ${likertOptions.map((option, index) => `
-                            <div class="form-check mb-3 p-3 border rounded option-item auto-advance-option" onclick="selectAssessmentOption(${index + 1})">
+                            <div class="form-check p-3 border rounded option-item auto-advance-option" onclick="selectAssessmentOption(${index + 1})" style="margin-bottom: 0;">
                                 <input class="form-check-input" type="radio" name="question${currentQuestionIndex}" value="${index + 1}" id="option${index}">
-                                <label class="form-check-label w-100" for="option${index}">
-                                    ${option}
+                                <label class="form-check-label w-100 d-flex align-items-center gap-2" for="option${index}" style="cursor: pointer;">
+                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(102, 126, 234, 0.1); font-size: 0.75rem; font-weight: 600; color: #667eea;">${index + 1}</span>
+                                    <span style="flex: 1;">${option}</span>
                                 </label>
                             </div>
                         `).join('')}
                     </div>
-                    <div class="text-center">
-                        <button class="btn btn-primary-custom btn-lg manual-next-btn" onclick="nextAssessmentQuestion()" style="display: none;">
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary-custom btn-lg manual-next-btn" onclick="nextAssessmentQuestion()" style="display: none; border-radius: 12px; padding: 12px 32px; font-weight: 600;">
                             <i class="fas fa-${currentQuestionIndex === questions.length - 1 ? 'flag-checkered' : 'arrow-right'} me-2"></i>
                             ${currentQuestionIndex === questions.length - 1 ? 'Finalizar Evaluación' : 'Siguiente Pregunta'}
                         </button>
@@ -17961,6 +18051,9 @@
             
             // Switch back to evaluations tab
             showTab('evaluations');
+            
+            // FORZAR re-renderizado completo para regenerar event listeners
+            window.__forceEvaluationsRender = true;
             
             // Refresh data
             refreshDashboard();
