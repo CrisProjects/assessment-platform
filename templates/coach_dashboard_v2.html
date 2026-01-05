@@ -2579,12 +2579,17 @@
     }
     
     /* FORZAR ACCESIBILIDAD DEL MODAL - SIN BACKDROP */
-    .modal-backdrop {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    body.modal-open {
+        .modal-backdrop:not(.evaluation-details-backdrop) {
+            display: none !important;
+            opacity: 0 !important;
+        }
+        
+        /* Backdrop visible para modal de detalles de evaluación */
+        .modal-backdrop.evaluation-details-backdrop {
+            display: block !important;
+            opacity: 0.5 !important;
+            z-index: 10599 !important;
+        }    body.modal-open {
         overflow: auto !important;
     }
     
@@ -4717,6 +4722,42 @@
                 </div>
             </div>
 
+            <!-- Modal para ver detalles de evaluación -->
+            <div class="modal fade" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable" style="margin-top: 6rem; margin-bottom: 2rem; max-height: calc(100vh - 8rem);">
+                    <div class="modal-content" style="max-height: 100%;">
+                        <div class="modal-header modal-header-dark">
+                            <h5 class="modal-title" id="evaluationDetailsModalLabel">
+                                <i class="fas fa-chart-radar me-2"></i>
+                                Detalles de Evaluación
+                            </h5>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-success btn-sm" onclick="createDevelopmentPlanFromEvaluation()" title="Crear Plan de Desarrollo">
+                                    <i class="fas fa-plus-circle me-1"></i>
+                                    Crear Plan
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
+                                    <i class="fas fa-print me-1"></i>
+                                    Imprimir
+                                </button>
+                                <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal" title="Cerrar">
+                                    <i class="fas fa-times me-1"></i>
+                                    Cerrar
+                                </button>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                        </div>
+                        <div class="modal-body" id="evaluationDetailsContent" style="overflow-y: auto; max-height: calc(100vh - 12rem);">
+                            <div class="loading-spinner">
+                                <div class="spinner-border spinner-border-custom" role="status">
+                                    <span class="visually-hidden">Cargando detalles...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Contenido Prueba Module -->
             <div id="contenido-prueba" class="module-content" style="display: none; scroll-margin-top: 80px;">
                 <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
@@ -5705,19 +5746,21 @@
 
 /* ESTILOS CRÍTICOS PARA MODALES - Asegurar visibilidad */
 #coacheeEvaluationsModal,
-#coachNotesModal {
+#coachNotesModal,
+#evaluationDetailsModal {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    z-index: 1060 !important;
+    z-index: 10600 !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
 }
 
 #coacheeEvaluationsModal.show,
-#coachNotesModal.show {
+#coachNotesModal.show,
+#evaluationDetailsModal.show {
     display: block !important;
 }
 
@@ -5876,45 +5919,6 @@
     }
 }
 </style>
-
-<!-- Modal para ver detalles de evaluación -->
-<div class="modal" id="evaluationDetailsModal" tabindex="-1" aria-labelledby="evaluationDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header modal-header-dark">
-                <h5 class="modal-title" id="evaluationDetailsModalLabel">
-                    <i class="fas fa-chart-radar me-2"></i>
-                    Detalles de Evaluación
-                </h5>
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-light btn-sm" onclick="printEvaluationReport()" title="Imprimir Reporte">
-                        <i class="fas fa-print me-1"></i>
-                        Imprimir
-                    </button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal" title="Cerrar">
-                        <i class="fas fa-times me-1"></i>
-                        Cerrar
-                    </button>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-            </div>
-            <div class="modal-body" id="evaluationDetailsContent">
-                <div class="loading-spinner">
-                    <div class="spinner-border spinner-border-custom" role="status">
-                        <span class="visually-hidden">Cargando detalles...</span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-progress" onclick="printEvaluationReport()">
-                    <i class="fas fa-print me-2"></i>
-                    Imprimir Reporte
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modal para asignar evaluación/tarea -->
 <div class="modal fade" id="assignModal" tabindex="-1">
@@ -6755,7 +6759,6 @@ function dashboardApp() {
                                 <div class="evaluation-score-section text-end">
                                     <div class="score-display ${scoreColor}">
                                         <div class="score-number">${evaluation.percentage || 0}%</div>
-                                        <div class="score-label">Puntuación</div>
                                     </div>
                                 </div>
                             </div>
@@ -6789,10 +6792,13 @@ function dashboardApp() {
                                 
                                 <div class="col-md-4">
                                     <div class="evaluation-actions">
-                                        <button class="btn btn-primary btn-block mb-2" 
-                                                onclick="viewEvaluationDetailsGlobal(${evaluation.id})"
-                                                title="Ver análisis completo de la evaluación">
-                                            <i class="fas fa-eye me-2"></i>
+                                        <button type="button" 
+                                                class="btn btn-primary w-100 mb-2" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#evaluationDetailsModal"
+                                                onclick="loadEvaluationDetails(${evaluation.id})"
+                                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 0.75rem 1rem; font-weight: 600; border-radius: 10px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25); transition: all 0.3s ease;">
+                                            <i class="fas fa-chart-line me-2"></i>
                                             Ver Análisis Completo
                                         </button>
                                         
@@ -9434,18 +9440,19 @@ async function viewPendingEvaluationDetails(taskId, assessmentId, coacheeId) {
     }
 }
 
-// Función global para ver detalles de evaluación (llamada desde displayCoacheeEvaluations)
-function viewEvaluationDetailsGlobal(evaluationId) {
+// Nueva función para cargar detalles de evaluación con Bootstrap modal nativo
+function loadEvaluationDetails(evaluationId) {
+    console.log('🔍 Cargando detalles de evaluación:', evaluationId);
+    
+    // Mostrar spinner inicial
     document.getElementById('evaluationDetailsContent').innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border" role="status">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">Cargando detalles...</span>
             </div>
+            <p class="mt-3 text-muted">Cargando análisis completo...</p>
         </div>
     `;
-    
-    const modal = new bootstrap.Modal(document.getElementById('evaluationDetailsModal'));
-    modal.show();
     
     // Cargar detalles de la evaluación
     fetch(`/api/coach/evaluation-details/${evaluationId}`)
@@ -9455,7 +9462,7 @@ function viewEvaluationDetailsGlobal(evaluationId) {
                 displayEvaluationDetailsV2(data.evaluation);
             } else {
                 document.getElementById('evaluationDetailsContent').innerHTML = `
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger m-4">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Error al cargar los detalles de la evaluación.
                     </div>
@@ -9463,14 +9470,54 @@ function viewEvaluationDetailsGlobal(evaluationId) {
             }
         })
         .catch(error => {
-            console.error('Error loading evaluation details:', error);
+            console.error('❌ Error loading evaluation details:', error);
             document.getElementById('evaluationDetailsContent').innerHTML = `
-                <div class="alert alert-danger">
+                <div class="alert alert-danger m-4">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Error al cargar los detalles de la evaluación.
                 </div>
             `;
         });
+}
+
+// Función para crear plan de desarrollo desde evaluación
+function createDevelopmentPlanFromEvaluation() {
+    console.log('📝 Redirigiendo a Planes de Desarrollo...');
+    
+    // Cerrar el modal
+    const modalElement = document.getElementById('evaluationDetailsModal');
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Redirigir a la sección Planes de Desarrollo usando Alpine.js
+    setTimeout(() => {
+        // Buscar el enlace de navegación
+        const planesLink = document.querySelector('a[data-module="planes-desarrollo"]');
+        if (planesLink) {
+            planesLink.click();
+            console.log('✅ Navegando a Planes de Desarrollo');
+        } else {
+            console.error('❌ No se encontró el enlace de Planes de Desarrollo');
+        }
+    }, 300);
+}
+
+// Función global para ver detalles de evaluación (DEPRECATED - mantener por compatibilidad)
+function viewEvaluationDetailsGlobal(evaluationId) {
+    // Redirigir a la nueva función
+    loadEvaluationDetails(evaluationId);
+    // Abrir modal manualmente si es necesario
+    const modalElement = document.getElementById('evaluationDetailsModal');
+    if (modalElement) {
+        const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+        modal.show();
+    }
 }
 
 // Función para mostrar detalles completos de evaluación
