@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Aplicación Flask para plataforma de evaluación de asertividad
+Version: 2026-01-17-23:15 - Fix error 500 en my-coachees
 """
 from dotenv import load_dotenv
 load_dotenv()
