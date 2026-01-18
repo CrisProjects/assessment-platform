@@ -851,6 +851,7 @@ def add_security_headers(response):
         "img-src 'self' data: https: blob:; "  # Imágenes: mismo origen + data URIs + HTTPS (para avatares S3)
         "connect-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com; "  # Conexiones AJAX + YouTube/Instagram oEmbed API
         "frame-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com; "  # Permitir embeds de YouTube e Instagram
+        "worker-src 'self' blob:; "  # Permite Web Workers para PDF.js
         "frame-ancestors 'none'; "  # No permitir ser embebido en iframes (complementa X-Frame-Options)
         "base-uri 'self'; "  # Base URI solo mismo origen
         "form-action 'self'"  # Formularios solo pueden enviar a mismo origen
@@ -6607,11 +6608,28 @@ def api_coach_stats():
         
         average_score = round(float(avg_score_result), 1) if avg_score_result else 0
         
+        # Contenido publicado (videos, documentos, artículos de la tabla Content)
+        published_content = Content.query.filter_by(
+            coach_id=current_coach.id,
+            is_active=True
+        ).count()
+        
+        # Sesiones programadas (sesiones confirmadas o pendientes en el futuro)
+        from datetime import date
+        today = date.today()
+        scheduled_sessions = CoachingSession.query.filter(
+            CoachingSession.coach_id == current_coach.id,
+            CoachingSession.status.in_(['pending', 'confirmed']),
+            CoachingSession.session_date >= today
+        ).count()
+        
         stats = {
             'total_coachees': total_coachees,
             'completed_assessments': completed_assessments,
             'pending_assessments': pending_assessments,
-            'average_score': average_score
+            'average_score': average_score,
+            'published_content': published_content,
+            'scheduled_sessions': scheduled_sessions
         }
         
         logger.info(f"✅ STATS: Returning stats: {stats}")
@@ -6625,6 +6643,267 @@ def api_coach_stats():
             'pending_assessments': 0,
             'average_score': 0
         }), 200
+
+@app.route('/api/coach/overview-charts', methods=['GET'])
+def api_coach_overview_charts():
+    """Obtener datos para los gráficos del overview"""
+    try:
+        coach_user_id = session.get('coach_user_id')
+        
+        if not coach_user_id:
+            logger.info("📊 OVERVIEW-CHARTS: No coach session, returning demo data")
+            return jsonify({
+                'activity_chart': {'labels': [], 'data': []},
+                'content_type_chart': {'labels': [], 'data': []},
+                'evaluations_chart': {'labels': [], 'data': []}
+            }), 200
+        
+        current_coach = User.query.get(coach_user_id)
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"⚠️ OVERVIEW-CHARTS: Invalid coach user {coach_user_id}")
+            return jsonify({
+                'activity_chart': {'labels': [], 'data': []},
+                'content_type_chart': {'labels': [], 'data': []},
+                'evaluations_chart': {'labels': [], 'data': []}
+            }), 200
+        
+        logger.info(f"📊 OVERVIEW-CHARTS: Generating charts for coach {current_coach.username}")
+        
+        # 1. Activity Chart - Coachees activos por semana (últimas 4 semanas)
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        weeks_data = []
+        weeks_labels = []
+        
+        for i in range(3, -1, -1):  # 4 semanas atrás hasta ahora
+            week_start = now - timedelta(weeks=i+1)
+            week_end = now - timedelta(weeks=i)
+            weeks_labels.append(f'Sem {4-i}')
+            
+            # Contar coachees con actividad en esa semana
+            active_coachees = User.query.filter(
+                User.coach_id == current_coach.id,
+                User.role == 'coachee',
+                User.last_login >= week_start,
+                User.last_login < week_end
+            ).count()
+            weeks_data.append(active_coachees)
+        
+        # 2. Content Type Chart - Distribución de tipos de contenido
+        # Contar contenido publicado de la tabla Content por tipo
+        video_count = Content.query.filter(
+            Content.coach_id == current_coach.id,
+            Content.content_type == 'video',
+            Content.is_active == True
+        ).count()
+        
+        document_count = Content.query.filter(
+            Content.coach_id == current_coach.id,
+            Content.content_type == 'document',
+            Content.is_active == True
+        ).count()
+        
+        article_count = Content.query.filter(
+            Content.coach_id == current_coach.id,
+            Content.content_type == 'article',
+            Content.is_active == True
+        ).count()
+        
+        total_content = video_count + document_count + article_count
+        
+        if total_content > 0:
+            content_labels = ['Videos', 'Documentos', 'Artículos']
+            content_data = [video_count, document_count, article_count]
+        else:
+            content_labels = []
+            content_data = []
+        
+        # 3. Evaluations Chart - Evaluaciones completadas por mes (últimos 6 meses)
+        # Obtener IDs de coachees para filtrar evaluaciones
+        coachee_ids = [c.id for c in User.query.filter_by(
+            coach_id=current_coach.id,
+            role='coachee'
+        ).with_entities(User.id).all()]
+        
+        months_data = []
+        months_labels = []
+        
+        for i in range(5, -1, -1):  # 6 meses atrás hasta ahora
+            month_date = now - timedelta(days=30*i)
+            month_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
+            if i == 0:
+                month_end = now
+            else:
+                next_month = month_start + timedelta(days=32)
+                month_end = next_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
+            # Nombre del mes en español
+            month_names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+            months_labels.append(month_names[month_start.month - 1])
+            
+            # Contar evaluaciones completadas en ese mes
+            if coachee_ids:
+                completed = AssessmentResult.query.filter(
+                    AssessmentResult.user_id.in_(coachee_ids),
+                    AssessmentResult.completed_at >= month_start,
+                    AssessmentResult.completed_at < month_end
+                ).count()
+                months_data.append(completed)
+            else:
+                months_data.append(0)
+        
+        result = {
+            'activity_chart': {
+                'labels': weeks_labels,
+                'data': weeks_data
+            },
+            'content_type_chart': {
+                'labels': content_labels,
+                'data': content_data
+            },
+            'evaluations_chart': {
+                'labels': months_labels,
+                'data': months_data
+            }
+        }
+        
+        logger.info(f"✅ OVERVIEW-CHARTS: Returning chart data")
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"❌ OVERVIEW-CHARTS: Error: {str(e)}", exc_info=True)
+        return jsonify({
+            'activity_chart': {'labels': [], 'data': []},
+            'content_type_chart': {'labels': [], 'data': []},
+            'evaluations_chart': {'labels': [], 'data': []}
+        }), 200
+
+@app.route('/api/coach/recent-activity', methods=['GET'])
+def api_coach_recent_activity():
+    """Obtener actividad reciente de coachees"""
+    from datetime import datetime, timedelta
+    
+    try:
+        coach_user_id = session.get('coach_user_id')
+        
+        if not coach_user_id:
+            logger.info("📋 RECENT-ACTIVITY: No coach session, returning empty list")
+            return jsonify({'activities': []}), 200
+        
+        current_coach = User.query.get(coach_user_id)
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"⚠️ RECENT-ACTIVITY: Invalid coach user {coach_user_id}")
+            return jsonify({'activities': []}), 200
+        
+        logger.info(f"📋 RECENT-ACTIVITY: Loading activity for coach {current_coach.username}")
+        
+        # Obtener IDs de coachees
+        coachee_ids = [c.id for c in User.query.filter_by(
+            coach_id=current_coach.id,
+            role='coachee'
+        ).with_entities(User.id).all()]
+        
+        logger.info(f"📋 RECENT-ACTIVITY: Found {len(coachee_ids)} coachees: {coachee_ids}")
+        
+        activities = []
+        
+        if coachee_ids:
+            # 1. Evaluaciones completadas recientemente (últimas 10)
+            recent_assessments = db.session.query(
+                AssessmentResult, User, Assessment
+            ).join(
+                User, AssessmentResult.user_id == User.id
+            ).join(
+                Assessment, AssessmentResult.assessment_id == Assessment.id
+            ).filter(
+                AssessmentResult.user_id.in_(coachee_ids)
+            ).order_by(
+                AssessmentResult.completed_at.desc()
+            ).limit(10).all()
+            
+            logger.info(f"📋 RECENT-ACTIVITY: Found {len(recent_assessments)} recent assessments")
+            
+            for result, coachee, assessment in recent_assessments:
+                # Calcular tiempo transcurrido
+                if result.completed_at:
+                    time_diff = datetime.now() - result.completed_at
+                    if time_diff.days > 0:
+                        time_ago = f"hace {time_diff.days}d"
+                    elif time_diff.seconds >= 3600:
+                        hours = time_diff.seconds // 3600
+                        time_ago = f"hace {hours}h"
+                    else:
+                        minutes = time_diff.seconds // 60
+                        time_ago = f"hace {minutes}m"
+                else:
+                    time_ago = "Recientemente"
+                
+                # Obtener iniciales
+                name_parts = coachee.full_name.split() if coachee.full_name else ['?', '?']
+                initials = ''.join([p[0].upper() for p in name_parts[:2]])
+                
+                activities.append({
+                    'type': 'assessment_completed',
+                    'coachee_name': coachee.full_name or coachee.username,
+                    'coachee_initials': initials,
+                    'description': f'completó la evaluación {assessment.title}',
+                    'time_ago': time_ago,
+                    'timestamp': result.completed_at.isoformat() if result.completed_at else None
+                })
+            
+            # 2. Nuevos registros de coachees (últimos 5)
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            
+            new_coachees = User.query.filter(
+                User.id.in_(coachee_ids),
+                User.created_at >= thirty_days_ago
+            ).order_by(
+                User.created_at.desc()
+            ).limit(5).all()
+            
+            logger.info(f"📋 RECENT-ACTIVITY: Found {len(new_coachees)} new coachees (last 30 days)")
+            
+            for coachee in new_coachees:
+                # Calcular tiempo transcurrido
+                if coachee.created_at:
+                    time_diff = datetime.now() - coachee.created_at
+                    if time_diff.days > 0:
+                        time_ago = f"hace {time_diff.days}d"
+                    elif time_diff.seconds >= 3600:
+                        hours = time_diff.seconds // 3600
+                        time_ago = f"hace {hours}h"
+                    else:
+                        minutes = time_diff.seconds // 60
+                        time_ago = f"hace {minutes}m"
+                else:
+                    time_ago = "Recientemente"
+                
+                # Obtener iniciales
+                name_parts = coachee.full_name.split() if coachee.full_name else ['?', '?']
+                initials = ''.join([p[0].upper() for p in name_parts[:2]])
+                
+                activities.append({
+                    'type': 'new_coachee',
+                    'coachee_name': coachee.full_name or coachee.username,
+                    'coachee_initials': initials,
+                    'description': 'se registró como nuevo coachee',
+                    'time_ago': time_ago,
+                    'timestamp': coachee.created_at.isoformat() if coachee.created_at else None
+                })
+        
+        # Ordenar por timestamp (más reciente primero)
+        activities.sort(key=lambda x: x['timestamp'] or '', reverse=True)
+        
+        # Limitar a 15 actividades
+        activities = activities[:15]
+        
+        logger.info(f"✅ RECENT-ACTIVITY: Returning {len(activities)} activities")
+        return jsonify({'activities': activities}), 200
+        
+    except Exception as e:
+        logger.error(f"❌ RECENT-ACTIVITY: Error: {str(e)}", exc_info=True)
+        return jsonify({'activities': []}), 200
 
 @app.route('/api/coach/coachees', methods=['GET'])
 def api_coach_coachees():
@@ -6810,6 +7089,23 @@ def api_coach_my_coachees():
         except Exception as le_error:
             logger.warning(f"⚠️ MY-COACHEES: Could not load last evaluations: {str(le_error)}")
         
+        # Query agrupada para contar evaluaciones pendientes por coachee
+        pending_evaluations_counts = {}
+        try:
+            pending_counts_result = db.session.query(
+                Task.coachee_id,
+                func.count(Task.id)
+            ).filter(
+                Task.coach_id == current_coach.id,
+                Task.coachee_id.in_(coachee_ids),
+                Task.category == 'evaluation',
+                Task.is_active == True
+            ).group_by(Task.coachee_id).all()
+            pending_evaluations_counts = {coachee_id: count for coachee_id, count in pending_counts_result}
+            logger.info(f"📊 MY-COACHEES: Loaded pending evaluations counts for {len(pending_evaluations_counts)} coachees")
+        except Exception as pec_error:
+            logger.warning(f"⚠️ MY-COACHEES: Could not load pending evaluations counts: {str(pec_error)}")
+        
         # Construir respuesta usando datos precargados
         coachees_data = []
         for coachee in coachees:
@@ -6824,6 +7120,7 @@ def api_coach_my_coachees():
                 'is_active': is_coachee_active(coachee, last_eval),  # ✅ Estado de actividad calculado
                 'account_active': coachee.is_active,  # ✅ Estado de cuenta (activo/desactivado)
                 'evaluations_count': evaluations_counts.get(coachee.id, 0),
+                'pending_evaluations_count': pending_evaluations_counts.get(coachee.id, 0),  # ✅ Contar evaluaciones pendientes
                 'last_evaluation': last_eval,
                 'avg_score': avg_scores.get(coachee.id),
                 'password': coachee.original_password,  # ✅ Incluir contraseña original para que el coach pueda verla
@@ -7093,6 +7390,21 @@ def api_coach_create_development_plan():
             new_plan.published_at = datetime.utcnow()
         
         db.session.add(new_plan)
+        
+        # Marcar la solicitud como completada si existe
+        request_task_id = data.get('request_task_id')
+        if request_task_id:
+            request_task = Task.query.filter_by(
+                id=request_task_id,
+                coach_id=current_coach.id,
+                category='development_plan_request'
+            ).first()
+            
+            if request_task:
+                request_task.is_active = False
+                request_task.completed_date = datetime.utcnow()
+                logger.info(f"✅ DEV-PLAN-REQUEST: Solicitud {request_task_id} marcada como completada")
+        
         db.session.commit()
         
         logger.info(f"📋 DEV-PLAN-CREATE: Coach {current_coach.id} created plan {new_plan.id} for coachee {coachee.id}, status: {new_plan.status}")
