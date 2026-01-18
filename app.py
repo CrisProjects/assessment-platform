@@ -8466,13 +8466,16 @@ def api_coach_available_assessments():
                 }
                 
                 assessments_data.append(assessment_data)
-                app.logger.info(f"✅ AVAILABLE-ASSESSMENTS: Processed assessment {assessment.id}: {assessment.title}")
+                app.logger.info(f"✅ AVAILABLE-ASSESSMENTS: Processed assessment {assessment.id}: {assessment.title} (category: '{assessment.category}')")
                 
             except Exception as process_error:
                 app.logger.error(f"❌ AVAILABLE-ASSESSMENTS: Error processing assessment {assessment.id}: {str(process_error)}")
                 # Continuar con las demás evaluaciones
                 continue
         
+        # Log de categorías encontradas
+        categories_found = set(a['category'] for a in assessments_data)
+        app.logger.info(f"📊 AVAILABLE-ASSESSMENTS: Categories found: {sorted(categories_found)}")
         app.logger.info(f"📤 AVAILABLE-ASSESSMENTS: Returning {len(assessments_data)} evaluations")
         
         # Asegurar que siempre regresemos algo, incluso si está vacío
