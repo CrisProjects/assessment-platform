@@ -6189,16 +6189,23 @@ def coach_dashboard_v2():
     
     logger.info(f"✨ Coach dashboard v2 (Alpine.js) accessed by: {current_coach.username} (ID: {current_coach.id})")
     
+    # Generar timestamp para forzar reload
+    deploy_version = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    
     response = make_response(render_template('coach_dashboard_v2.html',
                          coach_name=current_coach.full_name or current_coach.username,
                          coach_email=current_coach.email,
                          coach_id=current_coach.id,
-                         coach_avatar_url=current_coach.avatar_url or '/static/img/default-avatar.png'))
+                         coach_avatar_url=current_coach.avatar_url or '/static/img/default-avatar.png',
+                         deploy_version=deploy_version))
     
     # Prevenir cacheo del HTML para forzar actualizaciones
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    response.headers['X-Version'] = deploy_version
+    response.headers['ETag'] = f'"{deploy_version}"'
+    response.headers['Vary'] = 'Accept-Encoding'
     
     # Agregar CSP para permitir recursos externos (avatares, Chart.js, estilos CDN)
     response.headers['Content-Security-Policy'] = (
