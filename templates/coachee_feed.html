@@ -28,14 +28,59 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #fafafa;
+            background: linear-gradient(to bottom, #fafafa 0%, #ffffff 100%);
             padding-bottom: 70px; /* Espacio para la navegación inferior */
         }
         
-        /* Header */
+        /* Keyframes para animaciones */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideIndicator {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Header con Glassmorphism */
         .feed-header {
-            background: white;
-            border-bottom: 1px solid #dbdbdb;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(219, 219, 219, 0.5);
             padding: 12px 16px;
             position: sticky;
             top: 0;
@@ -43,6 +88,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
         
         .feed-header h3 {
@@ -50,7 +96,10 @@
             font-size: 32px !important;
             font-weight: 400 !important;
             margin: 0 !important;
-            color: #262626 !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             letter-spacing: 0.5px !important;
             line-height: 1.2 !important;
         }
@@ -110,11 +159,27 @@
             border: 2px solid #ffffff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
         
         .feed-header .user-avatar:hover {
             transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Badge de estado en avatar */
+        .feed-header .user-avatar::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 14px;
+            height: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid white;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
         }
         
         .feed-header .user-avatar img {
@@ -150,10 +215,18 @@
         /* Instagram Style Post */
         .instagram-post {
             background: white;
-            border: 1px solid #dbdbdb;
-            border-radius: 8px;
+            border: none;
+            border-radius: 16px;
             margin-bottom: 24px;
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        .instagram-post:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
         }
         
         .post-header {
@@ -179,6 +252,26 @@
             justify-content: center;
             color: white;
             font-size: 18px;
+            position: relative;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+        
+        .author-avatar:hover {
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Badge de estado en avatar del coach */
+        .author-avatar::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid white;
+            border-radius: 50%;
         }
         
         .author-info h6 {
@@ -200,6 +293,18 @@
             color: #262626;
             cursor: pointer;
             padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .post-options:hover {
+            background: rgba(0, 0, 0, 0.05);
+            transform: scale(1.05);
         }
         
         .post-media {
@@ -283,15 +388,20 @@
             color: #262626;
             cursor: pointer;
             padding: 8px;
-            transition: transform 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .action-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+        }
+        
+        .action-btn:active {
+            transform: scale(0.95);
         }
         
         .action-btn.liked i {
             color: #ed4956;
+            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         
         .post-info {
@@ -322,20 +432,22 @@
             margin-top: 8px;
         }
         
-        /* Bottom Navigation - Estilo LinkedIn */
+        /* Bottom Navigation - Estilo Premium */
         .bottom-navigation {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             height: 60px;
-            background: white;
-            border-top: 1px solid #dbdbdb;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(219, 219, 219, 0.5);
             display: flex;
             justify-content: space-around;
             align-items: center;
             z-index: 1000;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
         }
         
         .nav-item {
@@ -348,58 +460,219 @@
             background: transparent;
             cursor: pointer;
             padding: 8px;
-            transition: color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             color: #8e8e8e;
             text-decoration: none;
+            position: relative;
         }
         
         .nav-item i {
             font-size: 24px;
             margin-bottom: 4px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .nav-item span {
             font-size: 11px;
             font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .nav-item:hover,
-        .nav-item.active {
-            color: #0a66c2;
+        .nav-item:hover {
+            color: #667eea;
+        }
+        
+        .nav-item:hover i {
+            transform: translateY(-2px);
         }
         
         .nav-item.active {
+            color: #667eea;
+        }
+        
+        .nav-item.active i {
+            font-weight: 700;
+            transform: translateY(-2px);
+        }
+        
+        .nav-item.active span {
+            font-weight: 600;
+        }
+        
+        /* Indicador activo animado */
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            animation: slideIndicator 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* Loading State con Skeletons */
+        .loading-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+        
+        .skeleton-card {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        .skeleton-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+        }
+        
+        .skeleton-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .skeleton-text {
+            flex: 1;
+        }
+        
+        .skeleton-line {
+            height: 12px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            border-radius: 6px;
+            animation: pulse 1.5s ease-in-out infinite;
+            margin-bottom: 8px;
+        }
+        
+        .skeleton-line.short {
+            width: 60%;
+        }
+        
+        .skeleton-media {
+            width: 100%;
+            height: 350px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .skeleton-actions {
+            display: flex;
+            gap: 16px;
+            padding: 12px 16px;
+        }
+        
+        .skeleton-action {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        /* Empty State Mejorado */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .empty-state-icon {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .empty-state-icon::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
+        }
+        
+        .empty-state-icon i {
+            font-size: 40px;
+            color: #667eea;
+            z-index: 1;
+            position: relative;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+        }
+        
+        .empty-state h5 {
             color: #262626;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            animation: slideUp 0.5s ease-out 0.3s backwards;
         }
         
-        /* Loading y Empty States */
-        .loading-container,
-        .empty-state,
+        .empty-state p {
+            color: #8e8e8e;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+            animation: slideUp 0.5s ease-out 0.4s backwards;
+        }
+        
+        .empty-state-cta {
+            display: inline-block;
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideUp 0.5s ease-out 0.5s backwards;
+        }
+        
+        .empty-state-cta:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        .empty-state-cta:active {
+            transform: translateY(0);
+        }
+        
+        /* Error State */
         .error-state {
             text-align: center;
             padding: 60px 20px;
         }
         
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-        }
-        
-        .empty-state i {
+        .error-state i {
             font-size: 64px;
-            color: #dbdbdb;
+            color: #ed4956;
             margin-bottom: 16px;
-        }
-        
-        .empty-state h5 {
-            color: #8e8e8e;
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-        
-        .empty-state p {
-            color: #8e8e8e;
-            font-size: 14px;
         }
         
         /* Responsive */
@@ -452,10 +725,56 @@
     <!-- Feeds Container -->
     <div class="feeds-container" id="feedsContainer">
         <div class="loading-container">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando feeds...</span>
+            <!-- Skeleton Card 1 -->
+            <div class="skeleton-card" style="animation-delay: 0s;">
+                <div class="skeleton-header">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton-line" style="width: 40%;"></div>
+                        <div class="skeleton-line short" style="width: 30%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-media"></div>
+                <div class="skeleton-actions">
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                </div>
             </div>
-            <p class="mt-3 text-muted">Cargando contenido...</p>
+            
+            <!-- Skeleton Card 2 -->
+            <div class="skeleton-card" style="animation-delay: 0.1s;">
+                <div class="skeleton-header">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton-line" style="width: 45%;"></div>
+                        <div class="skeleton-line short" style="width: 35%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-media"></div>
+                <div class="skeleton-actions">
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                </div>
+            </div>
+            
+            <!-- Skeleton Card 3 -->
+            <div class="skeleton-card" style="animation-delay: 0.2s;">
+                <div class="skeleton-header">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton-line" style="width: 38%;"></div>
+                        <div class="skeleton-line short" style="width: 28%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-media"></div>
+                <div class="skeleton-actions">
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -484,22 +803,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        console.log('📱 Coachee Feed Page Loaded');
         
         // Cargar feeds al iniciar
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎬 DOM Content Loaded - Loading feeds...');
             loadUserAvatar();
             loadInstagramFeeds();
             
             // Inicializar sincronización de avatar
             setupAvatarSync();
-            console.log('🔄 Sistema de sincronización de avatar inicializado');
             
             // Revisar si el avatar fue actualizado
             const avatarUpdatedTimestamp = localStorage.getItem('avatarUpdated');
             if (avatarUpdatedTimestamp) {
-                console.log('🔄 Avatar was updated, reloading...');
                 // No eliminar el timestamp, lo necesitamos para sincronización
                 // Recargar avatar inmediatamente
                 setTimeout(() => {
@@ -515,10 +830,8 @@
                 const response = await fetch('/api/coachee/dashboard-summary');
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('📊 Dashboard summary data:', data);
                     if (data.success && data.summary?.coachee) {
                         const coachee = data.summary.coachee;
-                        console.log('🖼️ Avatar URL from coachee data:', coachee.avatar_url);
                         // Usar directamente el avatar_url del coachee
                         updateHeaderAvatar(coachee.avatar_url, coachee.name);
                     }
@@ -545,7 +858,6 @@
             const welcomeMessage = document.getElementById('welcomeMessageFeed');
             if (welcomeMessage && username) {
                 welcomeMessage.textContent = username;
-                console.log('✅ Welcome message updated with:', username);
             }
         }
         
@@ -554,7 +866,6 @@
             // Escuchar cambios en localStorage (cuando se actualiza en otra pestaña)
             window.addEventListener('storage', function(e) {
                 if (e.key === 'avatarUpdated') {
-                    console.log('🔄 Avatar actualizado en otra pestaña, recargando avatar...');
                     // Recargar avatar
                     loadUserAvatar();
                 }
@@ -566,7 +877,6 @@
                 const lastCheck = sessionStorage.getItem('lastAvatarCheck') || '0';
                 
                 if (lastUpdate && lastUpdate > lastCheck) {
-                    console.log('🔄 Avatar actualizado detectado, recargando avatar...');
                     sessionStorage.setItem('lastAvatarCheck', Date.now().toString());
                     loadUserAvatar();
                 }
@@ -575,11 +885,9 @@
         
         // Función para cargar feeds desde la API
         async function loadInstagramFeeds() {
-            console.log('🎬 Loading Instagram style feeds...');
             
             const container = document.getElementById('feedsContainer');
             if (!container) {
-                console.log('❌ Feeds container not found');
                 return;
             }
             
@@ -587,7 +895,6 @@
                 const response = await fetch('/api/coachee/content');
                 const data = await response.json();
                 
-                console.log('📊 API Response for feeds:', data);
                 
                 if (data.success && data.content && data.content.length > 0) {
                     displayInstagramFeeds(data.content);
@@ -614,18 +921,6 @@
                 const isYouTubeVideo = youtubeVideoId !== null;
                 const isInstagramVideo = instagramVideoId !== null;
                 const isDocument = item.content_type === 'document';
-                
-                console.log('🔍 Processing content item:', {
-                    id: item.id,
-                    type: item.content_type,
-                    title: item.title,
-                    url: item.content_url,
-                    youtubeVideoId: youtubeVideoId,
-                    instagramVideoId: instagramVideoId,
-                    isDocument: isDocument,
-                    isYouTubeVideo: isYouTubeVideo,
-                    isInstagramVideo: isInstagramVideo
-                });
                 
                 // Determinar el thumbnail/preview
                 let thumbnail;
@@ -764,21 +1059,16 @@
             });
             
             container.innerHTML = feedsHTML;
-            console.log(`✅ Displayed ${content.length} Instagram-style feeds`);
             
             // Generar previews de documentos después de cargar el HTML
             setTimeout(() => {
-                console.log('🔍 Iniciando renderizado de documentos...');
                 const documentCount = content.filter(item => item.content_type === 'document' && item.content_url).length;
-                console.log(`📄 Total documentos a renderizar: ${documentCount}`);
                 
                 content.forEach(item => {
                     if (item.content_type === 'document' && item.content_url) {
                         const canvasId = `doc-preview-${item.id}`;
-                        console.log(`📄 Intentando renderizar documento ID ${item.id}, Canvas: ${canvasId}, URL: ${item.content_url}`);
                         const canvas = document.getElementById(canvasId);
                         if (canvas) {
-                            console.log(`✅ Canvas ${canvasId} encontrado, llamando generateDocumentPreview...`);
                             generateDocumentPreview(item.content_url, canvasId);
                         } else {
                             console.error(`❌ Canvas ${canvasId} NO encontrado en el DOM`);
@@ -794,12 +1084,14 @@
             if (container) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-stream"></i>
-                        <h5>No hay feeds disponibles</h5>
-                        <p>Tu coach aún no ha compartido contenido contigo.</p>
-                        <button class="btn btn-primary mt-3" onclick="loadInstagramFeeds()">
-                            <i class="fas fa-sync-alt me-2"></i>Actualizar
-                        </button>
+                        <div class="empty-state-icon">
+                            <i class="fas fa-sparkles"></i>
+                        </div>
+                        <h5>No hay contenido aún</h5>
+                        <p>Tus coaches compartirán contenido educativo aquí.<br>Mantente atento a nuevas publicaciones.</p>
+                        <a href="#" class="empty-state-cta" onclick="loadInstagramFeeds(); return false;">
+                            <i class="fas fa-sync-alt me-2"></i>Actualizar contenido
+                        </a>
                     </div>
                 `;
             }
@@ -871,7 +1163,6 @@
         
         // Función para abrir video
         function openVideoFeed(url) {
-            console.log('🚀 Opening video from feed:', url);
             window.open(url, '_blank');
         }
         
@@ -887,28 +1178,20 @@
                 icon.classList.add('far');
                 button.classList.remove('liked');
             }
-            console.log('❤️ Toggled like for content:', contentId);
         }
         
         // Función para compartir
         function shareFeed(contentId) {
-            console.log('🔗 Sharing content:', contentId);
             showToast('¡Funcionalidad de compartir próximamente!', 'info');
         }
         
         // Función para abrir documento
         function openDocumentFeed(url, title) {
-            console.log('📄 Opening document from feed:', url);
             window.open(url, '_blank');
         }
         
         // Función para generar preview de documento
         async function generateDocumentPreview(url, canvasId) {
-            console.log('📄 [DOC PREVIEW] Iniciando con URL:', url);
-            console.log('📄 [DOC PREVIEW] URL en minúsculas:', url.toLowerCase());
-            console.log('📄 [DOC PREVIEW] Contiene .pdf?', url.toLowerCase().includes('.pdf'));
-            console.log('📄 [DOC PREVIEW] Contiene content_type=document?', url.includes('content_type=document'));
-            console.log('📄 [DOC PREVIEW] Contiene /download?', url.includes('/download'));
             
             const canvas = document.getElementById(canvasId);
             if (!canvas) {
@@ -928,7 +1211,6 @@
             ctx.fillText('Cargando documento...', 600, 500);
             
             if (url.toLowerCase().includes('.pdf') || url.includes('content_type=document') || url.includes('/download') || url.includes('/view') || url.includes('/preview')) {
-                console.log('✅ [DOC PREVIEW] Detectado como PDF, llamando generatePDFPreview');
                 try {
                     await generatePDFPreview(url, canvasId, 1200, 1000);
                 } catch (error) {
@@ -1016,14 +1298,12 @@
                 // Dibujar página centrada en canvas principal
                 ctx.drawImage(tempCanvas, offsetX, offsetY);
                 
-                console.log('✅ [PDF PREVIEW] PDF renderizado exitosamente');
                 
                 // Ocultar spinner después de renderizar
                 const loadingId = canvasId.replace('doc-preview-', 'doc-loading-feed-');
                 const loadingElement = document.getElementById(loadingId);
                 if (loadingElement) {
                     loadingElement.style.display = 'none';
-                    console.log('✅ Spinner ocultado:', loadingId);
                 }
                 
             } catch (error) {

@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InstaCoach - Feed Coach</title>
     
+    <!-- Google Fonts - InstaCoach Design -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
+    
+    <!-- InstaCoach Design System -->
+    <link rel="stylesheet" href="/static/css/instacoach-design-system.css">
+    
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -21,7 +29,7 @@
     </script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap');
+        [x-cloak] { display: none !important; }
         
         * {
             margin: 0;
@@ -30,73 +38,175 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #fafafa;
-            padding-bottom: 70px; /* Espacio para la navegación inferior */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(to bottom, #fafafa 0%, #ffffff 100%);
+            padding-bottom: 88px; /* Espacio para la navegación inferior */
         }
         
-        /* Header */
+        /* Keyframes para animaciones */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideIndicator {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Header con Glassmorphism - InstaCoach Design */
         .feed-header {
-            background: white;
-            border-bottom: 1px solid #dbdbdb;
-            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0.75rem 1rem;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1020;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
         .feed-header h3 {
-            font-family: 'Lobster Two', cursive !important;
-            font-size: 32px !important;
+            font-family: 'Pacifico', cursive !important;
+            font-size: 1.5rem !important;
             font-weight: 400 !important;
             margin: 0 !important;
-            color: #262626 !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             letter-spacing: 0.5px !important;
             line-height: 1.2 !important;
+        }
+        
+        .feed-header .subtitle {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            color: var(--gray-600);
+            font-weight: 500;
         }
         
         /* Responsive font sizes for InstaCoach title */
         @media (max-width: 768px) {
             .feed-header h3 {
-                font-size: 40px !important;
+                font-size: 1.375rem !important;
             }
         }
         
         @media (max-width: 576px) {
             .feed-header h3 {
-                font-size: 36px !important;
+                font-size: 1.25rem !important;
             }
         }
         
         .feed-header .user-info {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 0.75rem;
+        }
+        
+        /* Botón de notificaciones */
+        .notification-btn {
+            position: relative;
+            border-radius: var(--radius-xl);
+            padding: 0.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+        
+        .notification-btn:hover {
+            background: var(--gray-100);
+        }
+        
+        .notification-btn i {
+            color: var(--gray-600);
+            font-size: 1.25rem;
+        }
+        
+        .notification-btn .badge {
+            position: absolute;
+            right: 0.25rem;
+            top: 0.25rem;
+            height: 0.5rem;
+            width: 0.5rem;
+            border-radius: var(--radius-full);
+            background: var(--error);
+            border: 2px solid white;
         }
         
         .feed-header .user-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            border-radius: var(--radius-full);
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 18px;
+            font-size: 0.875rem;
             font-weight: 600;
             overflow: hidden;
             border: 2px solid #ffffff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
         
         .feed-header .user-avatar:hover {
             transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Badge de estado en avatar */
+        .feed-header .user-avatar::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 0.625rem;
+            height: 0.625rem;
+            background: var(--success);
+            border: 2px solid white;
+            border-radius: var(--radius-full);
         }
         
         .feed-header .user-avatar img {
@@ -106,21 +216,47 @@
         }
         
         .feed-header .dropdown .btn-link {
-            font-size: 20px;
+            font-size: 1.25rem;
             text-decoration: none;
-            opacity: 0.9;
-            transition: opacity 0.2s;
-            color: #262626 !important;
+            color: var(--gray-600) !important;
+            transition: all var(--transition-base);
+            padding: 0.5rem;
+            border-radius: var(--radius-xl);
         }
         
         .feed-header .dropdown .btn-link:hover {
-            opacity: 1;
-            color: #000000 !important;
+            color: var(--gray-900) !important;
+            background: var(--gray-100);
+        }
+        
+        .feed-header .dropdown {
+            position: relative;
         }
         
         .feed-header .dropdown-menu {
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--gray-200);
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            min-width: 200px;
+            z-index: 1000;
+            background: white;
+            padding: 0.5rem 0;
+        }
+        
+        .feed-header .dropdown-menu.show {
+            display: block;
+        }
+        
+        .feed-header .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: all 0.2s;
+        }
+        
+        .feed-header .dropdown-item:hover {
+            background: var(--gray-100);
         }
         
         /* Feed Container */
@@ -133,10 +269,18 @@
         /* Instagram Style Post */
         .instagram-post {
             background: white;
-            border: 1px solid #dbdbdb;
-            border-radius: 8px;
+            border: none;
+            border-radius: 16px;
             margin-bottom: 24px;
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        .instagram-post:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
         }
         
         .post-header {
@@ -162,6 +306,26 @@
             justify-content: center;
             color: white;
             font-size: 18px;
+            position: relative;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+        
+        .author-avatar:hover {
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Badge de estado en avatar del autor */
+        .author-avatar::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid white;
+            border-radius: 50%;
         }
         
         .author-info h6 {
@@ -231,11 +395,15 @@
             color: #262626;
             cursor: pointer;
             padding: 8px;
-            transition: transform 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .action-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+        }
+        
+        .action-btn:active {
+            transform: scale(0.95);
         }
         
         .post-info {
@@ -259,20 +427,22 @@
             margin-top: 8px;
         }
         
-        /* Bottom Navigation - Estilo LinkedIn */
+        /* Bottom Navigation - Estilo Premium */
         .bottom-navigation {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             height: 60px;
-            background: white;
-            border-top: 1px solid #dbdbdb;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(219, 219, 219, 0.5);
             display: flex;
             justify-content: space-around;
             align-items: center;
             z-index: 1000;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
         }
         
         .nav-item {
@@ -285,58 +455,208 @@
             background: transparent;
             cursor: pointer;
             padding: 8px;
-            transition: color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             color: #8e8e8e;
             text-decoration: none;
+            position: relative;
         }
         
         .nav-item i {
             font-size: 24px;
             margin-bottom: 4px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .nav-item span {
             font-size: 11px;
             font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .nav-item:hover,
+        .nav-item:hover {
+            color: #667eea;
+        }
+        
+        .nav-item:hover i {
+            transform: translateY(-2px);
+        }
+        
         .nav-item.active {
-            color: #0a66c2;
+            color: #667eea;
         }
         
-        .nav-item.active {
-            color: #262626;
+        .nav-item.active i {
+            font-weight: 700;
+            transform: translateY(-2px);
         }
         
-        /* Loading y Empty States */
-        .loading-container,
-        .empty-state,
-        .error-state {
+        .nav-item.active span {
+            font-weight: 600;
+        }
+        
+        /* Indicador activo animado */
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            animation: slideIndicator 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* Loading State con Skeletons */
+        .loading-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+        
+        .skeleton-card {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        .skeleton-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+        }
+        
+        .skeleton-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .skeleton-text {
+            flex: 1;
+        }
+        
+        .skeleton-line {
+            height: 12px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            border-radius: 6px;
+            animation: pulse 1.5s ease-in-out infinite;
+            margin-bottom: 8px;
+        }
+        
+        .skeleton-line.short {
+            width: 60%;
+        }
+        
+        .skeleton-media {
+            width: 100%;
+            height: 350px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .skeleton-actions {
+            display: flex;
+            gap: 16px;
+            padding: 12px 16px;
+        }
+        
+        .skeleton-action {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        /* Empty State Mejorado */
+        .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 80px 20px;
+            max-width: 500px;
+            margin: 0 auto;
         }
         
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
+        .empty-state-icon {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         
-        .empty-state i {
-            font-size: 64px;
-            color: #dbdbdb;
-            margin-bottom: 16px;
+        .empty-state-icon::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
+        }
+        
+        .empty-state-icon i {
+            font-size: 40px;
+            color: #667eea;
+            z-index: 1;
+            position: relative;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
         }
         
         .empty-state h5 {
-            color: #8e8e8e;
-            font-size: 18px;
-            margin-bottom: 8px;
+            color: #262626;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            animation: slideUp 0.5s ease-out 0.3s backwards;
         }
         
         .empty-state p {
             color: #8e8e8e;
-            font-size: 14px;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+            animation: slideUp 0.5s ease-out 0.4s backwards;
+        }
+        
+        .empty-state .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideUp 0.5s ease-out 0.5s backwards;
+        }
+        
+        .empty-state .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .empty-state .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
         }
         
         /* Responsive */
@@ -355,43 +675,242 @@
     </style>
 </head>
 <body x-data="feedApp()" x-init="init()">
-    <!-- Header -->
-    <div class="feed-header">
-        <div>
-            <h3>InstaCoach</h3>
-            <p class="mb-0" style="font-size: 14px; margin-top: 4px; color: #8e8e8e;">Welcome Coach <span x-text="coachName"></span></p>
-        </div>
-        <div class="user-info">
-            <div class="user-avatar" @click="window.location.href='/coach-profile?return=home'" style="cursor: pointer;" x-html="coachAvatar">
+    <!-- Header - InstaCoach Design -->
+    <header class="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-xl" style="border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: var(--z-sticky); width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+        <div class="flex h-16 items-center justify-between px-4" style="display: flex; height: 4rem; align-items: center; justify-content: space-between; padding: 0 1rem;">
+            <!-- Logo -->
+            <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
+                <h1 class="gradient-purple-text" style="font-family: 'Pacifico', cursive; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.4px; margin: 0; background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">InstaCoach</h1>
             </div>
-            <div class="dropdown">
-                <button class="btn btn-link p-0 ms-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #262626;">
-                    <i class="fas fa-ellipsis-v"></i>
+
+            <!-- Right Section -->
+            <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
+                <!-- Notifications -->
+                <button class="relative rounded-xl p-2 hover:bg-gray-100 transition" style="position: relative; border-radius: var(--radius-xl); padding: 0.5rem; border: none; background: transparent; cursor: pointer; transition: all var(--transition-base);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-bell" style="color: var(--gray-600); font-size: 1.25rem;"></i>
+                    <span class="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" style="position: absolute; right: 0.25rem; top: 0.25rem; height: 0.5rem; width: 0.5rem; border-radius: var(--radius-full); background: var(--error); border: 2px solid white;"></span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/coach-profile?return=home"><i class="fas fa-user-circle me-2"></i>Mi Perfil</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" @click.prevent="logout()" href="#"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
-                </ul>
+
+                <!-- Profile Dropdown -->
+                <div class="dropdown" style="position: relative;" id="feedProfileDropdown">
+                    <button
+                        onclick="toggleFeedDropdown(event)"
+                        class="flex items-center gap-2 rounded-xl p-1.5 pr-3 hover:bg-gray-100 transition"
+                        style="display: flex; align-items: center; gap: 0.5rem; border-radius: var(--radius-xl); padding: 0.375rem 0.75rem 0.375rem 0.375rem; border: none; background: transparent; cursor: pointer; transition: all var(--transition-base);"
+                        onmouseover="this.style.background='var(--gray-100)'"
+                        onmouseout="this.style.background='transparent'"
+                    >
+                        <div class="avatar avatar-md avatar-gradient" style="position: relative; width: 2rem; height: 2rem; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: var(--font-weight-semibold); font-size: 0.875rem;" x-html="coachAvatar || '<i class=\'fas fa-user\'></i>'">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white" style="position: absolute; bottom: 0; right: 2.5rem; height: 0.625rem; width: 0.625rem; border-radius: var(--radius-full); background: var(--success); border: 2px solid white;"></span>
+                        <i class="fas fa-chevron-down" style="color: var(--gray-600); font-size: 0.875rem;"></i>
+                    </button>
+
+                    <div
+                        id="feedProfileMenu"
+                        class="dropdown-menu"
+                        style="display: none; position: absolute; right: 0; margin-top: 0.5rem; width: 14rem; border-radius: var(--radius-2xl); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--gray-200); box-shadow: var(--shadow-lg); overflow: hidden; z-index: var(--z-dropdown);"
+                    >
+                        <div style="padding: 1rem; border-bottom: 1px solid var(--gray-200);">
+                            <p class="text-sm font-medium" style="font-size: 0.875rem; font-weight: var(--font-weight-medium); color: var(--gray-900); margin: 0;" x-text="coachName">Coach</p>
+                            <p class="text-xs text-muted" style="font-size: 0.75rem; color: var(--gray-500); margin: 0.25rem 0 0 0;">Coach Ejecutivo</p>
+                        </div>
+                        <div style="padding: 0.5rem;">
+                            <a href="/coach-profile?return=feed" class="dropdown-item" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--gray-700); border-radius: var(--radius-lg); text-decoration: none; transition: all var(--transition-base);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">
+                                <i class="fas fa-user-circle" style="margin-right: 0.5rem; width: 1rem;"></i> Mi Perfil
+                            </a>
+                            <button onclick="openFeedChangePasswordModal(); document.getElementById('feedProfileMenu').style.display='none'" class="dropdown-item" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--gray-700); background: transparent; border: none; border-radius: var(--radius-lg); cursor: pointer; transition: all var(--transition-base);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">
+                                <i class="fas fa-key" style="margin-right: 0.5rem; width: 1rem;"></i> Cambiar Contraseña
+                            </button>
+                            <button onclick="logout(); document.getElementById('feedProfileMenu').style.display='none'" class="dropdown-item" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--error); background: transparent; border: none; border-radius: var(--radius-lg); cursor: pointer; transition: all var(--transition-base);" onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'" onmouseout="this.style.background='transparent'">
+                                <i class="fas fa-sign-out-alt" style="margin-right: 0.5rem; width: 1rem;"></i> Cerrar Sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </header>
+    
+    <script>
+        // Dropdown functionality for feed
+        function toggleFeedDropdown(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('feedProfileMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('feedProfileDropdown');
+            const menu = document.getElementById('feedProfileMenu');
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+        
+        // Open change password modal for feed
+        function openFeedChangePasswordModal() {
+            const modalElement = document.getElementById('changePasswordModalFeed');
+            
+            if (!modalElement) {
+                console.error('Modal de cambio de contraseña no encontrado');
+                return;
+            }
+            
+            // Asegurar que el modal esté al final del body
+            if (modalElement.parentElement !== document.body) {
+                document.body.appendChild(modalElement);
+            }
+            
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            
+            modal.show();
+        }
+        
+        // Open profile modal for feed
+        async function openFeedProfileModal() {
+            const modalElement = document.getElementById('profileModalFeed');
+            
+            if (!modalElement) {
+                console.error('Modal de perfil no encontrado');
+                return;
+            }
+            
+            // Asegurar que el modal esté al final del body
+            if (modalElement.parentElement !== document.body) {
+                document.body.appendChild(modalElement);
+            }
+            
+            // Cargar datos del perfil
+            try {
+                const response = await fetch('/api/coach/profile', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.coach) {
+                    const coach = data.coach;
+                    
+                    // Actualizar nombre
+                    document.getElementById('feedProfileName').textContent = coach.name || 'Coach';
+                    
+                    // Actualizar email
+                    document.getElementById('feedProfileEmail').textContent = coach.email || '-';
+                    
+                    // Actualizar avatar si existe
+                    const avatarElement = document.getElementById('feedProfileAvatar');
+                    if (coach.avatar_url) {
+                        avatarElement.innerHTML = `<img src="${coach.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-full);">`;
+                    } else {
+                        const initials = coach.name ? coach.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'C';
+                        avatarElement.innerHTML = initials;
+                    }
+                    
+                    // Actualizar total coachees
+                    document.getElementById('feedProfileCoachees').textContent = coach.total_coachees || '0';
+                    
+                    // Actualizar fecha de creación
+                    if (coach.created_at) {
+                        const date = new Date(coach.created_at);
+                        document.getElementById('feedProfileCreated').textContent = date.toLocaleDateString('es-ES', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                    } else {
+                        document.getElementById('feedProfileCreated').textContent = '-';
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar perfil:', error);
+            }
+            
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            
+            modal.show();
+        }
+    </script>
     
     <!-- Feeds Container -->
     <div class="feeds-container">
         <!-- Loading State -->
         <div x-show="loading" class="loading-container">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando feeds...</span>
+            <!-- Skeleton Card 1 -->
+            <div class="skeleton-card" style="animation-delay: 0s;">
+                <div class="skeleton-header">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton-line" style="width: 40%;"></div>
+                        <div class="skeleton-line short" style="width: 30%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-media"></div>
+                <div class="skeleton-actions">
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                </div>
             </div>
-            <p class="mt-3 text-muted">Cargando tu contenido...</p>
+            
+            <!-- Skeleton Card 2 -->
+            <div class="skeleton-card" style="animation-delay: 0.1s;">
+                <div class="skeleton-header">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton-line" style="width: 45%;"></div>
+                        <div class="skeleton-line short" style="width: 35%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-media"></div>
+                <div class="skeleton-actions">
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                </div>
+            </div>
+            
+            <!-- Skeleton Card 3 -->
+            <div class="skeleton-card" style="animation-delay: 0.2s;">
+                <div class="skeleton-header">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton-line" style="width: 38%;"></div>
+                        <div class="skeleton-line short" style="width: 28%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-media"></div>
+                <div class="skeleton-actions">
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                    <div class="skeleton-action"></div>
+                </div>
+            </div>
         </div>
         
         <!-- Empty State -->
         <div x-show="!loading && content.length === 0" class="empty-state">
-            <i class="fas fa-stream"></i>
+            <div class="empty-state-icon">
+                <i class="fas fa-sparkles"></i>
+            </div>
             <h5>No has publicado contenido aún</h5>
-            <p>Ve al dashboard para agregar videos, documentos y recursos para tus coachees.</p>
+            <p>Ve al dashboard para agregar videos, documentos<br>y recursos para tus coachees.</p>
             <a href="/coach/dashboard-v2" class="btn btn-primary mt-3">
                 <i class="fas fa-chart-line me-2"></i>Ir al Dashboard
             </a>
@@ -416,6 +935,12 @@
                 
                 <div class="post-actions">
                     <div class="action-buttons">
+                        <button class="action-btn" 
+                                @click="item.liked = !item.liked" 
+                                :title="item.liked ? 'Ya te gusta' : 'Me gusta'"
+                                :style="item.liked ? 'color: #ef4444;' : ''">
+                            <i :class="item.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+                        </button>
                         <button class="action-btn" x-show="item.content_type === 'document'" @click="openDocument(item.content_url)" title="Abrir documento">
                             <i class="far fa-file-alt"></i>
                         </button>
@@ -445,10 +970,10 @@
     </div>
     
     <!-- Bottom Navigation -->
-    <nav class="bottom-navigation" x-data>
+    <nav class="bottom-navigation">
         <a href="/coach-feed" class="nav-item active" @click.prevent="window.location.reload()">
             <i class="fas fa-home"></i>
-            <span>Home</span>
+            <span>Feed</span>
         </a>
         
         <a href="/coach-comunidad" class="nav-item" @click.prevent="window.location.href = '/coach-comunidad'">
@@ -461,11 +986,71 @@
             <span>Dashboard</span>
         </a>
         
-        <button class="nav-item" @click="if(confirm('¿Estás seguro que deseas salir?')) { window.location.href='/coach-login'; }">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Salir</span>
+        <button class="nav-item" @click="showDrawer = true">
+            <i class="fas fa-ellipsis-h"></i>
+            <span>Más</span>
         </button>
     </nav>
+
+    <!-- Dashboard Drawer -->
+    <div x-show="showDrawer" 
+         x-cloak
+         @click="showDrawer = false"
+         class="dashboard-drawer-backdrop"
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+        <div class="dashboard-drawer" 
+             @click.stop
+             x-show="showDrawer"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-full"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform translate-y-full"
+             style="position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; z-index: 10001; max-height: 85vh; overflow-y: auto; box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);">
+            
+            <div style="width: 40px; height: 4px; background: #d1d5db; border-radius: 999px; margin: 0.75rem auto;"></div>
+            
+            <div style="padding: 0 1.5rem 1rem; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: #1f2937; margin: 0;">Navegación Rápida</h3>
+            </div>
+            
+            <div style="padding: 1rem 1rem 2rem;">
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; padding: 0 0.5rem;">Páginas</div>
+                    
+                    <a href="/coach-feed" style="display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; text-decoration: none; color: #374151; font-weight: 500; font-size: 0.9375rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); color: #667eea; font-weight: 600;">
+                        <i class="fas fa-home" style="width: 24px; font-size: 1.125rem; margin-right: 0.875rem;"></i>
+                        <span>Feed</span>
+                    </a>
+                    
+                    <a href="/coach-comunidad" style="display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; text-decoration: none; color: #374151; font-weight: 500; font-size: 0.9375rem; margin-top: 0.25rem;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#667eea'" onmouseout="this.style.background='transparent'; this.style.color='#374151'">
+                        <i class="fas fa-users" style="width: 24px; font-size: 1.125rem; margin-right: 0.875rem; opacity: 0.7;"></i>
+                        <span>Comunidad</span>
+                    </a>
+                    
+                    <a href="/coach/dashboard-v2" style="display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; text-decoration: none; color: #374151; font-weight: 500; font-size: 0.9375rem; margin-top: 0.25rem;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#667eea'" onmouseout="this.style.background='transparent'; this.style.color='#374151'">
+                        <i class="fas fa-chart-line" style="width: 24px; font-size: 1.125rem; margin-right: 0.875rem; opacity: 0.7;"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; padding: 0 0.5rem;">Cuenta</div>
+                    
+                    <a href="/coach-profile?return=feed" style="display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; text-decoration: none; color: #374151; font-weight: 500; font-size: 0.9375rem;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#667eea'" onmouseout="this.style.background='transparent'; this.style.color='#374151'">
+                        <i class="fas fa-user-circle" style="width: 24px; font-size: 1.125rem; margin-right: 0.875rem; opacity: 0.7;"></i>
+                        <span>Mi Perfil</span>
+                    </a>
+                    
+                    <button onclick="if(confirm('¿Estás seguro que deseas salir?')) { window.location.href='/coach-login'; }" style="display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; color: #dc2626; font-weight: 500; font-size: 0.9375rem; border: none; background: transparent; width: 100%; text-align: left; cursor: pointer; margin-top: 0.25rem;" onmouseover="this.style.background='rgba(220, 38, 38, 0.1)'; this.style.color='#b91c1c'" onmouseout="this.style.background='transparent'; this.style.color='#dc2626'">
+                        <i class="fas fa-sign-out-alt" style="width: 24px; font-size: 1.125rem; margin-right: 0.875rem; opacity: 0.7;"></i>
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -528,10 +1113,10 @@
                 content: [],
                 coachName: 'Coach',
                 coachAvatar: '<i class="fas fa-user-tie"></i>',
+                showDrawer: false,
                 
                 // Inicialización
                 async init() {
-                    console.log('📱 Coach Feed Alpine.js App Loaded');
                     await this.loadProfile();
                     await this.loadContent();
                 },
@@ -567,36 +1152,16 @@
                         
                         if (data.success && data.content) {
                             this.content = data.content;
-                            console.log(`✅ Loaded ${this.content.length} content items`);
-                            
-                            // Log completo del contenido recibido para diagnosticar
-                            console.log('📦 [COACH-FEED] Contenido completo recibido:', JSON.stringify(data.content, null, 2));
-                            
-                            // Verificar cuántos son documentos
-                            const documents = this.content.filter(item => item.content_type === 'document');
-                            console.log(`📄 [COACH-FEED] Total documentos con content_type='document': ${documents.length}`);
-                            documents.forEach((doc, index) => {
-                                console.log(`📄 [COACH-FEED] Documento ${index + 1}:`, {
-                                    id: doc.id,
-                                    title: doc.title,
-                                    content_type: doc.content_type,
-                                    content_url: doc.content_url
-                                });
-                            });
                             
                             // Generar previews de documentos después de renderizar
                             setTimeout(() => {
-                                console.log('🔍 Iniciando renderizado de documentos en coach feed...');
                                 const documentCount = this.content.filter(item => item.content_type === 'document' && item.content_url).length;
-                                console.log(`📄 Total documentos a renderizar: ${documentCount}`);
                                 
                                 this.content.forEach(item => {
                                     if (item.content_type === 'document' && item.content_url) {
                                         const canvasId = `doc-preview-${item.id}`;
-                                        console.log(`📄 Intentando renderizar documento ID ${item.id}, Canvas: ${canvasId}, URL: ${item.content_url}`);
                                         const canvas = document.getElementById(canvasId);
                                         if (canvas) {
-                                            console.log(`✅ Canvas ${canvasId} encontrado, llamando generateDocumentPreview...`);
                                             this.generateDocumentPreview(item.content_url, canvasId);
                                         } else {
                                             console.error(`❌ Canvas ${canvasId} NO encontrado en el DOM`);
@@ -711,12 +1276,10 @@
                 },
                 
                 openVideo(url) {
-                    console.log('🚀 Opening video:', url);
                     window.open(url, '_blank');
                 },
                 
                 openDocument(url) {
-                    console.log('📄 Opening document:', url);
                     window.open(url, '_blank');
                 },
                 
@@ -728,12 +1291,6 @@
                 
                 // Preview de documentos
                 async generateDocumentPreview(url, canvasId) {
-                    console.log('📄 [DOC PREVIEW] Iniciando con URL:', url);
-                    console.log('📄 [DOC PREVIEW] URL en minúsculas:', url.toLowerCase());
-                    console.log('📄 [DOC PREVIEW] Contiene .pdf?', url.toLowerCase().includes('.pdf'));
-                    console.log('📄 [DOC PREVIEW] Contiene content_type=document?', url.includes('content_type=document'));
-                    console.log('📄 [DOC PREVIEW] Contiene /download?', url.includes('/download'));
-                    console.log('📄 [DOC PREVIEW] Contiene /view?', url.includes('/view'));
                     
                     const canvas = document.getElementById(canvasId);
                     if (!canvas) {
@@ -758,10 +1315,8 @@
                         url.includes('content_type=document') || 
                         url.includes('/download') || 
                         url.includes('/view')) {
-                        console.log('✅ [DOC PREVIEW] Detectado como PDF, llamando generatePDFPreview');
                         await this.generatePDFPreview(url, canvasId, 1200, 1000);
                     } else {
-                        console.log('⚠️ [DOC PREVIEW] No detectado como PDF, mostrando icono genérico');
                         // Mostrar icono genérico de documento
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, 1200, 1000);
@@ -775,7 +1330,6 @@
                 },
                 
                 async generatePDFPreview(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
-                    console.log('🔍 [PDF PREVIEW] Iniciando generatePDFPreview...');
                     
                     if (typeof pdfjsLib === 'undefined') {
                         console.error('❌ [PDF PREVIEW] PDF.js no está cargado');
@@ -807,7 +1361,6 @@
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, maxWidth, maxHeight);
                         
-                        console.log('📥 [PDF PREVIEW] Cargando PDF desde:', url);
                         
                         const loadingTask = pdfjsLib.getDocument({
                             url: url,
@@ -817,7 +1370,6 @@
                         });
                         
                         const pdf = await loadingTask.promise;
-                        console.log('✅ [PDF PREVIEW] PDF cargado, obteniendo primera página...');
                         
                         const page = await pdf.getPage(1);
                         const viewport = page.getViewport({ scale: 1 });
@@ -828,7 +1380,6 @@
                         const scale = Math.min(scaleX, scaleY);
                         
                         const scaledViewport = page.getViewport({ scale });
-                        console.log('📐 [PDF PREVIEW] Viewport escalado:', scaledViewport.width, 'x', scaledViewport.height);
                         
                         // Usar tempCanvas pattern para renderizado
                         const tempCanvas = document.createElement('canvas');
@@ -836,14 +1387,12 @@
                         tempCanvas.width = scaledViewport.width;
                         tempCanvas.height = scaledViewport.height;
                         
-                        console.log('🎨 [PDF PREVIEW] Renderizando en canvas temporal...');
                         
                         await page.render({
                             canvasContext: tempCtx,
                             viewport: scaledViewport
                         }).promise;
                         
-                        console.log('✅ [PDF PREVIEW] Página renderizada en tempCanvas');
                         
                         // Limpiar y centrar en el canvas principal
                         ctx.fillStyle = '#ffffff';
@@ -853,7 +1402,6 @@
                         const offsetY = (maxHeight - scaledViewport.height) / 2;
                         
                         ctx.drawImage(tempCanvas, offsetX, offsetY);
-                        console.log('✅ [PDF PREVIEW] Vista previa completada exitosamente');
                         
                     } catch (error) {
                         console.error('❌ [PDF PREVIEW] Error generando vista previa:', error);
@@ -874,6 +1422,302 @@
                 }
             }
         }
+    </script>
+
+    <!-- Modal de Perfil para Coach Feed -->
+    <div class="modal fade" id="profileModalFeed" tabindex="-1" aria-labelledby="profileModalFeedLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="margin: auto; max-width: 500px;">
+            <div class="modal-content" style="border-radius: var(--radius-2xl); border: 1px solid var(--gray-200); box-shadow: var(--shadow-xl);">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title" id="profileModalFeedLabel">
+                        <i class="fas fa-user-circle me-2"></i>Mi Perfil
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Avatar Section -->
+                    <div class="text-center mb-4">
+                        <div class="avatar avatar-xl avatar-gradient mx-auto mb-3" style="width: 120px; height: 120px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: var(--font-weight-semibold); font-size: 3rem; margin: 0 auto 1rem auto;" id="feedProfileAvatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h4 class="mb-1" id="feedProfileName" style="font-weight: 600; color: var(--gray-900);">Cargando...</h4>
+                        <p class="text-muted mb-0" style="font-size: 0.875rem;">Coach Ejecutivo</p>
+                    </div>
+                    
+                    <!-- Info Section -->
+                    <div class="card" style="background: var(--gray-50); border: none; border-radius: var(--radius-lg); padding: 1.5rem;">
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.875rem; color: var(--gray-700); margin-bottom: 0.5rem;">
+                                <i class="fas fa-envelope me-2"></i>Correo Electrónico
+                            </label>
+                            <p class="mb-0" id="feedProfileEmail" style="color: var(--gray-900);">-</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.875rem; color: var(--gray-700); margin-bottom: 0.5rem;">
+                                <i class="fas fa-users me-2"></i>Total Coachees
+                            </label>
+                            <p class="mb-0" id="feedProfileCoachees" style="color: var(--gray-900);">-</p>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label" style="font-weight: 600; font-size: 0.875rem; color: var(--gray-700); margin-bottom: 0.5rem;">
+                                <i class="fas fa-calendar me-2"></i>Miembro desde
+                            </label>
+                            <p class="mb-0" id="feedProfileCreated" style="color: var(--gray-900);">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3" style="border-left: 4px solid #667eea; background: rgba(102, 126, 234, 0.1); border-color: #667eea;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>Para editar tu perfil completo, visita el <a href="/coach/dashboard-v2" style="color: #667eea; font-weight: 600;">Dashboard</a></small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Cambio de Contraseña para Coach Feed -->
+    <div class="modal fade" id="changePasswordModalFeed" tabindex="-1" aria-labelledby="changePasswordModalFeedLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="margin: auto; max-width: 500px;">
+            <div class="modal-content" style="border-radius: var(--radius-2xl); border: 1px solid var(--gray-200); box-shadow: var(--shadow-xl);">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title" id="changePasswordModalFeedLabel">
+                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordFormFeed" onsubmit="event.preventDefault();">
+                        <div class="mb-3">
+                            <label for="feedCurrentPassword" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Contraseña Actual
+                            </label>
+                            <input type="password" class="form-control" id="feedCurrentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedNewPassword" class="form-label">
+                                <i class="fas fa-key me-1"></i>Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="feedNewPassword" required minlength="8">
+                            
+                            <!-- Indicadores de política de contraseña -->
+                            <div id="feedPasswordRequirements" class="mt-2" style="font-size: 0.875rem;">
+                                <div class="password-requirement" id="feed-req-length" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Mínimo 8 caracteres
+                                </div>
+                                <div class="password-requirement" id="feed-req-uppercase" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 letra mayúscula
+                                </div>
+                                <div class="password-requirement" id="feed-req-lowercase" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 letra minúscula
+                                </div>
+                                <div class="password-requirement" id="feed-req-number" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 número
+                                </div>
+                                <div class="password-requirement" id="feed-req-special" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 símbolo especial (!@#$%^&*)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedConfirmPassword" class="form-label">
+                                <i class="fas fa-check-circle me-1"></i>Confirmar Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="feedConfirmPassword" required minlength="8">
+                            <div id="feedPasswordMatchIndicator" style="font-size: 0.875rem; margin-top: 0.5rem;"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="submitFeedPasswordChange()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                        <i class="fas fa-save me-1"></i>Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Funciones de validación de contraseña para Feed
+        function validateFeedPasswordPolicy() {
+            const password = document.getElementById('feedNewPassword').value;
+            
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+            
+            updateFeedRequirementIndicator('feed-req-length', requirements.length);
+            updateFeedRequirementIndicator('feed-req-uppercase', requirements.uppercase);
+            updateFeedRequirementIndicator('feed-req-lowercase', requirements.lowercase);
+            updateFeedRequirementIndicator('feed-req-number', requirements.number);
+            updateFeedRequirementIndicator('feed-req-special', requirements.special);
+            
+            return Object.values(requirements).every(r => r);
+        }
+        
+        function updateFeedRequirementIndicator(elementId, isValid) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const icon = element.querySelector('i');
+            
+            if (isValid) {
+                element.style.color = '#28a745';
+                icon.className = 'fas fa-check-circle';
+                icon.style.fontSize = '0.875rem';
+            } else {
+                element.style.color = '#6c757d';
+                icon.className = 'fas fa-circle';
+                icon.style.fontSize = '0.5rem';
+            }
+        }
+        
+        function validateFeedPasswordMatch() {
+            const newPassword = document.getElementById('feedNewPassword').value;
+            const confirmPassword = document.getElementById('feedConfirmPassword').value;
+            const indicator = document.getElementById('feedPasswordMatchIndicator');
+            
+            if (!confirmPassword) {
+                indicator.innerHTML = '';
+                return false;
+            }
+            
+            if (newPassword === confirmPassword) {
+                indicator.innerHTML = '<span style="color: #28a745;"><i class="fas fa-check-circle me-1"></i>Las contraseñas coinciden</span>';
+                return true;
+            } else {
+                indicator.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle me-1"></i>Las contraseñas no coinciden</span>';
+                return false;
+            }
+        }
+        
+        async function submitFeedPasswordChange() {
+            const currentPassword = document.getElementById('feedCurrentPassword').value;
+            const newPassword = document.getElementById('feedNewPassword').value;
+            const confirmPassword = document.getElementById('feedConfirmPassword').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showFeedNotification('Por favor completa todos los campos', 'warning');
+                return;
+            }
+            
+            if (!validateFeedPasswordPolicy()) {
+                showFeedNotification('La nueva contraseña no cumple con los requisitos', 'warning');
+                return;
+            }
+            
+            if (!validateFeedPasswordMatch()) {
+                showFeedNotification('Las contraseñas no coinciden', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coach/change-password', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showFeedNotification('✅ Contraseña cambiada exitosamente', 'success');
+                    
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModalFeed'));
+                    if (modal) modal.hide();
+                    
+                    // Limpiar formulario
+                    document.getElementById('changePasswordFormFeed').reset();
+                    document.getElementById('feedPasswordMatchIndicator').innerHTML = '';
+                    
+                    // Resetear indicadores
+                    ['feed-req-length', 'feed-req-uppercase', 'feed-req-lowercase', 'feed-req-number', 'feed-req-special'].forEach(id => {
+                        updateFeedRequirementIndicator(id, false);
+                    });
+                } else {
+                    showFeedNotification('❌ ' + (data.error || 'Error al cambiar la contraseña'), 'error');
+                }
+            } catch (error) {
+                console.error('Error al cambiar contraseña:', error);
+                showFeedNotification('❌ Error de conexión', 'error');
+            }
+        }
+        
+        function showFeedNotification(message, type = 'info') {
+            const typeMap = {
+                'warning': 'warning',
+                'error': 'danger',
+                'success': 'success',
+                'info': 'info'
+            };
+            
+            const bootstrapType = typeMap[type] || 'info';
+            
+            let toastContainer = document.getElementById('feedToastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'feedToastContainer';
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${bootstrapType} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            setTimeout(() => toast.remove(), 5000);
+        }
+        
+        // Agregar listeners cuando el modal se muestre
+        document.getElementById('changePasswordModalFeed').addEventListener('shown.bs.modal', function() {
+            const newPasswordInput = document.getElementById('feedNewPassword');
+            const confirmPasswordInput = document.getElementById('feedConfirmPassword');
+            
+            if (newPasswordInput) {
+                newPasswordInput.addEventListener('input', validateFeedPasswordPolicy);
+            }
+            
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('input', validateFeedPasswordMatch);
+            }
+        });
     </script>
 </body>
 </html>

@@ -24,8 +24,6 @@
     </script>
     <script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
     <link rel="stylesheet" href="/static/css/unified-dashboard.css?v={{ get_file_version('css/unified-dashboard.css') }}">
-    <!-- FullCalendar CSS -->
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
     
     <!-- Motion One - Premium Animations -->
     <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
@@ -12216,28 +12214,25 @@
         // ALPINE.JS COACHEE DASHBOARD APP - V2 REACTIVE
         // ============================================
         
-        console.log('🔧 Script principal cargando...');
         
         // Detectar cuando Alpine.js está listo
         document.addEventListener('alpine:init', () => {
-            console.log('✅ Alpine.js INITIALIZED');
         });
         
         // API configuration
         const API_BASE_URL = window.location.origin;
-        console.log('🌐 API_BASE_URL:', API_BASE_URL);
         
         // DEBUG: Add debugging function
         function debugLog(message, data = null) {
             const timestamp = new Date().toLocaleTimeString();
-            console.log(`🐛 [${timestamp}] ${message}`, data || '');
         }
         
         // ============================================
         // ALPINE.JS COMPONENT
         // ============================================
-        function coacheeDashboardApp() {
-            console.log('🎯 coacheeDashboardApp() function CALLED - Creating Alpine component');
+        console.log('📦 [COACHEE] Definiendo window.coacheeDashboardApp...');
+        window.coacheeDashboardApp = function() {
+            console.log('✨ [COACHEE] Función coacheeDashboardApp() llamada');
             
             // 🛡️ BOOT GUARD: Prevent double initialization
             if (window.__coacheeDashboardBooted) {
@@ -12245,7 +12240,6 @@
                 return window.__dashboardInstance;
             }
             window.__coacheeDashboardBooted = true;
-            console.log('✅ First boot - proceeding with initialization');
             
             const dashboardInstance = {
                 // Estado Global
@@ -12329,13 +12323,11 @@
                 // Inicialización
                 async init() {
                     try {
-                        console.log('🚀 Inicializando Coachee Dashboard Alpine.js V2');
                         
                         // Restaurar pestaña activa desde localStorage si existe
                         const savedTab = localStorage.getItem('coachee_activeTab');
                         if (savedTab) {
                             this.activeTab = savedTab;
-                            console.log('📍 Restaurando pestaña:', savedTab);
                             
                             // Aplicar clases show/active al tab-pane restaurado
                             setTimeout(() => {
@@ -12349,7 +12341,6 @@
                                 const restoredPane = document.getElementById(savedTab);
                                 if (restoredPane) {
                                     restoredPane.classList.add('show', 'active');
-                                    console.log('✅ Tab-pane restaurado visualmente:', savedTab);
                                 }
                             }, 100);
                         }
@@ -12365,18 +12356,13 @@
                         this.initializeLegacyFunctions();
                         
                         // Cargar datos iniciales
-                        console.log('📞 Cargando perfil de usuario...');
                         await this.loadUserProfile();
-                        console.log('✅ Perfil cargado');
                         
                         // Cargar evaluaciones disponibles
-                        console.log('📞 Cargando evaluaciones...');
                         await this.loadEvaluations();
-                        console.log('✅ Evaluaciones cargadas');
                         
                         // Si la pestaña restaurada es completed-evaluations, renderizarla
                         if (savedTab === 'completed-evaluations') {
-                            console.log('🔄 Renderizando evaluaciones completadas después de init...');
                             setTimeout(() => {
                                 this.renderCompletedEvaluationsSection();
                             }, 150);
@@ -12384,7 +12370,6 @@
                         
                         // Si la pestaña restaurada es content, cargar videos
                         if (savedTab === 'content') {
-                            console.log('🔄 Cargando contenido después de init...');
                             setTimeout(() => {
                                 this.loadVideos(false); // Usar cache si está disponible
                             }, 150);
@@ -12392,7 +12377,6 @@
                         
                         // Si la pestaña restaurada es development-plan, cargar planes
                         if (savedTab === 'development-plan') {
-                            console.log('🔄 Cargando planes de desarrollo después de init...');
                             setTimeout(() => {
                                 this.loadDevelopmentPlans();
                             }, 150);
@@ -12401,7 +12385,6 @@
                         // 🔥 WATCHER: Recargar PDFs cuando se vuelve a la pestaña de contenido
                         this.$watch('activeTab', (newTab, oldTab) => {
                             if (newTab === 'content' && oldTab !== 'content') {
-                                console.log('🔄 Volviendo a Mi Contenido - recargando PDFs...');
                                 // Esperar a que el DOM se actualice
                                 this.$nextTick(() => {
                                     // Forzar recarga de todos los PDFs
@@ -12411,7 +12394,6 @@
                                         // Remover timestamp anterior y agregar uno nuevo
                                         const baseSrc = currentSrc.split('?')[0];
                                         const newSrc = `${baseSrc}?t=${Date.now()}#view=FitH`;
-                                        console.log('📄 Recargando PDF:', newSrc);
                                         embed.src = newSrc;
                                     });
                                 });
@@ -12467,7 +12449,6 @@
                         document.documentElement.setAttribute('data-theme', 'light');
                     }
                     
-                    console.log('🌙 Theme initialized:', this.isDarkTheme ? 'dark' : 'light');
                 },
                 
                 // 🌙 Toggle Theme with Animation
@@ -12484,7 +12465,6 @@
                         document.documentElement.setAttribute('data-theme', 'light');
                     }
                     
-                    console.log('🌙 Theme toggled to:', this.isDarkTheme ? 'dark' : 'light');
                     
                     // Optional: Add a subtle animation feedback
                     const toggle = document.querySelector('.theme-toggle');
@@ -12499,14 +12479,12 @@
                 // Cargar perfil de usuario
                 async loadUserProfile() {
                     try {
-                        console.log('👤 Cargando perfil de usuario...');
                         
                         // Obtener del endpoint correcto
                         const response = await fetch('/api/coachee/profile');
                         
                         if (response.ok) {
                             const data = await response.json();
-                            console.log('✅ Perfil cargado desde /api/coachee/profile:', data);
                             
                             // El endpoint devuelve {success: true, profile: {...}}
                             const profile = data.profile || data;
@@ -12625,7 +12603,6 @@
                     
                     // Las funciones globales existentes se mantendrán por ahora
                     // Se migrarán progresivamente en los siguientes pasos
-                    console.log('✅ Funciones legacy inicializadas');
                 },
                 
                 // ============================================
@@ -12633,13 +12610,11 @@
                 // ============================================
                 
                 navigateToCompletedEvaluations() {
-                    console.log('📊 Navegando a evaluaciones completadas');
                     this.activeTab = 'completed-evaluations';
                     showTab('completed-evaluations');
                 },
                 
                 navigateToLatestEvaluation() {
-                    console.log('🎯 Navegando a última evaluación completada');
                     this.activeTab = 'completed-evaluations';
                     showTab('completed-evaluations');
                     
@@ -12671,13 +12646,11 @@
                 },
                 
                 navigateToTasks() {
-                    console.log('📋 Navegando a tareas');
                     this.activeTab = 'tasks';
                     showTab('tasks');
                 },
                 
                 navigateToOverdueTasks() {
-                    console.log('⚠️ Navegando a tareas vencidas');
                     this.activeTab = 'tasks';
                     showTab('tasks');
                     // Después del cambio de tab, filtrar tareas vencidas
@@ -12703,7 +12676,6 @@
                 // ============================================
                 
                 showTab(tabId) {
-                    console.log('🔄 ALPINE showTab called with:', tabId);
                     
                     // Colapsar categorías de evaluaciones disponibles ANTES de cambiar de pestaña
                     const currentActiveTab = document.querySelector('.tab-pane.show.active');
@@ -12759,7 +12731,6 @@
                     
                     // Guardar pestaña activa en localStorage
                     localStorage.setItem('coachee_activeTab', tabId);
-                    console.log('💾 Pestaña guardada en localStorage:', tabId);
                     
                     // 🔧 FORCE: Ensure col-md-9 always has zero padding
                     setTimeout(() => {
@@ -12770,7 +12741,6 @@
                             contentArea.style.setProperty('padding-right', '0', 'important');
                             contentArea.style.setProperty('padding-top', '0', 'important');
                             contentArea.style.setProperty('padding-bottom', '0', 'important');
-                            console.log('🔧 FORCE: Removed all padding from .col-md-9');
                         }
                     }, 10);
                     
@@ -12795,7 +12765,6 @@
                                     top: headerTop - offset,
                                     behavior: 'smooth'
                                 });
-                                console.log(`📱 Scrolling to ${tabId} header with offset (mobile only)`);
                             } else {
                                 // Fallback: scroll al tab-pane completo con offset móvil
                                 const paneTop = activeTabPane.getBoundingClientRect().top + window.pageYOffset;
@@ -12805,7 +12774,6 @@
                                     top: paneTop - offset,
                                     behavior: 'smooth'
                                 });
-                                console.log(`📱 Scrolling to ${tabId} pane (no header found, mobile only)`);
                             }
                         }
                     }, 150);
@@ -12839,7 +12807,6 @@
                         }, 100);
                     }
                     
-                    console.log('✅ ALPINE Tab changed to:', tabId);
                 },
                 
                 // ============================================
@@ -12849,7 +12816,6 @@
                 async loadEvaluations(forceRefresh = false) {
                     // OPTIMIZACIÓN: Evitar carga duplicada
                     if (this.loading.evaluations) {
-                        console.log('⏳ Evaluations already loading, skipping duplicate request');
                         return;
                     }
                     
@@ -12857,7 +12823,6 @@
                     if (!forceRefresh && this.evaluationsData && this.evaluationsLastLoaded) {
                         const age = Date.now() - this.evaluationsLastLoaded;
                         if (age < this.EVALUATIONS_CACHE_DURATION) {
-                            console.log(`📦 Using cached evaluations data (age: ${Math.round(age/1000)}s)`);
                             this.renderAvailableEvaluations();
                             return;
                         }
@@ -12921,7 +12886,6 @@
                 },
                 
                 renderAvailableEvaluations() {
-                    console.log('🔥 ALPINE: renderAvailableEvaluations CALLED');
                     
                     const container = document.getElementById('availableEvaluations');
                     if (!container) {
@@ -12929,15 +12893,12 @@
                         return;
                     }
                     
-                    console.log('✅ Container encontrado:', container);
-                    console.log('🔍 this.evaluationsData:', this.evaluationsData);
                     
                     // Exponer globalmente para legacy code
                     window.evaluationsData = this.evaluationsData;
                     
                     // Verificar mensaje específico
                     if (this.evaluationsData && this.evaluationsData.message) {
-                        console.log('⚠️ Mostrando mensaje específico:', this.evaluationsData.message);
                         container.innerHTML = `
                             <div class="empty-state">
                                 <div class="empty-state-icon">
@@ -12951,11 +12912,6 @@
                     }
                     
                     if (!this.evaluationsData || !this.evaluationsData.available || Object.keys(this.evaluationsData.available).length === 0) {
-                        console.log('⚠️ No hay evaluaciones disponibles. Data:', {
-                            exists: !!this.evaluationsData,
-                            hasAvailable: !!this.evaluationsData?.available,
-                            availableKeys: this.evaluationsData?.available ? Object.keys(this.evaluationsData.available) : []
-                        });
                         container.innerHTML = `
                             <div class="empty-state">
                                 <div class="empty-state-icon">
@@ -12969,11 +12925,8 @@
                     }
                     
                     // Llamar a función legacy de renderizado
-                    console.log('🚀 Llamando a renderAvailableEvaluationsLegacy...');
-                    console.log('🔍 typeof renderAvailableEvaluationsLegacy:', typeof renderAvailableEvaluationsLegacy);
                     
                     if (typeof renderAvailableEvaluationsLegacy === 'function') {
-                        console.log('✅ Función legacy encontrada, ejecutando...');
                         renderAvailableEvaluationsLegacy();
                     } else {
                         console.error('❌ renderAvailableEvaluationsLegacy NO está disponible');
@@ -12987,7 +12940,6 @@
                 // ============================================
                 
                 renderCompletedEvaluationsSection() {
-                    console.log('🔍 ALPINE: renderCompletedEvaluationsSection called');
                     
                     const container = document.getElementById('completedEvaluationsSection');
                     if (!container) {
@@ -12995,8 +12947,6 @@
                         return;
                     }
                     
-                    console.log('✅ Container encontrado:', container);
-                    console.log('🔍 this.evaluationsData:', this.evaluationsData);
                     
                     // Exponer globalmente para legacy code (ambas formas)
                     window.evaluationsData = this.evaluationsData;
@@ -13004,7 +12954,6 @@
                     
                     // Si no hay datos, mostrar estado vacío
                     if (!this.evaluationsData || !this.evaluationsData.completed || this.evaluationsData.completed.length === 0) {
-                        console.log('⚠️ No hay evaluaciones completadas');
                         container.innerHTML = `
                             <div style="text-align: center; padding: 3rem 1.25rem;">
                                 <div style="font-size: 4rem; color: #9ca3af; margin-bottom: 1rem;">
@@ -13022,11 +12971,8 @@
                     }
                     
                     // Llamar a función legacy para renderizar
-                    console.log('🚀 Llamando a renderCompletedEvaluationsLegacy...');
-                    console.log('🔍 typeof renderCompletedEvaluationsLegacy:', typeof renderCompletedEvaluationsLegacy);
                     
                     if (typeof renderCompletedEvaluationsLegacy === 'function') {
-                        console.log('✅ Función legacy encontrada, ejecutando...');
                         renderCompletedEvaluationsLegacy();
                     } else {
                         console.error('❌ renderCompletedEvaluationsLegacy no está disponible');
@@ -13034,19 +12980,15 @@
                 },
                 
                 async loadEvaluationHistory() {
-                    console.log('🔍 ALPINE: Loading evaluation history...');
                     try {
                         const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
                         const data = await response.json();
                         
-                        console.log('🔍 ALPINE: evaluation-history response:', data);
                         
                         if (response.ok) {
                             this.evaluationHistory = data.history || [];
                             this.progressData = data.progress_data || null;
                             
-                            console.log('🔍 DEBUG: progress_data:', data.progress_data);
-                            console.log('🔍 DEBUG: history length:', data.history?.length);
                             
                             // 🔥 ALPINE: Cargar gráfico de progreso completo
                             await this.loadAllAssessmentHistory();
@@ -13067,7 +13009,6 @@
                 // ============================================
                 
                 async loadPendingEvaluations() {
-                    console.log('📊 ALPINE: Cargando evaluaciones pendientes...');
                     try {
                         const response = await fetch(`${API_BASE_URL}/api/coachee/pending-evaluations`);
                         
@@ -13076,7 +13017,6 @@
                         }
                         
                         const data = await response.json();
-                        console.log('📦 ALPINE: Evaluaciones pendientes recibidas:', data);
                         
                         if (data.success) {
                             this.pendingEvaluations = data.pending_evaluations || [];
@@ -13105,7 +13045,6 @@
                 },
                 
                 displayPendingEvaluations() {
-                    console.log('🔍 ALPINE: displayPendingEvaluations called');
                     
                     // Exponer globalmente
                     window.pendingEvaluations = this.pendingEvaluations;
@@ -13123,11 +13062,9 @@
                 // ============================================
                 
                 async loadTasks(forceRefresh = false) {
-                    console.log('📋 ALPINE: Loading tasks...');
                     
                     // Evitar carga duplicada
                     if (this.isLoadingTasks) {
-                        console.log('⏳ Tasks already loading, skipping duplicate request');
                         return;
                     }
                     
@@ -13135,7 +13072,6 @@
                     if (!forceRefresh && this.tasksData && this.tasksData.length > 0 && this.tasksLastLoaded) {
                         const age = Date.now() - this.tasksLastLoaded;
                         if (age < this.TASKS_CACHE_DURATION) {
-                            console.log(`📦 Using cached tasks data (age: ${Math.round(age/1000)}s)`);
                             this.renderTasks();
                             return;
                         }
@@ -13182,7 +13118,6 @@
                             this.stats.activeTasks = activeTasks;
                             this.stats.overdueTasks = overdueTasks;
                             
-                            console.log(`✅ ALPINE: Tasks loaded successfully (${data.length} tasks, ${activeTasks} active, ${overdueTasks} overdue)`);
                             
                             // Exponer globalmente para legacy code
                             window.tasksData = this.tasksData;
@@ -13210,7 +13145,6 @@
                 },
                 
                 renderTasks() {
-                    console.log('🔍 ALPINE: renderTasks called');
                     
                     // Exponer globalmente
                     window.tasksData = this.tasksData;
@@ -13234,11 +13168,9 @@
                 
                 // Cargar videos y documentos
                 async loadVideos(forceRefresh = false) {
-                    console.log('🎥 ALPINE: Loading content...');
                     
                     // Evitar carga duplicada
                     if (this.isLoadingVideos) {
-                        console.log('⏳ Content already loading');
                         return;
                     }
                     
@@ -13246,7 +13178,6 @@
                     if (!forceRefresh && this.videosData && this.videosData.length > 0 && this.videosLastLoaded) {
                         const age = Date.now() - this.videosLastLoaded;
                         if (age < this.CONTENT_CACHE_DURATION) {
-                            console.log(`📦 Using cached content (age: ${Math.round(age/1000)}s)`);
                             return;
                         }
                     }
@@ -13266,7 +13197,6 @@
                         this.videosData = data.content || [];
                         this.videosLastLoaded = Date.now();
                         
-                        console.log(`✅ ALPINE: ${this.videosData.length} items loaded`);
                         
                         // Forzar actualización del estado de carga
                         this.isLoadingVideos = false;
@@ -13274,7 +13204,6 @@
                         // Seleccionar automáticamente el primer contenido si existe
                         if (this.videosData.length > 0 && !this.selectedContent) {
                             const firstContent = this.videosData[0];
-                            console.log('🎯 Auto-selecting first content:', firstContent.title);
                             
                             // Usar setTimeout para asegurarse de que el DOM está listo
                             setTimeout(() => {
@@ -13290,7 +13219,6 @@
                 
                 // Marcar contenido como visto
                 async markContentAsViewed(contentId) {
-                    console.log('📝 ALPINE: Marking content as viewed:', contentId);
                     
                     try {
                         const response = await fetch(`${API_BASE_URL}/api/coachee/content/${contentId}/mark-viewed`, {
@@ -13311,7 +13239,6 @@
                             item.is_viewed = true;
                         }
                         
-                        console.log('✅ Content marked as viewed');
                         
                         if (typeof showToast === 'function') {
                             showToast('Contenido marcado como visto', 'success');
@@ -13326,10 +13253,6 @@
                 
                 // Seleccionar contenido para vista previa
                 selectContentForPreview(item) {
-                    console.log('👁️ Selecting content for preview:', item);
-                    console.log('📄 Content type:', item.type);
-                    console.log('📄 File path:', item.file_path);
-                    console.log('📄 Content URL:', item.content_url);
                     
                     // Marcar como visto si no lo está
                     if (!item.is_viewed) {
@@ -13339,7 +13262,6 @@
                     // Guardar el contenido seleccionado
                     this.selectedContent = item;
                     
-                    console.log('📄 Selected content saved:', this.selectedContent);
                     
                     // Si es video, actualizar la vista previa
                     if (item.type === 'video' && item.video_id) {
@@ -13348,10 +13270,8 @@
                     
                     // Si es documento, asegurarse de que Alpine.js actualice la vista
                     if (item.type === 'document') {
-                        console.log('📄 Document selected - Alpine should update iframe with:', item.file_path);
                         // Forzar actualización de Alpine
                         this.$nextTick(() => {
-                            console.log('📄 After nextTick - selectedContent:', this.selectedContent);
                         });
                     }
                 },
@@ -13361,7 +13281,6 @@
                     const container = document.getElementById('videoPreviewContainer');
                     if (!container) return;
                     
-                    console.log('🎬 Updating video preview:', videoId, 'platform:', platform);
                     
                     // Limpiar contenido previo
                     container.innerHTML = '';
@@ -13432,13 +13351,11 @@
                 progressChart: null,
                 
                 resetProgressChartFilters() {
-                    console.log('🔄 ALPINE: Resetting progress chart filters');
                     if (this.progressChart) {
                         this.progressChart.data.datasets.forEach(dataset => {
                             dataset.hidden = false;
                         });
                         this.progressChart.update();
-                        console.log('✅ ALPINE: All datasets visible');
                     }
                 },
                 progressDataLoaded: false, // Cache flag para evitar recargas
@@ -13450,16 +13367,13 @@
                 
                 // Cargar historial completo de todas las evaluaciones
                 async loadAllAssessmentHistory(forceRefresh = false) {
-                    console.log('📈 ALPINE: Loading all assessment history...');
                     
                     // Si ya se cargó y no se fuerza refresh, no volver a cargar
                     if (this.progressDataLoaded && !forceRefresh && this.allAssessmentHistory) {
-                        console.log('✅ Progress data already loaded, skipping...');
                         return;
                     }
                     
                     if (this.isLoadingProgress) {
-                        console.log('⏳ Progress already loading');
                         return;
                     }
                     
@@ -13475,9 +13389,6 @@
                         }
                         
                         const data = await response.json();
-                        console.log('📊 ALPINE: All assessment history received:', data);
-                        console.log('📊 ALPINE: data.history:', data.history);
-                        console.log('📊 ALPINE: Object.keys length:', data.history ? Object.keys(data.history).length : 0);
                         
                         if (data.success && data.history && Object.keys(data.history).length > 0) {
                             this.allAssessmentHistory = data.history;
@@ -13493,9 +13404,6 @@
                                 };
                             }
                             
-                            console.log('📊 ALPINE: Statistics updated:', this.progressStatistics);
-                            console.log('📊 ALPINE: allAssessmentHistory set:', this.allAssessmentHistory);
-                            console.log('📊 ALPINE: isLoadingProgress:', this.isLoadingProgress);
                             
                             // Exponer globalmente
                             window.allAssessmentHistory = this.allAssessmentHistory;
@@ -13504,7 +13412,6 @@
                             this.renderProgressChart();
                         } else {
                             // No hay datos
-                            console.log('⚠️ ALPINE: No history data or empty history');
                             this.showEmptyProgressState();
                         }
                     } catch (error) {
@@ -13516,8 +13423,6 @@
                 
                 // Renderizar gráfico de progreso
                 renderProgressChart() {
-                    console.log('📊 ALPINE: renderProgressChart called');
-                    console.log('📊 ALPINE: allAssessmentHistory:', this.allAssessmentHistory);
                     
                     // Exponer globalmente
                     window.allAssessmentHistory = this.allAssessmentHistory;
@@ -13529,7 +13434,6 @@
                 
                 // Crear el gráfico de progreso con Chart.js (NUEVA VERSIÓN CON FECHAS)
                 createProgressChart() {
-                    console.log('📊 ALPINE: createProgressChart called (NEW VERSION)');
                     try {
                         const canvas = document.getElementById('alpineProgressChart');
                         
@@ -13543,11 +13447,9 @@
                         
                         // Destruir gráfico anterior si existe
                         if (this.progressChart) {
-                            console.log('📊 ALPINE: Destroying previous chart...');
                             this.progressChart.destroy();
                         }
                         
-                        console.log('📊 ALPINE: Building datasets with dates...');
                         
                         // Colores para diferentes evaluaciones
                         const colors = [
@@ -13566,10 +13468,6 @@
                         Object.entries(this.allAssessmentHistory).forEach(([assessmentId, assessmentData]) => {
                             const color = colors[colorIndex % colors.length];
                             colorIndex++;
-                            
-                            console.log(`📈 ALPINE: Creating dataset for: ${assessmentData.title}`, {
-                                dataPoints: assessmentData.data.length
-                            });
                             
                             datasets.push({
                                 label: assessmentData.title,
@@ -13595,7 +13493,6 @@
                             });
                         });
                         
-                        console.log('📊 ALPINE: Creating chart with', datasets.length, 'datasets');
                         
                         // Crear el gráfico con eje X de tiempo
                         this.progressChart = new Chart(ctx, {
@@ -13754,7 +13651,6 @@
                             }
                         });
                         
-                        console.log('✅ ALPINE: Progress chart created successfully with time axis');
                     } catch (error) {
                         console.error('❌ ALPINE: Error creating progress chart:', error);
                     } finally {
@@ -13764,7 +13660,6 @@
                 
                 // Mostrar estado vacío si no hay datos
                 showEmptyProgressState() {
-                    console.log('📊 ALPINE: No progress data available');
                     // Alpine maneja la visibilidad con x-show, no necesitamos manipular el DOM
                 },
                 
@@ -13778,10 +13673,8 @@
                 
                 // Cargar planes de desarrollo
                 async loadDevelopmentPlans(forceRefresh = false) {
-                    console.log('📋 ALPINE: Loading development plans...');
                     
                     if (this.isLoadingPlans) {
-                        console.log('⏳ Plans already loading');
                         return;
                     }
                     
@@ -13797,7 +13690,6 @@
                         }
                         
                         const data = await response.json();
-                        console.log('📋 ALPINE: Development plans received:', data);
                         
                         if (data.success && data.plans && data.plans.length > 0) {
                             this.developmentPlans = data.plans;
@@ -13806,7 +13698,6 @@
                             // Exponer globalmente
                             window.developmentPlans = this.developmentPlans;
                             
-                            console.log(`✅ ALPINE: ${this.developmentPlans.length} plans loaded`);
                             this.renderDevelopmentPlans();
                         } else {
                             // No hay planes
@@ -13830,7 +13721,6 @@
                 
                 // Renderizar planes (llamar función legacy)
                 renderDevelopmentPlans() {
-                    console.log('🔍 ALPINE: renderDevelopmentPlans called');
                     
                     // Exponer globalmente
                     window.developmentPlans = this.developmentPlans;
@@ -13868,7 +13758,6 @@
                 
                 // Cambiar tab de schedule
                 switchScheduleTab(tab) {
-                    console.log(`🗓️ ALPINE: Switching schedule tab to ${tab}`);
                     this.scheduleTab = tab;
                     
                     // Forzar estilos consistentes en los botones
@@ -13901,10 +13790,8 @@
                 
                 // Cargar disponibilidad del coach
                 async loadCoachAvailability(forceRefresh = false) {
-                    console.log('🗓️ ALPINE: Loading coach availability...');
                     
                     if (this.isLoadingAvailability) {
-                        console.log('⏳ Availability already loading');
                         return;
                     }
                     
@@ -13920,7 +13807,6 @@
                         }
                         
                         const data = await response.json();
-                        console.log('🗓️ ALPINE: Availability received:', data);
                         
                         if (data.success) {
                             this.coachAvailability = data.availability || [];
@@ -13931,7 +13817,6 @@
                             window.coachAvailability = this.coachAvailability;
                             window.occupiedSlots = this.occupiedSlots;
                             
-                            console.log(`✅ ALPINE: Loaded ${this.coachAvailability.length} availability slots`);
                             
                             // Llamar función legacy para renderizar
                             if (typeof displayCoachAvailability === 'function') {
@@ -13950,10 +13835,8 @@
                 
                 // Cargar mis sesiones
                 async loadMySessions(forceRefresh = false) {
-                    console.log('📅 ALPINE: Loading my sessions...');
                     
                     if (this.isLoadingSessions) {
-                        console.log('⏳ Sessions already loading');
                         return;
                     }
                     
@@ -13969,7 +13852,6 @@
                         }
                         
                         const data = await response.json();
-                        console.log('📅 ALPINE: Sessions received:', data);
                         
                         if (data.success) {
                             this.mySessions = data.sessions || [];
@@ -13977,7 +13859,6 @@
                             // Exponer globalmente
                             window.mySessions = this.mySessions;
                             
-                            console.log(`✅ ALPINE: Loaded ${this.mySessions.length} sessions`);
                             
                             // Llamar función legacy para renderizar
                             if (typeof displayMySessions === 'function') {
@@ -14022,7 +13903,6 @@
                 
                 // Abrir modal
                 openModal(modalName) {
-                    console.log(`🔓 ALPINE: Opening modal ${modalName}`);
                     this.modals[modalName] = true;
                     
                     // También activar el modal Bootstrap para compatibilidad
@@ -14038,7 +13918,6 @@
                 
                 // Cerrar modal
                 closeModal(modalName) {
-                    console.log(`🔒 ALPINE: Closing modal ${modalName}`);
                     this.modals[modalName] = false;
                     
                     // También cerrar el modal Bootstrap
@@ -14066,7 +13945,6 @@
                 
                 // Ver detalles de evaluación
                 viewEvaluationDetails(evaluationId) {
-                    console.log(`📊 ALPINE: Viewing evaluation ${evaluationId}`);
                     this.selectedEvaluation = evaluationId;
                     
                     // Llamar función legacy
@@ -14077,7 +13955,6 @@
                 
                 // Ver progreso de tarea
                 viewTaskProgress(taskId) {
-                    console.log(`📋 ALPINE: Viewing task progress ${taskId}`);
                     this.selectedTask = taskId;
                     
                     // Llamar función legacy
@@ -14089,7 +13966,6 @@
             
             // 🛡️ Store instance globally for boot guard
             window.__dashboardInstance = dashboardInstance;
-            console.log('✅ Dashboard instance stored globally');
             
             return dashboardInstance;
         }
@@ -14137,7 +14013,6 @@
         // Verificar si la sesión expiró y redirigir automáticamente
         function checkSessionExpired(data) {
             if (data && data.session_expired && data.redirect_url) {
-                console.log('🔒 Sesión expirada, redirigiendo a login...');
                 window.location.href = data.redirect_url;
                 return true;
             }
@@ -14196,8 +14071,6 @@
         let currentAssessmentId = null;
         
         // CACHE BUSTER: Verificar que JavaScript se cargó correctamente
-        console.log('🔄 COACHEE DASHBOARD LOADED - TIMESTAMP: 2025-10-12-17:35:00');
-        console.log('✅ Funciones de Preparación para crecer 2026 disponibles');
 
         // Logout function
         async function logout() {
@@ -14210,7 +14083,6 @@
 
                 // Limpiar localStorage antes de cerrar sesión
                 localStorage.removeItem('coachee_activeTab');
-                console.log('🧹 localStorage limpiado al cerrar sesión');
 
                 // Call logout API específico para coachee
                 const response = await fetch(`${API_BASE_URL}/api/coachee/logout`, {
@@ -14469,7 +14341,6 @@
         // ============================================
         
         async function loadDevelopmentPlans() {
-            console.log('📋 COACHEE: Cargando planes de desarrollo...');
             
             const loadingEl = document.getElementById('devPlanLoading');
             const emptyEl = document.getElementById('devPlanEmpty');
@@ -14488,16 +14359,13 @@
                 }
                 
                 const data = await response.json();
-                console.log('📋 COACHEE: Datos recibidos:', data);
                 
                 loadingEl.style.display = 'none';
                 
                 if (data.success && data.plans && data.plans.length > 0) {
-                    console.log(`📋 COACHEE: Se encontraron ${data.plans.length} planes`);
                     renderDevelopmentPlans(data.plans);
                     contentEl.style.display = 'block';
                 } else {
-                    console.log('📋 COACHEE: No hay planes disponibles');
                     emptyEl.style.display = 'block';
                 }
                 
@@ -14765,7 +14633,6 @@
         // Load user profile
         async function loadUserProfile() {
             try {
-                console.log('🔍 Cargando perfil de usuario...');
                 
                 // Esperar a que el DOM esté completamente cargado
                 if (document.readyState === 'loading') {
@@ -14773,28 +14640,19 @@
                 }
                 
                 // SOLUCIÓN: Obtener nombre real del usuario automáticamente
-                console.log('🔧 MODO AUTOMÁTICO: Obteniendo nombre del usuario...');
                 
                 // PRIORIDAD 1: Usar endpoint específico de coachee (más confiable)
-                console.log('🎯 PRIORIDAD 1: Intentando dashboard-summary (específico de coachee)...');
                 try {
                     const summaryResponse = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
-                    console.log('🌐 Dashboard summary response status:', summaryResponse.status);
                     
                     if (summaryResponse.ok) {
                         const summaryData = await summaryResponse.json();
-                        console.log('📊 Dashboard summary FULL data:', JSON.stringify(summaryData, null, 2));
                         
                         if (summaryData.success && summaryData.summary?.coachee?.name) {
                             const userName = summaryData.summary.coachee.name;
-                            console.log('👤 Nombre del COACHEE (dashboard-summary):', userName);
-                            console.log('📧 Email del COACHEE (dashboard-summary):', summaryData.summary.coachee.email);
-                            console.log('🖼️ Avatar del COACHEE (dashboard-summary):', summaryData.summary.coachee.avatar_url);
                             
                             // Mostrar también info del coach para comparar
                             if (summaryData.summary?.coach) {
-                                console.log('👔 Nombre del COACH:', summaryData.summary.coach.name);
-                                console.log('📧 Email del COACH:', summaryData.summary.coach.email);
                             }
                             
                             // Crear objeto currentUser con los datos del coachee
@@ -14807,75 +14665,56 @@
                             const welcomeText = userName;
                             updateAllWelcomeMessages(welcomeText);
                             updateHeaderAvatar();
-                            console.log('✅ Actualizado con nombre y avatar del dashboard summary:', welcomeText);
                             return;
                         } else {
-                            console.log('❌ Dashboard summary no tiene nombre de usuario');
                         }
                     } else {
-                        console.log('❌ Dashboard summary response not ok:', summaryResponse.status);
                     }
                 } catch (summaryError) {
-                    console.log('⚠️ Dashboard summary error:', summaryError.message);
                 }
                 
                 // PRIORIDAD 2: Fallback a /api/coachee/profile (específico para coachees con avatar)
-                console.log('🔄 PRIORIDAD 2: Fallback a coachee/profile (con avatar)...');
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/coachee/profile`);
-                    console.log('🌐 coachee/profile response status:', response.status);
                     
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('📥 API /api/coachee/profile response:', JSON.stringify(data, null, 2));
                         
                         if (data.success && data.profile?.full_name) {
                             const realName = data.profile.full_name;
-                            console.log('👤 Nombre obtenido (coachee/profile):', realName);
-                            console.log('📧 Email (coachee/profile):', data.profile.email);
-                            console.log('🎭 Role (coachee/profile):', data.profile.role);
-                            console.log('🖼️ Avatar (coachee/profile):', data.profile.avatar_url);
                             
                             const realWelcomeText = realName;
                             updateAllWelcomeMessages(realWelcomeText);
-                            console.log('✅ Actualizado con coachee/profile:', realWelcomeText);
                             currentUser = data.profile;
                             updateHeaderAvatar();
                             return;
                         }
                     }
                 } catch (apiError) {
-                    console.log('⚠️ coachee/profile API error:', apiError.message);
                 }
                 
                 // Último fallback: mantener mensaje genérico
-                console.log('🔄 Manteniendo mensaje genérico - todos los endpoints fallaron');
                 
             } catch (error) {
                 console.error('❌ Error cargando perfil:', error);
                 
                 // Fallback: mantener mensaje genérico si hay error total
-                console.log('🔄 Error total - manteniendo mensaje genérico de bienvenida');
             }
         }
 
         // Load dashboard summary
         async function loadDashboardSummary() {
             try {
-                console.log('Fetching dashboard summary from:', `${API_BASE_URL}/api/coachee/dashboard-summary`);
                 const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
                 
-                console.log('Response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
-                console.log('Raw API response data:', data);
                 
                 if (data && data.summary) {
                     dashboardData = data.summary;
-                    console.log('Dashboard data set to:', dashboardData);
                     updateSummaryCards();
                     updateUserInfo();
                 } else {
@@ -14958,7 +14797,6 @@
         async function loadEvaluations(forceRefresh = false) {
             // OPTIMIZACIÓN: Evitar carga duplicada
             if (isLoadingEvaluations) {
-                console.log('⏳ Evaluations already loading, skipping duplicate request');
                 return;
             }
             
@@ -14966,7 +14804,6 @@
             if (!forceRefresh && evaluationsData && evaluationsLastLoaded) {
                 const age = Date.now() - evaluationsLastLoaded;
                 if (age < EVALUATIONS_CACHE_DURATION) {
-                    console.log(`📦 Using cached evaluations data (age: ${Math.round(age/1000)}s)`);
                     renderAvailableEvaluationsLegacy();
                     return;
                 }
@@ -15037,7 +14874,6 @@
                 return;
             }
             
-            console.log(`✅ Mostrando ${pendingEvaluations.length} evaluaciones pendientes`);
             
             let html = '<div class="row g-3">';
             
@@ -15087,12 +14923,10 @@
         // Función para iniciar una evaluación pendiente
         async function startPendingEvaluation(assessmentId) {
             try {
-                console.log(`🚀 Iniciando evaluación pendiente: ${assessmentId}`);
                 
                 // Usar la función existente startEvaluation que ya maneja todo el flujo
                 await startEvaluation(assessmentId);
                 
-                console.log(`✅ Evaluación ${assessmentId} iniciada correctamente`);
             } catch (error) {
                 console.error('❌ Error iniciando evaluación:', error);
                 showToast('Error al iniciar la evaluación: ' + error.message, 'error');
@@ -15494,8 +15328,6 @@
         if (!window.__categoryToggleInitialized) {
             window.__categoryToggleInitialized = true;
             
-            console.log('🎯 Inicializando delegación de eventos para category toggle');
-            console.log('🕒 Timestamp de inicialización:', Date.now());
             console.trace('📍 STACK DE INICIALIZACIÓN');
             
             // Un solo listener global para clicks
@@ -15503,20 +15335,13 @@
                 const header = event.target.closest('.section-header-eval[data-category-id]');
                 if (!header) return;
                 
-                console.log('═══════════════════════════════════════');
-                console.log('🖱️ CLICK EVENT CAPTURED');
-                console.log('Event phase:', event.eventPhase === 1 ? 'CAPTURE' : event.eventPhase === 2 ? 'TARGET' : 'BUBBLE');
-                console.log('Event target:', event.target);
-                console.log('Header element:', header);
                 console.trace('📍 STACK DEL CLICK');
                 
                 event.preventDefault();
                 event.stopPropagation();
                 
                 const categoryId = header.getAttribute('data-category-id');
-                console.log('🔍 Click en categoría:', categoryId);
                 toggleCategoryPure(categoryId, header);
-                console.log('═══════════════════════════════════════');
             }, { passive: false });
             
             // Un solo listener global para teclado
@@ -15530,14 +15355,10 @@
                     }
                     event.stopPropagation();
                     
-                    console.log('═══════════════════════════════════════');
-                    console.log('⌨️ KEYBOARD EVENT CAPTURED:', event.key);
                     console.trace('📍 STACK DEL TECLADO');
                     
                     const categoryId = header.getAttribute('data-category-id');
-                    console.log('⌨️ Teclado en categoría:', categoryId);
                     toggleCategoryPure(categoryId, header);
-                    console.log('═══════════════════════════════════════');
                 }
             }, { passive: false });
         }
@@ -15552,13 +15373,6 @@
             
             const callNumber = window.__toggleCallCount[categoryId];
             
-            console.log('');
-            console.log('╔═══════════════════════════════════════╗');
-            console.log('║   toggleCategoryPure LLAMADA #' + callNumber + '      ║');
-            console.log('╚═══════════════════════════════════════╝');
-            console.log('🔄 CategoryId:', categoryId);
-            console.log('🕒 Timestamp:', Date.now());
-            console.log('📞 Call count:', callNumber);
             console.trace('📍 STACK COMPLETO DE toggleCategoryPure');
             
             const categoryGrid = document.getElementById(categoryId);
@@ -15582,29 +15396,14 @@
             const isExpanded = categoryGrid.getAttribute('data-expanded') === 'true';
             const newState = !isExpanded;
             
-            console.log('📊 Estado ANTES:', isExpanded ? 'EXPANDED' : 'COLLAPSED');
-            console.log('📊 Estado DESPUÉS:', newState ? 'EXPANDED' : 'COLLAPSED');
-            console.log('🎨 Estilos actuales del grid:');
-            console.log('  - display:', window.getComputedStyle(categoryGrid).display);
-            console.log('  - maxHeight:', window.getComputedStyle(categoryGrid).maxHeight);
-            console.log('  - opacity:', window.getComputedStyle(categoryGrid).opacity);
-            console.log('  - marginBottom:', window.getComputedStyle(categoryGrid).marginBottom);
             
             // INSTALAR MUTATIONOBSERVER SI NO EXISTE
             if (!window.__mutationObservers[categoryId]) {
-                console.log('🔬 Instalando MutationObserver para:', categoryId);
                 
                 const observer = new MutationObserver(function(mutations) {
                     mutations.forEach(function(mutation) {
                         if (mutation.type === 'attributes') {
-                            console.log('');
-                            console.log('🔔 MUTATION DETECTED en', categoryId);
-                            console.log('  Atributo cambiado:', mutation.attributeName);
-                            console.log('  Valor anterior:', mutation.oldValue);
-                            console.log('  Valor nuevo:', mutation.target.getAttribute(mutation.attributeName));
-                            console.log('  Timestamp:', Date.now());
                             console.trace('📍 STACK DE LA MUTACIÓN');
-                            console.log('');
                         }
                     });
                 });
@@ -15616,11 +15415,9 @@
                 });
                 
                 window.__mutationObservers[categoryId] = observer;
-                console.log('✅ MutationObserver instalado');
             }
             
             // Cambiar estado - CSS hace toda la animación
-            console.log('🔧 Cambiando data-expanded a:', newState.toString());
             categoryGrid.setAttribute('data-expanded', newState.toString());
             
             // CRÍTICO: Limpiar estilos inline que pueden sobrescribir CSS
@@ -15631,18 +15428,13 @@
                 categoryGrid.style.marginBottom = '';
             }
             
-            console.log('🔧 Cambiando aria-expanded a:', newState.toString());
             if (header) header.setAttribute('aria-expanded', newState.toString());
             
             // Rotar icono
             if (icon) {
-                console.log('🔧 Rotando icono a:', newState ? '0deg' : '-90deg');
                 icon.style.transform = newState ? 'rotate(0deg)' : 'rotate(-90deg)';
             }
             
-            console.log('✅ Toggle completado, nuevo estado:', newState);
-            console.log('╚═══════════════════════════════════════╝');
-            console.log('');
             
             // Warning si se llama más de una vez
             if (callNumber > 1) {
@@ -15691,13 +15483,10 @@
         // Render available evaluations
         // Función optimizada para renderizar evaluaciones disponibles con diseño moderno y compacto
         function renderAvailableEvaluationsLegacy() {
-            console.log('🔥 renderAvailableEvaluationsLegacy INICIANDO...');
             
             const evaluationsData = window.evaluationsData;
             const container = document.getElementById('availableEvaluations');
             
-            console.log('🔍 Container:', container);
-            console.log('🔍 window.evaluationsData:', evaluationsData);
             
             if (!container) {
                 console.error('❌ Container availableEvaluations no encontrado');
@@ -15709,7 +15498,6 @@
             if (container.children.length > 0 && !window.__forceEvaluationsRender) {
                 const hasEvaluationContent = container.querySelector('.category-grid');
                 if (hasEvaluationContent) {
-                    console.log('✅ Evaluation content already rendered, skipping to preserve state');
                     return;
                 }
             }
@@ -15720,7 +15508,6 @@
             if (container.children.length > 0 && !window.__forceEvaluationsRender) {
                 const hasEvaluationContent = container.querySelector('.category-grid');
                 if (hasEvaluationContent) {
-                    console.log('✅ Evaluation content already rendered, skipping to preserve state');
                     return;
                 }
             }
@@ -15779,8 +15566,6 @@
             // Clear container
             container.innerHTML = '';
             
-            console.log('🔍 Categorized evaluations:', categorizedEvaluations);
-            console.log('🔍 window.evaluationCategories:', window.evaluationCategories);
             
             // Render each category using extracted functions
             Object.entries(categorizedEvaluations).forEach(([categoryName, evaluations]) => {
@@ -15877,15 +15662,10 @@
 
         // LEGACY: Función original de renderizado - Renombrada para compatibilidad
         function renderCompletedEvaluationsLegacy() {
-            console.log('🎨 renderCompletedEvaluationsLegacy: INICIANDO');
-            console.log('📦 evaluationsData recibido:', evaluationsData);
-            console.log('📦 window.evaluationsData:', window.evaluationsData);
             
             const container = document.getElementById('completedEvaluationsSection');
-            console.log('📦 Container encontrado:', container);
             
             if (!evaluationsData || !evaluationsData.completed || evaluationsData.completed.length === 0) {
-                console.log('⚠️ No hay evaluaciones completadas para mostrar');
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem 1.25rem;">
                         <div style="font-size: 4rem; color: #9ca3af; margin-bottom: 1rem;">
@@ -16216,7 +15996,6 @@
         let progressTrendChart = null;
         
         async function createProgressTrendChart() {
-            console.log('📈 PROGRESS-TREND: Creating progress trend chart...');
             
             try {
                 // Obtener el canvas
@@ -16236,16 +16015,7 @@
                 const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-history`);
                 const data = await response.json();
                 
-                console.log('📊 PROGRESS-TREND: API Response:', {
-                    ok: response.ok,
-                    success: data.success,
-                    historyLength: data.history?.length,
-                    totalEvaluations: data.total,
-                    data: data
-                });
-                
                 if (!response.ok || !data.success || !data.history || data.history.length === 0) {
-                    console.log('⚠️ No hay datos de historial disponibles:', data);
                     canvas.parentElement.innerHTML = `
                         <div class="empty-state text-center py-5">
                             <i class="fas fa-chart-line text-muted mb-3" style="font-size: 3rem;"></i>
@@ -16261,7 +16031,6 @@
                     new Date(a.completed_at) - new Date(b.completed_at)
                 );
                 
-                console.log('📊 PROGRESS-TREND: History data received:', history);
                 
                 // Crear puntos de datos con fechas y porcentajes
                 const dataPoints = history.map(item => {
@@ -16280,7 +16049,6 @@
                     };
                 });
                 
-                console.log('📊 PROGRESS-TREND: Data points created:', dataPoints);
                 
                 // Crear un solo dataset con todas las evaluaciones conectadas cronológicamente
                 const datasets = [{
@@ -16294,7 +16062,6 @@
                     maxBarThickness: 60
                 }];
                 
-                console.log('📊 PROGRESS-TREND: Dataset created with', dataPoints.length, 'points');
                 
                 const ctx = canvas.getContext('2d');
                 
@@ -16415,7 +16182,6 @@
                     }
                 });
                 
-                console.log('✅ PROGRESS-TREND: Gráfico creado exitosamente con', datasets.length, 'series de datos');
                 
             } catch (error) {
                 console.error('❌ PROGRESS-TREND ERROR:', error);
@@ -16648,7 +16414,6 @@
         
         // Registrar globalmente para que Alpine.js pueda usarla
         window.renderContent = renderContent;
-        console.log('✅ renderContent registrada globalmente');
         
         async function loadContent() {
             // Evitar llamadas concurrentes
@@ -16725,35 +16490,25 @@
 
         // Open content (video or document)
         function openContent(contentId, contentUrl, title) {
-            console.log(`🎬 OPEN-CONTENT: Called for contentId=${contentId}, contentUrl=${contentUrl}`);
             
             // Verificar si este contenido tiene un video embebido activo
             const embeddedVideoIframe = document.getElementById(`youtube-${contentId}`);
-            console.log(`🔍 OPEN-CONTENT: Looking for iframe with ID youtube-${contentId}`, {
-                found: !!embeddedVideoIframe,
-                iframe: embeddedVideoIframe
-            });
             
             if (embeddedVideoIframe) {
-                console.log(`🚫 OPEN-CONTENT: Ignorando openContent para video embebido ${contentId} - iframe existe`);
                 return; // No hacer nada si hay un iframe embebido
             }
             
             // Verificar también si el contenedor padre tiene la clase has-embedded-video
             const embeddedContainer = document.querySelector(`#youtube-${contentId}`);
             if (embeddedContainer || document.querySelector(`.content-preview.has-embedded-video iframe[id="youtube-${contentId}"]`)) {
-                console.log(`🚫 OPEN-CONTENT: Ignorando openContent para video embebido ${contentId} - contenedor embebido detectado`);
                 return;
             }
             
-            console.log(`✅ OPEN-CONTENT: Procediendo con apertura normal para ${contentId}`);
             
             // Si es un video de YouTube, usar modal con iframe
             if (contentUrl.includes('youtube.com') || contentUrl.includes('youtu.be')) {
-                console.log(`🎥 OPEN-CONTENT: Abriendo modal para video ${contentId}`);
                 openVideoModal(contentUrl, title);
             } else {
-                console.log(`📄 OPEN-CONTENT: Abriendo en nueva pestaña para ${contentId}`);
                 // Para otros tipos de contenido, abrir en nueva pestaña
                 window.open(contentUrl, '_blank');
             }
@@ -16849,24 +16604,19 @@
 
         // Setup video tracking for embedded YouTube videos
         function setupVideoTracking(contentId) {
-            console.log(`🎯 SETUP-VIDEO-TRACKING: Called for contentId=${contentId}`);
             
             const iframe = document.getElementById(`youtube-${contentId}`);
             if (!iframe) {
-                console.log(`❌ SETUP-VIDEO-TRACKING: No iframe found for youtube-${contentId}`);
                 return;
             }
             
-            console.log(`✅ SETUP-VIDEO-TRACKING: Iframe found for youtube-${contentId}`, iframe);
             
             // Mark as viewed when iframe loads (auto-mark since video is now immediately accessible)
             setTimeout(() => {
                 const contentItem = contentData.find(c => c.id === contentId);
                 if (contentItem && !contentItem.is_viewed) {
-                    console.log(`📺 SETUP-VIDEO-TRACKING: Auto-marking video ${contentId} as viewed (embedded and accessible)`);
                     markContentAsViewed(contentId);
                 } else {
-                    console.log(`ℹ️ SETUP-VIDEO-TRACKING: Video ${contentId} already viewed or not found in contentData`);
                 }
             }, 1000);
         }
@@ -17251,12 +17001,6 @@
         // Start evaluation - FIXED VERSION
         async function startEvaluation(evaluationType) {
             try {
-                console.log('🚀 INICIANDO EVALUACIÓN:', {
-                    evaluationType: evaluationType,
-                    typeOfParam: typeof evaluationType,
-                    isNumber: !isNaN(evaluationType),
-                    parsedValue: parseInt(evaluationType)
-                });
                 
                 // CRÍTICO: Validar y parsear el assessment_id
                 const assessmentId = parseInt(evaluationType);
@@ -17270,7 +17014,6 @@
                     return;
                 }
                 
-                console.log('✅ Assessment ID validado:', assessmentId);
                 
                 // Reset assessment state
                 questions = [];
@@ -17280,13 +17023,6 @@
                 
                 // Store current assessment ID for later use (usar el ID numérico validado)
                 currentAssessmentId = assessmentId;
-                
-                console.log('📝 Estado reiniciado:', {
-                    currentAssessmentId: currentAssessmentId,
-                    questions: questions.length,
-                    answers: Object.keys(answers).length,
-                    isAssessmentActive: isAssessmentActive
-                });
                 
                 // Show assessment tab
                 document.getElementById('assessment-sidebar-item').style.display = 'block';
@@ -17328,22 +17064,7 @@
                 if (data.success && data.questions && data.questions.length > 0) {
                     questions = data.questions;
                     
-                    // MEJORADO: Validación completa del correlativo al cargar
-                    console.log('🔍 DEBUG PREGUNTAS CARGADAS:', {
-                        assessmentId: currentAssessmentId,
-                        total: questions.length,
-                        globalQuestionsLength: questions.length,
-                        first5: questions.slice(0, 5).map(q => ({
-                            id: q.id,
-                            order: q.order,
-                            text: q.text.substring(0, 30) + '...'
-                        })),
-                        allQuestionIds: questions.map(q => q.id),
-                        allQuestionOrders: questions.map(q => q.order)
-                    });
-                    
                     // CRÍTICO: Verificar que questions.length es correcto
-                    console.log('✅ CONFIRMACIÓN: questions.length =', questions.length, '| window.questions también =', questions.length);
                     
                     // Validar integridad del correlativo
                     validateQuestionSequence();
@@ -17355,7 +17076,6 @@
                             <i class="fas fa-clipboard-check me-2"></i>
                             ${data.assessment_title}
                         `;
-                        console.log('🎯 FRONTEND: Título actualizado a:', data.assessment_title);
                     }
                     
                     // Guardar el título para uso posterior en resultados
@@ -17373,7 +17093,6 @@
 
         // NUEVA: Validar secuencia completa del correlativo
         function validateQuestionSequence() {
-            console.log('🔍 VALIDANDO SECUENCIA DE PREGUNTAS...');
             
             const totalQuestions = questions.length;
             const expectedForIE = 12;
@@ -17406,7 +17125,6 @@
                 }))
             };
             
-            console.log('📊 RESULTADO VALIDACIÓN CORRELATIVO:', validationResult);
             
             if (!isCorrectCount) {
                 console.error('❌ ERROR: Cantidad incorrecta de preguntas', {
@@ -17428,7 +17146,6 @@
             }
             
             if (isCorrectCount && isConsecutiveSequence && arrayToOrderMatch) {
-                console.log('✅ VALIDACIÓN EXITOSA: Correlativo perfecto 1-12 consecutivo');
             }
             
             return validationResult;
@@ -17436,15 +17153,8 @@
 
         // Show current assessment question
         function showAssessmentQuestion() {
-            console.log('🎯 showAssessmentQuestion LLAMADO:', {
-                currentQuestionIndex: currentQuestionIndex,
-                questionsLength: questions.length,
-                willComplete: currentQuestionIndex >= questions.length,
-                globalVariableCheck: window.questions ? window.questions.length : 'window.questions no existe'
-            });
             
             if (currentQuestionIndex >= questions.length) {
-                console.log('🏁 COMPLETANDO EVALUACIÓN porque currentQuestionIndex >= questions.length');
                 completeAssessment();
                 return;
             }
@@ -17470,20 +17180,9 @@
             // Determinar opciones según el tipo de evaluación
             let likertOptions;
             
-            // DEBUG: Verificar qué assessment ID se está usando
-            console.log('🔍 DEBUG OPCIONES:', {
-                currentAssessmentId: currentAssessmentId,
-                assessmentIdType: typeof currentAssessmentId,
-                isEvaluacion6: currentAssessmentId === 6,
-                questionDimension: questions[currentQuestionIndex]?.dimension,
-                questionText: questions[currentQuestionIndex]?.text
-            });
-            
             if (currentAssessmentId === 6 || currentAssessmentId === "6") {  // Preparación para crecer 2026
-                console.log('✅ Usando opciones específicas para Preparación para crecer 2026');
                 likertOptions = getGrowthPreparationOptions(questions[currentQuestionIndex]);
             } else {
-                console.log('➡️ Usando opciones estándar de Likert');
                 // Opciones estándar para escala Likert de 5 puntos (otras evaluaciones)
                 likertOptions = [
                     'Totalmente en desacuerdo',
@@ -17493,20 +17192,6 @@
                     'Totalmente de acuerdo'
                 ];
             }
-            
-            // DEBUG: Log question details mejorado
-            console.log('🔍 DEBUG PREGUNTA MOSTRADA:', {
-                currentQuestionIndex: currentQuestionIndex,
-                displayNumber: question.order, // USAR ORDEN DE LA PREGUNTA, NO ÍNDICE
-                questionId: question.id,
-                questionOrder: question.order,
-                expectedCorrelativo: expectedCorrelativo,
-                correlatioMatch: question.order === expectedCorrelativo,
-                totalQuestions: questions.length,
-                questionText: question.text.substring(0, 50) + '...',
-                progressPercentage: Math.round(progress),
-                hasStoredAnswer: answers[question.id] !== undefined
-            });
             
             // Create question HTML - MODERNIZADO
             document.getElementById('questionContainer').innerHTML = `
@@ -17616,16 +17301,6 @@
             
             answers[currentQuestion.id] = parsedValue;
             
-            console.log('✅ RESPUESTA GUARDADA EXITOSAMENTE:', {
-                questionIndex: currentQuestionIndex,
-                questionId: currentQuestion.id,
-                questionOrder: currentQuestion.order,
-                selectedValue: parsedValue,
-                totalAnswersNow: Object.keys(answers).length,
-                questionText: currentQuestion.text.substring(0, 50) + '...',
-                allAnswerIds: Object.keys(answers).map(id => parseInt(id)).sort()
-            });
-            
             // Verificar que la respuesta realmente se guardó
             if (answers[currentQuestion.id] !== parsedValue) {
                 console.error('❌ ERROR CRÍTICO: La respuesta no se guardó correctamente', {
@@ -17671,16 +17346,6 @@
                 // CRÍTICO: Validar ANTES de incrementar el índice
                 const currentQuestion = questions[currentQuestionIndex];
                 
-                console.log('🔍 DEBUG ANTES DEL AVANCE:', {
-                    currentIndex: currentQuestionIndex,
-                    currentQuestionId: currentQuestion?.id,
-                    currentQuestionOrder: currentQuestion?.order,
-                    totalQuestionsLoaded: questions.length,
-                    answersSoFar: Object.keys(answers).length,
-                    answeredQuestionIds: Object.keys(answers).map(id => parseInt(id)).sort(),
-                    hasCurrentAnswer: currentQuestion ? !!answers[currentQuestion.id] : false
-                });
-                
                 // VALIDACIÓN CRÍTICA: Verificar que la pregunta actual esté respondida
                 if (!currentQuestion) {
                     console.error('❌ ERROR CRÍTICO: currentQuestion es undefined', {
@@ -17710,31 +17375,10 @@
                 const previousIndex = currentQuestionIndex;
                 currentQuestionIndex++;
                 
-                console.log('🔍 DEBUG DESPUÉS DEL AVANCE:', {
-                    previousIndex: previousIndex,
-                    newIndex: currentQuestionIndex,
-                    totalQuestions: questions.length,
-                    questionsArrayLength: questions.length,
-                    nextQuestionExists: !!questions[currentQuestionIndex],
-                    nextQuestionId: questions[currentQuestionIndex]?.id,
-                    nextQuestionOrder: questions[currentQuestionIndex]?.order,
-                    willComplete: currentQuestionIndex >= questions.length,
-                    shouldShowNext: currentQuestionIndex < questions.length,
-                    answersCount: Object.keys(answers).length
-                });
-                
                 // Decidir si mostrar siguiente pregunta o completar
                 if (currentQuestionIndex < questions.length) {
                     // HAY MÁS PREGUNTAS: Mostrar la siguiente
                     const nextQuestion = questions[currentQuestionIndex];
-                    console.log('➡️ AVANZANDO A SIGUIENTE PREGUNTA:', {
-                        arrayIndex: currentQuestionIndex,
-                        questionId: nextQuestion.id,
-                        correlativo: nextQuestion.order,
-                        expectedCorrelativo: currentQuestionIndex + 1,
-                        isCorrectSequence: nextQuestion.order === (currentQuestionIndex + 1),
-                        questionText: nextQuestion.text.substring(0, 50) + '...'
-                    });
                     
                     // Reset processing flag before showing next question
                     isProcessingAnswer = false;
@@ -17744,16 +17388,6 @@
                     // NO HAY MÁS PREGUNTAS: Validar y completar
                     const totalQuestionsExpected = questions.length;
                     const totalAnswered = Object.keys(answers).length;
-                    
-                    console.log('🏁 INTENTANDO COMPLETAR EVALUACIÓN:', {
-                        assessmentId: currentAssessmentId,
-                        assessmentType: currentAssessmentId === 2 ? 'DISC' : (currentAssessmentId === 3 ? 'IE' : 'OTRA'),
-                        totalQuestionsExpected: totalQuestionsExpected,
-                        totalAnswersCollected: totalAnswered,
-                        questionIds: questions.map(q => q.id).sort(),
-                        answeredIds: Object.keys(answers).map(id => parseInt(id)).sort(),
-                        allQuestionsAnswered: questions.every(q => answers[q.id] !== undefined)
-                    });
                     
                     // VALIDACIÓN FINAL: Verificar que TODAS las preguntas estén respondidas
                     const missingQuestions = questions.filter(q => !answers[q.id]);
@@ -17782,7 +17416,6 @@
                     }
                     
                     // TODO VALIDADO: Completar la evaluación
-                    console.log('✅ VALIDACIÓN EXITOSA: Completando evaluación con todas las respuestas');
                     // Note: completeAssessment() will reset isProcessingAnswer after completion
                     completeAssessment();
                 }
@@ -17803,12 +17436,6 @@
             const currentQuestion = questions[currentQuestionIndex];
             if (currentQuestion && currentQuestion.id) {
                 answers[currentQuestion.id] = parseInt(selected.value);
-                console.log('🔍 DEBUG RESPUESTA MANUAL:', {
-                    questionIndex: currentQuestionIndex,
-                    questionId: currentQuestion.id,
-                    selectedValue: parseInt(selected.value),
-                    totalAnswersNow: Object.keys(answers).length
-                });
             }
             
             // Use the same auto-advance logic
@@ -17818,8 +17445,6 @@
         // Complete assessment
         async function completeAssessment() {
             try {
-                console.log('Answers object:', answers);
-                console.log('Questions array:', questions);
                 
                 if (Object.keys(answers).length === 0) {
                     throw new Error('No hay respuestas guardadas');
@@ -17828,17 +17453,6 @@
                 // MEJORADO: Validación final completa antes de enviar
                 const totalAnswers = Object.keys(answers).length;
                 const expectedAnswers = questions.length;
-                
-                console.log('🔍 VALIDACIÓN FINAL ANTES DEL ENVÍO:', {
-                    assessmentType: currentAssessmentId === 2 ? 'DISC' : (currentAssessmentId === 3 ? 'IE' : 'OTRA'),
-                    currentAssessmentId: currentAssessmentId,
-                    totalAnswersProvided: totalAnswers,
-                    expectedAnswersFromQuestions: expectedAnswers,
-                    answeredQuestionIds: Object.keys(answers).map(id => parseInt(id)).sort(),
-                    expectedQuestionIds: questions.map(q => q.id).sort(),
-                    allQuestionsAnswered: questions.every(q => answers[q.id] !== undefined),
-                    missingQuestions: questions.filter(q => answers[q.id] === undefined).map(q => ({id: q.id, order: q.order}))
-                });
                 
                 // Verificar que todas las preguntas estén respondidas
                 if (totalAnswers !== expectedAnswers) {
@@ -17874,14 +17488,6 @@
                     });
                 }
                 
-                console.log('🔍 DEBUG ENVÍO:', {
-                    totalAnswers: Object.keys(answers).length,
-                    questionIds: Object.keys(answers).map(id => parseInt(id)),
-                    responses: responses,
-                    validationPassed: true
-                });
-                
-                console.log('Converted responses:', responses);
                 
                 if (responses.length === 0) {
                     throw new Error('No se pudieron procesar las respuestas');
@@ -17900,7 +17506,6 @@
                     assessment_id: currentAssessmentId
                 };
                 
-                console.log('Request body:', requestBody);
                 
                 // Send assessment data
                 const response = await fetch(`${API_BASE_URL}/api/save_assessment`, {
@@ -17913,7 +17518,6 @@
                 });
                 
                 const data = await response.json();
-                console.log('API response:', data);
                 
                 if (response.ok && data.success) {
                     showAssessmentResults(data);
@@ -17932,8 +17536,6 @@
 
         // Show assessment results
         function showAssessmentResults(data) {
-            console.log('🎯 showAssessmentResults received:', data);
-            console.log('🎯 Full API response structure:', JSON.stringify(data, null, 2));
             
             // Reset processing flag when showing results
             isProcessingAnswer = false;
@@ -17949,27 +17551,11 @@
             const completedAssessmentId = currentAssessmentId;
             const completedAssessmentTitle = window.currentAssessmentTitle || 'Evaluación';
             
-            console.log('🎯 EVALUACIÓN COMPLETADA:', {
-                evaluationId: evaluationId,
-                assessmentId: completedAssessmentId,
-                assessmentTitle: completedAssessmentTitle,
-                score: score,
-                resultText: resultText,
-                globalCurrentAssessmentId: currentAssessmentId,
-                windowCurrentAssessmentId: window.currentAssessmentId
-            });
-            
             // Store the result_id and data for detailed view
             window.lastEvaluationId = evaluationId;
             window.lastAssessmentData = result; // Store complete result data
             window.lastCompletedAssessmentId = completedAssessmentId;
             window.lastCompletedAssessmentTitle = completedAssessmentTitle;
-            
-            console.log('✅ Stored in window:', {
-                lastEvaluationId: window.lastEvaluationId,
-                lastCompletedAssessmentId: window.lastCompletedAssessmentId,
-                lastCompletedAssessmentTitle: window.lastCompletedAssessmentTitle
-            });
             
             if (!evaluationId) {
                 console.error('❌ No evaluation ID found in response:', data);
@@ -17989,7 +17575,6 @@
             
             // Mostrar directamente el modal de detalles de evaluación con los datos recién completados
             setTimeout(() => {
-                console.log('⏰ Calling viewEvaluationDetails with ID:', evaluationId);
                 viewEvaluationDetails(evaluationId);
             }, 1000); // Aumentar el tiempo para asegurar que los datos se guardan completamente
         }
@@ -18008,18 +17593,13 @@
 
         // View detailed results immediately after completing assessment
         async function viewDetailedResults() {
-            console.log('viewDetailedResults called');
-            console.log('lastEvaluationId:', window.lastEvaluationId);
-            console.log('lastAssessmentData:', window.lastAssessmentData);
             
             if (window.lastEvaluationId) {
                 try {
                     // If we have the assessment data in memory, use it immediately
                     if (window.lastAssessmentData && window.lastAssessmentData.dimensional_scores) {
-                        console.log('Using cached assessment data');
                         await viewEvaluationDetails(window.lastEvaluationId);
                     } else {
-                        console.log('Fetching fresh evaluation details from server');
                         await viewEvaluationDetails(window.lastEvaluationId);
                     }
                 } catch (error) {
@@ -18064,39 +17644,25 @@
         // View evaluation details
         async function viewEvaluationDetails(evaluationId) {
             try {
-                console.log('🔍 viewEvaluationDetails called with ID:', evaluationId);
-                console.log('🔍 Context:', {
-                    lastEvaluationId: window.lastEvaluationId,
-                    lastCompletedAssessmentId: window.lastCompletedAssessmentId,
-                    lastCompletedAssessmentTitle: window.lastCompletedAssessmentTitle
-                });
                 
                 // Cargar detalles de la evaluación PRIMERO
-                console.log('🌐 Fetching:', `${API_BASE_URL}/api/coachee/evaluation-details/${evaluationId}`);
                 const response = await fetch(`${API_BASE_URL}/api/coachee/evaluation-details/${evaluationId}`);
                 const data = await response.json();
                 
-                console.log('🌐 API response:', data);
-                console.log('🌐 Evaluation from API:', data.evaluation);
-                console.log('🌐 Assessment title from API:', data.evaluation?.assessment_title);
                 
                 if (response.ok) {
                     // La API devuelve {success: true, evaluation: {...}}
                     if (data.success && data.evaluation) {
-                        console.log('✅ Calling renderEvaluationDetails with evaluation ID:', data.evaluation.id);
                         renderEvaluationDetails(data.evaluation);
                         
                         // Mostrar el modal DESPUÉS de renderizar el contenido
                         const modalElement = document.getElementById('evaluationDetailsModal');
-                        console.log('🎬 Modal element before show:', modalElement);
-                        console.log('🎬 Modal element classes before:', modalElement.className);
                         
                         const modal = new bootstrap.Modal(modalElement, {
                             backdrop: false,
                             keyboard: true,
                             focus: true
                         });
-                        console.log('🎬 Showing modal...');
                         modal.show();
                         
                         // NO bloquear el scroll del body
@@ -18112,24 +17678,11 @@
                         // Verificar que Bootstrap agregó las clases
                         setTimeout(() => {
                             const computedStyle = window.getComputedStyle(modalElement);
-                            console.log('🎬 Modal element classes after show:', modalElement.className);
-                            console.log('🎬 Modal element style.display:', modalElement.style.display);
-                            console.log('🎬 Modal computed display:', computedStyle.display);
-                            console.log('🎬 Modal computed opacity:', computedStyle.opacity);
-                            console.log('🎬 Modal computed visibility:', computedStyle.visibility);
-                            console.log('🎬 Modal computed z-index:', computedStyle.zIndex);
-                            console.log('🎬 Modal computed position:', computedStyle.position);
-                            console.log('🎬 Modal computed top:', computedStyle.top);
-                            console.log('🎬 Modal computed left:', computedStyle.left);
-                            console.log('🎬 Modal getBoundingClientRect:', modalElement.getBoundingClientRect());
                             
                             // Verificar backdrop
                             const backdrop = document.querySelector('.modal-backdrop');
                             if (backdrop) {
-                                console.log('🎬 Backdrop found:', backdrop);
-                                console.log('🎬 Backdrop z-index:', window.getComputedStyle(backdrop).zIndex);
                             } else {
-                                console.log('❌ No backdrop found!');
                             }
                         }, 300);
                     } else {
@@ -18147,15 +17700,6 @@
         }
 
         function renderEvaluationDetails(evaluation) {
-            console.log('📊 renderEvaluationDetails called with:', evaluation);
-            console.log('📊 Evaluation ID:', evaluation.id);
-            console.log('📊 Assessment title:', evaluation.assessment_title);
-            console.log('📊 Assessment ID:', evaluation.assessment_id);
-            console.log('📊 Score:', evaluation.score);
-            console.log('📊 Current cached data:', window.lastAssessmentData);
-            console.log('📊 Last evaluation ID:', window.lastEvaluationId);
-            console.log('📊 Last completed assessment ID:', window.lastCompletedAssessmentId);
-            console.log('📊 Last completed assessment title:', window.lastCompletedAssessmentTitle);
             
             // CRÍTICO: Verificar si estamos mostrando la evaluación correcta
             if (window.lastCompletedAssessmentId && evaluation.assessment_id !== window.lastCompletedAssessmentId) {
@@ -18177,7 +17721,6 @@
             const useCurrent = currentData && window.lastEvaluationId && 
                              window.lastEvaluationId === evaluation.id;
             
-            console.log('📊 Using current cached data:', useCurrent);
             
             const data = useCurrent ? currentData : evaluation;
             const dimensionalScores = useCurrent ? currentData.dimensional_scores : evaluation.dimensional_scores;
@@ -18217,20 +17760,6 @@
                 analysisTitle = `Análisis de ${evaluation.assessment_title || 'Evaluación'}`;
                 chartTitle = 'Radar de Competencias';
             }
-            
-            console.log('📊 Assessment type detected:', { 
-                originalTitle: evaluation.assessment_title || data.assessment_title,
-                assessmentTitle, 
-                isDiscAssessment, 
-                isLeadershipAssessment,
-                isTeamworkAssessment,
-                isEmotionalIntelligenceAssessment,
-                analysisTitle 
-            });
-            console.log('Final data to use:', data);
-            console.log('Dimensional scores:', dimensionalScores);
-            console.log('Recommendations from server:', recommendations);
-            console.log('Recommendations count:', recommendations ? recommendations.length : 0);
             
             // Layout completamente diferente para "Preparación para crecer 2026"
             if (isGrowthPreparationAssessment) {
@@ -18433,14 +17962,6 @@
             
             // Crear el gráfico radar después de insertar el HTML
             setTimeout(() => {
-                console.log('🎯 CALLING RADAR: About to call createRadarChart with:', {
-                    dimensionalScores,
-                    isDiscAssessment,
-                    isEmotionalIntelligenceAssessment,
-                    isLeadershipAssessment,
-                    isTeamworkAssessment,
-                    assessmentTitle
-                });
                 createRadarChart(dimensionalScores, isDiscAssessment, isEmotionalIntelligenceAssessment, isLeadershipAssessment, isTeamworkAssessment);
                 
                 // ASEGURAR SCROLL AL INICIO después de crear gráfico también
@@ -18753,11 +18274,6 @@
         // CACHE BUSTER: 2025-10-12-17:35:00
         
         function getGrowthPreparationOptions(question) {
-            console.log('🎯 === INICIO getGrowthPreparationOptions ===');
-            console.log('🎯 Full question object:', JSON.stringify(question, null, 2));
-            console.log('🔍 Question dimension EXACT:', `"${question?.dimension}"`);
-            console.log('🔍 Question dimension length:', question?.dimension?.length);
-            console.log('🔍 Question dimension type:', typeof question?.dimension);
             
             // Opciones específicas por dimensión para la evaluación de crecimiento
             const growthOptionsByDimension = {
@@ -18770,25 +18286,17 @@
                 'Visión a futuro': ['Frustrado', 'Inquieto pero optimista', 'Orgulloso']
             };
             
-            console.log('🔍 Available dimensions in code:', Object.keys(growthOptionsByDimension));
-            console.log('🔍 Exact match test:', growthOptionsByDimension.hasOwnProperty(question?.dimension));
             
             // Probar también con trim por si hay espacios
             const cleanDimension = question?.dimension?.trim();
-            console.log('🔍 Clean dimension:', `"${cleanDimension}"`);
-            console.log('🔍 Clean match test:', growthOptionsByDimension.hasOwnProperty(cleanDimension));
             
             const options = growthOptionsByDimension[question?.dimension] || growthOptionsByDimension[cleanDimension] || ['Opción 1', 'Opción 2', 'Opción 3'];
-            console.log('🎯 Final options returned:', options);
-            console.log('🎯 === FIN getGrowthPreparationOptions ===');
             return options;
         }
         
         function generateGrowthPreparationResponsesHTML(responses) {
-            console.log('🔍 generateGrowthPreparationResponsesHTML - responses count:', responses ? responses.length : 0);
             
             if (!responses || responses.length === 0) {
-                console.log('⚠️ No responses available');
                 return '<div class="alert alert-warning">No hay respuestas detalladas disponibles.</div>';
             }
 
@@ -18842,7 +18350,6 @@
                 `;
             });
             
-            console.log('✅ Generated responses HTML for', responses.length, 'items');
             return html;
         }
         
@@ -19282,14 +18789,6 @@
         let radarChart = null;
 
         function createRadarChart(dimensionalScores, isDiscAssessment = false, isEmotionalIntelligenceAssessment = false, isLeadershipAssessment = false, isTeamworkAssessment = false) {
-            console.log('🎯 RADAR DEBUG: Function called with params:', {
-                isDiscAssessment,
-                isEmotionalIntelligenceAssessment,
-                isLeadershipAssessment,
-                isTeamworkAssessment,
-                dimensionalScores,
-                hasCanvas: !!document.getElementById('radarChart')
-            });
 
             const ctx = document.getElementById('radarChart');
             if (!ctx) {
@@ -19302,7 +18801,6 @@
                 return;
             }
 
-            console.log('✅ RADAR DEBUG: Canvas found, creating chart with scores:', dimensionalScores);
 
             // Destruir gráfico existente si existe
             if (radarChart) {
@@ -19313,7 +18811,6 @@
             let labels, dataValues, chartLabel;
             
             if (isDiscAssessment) {
-                console.log('📊 RADAR DEBUG: Using DISC configuration');
                 // Dimensiones DISC
                 labels = [
                     'Dominante',
@@ -19331,7 +18828,6 @@
                 
                 chartLabel = 'Perfil DISC';
             } else if (isEmotionalIntelligenceAssessment) {
-                console.log('🧠 RADAR DEBUG: Using Emotional Intelligence configuration');
                 // Dimensiones Inteligencia Emocional
                 labels = [
                     'Autoconciencia',
@@ -19350,23 +18846,17 @@
                 ];
                 
                 chartLabel = 'Perfil de Inteligencia Emocional';
-                console.log('🧠 RADAR DEBUG: IE data values:', dataValues);
             } else if (isLeadershipAssessment) {
-                console.log('👔 RADAR DEBUG: Using Leadership configuration');
                 // Usar las dimensiones originales de Liderazgo (sin traducir)
                 labels = Object.keys(dimensionalScores);
                 dataValues = Object.values(dimensionalScores);
                 chartLabel = 'Perfil de Liderazgo';
-                console.log('👔 RADAR DEBUG: Leadership data:', { labels, dataValues });
             } else if (isTeamworkAssessment) {
-                console.log('🤝 RADAR DEBUG: Using Teamwork configuration');
                 // Usar las dimensiones originales de Trabajo en Equipo (sin traducir)
                 labels = Object.keys(dimensionalScores);
                 dataValues = Object.values(dimensionalScores);
                 chartLabel = 'Perfil de Trabajo en Equipo';
-                console.log('🤝 RADAR DEBUG: Teamwork data:', { labels, dataValues });
             } else {
-                console.log('💬 RADAR DEBUG: Using Assertiveness configuration');
                 // Dimensiones Asertividad (configuración original)
                 labels = [
                     'Comunicación',
@@ -19386,12 +18876,6 @@
                 
                 chartLabel = 'Nivel de Asertividad';
             }
-
-            console.log('📊 RADAR DEBUG: Final chart config:', {
-                labels,
-                dataValues,
-                chartLabel
-            });
 
             radarChart = new Chart(ctx, {
                 type: 'radar',
@@ -19463,7 +18947,6 @@
                 }
             });
             
-            console.log('✅ RADAR DEBUG: Chart created successfully!');
         }
 
         function getStatusLabel(status) {
@@ -19500,7 +18983,6 @@
             const evaluationDetailsModal = document.getElementById('evaluationDetailsModal');
             if (evaluationDetailsModal) {
                 evaluationDetailsModal.addEventListener('hidden.bs.modal', function () {
-                    console.log('Modal cerrado - restableciendo estado del dashboard');
                     
                     // Reset assessment state completely
                     isAssessmentActive = false;
@@ -19528,7 +19010,6 @@
                     setTimeout(() => {
                         const backdrops = document.querySelectorAll('.modal-backdrop');
                         backdrops.forEach(backdrop => {
-                            console.log('Removing stuck backdrop:', backdrop);
                             backdrop.remove();
                         });
                         
@@ -19542,10 +19023,8 @@
                         // Force refresh dashboard to ensure all elements are clickable
                         refreshDashboard();
                         
-                        console.log('Dashboard completamente desbloqueado');
                     }, 100);
                     
-                    console.log('Estado del dashboard restablecido completamente');
                 });
             }
 
@@ -19992,56 +19471,41 @@
         
         // FUNCIÓN DE DEBUG TEMPORAL - Para ejecutar desde consola
         window.debugWelcomeMessage = function() {
-            console.log('🔍 DEBUG Document ready state:', document.readyState);
-            console.log('🔍 DEBUG All elements with id="welcomeMessage":', document.querySelectorAll('#welcomeMessage'));
-            console.log('🔍 DEBUG All spans:', document.querySelectorAll('span').length);
             
             const welcomeEl = document.getElementById('welcomeMessage');
-            console.log('🔍 DEBUG Element welcomeMessage:', welcomeEl);
-            console.log('🔍 DEBUG Current text:', welcomeEl?.textContent);
-            console.log('🔍 DEBUG Current user:', currentUser);
             
             // Buscar elementos similares
             const allSpans = document.querySelectorAll('span');
-            console.log('🔍 DEBUG All spans content:');
             allSpans.forEach((span, i) => {
                 if (span.textContent?.includes('Welcome')) {
-                    console.log(`  Span ${i}:`, span.id, span.textContent, span);
                 }
             });
             
             // Forzar actualización
             if (welcomeEl && currentUser?.full_name) {
                 welcomeEl.textContent = currentUser.full_name;
-                console.log('🔄 FORCED update to:', currentUser.full_name);
             } else {
-                console.log('❌ Cannot update: element or user missing');
             }
         };
 
         // FUNCIÓN PARA FORZAR ACTUALIZACIÓN MANUAL DEL NOMBRE
         window.forceUpdateUserName = async function() {
-            console.log('🔧 FORZANDO actualización del nombre de usuario...');
             
             try {
                 // Intentar dashboard summary primero
                 const response = await fetch(`${API_BASE_URL}/api/coachee/dashboard-summary`);
-                console.log('Response status:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Data received:', data);
                     
                     if (data.success && data.summary?.coachee?.name) {
                         const userName = data.summary.coachee.name;
                         const welcomeText = userName;
                         const count = updateAllWelcomeMessages(welcomeText);
-                        console.log(`✅ Actualizado ${count} elementos con: ${welcomeText}`);
                         return true;
                     }
                 }
                 
-                console.log('❌ No se pudo obtener el nombre del usuario');
                 return false;
                 
             } catch (error) {
@@ -20054,14 +19518,11 @@
         window.fixWelcomeMessage = function() {
             // Obtener todos los elementos con id="welcomeMessage"
             const allElements = document.querySelectorAll('#welcomeMessage');
-            console.log('🔍 Found', allElements.length, 'elements with id="welcomeMessage"');
             
             if (allElements.length > 1) {
-                console.log('⚠️ Removing duplicates, keeping only the first one');
                 // Mantener solo el primer elemento, eliminar el resto
                 for (let i = 1; i < allElements.length; i++) {
                     allElements[i].remove();
-                    console.log('🗑️ Removed duplicate element', i + 1);
                 }
             }
             
@@ -20069,7 +19530,6 @@
             const finalElement = document.getElementById('welcomeMessage');
             if (finalElement) {
                 finalElement.textContent = 'Welcome, test15!';
-                console.log('✅ Updated final element:', finalElement.textContent);
                 return true;
             }
             
@@ -20080,11 +19540,9 @@
         window.updateAllWelcomeMessages = function(message) {
             // Usar querySelectorAll para obtener TODOS los elementos
             const allWelcomeElements = document.querySelectorAll('#welcomeMessage');
-            console.log('🔍 Found', allWelcomeElements.length, 'elements with id="welcomeMessage"');
             
             allWelcomeElements.forEach((element, index) => {
                 element.textContent = message;
-                console.log(`🔄 Updated element ${index + 1}:`, element);
             });
             
             return allWelcomeElements.length;
@@ -20107,7 +19565,6 @@
                     for (let span of spans) {
                         if (span.textContent && span.textContent.includes('Welcome')) {
                             welcomeEl = span;
-                            console.log('🔍 Found welcome element via content search');
                             break;
                         }
                     }
@@ -20115,16 +19572,12 @@
                 
                 if (welcomeEl) {
                     welcomeEl.textContent = 'Welcome, test15!';
-                    console.log('🔄 FORCED update with delay successful');
-                    console.log('🔄 Updated element:', welcomeEl);
                 } else {
-                    console.log('❌ Element still not found after delay and multiple methods');
                     
                     // Método 4: Crear el elemento si no existe
                     const h3 = document.querySelector('h3');
                     if (h3) {
                         h3.innerHTML = '<i class="fas fa-home me-2"></i><span id="welcomeMessage">Welcome, test15!</span>';
-                        console.log('🔧 Created welcome element manually');
                     }
                 }
             }, 2000); // Aumentar delay a 2 segundos
@@ -20135,7 +19588,6 @@
             if (currentUser && currentUser.full_name) {
                 const welcomeText = currentUser.full_name;
                 const updatedCount = updateAllWelcomeMessages(welcomeText);
-                console.log('🔄 Actualizados', updatedCount, 'elementos con mensaje forzado:', welcomeText);
             }
         }
         
@@ -20147,7 +19599,6 @@
                     // Si hay avatar_url, mostrar imagen
                     if (currentUser.avatar_url) {
                         avatarElement.innerHTML = `<img src="${currentUser.avatar_url}" alt="${currentUser.full_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                        console.log('✅ Avatar actualizado con imagen:', currentUser.avatar_url);
                     } else {
                         // Obtener iniciales del nombre
                         const nameParts = currentUser.full_name.trim().split(' ');
@@ -20158,7 +19609,6 @@
                             initials = nameParts[0].charAt(0);
                         }
                         avatarElement.innerHTML = initials.toUpperCase();
-                        console.log('✅ Avatar actualizado con iniciales:', initials);
                     }
                 }
             }
@@ -20169,7 +19619,6 @@
             // Escuchar cambios en localStorage (cuando se actualiza en otra pestaña)
             window.addEventListener('storage', function(e) {
                 if (e.key === 'avatarUpdated') {
-                    console.log('🔄 Avatar actualizado en otra pestaña, recargando perfil...');
                     // Recargar perfil del usuario
                     fetch(`${API_BASE_URL}/api/coachee/profile`)
                         .then(response => response.json())
@@ -20190,7 +19639,6 @@
                 const lastCheck = sessionStorage.getItem('lastAvatarCheck') || '0';
                 
                 if (lastUpdate && lastUpdate > lastCheck) {
-                    console.log('🔄 Avatar actualizado detectado, recargando perfil...');
                     sessionStorage.setItem('lastAvatarCheck', Date.now().toString());
                     
                     // Recargar perfil del usuario
@@ -20210,7 +19658,6 @@
 
         // Función de emergencia para desbloquear el dashboard
         function forceUnlockDashboard() {
-            console.log('🚨 EMERGENCIA: Desbloqueando dashboard forzadamente');
             
             // Reset all assessment states
             isAssessmentActive = false;
@@ -20264,7 +19711,6 @@
             refreshDashboard();
             
             showToast('Dashboard desbloqueado forzadamente', 'success');
-            console.log('✅ Dashboard completamente desbloqueado');
         }
 
         // Make it globally accessible for debugging
@@ -20460,7 +19906,6 @@
 
         // Verificar Chart.js availability inmediatamente
         function testChartJSAvailability() {
-            console.log('🔍 TESTING Chart.js availability...');
             
             if (typeof Chart === 'undefined') {
                 console.error('❌ Chart.js NOT LOADED!');
@@ -20471,7 +19916,6 @@
                 );
                 return false;
             } else {
-                console.log('✅ Chart.js is available, version:', Chart.version);
                 // DIV VERDE DE "Chart.js loaded" ELIMINADO POR PETICIÓN DEL USUARIO
                 // document.body.insertAdjacentHTML('beforeend', 
                 //     '<div style="position: fixed; top: 10px; right: 10px; background: green; color: white; padding: 20px; z-index: 9999; border-radius: 5px;">' +
@@ -20487,11 +19931,9 @@
         
         async function safeInitializeApp() {
             if (isAppInitialized) {
-                console.log('⚠️ App already initialized, skipping duplicate initialization');
                 return;
             }
             isAppInitialized = true;
-            console.log('🚀 Starting app initialization...');
             
             testChartJSAvailability();
             await initializeApp();
@@ -20500,7 +19942,6 @@
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
             
-            console.log('✅ App initialization complete');
         }
         
         // Initialize when DOM is ready
@@ -20623,13 +20064,11 @@
         const calendarScript = document.createElement('script');
         calendarScript.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js';
         calendarScript.onload = function() {
-            console.log('✅ FullCalendar cargado para coachee');
             initializeCoacheeScheduling();
         };
         document.head.appendChild(calendarScript);
 
         function initializeCoacheeScheduling() {
-            console.log('🗓️ Inicializando sistema de agendamiento para coachee');
             loadCoachAvailability();
             loadMySessions();
             setupSessionRequestForm();
@@ -20827,7 +20266,6 @@
         let sessionFormConfigured = false;
 
         function setupSessionRequestForm() {
-            console.log('🔧 Configurando formulario de solicitud de sesión con dropdowns...');
             
             const form = document.getElementById('sessionRequestForm');
             if (!form) {
@@ -20837,7 +20275,6 @@
             
             // ⚠️ IMPORTANTE: Solo configurar una vez para evitar event listeners duplicados
             if (sessionFormConfigured) {
-                console.log('ℹ️ Formulario ya configurado, omitiendo configuración duplicada');
                 return;
             }
             
@@ -20851,20 +20288,16 @@
                 return;
             }
             
-            console.log('✅ Todos los campos del formulario encontrados');
             
             // Configurar fecha mínima (mañana en zona horaria de Santiago)
             sessionDate.min = getSantiagoTomorrow();
-            console.log('📅 Fecha mínima configurada (Santiago):', getSantiagoTomorrow());
             
             // Configurar dropdowns de tiempo para auto-completar
             function setupTimeDropdowns() {
-                console.log('🕐 Configurando dropdowns de tiempo...');
                 
                 // Auto-completar hora de fin cuando se selecciona hora de inicio
                 sessionStartTime.addEventListener('change', function() {
                     const startTime = this.value;
-                    console.log('🕐 Hora de inicio seleccionada:', startTime);
                     
                     if (startTime) {
                         const [hours, minutes] = startTime.split(':').map(Number);
@@ -20879,7 +20312,6 @@
                             sessionEndTime.value = endTime;
                         }
                         
-                        console.log('🕐 Hora de fin auto-completada:', sessionEndTime.value);
                     }
                 });
                 
@@ -20908,7 +20340,6 @@
                     }
                 });
                 
-                console.log('✅ Dropdowns de tiempo configurados');
             }
             
             // Configurar dropdowns
@@ -20916,7 +20347,6 @@
             
             // Agregar event listener al formulario (UNA SOLA VEZ)
             form.addEventListener('submit', function(e) {
-                console.log('📝 Formulario enviado - procesando solicitud');
                 e.preventDefault();
                 
                 // Validar que todos los campos estén completos
@@ -20946,7 +20376,6 @@
             
             // Marcar como configurado para evitar configuraciones duplicadas
             sessionFormConfigured = true;
-            console.log('✅ Formulario de solicitud con dropdowns configurado correctamente');
         }
 
         function submitSessionRequest() {
@@ -21215,7 +20644,6 @@
         }
 
         function activateRequestTab() {
-            console.log('🔄 Activando pestaña de solicitud de sesión manualmente');
             
             const requestTab = document.getElementById('schedule-request-tab');
             const requestPane = document.getElementById('schedule-request-pane');
@@ -21236,7 +20664,6 @@
                 // Configurar formulario
                 setTimeout(() => {
                     setupSessionRequestForm();
-                    console.log('✅ Pestaña de solicitud activada y formulario configurado');
                 }, 200);
             } else {
                 console.error('❌ No se pudieron encontrar las pestañas para activar');
@@ -21244,7 +20671,6 @@
         }
 
         function activateMySessionsTab() {
-            console.log('🔄 Activando pestaña de mis sesiones manualmente');
             
             const requestTab = document.getElementById('schedule-request-tab');
             const requestPane = document.getElementById('schedule-request-pane');
@@ -21265,7 +20691,6 @@
                 // Cargar sesiones
                 setTimeout(() => {
                     loadMySessions();
-                    console.log('✅ Pestaña de mis sesiones activada y datos cargados');
                 }, 200);
             } else {
                 console.error('❌ No se pudieron encontrar las pestañas para activar');
@@ -21273,7 +20698,6 @@
         }
 
         function switchToRequestTab() {
-            console.log('🔄 Cambiando a pestaña de solicitud de sesión');
             activateRequestTab();
             showNotification('Completa el formulario para solicitar una nueva sesión', 'info');
         }
@@ -21307,22 +20731,18 @@
 
         // Agregar event listeners para las sub-pestañas del calendario
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Inicializando sistema de pestañas del calendario');
             
             // Event listener para cuando se activa la pestaña "Solicitar Sesión"
             const scheduleRequestTab = document.getElementById('schedule-request-tab');
             if (scheduleRequestTab) {
-                console.log('✅ Pestaña "Solicitar Sesión" encontrada');
                 
                 // Event listener para Bootstrap tab
                 scheduleRequestTab.addEventListener('shown.bs.tab', function (e) {
-                    console.log('🎯 Pestaña "Solicitar Sesión" activada - Reinicializando formulario');
                     setTimeout(setupSessionRequestForm, 100);
                 });
                 
                 // Event listener manual para click
                 scheduleRequestTab.addEventListener('click', function (e) {
-                    console.log('👆 Click en pestaña "Solicitar Sesión"');
                     e.preventDefault();
                     activateRequestTab();
                 });
@@ -21333,16 +20753,13 @@
             // Event listener para cuando se activa la pestaña "Mis Sesiones"
             const mySessionsTab = document.getElementById('my-sessions-tab');
             if (mySessionsTab) {
-                console.log('✅ Pestaña "Mis Sesiones" encontrada');
                 
                 mySessionsTab.addEventListener('shown.bs.tab', function (e) {
-                    console.log('🎯 Pestaña "Mis Sesiones" activada - Refrescando sesiones');
                     setTimeout(loadMySessions, 100);
                 });
                 
                 // Event listener manual para click
                 mySessionsTab.addEventListener('click', function (e) {
-                    console.log('👆 Click en pestaña "Mis Sesiones"');
                     e.preventDefault();
                     activateMySessionsTab();
                 });
@@ -21515,7 +20932,6 @@
                             // El último backdrop es el del modal actual
                             const lastBackdrop = backdrops[backdrops.length - 1];
                             lastBackdrop.style.zIndex = '1060';
-                            console.log('✅ Backdrop ajustado:', lastBackdrop, 'z-index:', lastBackdrop.style.zIndex);
                         }
                     }, 10);
                 }, { once: true });
@@ -21529,7 +20945,6 @@
                         const lastBackdrop = backdrops[backdrops.length - 1];
                         lastBackdrop.style.zIndex = '1060';
                     }
-                    console.log('✅ Modal contactCoach completamente visible - z-index: 1065');
                 }, { once: true });
                 
                 modal.show();
@@ -22166,8 +21581,6 @@
             `;
         }
 
-        console.log('🔄 Coachee Calendar System: 2025-10-18-16:44 - Sistema de agendamiento con zona horaria Santiago');
-        console.log('🇨🇱 Hora actual Santiago:', getSantiagoDateTime().toLocaleString('es-CL'));
         
         // ========== INSTAGRAM STYLE FEEDS FUNCTIONALITY ==========
         
@@ -22177,18 +21590,15 @@
             existingShowTab(tabId);
             
             if (tabId === 'feeds') {
-                console.log('📺 Feeds tab activated - loading Instagram style feeds');
                 setTimeout(loadInstagramFeeds, 100);
             }
         };
         
         // Función para cargar feeds desde la API
         async function loadInstagramFeeds() {
-            console.log('🎬 Loading Instagram style feeds...');
             
             const container = document.getElementById('feedsContainer');
             if (!container) {
-                console.log('❌ Feeds container not found');
                 return;
             }
             
@@ -22196,7 +21606,6 @@
                 const response = await fetch('/api/coachee/content');
                 const data = await response.json();
                 
-                console.log('📊 API Response for feeds:', data);
                 
                 if (data.success && data.content && data.content.length > 0) {
                     displayInstagramFeeds(data.content);
@@ -22220,15 +21629,6 @@
                 const videoId = extractYouTubeVideoId(item.content_url);
                 const isYouTubeVideo = videoId && item.content_type === 'video';
                 const isDocument = item.content_type === 'document';
-                
-                console.log('🔍 Processing content item:', {
-                    id: item.id,
-                    type: item.content_type,
-                    title: item.title,
-                    url: item.content_url,
-                    isDocument: isDocument,
-                    isYouTubeVideo: isYouTubeVideo
-                });
                 
                 // Determinar el thumbnail/preview
                 let thumbnail;
@@ -22369,19 +21769,14 @@
             });
             
             container.innerHTML = feedsHTML;
-            console.log(`✅ Displayed ${content.length} Instagram-style feeds`);
             
             // Generar previews de documentos después de insertar el HTML
             content.forEach(item => {
-                console.log(`🔍 Processing item ${item.id}: type=${item.content_type}, url=${item.content_url}`);
                 if (item.content_type === 'document') {
                     const canvasId = `doc-preview-${item.id}`;
-                    console.log(`📄 [DOCUMENT PREVIEW] Generating preview for document ${item.id}, canvas: ${canvasId}`);
-                    console.log(`📄 [DOCUMENT PREVIEW] URL: ${item.content_url}`);
                     // Delay para asegurar que el canvas esté en el DOM
                     setTimeout(() => {
                         const canvas = document.getElementById(canvasId);
-                        console.log(`📄 [DOCUMENT PREVIEW] Canvas found:`, canvas);
                         if (canvas) {
                             generateDocumentPreview(item.content_url, canvasId);
                         } else {
@@ -22421,7 +21816,6 @@
         
         // Función para abrir video en nueva pestaña
         function openVideoFeed(url) {
-            console.log('🚀 Opening video from feed:', url);
             window.open(url, '_blank');
         }
         
@@ -22437,18 +21831,15 @@
                 icon.classList.add('far');
                 button.classList.remove('liked');
             }
-            console.log('❤️ Toggled like for content:', contentId);
         }
         
         // Función para compartir
         function shareFeed(contentId) {
-            console.log('🔗 Sharing content:', contentId);
             showToast('¡Funcionalidad de compartir próximamente!', 'info');
         }
         
         // Función para abrir documento en nueva pestaña
         function openDocumentFeed(url, title) {
-            console.log('📄 Opening document from feed:', url);
             window.open(url, '_blank');
         }
         
@@ -22484,7 +21875,6 @@
         
         // Función para generar vista completa del documento
         async function generateFullDocumentPreview(url, canvasId) {
-            console.log('📄 [FULL PDF] Loading full document:', url);
             
             if (typeof pdfjsLib === 'undefined') {
                 console.error('❌ [FULL PDF] PDF.js not loaded');
@@ -22498,7 +21888,6 @@
                 const loadingTask = pdfjsLib.getDocument(url);
                 const pdf = await loadingTask.promise;
                 
-                console.log('📄 [FULL PDF] PDF loaded, total pages:', pdf.numPages);
                 
                 // Renderizar la primera página con mejor calidad
                 const page = await pdf.getPage(1);
@@ -22516,7 +21905,6 @@
                     viewport: viewport
                 }).promise;
                 
-                console.log('✅ [FULL PDF] Document rendered successfully');
             } catch (error) {
                 console.error('❌ [FULL PDF] Error loading document:', error);
             }
@@ -22524,8 +21912,6 @@
         
         // Funciones de PDF.js para preview de documentos
     async function generatePDFPreview(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
-            console.log('📄 [PDF PREVIEW] Starting PDF preview generation for:', url);
-            console.log('📄 [PDF PREVIEW] PDF.js available:', typeof pdfjsLib !== 'undefined');
             
             if (typeof pdfjsLib === 'undefined') {
                 console.error('❌ [PDF PREVIEW] PDF.js not loaded');
@@ -22547,7 +21933,6 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, maxWidth, maxHeight);
                 
-                console.log('📄 [PDF PREVIEW] Loading PDF document...');
                 
                 // Cargar PDF con configuración para CORS
                 const loadingTask = pdfjsLib.getDocument({
@@ -22558,7 +21943,6 @@
                 });
                 
                 const pdf = await loadingTask.promise;
-                console.log('📄 [PDF PREVIEW] PDF loaded successfully, pages:', pdf.numPages);
                 
                 // Obtener primera página
                 const page = await pdf.getPage(1);
@@ -22596,7 +21980,6 @@
                 // Dibujar página centrada en canvas principal
                 ctx.drawImage(tempCanvas, offsetX, offsetY);
                 
-                console.log('✅ PDF preview generated successfully for:', url);
                 
             } catch (error) {
                 console.error('❌ Error generating PDF preview:', error);
@@ -22623,8 +22006,6 @@
         
         // Función para generar preview de documento (unified)
         async function generateDocumentPreview(url, canvasId) {
-            console.log('📄 [DOC PREVIEW] Starting preview generation for:', url);
-            console.log('📄 [DOC PREVIEW] Canvas ID:', canvasId);
             
             const canvas = document.getElementById(canvasId);
             if (!canvas) {
@@ -22646,7 +22027,6 @@
             
             // Verificar si es PDF
             if (url.toLowerCase().includes('.pdf') || url.includes('content_type=document') || url.includes('/download') || url.includes('/view') || url.includes('/preview')) {
-                console.log('📄 [DOC PREVIEW] Detected as PDF, generating PDF preview');
                 try {
                     await generatePDFPreview(url, canvasId, 1200, 1000);
                 } catch (error) {
@@ -22663,7 +22043,6 @@
                     ctx.fillText('📄', 600, 700);
                 }
             } else {
-                console.log('📄 [DOC PREVIEW] Non-PDF document, showing generic icon');
                 // Para otros tipos de documento, mostrar icono genérico
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, 1200, 1000);
@@ -22681,7 +22060,6 @@
         
         // Función para refrescar feeds
         function refreshFeeds() {
-            console.log('🔄 Refreshing Instagram feeds...');
             const container = document.getElementById('feedsContainer');
             if (container) {
                 container.innerHTML = `
@@ -22826,7 +22204,6 @@
             }
         });
         
-        console.log('✅ Script principal completamente cargado - coacheeDashboardApp() definido');
     </script>
     
     <!-- Alpine.js - CARGAR DESPUÉS de que coacheeDashboardApp() esté definido -->

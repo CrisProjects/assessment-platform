@@ -354,49 +354,7 @@ def log_security_event(event_type, severity='info', user_id=None, username=None,
         description: Descripción del evento
         additional_data: Datos adicionales en formato string (puede ser JSON)
     """
-    # TEMP: Disabled debido a schema mismatch - usar logger en su lugar
     logger.info(f"Security event: {event_type} | {username} | {description}")
-    return
-    
-    try:
-        # Obtener información de la solicitud HTTP
-        ip_address = request.remote_addr if request else None
-        user_agent = request.headers.get('User-Agent', '')[:500] if request else None
-        endpoint = request.endpoint if request else None
-        method = request.method if request else None
-        
-        # Crear registro de seguridad
-        security_log = SecurityLog(
-            event_type=event_type,
-            severity=severity,
-            user_id=user_id,
-            username=username,
-            user_role=user_role,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            endpoint=endpoint,
-            method=method,
-            description=description,
-            additional_data=additional_data
-        )
-        
-        db.session.add(security_log)
-        db.session.commit()
-        
-        # Log en el sistema de logging estándar
-        log_message = f"Security Event: {event_type} | Severity: {severity} | User: {username or 'Unknown'} | IP: {ip_address}"
-        if severity == 'critical':
-            logger.critical(log_message)
-        elif severity == 'error':
-            logger.error(log_message)
-        elif severity == 'warning':
-            logger.warning(log_message)
-        else:
-            logger.info(log_message)
-            
-    except Exception as e:
-        logger.error(f"Error logging security event: {str(e)}")
-        # No lanzar excepción para no interrumpir flujo principal
 
 def log_failed_login(username, reason='Invalid credentials'):
     """Registra un intento de login fallido con contexto extendido"""
@@ -1166,6 +1124,7 @@ class Task(db.Model):
     description = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(100), nullable=False)
     priority = db.Column(db.String(20), default='medium')
+    type = db.Column(db.String(20), default='accion')
     due_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -1233,15 +1192,47 @@ class DevelopmentPlan(db.Model):
         self.created_at = kwargs.get('created_at', now)
         self.updated_at = kwargs.get('updated_at', now)
 
+class Notification(db.Model):
+    __tablename__ = 'notification'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    type = db.Column(db.String(50), nullable=False)  # session_request, evaluation_completed, content_assigned, etc.
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    related_id = db.Column(db.Integer, nullable=True)  # ID del objeto relacionado
+    related_type = db.Column(db.String(50), nullable=True)  # tipo del objeto relacionado
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    user = db.relationship('User', backref='notifications')
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.created_at = kwargs.get('created_at', datetime.utcnow())
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'type': self.type,
+            'title': self.title,
+            'message': self.message,
+            'related_id': self.related_id,
+            'related_type': self.related_type,
+            'is_read': self.is_read,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 class Content(db.Model):
     __tablename__ = 'content'
     
     id = db.Column(db.Integer, primary_key=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # NULL = biblioteca, no asignado
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    content_type = db.Column(db.String(50), default='video')  # video, document, link
+    content_type = db.Column(db.String(50), default='video')  # video, document, article
     content_url = db.Column(db.String(500), nullable=False)  # URL del video o archivo
     thumbnail_url = db.Column(db.String(500), nullable=True)
     duration = db.Column(db.Integer, nullable=True)  # duración en segundos
@@ -3523,10 +3514,6 @@ def generate_recommendations(dimensional_scores, overall_score, assessment_type=
 def index():
     return render_template('index.html')
 
-@app.route('/test_carousel.html')
-def test_carousel():
-    return render_template('test_carousel.html')
-
 @app.route('/api/status')
 def api_status():
     return jsonify({
@@ -3621,212 +3608,6 @@ def health_check():
         health_status['error'] = str(e)
     
     return jsonify(health_status)
-
-@app.route('/api/railway-debug')
-@admin_required
-def api_railway_debug():
-    """Endpoint de debug específico para Railway - Verificar resultados de evaluaciones"""
-    try:
-        # Información del entorno
-        is_railway = bool(os.environ.get('RAILWAY_ENVIRONMENT'))
-        database_url = os.environ.get('DATABASE_URL', 'No configurada')
-        
-        # Contar registros principales
-        users_count = User.query.count()
-        assessments_count = Assessment.query.count()
-        results_count = AssessmentResult.query.count()
-        questions_count = Question.query.count()
-        responses_count = Response.query.count()
-        
-        # Verificar coachees y sus evaluaciones
-        coachees_data = []
-        coachees = User.query.filter_by(role='coachee').all()
-        
-        for coachee in coachees:
-            completed = AssessmentResult.query.filter_by(user_id=coachee.id).all()
-            coachee_results = []
-            
-            for result in completed:
-                assessment = Assessment.query.get(result.assessment_id)
-                responses = Response.query.filter_by(assessment_result_id=result.id).count()
-                
-                coachee_results.append({
-                    'result_id': result.id,
-                    'assessment_name': assessment.title if assessment else "Evaluación eliminada",
-                    'score': result.score,
-                    'completed_at': result.completed_at.isoformat() if result.completed_at else None,
-                    'responses_count': responses,
-                    'has_result_text': bool(result.result_text),
-                    'has_dimensional_scores': bool(result.dimensional_scores)
-                })
-            
-            coachees_data.append({
-                'id': coachee.id,
-                'username': coachee.username,
-                'email': coachee.email,
-                'coach_id': coachee.coach_id,
-                'completed_evaluations': len(completed),
-                'evaluations': coachee_results
-            })
-        
-        # Verificar evaluaciones activas
-        active_assessments = []
-        for assessment in Assessment.query.filter_by(is_active=True).all():
-            questions = Question.query.filter_by(assessment_id=assessment.id, is_active=True).count()
-            results = AssessmentResult.query.filter_by(assessment_id=assessment.id).count()
-            
-            active_assessments.append({
-                'id': assessment.id,
-                'title': assessment.title,
-                'questions_count': questions,
-                'results_count': results
-            })
-        
-        # Detectar problemas específicos
-        issues = []
-        
-        if results_count == 0:
-            issues.append("No hay resultados de evaluaciones en la base de datos")
-        
-        # Verificar resultados sin respuestas
-        results_without_responses = []
-        for result in AssessmentResult.query.all():
-            responses = Response.query.filter_by(assessment_result_id=result.id).count()
-            if responses == 0:
-                results_without_responses.append(result.id)
-        
-        if results_without_responses:
-            issues.append(f"Hay {len(results_without_responses)} resultados sin respuestas asociadas")
-        
-        # Verificar configuración
-        config_issues = []
-        if not app.config.get('SECRET_KEY'):
-            config_issues.append("SECRET_KEY no configurado")
-        
-        return jsonify({
-            'success': True,
-            'timestamp': datetime.utcnow().isoformat(),
-            'environment': {
-                'is_railway': is_railway,
-                'database_type': 'PostgreSQL' if 'postgresql' in database_url else 'SQLite' if 'sqlite' in database_url else 'Unknown',
-                'flask_env': os.environ.get('FLASK_ENV'),
-                'is_production': os.environ.get('FLASK_ENV') == 'production'
-            },
-            'database_counts': {
-                'users': users_count,
-                'assessments': assessments_count,
-                'results': results_count,
-                'questions': questions_count,
-                'responses': responses_count
-            },
-            'coachees': coachees_data,
-            'active_assessments': active_assessments,
-            'issues': issues,
-            'config_issues': config_issues,
-            'results_without_responses': results_without_responses
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error en railway debug: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'timestamp': datetime.utcnow().isoformat()
-        }), 500
-
-@app.route('/api/debug/evaluation-results')
-@admin_required
-def debug_evaluation_results():
-    """Debug específico para el problema de visualización de resultados"""
-    try:
-        # Información básica
-        results_total = AssessmentResult.query.count()
-        users_total = User.query.count()
-        coachees_total = User.query.filter_by(role='coachee').count()
-        
-        # Obtener resultados con detalles
-        results_data = []
-        for result in AssessmentResult.query.all():
-            assessment = Assessment.query.get(result.assessment_id)
-            user = User.query.get(result.user_id)
-            responses = Response.query.filter_by(assessment_result_id=result.id).count()
-            
-            results_data.append({
-                'result_id': result.id,
-                'user_id': result.user_id,
-                'username': user.username if user else 'Usuario eliminado',
-                'user_role': user.role if user else 'N/A',
-                'assessment_id': result.assessment_id,
-                'assessment_title': assessment.title if assessment else 'Evaluación eliminada',
-                'score': result.score,
-                'total_questions': result.total_questions,
-                'completed_at': result.completed_at.isoformat() if result.completed_at else None,
-                'has_result_text': bool(result.result_text),
-                'result_text_length': len(result.result_text) if result.result_text else 0,
-                'has_dimensional_scores': bool(result.dimensional_scores),
-                'responses_count': responses,
-                'coach_id': result.coach_id,
-                'invitation_id': result.invitation_id
-            })
-        
-        # Verificar problemas específicos de visualización
-        visualization_issues = []
-        
-        # Problema 1: Resultados sin respuestas
-        results_no_responses = [r for r in results_data if r['responses_count'] == 0]
-        if results_no_responses:
-            visualization_issues.append(f"Hay {len(results_no_responses)} resultados sin respuestas asociadas")
-        
-        # Problema 2: Resultados sin texto de resultado
-        results_no_text = [r for r in results_data if not r['has_result_text']]
-        if results_no_text:
-            visualization_issues.append(f"Hay {len(results_no_text)} resultados sin texto de resultado")
-        
-        # Problema 3: Resultados sin scores dimensionales
-        results_no_dimensional = [r for r in results_data if not r['has_dimensional_scores']]
-        if results_no_dimensional:
-            visualization_issues.append(f"Hay {len(results_no_dimensional)} resultados sin scores dimensionales")
-        
-        # Verificar configuración del frontend
-        frontend_config = {
-            'coachee_dashboard_exists': os.path.exists('templates/coachee_dashboard.html'),
-            'coach_dashboard_exists': os.path.exists('templates/coach_dashboard_v2.html'),
-            'static_files_exist': os.path.exists('static'),
-            'api_endpoints_available': [
-                '/api/coachee/evaluations',
-                '/api/coachee/evaluation-details/<id>',
-                '/api/coach/coachee-evaluations/<id>',
-                '/api/coach/evaluation-details/<id>'
-            ]
-        }
-        
-        return jsonify({
-            'success': True,
-            'timestamp': datetime.utcnow().isoformat(),
-            'summary': {
-                'total_results': results_total,
-                'total_users': users_total,
-                'total_coachees': coachees_total,
-                'visualization_issues_count': len(visualization_issues)
-            },
-            'results_details': results_data,
-            'visualization_issues': visualization_issues,
-            'frontend_config': frontend_config,
-            'database_type': 'PostgreSQL' if 'postgresql' in app.config['SQLALCHEMY_DATABASE_URI'] else 'SQLite',
-            'environment': {
-                'is_railway': bool(os.environ.get('RAILWAY_ENVIRONMENT')),
-                'flask_env': os.environ.get('FLASK_ENV'),
-                'debug_mode': app.debug
-            }
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error en debug evaluation results: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'timestamp': datetime.utcnow().isoformat()
-        }), 500
 
 @app.route('/favicon.ico')
 def favicon():
@@ -5817,7 +5598,7 @@ def api_coach_login():
             return jsonify({
                 'success': True,
                 'user': create_user_response(coach_user),
-                'redirect_url': '/coach/dashboard-v2'
+                'redirect_url': '/coach-feed'
             }), 200
         else:
             # Registrar login fallido en auditoría
@@ -6325,6 +6106,19 @@ def api_save_assessment():
                     'error': f'Error guardando evaluación: {error_str}',
                     'code': 'COMMIT_ERROR'
                 }), 500
+        
+        # Crear notificación para el coach si existe
+        if current_coachee.coach_id:
+            assessment = Assessment.query.get(assessment_id_int)
+            assessment_name = assessment.name if assessment else 'una evaluación'
+            create_notification(
+                user_id=current_coachee.coach_id,
+                type='evaluation_completed',
+                title='Evaluación completada',
+                message=f'{current_coachee.full_name} ha completado {assessment_name}',
+                related_id=assessment_result.id,
+                related_type='assessment_result'
+            )
         
         return jsonify({
             'success': True,
@@ -7998,71 +7792,6 @@ def api_coach_pending_evaluations():
         logger.error(f"❌ PENDING-EVALUATIONS: Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error obteniendo evaluaciones pendientes: {str(e)}'}), 500
 
-@app.route('/api/coach/debug-users', methods=['GET'])
-@coach_session_required
-def api_coach_debug_users():
-    """Endpoint de debug para verificar usuarios en Railway"""
-    try:
-        if not g.current_user or g.current_user.role != 'coach':
-            return jsonify({'error': 'Access denied'}), 403
-            
-        logger.info(f"🐛 DEBUG: Coach {g.current_user.username} (ID: {g.current_user.id}) requesting user debug info")
-        
-        # Obtener todos los usuarios
-        all_users = User.query.all()
-        logger.info(f"🐛 DEBUG: Total users in database: {len(all_users)}")
-        
-        # Obtener usuarios por rol
-        admins = User.query.filter_by(role='platform_admin').all()
-        coaches = User.query.filter_by(role='coach').all()
-        coachees = User.query.filter_by(role='coachee').all()
-        
-        # Obtener coachees específicos del coach actual
-        my_coachees = User.query.filter_by(coach_id=g.current_user.id, role='coachee').all()
-        
-        debug_info = {
-            'current_coach': {
-                'id': g.current_user.id,
-                'username': g.current_user.username,
-                'email': g.current_user.email,
-                'role': g.current_user.role
-            },
-            'database_stats': {
-                'total_users': len(all_users),
-                'admins': len(admins),
-                'coaches': len(coaches),
-                'coachees': len(coachees),
-                'my_coachees': len(my_coachees)
-            },
-            'my_coachees_details': [
-                {
-                    'id': c.id,
-                    'username': c.username,
-                    'email': c.email,
-                    'full_name': c.full_name,
-                    'coach_id': c.coach_id,
-                    'is_active': c.is_active,
-                    'created_at': c.created_at.isoformat() if c.created_at else None
-                } for c in my_coachees
-            ],
-            'all_coachees_summary': [
-                {
-                    'id': c.id,
-                    'username': c.username,
-                    'email': c.email,
-                    'coach_id': c.coach_id,
-                    'belongs_to_current_coach': c.coach_id == g.current_user.id
-                } for c in coachees
-            ]
-        }
-        
-        logger.info(f"🐛 DEBUG: Debug info prepared: {debug_info}")
-        return jsonify(debug_info), 200
-        
-    except Exception as e:
-        logger.error(f"❌ DEBUG: Error in debug endpoint: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/coach/tasks', methods=['GET'])
 @coach_session_required
 def api_coach_tasks_get():
@@ -8122,6 +7851,7 @@ def api_coach_tasks_get():
                 'description': task.description,
                 'category': task.category,
                 'priority': task.priority,
+                'type': getattr(task, 'type', 'accion'),
                 'due_date': task.due_date.isoformat() if task.due_date else None,
                 'created_at': task.created_at.isoformat(),
                 'coachee_name': task.coachee.full_name,  # Nombre directo para compatibilidad frontend
@@ -8200,6 +7930,7 @@ def api_coach_tasks_post():
             description=data['description'],
             category=data['category'],
             priority=data.get('priority', 'medium'),
+            type=data.get('type', 'accion'),
             due_date=due_date
         )
         
@@ -8693,6 +8424,7 @@ def api_coach_available_assessments():
                     'id': assessment.id,
                     'title': assessment.title or 'Sin título',
                     'description': assessment.description or 'Sin descripción',
+                    'category': assessment.category or 'Otros',
                     'questions_count': questions_counts.get(assessment.id, 0),
                     'completed_count': completed_counts.get(assessment.id, 0),
                     'created_at': assessment.created_at.isoformat() if assessment.created_at else None
@@ -8935,64 +8667,6 @@ def api_admin_fix_coach_assignments():
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"ERROR CORRIGIENDO ASIGNACIONES: {str(e)}")
-        return jsonify({'error': f'Error: {str(e)}'}), 500
-
-# Endpoint temporal público para diagnóstico (REMOVER DESPUÉS) - FORCE DEPLOY
-# REMOVIDO POR SEGURIDAD - Usar endpoint admin protegido /api/admin/check-coach-ids
-# @app.route('/api/public/diagnose-coach-assignments', methods=['GET'])
-# def api_public_diagnose_coach_assignments():
-#     """Endpoint temporal público para diagnosticar problemas de coach_id"""
-#     # ENDPOINT ELIMINADO POR SEGURIDAD - Exponía información sensible públicamente
-
-# ENDPOINT ELIMINADO POR SEGURIDAD
-# @app.route('/api/public/fix-coach-assignments/<secret_key>', methods=['POST'])
-# def api_public_fix_coach_assignments(secret_key):
-#     """Endpoint temporal público para corregir problemas de coach_id con clave secreta"""
-#     # ENDPOINT ELIMINADO - Clave débil hardcodeada permitía modificación de datos
-#     # Usar endpoint admin protegido /api/admin/fix-coach-assignments en su lugar
-
-# Placeholder para mantener compatibilidad de líneas - REMOVER EN PRÓXIMA VERSIÓN
-def _removed_public_fix_endpoint():
-    """Función placeholder - endpoint público eliminado por seguridad"""
-    pass
-
-# Continuar con el código original después de la función eliminada
-def _continue_after_removed_endpoint():
-    try:
-        broken_evaluations = db.session.query(AssessmentResult, User).join(
-            User, AssessmentResult.user_id == User.id
-        ).filter(
-            AssessmentResult.coach_id.is_(None),
-            User.coach_id.isnot(None)
-        ).all()
-        
-        corrected_count = 0
-        corrected_details = []
-        
-        for result, user in broken_evaluations:
-            # Asignar el coach_id correcto
-            result.coach_id = user.coach_id
-            corrected_count += 1
-            
-            corrected_details.append({
-                'evaluation_id': result.id,
-                'user_name': user.full_name,
-                'assigned_coach_id': user.coach_id
-            })
-        
-        # Guardar cambios
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'corrected_count': corrected_count,
-            'corrected_details': corrected_details,
-            'message': f'Se corrigieron {corrected_count} evaluaciones'
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"ERROR CORRECCIÓN PÚBLICA: {str(e)}")
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/coach/coachee-evaluations/<int:coachee_id>', methods=['GET'])
@@ -11109,7 +10783,7 @@ def api_coach_get_assigned_content():
         
         # Obtener parámetros de filtro
         coachee_filter = request.args.get('coachee_id', type=int)
-        view_mode = request.args.get('view_mode', 'all')  # 'all', 'unique'
+        view_mode = request.args.get('view_mode', 'unique')  # 'all', 'unique' - Por defecto 'unique' para agrupar contenido
         
         # Query base
         query = Content.query.filter_by(coach_id=current_coach.id, is_active=True)
@@ -11188,6 +10862,7 @@ def api_coach_get_assigned_content():
                     'content_url': content_url,
                     'thumbnail_url': content.thumbnail_url,
                     'duration': content.duration,
+                    'assigned_at': content.assigned_at.isoformat() if content.assigned_at else None,
                     'assignments': data['assignments'],
                     'total_assigned': data['total_assigned'],
                     'total_viewed': data['total_viewed'],
@@ -11313,6 +10988,329 @@ def api_coach_delete_content(content_id):
         db.session.rollback()
         logger.error(f"Error en api_coach_delete_content: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error eliminando contenido: {str(e)}'}), 500
+
+@app.route('/api/coach/content/<int:content_id>/share', methods=['POST'])
+@coach_session_required
+def api_coach_share_content(content_id):
+    """Compartir contenido existente con múltiples coachees (crear copias)"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        logger.info(f"📤 SHARE-CONTENT: Coach {current_coach.id if current_coach else 'None'} intenta compartir content_id={content_id}")
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden compartir contenido.'}), 403
+        
+        # Obtener el contenido original (puede estar asignado a cualquier coachee)
+        logger.info(f"🔍 Buscando Content: id={content_id}, coach_id={current_coach.id}, is_active=True")
+        original_content = Content.query.filter_by(
+            id=content_id,
+            coach_id=current_coach.id,
+            is_active=True
+        ).first()
+        
+        if not original_content:
+            # Debug: Ver si existe con otros filtros
+            any_with_id = Content.query.filter_by(id=content_id).first()
+            logger.error(f"❌ Contenido {content_id} no encontrado para coach {current_coach.id}")
+            logger.error(f"   ¿Existe con ese ID en DB? {any_with_id is not None}")
+            if any_with_id:
+                logger.error(f"   Pero pertenece a coach_id={any_with_id.coach_id}, is_active={any_with_id.is_active}")
+            return jsonify({'error': 'Contenido no encontrado en tu biblioteca'}), 404
+        
+        logger.info(f"✅ Contenido encontrado: '{original_content.title}' (URL: {original_content.content_url})")
+        
+        # Obtener lista de coachee_ids del request
+        data = request.get_json()
+        coachee_ids = data.get('coachee_ids', [])
+        
+        logger.info(f"📋 Coachee IDs recibidos: {coachee_ids}")
+        
+        if not coachee_ids or not isinstance(coachee_ids, list):
+            return jsonify({'error': 'Debe proporcionar una lista de coachee_ids'}), 400
+        
+        # Validar que todos los coachees pertenecen a este coach
+        logger.info(f"🔍 Buscando coachees con: coach_id={current_coach.id}, role='coachee'")
+        
+        # Quitar el filtro is_active porque está causando problemas
+        valid_coachees = User.query.filter(
+            User.id.in_(coachee_ids),
+            User.coach_id == current_coach.id,
+            User.role == 'coachee'
+        ).all()
+        
+        logger.info(f"📊 Coachees encontrados: {len(valid_coachees)} de {len(coachee_ids)} solicitados")
+        for coachee in valid_coachees:
+            logger.info(f"   ✅ Coachee válido: {coachee.full_name} (ID: {coachee.id})")
+        
+        if len(valid_coachees) != len(coachee_ids):
+            # Debug: Ver qué coachees no se encontraron
+            found_ids = {c.id for c in valid_coachees}
+            missing_ids = set(coachee_ids) - found_ids
+            logger.error(f"❌ Coachees no encontrados o inválidos: {missing_ids}")
+            
+            # Ver detalles de los coachees no válidos
+            for missing_id in missing_ids:
+                user = User.query.get(missing_id)
+                if user:
+                    logger.error(f"   ⚠️ User ID {missing_id}: coach_id={user.coach_id}, role={user.role}, is_active={user.is_active}")
+                else:
+                    logger.error(f"   ⚠️ User ID {missing_id}: No existe en la base de datos")
+            
+            return jsonify({'error': 'Algunos coachees no son válidos o no te pertenecen'}), 400
+        
+        # Crear copias del contenido para cada coachee
+        shared_count = 0
+        for coachee in valid_coachees:
+            # Verificar si ya existe este contenido para este coachee
+            existing = Content.query.filter_by(
+                coach_id=current_coach.id,
+                coachee_id=coachee.id,
+                content_url=original_content.content_url,
+                is_active=True
+            ).first()
+            
+            if existing:
+                logger.info(f"⚠️  Contenido ya existe para coachee {coachee.id}, saltando...")
+                continue
+            
+            # Crear nueva instancia del contenido
+            new_content = Content(
+                coach_id=current_coach.id,
+                coachee_id=coachee.id,
+                title=original_content.title,
+                description=original_content.description,
+                content_type=original_content.content_type,
+                content_url=original_content.content_url,
+                thumbnail_url=original_content.thumbnail_url,
+                duration=original_content.duration,
+                is_active=True,
+                is_viewed=False,
+                assigned_at=datetime.utcnow()
+            )
+            db.session.add(new_content)
+            shared_count += 1
+            logger.info(f"✅ Contenido compartido con coachee {coachee.full_name} (ID: {coachee.id})")
+        
+        db.session.commit()
+        
+        if shared_count == 0:
+            return jsonify({
+                'success': True,
+                'message': 'El contenido ya estaba asignado a todos los coachees seleccionados',
+                'shared_count': 0
+            }), 200
+        
+        return jsonify({
+            'success': True,
+            'message': f'Contenido compartido exitosamente con {shared_count} coachee(s)',
+            'shared_count': shared_count
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en api_coach_share_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error compartiendo contenido: {str(e)}'}), 500
+
+@app.route('/api/coach/content/upload', methods=['POST'])
+@coach_session_required
+def api_coach_upload_content():
+    """Subir nuevo contenido a la biblioteca del coach (sin asignar a coachee específico)"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden subir contenido.'}), 403
+        
+        # Obtener datos del formulario
+        title = request.form.get('title')
+        description = request.form.get('description', '')
+        content_type = request.form.get('content_type', 'video')  # video, document, article
+        content_url = request.form.get('url', '')
+        
+        # Validar campos requeridos
+        if not title:
+            return jsonify({'error': 'El título es requerido'}), 400
+        
+        if not content_type:
+            return jsonify({'error': 'El tipo de contenido es requerido'}), 400
+        
+        # Manejar archivo subido (para documentos)
+        file = request.files.get('file')
+        if file and file.filename:
+            # Aquí puedes implementar guardado de archivo
+            # Por ahora, solo lo registramos como URL placeholder
+            filename = file.filename
+            # TODO: Guardar archivo en servidor o S3
+            if not content_url:
+                content_url = f'file://{filename}'  # Placeholder para archivo local
+            logger.info(f"📁 Archivo recibido: {filename}")
+        
+        # Validar que haya URL o archivo
+        if not content_url:
+            return jsonify({'error': 'Se requiere una URL o un archivo'}), 400
+        
+        # Generar thumbnail para videos de YouTube
+        thumbnail_url = None
+        if content_type == 'video' and 'youtube.com' in content_url or 'youtu.be' in content_url:
+            import re
+            youtube_match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([^&\s]+)', content_url)
+            if youtube_match:
+                video_id = youtube_match.group(1)
+                thumbnail_url = f'https://img.youtube.com/vi/{video_id}/maxresdefault.jpg'
+        
+        # Crear contenido SIN asignar a coachee (coachee_id = None para biblioteca)
+        # Nota: El modelo Content permite NULL en coachee_id para contenido de biblioteca
+        content = Content(
+            coach_id=current_coach.id,
+            coachee_id=None,  # NULL = contenido de biblioteca (no asignado aún)
+            title=title,
+            description=description,
+            content_type=content_type,
+            content_url=content_url,
+            thumbnail_url=thumbnail_url,
+            is_active=True
+        )
+        
+        db.session.add(content)
+        db.session.commit()
+        
+        logger.info(f"✅ Contenido creado: ID={content.id}, Coach={current_coach.id}, Type={content_type}, Title={title}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contenido subido exitosamente',
+            'id': content.id,
+            'title': content.title,
+            'content_type': content.content_type,
+            'content_url': content.content_url,
+            'thumbnail_url': content.thumbnail_url,
+            'created_at': content.assigned_at.strftime('%Y-%m-%d %H:%M:%S')
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en api_coach_upload_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error subiendo contenido: {str(e)}'}), 500
+
+# ⚠️ FUNCIÓN DUPLICADA COMENTADA - Ver línea 11317 para la función correcta
+"""
+@app.route('/api/coach/content/<int:content_id>/share', methods=['POST'])
+@coach_session_required
+def api_coach_share_content(content_id):
+    # Compartir contenido de biblioteca con uno o varios coachees
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Verificar que el contenido existe y pertenece al coach
+        library_content = Content.query.filter_by(
+            id=content_id,
+            coach_id=current_coach.id,
+            coachee_id=None,  # Contenido de biblioteca
+            is_active=True
+        ).first()
+        
+        if not library_content:
+            return jsonify({'error': 'Contenido no encontrado en tu biblioteca'}), 404
+        
+        data = request.get_json()
+        coachee_ids = data.get('coachee_ids', [])
+        
+        if not coachee_ids:
+            return jsonify({'error': 'Debes seleccionar al menos un coachee'}), 400
+        
+        # Verificar que los coachees pertenecen al coach
+        coachees = User.query.filter(
+            User.id.in_(coachee_ids),
+            User.coach_id == current_coach.id,
+            User.role == 'coachee'
+        ).all()
+        
+        if len(coachees) != len(coachee_ids):
+            return jsonify({'error': 'Algunos coachees no son válidos'}), 400
+        
+        # Crear copias del contenido para cada coachee
+        shared_count = 0
+        for coachee in coachees:
+            # Verificar si ya existe
+            existing = Content.query.filter_by(
+                coach_id=current_coach.id,
+                coachee_id=coachee.id,
+                title=library_content.title,
+                content_url=library_content.content_url,
+                is_active=True
+            ).first()
+            
+            if not existing:
+                shared_content = Content(
+                    coach_id=current_coach.id,
+                    coachee_id=coachee.id,
+                    title=library_content.title,
+                    description=library_content.description,
+                    content_type=library_content.content_type,
+                    content_url=library_content.content_url,
+                    thumbnail_url=library_content.thumbnail_url,
+                    duration=library_content.duration,
+                    is_active=True
+                )
+                db.session.add(shared_content)
+                shared_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Contenido compartido con {shared_count} coachee(s)',
+            'shared_count': shared_count
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en api_coach_share_content: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error compartiendo contenido: {str(e)}'}), 500
+"""
+
+@app.route('/api/coach/content/library', methods=['GET'])
+@coach_session_required
+def api_coach_get_library():
+    """Obtener contenido de biblioteca del coach (no asignado)"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        # Obtener solo contenido de biblioteca (coachee_id = NULL)
+        library_items = Content.query.filter_by(
+            coach_id=current_coach.id,
+            coachee_id=None,
+            is_active=True
+        ).order_by(Content.assigned_at.desc()).all()
+        
+        content_list = []
+        for item in library_items:
+            content_list.append({
+                'id': item.id,
+                'title': item.title,
+                'description': item.description,
+                'content_type': item.content_type,
+                'content_url': item.content_url,
+                'thumbnail_url': item.thumbnail_url,
+                'created_at': item.assigned_at.strftime('%d/%m/%Y')
+            })
+        
+        return jsonify({
+            'success': True,
+            'content': content_list,
+            'total': len(content_list)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en api_coach_get_library: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo biblioteca: {str(e)}'}), 500
 
 @app.route('/api/coach/my-content', methods=['GET'])
 @coach_session_required
@@ -12392,6 +12390,16 @@ def api_coachee_request_session():
         logger.info(f"   Fecha: {requested_date}, Hora: {start_time_obj}-{end_time_obj}")
         logger.info(f"   Título: {title}, ID: {new_session.id}")
         
+        # Crear notificación para el coach
+        create_notification(
+            user_id=current_coachee.coach_id,
+            type='session_request',
+            title='Nueva solicitud de sesión',
+            message=f'{current_coachee.full_name} ha solicitado una sesión para el {requested_date.strftime("%d/%m/%Y")} a las {start_time}',
+            related_id=new_session.id,
+            related_type='session'
+        )
+        
         return jsonify({
             'success': True,
             'message': f'Solicitud enviada para {session_date} a las {start_time}',
@@ -13249,6 +13257,125 @@ def api_testpersonal_calculate():
 
 # ============================================================================
 # FIN MÓDULO TESTPERSONAL
+# ============================================================================
+
+# ============================================================================
+# NOTIFICACIONES API
+# ============================================================================
+
+@app.route('/api/notifications', methods=['GET'])
+@login_required
+def api_get_notifications():
+    """Obtener notificaciones del usuario actual"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        
+        notifications = Notification.query.filter_by(
+            user_id=current_user.id
+        ).order_by(
+            Notification.created_at.desc()
+        ).limit(limit).all()
+        
+        return jsonify({
+            'success': True,
+            'notifications': [n.to_dict() for n in notifications],
+            'total': len(notifications)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo notificaciones: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error obteniendo notificaciones'}), 500
+
+@app.route('/api/notifications/unread-count', methods=['GET'])
+@login_required
+def api_get_unread_count():
+    """Obtener contador de notificaciones no leídas"""
+    try:
+        count = Notification.query.filter_by(
+            user_id=current_user.id,
+            is_read=False
+        ).count()
+        
+        return jsonify({
+            'success': True,
+            'count': count
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo contador: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error obteniendo contador'}), 500
+
+@app.route('/api/notifications/<int:notification_id>/mark-read', methods=['POST'])
+@login_required
+def api_mark_notification_read(notification_id):
+    """Marcar notificación como leída"""
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({'error': 'Notificación no encontrada'}), 404
+        
+        notification.is_read = True
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notificación marcada como leída'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error marcando notificación: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error marcando notificación'}), 500
+
+@app.route('/api/notifications/mark-all-read', methods=['POST'])
+@login_required
+def api_mark_all_notifications_read():
+    """Marcar todas las notificaciones como leídas"""
+    try:
+        Notification.query.filter_by(
+            user_id=current_user.id,
+            is_read=False
+        ).update({'is_read': True})
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todas las notificaciones marcadas como leídas'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error marcando todas: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error marcando notificaciones'}), 500
+
+# Función helper para crear notificaciones
+def create_notification(user_id, type, title, message, related_id=None, related_type=None):
+    """Helper para crear notificaciones"""
+    try:
+        notification = Notification(
+            user_id=user_id,
+            type=type,
+            title=title,
+            message=message,
+            related_id=related_id,
+            related_type=related_type
+        )
+        db.session.add(notification)
+        db.session.commit()
+        logger.info(f"✅ Notificación creada: {title} para user_id={user_id}")
+        return notification
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creando notificación: {str(e)}", exc_info=True)
+        return None
+
+# ============================================================================
+# INICIALIZACIÓN DE LA APP
 # ============================================================================
 
 if __name__ == '__main__':

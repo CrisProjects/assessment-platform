@@ -629,7 +629,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        console.log('🚀 TestPersonal Demo Mode Loaded');
         
         let currentQuestionIndex = 0;
         let questions = [];
@@ -637,7 +636,6 @@
         
         // Cargar preguntas al iniciar
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📊 Loading TestPersonal questions...');
             loadQuestions();
         });
         
@@ -648,7 +646,6 @@
                 
                 if (data.success) {
                     questions = data.questions;
-                    console.log(`✅ ${questions.length} questions loaded`);
                     
                     document.getElementById('totalQuestions').textContent = questions.length;
                     renderQuestions();
@@ -731,7 +728,6 @@
         
         function answerQuestion(questionId, value, questionIndex) {
             responses[questionId] = value;
-            console.log(`✅ Question ${questionId} answered:`, value);
             
             // Pequeña animación antes de avanzar
             setTimeout(() => {
@@ -747,8 +743,6 @@
         
         async function calculateResults() {
             try {
-                console.log('📊 Calculating results...', responses);
-                console.log('📊 Total responses:', Object.keys(responses).length);
                 
                 const response = await fetch('/api/testpersonal/calculate', {
                     method: 'POST',
@@ -758,17 +752,14 @@
                     body: JSON.stringify({ responses })
                 });
                 
-                console.log('📡 Response status:', response.status);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log('📦 Data received:', data);
                 
                 if (data.success) {
-                    console.log('✅ Results calculated:', data);
                     displayResults(data);
                 } else {
                     console.error('❌ Error calculating results:', data.error);
@@ -784,7 +775,6 @@
         
         function displayResults(data) {
             try {
-                console.log('🎨 Displaying results...', data);
                 
                 // Ocultar preguntas y progreso
                 document.getElementById('questionsContainer').style.display = 'none';
@@ -801,11 +791,8 @@
                 document.getElementById('resultsDescription').textContent = data.result_text;
                 
                 // Crear radar chart
-                console.log('📊 Creating radar chart...');
-                console.log('📊 Area scores data:', data.area_scores);
                 createRadarChart(data.area_scores);
                 
-                console.log('✅ Results displayed successfully!');
             } catch (error) {
                 console.error('❌ Error displaying results:', error);
                 console.error('❌ Error stack:', error.stack);
@@ -817,13 +804,11 @@
         let radarChartInstance = null;
         
         function createRadarChart(areaScores) {
-            console.log('🎯 createRadarChart called with:', areaScores);
             
             const canvas = document.getElementById('radarChart');
             
             // Destruir el chart anterior si existe
             if (radarChartInstance) {
-                console.log('🗑️ Destroying previous chart instance');
                 radarChartInstance.destroy();
             }
             
@@ -832,8 +817,6 @@
             const labels = Object.keys(areaScores);
             const values = Object.values(areaScores);
             
-            console.log('📊 Chart labels:', labels);
-            console.log('📊 Chart values:', values);
             
             // Detectar si es móvil
             const isMobile = window.innerWidth <= 768;
@@ -980,7 +963,6 @@
             // Volver a la primera pregunta
             showQuestion(0);
             
-            console.log('🔄 Assessment restarted');
         }
     </script>
 </body>
