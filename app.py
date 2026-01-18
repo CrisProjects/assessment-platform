@@ -131,6 +131,17 @@ CORS(app, origins=allowed_origins, supports_credentials=True,
 
 # Inicialización de extensiones
 db = SQLAlchemy(app)
+
+# Aplicar migraciones automáticas en producción
+if IS_PRODUCTION:
+    try:
+        from auto_migrate import apply_migrations
+        logger.info("🔧 Aplicando migraciones automáticas...")
+        apply_migrations()
+        logger.info("✅ Migraciones completadas")
+    except Exception as e:
+        logger.warning(f"⚠️ Error en auto-migrations (continuando): {e}")
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'dashboard_selection'  # type: ignore
@@ -6689,9 +6700,16 @@ def is_coachee_active(coachee, last_evaluation):
 @coach_session_required
 def api_coach_my_coachees():
     """Obtener la lista de coachees del coach actual"""
+    logger.info("="*80)
+    logger.info("🔍 MY-COACHEES: ===== INICIO DE REQUEST =====")
+    logger.info(f"🔍 MY-COACHEES: g object: {dir(g)}")
+    logger.info(f"🔍 MY-COACHEES: hasattr(g, 'current_user'): {hasattr(g, 'current_user')}")
+    
     try:
         # Usar g.current_user que es establecido por @coach_session_required
         current_coach = getattr(g, 'current_user', None)
+        logger.info(f"🔍 MY-COACHEES: current_coach obtenido: {current_coach}")
+        logger.info(f"🔍 MY-COACHEES: type(current_coach): {type(current_coach)}")
         
         logger.info(f"🔍 MY-COACHEES: Request from user {current_coach.username if current_coach else 'Unknown'} (ID: {current_coach.id if current_coach else 'Unknown'}, role: {current_coach.role if current_coach else 'Unknown'})")
         
@@ -6814,12 +6832,20 @@ def api_coach_my_coachees():
         }), 200
         
     except Exception as e:
+        # Logging super detallado del error
+        logger.error("="*80)
+        logger.error("❌ MY-COACHEES: ===== ERROR CAPTURADO =====")
+        logger.error(f"❌ MY-COACHEES: Exception type: {type(e).__name__}")
+        logger.error(f"❌ MY-COACHEES: Exception message: {str(e)}")
+        logger.error(f"❌ MY-COACHEES: Exception args: {e.args}")
+        
         # Usar current_coach en lugar de current_user
         current_coach = getattr(g, 'current_user', None)
         coach_info = f"{current_coach.username} (ID: {current_coach.id})" if current_coach else "Unknown"
         logger.error(f"❌ MY-COACHEES: Error getting coachees for coach {coach_info}: {str(e)}")
         logger.error(f"❌ MY-COACHEES: Exception details: {e.__class__.__name__}: {str(e)}")
         logger.error(f"❌ MY-COACHEES: Traceback: {traceback.format_exc()}")
+        logger.error("="*80)
         return jsonify({'error': f'Error obteniendo coachees: {str(e)}'}), 500
 
 @app.route('/api/coach/development-plan-requests', methods=['GET'])
