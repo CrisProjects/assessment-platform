@@ -6195,6 +6195,11 @@ def coach_dashboard_v2():
                          coach_id=current_coach.id,
                          coach_avatar_url=current_coach.avatar_url or '/static/img/default-avatar.png'))
     
+    # Prevenir cacheo del HTML para forzar actualizaciones
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
     # Agregar CSP para permitir recursos externos (avatares, Chart.js, estilos CDN)
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
