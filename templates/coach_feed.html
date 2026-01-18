@@ -1117,19 +1117,32 @@
                 
                 // Inicialización
                 async init() {
+                    console.log('🚀 [COACH-FEED] Inicializando aplicación...');
+                    console.log('🔍 [COACH-FEED] Estado inicial - loading:', this.loading, 'content:', this.content);
                     await this.loadProfile();
                     await this.loadContent();
+                    console.log('✅ [COACH-FEED] Inicialización completa');
+                    console.log('📊 [COACH-FEED] Estado final - loading:', this.loading, 'content.length:', this.content.length);
                 },
                 
                 // Cargar perfil
                 async loadProfile() {
+                    console.log('🔄 [COACH-FEED] Cargando perfil...');
                     try {
                         const response = await fetch('/api/coach/profile');
+                        console.log('📡 [COACH-FEED] Perfil - Status:', response.status);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
                         const data = await response.json();
+                        console.log('👤 [COACH-FEED] Perfil recibido:', data);
                         
                         if (data.success && data.profile) {
                             const profile = data.profile;
                             this.coachName = profile.full_name || profile.username || 'Coach';
+                            console.log('✅ [COACH-FEED] Nombre coach:', this.coachName);
                             
                             if (profile.avatar_url) {
                                 this.coachAvatar = `<img src="${profile.avatar_url}" alt="${this.coachName}" style="width: 100%; height: 100%; object-fit: cover;">`;
@@ -1137,25 +1150,38 @@
                                 const initial = this.coachName.charAt(0).toUpperCase();
                                 this.coachAvatar = initial;
                             }
+                        } else {
+                            console.warn('⚠️ [COACH-FEED] Respuesta de perfil sin success o profile');
                         }
                     } catch (error) {
-                        console.error('❌ Error loading profile:', error);
+                        console.error('❌ [COACH-FEED] Error loading profile:', error);
+                        console.error('Stack:', error.stack);
                     }
                 },
                 
                 // Cargar contenido
                 async loadContent() {
                     this.loading = true;
+                    console.log('🔄 [COACH-FEED] Iniciando carga de contenido...');
                     try {
                         const response = await fetch('/api/coach/my-content');
+                        console.log('📡 [COACH-FEED] Respuesta recibida:', response.status, response.statusText);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
                         const data = await response.json();
+                        console.log('📦 [COACH-FEED] Datos parseados:', data);
                         
                         if (data.success && data.content) {
                             this.content = data.content;
+                            console.log(`✅ [COACH-FEED] Contenido cargado: ${this.content.length} items`);
                             
                             // Generar previews de documentos después de renderizar
                             setTimeout(() => {
                                 const documentCount = this.content.filter(item => item.content_type === 'document' && item.content_url).length;
+                                console.log(`📄 [COACH-FEED] Documentos para preview: ${documentCount}`);
                                 
                                 this.content.forEach(item => {
                                     if (item.content_type === 'document' && item.content_url) {
@@ -1169,11 +1195,15 @@
                                     }
                                 });
                             }, 200);
+                        } else {
+                            console.warn('⚠️ [COACH-FEED] Respuesta sin contenido:', data);
                         }
                     } catch (error) {
-                        console.error('❌ Error loading content:', error);
+                        console.error('❌ [COACH-FEED] Error loading content:', error);
+                        console.error('Stack:', error.stack);
                     } finally {
                         this.loading = false;
+                        console.log('🏁 [COACH-FEED] Carga finalizada. Loading:', this.loading);
                     }
                 },
                 

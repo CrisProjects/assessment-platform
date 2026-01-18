@@ -11320,7 +11320,11 @@ def api_coach_get_my_content():
         # Usar g.current_user que es establecido por @coach_session_required
         current_coach = getattr(g, 'current_user', None)
         
+        logger.info(f"🔍 MY-CONTENT: Request recibida. Current coach: {current_coach}")
+        logger.info(f"🔍 MY-CONTENT: Coach ID: {current_coach.id if current_coach else 'None'}, Role: {current_coach.role if current_coach else 'None'}")
+        
         if not current_coach or current_coach.role != 'coach':
+            logger.error(f"❌ MY-CONTENT: Acceso denegado. current_coach: {current_coach}, role: {current_coach.role if current_coach else 'None'}")
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver su contenido.'}), 403
         
         # Obtener todo el contenido del coach agrupado por título/URL
@@ -11330,7 +11334,7 @@ def api_coach_get_my_content():
         ).order_by(Content.assigned_at.desc()).all()
         
         logger.info(f"🔍 MY-CONTENT: Coach {current_coach.id} solicitando su contenido publicado")
-        logger.info(f"📊 Encontrados {len(content_items)} items totales")
+        logger.info(f"📊 MY-CONTENT: Encontrados {len(content_items)} items totales")
         
         # Agrupar contenido único por título y URL
         unique_content = {}
@@ -11347,7 +11351,7 @@ def api_coach_get_my_content():
                         document_id = match.group(1)
                         # Convertir a URL del coach: /api/coach/documents/{doc_id}/view
                         content_url = f"/api/coach/documents/{document_id}/view"
-                        logger.info(f"📄 Transformando URL de documento de {content.content_url} a {content_url}")
+                        logger.info(f"📄 MY-CONTENT: Transformando URL de documento de {content.content_url} a {content_url}")
                 
                 unique_content[key] = {
                     'id': content.id,
@@ -11365,6 +11369,7 @@ def api_coach_get_my_content():
         content_list = list(unique_content.values())
         
         logger.info(f"✅ MY-CONTENT: Devolviendo {len(content_list)} items únicos de contenido")
+        logger.info(f"📦 MY-CONTENT: Contenido a enviar: {content_list}")
         
         return jsonify({
             'success': True,
@@ -11372,7 +11377,7 @@ def api_coach_get_my_content():
         }), 200
         
     except Exception as e:
-        logger.error(f"Error en api_coach_get_my_content: {str(e)}", exc_info=True)
+        logger.error(f"❌ MY-CONTENT: Error en api_coach_get_my_content: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo contenido: {str(e)}'}), 500
 
 @app.route('/api/coach/update-coachee/<int:coachee_id>', methods=['PUT'])
