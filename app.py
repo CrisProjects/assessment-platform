@@ -6123,7 +6123,7 @@ def api_save_assessment():
         # Crear notificación para el coach si existe
         if current_coachee.coach_id:
             assessment = Assessment.query.get(assessment_id_int)
-            assessment_name = assessment.name if assessment else 'una evaluación'
+            assessment_name = assessment.title if assessment else 'una evaluación'
             create_notification(
                 user_id=current_coachee.coach_id,
                 type='evaluation_completed',
@@ -7089,19 +7089,44 @@ def api_coach_my_coachees():
         except Exception as le_error:
             logger.warning(f"⚠️ MY-COACHEES: Could not load last evaluations: {str(le_error)}")
         
-        # Query agrupada para contar evaluaciones pendientes por coachee
+        # 🔥 Query para contar evaluaciones pendientes por coachee (NO completadas)
+        # LÓGICA CORRECTA: Una evaluación está pendiente si está asignada (Task activa) 
+        # pero NO tiene un AssessmentResult completado
         pending_evaluations_counts = {}
         try:
-            pending_counts_result = db.session.query(
-                Task.coachee_id,
-                func.count(Task.id)
-            ).filter(
-                Task.coach_id == current_coach.id,
-                Task.coachee_id.in_(coachee_ids),
-                Task.category == 'evaluation',
-                Task.is_active == True
-            ).group_by(Task.coachee_id).all()
-            pending_evaluations_counts = {coachee_id: count for coachee_id, count in pending_counts_result}
+            for coachee_id in coachee_ids:
+                # Obtener tareas de evaluación asignadas a este coachee
+                assigned_tasks = Task.query.filter(
+                    Task.coach_id == current_coach.id,
+                    Task.coachee_id == coachee_id,
+                    Task.category == 'evaluation',
+                    Task.is_active == True
+                ).all()
+                
+                pending_count = 0
+                for task in assigned_tasks:
+                    # Extraer assessment_id del título de la tarea
+                    assessment_title_from_task = task.title.replace('Completar: ', '').replace('Evaluación: ', '').strip()
+                    
+                    # Buscar la evaluación correspondiente
+                    matching_assessment = Assessment.query.filter(
+                        Assessment.title == assessment_title_from_task,
+                        Assessment.is_active == True
+                    ).first()
+                    
+                    if matching_assessment:
+                        # Verificar si tiene resultado completado
+                        has_completed = AssessmentResult.query.filter(
+                            AssessmentResult.user_id == coachee_id,
+                            AssessmentResult.assessment_id == matching_assessment.id,
+                            AssessmentResult.completed_at.isnot(None)
+                        ).first()
+                        
+                        if not has_completed:
+                            pending_count += 1
+                
+                pending_evaluations_counts[coachee_id] = pending_count
+            
             logger.info(f"📊 MY-COACHEES: Loaded pending evaluations counts for {len(pending_evaluations_counts)} coachees")
         except Exception as pec_error:
             logger.warning(f"⚠️ MY-COACHEES: Could not load pending evaluations counts: {str(pec_error)}")
@@ -9141,8 +9166,11 @@ def api_coachee_evaluations():
         # Si tiene coach asignado, permitir acceso a evaluaciones
         logger.info(f"✅ DEBUG: Coachee {current_user.username} tiene coach asignado (ID: {current_user.coach_id})")
         
-        # Obtener evaluaciones completadas
-        completed_results = AssessmentResult.query.filter_by(user_id=current_user.id).all()
+        # 🔥 IMPORTANTE: Obtener solo evaluaciones REALMENTE completadas (con completed_at)
+        completed_results = AssessmentResult.query.filter(
+            AssessmentResult.user_id == current_user.id,
+            AssessmentResult.completed_at.isnot(None)  # 🔥 Solo las que tienen fecha de completado
+        ).all()
         logger.info(f"🔍 DEBUG: Evaluaciones completadas encontradas: {len(completed_results)}")
         
         completed_evaluations = []
@@ -9168,17 +9196,42 @@ def api_coachee_evaluations():
         ).all()
         
         logger.info(f"🔍 DEBUG: Tareas de evaluación asignadas encontradas: {len(assigned_tasks)}")
-        
-        # Extraer IDs de evaluaciones asignadas del título de las tareas
-        assigned_assessment_ids = []
         for task in assigned_tasks:
-            # El título de la tarea contiene el nombre de la evaluación
-            # Buscar la evaluación que coincida con el título
-            for assessment in Assessment.query.filter(Assessment.is_active == True).all():
-                if assessment.title in task.title:
-                    assigned_assessment_ids.append(assessment.id)
-                    logger.info(f"🎯 DEBUG: Found assigned assessment: {assessment.title} (ID: {assessment.id})")
-                    break
+            logger.info(f"🔍 DEBUG: Tarea encontrada - ID: {task.id}, Título: '{task.title}'")
+        
+        # 🔥 NUEVO: Mapear evaluaciones a sus tareas de asignación (para rastrear fecha de asignación)
+        # Esto permite saber si una evaluación fue completada DESPUÉS de ser asignada
+        assigned_assessment_ids = []
+        assessment_task_map = {}  # {assessment_id: task}
+        
+        for task in assigned_tasks:
+            # Remover el prefijo "Completar: " si existe
+            assessment_title_from_task = task.title.replace('Completar: ', '').strip()
+            logger.info(f"🔍 DEBUG: Buscando evaluación con título: '{assessment_title_from_task}'")
+            
+            # Buscar la evaluación que coincida exactamente con el título
+            matching_assessment = Assessment.query.filter(
+                Assessment.title == assessment_title_from_task,
+                Assessment.is_active == True
+            ).first()
+            
+            if matching_assessment:
+                assigned_assessment_ids.append(matching_assessment.id)
+                assessment_task_map[matching_assessment.id] = task  # 🔥 Guardar la tarea
+                logger.info(f"🎯 DEBUG: Found assigned assessment: {matching_assessment.title} (ID: {matching_assessment.id}, Task created: {task.created_at})")
+            else:
+                # Fallback: buscar si el título está contenido (para compatibilidad con títulos antiguos)
+                for assessment in Assessment.query.filter(Assessment.is_active == True).all():
+                    if assessment.title in task.title or assessment.title == assessment_title_from_task:
+                        if assessment.id not in assigned_assessment_ids:
+                            assigned_assessment_ids.append(assessment.id)
+                            assessment_task_map[assessment.id] = task  # 🔥 Guardar la tarea
+                            logger.info(f"🎯 DEBUG: Found assigned assessment (fallback): {assessment.title} (ID: {assessment.id}, Task created: {task.created_at})")
+                        break
+                else:
+                    logger.warning(f"⚠️ DEBUG: No se encontró evaluación para la tarea: '{task.title}'")
+        
+        logger.info(f"🔍 DEBUG: IDs de evaluaciones asignadas: {assigned_assessment_ids}")
         
         # Obtener solo las evaluaciones asignadas
         available_assessments = Assessment.query.filter(
@@ -9195,17 +9248,35 @@ def api_coachee_evaluations():
                 is_active=True
             ).order_by(Question.order.asc()).all()
             
-            # Verificar si ya ha sido completada anteriormente
-            previous_attempts = len([r for r in completed_results if r.assessment_id == assessment.id])
+            # 🔥 LÓGICA CORRECTA: Una evaluación está completada para esta asignación si:
+            # Existe un resultado completado DESPUÉS de la fecha de asignación (Task.created_at)
+            task = assessment_task_map.get(assessment.id)
+            task_created_at = task.created_at if task else None
             
-            logger.info(f"🔍 DEBUG: Assessment {assessment.id} ({assessment.title}) tiene {len(questions)} preguntas, {previous_attempts} intentos previos")
+            # Contar TODOS los intentos previos
+            all_results = [r for r in completed_results if r.assessment_id == assessment.id]
+            previous_attempts = len(all_results)
             
+            # Verificar si fue completada DESPUÉS de la asignación actual
+            if task_created_at:
+                results_after_assignment = [r for r in all_results if r.completed_at > task_created_at]
+                has_completed = len(results_after_assignment) > 0
+                logger.info(f"🔍 DEBUG: Assessment {assessment.id} - Task created: {task_created_at}, Resultados después de asignación: {len(results_after_assignment)}")
+            else:
+                # Si no hay task (no debería pasar), usar lógica antigua
+                has_completed = previous_attempts > 0
+                logger.warning(f"⚠️ DEBUG: Assessment {assessment.id} no tiene task asociada, usando lógica de fallback")
+            
+            logger.info(f"🔍 DEBUG: Assessment {assessment.id} ({assessment.title}) - {previous_attempts} intentos totales, completada esta asignación: {has_completed}")
+            
+            # 🔥 IMPORTANTE: TODAS las evaluaciones asignadas van a 'available' (no filtrar por completadas)
             available_evaluations[str(assessment.id)] = {
                 'id': assessment.id,
                 'title': assessment.title,
                 'description': assessment.description,
                 'total_questions': len(questions),
                 'previous_attempts': previous_attempts,
+                'is_completed': has_completed,  # 🔥 NUEVO FLAG
                 'created_at': assessment.created_at.isoformat() if assessment.created_at else None,
                 'coach_name': current_user.coach.full_name if current_user.coach else 'Sin asignar'
             }
@@ -9610,7 +9681,7 @@ def api_coachee_all_assessment_history():
         # Obtener TODO el historial del coachee desde AssessmentHistory
         history_entries = AssessmentHistory.query.filter_by(
             user_id=g.current_user.id
-        ).order_by(AssessmentHistory.completed_at.asc()).all()
+        ).order_by(AssessmentHistory.completed_at.desc()).all()  # 🔥 Ordenar descendente (último primero)
         
         if not history_entries:
             logger.info(f"📊 ALL-ASSESSMENT-HISTORY: No history found for user {g.current_user.id}")
@@ -9684,9 +9755,9 @@ def api_coachee_all_assessment_history():
                 'worst_score': round(min(all_scores), 2)
             }
         
-        # ✅ ORDENAR datos dentro de cada grupo por fecha (ascendente)
+        # 🔥 ORDENAR datos dentro de cada grupo por fecha (descendente - último primero)
         for assessment_id, assessment_data in grouped_history.items():
-            assessment_data['data'].sort(key=lambda x: x['completed_at'] if x['completed_at'] else '')
+            assessment_data['data'].sort(key=lambda x: x['completed_at'] if x['completed_at'] else '', reverse=True)
         
         logger.info(f"✅ ALL-ASSESSMENT-HISTORY: Returning {len(grouped_history)} evaluation types with {total_attempts} total attempts")
         
@@ -9859,6 +9930,78 @@ def api_coach_evaluation_details(evaluation_id):
     except Exception as e:
         logger.error(f"Error en api_coach_evaluation_details: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo detalles: {str(e)}'}), 500
+
+@app.route('/api/coachee/history-attempt-details/<int:history_id>', methods=['GET'])
+@coachee_session_required
+def api_coachee_history_attempt_details(history_id):
+    """Obtener detalles específicos de un intento histórico desde AssessmentHistory"""
+    try:
+        logger.info(f"🔍 HISTORY-ATTEMPT-DETAILS: User {g.current_user.username} (ID: {g.current_user.id}) requesting history attempt {history_id}")
+        
+        # Obtener el intento específico del historial
+        history_entry = AssessmentHistory.query.filter_by(
+            id=history_id,
+            user_id=g.current_user.id
+        ).first()
+        
+        if not history_entry:
+            logger.error(f"❌ HISTORY-ATTEMPT-DETAILS: History entry {history_id} not found for user {g.current_user.id}")
+            return jsonify({'error': 'Intento de evaluación no encontrado.'}), 404
+        
+        # Obtener información del assessment
+        assessment = Assessment.query.get(history_entry.assessment_id)
+        
+        if not assessment:
+            logger.error(f"❌ HISTORY-ATTEMPT-DETAILS: Assessment {history_entry.assessment_id} not found")
+            return jsonify({'error': 'Evaluación no encontrada.'}), 404
+        
+        # Generar recomendaciones basadas en los resultados históricos
+        recommendations = []
+        if history_entry.dimensional_scores and history_entry.score is not None:
+            logger.info(f"🔍 GENERATING RECOMMENDATIONS FOR HISTORY: assessment_title='{assessment.title}', score={history_entry.score}, dimensional_scores={history_entry.dimensional_scores}")
+            recommendations = generate_recommendations(history_entry.dimensional_scores, history_entry.score, assessment.title)
+            logger.info(f"📝 HISTORY RECOMMENDATIONS GENERATED: {len(recommendations)} items")
+        elif history_entry.score is not None:
+            logger.info(f"🔍 GENERATING BASIC RECOMMENDATIONS FOR HISTORY: assessment_title='{assessment.title}', score={history_entry.score}")
+            recommendations = generate_recommendations({}, history_entry.score, assessment.title)
+        
+        # Formatear fecha
+        formatted_date = history_entry.completed_at.strftime('%d/%m/%Y %H:%M') if history_entry.completed_at else 'N/A'
+        
+        logger.info(f"✅ HISTORY-ATTEMPT-DETAILS: Returning details for attempt #{history_entry.attempt_number} of assessment '{assessment.title}'")
+        logger.info(f"📊 SCORE DATA: score={history_entry.score}, is_percentage=True, assessment_type='{assessment.title}'")
+        
+        return jsonify({
+            'success': True,
+            'evaluation': {
+                'id': history_entry.id,
+                'assessment_id': history_entry.assessment_id,
+                'assessment_title': assessment.title,
+                'assessment': {
+                    'id': history_entry.assessment_id,
+                    'title': assessment.title,
+                    'description': assessment.description
+                },
+                'score': history_entry.score,  # Ya es porcentaje en AssessmentHistory
+                'is_percentage': True,  # 🔥 NUEVO: Indicar que el score ya es porcentaje
+                'total_score': 100,  # Siempre 100 para porcentajes
+                'total_questions': history_entry.total_questions,
+                'completed_at': history_entry.completed_at.isoformat() if history_entry.completed_at else None,
+                'formatted_date': formatted_date,
+                'result_text': history_entry.result_text,
+                'dimensional_scores': history_entry.dimensional_scores,
+                'attempt_number': history_entry.attempt_number,
+                'recommendations': recommendations,
+                'coach': {
+                    'name': history_entry.coach.full_name if history_entry.coach else 'Sin asignar',
+                    'email': history_entry.coach.email if history_entry.coach else None
+                } if history_entry.coach else None
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coachee_history_attempt_details: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo detalles del intento: {str(e)}'}), 500
 
 # ========== NUEVOS ENDPOINTS PARA GESTIÓN DE CITAS ==========
 

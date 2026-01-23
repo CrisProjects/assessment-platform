@@ -3358,7 +3358,7 @@
         display: flex !important;
         justify-content: space-around !important;
         align-items: center !important;
-        z-index: 9999 !important;
+        z-index: 10500 !important;
         box-shadow: 0 -8px 24px rgba(102, 126, 234, 0.08), 0 -2px 8px rgba(0, 0, 0, 0.04) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
@@ -3469,13 +3469,27 @@
         bottom: 0;
         left: 0;
         right: 0;
-        background: white;
-        border-radius: 24px 24px 0 0;
-        z-index: 10001;
-        max-height: 85vh;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
+        padding: 24px;
+        padding-bottom: calc(72px + 24px);
+        z-index: 10500;
+        box-shadow: 
+            0 -10px 25px -5px rgba(0, 0, 0, 0.1),
+            0 -4px 10px -3px rgba(0, 0, 0, 0.05);
+        max-height: 60vh;
         overflow-y: auto;
-        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
         animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    [data-theme="dark"] .dashboard-drawer {
+        background: rgba(31, 41, 55, 0.98);
+        box-shadow: 
+            0 -10px 25px -5px rgba(0, 0, 0, 0.3),
+            0 -4px 10px -3px rgba(0, 0, 0, 0.2);
     }
     
     @keyframes slideUp {
@@ -3494,23 +3508,65 @@
         height: 4px;
         background: #d1d5db;
         border-radius: 999px;
-        margin: 0.75rem auto;
+        margin: 0 auto 0.75rem;
+    }
+    
+    [data-theme="dark"] .drawer-handle {
+        background: rgba(255, 255, 255, 0.2);
     }
     
     .drawer-header {
-        padding: 0 1.5rem 1rem;
-        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    [data-theme="dark"] .drawer-header {
+        border-bottom-color: rgba(255, 255, 255, 0.08);
     }
     
     .drawer-header h3 {
-        font-size: 1.25rem;
+        font-size: 18px;
         font-weight: 700;
-        color: #1f2937;
+        color: #111827;
         margin: 0;
     }
     
+    [data-theme="dark"] .drawer-header h3 {
+        color: #F9FAFB;
+    }
+    
+    .drawer-close {
+        background: rgba(0, 0, 0, 0.05);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .drawer-close:hover {
+        background: rgba(0, 0, 0, 0.1);
+        transform: scale(1.05);
+    }
+    
+    [data-theme="dark"] .drawer-close {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-theme="dark"] .drawer-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
     .drawer-content {
-        padding: 1rem 1rem 2rem;
+        padding: 0;
     }
     
     .drawer-section {
@@ -3523,48 +3579,76 @@
         color: #6b7280;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
-        padding: 0 0.5rem;
+        margin-bottom: 0.75rem;
+        padding: 0;
+    }
+    
+    .drawer-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
     }
     
     .drawer-menu-item {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        padding: 0.875rem 1rem;
-        border-radius: 12px;
+        justify-content: center;
+        padding: 20px 12px;
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 16px;
         text-decoration: none;
         color: #374151;
-        font-weight: 500;
-        font-size: 0.9375rem;
-        transition: all 0.2s;
-        border: none;
-        background: transparent;
-        width: 100%;
-        text-align: left;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
-        margin-bottom: 0.25rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
     
     .drawer-menu-item:hover {
-        background: #f3f4f6;
-        color: #667eea;
+        background: rgba(79, 70, 229, 0.08);
+        border-color: rgba(79, 70, 229, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    [data-theme="dark"] .drawer-menu-item {
+        background: rgba(255, 255, 255, 0.03);
+        color: #D1D5DB;
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-theme="dark"] .drawer-menu-item:hover {
+        background: rgba(79, 70, 229, 0.15);
+        border-color: rgba(79, 70, 229, 0.3);
+    }
+    
+    .drawer-menu-item i {
+        font-size: 28px;
+        margin-bottom: 8px;
+        color: #4F46E5;
+    }
+    
+    [data-theme="dark"] .drawer-menu-item i {
+        color: #818CF8;
+    }
+    
+    .drawer-menu-item span {
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.3;
     }
     
     .drawer-menu-item.active {
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
         color: #667eea;
         font-weight: 600;
-    }
-    
-    .drawer-menu-item i {
-        width: 24px;
-        font-size: 1.125rem;
-        margin-right: 0.875rem;
-        opacity: 0.7;
+        border-color: rgba(102, 126, 234, 0.3);
     }
     
     .drawer-menu-item.active i {
-        opacity: 1;
+        color: #667eea;
     }
     
     .drawer-menu-item.danger {
@@ -4914,7 +4998,7 @@
     <!-- Navegación inferior (Bottom Navigation) - Mobile Only -->
     <nav class="bottom-navigation" x-data>
         <a href="/coach-feed" class="bottom-nav-item" @click.prevent="window.location.href = '/coach-feed'">
-            <i class="fas fa-home"></i>
+            <i class="fas fa-rss"></i>
             <span>Feed</span>
         </a>
         
@@ -4923,10 +5007,12 @@
             <span>Comunidad</span>
         </a>
         
-        <a href="/coach/dashboard-v2" class="bottom-nav-item active" @click.prevent="window.location.reload()">
-            <i class="fas fa-chart-line"></i>
-            <span>Dashboard</span>
-        </a>
+        <button class="bottom-nav-item" 
+                :class="{ 'active': activeModule === 'overview' }"
+                @click="showModule('overview', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+            <i class="fas fa-chart-pie"></i>
+            <span>Overview</span>
+        </button>
         
         <button class="bottom-nav-item" @click="showDashboardDrawer = true">
             <i class="fas fa-ellipsis-h"></i>
@@ -4949,85 +5035,67 @@
              x-transition:leave-start="opacity-100 transform translate-y-0"
              x-transition:leave-end="opacity-0 transform translate-y-full">
             
-            <!-- Handle visual para drag (opcional) -->
+            <!-- Handle visual para drag -->
             <div class="drawer-handle"></div>
             
             <!-- Header del drawer -->
             <div class="drawer-header">
                 <h3>Navegación Rápida</h3>
+                <button class="drawer-close" @click="showDashboardDrawer = false">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             
             <!-- Contenido del drawer -->
-            <div class="drawer-content">
-                <!-- Módulos del Dashboard -->
-                <div class="drawer-section">
-                    <div class="drawer-section-title">Módulos</div>
-                    
-                    <button class="drawer-menu-item" 
-                            :class="activeModule === 'overview' ? 'active' : ''"
-                            @click="showModule('overview', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                        <i class="fas fa-chart-pie"></i>
-                        <span>Overview</span>
-                    </button>
-                    
-                    <button class="drawer-menu-item" 
-                            :class="activeModule === 'mis-coachees' ? 'active' : ''"
-                            @click="showModule('mis-coachees', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                        <i class="fas fa-users"></i>
-                        <span>Mis Coachees</span>
-                    </button>
-                    
-                    <button class="drawer-menu-item" 
-                            :class="activeModule === 'evaluaciones' ? 'active' : ''"
-                            @click="showModule('evaluaciones', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                        <i class="fas fa-clipboard-check"></i>
-                        <span>Evaluaciones</span>
-                    </button>
-                    
-                    <button class="drawer-menu-item" 
-                            :class="activeModule === 'gestion-tareas' ? 'active' : ''"
-                            @click="showModule('gestion-tareas', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                        <i class="fas fa-tasks"></i>
-                        <span>Gestión de Tareas</span>
-                    </button>
-                    
-                    <button class="drawer-menu-item" 
-                            :class="activeModule === 'planes-desarrollo' ? 'active' : ''"
-                            @click="showModule('planes-desarrollo', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                        <i class="fas fa-bullseye"></i>
-                        <span>Planes de Desarrollo</span>
-                    </button>
-                    
-                    <button class="drawer-menu-item" 
-                            :class="activeModule === 'contenido' ? 'active' : ''"
-                            @click="showModule('contenido', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                        <i class="fas fa-book-open"></i>
-                        <span>Contenido</span>
-                    </button>
-                    
-                    <button class="drawer-menu-item" 
-                            :class="activeModule === 'mi-agenda' ? 'active' : ''"
-                            @click="showModule('mi-agenda', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Mi Agenda</span>
-                    </button>
-                </div>
+            <div class="drawer-grid">
+                <button class="drawer-menu-item" 
+                        :class="activeModule === 'overview' ? 'active' : ''"
+                        @click="showModule('overview', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Overview</span>
+                </button>
                 
-                <!-- Opciones de usuario -->
-                <div class="drawer-section">
-                    <div class="drawer-section-title">Cuenta</div>
-                    
-                    <a href="/coach-profile?return=dashboard" class="drawer-menu-item">
-                        <i class="fas fa-user-circle"></i>
-                        <span>Mi Perfil</span>
-                    </a>
-                    
-                    <button class="drawer-menu-item danger" 
-                            @click="if(confirm('¿Estás seguro que deseas salir?')) { logout(); }">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Cerrar Sesión</span>
-                    </button>
-                </div>
+                <button class="drawer-menu-item" 
+                        :class="activeModule === 'mis-coachees' ? 'active' : ''"
+                        @click="showModule('mis-coachees', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-users"></i>
+                    <span>Mis Coachees</span>
+                </button>
+                
+                <button class="drawer-menu-item" 
+                        :class="activeModule === 'evaluaciones' ? 'active' : ''"
+                        @click="showModule('evaluaciones', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Evaluaciones</span>
+                </button>
+                
+                <button class="drawer-menu-item" 
+                        :class="activeModule === 'gestion-tareas' ? 'active' : ''"
+                        @click="showModule('gestion-tareas', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-tasks"></i>
+                    <span>Gestión de Tareas</span>
+                </button>
+                
+                <button class="drawer-menu-item" 
+                        :class="activeModule === 'planes-desarrollo' ? 'active' : ''"
+                        @click="showModule('planes-desarrollo', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-bullseye"></i>
+                    <span>Planes de Desarrollo</span>
+                </button>
+                
+                <button class="drawer-menu-item" 
+                        :class="activeModule === 'contenido' ? 'active' : ''"
+                        @click="showModule('contenido', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-book-open"></i>
+                    <span>Contenido</span>
+                </button>
+                
+                <button class="drawer-menu-item" 
+                        :class="activeModule === 'mi-agenda' ? 'active' : ''"
+                        @click="showModule('mi-agenda', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Mi Agenda</span>
+                </button>
             </div>
         </div>
     </div>
@@ -9522,10 +9590,25 @@ window.dashboardApp = function() {
             console.log('📊 [DASHBOARD] Cargando estadísticas...');
             await this.loadStats();
             
-            // Recuperar la última sección activa desde localStorage
-            const lastActiveModule = localStorage.getItem('coach_active_module') || 'overview';
-            console.log(`📂 [DASHBOARD] Mostrando módulo: ${lastActiveModule}`);
-            await this.showModule(lastActiveModule);
+            // Primero verificar si hay un parámetro 'module' en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const moduleFromUrl = urlParams.get('module');
+            
+            let moduleToShow;
+            if (moduleFromUrl) {
+                // Si viene de un link directo, usar ese módulo
+                moduleToShow = moduleFromUrl;
+                console.log(`🔗 [DASHBOARD] Módulo desde URL: ${moduleToShow}`);
+                // Limpiar el parámetro de la URL sin recargar la página
+                window.history.replaceState({}, '', window.location.pathname);
+            } else {
+                // Si no, recuperar la última sección activa desde localStorage
+                moduleToShow = localStorage.getItem('coach_active_module') || 'overview';
+                console.log(`📂 [DASHBOARD] Módulo desde localStorage: ${moduleToShow}`);
+            }
+            
+            console.log(`📂 [DASHBOARD] Mostrando módulo: ${moduleToShow}`);
+            await this.showModule(moduleToShow);
             console.log('✅ [DASHBOARD] Inicialización completa');
         },
         
