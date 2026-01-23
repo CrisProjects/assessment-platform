@@ -4506,6 +4506,11 @@
         100% { background-position: -200% 0; }
     }
     
+    @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    
     .skeleton-card {
         height: 350px;
     }
@@ -5299,7 +5304,8 @@
                                     </div>
                                     <div>
                                         <h3 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1.875rem; margin: 0 0 0.25rem 0; line-height: 1;">
-                                            <span x-text="coacheesData.length || 0"></span>
+                                            <span x-show="!loading.coachees" x-text="coacheesData.length"></span>
+                                            <span x-show="loading.coachees" style="display: inline-block; width: 60px; height: 30px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;"></span>
                                         </h3>
                                         <p class="mb-0" style="color: #6b7280; font-size: 0.875rem; font-weight: 400; margin: 0;">Total de Coachees</p>
                                     </div>
@@ -5328,7 +5334,8 @@
                                     </div>
                                     <div>
                                         <h3 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1.875rem; margin: 0 0 0.25rem 0; line-height: 1;">
-                                            <span x-text="stats.publishedContent !== undefined ? stats.publishedContent : '..'"></span>
+                                            <span x-show="!loading.stats" x-text="stats.publishedContent"></span>
+                                            <span x-show="loading.stats" style="display: inline-block; width: 60px; height: 30px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;"></span>
                                         </h3>
                                         <p class="mb-0" style="color: #6b7280; font-size: 0.875rem; font-weight: 400; margin: 0;">Contenido Publicado</p>
                                     </div>
@@ -5357,7 +5364,8 @@
                                     </div>
                                     <div>
                                         <h3 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1.875rem; margin: 0 0 0.25rem 0; line-height: 1;">
-                                            <span x-text="stats.scheduledSessions !== undefined ? stats.scheduledSessions : '..'"></span>
+                                            <span x-show="!loading.stats" x-text="stats.scheduledSessions"></span>
+                                            <span x-show="loading.stats" style="display: inline-block; width: 60px; height: 30px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;"></span>
                                         </h3>
                                         <p class="mb-0" style="color: #6b7280; font-size: 0.875rem; font-weight: 400; margin: 0;">Sesiones Programadas</p>
                                     </div>
@@ -5386,7 +5394,8 @@
                                     </div>
                                     <div>
                                         <h3 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1.875rem; margin: 0 0 0.25rem 0; line-height: 1;">
-                                            <span x-text="stats.pendingAssessments !== undefined ? stats.pendingAssessments : '..'"></span>
+                                            <span x-show="!loading.stats" x-text="stats.pendingAssessments"></span>
+                                            <span x-show="loading.stats" style="display: inline-block; width: 60px; height: 30px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;"></span>
                                         </h3>
                                         <p class="mb-0" style="color: #6b7280; font-size: 0.875rem; font-weight: 400; margin: 0;">Evaluaciones Pendientes</p>
                                     </div>
