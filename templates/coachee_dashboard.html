@@ -18766,6 +18766,31 @@
         // FUNCIÓN renderTestProgressChart ELIMINADA POR PETICIÓN DEL USUARIO
         // FUNCIÓN createSecondChart ELIMINADA - Canvas no existe en el DOM
 
+        // ⚡ FASE 2: Lazy Loading de Chart.js
+        async function loadChartJs() {
+            if (window.Chart) {
+                console.log('✅ Chart.js ya está cargado');
+                return true;
+            }
+            
+            console.log('🔄 [LAZY-LOAD] Cargando Chart.js dinámicamente...');
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                script.onload = () => {
+                    window.chartJsLoaded = true;
+                    console.log('✅ Chart.js cargado exitosamente');
+                    resolve(true);
+                };
+                script.onerror = () => {
+                    console.error('❌ Error al cargar Chart.js');
+                    reject(new Error('Failed to load Chart.js'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
         // NUEVO: Crear gráfico de tendencia de progreso
         let progressTrendChart = null;
         
@@ -18779,10 +18804,21 @@
                     return;
                 }
                 
-                // Verificar Chart.js
+                // ⚡ FASE 2: Cargar Chart.js dinámicamente si no está disponible
                 if (typeof Chart === 'undefined') {
-                    console.error('❌ Chart.js no está disponible');
-                    return;
+                    console.log('📊 Chart.js no disponible, cargando...');
+                    try {
+                        await loadChartJs();
+                    } catch (error) {
+                        console.error('❌ Error cargando Chart.js:', error);
+                        canvas.parentElement.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No se pudo cargar el gráfico. Por favor, recarga la página.
+                            </div>
+                        `;
+                        return;
+                    }
                 }
                 
                 // Obtener datos del historial de evaluaciones
