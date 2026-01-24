@@ -904,14 +904,14 @@ def add_security_headers(response):
 def unauthorized():
     if request.path.startswith('/api/'):
         # Determinar la URL de redirección según la ruta del API
-        redirect_url = '/participant-login'
+        redirect_url = '/participant-access'
         
         if '/api/admin' in request.path or '/api/platform-admin' in request.path:
             redirect_url = '/admin-login'
         elif '/api/coach' in request.path:
             redirect_url = '/coach-login'
         elif '/api/coachee' in request.path:
-            redirect_url = '/participant-login'
+            redirect_url = '/participant-access'
         
         return jsonify({
             'error': 'Sesión expirada. Por favor, inicia sesión nuevamente.',
@@ -3736,7 +3736,14 @@ def api_login():
         password = result['password']
         dashboard_type = data.get('dashboard_type', 'auto')  # 'coach', 'coachee', 'auto'
         
+        logger.info(f"🔐 LOGIN: Attempt for username/email: {username}, dashboard_type: {dashboard_type}")
+        
         user = User.query.filter((User.username == username) | (User.email == username)).first()  # type: ignore
+        
+        if not user:
+            logger.warning(f"❌ LOGIN: User not found for username/email: {username}")
+        else:
+            logger.info(f"✅ LOGIN: User found - ID: {user.id}, Username: {user.username}, Role: {user.role}, Active: {user.is_active}")
         
         # Forzar recarga desde BD para evitar caché desactualizado
         if user:

@@ -9512,7 +9512,7 @@
                 <div class="tab-content" id="mainTabContent" style="margin: 0 !important; padding: 0 !important;">
                 
                 <!-- Overview Tab - Gamification Design -->
-                <div class="tab-pane fade show active" id="overview" role="tabpanel" x-show="activeTab === 'overview'">
+                <div class="tab-pane" id="overview" role="tabpanel" style="display: none;">
                     <div style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
@@ -9732,7 +9732,7 @@
                 </div>
                 
                 <!-- Nueva Sección: Evaluaciones (Figma Complete Design) -->
-                <div class="tab-pane fade" id="evaluaciones-figma" role="tabpanel" x-show="activeTab === 'evaluaciones-figma'">
+                <div class="tab-pane" id="evaluaciones-figma" role="tabpanel" style="display: none;">
                     <div style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
@@ -10611,7 +10611,7 @@
                 </div>
 
                 <!-- Tasks Tab -->
-                <div class="tab-pane fade" id="tasks" role="tabpanel" x-show="activeTab === 'tasks'">
+                <div class="tab-pane" id="tasks" role="tabpanel" style="display: none;">
                     <div class="section-tasks" style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
                         <!-- Header -->
                         <div class="section-header-tasks" style="margin-bottom: 1.5rem;">
@@ -10635,7 +10635,7 @@
                 </div>
 
                 <!-- Content Tab -->
-                <div class="tab-pane fade" id="content" role="tabpanel" x-show="activeTab === 'content'">
+                <div class="tab-pane" id="content" role="tabpanel" style="display: none;">
                     <div class="section-content" style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
@@ -10811,7 +10811,7 @@
                 </div>
 
                 <!-- Progress Tab -->
-                <div class="tab-pane fade" id="progress" role="tabpanel" x-show="activeTab === 'progress'">
+                <div class="tab-pane" id="progress" role="tabpanel" style="display: none;">
                     <div style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
@@ -10893,7 +10893,7 @@
                 </div>
 
                 <!-- Development Plan Tab -->
-                <div class="tab-pane fade" id="development-plan" role="tabpanel" x-show="activeTab === 'development-plan'">
+                <div class="tab-pane" id="development-plan" role="tabpanel" style="display: none;">
                     <div style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
@@ -10934,7 +10934,7 @@
                 </div>
 
                 <!-- Schedule Coach Tab -->
-                <div class="tab-pane fade" id="schedule-coach" role="tabpanel" x-show="activeTab === 'schedule-coach'">
+                <div class="tab-pane" id="schedule-coach" role="tabpanel" style="display: none;">
                     <div style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
@@ -13132,26 +13132,20 @@
                 async init() {
                     try {
                         
-                        // Restaurar pestaña activa desde localStorage si existe
+                        // Restaurar pestaña activa desde localStorage o query param
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const tabParam = urlParams.get('tab');
                         const savedTab = localStorage.getItem('coachee_activeTab');
-                        if (savedTab) {
+                        
+                        // Prioridad: 1) Query param, 2) localStorage, 3) default (overview)
+                        if (tabParam) {
+                            this.activeTab = tabParam;
+                            localStorage.setItem('coachee_activeTab', tabParam);
+                        } else if (savedTab) {
                             this.activeTab = savedTab;
-                            
-                            // Aplicar clases show/active al tab-pane restaurado
-                            setTimeout(() => {
-                                // Ocultar todos los tab-panes primero
-                                const allTabPanes = document.querySelectorAll('.tab-pane');
-                                allTabPanes.forEach(pane => {
-                                    pane.classList.remove('show', 'active');
-                                });
-                                
-                                // Mostrar el tab-pane restaurado
-                                const restoredPane = document.getElementById(savedTab);
-                                if (restoredPane) {
-                                    restoredPane.classList.add('show', 'active');
-                                }
-                            }, 100);
                         }
+                        // Alpine.js se encarga automáticamente de mostrar/ocultar con x-show
+                        // Alpine.js se encarga automáticamente de mostrar/ocultar con x-show
                         
                         this.createParticles();
                         this.updateDateTime();
@@ -13166,32 +13160,43 @@
                         // 🚀 OPTIMIZACIÓN: Cargar todos los datos en una sola llamada
                         await this.loadDashboardData();
                         
-                        // Si la pestaña restaurada es completed-evaluations, renderizarla
-                        if (savedTab === 'completed-evaluations') {
-                            setTimeout(() => {
+                        // Cargar contenido específico según pestaña activa
+                        // IMPORTANTE: Dar tiempo a Alpine.js para renderizar el DOM completamente
+                        const currentTab = this.activeTab;
+                        
+                        // ✅ VANILLA JS: Show the active tab after DOM is ready
+                        setTimeout(() => {
+                            console.log('🎯 Mostrando tab inicial:', currentTab);
+                            this.showTab(currentTab);
+                            
+                            if (currentTab === 'overview') {
+                                // Overview ya se carga con loadDashboardData, solo asegurar visibilidad
+                                console.log('✅ Overview visible y listo');
+                            } else if (currentTab === 'evaluaciones-figma') {
+                                // Cargar evaluaciones disponibles - ESPERAR A QUE EL DOM EXISTA
+                                console.log('🔄 Cargando evaluaciones disponibles...');
+                                this.loadEvaluations();
+                            } else if (currentTab === 'completed-evaluations') {
                                 this.renderCompletedEvaluationsSection();
-                            }, 150);
-                        }
-                        
-                        // Si la pestaña restaurada es content, cargar videos
-                        if (savedTab === 'content') {
-                            setTimeout(() => {
+                            } else if (currentTab === 'content') {
                                 this.loadVideos(false); // Usar cache si está disponible
-                            }, 150);
-                        }
-                        
-                        // Si la pestaña restaurada es development-plan, cargar planes
-                        if (savedTab === 'development-plan') {
-                            setTimeout(() => {
+                            } else if (currentTab === 'development-plan') {
                                 this.loadDevelopmentPlans();
-                            }, 150);
-                        }
+                            }
+                        }, 300); // 300ms asegura que Alpine.js haya renderizado completamente el DOM
                         
                         // 🔥 WATCHER: Recargar PDFs cuando se vuelve a la pestaña de contenido
                         this.$watch('activeTab', (newTab, oldTab) => {
-                            if (newTab === 'content' && oldTab !== 'content') {
-                                // Esperar a que el DOM se actualice
-                                this.$nextTick(() => {
+                            // Evitar procesamiento si el tab no cambió realmente
+                            if (newTab === oldTab) return;
+                            
+                            // Cargar contenido específico según la pestaña
+                            // Dar tiempo a Alpine.js para renderizar el DOM
+                            setTimeout(() => {
+                                if (newTab === 'evaluaciones-figma' && !this.evaluationsData) {
+                                    console.log('🔄 Cargando evaluaciones al cambiar de tab');
+                                    this.loadEvaluations();
+                                } else if (newTab === 'content' && oldTab !== 'content') {
                                     // Forzar recarga de todos los PDFs
                                     const pdfEmbeds = document.querySelectorAll('embed[type="application/pdf"]');
                                     pdfEmbeds.forEach(embed => {
@@ -13201,8 +13206,8 @@
                                         const newSrc = `${baseSrc}?t=${Date.now()}#view=FitH`;
                                         embed.src = newSrc;
                                     });
-                                });
-                            }
+                                }
+                            }, 300); // 300ms asegura renderizado completo del DOM
                         });
                     } catch (error) {
                         console.error('❌ ERROR en init():', error);
@@ -13303,6 +13308,7 @@
                             if (data.profile) {
                                 const profile = data.profile;
                                 this.userName = profile.full_name || profile.username || 'Usuario';
+                                this.coacheeName = profile.full_name || profile.username || 'Usuario'; // ✅ Para Overview
                                 this.userEmail = profile.email;
                                 this.userRole = profile.role;
                                 
@@ -13607,10 +13613,10 @@
                 // ============================================
                 
                 showTab(tabId) {
+                    console.log('🎯 showTab called:', tabId);
                     
                     // Colapsar categorías de evaluaciones disponibles ANTES de cambiar de pestaña
-                    const currentActiveTab = document.querySelector('.tab-pane.show.active');
-                    if (currentActiveTab && currentActiveTab.id === 'evaluations' && tabId !== 'evaluations') {
+                    if (this.activeTab === 'evaluations' && tabId !== 'evaluations') {
                         // Estamos saliendo de la pestaña de evaluaciones
                         const allCategories = document.querySelectorAll('#availableEvaluations .assessments-grid[data-expanded="true"]');
                         allCategories.forEach(categoryGrid => {
@@ -13627,43 +13633,21 @@
                         });
                     }
                     
-                    // Ocultar todos los tab-panes
-                    const allTabPanes = document.querySelectorAll('.tab-pane');
-                    allTabPanes.forEach(pane => {
-                        pane.classList.remove('show', 'active');
-                        // Si tiene display inline, ocultarlo
-                        if (pane.style.display === 'block') {
-                            pane.style.display = 'none';
-                        }
+                    // ✅ VANILLA JS: Hide ALL tab-panes first (like coach dashboard)
+                    document.querySelectorAll('.tab-pane').forEach(pane => {
+                        pane.style.display = 'none';
                     });
                     
-                    // Mostrar el tab-pane seleccionado
-                    const targetPane = document.getElementById(tabId);
-                    if (targetPane) {
-                        targetPane.classList.add('show', 'active');
-                        // Forzar display block para tabs que tienen display: none inline
-                        targetPane.style.display = 'block';
-                        
-                        // SCROLL AL INICIO cuando se abre assessment
-                        if (tabId === 'assessment') {
-                            // Buscar el contenedor principal con scroll
-                            const mainContent = document.querySelector('.col-12.col-xl-9');
-                            if (mainContent) {
-                                // Scroll suave al inicio del contenedor
-                                mainContent.scrollTo({
-                                    top: 0,
-                                    behavior: 'smooth'
-                                });
-                            }
-                            // También hacer scroll de la ventana al inicio
-                            window.scrollTo({
-                                top: 0,
-                                behavior: 'smooth'
-                            });
-                        }
+                    // ✅ VANILLA JS: Show selected tab-pane
+                    const selectedPane = document.getElementById(tabId);
+                    if (selectedPane) {
+                        selectedPane.style.display = 'block';
+                        console.log('✅ Tab displayed:', tabId);
+                    } else {
+                        console.error('❌ Tab not found:', tabId);
                     }
                     
-                    // Actualizar estado reactivo
+                    // Update activeTab for tracking and :class bindings
                     this.activeTab = tabId;
                     
                     // Guardar pestaña activa en localStorage
@@ -13803,9 +13787,9 @@
                             // Exponer globalmente para legacy code
                             window.evaluationsData = this.evaluationsData;
                             
-                            // 🔥 FIX: Ya no llamamos a renderAvailableEvaluations legacy (contenedor eliminado)
-                            // debugLog('✅ Renderizando evaluaciones disponibles...');
-                            // this.renderAvailableEvaluations();
+                            // ✅ Renderizar evaluaciones con diseño Figma (Alpine.js)
+                            debugLog('✅ Renderizando evaluaciones disponibles...');
+                            this.renderAvailableEvaluations();
                         } else {
                             console.error('Formato de datos inesperado:', data);
                             throw new Error('Formato de datos inesperado del servidor');
@@ -13831,57 +13815,54 @@
                 },
                 
                 renderAvailableEvaluations() {
+                    console.log('🎨 Renderizando evaluaciones con diseño Figma...');
                     
-                    const container = document.getElementById('availableEvaluations');
-                    if (!container) {
-                        console.error('❌ Container availableEvaluations NO ENCONTRADO');
+                    // ✅ CRÍTICO: Si window.evaluationsData ya existe (cargado por legacy loadEvaluations),
+                    // usarlo directamente en lugar del state de Alpine.js
+                    // Esto evita problemas con el Proxy reactivo que pierde la estructura de datos
+                    if (window.evaluationsData && typeof window.evaluationsData === 'object') {
+                        console.log('📦 Usando evaluationsData de window (ya cargado por API)');
+                        
+                        // Renderizar stats de Figma con datos del servidor
+                        if (typeof renderFigmaStats === 'function') {
+                            console.log('📊 Llamando a renderFigmaStats con datos del servidor...');
+                            renderFigmaStats();
+                        }
+                        
+                        console.log('✅ Evaluaciones renderizadas exitosamente (desde window)');
                         return;
                     }
                     
-                    
-                    // Exponer globalmente para legacy code
-                    window.evaluationsData = this.evaluationsData;
+                    // Fallback: usar datos de Alpine.js si window.evaluationsData no existe
+                    console.log('📦 Usando evaluationsData de Alpine.js (fallback)');
                     
                     // Verificar mensaje específico
                     if (this.evaluationsData && this.evaluationsData.message) {
-                        container.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-user-tie"></i>
-                                </div>
-                                <div class="empty-state-title">Información</div>
-                                <div class="empty-state-description">${this.evaluationsData.message}</div>
-                            </div>
-                        `;
+                        console.warn('⚠️ Mensaje del servidor:', this.evaluationsData.message);
                         return;
                     }
                     
-                    if (!this.evaluationsData || !this.evaluationsData.available || Object.keys(this.evaluationsData.available).length === 0) {
-                        container.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-inbox"></i>
-                                </div>
-                                <div class="empty-state-title">Sin evaluaciones disponibles</div>
-                                <div class="empty-state-description">No tienes evaluaciones disponibles en este momento</div>
-                            </div>
-                        `;
+                    // ✅ FIX: Validar que haya ALGÚN dato (completadas O disponibles)
+                    const hasAvailable = this.evaluationsData?.available && Object.keys(this.evaluationsData.available).length > 0;
+                    const hasCompleted = this.evaluationsData?.completed && Array.isArray(this.evaluationsData.completed) && this.evaluationsData.completed.length > 0;
+                    
+                    if (!this.evaluationsData || (!hasAvailable && !hasCompleted)) {
+                        console.warn('⚠️ No hay evaluaciones disponibles ni completadas');
                         return;
                     }
                     
-                    // Llamar a función legacy de renderizado
+                    console.log(`📊 Datos: ${hasCompleted ? this.evaluationsData.completed.length : 0} completadas, ${hasAvailable ? Object.keys(this.evaluationsData.available).length : 0} disponibles`);
                     
-                    if (typeof renderAvailableEvaluationsLegacy === 'function') {
-                        renderAvailableEvaluationsLegacy();
-                        
-                        // ❌ DESHABILITADO - Conflicto con secciones expandibles
-                        // Render Figma section
-                        // if (typeof renderFigmaEvaluacionesSection === 'function') {
-                        //     renderFigmaEvaluacionesSection();
-                        // }
-                    } else {
-                        console.error('❌ renderAvailableEvaluationsLegacy NO está disponible');
+                    // ✅ FIX: Hacer deep copy de los datos para evitar Proxy de Alpine.js
+                    window.evaluationsData = JSON.parse(JSON.stringify(this.evaluationsData));
+                    
+                    // ✅ Renderizar stats de Figma
+                    if (typeof renderFigmaStats === 'function') {
+                        console.log('📊 Llamando a renderFigmaStats...');
+                        renderFigmaStats();
                     }
+                    
+                    console.log('✅ Evaluaciones renderizadas exitosamente');
                 },
                 
                 // ============================================
@@ -15786,9 +15767,7 @@
             if (!forceRefresh && evaluationsData && evaluationsLastLoaded) {
                 const age = Date.now() - evaluationsLastLoaded;
                 if (age < EVALUATIONS_CACHE_DURATION) {
-                    renderAvailableEvaluationsLegacy();
-                    
-                    // 🔥 FIX: Renderizar stats de Figma si estamos en el tab evaluaciones-figma
+                    // ✅ Renderizar stats de Figma directamente (legacy function removed)
                     const savedTab = localStorage.getItem('coachee_activeTab');
                     if (savedTab === 'evaluaciones-figma' && typeof renderFigmaStats === 'function') {
                         debugLog('📊 Renderizando estadísticas de Figma desde cache...');
@@ -15820,9 +15799,8 @@
                     window.evaluationsData = data; // 🔥 IMPORTANTE: Asignar a window para funciones Figma
                     evaluationsLastLoaded = Date.now();
                     debugLog('✅ Renderizando evaluaciones disponibles...');
-                    renderAvailableEvaluationsLegacy();
                     
-                    // 🔥 FIX: Renderizar stats de Figma si estamos en el tab evaluaciones-figma
+                    // ✅ Renderizar stats de Figma directamente (legacy function removed)
                     const savedTab = localStorage.getItem('coachee_activeTab');
                     if (savedTab === 'evaluaciones-figma' && typeof renderFigmaStats === 'function') {
                         debugLog('📊 Renderizando estadísticas de Figma...');
@@ -16755,7 +16733,7 @@
             
             
             if (!container) {
-                console.error('❌ Container availableEvaluations no encontrado');
+                console.warn('⚠️ Legacy container availableEvaluations no encontrado (esperado - usando diseño Figma)');
                 return;
             }
             
@@ -25215,7 +25193,7 @@
         <!-- Overview -->
         <button class="nav-item" 
                 :class="{ 'active': activeTab === 'overview' }"
-                @click="activeTab = 'overview'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                @click="showTab('overview'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
             <i class="fas fa-chart-pie"></i>
             <span>Overview</span>
         </button>
@@ -25249,49 +25227,49 @@
         <div class="drawer-grid">
             <button class="drawer-item" 
                     :class="{ 'active': activeTab === 'overview' }"
-                    @click="activeTab = 'overview'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    @click="showTab('overview'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                 <i class="fas fa-home"></i>
                 <span>Overview</span>
             </button>
             
             <button class="drawer-item" 
                     :class="{ 'active': activeTab === 'evaluaciones-figma' }"
-                    @click="activeTab = 'evaluaciones-figma'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    @click="showTab('evaluaciones-figma'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                 <i class="fas fa-chart-bar"></i>
                 <span>Evaluaciones</span>
             </button>
 
             <button class="drawer-item"
                     :class="{ 'active': activeTab === 'tasks' }"
-                    @click="activeTab = 'tasks'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    @click="showTab('tasks'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                 <i class="fas fa-tasks"></i>
                 <span>Mis Acciones y Metas</span>
             </button>
 
             <button class="drawer-item"
                     :class="{ 'active': activeTab === 'content' }"
-                    @click="activeTab = 'content'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    @click="showTab('content'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                 <i class="fas fa-folder-open"></i>
                 <span>Mi Contenido</span>
             </button>
 
             <button class="drawer-item"
                     :class="{ 'active': activeTab === 'progress' }"
-                    @click="activeTab = 'progress'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    @click="showTab('progress'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                 <i class="fas fa-chart-line"></i>
                 <span>Mi Progreso</span>
             </button>
 
             <button class="drawer-item"
                     :class="{ 'active': activeTab === 'development-plan' }"
-                    @click="activeTab = 'development-plan'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    @click="showTab('development-plan'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                 <i class="fas fa-rocket"></i>
                 <span>Mi Plan de Desarrollo</span>
             </button>
 
             <button class="drawer-item"
                     :class="{ 'active': activeTab === 'schedule-coach' }"
-                    @click="activeTab = 'schedule-coach'; showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    @click="showTab('schedule-coach'); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Agendar Coach</span>
             </button>
