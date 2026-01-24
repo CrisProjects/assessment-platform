@@ -9642,13 +9642,55 @@ window.dashboardApp = function() {
                 await this.loadDashboardData();
                 console.log('✅ [DASHBOARD] Datos cargados');
                 
-                // Solo inicializar características adicionales del módulo (charts, etc)
-                if (moduleToShow === 'overview') {
-                    setTimeout(() => {
-                        this.initializeOverviewCharts();
-                        this.loadRecentActivity();
-                    }, 100);
+                // Cargar datos específicos del módulo actual (FIX: cargar datos al refrescar con F5)
+                console.log(`🔄 [DASHBOARD] Cargando datos específicos del módulo: ${moduleToShow}`);
+                switch(moduleToShow) {
+                    case 'overview':
+                        setTimeout(() => {
+                            this.initializeOverviewCharts();
+                            this.loadRecentActivity();
+                        }, 100);
+                        break;
+                    case 'mis-coachees':
+                        await this.loadCoachees();
+                        break;
+                    case 'gestion-tareas':
+                        // Cargar coachees primero si no están cargados (necesarios para el filtro)
+                        if (!this.coacheesData || this.coacheesData.length === 0) {
+                            await this.loadCoachees();
+                        }
+                        await this.loadTasks();
+                        break;
+                    case 'evaluaciones':
+                        await this.loadAvailableAssessments();
+                        break;
+                    case 'planes-desarrollo':
+                        await this.loadDevelopmentPlanRequests();
+                        break;
+                    case 'contenido':
+                        // Poblar selectores de coachees primero
+                        await this.populateCoacheeSelectors();
+                        // Luego cargar contenido
+                        await this.loadAssignedContent();
+                        break;
+                    case 'mi-agenda':
+                        // Inicializar calendario
+                        setTimeout(() => {
+                            this.initializeCalendar();
+                            this.loadMyAvailability();
+                            // Cargar coachees para el formulario de citas directas
+                            loadCoacheesForDirectAppointment();
+                        }, 100);
+                        // Cargar solicitudes en segundo plano
+                        setTimeout(() => {
+                            this.loadSessionRequests();
+                        }, 200);
+                        break;
+                    case 'solicitudes-sesion':
+                        await this.loadSessionRequests();
+                        break;
                 }
+                
             } catch (error) {
                 console.error('❌ [DASHBOARD] Error cargando datos:', error);
             }
