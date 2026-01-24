@@ -13165,11 +13165,8 @@
                         // IMPORTANTE: Inicializar funciones legacy PRIMERO para exponer window.evaluationCategories
                         this.initializeLegacyFunctions();
                         
-                        // Cargar datos iniciales
-                        await this.loadUserProfile();
-                        
-                        // Cargar evaluaciones disponibles
-                        await this.loadEvaluations();
+                        // 🚀 OPTIMIZACIÓN: Cargar todos los datos en una sola llamada
+                        await this.loadDashboardData();
                         
                         // Si la pestaña restaurada es completed-evaluations, renderizarla
                         if (savedTab === 'completed-evaluations') {
@@ -13286,7 +13283,88 @@
                     }
                 },
                 
-                // Cargar perfil de usuario
+                // NUEVA FUNCIÓN OPTIMIZADA: Cargar todos los datos en una sola llamada
+                async loadDashboardData() {
+                    try {
+                        console.log('🚀 [LOAD] Llamando a /api/coachee/dashboard-init (endpoint optimizado)');
+                        const response = await fetch('/api/coachee/dashboard-init');
+                        
+                        // Si el endpoint no existe (404), usar método legacy
+                        if (response.status === 404) {
+                            console.warn('⚠️ [LOAD] Endpoint optimizado no disponible, usando método legacy');
+                            await this.loadUserProfile();
+                            await this.loadEvaluations();
+                            return;
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📦 [LOAD] Respuesta recibida:', data);
+                        
+                        if (data.success) {
+                            // 1. Cargar datos del perfil
+                            if (data.profile) {
+                                const profile = data.profile;
+                                this.userName = profile.full_name || profile.username || 'Usuario';
+                                this.userEmail = profile.email;
+                                this.userRole = profile.role;
+                                
+                                if (profile.avatar_url) {
+                                    this.userAvatar = `<img src="${profile.avatar_url}" alt="${this.userName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                                } else {
+                                    const initial = this.userName.charAt(0).toUpperCase();
+                                    this.userAvatar = initial;
+                                }
+                                
+                                if (profile.coach) {
+                                    this.coachName = profile.coach.name;
+                                    this.coachEmail = profile.coach.email;
+                                }
+                                
+                                console.log('✅ [LOAD] Perfil cargado:', this.userName);
+                            }
+                            
+                            // 2. Cargar evaluaciones
+                            if (data.evaluations) {
+                                this.evaluationsData = data.evaluations;
+                                this.evaluationsLastLoaded = Date.now();
+                                
+                                // Actualizar stats
+                                if (data.evaluations.completed && Array.isArray(data.evaluations.completed)) {
+                                    this.stats.completedEvaluations = data.evaluations.completed.length;
+                                    if (data.evaluations.completed.length > 0) {
+                                        this.stats.latestScore = data.evaluations.completed[0].score + '%' || '0%';
+                                        this.stats.latestEvaluationId = data.evaluations.completed[0].id;
+                                    }
+                                }
+                                
+                                console.log(`✅ [LOAD] Evaluaciones cargadas: ${data.evaluations.total_completed} completadas`);
+                            }
+                            
+                            // 3. Cargar stats
+                            if (data.stats) {
+                                this.stats.pendingTasks = data.stats.pending_tasks_count || 0;
+                                console.log('✅ [LOAD] Stats cargadas');
+                            }
+                            
+                            console.log('🎉 [LOAD] Todos los datos cargados en una sola llamada');
+                        } else {
+                            console.warn('⚠️ [LOAD] Respuesta sin success:true, usando método legacy');
+                            await this.loadUserProfile();
+                            await this.loadEvaluations();
+                        }
+                    } catch (error) {
+                        console.error('❌ [LOAD] Error cargando dashboard data:', error);
+                        console.log('🔄 [LOAD] Fallback a método legacy');
+                        try {
+                            await this.loadUserProfile();
+                            await this.loadEvaluations();
+                        } catch (legacyError) {
+                            console.error('❌ [LOAD] Error también en método legacy:', legacyError);
+                        }
+                    }
+                },
+                
+                // Cargar perfil de usuario (LEGACY - mantener para compatibilidad)
                 async loadUserProfile() {
                     try {
                         

@@ -817,7 +817,21 @@ def add_security_headers(response):
     """
     Agrega headers de seguridad HTTP a todas las respuestas.
     Protege contra ataques comunes como XSS, clickjacking, MIME sniffing, etc.
+    También optimiza caché para assets estáticos.
     """
+    # ============================================================================
+    # OPTIMIZACIÓN: CACHÉ PARA ASSETS ESTÁTICOS
+    # ============================================================================
+    # Permitir caché del navegador para archivos estáticos (CSS, JS, imágenes)
+    # Esto reduce drásticamente el tiempo de carga en visitas repetidas
+    if request.path.startswith('/static/'):
+        # Caché de 1 año para assets con versionado (cambian el ?v=timestamp)
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        logger.debug(f"📦 Cache enabled for: {request.path}")
+    
+    # ============================================================================
+    # SECURITY HEADERS
+    # ============================================================================
     # X-Frame-Options: Previene clickjacking
     # DENY: no permite que el sitio sea embebido en iframes
     response.headers['X-Frame-Options'] = 'DENY'
@@ -10788,10 +10802,146 @@ def api_coachee_profile():
         logger.error(f"Error en api_coachee_profile: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
 
+@app.route('/api/coachee/dashboard-init', methods=['GET'])
+@coachee_session_required
+def api_coachee_dashboard_init():
+    """
+    Endpoint optimizado que retorna TODOS los datos necesarios para inicializar el dashboard coachee
+    en una sola llamada, reduciendo latencia de red en producción.
+    
+    Retorna:
+    - profile: Datos del perfil del coachee
+    - evaluations: Evaluaciones disponibles y completadas
+    - pending_tasks_count: Número de tareas pendientes
+    - completed_evaluations_count: Número de evaluaciones completadas
+    """
+    try:
+        current_coachee = g.current_user
+        
+        if current_coachee.role != 'coachee':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        logger.info(f"🚀 DASHBOARD-INIT: Loading all data for coachee {current_coachee.username}")
+        
+        # 1. PROFILE DATA
+        coach = None
+        if current_coachee.coach_id:
+            coach = User.query.get(current_coachee.coach_id)
+        
+        total_evaluations = AssessmentResult.query.filter_by(
+            user_id=current_coachee.id
+        ).count()
+        
+        profile_data = {
+            'id': current_coachee.id,
+            'username': current_coachee.username,
+            'full_name': current_coachee.full_name,
+            'email': current_coachee.email,
+            'role': current_coachee.role,
+            'avatar_url': current_coachee.avatar_url if hasattr(current_coachee, 'avatar_url') else None,
+            'created_at': current_coachee.created_at.isoformat() if hasattr(current_coachee, 'created_at') and current_coachee.created_at else None,
+            'coach': {
+                'id': coach.id if coach else None,
+                'name': coach.full_name if coach else None,
+                'email': coach.email if coach else None
+            } if coach else None,
+            'stats': {
+                'total_evaluations_completed': total_evaluations
+            }
+        }
+        
+        # 2. EVALUATIONS DATA (disponibles y completadas)
+        # Evaluaciones completadas
+        completed_results = AssessmentResult.query.filter(
+            AssessmentResult.user_id == current_coachee.id,
+            AssessmentResult.completed_at.isnot(None)
+        ).order_by(AssessmentResult.completed_at.desc()).limit(10).all()
+        
+        completed_evaluations = []
+        for result in completed_results:
+            assessment = Assessment.query.get(result.assessment_id)
+            completed_evaluations.append({
+                'id': result.id,
+                'assessment_id': result.assessment_id,
+                'assessment_title': assessment.title if assessment else 'Evaluación eliminada',
+                'score': result.score,
+                'total_questions': result.total_questions,
+                'completed_at': result.completed_at.isoformat() if result.completed_at else None,
+                'result_text': result.result_text,
+                'dimensional_scores': result.dimensional_scores
+            })
+        
+        # Evaluaciones disponibles (asignadas por tareas)
+        assigned_tasks = Task.query.filter_by(
+            coachee_id=current_coachee.id,
+            is_active=True,
+            category='evaluation'
+        ).all()
+        
+        available_evaluations = {}
+        for task in assigned_tasks:
+            # Parsear título de la tarea para obtener assessment_id
+            if 'assessment_id:' in task.description:
+                try:
+                    assessment_id = int(task.description.split('assessment_id:')[1].split()[0])
+                    assessment = Assessment.query.get(assessment_id)
+                    if assessment and assessment.is_active:
+                        available_evaluations[assessment.category] = {
+                            'id': assessment.id,
+                            'title': assessment.title,
+                            'description': assessment.description,
+                            'category': assessment.category,
+                            'task_id': task.id
+                        }
+                except (ValueError, IndexError):
+                    continue
+        
+        # 3. TASKS STATS
+        tasks = Task.query.filter(
+            Task.coachee_id == current_coachee.id,
+            Task.is_active == True,
+            Task.category != 'evaluation'
+        ).all()
+        
+        pending_tasks = 0
+        current_date = date.today()
+        
+        for task in tasks:
+            latest_progress = TaskProgress.query.filter_by(task_id=task.id)\
+                .order_by(TaskProgress.created_at.desc()).first()
+            
+            if latest_progress and latest_progress.status in ['pending', 'in_progress']:
+                pending_tasks += 1
+        
+        # 4. RESPONSE COMBINADA
+        response = {
+            'success': True,
+            'profile': profile_data,
+            'evaluations': {
+                'available': available_evaluations,
+                'completed': completed_evaluations,
+                'total_available': len(available_evaluations),
+                'total_completed': len(completed_evaluations)
+            },
+            'stats': {
+                'pending_tasks_count': pending_tasks,
+                'completed_evaluations_count': len(completed_evaluations)
+            }
+        }
+        
+        logger.info(f"✅ DASHBOARD-INIT: Returning all data in single response for coachee")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"❌ DASHBOARD-INIT: Error: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
 @app.route('/api/coachee/dashboard-summary', methods=['GET'])
 @coachee_session_required
 def api_coachee_dashboard_summary():
-    """Obtener resumen para el dashboard del coachee"""
+    """Obtener resumen para el dashboard del coachee (LEGACY - mantener para compatibilidad)"""
     try:
         current_user = g.current_user
         # Verificar que es un coachee (ya verificado por el decorador)
