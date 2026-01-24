@@ -47,6 +47,11 @@
 
     
     <style>
+        /* Alpine.js x-cloak - Ocultar elementos hasta que Alpine esté listo */
+        [x-cloak] {
+            display: none !important;
+        }
+        
         /* Variables CSS para recomendaciones unificadas - IGUAL QUE COACHEE */
         :root {
             --calm-primary: #1E3A8A;        /* Deep Blue */
@@ -5304,8 +5309,8 @@
                                     </div>
                                     <div>
                                         <h3 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1.875rem; margin: 0 0 0.25rem 0; line-height: 1;">
-                                            <span x-show="!loading.coachees" x-text="coacheesData.length"></span>
-                                            <span x-show="loading.coachees" style="display: inline-block; width: 60px; height: 30px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;"></span>
+                                            <span x-show="!loading.stats" x-text="coacheesData.length"></span>
+                                            <span x-show="loading.stats" style="display: inline-block; width: 60px; height: 30px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;"></span>
                                         </h3>
                                         <p class="mb-0" style="color: #6b7280; font-size: 0.875rem; font-weight: 400; margin: 0;">Total de Coachees</p>
                                     </div>
@@ -9585,6 +9590,10 @@ window.dashboardApp = function() {
         // Inicialización
         async init() {
             console.log('🚀 [DASHBOARD] Iniciando dashboard...');
+            
+            // Asegurar que el drawer esté cerrado al iniciar
+            this.showDashboardDrawer = false;
+            
             this.createParticles();
             this.updateDateTime();
             setInterval(() => this.updateDateTime(), 1000);
@@ -9593,11 +9602,6 @@ window.dashboardApp = function() {
             document.querySelectorAll('.module-content').forEach(module => {
                 module.style.display = 'none';
             });
-            
-            console.log('📥 [DASHBOARD] Cargando perfil...');
-            await this.loadProfile();
-            console.log('📊 [DASHBOARD] Cargando estadísticas...');
-            await this.loadStats();
             
             // Primero verificar si hay un parámetro 'module' en la URL
             const urlParams = new URLSearchParams(window.location.search);
@@ -9616,9 +9620,57 @@ window.dashboardApp = function() {
                 console.log(`📂 [DASHBOARD] Módulo desde localStorage: ${moduleToShow}`);
             }
             
-            console.log(`📂 [DASHBOARD] Mostrando módulo: ${moduleToShow}`);
-            await this.showModule(moduleToShow);
+            // Establecer activeModule
+            this.activeModule = moduleToShow;
+            localStorage.setItem('coach_active_module', moduleToShow);
+            
+            // Mostrar el módulo INMEDIATAMENTE (antes de cargar datos)
+            const moduleElement = document.getElementById(moduleToShow);
+            if (moduleElement) {
+                moduleElement.style.display = 'block';
+                moduleElement.classList.add('module-visible');
+                console.log(`👁️ [DASHBOARD] Módulo ${moduleToShow} visible inmediatamente`);
+            }
+            
+            // Marcar el enlace activo
+            const selectedLink = document.querySelector(`[data-module="${moduleToShow}"]`);
+            if (selectedLink) {
+                selectedLink.classList.add('active');
+            }
+            
+            // Luego cargar datos en paralelo (no bloquea la UI)
+            console.log('📥 [DASHBOARD] Cargando perfil y estadísticas...');
+            try {
+                await Promise.all([
+                    this.loadProfile(),
+                    this.loadStats()
+                ]);
+                console.log('✅ [DASHBOARD] Datos cargados');
+                
+                // Solo inicializar características adicionales del módulo (charts, etc)
+                if (moduleToShow === 'overview') {
+                    setTimeout(() => {
+                        this.initializeOverviewCharts();
+                        this.loadRecentActivity();
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('❌ [DASHBOARD] Error cargando datos:', error);
+            }
+            
             console.log('✅ [DASHBOARD] Inicialización completa');
+        },
+        
+        // Nueva función para inicializar características específicas del módulo
+        initializeModule(moduleId) {
+            switch(moduleId) {
+                case 'overview':
+                    setTimeout(() => {
+                        this.initializeOverviewCharts();
+                        this.loadRecentActivity();
+                    }, 100);
+                    break;
+            }
         },
         
         // Crear partículas animadas
@@ -9701,6 +9753,9 @@ window.dashboardApp = function() {
                 if (this.checkSessionExpired(data)) return;
                 
                 if (data.success) {
+                    // IMPORTANTE: Llenar coacheesData aquí también para evitar pestañeo
+                    this.coacheesData = data.coachees;
+                    this.filteredCoacheesData = data.coachees;
                     this.stats.totalCoachees = data.coachees.length;
                     
                     let totalEvaluations = 0;
@@ -9785,8 +9840,11 @@ window.dashboardApp = function() {
             // Cargar datos específicos del módulo
             switch(moduleId) {
                 case 'overview':
-                    await this.loadStats();
-                    await this.loadCoachees(); // Cargar coachees para mostrar el total en la tarjeta
+                    // Solo recargar stats si viene de una navegación del usuario (shouldScroll = true)
+                    if (shouldScroll) {
+                        await this.loadStats();
+                    }
+                    // Inicializar charts
                     setTimeout(() => {
                         this.initializeOverviewCharts();
                         this.loadRecentActivity();
