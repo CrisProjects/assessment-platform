@@ -27,8 +27,8 @@
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ⚡ OPTIMIZACIÓN FASE 2: Chart.js se carga dinámicamente cuando se necesita (lazy loading) -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
     <script src="/static/js/recommendations.js?v={{ get_file_version('js/recommendations.js') }}"></script>
     <!-- InstaCoach UI Components -->
     <script src="/static/js/ui-components.js?v={{ get_file_version('js/ui-components.js') }}"></script>
@@ -36,13 +36,11 @@
     <!-- FullCalendar JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     
-    <!-- PDF.js para vista previa de documentos -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- ⚡ OPTIMIZACIÓN FASE 2: PDF.js se carga dinámicamente cuando hay documentos (lazy loading) -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script> -->
     <script>
-        // Configurar worker de PDF.js
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
+        // PDF.js se configurará dinámicamente cuando se cargue
+        window.pdfJsLoaded = false;
     </script>
 
     
@@ -11587,8 +11585,101 @@ window.dashboardApp = function() {
             }
         },
         
-        // Inicializar gráficos de Overview
+        // ⚡ FASE 2: Lazy Loading de Chart.js
+        async loadChartJs() {
+            // Si ya está cargado, no hacer nada
+            if (window.Chart) {
+                console.log('✅ [LAZY-LOAD] Chart.js ya está cargado');
+                return true;
+            }
+            
+            try {
+                console.log('🔄 [LAZY-LOAD] Cargando Chart.js...');
+                
+                // Crear elemento script
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                
+                // Promesa que se resuelve cuando el script carga
+                const loaded = new Promise((resolve, reject) => {
+                    script.onload = () => {
+                        console.log('✅ [LAZY-LOAD] Chart.js cargado exitosamente');
+                        resolve(true);
+                    };
+                    script.onerror = () => {
+                        console.error('❌ [LAZY-LOAD] Error cargando Chart.js');
+                        reject(new Error('Failed to load Chart.js'));
+                    };
+                });
+                
+                // Agregar script al documento
+                document.head.appendChild(script);
+                
+                // Esperar a que cargue
+                await loaded;
+                return true;
+                
+            } catch (error) {
+                console.error('❌ [LAZY-LOAD] Error en loadChartJs:', error);
+                return false;
+            }
+        },
+        
+        // ⚡ FASE 2: Lazy Loading de PDF.js
+        async loadPdfJs() {
+            // Si ya está cargado, no hacer nada
+            if (window.pdfJsLoaded && window.pdfjsLib) {
+                console.log('✅ [LAZY-LOAD] PDF.js ya está cargado');
+                return true;
+            }
+            
+            try {
+                console.log('🔄 [LAZY-LOAD] Cargando PDF.js...');
+                
+                // Crear elemento script
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                
+                // Promesa que se resuelve cuando el script carga
+                const loaded = new Promise((resolve, reject) => {
+                    script.onload = () => {
+                        // Configurar worker
+                        if (typeof pdfjsLib !== 'undefined') {
+                            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                            window.pdfJsLoaded = true;
+                            console.log('✅ [LAZY-LOAD] PDF.js cargado y configurado');
+                            resolve(true);
+                        } else {
+                            reject(new Error('pdfjsLib not available'));
+                        }
+                    };
+                    script.onerror = () => {
+                        console.error('❌ [LAZY-LOAD] Error cargando PDF.js');
+                        reject(new Error('Failed to load PDF.js'));
+                    };
+                });
+                
+                // Agregar script al documento
+                document.head.appendChild(script);
+                
+                // Esperar a que cargue
+                await loaded;
+                return true;
+                
+            } catch (error) {
+                console.error('❌ [LAZY-LOAD] Error en loadPdfJs:', error);
+                return false;
+            }
+        },
+        
+        // Inicializar gráficos de Overview (CON LAZY LOADING)
         async initializeOverviewCharts() {
+            // ⚡ FASE 2: Cargar Chart.js dinámicamente si no está disponible
+            if (!window.Chart) {
+                console.log('📊 [OVERVIEW-CHARTS] Chart.js no disponible, cargando...');
+                await this.loadChartJs();
+            }
+            
             // Evitar inicialización múltiple
             if (this.chartsInitializing) {
                 console.log('⏸️ [OVERVIEW-CHARTS] Already initializing, skipping...');
