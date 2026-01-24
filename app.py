@@ -13,6 +13,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_compress import Compress
 from datetime import datetime, timedelta, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -131,6 +132,10 @@ CORS(app, origins=allowed_origins, supports_credentials=True,
 
 # Inicialización de extensiones
 db = SQLAlchemy(app)
+
+# Habilitar compresión GZIP para reducir tamaño de respuestas (mejora en producción)
+Compress(app)
+logger.info("✅ Compresión GZIP habilitada")
 
 # Aplicar migraciones automáticas en producción
 if IS_PRODUCTION:
@@ -6535,6 +6540,148 @@ def api_coach_create_invitation_v2():
         db.session.rollback()
         logger.error(f"❌ INVITATION: Error creating coachee: {str(e)}")
         return jsonify({'error': f'Error creando coachee: {str(e)}'}), 500
+
+@app.route('/api/coach/dashboard-init', methods=['GET'])
+@coach_session_required
+def api_coach_dashboard_init():
+    """
+    Endpoint optimizado que retorna TODOS los datos necesarios para inicializar el dashboard
+    en una sola llamada, reduciendo latencia de red en producción.
+    
+    Retorna:
+    - profile: Datos del perfil del coach
+    - stats: Estadísticas del dashboard
+    - coachees: Lista de coachees (limitada a primeros 50)
+    - recent_activity: Actividad reciente
+    """
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        logger.info(f"🚀 DASHBOARD-INIT: Loading all data for coach {current_coach.username}")
+        
+        # 1. PROFILE DATA
+        profile_data = {
+            'id': current_coach.id,
+            'username': current_coach.username,
+            'email': current_coach.email,
+            'full_name': current_coach.full_name or current_coach.username,
+            'avatar_url': current_coach.avatar_url
+        }
+        
+        # 2. COACHEES DATA (limitado a 50 para velocidad)
+        coachees = User.query.filter_by(
+            coach_id=current_coach.id,
+            role='coachee'
+        ).limit(50).all()
+        
+        coachee_ids = [c.id for c in coachees]
+        
+        # Optimización: Queries agrupadas
+        evaluations_counts = {}
+        if coachee_ids:
+            eval_counts_result = db.session.query(
+                AssessmentResult.user_id,
+                func.count(AssessmentResult.id)
+            ).filter(
+                AssessmentResult.user_id.in_(coachee_ids)
+            ).group_by(AssessmentResult.user_id).all()
+            evaluations_counts = {user_id: count for user_id, count in eval_counts_result}
+        
+        avg_scores = {}
+        if coachee_ids:
+            avg_scores_result = db.session.query(
+                AssessmentResult.user_id,
+                func.avg(AssessmentResult.score)
+            ).filter(
+                AssessmentResult.user_id.in_(coachee_ids),
+                AssessmentResult.score.isnot(None)
+            ).group_by(AssessmentResult.user_id).all()
+            avg_scores = {user_id: round(float(avg), 1) for user_id, avg in avg_scores_result if avg is not None}
+        
+        # Formatear coachees
+        coachees_data = []
+        for coachee in coachees:
+            coachee_data = {
+                'id': coachee.id,
+                'username': coachee.username,
+                'email': coachee.email,
+                'full_name': coachee.full_name or coachee.username,
+                'avatar_url': coachee.avatar_url,
+                'evaluations_count': evaluations_counts.get(coachee.id, 0),
+                'avg_score': avg_scores.get(coachee.id, 0)
+            }
+            coachees_data.append(coachee_data)
+        
+        # 3. STATS DATA
+        total_coachees = User.query.filter_by(
+            coach_id=current_coach.id,
+            role='coachee'
+        ).count()
+        
+        # Contar tareas de evaluación asignadas
+        total_assigned_tasks = Task.query.filter_by(
+            coach_id=current_coach.id,
+            category='evaluation',
+            is_active=True
+        ).count()
+        
+        completed_assessments = sum(evaluations_counts.values()) if evaluations_counts else 0
+        
+        # Promedio general
+        avg_score_result = db.session.query(
+            func.avg(AssessmentResult.score)
+        ).filter(
+            AssessmentResult.user_id.in_(coachee_ids),
+            AssessmentResult.score.isnot(None)
+        ).scalar() if coachee_ids else None
+        average_score = round(float(avg_score_result), 1) if avg_score_result else 0
+        
+        # Contenido publicado
+        published_content = Content.query.filter_by(
+            coach_id=current_coach.id,
+            is_active=True
+        ).count()
+        
+        # Sesiones programadas
+        from datetime import date
+        today = date.today()
+        scheduled_sessions = CoachingSession.query.filter(
+            CoachingSession.coach_id == current_coach.id,
+            CoachingSession.status.in_(['pending', 'confirmed']),
+            CoachingSession.session_date >= today
+        ).count()
+        
+        stats_data = {
+            'total_coachees': total_coachees,
+            'completed_assessments': completed_assessments,
+            'pending_assessments': max(0, total_assigned_tasks - completed_assessments),
+            'average_score': average_score,
+            'published_content': published_content,
+            'scheduled_sessions': scheduled_sessions,
+            'assigned_evaluation_tasks': total_assigned_tasks
+        }
+        
+        # 4. RESPONSE COMBINADA
+        response = {
+            'success': True,
+            'profile': profile_data,
+            'coachees': coachees_data,
+            'stats': stats_data,
+            'coachees_total': total_coachees,
+            'coachees_loaded': len(coachees_data)
+        }
+        
+        logger.info(f"✅ DASHBOARD-INIT: Returning all data in single response")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"❌ DASHBOARD-INIT: Error: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'error': 'Error interno del servidor'}), 500
 
 @app.route('/api/coach/stats', methods=['GET'])
 def api_coach_stats():

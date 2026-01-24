@@ -5309,7 +5309,7 @@
                                     </div>
                                     <div>
                                         <h3 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1.875rem; margin: 0 0 0.25rem 0; line-height: 1;">
-                                            <span x-show="!loading.stats" x-text="coacheesData.length"></span>
+                                            <span x-show="!loading.stats" x-text="stats.totalCoachees"></span>
                                             <span x-show="loading.stats" style="display: inline-block; width: 60px; height: 30px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px;"></span>
                                         </h3>
                                         <p class="mb-0" style="color: #6b7280; font-size: 0.875rem; font-weight: 400; margin: 0;">Total de Coachees</p>
@@ -9639,12 +9639,9 @@ window.dashboardApp = function() {
             }
             
             // Luego cargar datos en paralelo (no bloquea la UI)
-            console.log('📥 [DASHBOARD] Cargando perfil y estadísticas...');
+            console.log('📥 [DASHBOARD] Cargando datos desde endpoint optimizado...');
             try {
-                await Promise.all([
-                    this.loadProfile(),
-                    this.loadStats()
-                ]);
+                await this.loadDashboardData();
                 console.log('✅ [DASHBOARD] Datos cargados');
                 
                 // Solo inicializar características adicionales del módulo (charts, etc)
@@ -9707,7 +9704,89 @@ window.dashboardApp = function() {
             return false;
         },
         
-        // Cargar perfil del coach
+        // NUEVA FUNCIÓN OPTIMIZADA: Cargar todos los datos en una sola llamada
+        async loadDashboardData() {
+            this.loading.stats = true;
+            try {
+                console.log('🚀 [LOAD] Llamando a /api/coach/dashboard-init (endpoint optimizado)');
+                const response = await fetch('/api/coach/dashboard-init');
+                
+                // Si el endpoint no existe (404), usar método legacy
+                if (response.status === 404) {
+                    console.warn('⚠️ [LOAD] Endpoint optimizado no disponible, usando método legacy');
+                    await Promise.all([
+                        this.loadProfile(),
+                        this.loadStats()
+                    ]);
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('📦 [LOAD] Respuesta recibida:', data);
+                
+                // Verificar sesión expirada
+                if (this.checkSessionExpired(data)) return;
+                
+                if (data.success) {
+                    // 1. Cargar datos del perfil
+                    if (data.profile) {
+                        this.coachName = data.profile.full_name || data.profile.username || 'Coach';
+                        this.coachEmail = data.profile.email;
+                        
+                        if (data.profile.avatar_url) {
+                            this.coachAvatar = `<img src="${data.profile.avatar_url}" alt="${this.coachName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        } else {
+                            const initial = this.coachName.charAt(0).toUpperCase();
+                            this.coachAvatar = initial;
+                        }
+                        console.log('✅ [LOAD] Perfil cargado:', this.coachName);
+                    }
+                    
+                    // 2. Cargar coachees
+                    if (data.coachees) {
+                        this.coacheesData = data.coachees;
+                        this.filteredCoacheesData = data.coachees;
+                        console.log(`✅ [LOAD] ${data.coachees.length} coachees cargados`);
+                    }
+                    
+                    // 3. Cargar estadísticas
+                    if (data.stats) {
+                        this.stats.totalCoachees = data.stats.total_coachees || 0;
+                        this.stats.completedAssessments = data.stats.completed_assessments || 0;
+                        this.stats.pendingAssessments = data.stats.pending_assessments || 0;
+                        this.stats.publishedContent = data.stats.published_content || 0;
+                        this.stats.scheduledSessions = data.stats.scheduled_sessions || 0;
+                        this.stats.avgScore = data.stats.average_score ? data.stats.average_score + '%' : '0%';
+                        this.stats.averageProgress = data.stats.average_score || 0;
+                        console.log('✅ [LOAD] Estadísticas cargadas:', this.stats);
+                    }
+                    
+                    console.log('🎉 [LOAD] Todos los datos cargados en una sola llamada');
+                } else {
+                    console.warn('⚠️ [LOAD] Respuesta sin success:true, usando método legacy');
+                    await Promise.all([
+                        this.loadProfile(),
+                        this.loadStats()
+                    ]);
+                }
+            } catch (error) {
+                console.error('❌ [LOAD] Error cargando dashboard data:', error);
+                console.log('🔄 [LOAD] Fallback a método legacy');
+                try {
+                    await Promise.all([
+                        this.loadProfile(),
+                        this.loadStats()
+                    ]);
+                } catch (legacyError) {
+                    console.error('❌ [LOAD] Error también en método legacy:', legacyError);
+                }
+            } finally {
+                this.loading.stats = false;
+                console.log('🏁 [LOAD] loading.stats = false');
+            }
+        },
+        
+        // Cargar perfil del coach (LEGACY - se mantiene para compatibilidad)
         async loadProfile() {
             try {
                 const response = await fetch('/api/coach/profile');
