@@ -816,13 +816,13 @@
     </style>
 </head>
 <body>
-    <!-- Modern Header -->
-    <header style="position: sticky; top: 0; z-index: 50; width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #e5e7eb;">
-        <div style="display: flex; height: 4rem; align-items: center; justify-content: space-between; padding: 0 1.5rem;">
+    <!-- Header -->
+    <header style="position: sticky; top: 0; z-index: 50; width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #e5e7eb; border-top: none !important; border-left: none !important; border-right: none !important; margin: 0 !important;">
+        <div style="display: flex; height: 4rem; align-items: center; justify-content: space-between; padding: 0 1.5rem; margin: 0 !important;">
             <!-- Logo -->
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; border: none !important; outline: none !important; box-shadow: none !important;">
-                    <h1 style="font-family: 'Pacifico', cursive; font-size: 1.5rem; font-weight: 400; margin: 0; padding: 0; color: transparent !important; background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important;">InstaCoach</h1>
+                    <h1 style="font-family: 'Pacifico', cursive; font-size: 1.875rem; font-weight: 400; margin: 0; padding: 0; color: transparent !important; background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important;">InstaCoach</h1>
                 </div>
             </div>
 
@@ -1057,9 +1057,153 @@
             window.location.href = '/participant-access';
         }
         
-        // Change password modal (placeholder - you may need to implement this)
+        // Change password modal for feed
         function openChangePasswordModalFeed() {
-            alert('Funcionalidad de cambio de contraseña - por implementar');
+            const modal = new bootstrap.Modal(document.getElementById('changePasswordModalFeed'));
+            modal.show();
+            
+            // Inicializar listeners de validación en tiempo real
+            setTimeout(() => {
+                const newPasswordInput = document.getElementById('feedNewPassword');
+                const confirmPasswordInput = document.getElementById('feedConfirmPassword');
+                
+                if (newPasswordInput) {
+                    newPasswordInput.addEventListener('input', validatePasswordPolicyFeed);
+                }
+                
+                if (confirmPasswordInput) {
+                    confirmPasswordInput.addEventListener('input', validatePasswordMatchFeed);
+                }
+            }, 100);
+        }
+        
+        // Validar política de contraseña en tiempo real
+        function validatePasswordPolicyFeed() {
+            const password = document.getElementById('feedNewPassword').value;
+            
+            // Requisitos
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+            
+            // Actualizar indicadores visuales
+            updateRequirementIndicatorFeed('req-length-feed', requirements.length);
+            updateRequirementIndicatorFeed('req-uppercase-feed', requirements.uppercase);
+            updateRequirementIndicatorFeed('req-lowercase-feed', requirements.lowercase);
+            updateRequirementIndicatorFeed('req-number-feed', requirements.number);
+            updateRequirementIndicatorFeed('req-special-feed', requirements.special);
+            
+            return Object.values(requirements).every(r => r);
+        }
+        
+        // Actualizar indicador de requisito
+        function updateRequirementIndicatorFeed(elementId, isValid) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const icon = element.querySelector('i');
+            
+            if (isValid) {
+                element.style.color = '#28a745';
+                icon.className = 'fas fa-check-circle';
+                icon.style.fontSize = '0.875rem';
+            } else {
+                element.style.color = '#6c757d';
+                icon.className = 'fas fa-circle';
+                icon.style.fontSize = '0.5rem';
+            }
+        }
+        
+        // Validar coincidencia de contraseñas
+        function validatePasswordMatchFeed() {
+            const newPassword = document.getElementById('feedNewPassword').value;
+            const confirmPassword = document.getElementById('feedConfirmPassword').value;
+            const indicator = document.getElementById('passwordMatchIndicatorFeed');
+            
+            if (!indicator || !confirmPassword) return;
+            
+            if (newPassword === confirmPassword) {
+                indicator.innerHTML = '<i class="fas fa-check-circle" style="color: #28a745; margin-right: 0.5rem;"></i>Las contraseñas coinciden';
+                indicator.style.color = '#28a745';
+            } else {
+                indicator.innerHTML = '<i class="fas fa-times-circle" style="color: #dc3545; margin-right: 0.5rem;"></i>Las contraseñas no coinciden';
+                indicator.style.color = '#dc3545';
+            }
+        }
+
+        async function submitPasswordChangeFeed() {
+            const currentPassword = document.getElementById('feedCurrentPassword').value.trim();
+            const newPassword = document.getElementById('feedNewPassword').value.trim();
+            const confirmPassword = document.getElementById('feedConfirmPassword').value.trim();
+            
+            // Validar campos
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('❌ Todos los campos son requeridos');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('❌ Las contraseñas nuevas no coinciden');
+                return;
+            }
+            
+            // Validar política completa
+            const requirements = {
+                length: newPassword.length >= 8,
+                uppercase: /[A-Z]/.test(newPassword),
+                lowercase: /[a-z]/.test(newPassword),
+                number: /[0-9]/.test(newPassword),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword)
+            };
+            
+            const failedRequirements = [];
+            if (!requirements.length) failedRequirements.push('mínimo 8 caracteres');
+            if (!requirements.uppercase) failedRequirements.push('al menos 1 letra mayúscula');
+            if (!requirements.lowercase) failedRequirements.push('al menos 1 letra minúscula');
+            if (!requirements.number) failedRequirements.push('al menos 1 número');
+            if (!requirements.special) failedRequirements.push('al menos 1 símbolo especial');
+            
+            if (failedRequirements.length > 0) {
+                alert('❌ La contraseña debe cumplir: ' + failedRequirements.join(', '));
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/coachee/change-password', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Contraseña actualizada correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModalFeed')).hide();
+                    // Limpiar campos
+                    document.getElementById('feedCurrentPassword').value = '';
+                    document.getElementById('feedNewPassword').value = '';
+                    document.getElementById('feedConfirmPassword').value = '';
+                    // Limpiar indicadores
+                    document.getElementById('passwordMatchIndicatorFeed').innerHTML = '';
+                    ['req-length-feed', 'req-uppercase-feed', 'req-lowercase-feed', 'req-number-feed', 'req-special-feed'].forEach(id => {
+                        updateRequirementIndicatorFeed(id, false);
+                    });
+                } else {
+                    alert('❌ Error: ' + (data.error || 'No se pudo cambiar la contraseña'));
+                }
+            } catch (error) {
+                alert('❌ Error al cambiar la contraseña: ' + error.message);
+            }
         }
 
         // Función para cargar el avatar del usuario
@@ -1607,5 +1751,75 @@
             });
         }
     </script>
+
+    <!-- Modal de Cambio de Contraseña para Feed -->
+    <div class="modal fade" id="changePasswordModalFeed" tabindex="-1" aria-labelledby="changePasswordModalFeedLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="changePasswordModalFeedLabel">
+                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordFormFeed" onsubmit="event.preventDefault(); submitPasswordChangeFeed();">
+                        <div class="mb-3">
+                            <label for="feedCurrentPassword" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Contraseña Actual
+                            </label>
+                            <input type="password" class="form-control" id="feedCurrentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedNewPassword" class="form-label">
+                                <i class="fas fa-key me-1"></i>Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="feedNewPassword" required minlength="8">
+                            
+                            <!-- Indicadores de política de contraseña -->
+                            <div id="passwordRequirementsFeed" class="mt-2" style="font-size: 0.875rem;">
+                                <div class="password-requirement" id="req-length-feed" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Mínimo 8 caracteres
+                                </div>
+                                <div class="password-requirement" id="req-uppercase-feed" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 letra mayúscula
+                                </div>
+                                <div class="password-requirement" id="req-lowercase-feed" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 letra minúscula
+                                </div>
+                                <div class="password-requirement" id="req-number-feed" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 número
+                                </div>
+                                <div class="password-requirement" id="req-special-feed" style="color: #6c757d; margin-bottom: 0.25rem;">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                                    Al menos 1 símbolo especial (!@#$%^&*)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedConfirmPassword" class="form-label">
+                                <i class="fas fa-check-circle me-1"></i>Confirmar Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="feedConfirmPassword" required minlength="8">
+                            <div id="passwordMatchIndicatorFeed" style="font-size: 0.875rem; margin-top: 0.5rem;"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="submitPasswordChangeFeed()">
+                        <i class="fas fa-save me-1"></i>Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
