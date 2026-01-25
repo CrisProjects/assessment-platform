@@ -4215,7 +4215,7 @@ def api_admin_logout():
 # ============================================================================
 
 @app.route('/api/admin/profile', methods=['GET'])
-@login_required
+@admin_required
 def get_admin_profile():
     """Obtiene el perfil del administrador autenticado"""
     try:
@@ -4243,7 +4243,7 @@ def get_admin_profile():
         return jsonify({'error': 'Error al obtener el perfil'}), 500
 
 @app.route('/api/admin/profile', methods=['PUT'])
-@login_required
+@admin_required
 def update_admin_profile():
     """Actualiza el perfil del administrador autenticado"""
     try:
@@ -4322,7 +4322,7 @@ def update_admin_profile():
         return jsonify({'error': 'Error al actualizar el perfil'}), 500
 
 @app.route('/api/admin/change-password', methods=['POST'])
-@login_required
+@admin_required
 def admin_change_password():
     """Permite a un administrador cambiar su contraseña"""
     try:
@@ -6291,7 +6291,7 @@ def coachee_profile():
     return render_template('coachee_profile.html')
 
 @app.route('/platform-admin-dashboard')
-@login_required
+@admin_required
 def platform_admin_dashboard():
     # Validar sesión activa de admin con múltiples verificaciones
     if not current_user.is_authenticated:
@@ -6334,7 +6334,7 @@ def admin_dashboard():
     return redirect(url_for('platform_admin_dashboard'))
 
 @app.route('/admin/dashboard-alpine')
-@login_required
+@admin_required
 def admin_dashboard_alpine():
     """Versión experimental del dashboard de administración usando Alpine.js"""
     # Validar sesión activa de admin
@@ -9105,7 +9105,7 @@ def api_get_assessment_questions(assessment_id):
         }), 500
 
 @app.route('/api/admin/create-additional-assessments', methods=['POST'])
-@login_required
+@admin_required
 def api_create_additional_assessments():
     """Crear evaluaciones adicionales (solo administradores)"""
     try:
@@ -9135,7 +9135,7 @@ def api_create_additional_assessments():
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/admin/check-coach-assignments', methods=['GET'])
-@login_required
+@admin_required
 def api_admin_check_coach_assignments():
     """Verificar evaluaciones sin coach_id asignado"""
     try:
@@ -9174,7 +9174,7 @@ def api_admin_check_coach_assignments():
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/admin/fix-coach-assignments', methods=['POST'])
-@login_required
+@admin_required
 def api_admin_fix_coach_assignments():
     """Corregir evaluaciones sin coach_id asignado"""
     try:
@@ -11085,7 +11085,7 @@ def api_coachee_validate_visibility():
         }), 500
 
 @app.route('/api/admin/validate-coachee-visibility/<int:coachee_id>', methods=['GET'])
-@login_required
+@either_session_required
 def api_admin_validate_coachee_visibility(coachee_id):
     """Validar visibilidad de evaluaciones para un coachee específico (solo admin/coach)"""
     try:
