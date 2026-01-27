@@ -1720,7 +1720,9 @@ def load_current_user():
                 if current_time - last_activity_time > inactivity_limit:
                     # Sesión de coach expirada por inactividad
                     coach_id = session.get('coach_user_id')
-                    session.clear()
+                    # Limpiar solo las claves de coach (no session.clear() para evitar conflictos)
+                    session.pop('coach_user_id', None)
+                    session.pop('last_activity_coach', None)
                     logger.info(f"Coach session expired due to inactivity (coach_id: {coach_id})")
                     return redirect(url_for('coach_login_page'))
                 else:
@@ -1742,7 +1744,10 @@ def load_current_user():
                 if current_time - last_activity_time > inactivity_limit:
                     # Sesión de coachee expirada por inactividad
                     coachee_id = session.get('coachee_user_id')
-                    session.clear()
+                    # Limpiar solo las claves de coachee (no session.clear() para evitar conflictos)
+                    session.pop('coachee_user_id', None)
+                    session.pop('last_activity_coachee', None)
+                    session.pop('temp_coachee_id', None)
                     logger.info(f"Coachee session expired due to inactivity (coachee_id: {coachee_id})")
                     return redirect(url_for('participant_access'))
                 else:
