@@ -11459,7 +11459,8 @@ def api_coachee_get_content():
                 'viewed_at': content.viewed_at.isoformat() if content.viewed_at else None,
                 'created_at': content.assigned_at.isoformat() if content.assigned_at else None,
                 'assigned_at': content.assigned_at.isoformat() if content.assigned_at else None,
-                'coach_name': coach.full_name if coach else 'Coach no encontrado'
+                'coach_name': coach.full_name if coach else 'Coach no encontrado',
+                'coach_avatar_url': coach.avatar_url if coach and coach.avatar_url else None
             }
             content_list.append(content_data)
         
