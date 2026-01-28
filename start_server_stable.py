@@ -3,6 +3,18 @@ import os
 import sys
 import subprocess
 
+# Activar virtual environment si existe
+VENV_PATH = os.path.join(os.path.dirname(__file__), '.venv')
+if os.path.exists(VENV_PATH):
+    activate_this = os.path.join(VENV_PATH, 'bin', 'activate_this.py')
+    if os.path.exists(activate_this):
+        exec(open(activate_this).read(), {'__file__': activate_this})
+    else:
+        # Alternativa: agregar el venv al path
+        site_packages = os.path.join(VENV_PATH, 'lib', f'python{sys.version_info.major}.{sys.version_info.minor}', 'site-packages')
+        if os.path.exists(site_packages):
+            sys.path.insert(0, site_packages)
+
 # Configurar Flask
 os.environ['FLASK_APP'] = 'app.py'
 os.environ['FLASK_ENV'] = 'development'

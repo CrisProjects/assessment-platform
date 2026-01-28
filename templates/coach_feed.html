@@ -951,6 +951,25 @@
             
             modal.show();
         }
+        
+        // Función global de logout (fuera de Alpine.js)
+        function logout() {
+            if (confirm('¿Estás seguro que deseas salir?')) {
+                fetch('/api/coach/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(() => {
+                    window.location.href = '/coach-login';
+                })
+                .catch(error => {
+                    console.error('Error al cerrar sesión:', error);
+                    window.location.href = '/coach-login';
+                });
+            }
+        }
     </script>
     
     <!-- Feeds Container -->
@@ -1026,9 +1045,17 @@
             <div class="instagram-post">
                 <div class="post-header">
                     <div class="post-author">
-                        <div class="author-avatar" x-html="coachAvatar"></div>
+                        <div class="author-avatar" x-html="getAuthorAvatarHtml(item)"></div>
                         <div class="author-info">
-                            <h6 x-text="coachName"></h6>
+                            <h6>
+                                <span x-text="item.author_name || coachName"></span>
+                                <template x-if="item.community">
+                                    <span style="color: #667eea; font-size: 0.85em;">
+                                        <i class="fas fa-users" style="margin-left: 0.25rem;"></i>
+                                        <span x-text="item.community.name"></span>
+                                    </span>
+                                </template>
+                            </h6>
                             <small x-text="getRelativeTime(item.created_at)"></small>
                         </div>
                     </div>
@@ -1084,9 +1111,9 @@
             <span>Comunidad</span>
         </a>
         
-        <a href="/coach/dashboard-v2?module=overview" class="bottom-nav-item" @click.prevent="window.location.href = '/coach/dashboard-v2?module=overview'">
-            <i class="fas fa-chart-pie"></i>
-            <span>Overview</span>
+        <a href="/coach/dashboard-v2" class="bottom-nav-item" @click.prevent="window.location.href = '/coach/dashboard-v2'">
+            <i class="fas fa-th-large"></i>
+            <span>Dashboard</span>
         </a>
         
         <button class="bottom-nav-item" @click="showDrawer = true">
@@ -1235,6 +1262,19 @@
                     console.log('📊 [COACH-FEED] Estado final - loading:', this.loading, 'content.length:', this.content.length);
                 },
                 
+                // Generar HTML del avatar
+                getAuthorAvatarHtml(item) {
+                    const avatarUrl = item.author_avatar;
+                    const authorName = item.author_name || 'Usuario';
+                    
+                    if (avatarUrl) {
+                        return `<img src="${avatarUrl}" alt="${authorName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    } else {
+                        const initial = authorName.charAt(0).toUpperCase();
+                        return initial;
+                    }
+                },
+                
                 // Cargar perfil
                 async loadProfile() {
                     console.log('🔄 [COACH-FEED] Cargando perfil...');
@@ -1274,7 +1314,7 @@
                     this.loading = true;
                     console.log('🔄 [COACH-FEED] Iniciando carga de contenido...');
                     try {
-                        const response = await fetch('/api/coach/my-content');
+                        const response = await fetch('/api/coach/unified-feed');
                         console.log('📡 [COACH-FEED] Respuesta recibida:', response.status, response.statusText);
                         
                         if (!response.ok) {
@@ -1286,7 +1326,7 @@
                         
                         if (data.success && data.content) {
                             this.content = data.content;
-                            console.log(`✅ [COACH-FEED] Contenido cargado: ${this.content.length} items`);
+                            console.log(`✅ [COACH-FEED] Contenido cargado: ${this.content.length} items (propio + comunidades)`);
                             
                             // Generar previews de documentos después de renderizar
                             setTimeout(() => {
@@ -1421,12 +1461,6 @@
                 
                 openDocument(url) {
                     window.open(url, '_blank');
-                },
-                
-                logout() {
-                    if (confirm('¿Estás seguro que deseas salir?')) {
-                        window.location.href = '/coach-login';
-                    }
                 },
                 
                 // Preview de documentos

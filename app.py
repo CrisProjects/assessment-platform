@@ -20,6 +20,7 @@ from functools import wraps
 from sqlalchemy import func, desc, inspect, text, and_, or_
 from logging.handlers import RotatingFileHandler
 import os, secrets, re, logging, string, traceback, json
+from urllib.parse import quote as url_quote
 import pytz
 import boto3
 from botocore.exceptions import ClientError
@@ -497,6 +498,427 @@ def check_account_lockout(username, time_window_minutes=15, max_attempts=5):
     except Exception as e:
         logger.error(f"Error checking account lockout: {str(e)}")
         return (False, None, 0)  # En caso de error, no bloquear
+
+def send_community_invitation(invitation, community, inviter, method='email'):
+    """
+    Envía invitación a comunidad por email, WhatsApp o SMS.
+    
+    Args:
+        invitation: Objeto CommunityInvitation
+        community: Objeto CoachCommunity
+        inviter: Usuario que envía la invitación
+        method: 'email', 'whatsapp' o 'sms'
+    
+    Returns:
+        dict: {'success': bool, 'message': str, 'whatsapp_link': str (opcional)}
+    """
+    try:
+        invitation_link = f"{request.host_url}coach-login?invitation={invitation.token}"
+        inviter_name = inviter.full_name or inviter.email
+        
+        message_text = f"""
+¡Hola {invitation.invitee_name}!
+
+{inviter_name} te ha invitado a unirte a la comunidad "{community.name}" en InstaCoach Assessment Platform.
+
+{invitation.message if invitation.message else ''}
+
+Para aceptar la invitación, haz clic en el siguiente enlace:
+{invitation_link}
+
+Esta invitación expira en 7 días.
+
+Saludos,
+Equipo InstaCoach
+        """.strip()
+        
+        if method == 'email':
+            # Enviar por email
+            smtp_server = os.environ.get('SMTP_SERVER')
+            smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+            smtp_username = os.environ.get('SMTP_USERNAME')
+            smtp_password = os.environ.get('SMTP_PASSWORD')
+            
+            if not all([smtp_server, smtp_username, smtp_password]):
+                logger.warning("SMTP not configured, returning invitation link only")
+                return {
+                    'success': True,
+                    'message': 'Invitación creada (email no configurado)',
+                    'invitation_link': invitation_link
+                }
+            
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            
+            msg = MIMEMultipart()
+            msg['From'] = smtp_username
+            msg['To'] = invitation.invitee_email
+            msg['Subject'] = f'Invitación a {community.name} - InstaCoach'
+            
+            # HTML body
+            html_body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                    <h2 style="color: #6366f1;">¡Has sido invitado!</h2>
+                    <p>Hola <strong>{invitation.invitee_name}</strong>,</p>
+                    <p><strong>{inviter_name}</strong> te ha invitado a unirte a la comunidad <strong>"{community.name}"</strong> en InstaCoach Assessment Platform.</p>
+                    {f'<p style="background: #f0f0f0; padding: 15px; border-left: 4px solid #6366f1; margin: 20px 0;"><em>{invitation.message}</em></p>' if invitation.message else ''}
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{invitation_link}" 
+                           style="background: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+                            Aceptar Invitación
+                        </a>
+                    </div>
+                    <p style="color: #666; font-size: 0.9em;">Esta invitación expira en 7 días.</p>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                    <p style="color: #999; font-size: 0.85em;">Equipo InstaCoach Assessment Platform</p>
+                </div>
+            </body>
+            </html>
+            """
+            
+            msg.attach(MIMEText(html_body, 'html'))
+            msg.attach(MIMEText(message_text, 'plain'))
+            
+            # Enviar email
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(msg)
+            server.quit()
+            
+            logger.info(f"📧 Email de invitación enviado a {invitation.invitee_email}")
+            return {
+                'success': True,
+                'message': 'Invitación enviada por email',
+                'invitation_link': invitation_link
+            }
+            
+        elif method == 'whatsapp':
+            # Generar link de WhatsApp
+            phone = invitation.invitee_phone.replace(' ', '').replace('-', '').replace('+', '')
+            whatsapp_message = f"""¡Hola {invitation.invitee_name}!
+
+{inviter_name} te ha invitado a unirte a la comunidad "{community.name}" en InstaCoach.
+
+{invitation.message if invitation.message else ''}
+
+Acepta la invitación aquí: {invitation_link}
+
+Expira en 7 días."""
+            
+            whatsapp_link = f"https://wa.me/{phone}?text={url_quote(whatsapp_message)}"
+            
+            logger.info(f"📱 Link de WhatsApp generado para {invitation.invitee_phone}")
+            return {
+                'success': True,
+                'message': 'Link de WhatsApp generado',
+                'whatsapp_link': whatsapp_link,
+                'invitation_link': invitation_link
+            }
+            
+        elif method == 'sms':
+            # Por ahora, SMS solo retorna el mensaje a enviar
+            # En producción, integrar con Twilio, AWS SNS, etc.
+            sms_text = f"InstaCoach: {inviter_name} te invitó a '{community.name}'. Acepta aquí: {invitation_link} (expira en 7 días)"
+            
+            logger.info(f"📲 SMS preparado para {invitation.invitee_phone}")
+            return {
+                'success': True,
+                'message': 'SMS preparado (integración pendiente)',
+                'sms_text': sms_text,
+                'invitation_link': invitation_link,
+                'note': 'Integra con Twilio o AWS SNS para envío automático'
+            }
+        
+    except Exception as e:
+        logger.error(f"Error enviando invitación por {method}: {str(e)}", exc_info=True)
+        return {
+            'success': False,
+            'message': f'Error enviando por {method}: {str(e)}',
+            'invitation_link': invitation_link  # Siempre retornar el link
+        }
+
+
+def send_coach_request_email(coach_request):
+    """
+    Envía email a support@instacoach.cl cuando se recibe una nueva solicitud de coach.
+    
+    Args:
+        coach_request: Instancia de CoachRequest con la información del solicitante
+    """
+    try:
+        # Obtener configuración SMTP
+        smtp_server = os.environ.get('SMTP_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+        smtp_username = os.environ.get('SMTP_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        support_email = 'support@instacoach.cl'
+        
+        if not all([smtp_server, smtp_username, smtp_password]):
+            logger.warning("⚠️ SMTP not configured - Coach request email not sent")
+            return False
+        
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        import json
+        
+        # Parsear áreas de expertise
+        areas_list = []
+        if coach_request.areas:
+            try:
+                areas_list = json.loads(coach_request.areas) if isinstance(coach_request.areas, str) else coach_request.areas
+            except:
+                areas_list = []
+        
+        areas_text = ', '.join(areas_list) if areas_list else 'No especificado'
+        
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = support_email
+        msg['Subject'] = f'Nueva Solicitud de Coach - {coach_request.full_name}'
+        
+        # HTML body
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 700px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                <h2 style="color: #6366f1; border-bottom: 3px solid #6366f1; padding-bottom: 10px;">
+                    📝 Nueva Solicitud de Coach
+                </h2>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #333; margin-top: 0;">Información Personal</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold; width: 150px;">Nombre:</td>
+                            <td style="padding: 8px 0;">{coach_request.full_name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold;">Email:</td>
+                            <td style="padding: 8px 0;">{coach_request.email}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold;">Usuario:</td>
+                            <td style="padding: 8px 0;">{coach_request.username}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #333; margin-top: 0;">Información Profesional</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold; width: 150px;">Áreas de Expertise:</td>
+                            <td style="padding: 8px 0;">{areas_text}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold;">Experiencia:</td>
+                            <td style="padding: 8px 0;">{coach_request.experiencia or 'No especificado'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold;">Estilo de Coaching:</td>
+                            <td style="padding: 8px 0;">{coach_request.estilo or 'No especificado'}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                {f'''<div style="background: #f0f4ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
+                    <h3 style="color: #333; margin-top: 0;">Biografía</h3>
+                    <p style="margin: 0; white-space: pre-wrap;">{coach_request.bio}</p>
+                </div>''' if coach_request.bio else ''}
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0;">
+                        <strong>⏰ Fecha de solicitud:</strong> {coach_request.created_at.strftime('%d/%m/%Y %H:%M')}
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <p style="color: #666;">Para aprobar esta solicitud, inicia sesión en el panel de administración:</p>
+                    <a href="http://localhost:5002/admin-dashboard" 
+                       style="background: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin: 10px 5px;">
+                        Ir al Panel de Admin
+                    </a>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                <p style="color: #999; font-size: 0.85em; text-align: center;">
+                    Sistema InstaCoach Assessment Platform<br>
+                    Este es un email automático, por favor no responder.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text version - preparar sección de biografía
+        bio_section = f"BIOGRAFÍA\n{'-' * 50}\n{coach_request.bio}\n" if coach_request.bio else ""
+        
+        text_body = f"""
+Nueva Solicitud de Coach - InstaCoach
+
+INFORMACIÓN PERSONAL
+--------------------
+Nombre: {coach_request.full_name}
+Email: {coach_request.email}
+Usuario: {coach_request.username}
+
+INFORMACIÓN PROFESIONAL
+-----------------------
+Áreas de Expertise: {areas_text}
+Experiencia: {coach_request.experiencia or 'No especificado'}
+Estilo de Coaching: {coach_request.estilo or 'No especificado'}
+
+{bio_section}
+
+Fecha de solicitud: {coach_request.created_at.strftime('%d/%m/%Y %H:%M')}
+
+Para revisar y aprobar esta solicitud, accede al panel de administración:
+http://localhost:5002/admin-dashboard
+
+---
+Sistema InstaCoach Assessment Platform
+        """.strip()
+        
+        msg.attach(MIMEText(html_body, 'html'))
+        msg.attach(MIMEText(text_body, 'plain'))
+        
+        # Enviar email
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        
+        logger.info(f"📧 Email de solicitud de coach enviado a {support_email} para {coach_request.full_name}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error enviando email de solicitud de coach: {str(e)}", exc_info=True)
+        return False
+
+
+def send_confirmation_email_to_applicant(coach_request):
+    """
+    Envía email de confirmación al solicitante confirmando que su solicitud fue recibida.
+    
+    Args:
+        coach_request: Instancia de CoachRequest con la información del solicitante
+    """
+    try:
+        # Obtener configuración SMTP
+        smtp_server = os.environ.get('SMTP_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+        smtp_username = os.environ.get('SMTP_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        
+        if not all([smtp_server, smtp_username, smtp_password]):
+            logger.warning("⚠️ SMTP not configured - Confirmation email not sent")
+            return False
+        
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = coach_request.email
+        msg['Subject'] = '✅ Solicitud de Coach Recibida - InstaCoach'
+        
+        # HTML body
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center;">
+                    <h1 style="margin: 0; font-size: 28px;">¡Gracias por tu interés!</h1>
+                    <p style="margin: 10px 0 0 0; font-size: 16px;">Tu solicitud ha sido recibida exitosamente</p>
+                </div>
+                
+                <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px;">
+                    <p style="font-size: 16px; margin-top: 0;">Hola <strong>{coach_request.full_name}</strong>,</p>
+                    
+                    <p>Hemos recibido tu solicitud para unirte a nuestro equipo de coaches en InstaCoach Assessment Platform.</p>
+                    
+                    <div style="background: #f0f4ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
+                        <h3 style="color: #6366f1; margin-top: 0;">📋 Resumen de tu solicitud:</h3>
+                        <ul style="list-style: none; padding: 0; margin: 10px 0;">
+                            <li style="padding: 5px 0;"><strong>Nombre:</strong> {coach_request.full_name}</li>
+                            <li style="padding: 5px 0;"><strong>Email:</strong> {coach_request.email}</li>
+                            <li style="padding: 5px 0;"><strong>Usuario:</strong> {coach_request.username}</li>
+                            <li style="padding: 5px 0;"><strong>Nivel de experiencia:</strong> {coach_request.experiencia or 'No especificado'}</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                        <p style="margin: 0;"><strong>⏳ ¿Qué sigue?</strong></p>
+                        <p style="margin: 10px 0 0 0;">Nuestro equipo revisará tu perfil y experiencia. Te contactaremos por este mismo email en un plazo de <strong>2-3 días hábiles</strong> con los siguientes pasos.</p>
+                    </div>
+                    
+                    <p>Si tienes alguna pregunta mientras tanto, no dudes en contactarnos a <a href="mailto:support@instacoach.cl" style="color: #6366f1;">support@instacoach.cl</a></p>
+                    
+                    <p style="margin-top: 30px;">Saludos,<br><strong>Equipo InstaCoach</strong></p>
+                </div>
+                
+                <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+                    <p>Este es un email automático, por favor no responder directamente.</p>
+                    <p>© 2026 InstaCoach Assessment Platform</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text version
+        text_body = f"""
+¡Gracias por tu interés en InstaCoach!
+
+Hola {coach_request.full_name},
+
+Hemos recibido tu solicitud para unirte a nuestro equipo de coaches en InstaCoach Assessment Platform.
+
+RESUMEN DE TU SOLICITUD:
+-------------------------
+Nombre: {coach_request.full_name}
+Email: {coach_request.email}
+Usuario: {coach_request.username}
+Nivel de experiencia: {coach_request.experiencia or 'No especificado'}
+
+¿QUÉ SIGUE?
+-----------
+Nuestro equipo revisará tu perfil y experiencia. Te contactaremos por este mismo email en un plazo de 2-3 días hábiles con los siguientes pasos.
+
+Si tienes alguna pregunta mientras tanto, no dudes en contactarnos a support@instacoach.cl
+
+Saludos,
+Equipo InstaCoach
+
+---
+Este es un email automático, por favor no responder directamente.
+© 2026 InstaCoach Assessment Platform
+        """.strip()
+        
+        msg.attach(MIMEText(html_body, 'html'))
+        msg.attach(MIMEText(text_body, 'plain'))
+        
+        # Enviar email
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        
+        logger.info(f"📧 Email de confirmación enviado a {coach_request.email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error enviando email de confirmación: {str(e)}", exc_info=True)
+        return False
+
 
 def send_security_alert(event_type, details):
     """
@@ -999,6 +1421,33 @@ class PasswordResetToken(db.Model):
         """Verifica si el token sigue siendo válido"""
         return not self.used and datetime.utcnow() < self.expires_at
 
+class CoachRequest(db.Model):
+    __tablename__ = 'coach_request'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(120), nullable=False, index=True)
+    username = db.Column(db.String(80), nullable=False)
+    areas = db.Column(db.Text, nullable=True)  # JSON array de áreas de expertise
+    experiencia = db.Column(db.String(50), nullable=True)
+    estilo = db.Column(db.String(50), nullable=True)
+    bio = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending', index=True)  # pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
+    activation_token = db.Column(db.String(100), unique=True, nullable=True, index=True)  # Token para activación
+    activation_expires = db.Column(db.DateTime, nullable=True)  # Expiración del token
+    
+    reviewer = db.relationship('User', backref='reviewed_coach_requests')
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        if 'created_at' not in kwargs:
+            self.created_at = datetime.utcnow()
+
 class Assessment(db.Model):
     __tablename__ = 'assessment'
     
@@ -1273,6 +1722,11 @@ class Content(db.Model):
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
+    # NUEVOS CAMPOS PARA COMUNIDADES
+    community_id = db.Column(db.Integer, db.ForeignKey('coach_community.id'), nullable=True, index=True)  # comunidad donde se comparte
+    shared_with_community = db.Column(db.Boolean, default=False, index=True)  # si está compartido en comunidad
+    shared_at = db.Column(db.DateTime, nullable=True)  # cuándo se compartió
+    
     coach = db.relationship('User', foreign_keys=[coach_id], backref='assigned_content')
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_content')
 
@@ -1455,6 +1909,161 @@ class DocumentFile(db.Model):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+# ============================================================================
+# MODELOS PARA SISTEMA DE COMUNIDADES DE COACHES
+# ============================================================================
+
+class CoachCommunity(db.Model):
+    """
+    Modelo para comunidades de coaches.
+    Permite a coaches crear y gestionar comunidades para compartir contenido.
+    """
+    __tablename__ = 'coach_community'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    privacy = db.Column(db.String(20), default='private', index=True)  # private, public
+    
+    # Relaciones
+    creator = db.relationship('User', foreign_keys=[creator_id], backref='created_communities')
+    memberships = db.relationship('CommunityMembership', backref='community', lazy='dynamic', cascade='all, delete-orphan')
+    shared_content = db.relationship('Content', backref='community', lazy='dynamic')
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.created_at = kwargs.get('created_at', datetime.utcnow())
+        self.updated_at = kwargs.get('updated_at', datetime.utcnow())
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'creator_id': self.creator_id,
+            'creator_name': self.creator.full_name if self.creator else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'is_active': self.is_active,
+            'privacy': self.privacy,
+            'member_count': self.memberships.filter_by(is_active=True).count()
+        }
+
+class CommunityMembership(db.Model):
+    """
+    Modelo para membresía de coaches en comunidades.
+    Gestiona roles y permisos dentro de cada comunidad.
+    """
+    __tablename__ = 'community_membership'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    community_id = db.Column(db.Integer, db.ForeignKey('coach_community.id'), nullable=False, index=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    role = db.Column(db.String(20), default='member', index=True)  # admin, moderator, member
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    
+    # Relaciones
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='community_memberships')
+    
+    __table_args__ = (
+        db.UniqueConstraint('community_id', 'coach_id', name='uq_community_coach'),
+        db.Index('idx_community_active', 'community_id', 'is_active'),
+    )
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.joined_at = kwargs.get('joined_at', datetime.utcnow())
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'community_id': self.community_id,
+            'coach_id': self.coach_id,
+            'coach_name': self.coach.full_name if self.coach else None,
+            'coach_email': self.coach.email if self.coach else None,
+            'coach_avatar': self.coach.avatar_url if self.coach else None,
+            'role': self.role,
+            'joined_at': self.joined_at.isoformat() if self.joined_at else None,
+            'is_active': self.is_active
+        }
+
+class CommunityInvitation(db.Model):
+    """
+    Modelo para invitaciones a comunidades de coaches.
+    Gestiona invitaciones mediante link - NO crea acceso automático.
+    El invitado debe registrarse por su cuenta en coach-login.
+    """
+    __tablename__ = 'community_invitation'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    community_id = db.Column(db.Integer, db.ForeignKey('coach_community.id'), nullable=False, index=True)
+    inviter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)  # quien invita
+    invitee_email = db.Column(db.String(120), nullable=True, index=True)  # email del invitado (opcional si usa phone)
+    invitee_phone = db.Column(db.String(30), nullable=True, index=True)  # teléfono del invitado (WhatsApp/SMS)
+    invitee_name = db.Column(db.String(200), nullable=True)  # nombre opcional del invitado
+    token = db.Column(db.String(128), unique=True, nullable=False, index=True)  # token único para el link
+    message = db.Column(db.Text, nullable=True)  # mensaje personalizado opcional
+    invitation_method = db.Column(db.String(20), default='email')  # 'email', 'whatsapp', 'sms'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)  # expiración del link
+    accepted_at = db.Column(db.DateTime, nullable=True)  # cuándo se aceptó
+    is_used = db.Column(db.Boolean, default=False, index=True)  # si ya se usó el link
+    accepted_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)  # quien aceptó
+    
+    # Relaciones
+    community = db.relationship('CoachCommunity', backref='invitations')
+    inviter = db.relationship('User', foreign_keys=[inviter_id], backref='sent_community_invitations')
+    accepted_by = db.relationship('User', foreign_keys=[accepted_by_user_id], backref='accepted_community_invitations')
+    
+    __table_args__ = (
+        db.Index('idx_invitation_email_community', 'invitee_email', 'community_id'),
+    )
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        if 'created_at' not in kwargs:
+            self.created_at = datetime.utcnow()
+        if 'expires_at' not in kwargs:
+            self.expires_at = datetime.utcnow() + timedelta(days=7)  # expira en 7 días
+        if 'token' not in kwargs:
+            self.token = secrets.token_urlsafe(32)
+    
+    def is_valid(self):
+        """Verifica si la invitación sigue siendo válida"""
+        return not self.is_used and datetime.utcnow() < self.expires_at
+    
+    def mark_as_used(self, user_id):
+        """Marca la invitación como usada"""
+        self.is_used = True
+        self.accepted_at = datetime.utcnow()
+        self.accepted_by_user_id = user_id
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'community_id': self.community_id,
+            'community_name': self.community.name if self.community else None,
+            'inviter_name': self.inviter.full_name if self.inviter else None,
+            'invitee_email': self.invitee_email,
+            'invitee_name': self.invitee_name,
+            'message': self.message,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'is_used': self.is_used,
+            'is_valid': self.is_valid()
+        }
+
+# ============================================================================
+# FIN DE MODELOS DE COMUNIDADES
+# ============================================================================
         self.uploaded_at = kwargs.get('uploaded_at', datetime.utcnow())
 
 @login_manager.user_loader
@@ -1769,10 +2378,33 @@ admin_required = create_decorator(
     'Acceso denegado. Solo administradores pueden acceder a esta función.'
 )
 
-coach_required = create_decorator(
-    lambda: current_user.is_authenticated and current_user.role == 'coach',
-    'Acceso denegado. Solo coaches pueden acceder a esta función.'
-)
+def coach_required(f):
+    """Decorador que verifica si el usuario es coach (usando sesión de coach)"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Verificar si hay sesión de coach activa
+        if 'coach_user_id' not in session:
+            log_unauthorized_access(username='Anonymous', required_role='coach')
+            if request.path.startswith('/api/'):
+                return jsonify({'error': 'Autenticación requerida. Debes iniciar sesión como coach.'}), 401
+            return redirect(url_for('coach_login_page'))
+        
+        # Cargar coach desde sesión
+        coach_id = session.get('coach_user_id')
+        coach = User.query.get(coach_id)
+        
+        if not coach or coach.role != 'coach':
+            log_unauthorized_access(user_id=coach_id, username=coach.username if coach else None, required_role='coach')
+            session.pop('coach_user_id', None)  # Limpiar sesión inválida
+            if request.path.startswith('/api/'):
+                return jsonify({'error': 'Acceso denegado. Solo coaches pueden acceder a esta función.'}), 403
+            return redirect(url_for('coach_login_page'))
+        
+        # Establecer g.current_user para uso en la función
+        g.current_user = coach
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Inicialización automática de base de datos
 def auto_initialize_database():
@@ -4556,70 +5188,110 @@ def coachee_change_password():
 # ============================================================================
 
 @app.route('/api/register', methods=['POST'])
+@limiter.limit("3 per hour")  # Máximo 3 solicitudes por hora por IP
 def api_register():
+    """
+    Endpoint para solicitudes de registro de coach.
+    Ahora crea una solicitud pendiente de aprobación en vez de crear el usuario directamente.
+    El administrador debe aprobar la solicitud desde el admin-dashboard.
+    
+    Security:
+    - Rate limited: 3 requests per hour per IP
+    - HTML sanitization on text fields
+    - Field size limits enforced
+    - DNS validation of email domain
+    """
     try:
         data = request.get_json()
         if not data:
             return jsonify({'error': 'Datos JSON requeridos'}), 400
         
-        # Validar y sanitizar inputs
-        valid, result = validate_and_sanitize_register_input(data)
-        if not valid:
-            logger.warning(f"Registration attempt with invalid input from {request.remote_addr}: {result}")
-            return jsonify({'error': result}), 400
+        # Extraer y sanitizar datos del formulario
+        from markupsafe import escape
+        full_name = escape(data.get('full_name', '').strip())
+        email = data.get('email', '').strip().lower()
+        username = escape(data.get('username', '').strip())
+        areas = data.get('areas', [])
+        experiencia = escape(data.get('experiencia', '').strip())
+        estilo = escape(data.get('estilo', '').strip())
+        bio = escape(data.get('bio', '').strip())
         
-        email = result['email']
-        password = result['password']
-        full_name = result['full_name']
-        username = result['username']
+        # Validaciones de tamaño
+        if len(str(full_name)) > 200:
+            return jsonify({'error': 'Nombre muy largo (máximo 200 caracteres)'}), 400
+        if len(str(username)) > 80:
+            return jsonify({'error': 'Usuario muy largo (máximo 80 caracteres)'}), 400
+        if len(str(bio)) > 5000:
+            return jsonify({'error': 'Biografía muy larga (máximo 5000 caracteres)'}), 400
         
-        # Verificar unicidad de username
-        counter = 1
-        original_username = username
-        while User.query.filter_by(username=username).first():
-            username = f"{original_username}{counter}"
-            counter += 1
+        # Validaciones básicas
+        if not all([full_name, email, username]):
+            return jsonify({'error': 'Nombre, email y usuario son requeridos'}), 400
         
-        # Verificar si el usuario ya existe
-        existing_user = User.query.filter((User.username == username) | (User.email == email)).first()  # type: ignore
+        # Validar formato de email con regex más estricto
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            return jsonify({'error': 'Formato de email inválido'}), 400
+        
+        # Verificar que el dominio del email existe (DNS lookup)
+        try:
+            import socket
+            domain = email.split('@')[1]
+            socket.gethostbyname(domain)
+        except (socket.gaierror, IndexError):
+            logger.warning(f"⚠️ Email con dominio inválido o no existente: {email}")
+            return jsonify({'error': 'El dominio del email no es válido o no existe'}), 400
+        
+        # Verificar si ya existe un usuario con ese email
+        existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            field = 'nombre de usuario' if existing_user.username == username else 'email'
-            return jsonify({'error': f'El {field} ya está en uso'}), 409
+            return jsonify({'error': 'El email ya está registrado en el sistema'}), 409
         
-        # Crear nuevo usuario
-        role = data.get('role', 'coachee')
-        if role not in ['coachee', 'coach', 'platform_admin']:
-            role = 'coachee'
-            
-        new_user = User(
-            username=username,
-            email=email,
+        # Verificar si ya existe una solicitud pendiente con ese email
+        existing_request = CoachRequest.query.filter_by(email=email, status='pending').first()
+        if existing_request:
+            return jsonify({'error': 'Ya existe una solicitud pendiente con este email'}), 409
+        
+        # Convertir áreas a JSON string si es array
+        import json
+        areas_json = json.dumps(areas) if isinstance(areas, list) else areas
+        
+        # Crear nueva solicitud de coach
+        coach_request = CoachRequest(
             full_name=full_name,
-            role=role
+            email=email,
+            username=username,
+            areas=areas_json,
+            experiencia=experiencia,
+            estilo=estilo,
+            bio=bio,
+            status='pending'
         )
         
-        if data.get('coach_id'):
-            if coach := User.query.filter_by(id=data['coach_id'], role='coach').first():
-                new_user.coach_id = coach.id
-        
-        new_user.set_password(password)
-        db.session.add(new_user)
+        db.session.add(coach_request)
         db.session.commit()
         
-        # Auto-login
-        login_user(new_user, remember=True)
-        session.permanent = True
+        # Enviar emails de manera asíncrona para no bloquear la respuesta
+        email_to_support_sent = send_coach_request_email(coach_request)
+        email_to_applicant_sent = send_confirmation_email_to_applicant(coach_request)
+        
+        logger.info(f"✅ Nueva solicitud de coach recibida: {full_name} ({email}) - ID: {coach_request.id}")
+        logger.info(f"📧 Emails enviados - Support: {email_to_support_sent}, Confirmación: {email_to_applicant_sent}")
         
         return jsonify({
             'success': True,
-            'message': 'Usuario registrado exitosamente',
-            'user_id': new_user.id,
-            'redirect': get_dashboard_url(new_user.role)
+            'message': 'Solicitud enviada exitosamente',
+            'note': 'Tu solicitud ha sido recibida. Revisa tu email para confirmar que la recibimos. Te contactaremos en 2-3 días hábiles.',
+            'emails_sent': {
+                'support': email_to_support_sent,
+                'confirmation': email_to_applicant_sent
+            }
         }), 201
         
     except Exception as e:
+        logger.error(f"❌ Error procesando solicitud de coach: {str(e)}", exc_info=True)
         db.session.rollback()
-        return jsonify({'error': f'Error en registro: {str(e)}'}), 500
+        return jsonify({'error': 'Error al procesar la solicitud. Intenta nuevamente.'}), 500
 
 # Rutas de administrador
 @app.route('/admin-login')
@@ -8561,7 +9233,7 @@ def api_coach_update_task(task_id):
         
         # Actualizar coachee si se proporciona
         if data.get('coachee_id'):
-            coachee = User.query.filter_by(id=data['coachee_id'], coach_id=current_user.id, role='coachee').first()
+            coachee = User.query.filter_by(id=data['coachee_id'], coach_id=g.current_user.id, role='coachee').first()
             if not coachee:
                 return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
             task.coachee_id = data['coachee_id']
@@ -8716,7 +9388,7 @@ def api_coach_coachee_assessments(coachee_id):
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver evaluaciones de coachees.'}), 403
         
         # Verificar que el coachee pertenece al coach actual
-        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
+        coachee = User.query.filter_by(id=coachee_id, coach_id=g.current_user.id, role='coachee').first()
         if not coachee:
             logger.warning(f"❌ COACHEE-ASSESSMENTS: Coachee {coachee_id} not found or unauthorized")
             return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
@@ -8728,7 +9400,7 @@ def api_coach_coachee_assessments(coachee_id):
         
         # 2. Obtener tareas de evaluación asignadas a este coachee
         evaluation_tasks = Task.query.filter_by(
-            coach_id=current_user.id,
+            coach_id=g.current_user.id,
             coachee_id=coachee_id,
             category='evaluation',
             is_active=True
@@ -8835,7 +9507,7 @@ def api_coach_unassign_assessment():
         logger.info(f"🔍 UNASSIGN-ASSESSMENT: Searching for coachee {coachee_id} and assessment '{assessment_title}'")
         
         # Verificar que el coachee pertenece al coach actual
-        coachee = User.query.filter_by(id=coachee_id, coach_id=current_user.id, role='coachee').first()
+        coachee = User.query.filter_by(id=coachee_id, coach_id=g.current_user.id, role='coachee').first()
         if not coachee:
             logger.warning(f"❌ UNASSIGN-ASSESSMENT: Coachee {coachee_id} not found or unauthorized")
             return jsonify({'error': 'Coachee no encontrado o no autorizado.'}), 404
@@ -8852,7 +9524,7 @@ def api_coach_unassign_assessment():
         evaluation_task = None
         for title_variant in possible_titles:
             evaluation_task = Task.query.filter_by(
-                coach_id=current_user.id,
+                coach_id=g.current_user.id,
                 coachee_id=coachee_id,
                 title=title_variant,
                 category='evaluation',
@@ -11509,76 +12181,119 @@ def api_coachee_mark_content_viewed(content_id):
 @app.route('/api/coach/content', methods=['POST'])
 @coach_session_required
 def api_coach_assign_content():
-    """Asignar contenido a un coachee (para coaches)"""
+    """Publicar contenido: biblioteca, coachee, y/o comunidad"""
     try:
         # Usar g.current_user que es establecido por @coach_session_required
         current_coach = getattr(g, 'current_user', None)
         
         if not current_coach or current_coach.role != 'coach':
-            return jsonify({'error': 'Acceso denegado. Solo coaches pueden asignar contenido.'}), 403
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden publicar contenido.'}), 403
         
         data = request.get_json()
         
-        required_fields = ['coachee_id', 'title', 'content_url']
+        # Validar campos requeridos mínimos
+        required_fields = ['title', 'content_url']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'Campo requerido: {field}'}), 400
         
-        # Verificar que el coachee pertenece al coach
-        coachee = User.query.filter_by(
-            id=data['coachee_id'],
-            coach_id=current_coach.id,
-            role='coachee'
-        ).first()
+        # Obtener opciones de publicación
+        coachee_id = data.get('coachee_id')
+        save_to_library = data.get('save_to_library', False)
+        share_with_community = data.get('shared_with_community', False)
+        community_id = data.get('community_id')
         
-        if not coachee:
-            return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+        # Validar que al menos se seleccione una opción
+        if not coachee_id and not save_to_library and not share_with_community:
+            return jsonify({'error': 'Debes seleccionar al menos una opción: biblioteca, coachee o comunidad'}), 400
         
-        # Verificar si ya existe contenido similar para evitar duplicados
-        logger.info(f"🔍 DUPLICATE-CHECK: Verificando duplicados para coach_id={current_coach.id}, coachee_id={data['coachee_id']}, title='{data['title']}', url='{data['content_url']}'")
+        # Si se especifica coachee, verificar que pertenezca al coach
+        if coachee_id:
+            coachee = User.query.filter_by(
+                id=coachee_id,
+                coach_id=current_coach.id,
+                role='coachee'
+            ).first()
+            
+            if not coachee:
+                return jsonify({'error': 'Coachee no encontrado o no pertenece a este coach'}), 404
+            
+            # Verificar duplicados solo si se asigna a coachee
+            logger.info(f"🔍 DUPLICATE-CHECK: Verificando duplicados para coach_id={current_coach.id}, coachee_id={coachee_id}, title='{data['title']}', url='{data['content_url']}'")
+            
+            existing_content = Content.query.filter_by(
+                coach_id=current_coach.id,
+                coachee_id=coachee_id,
+                title=data['title'],
+                content_url=data['content_url'],
+                is_active=True
+            ).first()
+            
+            if existing_content:
+                logger.warning(f"⚠️ DUPLICATE-FOUND: Content ID {existing_content.id} ya existe para este coachee")
+                return jsonify({
+                    'error': 'Ya existe contenido con este título y URL para este coachee',
+                    'existing_content_id': existing_content.id
+                }), 409
         
-        existing_content = Content.query.filter_by(
-            coach_id=current_coach.id,
-            coachee_id=data['coachee_id'],
-            title=data['title'],
-            content_url=data['content_url'],
-            is_active=True
-        ).first()
+        # Validar comunidad si se especifica
+        if share_with_community and community_id:
+            # Verificar que la comunidad existe y el coach es miembro
+            community = CoachCommunity.query.filter_by(id=community_id, is_active=True).first()
+            if not community:
+                return jsonify({'error': 'Comunidad no encontrada'}), 404
+            
+            membership = CommunityMembership.query.filter_by(
+                community_id=community_id,
+                coach_id=current_coach.id,
+                is_active=True
+            ).first()
+            
+            if not membership:
+                return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
         
-        if existing_content:
-            logger.warning(f"⚠️ DUPLICATE-FOUND: Content ID {existing_content.id} ya existe para este coachee")
-            return jsonify({
-                'error': 'Ya existe contenido con este título y URL para este coachee',
-                'existing_content_id': existing_content.id
-            }), 409
-        
-        logger.info(f"✅ NO-DUPLICATE: Creando nuevo contenido para coachee {data['coachee_id']}")
+        logger.info(f"✅ PUBLICANDO: Creando contenido para coach {current_coach.id}")
         
         # Crear nuevo contenido
+        # Si no hay coachee_id, se guarda como biblioteca (coachee_id = NULL)
         content = Content(
             coach_id=current_coach.id,
-            coachee_id=data['coachee_id'],
+            coachee_id=coachee_id if coachee_id else None,
             title=data['title'],
             description=data.get('description', ''),
             content_type=data.get('content_type', 'video'),
             content_url=data['content_url'],
             thumbnail_url=data.get('thumbnail_url'),
-            duration=data.get('duration')
+            duration=data.get('duration'),
+            community_id=community_id if share_with_community else None,
+            shared_with_community=share_with_community,
+            shared_at=datetime.utcnow() if share_with_community else None
         )
         
         db.session.add(content)
         db.session.commit()
         
+        # Construir mensaje de éxito
+        destinations = []
+        if save_to_library or not coachee_id:
+            destinations.append('biblioteca')
+        if coachee_id:
+            destinations.append('coachee')
+        if share_with_community:
+            destinations.append('comunidad')
+        
+        message = f'Contenido publicado en: {", ".join(destinations)}'
+        
         return jsonify({
             'success': True,
-            'message': 'Contenido asignado exitosamente',
+            'message': message,
             'content_id': content.id
         }), 201
         
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error en api_coach_assign_content: {str(e)}", exc_info=True)
-        return jsonify({'error': f'Error asignando contenido: {str(e)}'}), 500
+        return jsonify({'error': f'Error publicando contenido: {str(e)}'}), 500
 
 @app.route('/api/coach/content', methods=['GET'])
 @coach_session_required
@@ -11830,14 +12545,16 @@ def api_coach_share_content(content_id):
         
         logger.info(f"✅ Contenido encontrado: '{original_content.title}' (URL: {original_content.content_url})")
         
-        # Obtener lista de coachee_ids del request
+        # Obtener lista de coachee_ids y community_ids del request
         data = request.get_json()
         coachee_ids = data.get('coachee_ids', [])
+        community_ids = data.get('community_ids', [])
         
         logger.info(f"📋 Coachee IDs recibidos: {coachee_ids}")
+        logger.info(f"📋 Community IDs recibidos: {community_ids}")
         
-        if not coachee_ids or not isinstance(coachee_ids, list):
-            return jsonify({'error': 'Debe proporcionar una lista de coachee_ids'}), 400
+        if (not coachee_ids or not isinstance(coachee_ids, list)) and (not community_ids or not isinstance(community_ids, list)):
+            return jsonify({'error': 'Debe proporcionar una lista de coachee_ids y/o community_ids'}), 400
         
         # Validar que todos los coachees pertenecen a este coach
         logger.info(f"🔍 Buscando coachees con: coach_id={current_coach.id}, role='coachee'")
@@ -11904,17 +12621,84 @@ def api_coach_share_content(content_id):
         
         db.session.commit()
         
-        if shared_count == 0:
+        # Compartir con comunidades
+        community_shared_count = 0
+        if community_ids:
+            logger.info(f"🔄 Compartiendo con {len(community_ids)} comunidad(es)...")
+            
+            for community_id in community_ids:
+                # Verificar que la comunidad existe y el coach es miembro
+                membership = CommunityMembership.query.filter_by(
+                    community_id=community_id,
+                    coach_id=current_coach.id,
+                    is_active=True
+                ).first()
+                
+                if not membership:
+                    logger.warning(f"⚠️ Coach no es miembro de la comunidad {community_id}, saltando...")
+                    continue
+                
+                # Verificar si ya existe este contenido compartido en esta comunidad
+                existing_community_content = Content.query.filter_by(
+                    coach_id=current_coach.id,
+                    community_id=community_id,
+                    content_url=original_content.content_url,
+                    is_active=True,
+                    shared_with_community=True
+                ).first()
+                
+                if existing_community_content:
+                    logger.info(f"⚠️ Contenido ya existe en comunidad {community_id}, saltando...")
+                    continue
+                
+                # Crear nueva instancia del contenido para la comunidad
+                community_content = Content(
+                    coach_id=current_coach.id,
+                    community_id=community_id,
+                    coachee_id=None,  # No asignado a coachee específico
+                    title=original_content.title,
+                    description=original_content.description,
+                    content_type=original_content.content_type,
+                    content_url=original_content.content_url,
+                    thumbnail_url=original_content.thumbnail_url,
+                    duration=original_content.duration,
+                    is_active=True,
+                    is_viewed=False,
+                    shared_with_community=True,
+                    shared_at=datetime.utcnow()
+                )
+                db.session.add(community_content)
+                community_shared_count += 1
+                logger.info(f"✅ Contenido compartido con comunidad {community_id}")
+            
+            db.session.commit()
+        
+        # Preparar mensaje de respuesta
+        total_shared = shared_count + community_shared_count
+        
+        if total_shared == 0:
             return jsonify({
                 'success': True,
-                'message': 'El contenido ya estaba asignado a todos los coachees seleccionados',
-                'shared_count': 0
+                'message': 'El contenido ya estaba compartido con todos los destinatarios seleccionados',
+                'shared_count': 0,
+                'coachees_count': 0,
+                'communities_count': 0
             }), 200
+        
+        message_parts = []
+        if shared_count > 0:
+            message_parts.append(f'{shared_count} coachee(s)')
+        if community_shared_count > 0:
+            message_parts.append(f'{community_shared_count} comunidad(es)')
+        
+        message = f'Contenido compartido exitosamente con {" y ".join(message_parts)}'
         
         return jsonify({
             'success': True,
-            'message': f'Contenido compartido exitosamente con {shared_count} coachee(s)',
-            'shared_count': shared_count
+            'message': message,
+            'shared_count': total_shared,
+            'coachees_count': shared_count,
+            'communities_count': community_shared_count
         }), 200
         
     except Exception as e:
@@ -11938,12 +12722,34 @@ def api_coach_upload_content():
         content_type = request.form.get('content_type', 'video')  # video, document, article
         content_url = request.form.get('url', '')
         
+        # NUEVO: Soporte para compartir en comunidad
+        community_id = request.form.get('community_id')
+        shared_with_community = request.form.get('shared_with_community', 'false').lower() == 'true'
+        
         # Validar campos requeridos
         if not title:
             return jsonify({'error': 'El título es requerido'}), 400
         
         if not content_type:
             return jsonify({'error': 'El tipo de contenido es requerido'}), 400
+        
+        # Si se especifica compartir en comunidad, validar membresía
+        if community_id and shared_with_community:
+            try:
+                community_id = int(community_id)
+                membership = CommunityMembership.query.filter_by(
+                    community_id=community_id,
+                    coach_id=current_coach.id,
+                    is_active=True
+                ).first()
+                
+                if not membership:
+                    return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
+            except (ValueError, TypeError):
+                return jsonify({'error': 'ID de comunidad inválido'}), 400
+        else:
+            community_id = None
+            shared_with_community = False
         
         # Manejar archivo subido (para documentos)
         file = request.files.get('file')
@@ -11970,7 +12776,7 @@ def api_coach_upload_content():
                 thumbnail_url = f'https://img.youtube.com/vi/{video_id}/maxresdefault.jpg'
         
         # Crear contenido SIN asignar a coachee (coachee_id = None para biblioteca)
-        # Nota: El modelo Content permite NULL en coachee_id para contenido de biblioteca
+        # MODIFICADO: Agregar campos de comunidad
         content = Content(
             coach_id=current_coach.id,
             coachee_id=None,  # NULL = contenido de biblioteca (no asignado aún)
@@ -11979,13 +12785,17 @@ def api_coach_upload_content():
             content_type=content_type,
             content_url=content_url,
             thumbnail_url=thumbnail_url,
-            is_active=True
+            is_active=True,
+            community_id=community_id if shared_with_community else None,
+            shared_with_community=shared_with_community,
+            shared_at=datetime.utcnow() if shared_with_community else None
         )
         
         db.session.add(content)
         db.session.commit()
         
-        logger.info(f"✅ Contenido creado: ID={content.id}, Coach={current_coach.id}, Type={content_type}, Title={title}")
+        community_msg = f" y compartido en comunidad {community_id}" if shared_with_community else ""
+        logger.info(f"✅ Contenido creado: ID={content.id}, Coach={current_coach.id}, Type={content_type}, Title={title}{community_msg}")
         
         return jsonify({
             'success': True,
@@ -11995,6 +12805,8 @@ def api_coach_upload_content():
             'content_type': content.content_type,
             'content_url': content.content_url,
             'thumbnail_url': content.thumbnail_url,
+            'community_id': content.community_id,
+            'shared_with_community': content.shared_with_community,
             'created_at': content.assigned_at.strftime('%Y-%m-%d %H:%M:%S')
         }), 201
         
@@ -12189,6 +13001,135 @@ def api_coach_get_my_content():
     except Exception as e:
         logger.error(f"❌ MY-CONTENT: Error en api_coach_get_my_content: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo contenido: {str(e)}'}), 500
+
+@app.route('/api/coach/unified-feed', methods=['GET'])
+@coach_session_required
+def api_coach_get_unified_feed():
+    """
+    Obtener feed unificado: contenido propio + contenido compartido en comunidades.
+    Retorna contenido mezclado ordenado cronológicamente con indicador de fuente.
+    """
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches.'}), 403
+        
+        # 1. Obtener contenido propio del coach
+        own_content = Content.query.filter_by(
+            coach_id=current_coach.id,
+            is_active=True
+        ).all()
+        
+        # 2. Obtener comunidades donde es miembro activo
+        my_memberships = CommunityMembership.query.filter_by(
+            coach_id=current_coach.id,
+            is_active=True
+        ).all()
+        
+        community_ids = [m.community_id for m in my_memberships]
+        
+        # 3. Obtener contenido compartido en esas comunidades (excluir propio)
+        community_content = []
+        if community_ids:
+            community_content = Content.query.filter(
+                Content.community_id.in_(community_ids),
+                Content.shared_with_community == True,
+                Content.is_active == True,
+                Content.coach_id != current_coach.id  # Excluir contenido propio
+            ).all()
+        
+        # 4. Combinar y formatear todo el contenido
+        unified_feed = []
+        
+        # Procesar contenido propio
+        for content in own_content:
+            # Transformar URL de documento si es necesario
+            content_url = content.content_url
+            if content.content_type == 'document' and '/api/coachee/documents/' in content_url:
+                import re
+                match = re.search(r'/api/coachee/documents/(\d+)/', content_url)
+                if match:
+                    document_id = match.group(1)
+                    content_url = f"/api/coach/documents/{document_id}/view"
+            
+            community_info = None
+            if content.shared_with_community and content.community_id:
+                community = CoachCommunity.query.get(content.community_id)
+                if community:
+                    community_info = {
+                        'id': community.id,
+                        'name': community.name
+                    }
+            
+            unified_feed.append({
+                'id': content.id,
+                'title': content.title,
+                'description': content.description,
+                'content_type': content.content_type,
+                'content_url': content_url,
+                'thumbnail_url': content.thumbnail_url,
+                'created_at': (content.shared_at or content.assigned_at).isoformat() if (content.shared_at or content.assigned_at) else None,
+                'source_type': 'own',  # Contenido propio
+                'author_name': current_coach.full_name,
+                'author_id': current_coach.id,
+                'author_avatar': current_coach.avatar_url,
+                'community': community_info
+            })
+        
+        # Procesar contenido de comunidades
+        for content in community_content:
+            community = CoachCommunity.query.get(content.community_id)
+            author = content.coach
+            
+            # Transformar URL de documento si es necesario
+            content_url = content.content_url
+            if content.content_type == 'document' and '/api/coachee/documents/' in content_url:
+                import re
+                match = re.search(r'/api/coachee/documents/(\d+)/', content_url)
+                if match:
+                    document_id = match.group(1)
+                    content_url = f"/api/coach/documents/{document_id}/view"
+            
+            unified_feed.append({
+                'id': content.id,
+                'title': content.title,
+                'description': content.description,
+                'content_type': content.content_type,
+                'content_url': content_url,
+                'thumbnail_url': content.thumbnail_url,
+                'created_at': (content.shared_at or content.assigned_at).isoformat() if (content.shared_at or content.assigned_at) else None,
+                'source_type': 'community',  # Contenido de comunidad
+                'author_name': author.full_name if author else 'Desconocido',
+                'author_id': author.id if author else None,
+                'author_avatar': author.avatar_url if author else None,
+                'community': {
+                    'id': community.id,
+                    'name': community.name
+                } if community else None
+            })
+        
+        # 5. Ordenar por fecha descendente (más reciente primero)
+        unified_feed.sort(
+            key=lambda x: datetime.fromisoformat(x['created_at']) if x['created_at'] else datetime.min,
+            reverse=True
+        )
+        
+        logger.info(f"✅ UNIFIED-FEED: Coach {current_coach.id} - {len(own_content)} propios + {len(community_content)} de comunidades = {len(unified_feed)} total")
+        
+        return jsonify({
+            'success': True,
+            'content': unified_feed,
+            'stats': {
+                'own': len(own_content),
+                'community': len(community_content),
+                'total': len(unified_feed)
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ UNIFIED-FEED: Error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error obteniendo feed unificado'}), 500
 
 @app.route('/api/coach/update-coachee/<int:coachee_id>', methods=['PUT'])
 @coach_session_required
@@ -14188,6 +15129,806 @@ def create_notification(user_id, type, title, message, related_id=None, related_
         db.session.rollback()
         logger.error(f"Error creando notificación: {str(e)}", exc_info=True)
         return None
+
+# ============================================================================
+# APIs DE COMUNIDADES DE COACHES
+# ============================================================================
+
+@app.route('/api/communities', methods=['POST'])
+@coach_required
+def api_create_community():
+    """Crear una nueva comunidad de coaches"""
+    try:
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        name = data.get('name', '').strip()
+        if not name or len(name) < 3:
+            return jsonify({'error': 'El nombre debe tener al menos 3 caracteres'}), 400
+        
+        if len(name) > 200:
+            return jsonify({'error': 'El nombre no puede exceder 200 caracteres'}), 400
+        
+        description = data.get('description', '').strip()
+        if description and len(description) > 1000:
+            return jsonify({'error': 'La descripción no puede exceder 1000 caracteres'}), 400
+        
+        privacy = data.get('privacy', 'private')
+        if privacy not in ['private', 'public']:
+            return jsonify({'error': 'Privacy debe ser "private" o "public"'}), 400
+        
+        # Crear comunidad
+        community = CoachCommunity(
+            name=sanitize_string(name, 200),
+            description=sanitize_string(description, 1000) if description else None,
+            creator_id=g.current_user.id,
+            privacy=privacy
+        )
+        db.session.add(community)
+        db.session.flush()  # Obtener ID sin hacer commit completo
+        
+        # Crear membresía automática del creador como admin
+        membership = CommunityMembership(
+            community_id=community.id,
+            coach_id=g.current_user.id,
+            role='admin'
+        )
+        db.session.add(membership)
+        db.session.commit()
+        
+        logger.info(f"✅ Comunidad creada: {community.name} (ID: {community.id}) por coach {g.current_user.username}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Comunidad creada exitosamente',
+            'community': community.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creando comunidad: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error creando comunidad'}), 500
+
+@app.route('/api/communities', methods=['GET'])
+@coach_required
+def api_list_communities():
+    """Listar comunidades del coach (creadas + donde es miembro)"""
+    try:
+        # Obtener coach desde la sesión
+        coach_id = session.get('coach_user_id')
+        coach = User.query.get(coach_id)
+        
+        if not coach:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Obtener comunidades donde es miembro activo
+        memberships = CommunityMembership.query.filter_by(
+            coach_id=coach.id,
+            is_active=True
+        ).all()
+        
+        communities = []
+        for membership in memberships:
+            community = membership.community
+            if community.is_active:
+                community_dict = community.to_dict()
+                # Agregar información de membresía
+                community_dict['my_role'] = membership.role
+                community_dict['joined_at'] = membership.joined_at.isoformat() if membership.joined_at else None
+                # Indicar si es el creador
+                community_dict['is_creator'] = (community.creator_id == coach.id)
+                # Contar miembros activos
+                community_dict['members_count'] = CommunityMembership.query.filter_by(
+                    community_id=community.id,
+                    is_active=True
+                ).count()
+                # Contar contenido compartido
+                community_dict['content_count'] = Content.query.filter_by(
+                    community_id=community.id,
+                    shared_with_community=True,
+                    is_active=True
+                ).count()
+                communities.append(community_dict)
+        
+        # Ordenar: primero las creadas por el usuario, luego por fecha de creación
+        communities.sort(key=lambda x: (
+            0 if x['creator_id'] == coach.id else 1,
+            -datetime.fromisoformat(x['created_at']).timestamp()
+        ))
+        
+        return jsonify({
+            'success': True,
+            'communities': communities,
+            'total': len(communities)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error listando comunidades: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error obteniendo comunidades'}), 500
+
+@app.route('/api/communities/<int:community_id>', methods=['GET'])
+@coach_required
+def api_get_community(community_id):
+    """Obtener detalle de una comunidad"""
+    try:
+        community = CoachCommunity.query.get(community_id)
+        if not community or not community.is_active:
+            return jsonify({'error': 'Comunidad no encontrada'}), 404
+        
+        # Verificar que el usuario es miembro
+        membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=g.current_user.id,
+            is_active=True
+        ).first()
+        
+        if not membership:
+            return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
+        
+        # Obtener detalle completo
+        community_dict = community.to_dict()
+        community_dict['my_role'] = membership.role
+        
+        # Obtener miembros
+        members = []
+        for m in community.memberships.filter_by(is_active=True).all():
+            coach = m.coach
+            members.append({
+                'id': m.id,
+                'coach_id': coach.id,
+                'coach_name': coach.full_name,
+                'coach_email': coach.email,
+                'coach_avatar': coach.avatar_url,
+                'role': m.role,
+                'joined_at': m.joined_at.isoformat() if m.joined_at else None
+            })
+        
+        community_dict['members'] = members
+        community_dict['members_count'] = len(members)
+        
+        # Obtener contenido reciente
+        recent_content = Content.query.filter_by(
+            community_id=community_id,
+            shared_with_community=True,
+            is_active=True
+        ).order_by(Content.shared_at.desc()).limit(10).all()
+        
+        community_dict['recent_content'] = [{
+            'id': c.id,
+            'title': c.title,
+            'content_type': c.content_type,
+            'coach_name': c.coach.full_name,
+            'shared_at': c.shared_at.isoformat() if c.shared_at else None
+        } for c in recent_content]
+        
+        return jsonify({
+            'success': True,
+            'community': community_dict
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo comunidad: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error obteniendo comunidad'}), 500
+
+@app.route('/api/communities/<int:community_id>', methods=['PUT'])
+@coach_required
+def api_update_community(community_id):
+    """Actualizar información de una comunidad (solo admin)"""
+    try:
+        community = CoachCommunity.query.get(community_id)
+        if not community or not community.is_active:
+            return jsonify({'error': 'Comunidad no encontrada'}), 404
+        
+        # Verificar que el usuario es admin
+        membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=g.current_user.id,
+            is_active=True
+        ).first()
+        
+        if not membership or membership.role != 'admin':
+            return jsonify({'error': 'Solo administradores pueden actualizar la comunidad'}), 403
+        
+        data = request.get_json()
+        
+        # Actualizar nombre si se proporciona
+        if 'name' in data:
+            name = data['name'].strip()
+            if not name or len(name) < 3:
+                return jsonify({'error': 'El nombre debe tener al menos 3 caracteres'}), 400
+            if len(name) > 200:
+                return jsonify({'error': 'El nombre no puede exceder 200 caracteres'}), 400
+            community.name = sanitize_string(name, 200)
+        
+        # Actualizar descripción si se proporciona
+        if 'description' in data:
+            description = data['description'].strip()
+            if description and len(description) > 1000:
+                return jsonify({'error': 'La descripción no puede exceder 1000 caracteres'}), 400
+            community.description = sanitize_string(description, 1000) if description else None
+        
+        # Actualizar privacidad si se proporciona
+        if 'privacy' in data:
+            privacy = data['privacy']
+            if privacy not in ['private', 'public']:
+                return jsonify({'error': 'Privacy debe ser "private" o "public"'}), 400
+            community.privacy = privacy
+        
+        community.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        logger.info(f"✅ Comunidad actualizada: {community.name} (ID: {community.id})")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Comunidad actualizada exitosamente',
+            'community': community.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error actualizando comunidad: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error actualizando comunidad'}), 500
+
+@app.route('/api/communities/<int:community_id>', methods=['DELETE'])
+@coach_required
+def api_delete_community(community_id):
+    """Eliminar una comunidad (solo creador)"""
+    try:
+        community = CoachCommunity.query.get(community_id)
+        if not community or not community.is_active:
+            return jsonify({'error': 'Comunidad no encontrada'}), 404
+        
+        # Verificar que el usuario es el creador
+        if community.creator_id != current_user.id:
+            return jsonify({'error': 'Solo el creador puede eliminar la comunidad'}), 403
+        
+        # Soft delete: marcar como inactiva
+        community.is_active = False
+        community.updated_at = datetime.utcnow()
+        
+        # Desactivar todas las membresías
+        CommunityMembership.query.filter_by(
+            community_id=community_id
+        ).update({'is_active': False})
+        
+        # Desvincular contenido compartido
+        Content.query.filter_by(
+            community_id=community_id
+        ).update({
+            'community_id': None,
+            'shared_with_community': False
+        })
+        
+        db.session.commit()
+        
+        logger.info(f"✅ Comunidad eliminada: {community.name} (ID: {community.id})")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Comunidad eliminada exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error eliminando comunidad: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error eliminando comunidad'}), 500
+
+# ============================================================================
+# APIs DE GESTIÓN DE MIEMBROS DE COMUNIDADES
+# ============================================================================
+
+@app.route('/api/communities/<int:community_id>/invite', methods=['POST'])
+@coach_required
+def api_invite_to_community(community_id):
+    """Invitar a otro coach a la comunidad por email, WhatsApp o SMS"""
+    try:
+        community = CoachCommunity.query.get(community_id)
+        if not community or not community.is_active:
+            return jsonify({'error': 'Comunidad no encontrada'}), 404
+        
+        # Verificar que el usuario es admin o moderator
+        membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=g.current_user.id,
+            is_active=True
+        ).first()
+        
+        if not membership or membership.role not in ['admin', 'moderator']:
+            return jsonify({'error': 'Solo administradores y moderadores pueden invitar'}), 403
+        
+        data = request.get_json()
+        
+        # Obtener método de invitación
+        method = data.get('method', 'email')
+        if method not in ['email', 'whatsapp', 'sms']:
+            return jsonify({'error': 'Método inválido. Usa: email, whatsapp o sms'}), 400
+        
+        # Validar nombre
+        invitee_name = data.get('invitee_name', '').strip()
+        if not invitee_name or len(invitee_name) < 2:
+            return jsonify({'error': 'El nombre debe tener al menos 2 caracteres'}), 400
+        invitee_name = sanitize_string(invitee_name, 200)
+        
+        invitee_email = None
+        invitee_phone = None
+        
+        # Validar según método
+        if method == 'email':
+            valid, result = validate_email(data.get('invitee_email', ''))
+            if not valid:
+                return jsonify({'error': result}), 400
+            invitee_email = result
+            
+            # Verificar que no sea el mismo usuario
+            if invitee_email.lower() == current_user.email.lower():
+                return jsonify({'error': 'No puedes invitarte a ti mismo'}), 400
+            
+            # Verificar si ya existe un coach con ese email
+            existing_coach = User.query.filter_by(email=invitee_email, role='coach', active=True).first()
+            
+            # Si existe, verificar que no sea ya miembro
+            if existing_coach:
+                existing_membership = CommunityMembership.query.filter_by(
+                    community_id=community_id,
+                    coach_id=existing_coach.id,
+                    is_active=True
+                ).first()
+                if existing_membership:
+                    return jsonify({'error': 'Este coach ya es miembro de la comunidad'}), 400
+            
+            # Verificar si ya existe una invitación pendiente
+            existing_invitation = CommunityInvitation.query.filter_by(
+                community_id=community_id,
+                invitee_email=invitee_email,
+                is_used=False
+            ).filter(
+                CommunityInvitation.expires_at > datetime.utcnow()
+            ).first()
+            
+            if existing_invitation:
+                return jsonify({'error': 'Ya existe una invitación pendiente para este email'}), 400
+        
+        else:  # whatsapp o sms
+            invitee_phone = data.get('invitee_phone', '').strip()
+            if not invitee_phone:
+                return jsonify({'error': 'El número de teléfono es requerido'}), 400
+            
+            # Validar formato básico de teléfono
+            phone_cleaned = ''.join(filter(str.isdigit, invitee_phone))
+            if len(phone_cleaned) < 8:
+                return jsonify({'error': 'Número de teléfono inválido'}), 400
+            
+            invitee_phone = sanitize_string(invitee_phone, 30)
+            
+            # Verificar si ya existe una invitación pendiente con ese teléfono
+            existing_invitation = CommunityInvitation.query.filter_by(
+                community_id=community_id,
+                invitee_phone=invitee_phone,
+                is_used=False
+            ).filter(
+                CommunityInvitation.expires_at > datetime.utcnow()
+            ).first()
+            
+            if existing_invitation:
+                return jsonify({'error': 'Ya existe una invitación pendiente para este número'}), 400
+        
+        # Crear invitación
+        message = data.get('message', '').strip()
+        if message:
+            message = sanitize_string(message, 500)
+        
+        token = secrets.token_urlsafe(32)
+        invitation = CommunityInvitation(
+            community_id=community_id,
+            inviter_id=current_user.id,
+            invitee_email=invitee_email,
+            invitee_phone=invitee_phone,
+            invitee_name=invitee_name,
+            token=token,
+            message=message,
+            invitation_method=method,
+            expires_at=datetime.utcnow() + timedelta(days=7)
+        )
+        db.session.add(invitation)
+        db.session.commit()
+        
+        # Enviar invitación según método
+        send_result = send_community_invitation(invitation, community, current_user, method)
+        
+        invitation_link = f"{request.host_url}coach-login?invitation={token}"
+        
+        logger.info(f"✅ Invitación creada por {method}: {invitee_email or invitee_phone} a comunidad {community.name}")
+        
+        response_data = {
+            'success': True,
+            'message': send_result.get('message', 'Invitación enviada'),
+            'invitation_link': invitation_link,
+            'method': method,
+            'invitation': invitation.to_dict()
+        }
+        
+        # Agregar links específicos según método
+        if 'whatsapp_link' in send_result:
+            response_data['whatsapp_link'] = send_result['whatsapp_link']
+        if 'sms_text' in send_result:
+            response_data['sms_text'] = send_result['sms_text']
+        if 'note' in send_result:
+            response_data['note'] = send_result['note']
+        
+        return jsonify(response_data), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creando invitación: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error creando invitación'}), 500
+
+@app.route('/api/my-community-invitations', methods=['GET'])
+@coach_required
+def api_get_my_community_invitations():
+    """Obtener invitaciones pendientes del usuario actual"""
+    try:
+        # Obtener coach desde la sesión
+        coach_id = session.get('coach_user_id')
+        coach = User.query.get(coach_id)
+        
+        if not coach:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        user_email_lower = coach.email.lower()
+        logger.info(f"🔍 Buscando invitaciones para: {user_email_lower} (Coach ID: {coach_id}, Username: {coach.username})")
+        
+        # Buscar invitaciones pendientes para el email del usuario (case-insensitive)
+        pending_invitations = CommunityInvitation.query.filter(
+            db.func.lower(CommunityInvitation.invitee_email) == user_email_lower,
+            CommunityInvitation.is_used == False,
+            CommunityInvitation.expires_at > datetime.utcnow()
+        ).order_by(CommunityInvitation.created_at.desc()).all()
+        
+        logger.info(f"📬 Invitaciones encontradas: {len(pending_invitations)}")
+        
+        invitations_data = []
+        for invitation in pending_invitations:
+            community = invitation.community
+            if community and community.is_active:
+                # Verificar que no sea ya miembro
+                existing_membership = CommunityMembership.query.filter_by(
+                    community_id=community.id,
+                    coach_id=coach.id,
+                    is_active=True
+                ).first()
+                
+                if not existing_membership:
+                    invitations_data.append({
+                        'id': invitation.id,
+                        'token': invitation.token,
+                        'community': {
+                            'id': community.id,
+                            'name': community.name,
+                            'description': community.description
+                        },
+                        'inviter': {
+                            'name': invitation.inviter.full_name if invitation.inviter.full_name else invitation.inviter.username,
+                            'username': invitation.inviter.username
+                        },
+                        'message': invitation.message,
+                        'created_at': invitation.created_at.isoformat(),
+                        'expires_at': invitation.expires_at.isoformat()
+                    })
+        
+        return jsonify({
+            'success': True,
+            'invitations': invitations_data,
+            'count': len(invitations_data)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo invitaciones: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error obteniendo invitaciones'}), 500
+
+@app.route('/api/communities/<int:community_id>/members', methods=['GET'])
+@coach_required
+def api_list_community_members(community_id):
+    """Listar miembros de una comunidad"""
+    try:
+        community = CoachCommunity.query.get(community_id)
+        if not community or not community.is_active:
+            return jsonify({'error': 'Comunidad no encontrada'}), 404
+        
+        # Verificar que el usuario es miembro
+        my_membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=g.current_user.id,
+            is_active=True
+        ).first()
+        
+        if not my_membership:
+            return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
+        
+        # Obtener miembros activos
+        memberships = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            is_active=True
+        ).order_by(CommunityMembership.joined_at.desc()).all()
+        
+        members = []
+        for m in memberships:
+            coach = m.coach
+            members.append({
+                'membership_id': m.id,
+                'coach_id': coach.id,
+                'coach_name': coach.full_name,
+                'coach_email': coach.email,
+                'coach_avatar': coach.avatar_url,
+                'role': m.role,
+                'joined_at': m.joined_at.isoformat() if m.joined_at else None,
+                'is_creator': coach.id == community.creator_id
+            })
+        
+        # Ordenar: creador primero, luego admins, luego moderators, luego members
+        role_order = {'admin': 0, 'moderator': 1, 'member': 2}
+        members.sort(key=lambda x: (
+            0 if x['is_creator'] else 1,
+            role_order.get(x['role'], 3)
+        ))
+        
+        return jsonify({
+            'success': True,
+            'members': members,
+            'total': len(members),
+            'my_role': my_membership.role
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error listando miembros: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error obteniendo miembros'}), 500
+
+@app.route('/api/communities/<int:community_id>/members/<int:coach_id>', methods=['DELETE'])
+@coach_required
+def api_remove_community_member(community_id, coach_id):
+    """Remover un miembro de la comunidad"""
+    try:
+        community = CoachCommunity.query.get(community_id)
+        if not community or not community.is_active:
+            return jsonify({'error': 'Comunidad no encontrada'}), 404
+        
+        # Verificar que el usuario es admin
+        my_membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=g.current_user.id,
+            is_active=True
+        ).first()
+        
+        if not my_membership or my_membership.role != 'admin':
+            return jsonify({'error': 'Solo administradores pueden remover miembros'}), 403
+        
+        # No puede remover al creador
+        if coach_id == community.creator_id:
+            return jsonify({'error': 'No puedes remover al creador de la comunidad'}), 400
+        
+        # No puede removerse a sí mismo (debe salir de la comunidad)
+        if coach_id == current_user.id:
+            return jsonify({'error': 'No puedes removerte a ti mismo. Usa la opción "Salir de la comunidad"'}), 400
+        
+        # Obtener membresía a remover
+        membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=coach_id,
+            is_active=True
+        ).first()
+        
+        if not membership:
+            return jsonify({'error': 'El coach no es miembro de esta comunidad'}), 404
+        
+        # Desactivar membresía
+        membership.is_active = False
+        db.session.commit()
+        
+        logger.info(f"✅ Miembro removido: coach {coach_id} de comunidad {community.name}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Miembro removido exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error removiendo miembro: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error removiendo miembro'}), 500
+
+@app.route('/api/communities/<int:community_id>/members/<int:coach_id>/role', methods=['PUT'])
+@coach_required
+def api_change_member_role(community_id, coach_id):
+    """Cambiar rol de un miembro (admin puede cambiar a moderator o member)"""
+    try:
+        community = CoachCommunity.query.get(community_id)
+        if not community or not community.is_active:
+            return jsonify({'error': 'Comunidad no encontrada'}), 404
+        
+        # Verificar que el usuario es admin
+        my_membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=g.current_user.id,
+            is_active=True
+        ).first()
+        
+        if not my_membership or my_membership.role != 'admin':
+            return jsonify({'error': 'Solo administradores pueden cambiar roles'}), 403
+        
+        # No puede cambiar rol del creador
+        if coach_id == community.creator_id:
+            return jsonify({'error': 'No puedes cambiar el rol del creador'}), 400
+        
+        data = request.get_json()
+        new_role = data.get('role', '').strip().lower()
+        
+        if new_role not in ['admin', 'moderator', 'member']:
+            return jsonify({'error': 'Rol debe ser "admin", "moderator" o "member"'}), 400
+        
+        # Obtener membresía a actualizar
+        membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=coach_id,
+            is_active=True
+        ).first()
+        
+        if not membership:
+            return jsonify({'error': 'El coach no es miembro de esta comunidad'}), 404
+        
+        old_role = membership.role
+        membership.role = new_role
+        db.session.commit()
+        
+        logger.info(f"✅ Rol cambiado: coach {coach_id} de {old_role} a {new_role} en comunidad {community.name}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Rol actualizado a {new_role}',
+            'membership': membership.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error cambiando rol: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error cambiando rol'}), 500
+
+# ============================================================================
+# APIs DE INVITACIONES A COMUNIDADES
+# ============================================================================
+
+@app.route('/api/community-invitations/validate/<token>', methods=['GET'])
+def api_validate_community_invitation(token):
+    """Validar un token de invitación (no requiere autenticación)"""
+    try:
+        invitation = CommunityInvitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            return jsonify({'error': 'Invitación no encontrada'}), 404
+        
+        if not invitation.is_valid():
+            reason = 'expirada' if datetime.utcnow() > invitation.expires_at else 'ya utilizada'
+            return jsonify({'error': f'Invitación {reason}'}), 400
+        
+        community = invitation.community
+        if not community or not community.is_active:
+            return jsonify({'error': 'La comunidad ya no existe'}), 404
+        
+        inviter = invitation.inviter
+        
+        return jsonify({
+            'success': True,
+            'valid': True,
+            'invitation': {
+                'id': invitation.id,
+                'community_name': community.name,
+                'community_description': community.description,
+                'inviter_name': inviter.full_name,
+                'invitee_name': invitation.invitee_name,
+                'invitee_email': invitation.invitee_email,
+                'message': invitation.message,
+                'created_at': invitation.created_at.isoformat() if invitation.created_at else None,
+                'expires_at': invitation.expires_at.isoformat() if invitation.expires_at else None
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error validando invitación: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error validando invitación'}), 500
+
+@app.route('/api/community-invitations/accept/<token>', methods=['POST'])
+@coach_required
+def api_accept_community_invitation(token):
+    """Aceptar una invitación a comunidad (requiere ser coach autenticado)"""
+    try:
+        # Obtener coach desde la sesión
+        coach_id = session.get('coach_user_id')
+        coach = User.query.get(coach_id)
+        
+        if not coach:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        invitation = CommunityInvitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            return jsonify({'error': 'Invitación no encontrada'}), 404
+        
+        if not invitation.is_valid():
+            reason = 'expirada' if datetime.utcnow() > invitation.expires_at else 'ya utilizada'
+            return jsonify({'error': f'Invitación {reason}'}), 400
+        
+        community = invitation.community
+        if not community or not community.is_active:
+            return jsonify({'error': 'La comunidad ya no existe'}), 404
+        
+        # Verificar que el email coincide con el usuario actual (case-insensitive)
+        if invitation.invitee_email.lower() != coach.email.lower():
+            logger.warning(f"⚠️ Email mismatch: invitation={invitation.invitee_email}, coach={coach.email}")
+            return jsonify({'error': 'Esta invitación no corresponde a tu email'}), 403
+        
+        # Verificar que no sea ya miembro
+        existing_membership = CommunityMembership.query.filter_by(
+            community_id=community.id,
+            coach_id=coach.id,
+            is_active=True
+        ).first()
+        
+        if existing_membership:
+            return jsonify({'error': 'Ya eres miembro de esta comunidad'}), 400
+        
+        # Crear membresía
+        membership = CommunityMembership(
+            community_id=community.id,
+            coach_id=coach.id,
+            role='member'
+        )
+        db.session.add(membership)
+        
+        # Marcar invitación como usada
+        invitation.mark_as_used(coach.id)
+        
+        db.session.commit()
+        
+        logger.info(f"✅ Invitación aceptada: coach {coach.username} unido a comunidad {community.name}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Te has unido exitosamente a {community.name}',
+            'community': community.to_dict(),
+            'membership': membership.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error aceptando invitación: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error aceptando invitación'}), 500
+
+@app.route('/api/community-invitations/reject/<token>', methods=['POST'])
+def api_reject_community_invitation(token):
+    """Rechazar una invitación a comunidad (no requiere autenticación)"""
+    try:
+        invitation = CommunityInvitation.query.filter_by(token=token).first()
+        
+        if not invitation:
+            return jsonify({'error': 'Invitación no encontrada'}), 404
+        
+        if not invitation.is_valid():
+            return jsonify({'error': 'La invitación ya no es válida'}), 400
+        
+        # Marcar como usada (rechazada)
+        invitation.mark_as_used()
+        db.session.commit()
+        
+        logger.info(f"ℹ️ Invitación rechazada: {invitation.invitee_email}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Invitación rechazada'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error rechazando invitación: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error rechazando invitación'}), 500
 
 # ============================================================================
 # INICIALIZACIÓN DE LA APP

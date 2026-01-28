@@ -769,18 +769,17 @@
                                     <label for="registro-email"><i class="fas fa-at me-2"></i>Email</label>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="registro-usuario" name="username" placeholder="Usuario" required>
-                                    <label for="registro-usuario"><i class="fas fa-id-card me-2"></i>Usuario</label>
+                                    <label for="registro-usuario"><i class="fas fa-id-card me-2"></i>Usuario deseado</label>
+                                    <small class="text-muted">Este será tu nombre de usuario para acceder a la plataforma</small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="password" class="form-control" id="registro-password" name="password" placeholder="Contraseña" required>
-                                    <label for="registro-password"><i class="fas fa-lock me-2"></i>Contraseña</label>
-                                </div>
-                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Proceso de aprobación:</strong> Tu solicitud será revisada por nuestro equipo. Si es aprobada, recibirás un email con tu contraseña de acceso.
                         </div>
                     </div>
                     
@@ -898,8 +897,8 @@
             </div>
             <div class="modal-footer border-0 justify-content-center pb-4">
                 <button type="button" class="btn btn-lg btn-register-coach-submit" onclick="submitRegisterCoach()">
-                    <i class="fas fa-check-circle me-2"></i>
-                    Completar Registro
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Enviar Solicitud
                 </button>
             </div>
         </div>
@@ -1263,6 +1262,37 @@
 
 {% block extra_js %}
 <script>
+// Función global para mostrar alertas
+function showAlert(message, type) {
+    // Remove existing alerts
+    const existingAlerts = document.querySelectorAll('.alert');
+    existingAlerts.forEach(alert => alert.remove());
+    
+    // Create new alert
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.style.position = 'fixed';
+    alert.style.top = '20px';
+    alert.style.right = '20px';
+    alert.style.zIndex = '9999';
+    alert.style.minWidth = '300px';
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Append to body
+    document.body.appendChild(alert);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('coachLoginForm');
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -1329,31 +1359,6 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.style.background = '';
         submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Acceder como Coach';
     }
-    
-    function showAlert(message, type) {
-        // Remove existing alerts
-        const existingAlerts = document.querySelectorAll('.alert');
-        existingAlerts.forEach(alert => alert.remove());
-        
-        // Create new alert
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type} alert-dismissible fade show`;
-        alert.innerHTML = `
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        // Insert before form
-        form.parentNode.insertBefore(alert, form);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
-        }, 5000);
-    }
 });
 
 // Función para manejar el registro de coach
@@ -1387,51 +1392,57 @@ function submitRegisterCoach() {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando registro...';
     
     // Enviar datos
-    fetch('/api/coach/register', {
+    fetch('/api/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+            full_name: data.nombre,
+            email: data.email,
+            username: data.username,
+            areas: data.areas,
+            experiencia: data.experiencia,
+            estilo: data.estilo,
+            bio: data.bio
+        })
     })
-    .then(response => response.json())
+    .then(response => {
+        // Capturar tanto respuestas exitosas como errores HTTP
+        return response.json().then(data => {
+            if (!response.ok) {
+                // Si hay error HTTP, lanzar excepción con el mensaje del servidor
+                throw new Error(data.error || data.message || 'Error al procesar la solicitud');
+            }
+            return data;
+        });
+    })
     .then(result => {
-        if (result.success) {
-            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>¡Registro exitoso!';
-            submitBtn.style.background = 'var(--success-green)';
+        // Solicitud exitosa
+        submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>¡Solicitud enviada!';
+        submitBtn.style.background = 'var(--success-green)';
+        
+        showAlert(result.note || '¡Solicitud enviada con éxito! Te contactaremos pronto.', 'success');
+        
+        setTimeout(() => {
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('registerCoachModal'));
+            modal.hide();
             
-            showAlert('¡Registro completado con éxito! Redirigiendo...', 'success');
+            // Limpiar formulario
+            const form = document.getElementById('registerCoachForm');
+            form.reset();
             
-            setTimeout(() => {
-                // Cerrar modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('registerCoachModal'));
-                modal.hide();
-                
-                // Limpiar formulario
-                form.reset();
-                
-                // Opcional: Redirigir al login o dashboard
-                if (result.redirect) {
-                    window.location.href = result.redirect;
-                }
-            }, 2000);
-        } else {
-            submitBtn.innerHTML = '<i class="fas fa-times me-2"></i>' + (result.message || 'Error en el registro');
-            submitBtn.style.background = 'var(--danger-red)';
-            showAlert(result.message || 'Error al procesar el registro', 'danger');
-            
-            setTimeout(() => {
-                submitBtn.disabled = false;
-                submitBtn.style.background = '';
-                submitBtn.innerHTML = originalText;
-            }, 3000);
-        }
+            // Mostrar mensaje final
+            showAlert('Tu solicitud ha sido recibida. El equipo de InstaCoach la revisará y te contactará por email.', 'info');
+        }, 2000);
     })
     .catch(error => {
         console.error('Error:', error);
-        submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error de conexión';
+        const errorMessage = error.message || 'Error de conexión. Intenta nuevamente.';
+        submitBtn.innerHTML = '<i class="fas fa-times me-2"></i>Error';
         submitBtn.style.background = 'var(--danger-red)';
-        showAlert('Error de conexión. Intenta nuevamente.', 'danger');
+        showAlert(errorMessage, 'danger');
         
         setTimeout(() => {
             submitBtn.disabled = false;

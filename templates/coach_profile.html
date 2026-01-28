@@ -407,8 +407,8 @@
     <!-- Bottom Navigation -->
     <nav class="bottom-navigation">
         <a href="/coach-feed" class="nav-item">
-            <i class="fas fa-home"></i>
-            <span>Home</span>
+            <i class="fas fa-rss"></i>
+            <span>Feed</span>
         </a>
         
         <a href="/coach-comunidad" class="nav-item">
@@ -416,15 +416,15 @@
             <span>Comunidad</span>
         </a>
         
-        <a href="/coach-dashboard" class="nav-item">
-            <i class="fas fa-chart-line"></i>
+        <a href="/coach/dashboard-v2" class="nav-item">
+            <i class="fas fa-th-large"></i>
             <span>Dashboard</span>
         </a>
         
-        <button class="nav-item" onclick="confirmLogout()">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Salir</span>
-        </button>
+        <a href="/coach-profile" class="nav-item active">
+            <i class="fas fa-user-circle"></i>
+            <span>Perfil</span>
+        </a>
     </nav>
     
     <!-- Avatar Gallery Modal -->
@@ -661,7 +661,37 @@
         // Confirmar logout
         function confirmLogout() {
             if (confirm('¿Estás seguro que deseas salir?')) {
-                window.location.href = '/coach-login';
+                fetch('/api/coach/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(() => {
+                    window.location.href = '/coach-login';
+                })
+                .catch(error => {
+                    console.error('Error al cerrar sesión:', error);
+                    window.location.href = '/coach-login';
+                });
+            }
+        }
+        
+        function logout() {
+            if (confirm('¿Estás seguro que deseas salir?')) {
+                fetch('/api/coach/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(() => {
+                    window.location.href = '/coach-login';
+                })
+                .catch(error => {
+                    console.error('Error al cerrar sesión:', error);
+                    window.location.href = '/coach-login';
+                });
             }
         }
         

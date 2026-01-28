@@ -11,6 +11,551 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Estilos personalizados para modal de invitación -->
+    <style>
+        /* Reset y base */
+        [x-cloak] { display: none !important; }
+        
+        /* Animaciones minimalistas */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes backdropFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-backdrop-custom {
+            animation: backdropFadeIn 0.2s ease-out;
+        }
+        
+        .modal-content {
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .dashboard-drawer-backdrop {
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        /* Transiciones suaves */
+        [x-transition] {
+            transition: all 0.15s ease;
+        }
+        
+        /* Efectos de focus */
+        input:focus, textarea:focus, select:focus {
+            outline: none !important;
+        }
+        
+        /* Loading spinner */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .fa-spinner { animation: spin 0.6s linear infinite; }
+        
+        /* Variables CSS */
+        :root {
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    
+    <!-- Alpine.js Community Component - DEBE IR ANTES de Alpine.js -->
+    <script>
+        // Definir componente Alpine ANTES de que Alpine.js se cargue
+        window.communityApp = function() {
+            return {
+                // State
+                showDrawer: false,
+                showCreateModal: false,
+                showDetailModal: false,
+                showInviteModal: false,
+                communities: [],
+                myCommunities: [],
+                otherCommunities: [],
+                pendingInvitations: [],
+                selectedCommunity: null,
+                loading: false,
+                error: null,
+                inviteSuccess: false,
+                newCommunity: {
+                    name: '',
+                    description: '',
+                    is_private: false
+                },
+                inviteEmail: '',
+                inviteName: '',
+                inviteMessage: '',
+                inviteMethod: 'email',
+                invitePhone: '',
+                
+                // Initialize
+                async init() {
+                    console.log('Community app initialized');
+                    await this.loadUserInfo();
+                    await this.loadCommunities();
+                    await this.loadPendingInvitations();
+                },
+                
+                // Load user info
+                async loadUserInfo() {
+                    try {
+                        const response = await fetch('/api/coach/profile');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success && data.profile) {
+                                const profile = data.profile;
+                                const displayName = profile.full_name || profile.username || 'Coach';
+                                
+                                const coachNameElement = document.getElementById('comunidadCoachName');
+                                if (coachNameElement) {
+                                    coachNameElement.textContent = displayName;
+                                }
+                                this.updateHeaderInfo(profile.avatar_url, displayName);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error loading user info:', error);
+                    }
+                },
+                
+                // Update header info
+                updateHeaderInfo(avatarUrl, displayName) {
+                    const headerAvatar = document.getElementById('headerAvatar');
+                    if (headerAvatar) {
+                        if (avatarUrl) {
+                            headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${displayName}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                        } else if (displayName) {
+                            const initial = displayName.charAt(0).toUpperCase();
+                            headerAvatar.innerHTML = initial;
+                        }
+                    }
+                },
+                
+                // Load communities from API
+                async loadCommunities() {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const response = await fetch('/api/communities', {
+                            method: 'GET',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('Communities loaded:', data);
+                        
+                        if (data.success) {
+                            this.communities = data.communities || [];
+                            this.myCommunities = this.communities.filter(c => c.my_role === 'creator' || c.my_role === 'admin');
+                            this.otherCommunities = this.communities.filter(c => c.my_role !== 'creator' && c.my_role !== 'admin');
+                            
+                            // Update DOM
+                            this.displayCommunities();
+                        }
+                    } catch (error) {
+                        console.error('Error loading communities:', error);
+                        this.error = 'Error al cargar las comunidades';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Display communities in DOM
+                displayCommunities() {
+                    this.displayGroupList(this.myCommunities, 'myGroupsContainer', true);
+                    this.displayGroupList(this.otherCommunities, 'otherGroupsContainer', false);
+                },
+                
+                // Display specific group list
+                displayGroupList(groups, containerId, isMyGroups) {
+                    const container = document.getElementById(containerId);
+                    if (!container) return;
+                    
+                    if (groups.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-${isMyGroups ? 'users' : 'globe'}"></i>
+                                <h5>${isMyGroups ? 'Aún no has creado grupos' : 'No hay otros grupos disponibles'}</h5>
+                                <p>${isMyGroups ? 'Crea tu primer grupo para conectar con otros coaches' : 'Sé el primero en crear un grupo'}</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    let groupsHTML = '';
+                    groups.forEach(group => {
+                        const icon = group.is_private ? '🔒' : '🌐';
+                        const role = group.my_role === 'creator' ? 'Creador' : group.my_role === 'admin' ? 'Admin' : 'Miembro';
+                        
+                        groupsHTML += `
+                            <div class="group-card" onclick="window.communityAppInstance.openCommunity(${group.id})">
+                                <div class="group-image">
+                                    ${icon}
+                                </div>
+                                <div class="group-body">
+                                    <div class="group-title">${group.name}</div>
+                                    <div class="group-description">${group.description || 'Sin descripción'}</div>
+                                    <div class="group-meta">
+                                        <div class="group-members">
+                                            <i class="fas fa-user-friends"></i>
+                                            <span>${group.members_count || 0} miembros</span>
+                                        </div>
+                                        <span class="group-badge">${role}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = groupsHTML;
+                },
+                
+                // Open create community modal
+                openCreateModal() {
+                    this.newCommunity = {
+                        name: '',
+                        description: '',
+                        is_private: false
+                    };
+                    this.error = null;
+                    this.showCreateModal = true;
+                },
+                
+                // Create new community
+                async createCommunity() {
+                    if (!this.newCommunity.name.trim()) {
+                        this.error = 'El nombre es requerido';
+                        return;
+                    }
+                    
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const response = await fetch('/api/communities', {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.newCommunity)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Error al crear la comunidad');
+                        }
+                        
+                        if (data.success) {
+                            console.log('Community created:', data.community);
+                            this.showCreateModal = false;
+                            await this.loadCommunities();
+                        } else {
+                            this.error = data.error || 'Error al crear la comunidad';
+                        }
+                    } catch (error) {
+                        console.error('Error creating community:', error);
+                        this.error = error.message || 'Error al crear la comunidad';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Open community detail
+                async openCommunity(communityId) {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const response = await fetch(`/api/communities/${communityId}`, {
+                            method: 'GET',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.selectedCommunity = data.community;
+                            this.showDetailModal = true;
+                            console.log('Community detail loaded:', data.community);
+                        }
+                    } catch (error) {
+                        console.error('Error loading community detail:', error);
+                        this.error = 'Error al cargar los detalles de la comunidad';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Invite member
+                async inviteMember() {
+                    // Validar según método seleccionado
+                    if (this.inviteMethod === 'email') {
+                        if (!this.inviteEmail.trim()) {
+                            this.error = 'El email es requerido';
+                            return;
+                        }
+                    } else {
+                        if (!this.invitePhone.trim()) {
+                            this.error = 'El número de teléfono es requerido';
+                            return;
+                        }
+                    }
+                    
+                    if (!this.inviteName.trim()) {
+                        this.error = 'El nombre es requerido';
+                        return;
+                    }
+                    
+                    this.loading = true;
+                    this.error = null;
+                    this.inviteSuccess = false;
+                    
+                    try {
+                        const payload = {
+                            invitee_name: this.inviteName,
+                            message: this.inviteMessage || '',
+                            method: this.inviteMethod
+                        };
+                        
+                        // Agregar email o teléfono según método
+                        if (this.inviteMethod === 'email') {
+                            payload.invitee_email = this.inviteEmail;
+                        } else {
+                            payload.invitee_phone = this.invitePhone;
+                        }
+                        
+                        const response = await fetch(`/api/communities/${this.selectedCommunity.id}/invite`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Error al enviar la invitación');
+                        }
+                        
+                        if (data.success) {
+                            this.inviteSuccess = true;
+                            this.inviteEmail = '';
+                            this.inviteName = '';
+                            this.inviteMessage = '';
+                            this.invitePhone = '';
+                            
+                            // Mostrar mensaje según método
+                            let successMsg = '✅ Invitación enviada exitosamente!';
+                            if (this.inviteMethod === 'email') {
+                                successMsg += '\n\n📧 Se envió un email con el link de invitación.';
+                            } else if (this.inviteMethod === 'whatsapp') {
+                                successMsg += `\n\n💬 Link de WhatsApp:\n${data.whatsapp_link || data.invitation_link}`;
+                            } else if (this.inviteMethod === 'sms') {
+                                successMsg += '\n\n📱 Se envió un SMS con el link de invitación.';
+                            }
+                            
+                            if (data.invitation_link) {
+                                successMsg += `\n\nO comparte este link directamente:\n${data.invitation_link}`;
+                            }
+                            
+                            this.error = null;
+                            alert(successMsg);
+                            
+                            setTimeout(() => {
+                                this.showInviteModal = false;
+                                this.inviteSuccess = false;
+                            }, 2000);
+                        } else {
+                            this.error = data.error || 'Error al enviar la invitación';
+                        }
+                    } catch (error) {
+                        console.error('Error inviting member:', error);
+                        this.error = error.message || 'Error al enviar la invitación';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Load pending invitations
+                async loadPendingInvitations() {
+                    try {
+                        const response = await fetch('/api/my-community-invitations', {
+                            method: 'GET',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                                this.pendingInvitations = data.invitations || [];
+                                console.log(`📬 Invitaciones pendientes: ${this.pendingInvitations.length}`);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error loading pending invitations:', error);
+                    }
+                },
+                
+                // Accept invitation
+                async acceptInvitation(token) {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const response = await fetch(`/api/community-invitations/accept/${token}`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Error al aceptar la invitación');
+                        }
+                        
+                        if (data.success) {
+                            alert(`✅ ${data.message}`);
+                            // Reload communities and invitations
+                            await this.loadCommunities();
+                            await this.loadPendingInvitations();
+                        } else {
+                            this.error = data.error || 'Error al aceptar la invitación';
+                        }
+                    } catch (error) {
+                        console.error('Error accepting invitation:', error);
+                        this.error = error.message || 'Error al aceptar la invitación';
+                        alert(`❌ ${this.error}`);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Reject invitation
+                async rejectInvitation(token) {
+                    if (!confirm('¿Estás seguro de que deseas rechazar esta invitación?')) {
+                        return;
+                    }
+                    
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const response = await fetch(`/api/community-invitations/reject/${token}`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Error al rechazar la invitación');
+                        }
+                        
+                        if (data.success) {
+                            alert('Invitación rechazada');
+                            // Reload invitations
+                            await this.loadPendingInvitations();
+                        } else {
+                            this.error = data.error || 'Error al rechazar la invitación';
+                        }
+                    } catch (error) {
+                        console.error('Error rejecting invitation:', error);
+                        this.error = error.message || 'Error al rechazar la invitación';
+                        alert(`❌ ${this.error}`);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Remove member
+                async removeMember(coachId) {
+                    if (!confirm('¿Estás seguro de que deseas eliminar a este miembro?')) {
+                        return;
+                    }
+                    
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const response = await fetch(`/api/communities/${this.selectedCommunity.id}/members/${coachId}`, {
+                            method: 'DELETE',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Error al eliminar el miembro');
+                        }
+                        
+                        if (data.success) {
+                            // Reload community detail
+                            await this.openCommunity(this.selectedCommunity.id);
+                        } else {
+                            this.error = data.error || 'Error al eliminar el miembro';
+                        }
+                    } catch (error) {
+                        console.error('Error removing member:', error);
+                        this.error = error.message || 'Error al eliminar el miembro';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            };
+        };
+        
+        // Guardar referencia global para acceso desde onclick handlers
+        window.communityAppInstance = null;
+        
+        document.addEventListener('alpine:init', () => {
+            console.log('Alpine initialized');
+        });
+    </script>
+    
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
     
@@ -512,7 +1057,7 @@
         }
     </style>
 </head>
-<body x-data="{ showDrawer: false }">
+<body x-data="communityApp()" x-init="window.communityAppInstance = $data; init()">
     <!-- Header - InstaCoach Design -->
     <header class="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-xl" style="border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: var(--z-sticky); width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
         <div class="flex h-16 items-center justify-between px-4" style="display: flex; height: 4rem; align-items: center; justify-content: space-between; padding: 0 1rem;">
@@ -528,7 +1073,27 @@
                 <!-- Notifications -->
                 <button class="relative rounded-xl p-2 hover:bg-gray-100 transition" style="position: relative; border-radius: var(--radius-xl); padding: 0.5rem; border: none; background: transparent; cursor: pointer; transition: all var(--transition-base);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">
                     <i class="fas fa-bell" style="color: var(--gray-600); font-size: 1.25rem;"></i>
-                    <span class="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" style="position: absolute; right: 0.25rem; top: 0.25rem; height: 0.5rem; width: 0.5rem; border-radius: var(--radius-full); background: var(--error); border: 2px solid white;"></span>
+                    <!-- Invitation count badge -->
+                    <span x-show="pendingInvitations.length > 0" 
+                          x-text="pendingInvitations.length" 
+                          class="absolute" 
+                          style="position: absolute; 
+                                 right: 0; 
+                                 top: 0; 
+                                 min-width: 20px; 
+                                 height: 20px; 
+                                 background: #ef4444; 
+                                 color: white; 
+                                 border-radius: 10px; 
+                                 font-size: 11px; 
+                                 font-weight: 700; 
+                                 display: flex; 
+                                 align-items: center; 
+                                 justify-content: center; 
+                                 padding: 0 5px;
+                                 border: 2px solid white;
+                                 box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);"
+                          x-transition></span>
                 </button>
 
                 <!-- Profile Dropdown -->
@@ -575,6 +1140,89 @@
     
     <!-- Community Container -->
     <div class="community-container">
+        <!-- Pending Invitations Banner -->
+        <div x-show="pendingInvitations.length > 0" 
+             class="invitation-banner" 
+             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    border-radius: 12px; 
+                    padding: 20px; 
+                    margin-bottom: 24px; 
+                    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+                    display: none;"
+             x-transition>
+            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                    <i class="fas fa-envelope" style="color: white; font-size: 20px;"></i>
+                </div>
+                <h4 style="color: white; margin: 0; font-size: 18px; font-weight: 600;">
+                    📬 Tienes <span x-text="pendingInvitations.length"></span> invitación<span x-text="pendingInvitations.length > 1 ? 'es' : ''"></span> pendiente<span x-text="pendingInvitations.length > 1 ? 's' : ''"></span>
+                </h4>
+            </div>
+            
+            <template x-for="inv in pendingInvitations" :key="inv.id">
+                <div style="background: white; 
+                            border-radius: 10px; 
+                            padding: 16px; 
+                            margin-bottom: 12px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+                        <div style="flex: 1;">
+                            <p style="margin: 0 0 8px 0; color: #1e293b; font-size: 15px;">
+                                <strong x-text="inv.inviter.name" style="color: #667eea;"></strong> 
+                                te invitó a unirte a 
+                                <strong x-text="inv.community.name" style="color: #764ba2;"></strong>
+                            </p>
+                            <p x-show="inv.message" 
+                               x-text="inv.message" 
+                               style="margin: 0 0 8px 0; color: #64748b; font-size: 14px; font-style: italic;"></p>
+                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                <i class="fas fa-clock" style="margin-right: 4px;"></i>
+                                Enviado el <span x-text="new Date(inv.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })"></span>
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                            <button @click="acceptInvitation(inv.token)"
+                                    style="background: #10b981; 
+                                           color: white; 
+                                           border: none; 
+                                           border-radius: 8px; 
+                                           padding: 10px 16px; 
+                                           font-size: 14px; 
+                                           font-weight: 600; 
+                                           cursor: pointer;
+                                           transition: all 0.2s;
+                                           display: flex;
+                                           align-items: center;
+                                           gap: 6px;"
+                                    onmouseover="this.style.background='#059669'; this.style.transform='translateY(-2px)'"
+                                    onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'">
+                                <i class="fas fa-check"></i>
+                                Aceptar
+                            </button>
+                            <button @click="rejectInvitation(inv.token)"
+                                    style="background: #ef4444; 
+                                           color: white; 
+                                           border: none; 
+                                           border-radius: 8px; 
+                                           padding: 10px 16px; 
+                                           font-size: 14px; 
+                                           font-weight: 600; 
+                                           cursor: pointer;
+                                           transition: all 0.2s;
+                                           display: flex;
+                                           align-items: center;
+                                           gap: 6px;"
+                                    onmouseover="this.style.background='#dc2626'; this.style.transform='translateY(-2px)'"
+                                    onmouseout="this.style.background='#ef4444'; this.style.transform='translateY(0)'">
+                                <i class="fas fa-times"></i>
+                                Rechazar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        
         <!-- Mis Grupos Section -->
         <div class="section-header">
             <h4><i class="fas fa-users me-2"></i>Mis Grupos</h4>
@@ -619,9 +1267,9 @@
             <span>Comunidad</span>
         </a>
         
-        <a href="/coach/dashboard-v2?module=overview" class="bottom-nav-item">
-            <i class="fas fa-chart-pie"></i>
-            <span>Overview</span>
+        <a href="/coach/dashboard-v2" class="bottom-nav-item">
+            <i class="fas fa-th-large"></i>
+            <span>Dashboard</span>
         </a>
         
         <button class="bottom-nav-item" @click="showDrawer = true">
@@ -694,16 +1342,342 @@
         </div>
     </div>
     
+    <!-- Create Community Modal -->
+    <div x-show="showCreateModal" 
+         x-cloak
+         @click.self="showCreateModal = false"
+         class="dashboard-drawer-backdrop"
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10001; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;">
+        <div class="modal-content" @click.stop style="background: white; border-radius: var(--radius-2xl); padding: 2rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1.5rem; font-weight: var(--font-weight-semibold);">
+                    <i class="fas fa-users me-2" style="color: var(--purple-start);"></i>
+                    Crear Nueva Comunidad
+                </h3>
+                <button @click="showCreateModal = false" style="background: none; border: none; font-size: 1.5rem; color: var(--gray-500); cursor: pointer; padding: 0; line-height: 1;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form @submit.prevent="createCommunity">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">Nombre *</label>
+                    <input x-model="newCommunity.name" type="text" required maxlength="100" 
+                           style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); font-size: 1rem;"
+                           placeholder="Ej: Coaches de Liderazgo">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">Descripción</label>
+                    <textarea x-model="newCommunity.description" maxlength="500" rows="4"
+                              style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); font-size: 1rem; resize: vertical;"
+                              placeholder="Describe el propósito de tu comunidad..."></textarea>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" x-model="newCommunity.is_private" 
+                               style="margin-right: 0.5rem; width: 1.25rem; height: 1.25rem;">
+                        <span style="font-weight: var(--font-weight-medium); color: var(--gray-700);">
+                            <i class="fas fa-lock me-2" style="color: var(--purple-start);"></i>
+                            Comunidad Privada (solo por invitación)
+                        </span>
+                    </label>
+                </div>
+                
+                <div x-show="error" x-text="error" 
+                     style="background: var(--error-light); color: var(--error); padding: 0.75rem; border-radius: var(--radius-lg); margin-bottom: 1rem; font-size: 0.875rem;">
+                </div>
+                
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" @click="showCreateModal = false" 
+                            style="padding: 0.75rem 1.5rem; border: 1px solid var(--gray-300); background: white; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--font-weight-medium);">
+                        Cancelar
+                    </button>
+                    <button type="submit" :disabled="loading" 
+                            style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); color: white; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--font-weight-medium);">
+                        <span x-show="!loading">Crear Comunidad</span>
+                        <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Creando...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Community Detail Modal -->
+    <div x-show="showDetailModal" 
+         x-cloak
+         @click.self="showDetailModal = false"
+         class="dashboard-drawer-backdrop"
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10001; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;">
+        <div class="modal-content" @click.stop style="background: white; border-radius: var(--radius-2xl); padding: 2rem; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1.5rem; font-weight: var(--font-weight-semibold);" x-text="selectedCommunity?.name"></h3>
+                <button @click="showDetailModal = false" style="background: none; border: none; font-size: 1.5rem; color: var(--gray-500); cursor: pointer; padding: 0; line-height: 1;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <template x-if="selectedCommunity">
+                <div>
+                    <p style="color: var(--gray-600); margin-bottom: 1.5rem;" x-text="selectedCommunity.description"></p>
+                    
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                        <span style="display: flex; align-items: center; color: var(--gray-600);">
+                            <i class="fas fa-users me-2"></i>
+                            <span x-text="selectedCommunity.members?.length || 0"></span> miembros
+                        </span>
+                        <span x-show="selectedCommunity.is_private" style="display: flex; align-items: center; color: var(--purple-start);">
+                            <i class="fas fa-lock me-2"></i> Privada
+                        </span>
+                    </div>
+                    
+                    <!-- Admin Actions -->
+                    <div x-show="selectedCommunity.my_role === 'admin' || selectedCommunity.my_role === 'creator'" style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem;">
+                        <button @click="showInviteModal = true" 
+                                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); color: white; border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: 0.875rem;">
+                            <i class="fas fa-user-plus me-2"></i>Invitar Coach
+                        </button>
+                    </div>
+                    
+                    <!-- Members List -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="font-size: 1.125rem; font-weight: var(--font-weight-semibold); margin-bottom: 1rem;">Miembros</h4>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <template x-for="member in selectedCommunity.members" :key="member.coach_id">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--gray-50); border-radius: var(--radius-lg);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 2.5rem; height: 2.5rem; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: var(--font-weight-semibold);">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: var(--font-weight-medium);" x-text="member.coach_name"></div>
+                                            <div style="font-size: 0.75rem; color: var(--gray-500);" x-text="member.role === 'creator' ? 'Creador' : member.role === 'admin' ? 'Administrador' : member.role === 'moderator' ? 'Moderador' : 'Miembro'"></div>
+                                        </div>
+                                    </div>
+                                    <div x-show="(selectedCommunity.my_role === 'admin' || selectedCommunity.my_role === 'creator') && member.role !== 'creator'" style="display: flex; gap: 0.5rem;">
+                                        <button @click="removeMember(member.coach_id)" 
+                                                style="padding: 0.25rem 0.75rem; background: var(--error); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.75rem;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Content -->
+                    <div x-show="selectedCommunity.recent_content?.length > 0">
+                        <h4 style="font-size: 1.125rem; font-weight: var(--font-weight-semibold); margin-bottom: 1rem;">Contenido Reciente</h4>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <template x-for="content in selectedCommunity.recent_content" :key="content.id">
+                                <div style="padding: 0.75rem; background: var(--gray-50); border-radius: var(--radius-lg);">
+                                    <div style="font-weight: var(--font-weight-medium); margin-bottom: 0.25rem;" x-text="content.title"></div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                        <span x-text="content.author_name"></span> • 
+                                        <span x-text="content.content_type"></span> • 
+                                        <span x-text="new Date(content.shared_at).toLocaleDateString()"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Invite Member Modal -->
+    <div x-show="showInviteModal" 
+         x-cloak
+         @click.self="showInviteModal = false"
+         class="modal-backdrop-custom"
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); z-index: 10002; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="modal-content" @click.stop style="background: white; border-radius: 20px; padding: 0; max-width: 520px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05); max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+            <form @submit.prevent="inviteMember" style="display: flex; flex-direction: column; height: 100%;">
+            <div style="flex: 1; overflow-y: auto;">
+            <!-- Header estilo Figma -->
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 2rem 2rem 1.75rem; position: relative;">
+                <button type="button" @click="showInviteModal = false" 
+                        style="position: absolute; top: 1rem; right: 1rem; background: rgba(255, 255, 255, 0.15); border: none; color: white; width: 2rem; height: 2rem; border-radius: 8px; cursor: pointer; font-size: 1.125rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; backdrop-filter: blur(10px);"
+                        onmouseover="this.style.background='rgba(255, 255, 255, 0.25)'; this.style.transform='scale(1.05)'"
+                        onmouseout="this.style.background='rgba(255, 255, 255, 0.15)'; this.style.transform='scale(1)'">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="width: 3rem; height: 3rem; background: rgba(255, 255, 255, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                        <i class="fas fa-user-plus" style="font-size: 1.25rem; color: white;"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: white; letter-spacing: -0.025em;">
+                            Invitar Coach
+                        </h3>
+                        <p style="margin: 0.25rem 0 0; font-size: 0.875rem; color: rgba(255, 255, 255, 0.8); font-weight: 400;">
+                            Agrega un nuevo coach a la comunidad
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido -->
+            <div style="padding: 2rem;">
+                <!-- Método de invitación -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 1rem; color: #0f172a; font-size: 0.875rem; letter-spacing: -0.01em;">
+                        Método de invitación
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+                        <!-- Botón Email -->
+                        <button type="button" 
+                                @click="inviteMethod = 'email'"
+                                style="padding: 1rem; border-radius: 12px; border: 2px solid; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.625rem; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative;"
+                                :style="inviteMethod === 'email' ? 'background: #6366f1; color: white; border-color: #6366f1; box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.1); transform: translateY(-2px);' : 'background: #f8fafc; color: #64748b; border-color: #e2e8f0;'"
+                                onmouseover="if(this.style.background !== 'rgb(99, 102, 241)') { this.style.borderColor='#cbd5e1'; this.style.background='#f1f5f9'; this.style.transform='translateY(-1px)'; }"
+                                onmouseout="if(this.style.background !== 'rgb(99, 102, 241)') { this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.transform='translateY(0)'; }">
+                            <div style="width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 10px;"
+                                 :style="inviteMethod === 'email' ? 'background: rgba(255, 255, 255, 0.2);' : 'background: white; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                            </div>
+                            <span style="font-size: 0.875rem; font-weight: 600; letter-spacing: -0.01em;">Email</span>
+                        </button>
+                        
+                        <!-- Botón WhatsApp -->
+                        <button type="button" 
+                                @click="inviteMethod = 'whatsapp'"
+                                style="padding: 1rem; border-radius: 12px; border: 2px solid; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.625rem; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative;"
+                                :style="inviteMethod === 'whatsapp' ? 'background: #25D366; color: white; border-color: #25D366; box-shadow: 0 10px 25px -5px rgba(37, 211, 102, 0.4), 0 0 0 1px rgba(37, 211, 102, 0.1); transform: translateY(-2px);' : 'background: #f8fafc; color: #64748b; border-color: #e2e8f0;'"
+                                onmouseover="if(this.style.background !== 'rgb(37, 211, 102)') { this.style.borderColor='#cbd5e1'; this.style.background='#f1f5f9'; this.style.transform='translateY(-1px)'; }"
+                                onmouseout="if(this.style.background !== 'rgb(37, 211, 102)') { this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.transform='translateY(0)'; }">
+                            <div style="width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 10px;"
+                                 :style="inviteMethod === 'whatsapp' ? 'background: rgba(255, 255, 255, 0.2);' : 'background: white; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                </svg>
+                            </div>
+                            <span style="font-size: 0.875rem; font-weight: 600; letter-spacing: -0.01em;">WhatsApp</span>
+                        </button>
+                        
+                        <!-- Botón SMS -->
+                        <button type="button" 
+                                @click="inviteMethod = 'sms'"
+                                style="padding: 1rem; border-radius: 12px; border: 2px solid; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.625rem; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative;"
+                                :style="inviteMethod === 'sms' ? 'background: #10b981; color: white; border-color: #10b981; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1); transform: translateY(-2px);' : 'background: #f8fafc; color: #64748b; border-color: #e2e8f0;'"
+                                onmouseover="if(this.style.background !== 'rgb(16, 185, 129)') { this.style.borderColor='#cbd5e1'; this.style.background='#f1f5f9'; this.style.transform='translateY(-1px)'; }"
+                                onmouseout="if(this.style.background !== 'rgb(16, 185, 129)') { this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.transform='translateY(0)'; }">
+                            <div style="width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 10px;"
+                                 :style="inviteMethod === 'sms' ? 'background: rgba(255, 255, 255, 0.2);' : 'background: white; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                            </div>
+                            <span style="font-size: 0.875rem; font-weight: 600; letter-spacing: -0.01em;">SMS</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Campo dinámico según método -->
+                <div x-show="inviteMethod === 'email'" x-transition style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #0f172a; font-size: 0.875rem; letter-spacing: -0.01em;">Email *</label>
+                    <input x-model="inviteEmail" type="email" :required="inviteMethod === 'email'" 
+                           style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.9375rem; transition: all 0.2s; background: #f8fafc;"
+                           placeholder="coach@ejemplo.com"
+                           onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 4px rgba(99, 102, 241, 0.1)'; this.style.background='white';"
+                           onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.background='#f8fafc';">
+                </div>
+                
+                <div x-show="inviteMethod === 'whatsapp' || inviteMethod === 'sms'" x-transition style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #0f172a; font-size: 0.875rem; letter-spacing: -0.01em; display: flex; align-items: center; gap: 0.5rem;" x-text="inviteMethod === 'whatsapp' ? 'WhatsApp *' : 'Teléfono *'"></label>
+                    <input x-model="invitePhone" type="tel" :required="inviteMethod !== 'email'" 
+                           style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.9375rem; transition: all 0.2s; background: #f8fafc;"
+                           placeholder="+56 9 1234 5678"
+                           onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 4px rgba(16, 185, 129, 0.1)'; this.style.background='white';"
+                           onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.background='#f8fafc';">
+                    <div style="display: flex; align-items: center; gap: 0.375rem; margin-top: 0.5rem;">
+                        <svg width="14" height="14" fill="#64748b" viewBox="0 0 20 20" style="flex-shrink: 0;">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        <small style="color: #64748b; font-size: 0.75rem;">Incluye código de país (ej: +56 para Chile)</small>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #0f172a; font-size: 0.875rem; letter-spacing: -0.01em;">Nombre *</label>
+                    <input x-model="inviteName" type="text" required 
+                           style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.9375rem; transition: all 0.2s; background: #f8fafc;"
+                           placeholder="Nombre completo del coachee"
+                           onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 4px rgba(99, 102, 241, 0.1)'; this.style.background='white';"
+                           onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.background='#f8fafc';">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #0f172a; font-size: 0.875rem; letter-spacing: -0.01em;">Mensaje (opcional)</label>
+                    <textarea x-model="inviteMessage" rows="3" 
+                              style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.9375rem; resize: vertical; transition: all 0.2s; font-family: inherit; background: #f8fafc;"
+                              placeholder="Agrega un mensaje personalizado de bienvenida para tu coachee..."
+                              onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 4px rgba(99, 102, 241, 0.1)'; this.style.background='white';"
+                              onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'; this.style.background='#f8fafc';"></textarea>
+                </div>
+                
+                <!-- Mensajes de error/éxito -->
+                <div x-show="error" x-transition style="padding: 1rem 1.25rem; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); color: #991b1b; border-radius: 10px; margin-bottom: 1rem; font-size: 0.875rem; border: 2px solid #fecaca; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);">
+                    <div style="width: 2rem; height: 2rem; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 1rem; color: #ef4444;"></i>
+                    </div>
+                    <span x-text="error" style="flex: 1; font-weight: 500;"></span>
+                </div>
+                
+                <div x-show="inviteSuccess" x-transition style="padding: 1rem 1.25rem; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); color: #065f46; border-radius: 10px; margin-bottom: 1rem; font-size: 0.875rem; border: 2px solid #bbf7d0; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);">
+                    <div style="width: 2rem; height: 2rem; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-check-circle" style="font-size: 1rem; color: #10b981;"></i>
+                    </div>
+                    <span style="font-weight: 500;">Invitación enviada exitosamente</span>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div style="padding: 1.5rem 2rem; background: #fafafa; border-top: 1px solid #f1f5f9; margin: 0 -2rem -2rem -2rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" @click="showInviteModal = false" 
+                            style="padding: 0.75rem 1.5rem; background: white; color: #475569; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 0.875rem;"
+                            onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.08)';"
+                            onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        Cancelar
+                    </button>
+                    <button type="submit" :disabled="loading" 
+                            style="padding: 0.75rem 2rem; background: #6366f1 !important; color: white !important; border: 2px solid #6366f1; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 0.875rem; letter-spacing: -0.01em; box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.1); display: flex; align-items: center; gap: 0.5rem;"
+                            :style="loading ? 'opacity: 0.6; cursor: not-allowed;' : ''"
+                            onmouseover="if(!this.disabled) { this.style.background='#5558e3'; this.style.borderColor='#5558e3'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 28px -5px rgba(99, 102, 241, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.1)'; }"
+                            onmouseout="if(!this.disabled) { this.style.background='#6366f1'; this.style.borderColor='#6366f1'; this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 25px -5px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.1)'; }">
+                        <span x-show="!loading" style="display: flex; align-items: center; gap: 0.5rem; color: white;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                            Enviar invitación
+                        </span>
+                        <span x-show="loading" style="display: flex; align-items: center; gap: 0.5rem; color: white;">
+                            <i class="fas fa-spinner fa-spin" style="color: white;"></i>
+                            Enviando...
+                        </span>
+                    </button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+    
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        
-        // Cargar información al iniciar
-        document.addEventListener('DOMContentLoaded', function() {
-            loadUserInfo();
-            loadGroups();
-        });
+        // Toggle profile menu
+        function toggleComunidadProfileMenu() {
+            const menu = document.getElementById('comunidadProfileMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            }
+        }
         
         // Toggle dropdown menu
         function toggleComunidadDropdown(event) {
@@ -723,151 +1697,29 @@
             }
         });
         
-        // Función para cargar información del usuario
-        async function loadUserInfo() {
-            try {
-                const response = await fetch('/api/coach/profile');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.profile) {
-                        const profile = data.profile;
-                        const displayName = profile.full_name || profile.username || 'Coach';
-                        
-                        // Update coach name in header dropdown
-                        const coachNameElement = document.getElementById('comunidadCoachName');
-                        if (coachNameElement) {
-                            coachNameElement.textContent = displayName;
-                        }
-                        updateHeaderInfo(profile.avatar_url, displayName);
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading user info:', error);
-            }
-        }
-        
-        // Función para actualizar header
-        function updateHeaderInfo(avatarUrl, displayName) {
-            const headerAvatar = document.getElementById('headerAvatar');
-            if (headerAvatar) {
-                if (avatarUrl) {
-                    // Si hay avatar, mostrar imagen
-                    headerAvatar.innerHTML = `<img src="${avatarUrl}" alt="${displayName}" style="width: 100%; height: 100%; object-fit: cover;">`;
-                } else if (displayName) {
-                    // Si no hay avatar, mostrar inicial
-                    const initial = displayName.charAt(0).toUpperCase();
-                    headerAvatar.innerHTML = initial;
-                }
-            }
-            
-            const welcomeMessage = document.getElementById('welcomeMessageComunidad');
-            if (welcomeMessage && displayName) {
-                welcomeMessage.textContent = displayName;
-            }
-        }
-        
-        // Función para cargar grupos (simulado por ahora)
-        function loadGroups() {
-            
-            // Por ahora mostrar datos de ejemplo
-            const myGroups = [
-                {
-                    id: 1,
-                    name: 'Coaches de Liderazgo',
-                    description: 'Grupo para compartir estrategias y herramientas de liderazgo efectivo',
-                    members: 24,
-                    isOwner: true,
-                    icon: '👥'
-                },
-                {
-                    id: 2,
-                    name: 'Desarrollo Personal',
-                    description: 'Espacio para discutir técnicas de crecimiento personal y profesional',
-                    members: 18,
-                    isOwner: true,
-                    icon: '🌱'
-                }
-            ];
-            
-            const otherGroups = [
-                {
-                    id: 3,
-                    name: 'Coaching Ejecutivo',
-                    description: 'Red de coaches especializados en alta dirección y ejecutivos',
-                    members: 42,
-                    isOwner: false,
-                    icon: '💼'
-                },
-                {
-                    id: 4,
-                    name: 'Mindfulness & Bienestar',
-                    description: 'Prácticas de mindfulness aplicadas al coaching',
-                    members: 35,
-                    isOwner: false,
-                    icon: '🧘'
-                },
-                {
-                    id: 5,
-                    name: 'Coaching Deportivo',
-                    description: 'Técnicas de coaching aplicadas al rendimiento deportivo',
-                    members: 28,
-                    isOwner: false,
-                    icon: '⚽'
-                }
-            ];
-            
-            displayGroups(myGroups, 'myGroupsContainer', true);
-            displayGroups(otherGroups, 'otherGroupsContainer', false);
-        }
-        
-        // Función para mostrar grupos
-        function displayGroups(groups, containerId, isMyGroups) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            
-            if (groups.length === 0) {
-                return; // Mantener empty state
-            }
-            
-            let groupsHTML = '';
-            groups.forEach(group => {
-                groupsHTML += `
-                    <div class="group-card" onclick="openGroup(${group.id})">
-                        <div class="group-image">
-                            ${group.icon}
-                        </div>
-                        <div class="group-body">
-                            <div class="group-title">${group.name}</div>
-                            <div class="group-description">${group.description}</div>
-                            <div class="group-meta">
-                                <div class="group-members">
-                                    <i class="fas fa-user-friends"></i>
-                                    <span>${group.members} miembros</span>
-                                </div>
-                                ${group.isOwner ? '<span class="group-badge">Owner</span>' : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = groupsHTML;
-        }
-        
-        // Función para abrir grupo
-        function openGroup(groupId) {
-            alert(`Funcionalidad de grupo ${groupId} en desarrollo`);
-        }
-        
-        // Función para abrir modal de crear grupo
-        function openCreateGroupModal() {
-            alert('Funcionalidad de crear grupo en desarrollo');
-        }
-        
         // Función para confirmar logout
         function confirmLogout() {
             if (confirm('¿Estás seguro que deseas salir?')) {
-                window.location.href = '/coach-login';
+                fetch('/api/coach/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(() => {
+                    window.location.href = '/coach-login';
+                })
+                .catch(error => {
+                    console.error('Error al cerrar sesión:', error);
+                    window.location.href = '/coach-login';
+                });
+            }
+        }
+        
+        // Open create group modal (for button onclick)
+        function openCreateGroupModal() {
+            if (window.communityAppInstance) {
+                window.communityAppInstance.openCreateModal();
             }
         }
     </script>

@@ -7181,11 +7181,14 @@
                                         <form id="assignContentForm">
                                             <div class="mb-3">
                                                 <label for="coacheeSelect" class="form-label">
-                                                    <i class="fas fa-user me-1"></i>Seleccionar Coachee
+                                                    <i class="fas fa-user me-1"></i>Asignar a Coachee (opcional)
                                                 </label>
-                                                <select class="form-select" id="coacheeSelect" required>
-                                                    <option value="">Selecciona un coachee...</option>
+                                                <select class="form-select" id="coacheeSelect">
+                                                    <option value="">-- No asignar a ningún coachee --</option>
                                                 </select>
+                                                <div class="form-text">
+                                                    <i class="fas fa-info-circle me-1"></i>Deja vacío para guardarlo solo en tu biblioteca o compartirlo en comunidad
+                                                </div>
                                             </div>
                                             
                                             <div class="mb-3">
@@ -7223,10 +7226,51 @@
                                                     placeholder="15" min="1" max="999">
                                             </div>
                                             
+                                            <!-- OPCIONES DE PUBLICACIÓN -->
+                                            <div class="mb-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 10px; padding: 1rem; border: 1px solid #86efac;">
+                                                <div style="margin-bottom: 0.75rem;">
+                                                    <h6 style="color: #15803d; font-weight: 600; margin: 0;">
+                                                        <i class="fas fa-share-alt me-1"></i>¿Dónde publicar este contenido?
+                                                    </h6>
+                                                    <div class="form-text" style="font-size: 0.75rem; color: #166534; margin-top: 0.25rem;">
+                                                        Puedes seleccionar una o más opciones
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Opción: Guardar en mi biblioteca -->
+                                                <div class="form-check mb-2">
+                                                    <input type="checkbox" class="form-check-input" id="saveToLibrary" 
+                                                        style="border-color: #22c55e; cursor: pointer;" checked>
+                                                    <label class="form-check-label" for="saveToLibrary" style="cursor: pointer; color: #166534;">
+                                                        <i class="fas fa-bookmark me-1"></i>Guardar en mi biblioteca personal
+                                                    </label>
+                                                </div>
+                                                
+                                                <!-- Opción: Compartir en comunidad -->
+                                                <div class="form-check mb-2">
+                                                    <input type="checkbox" class="form-check-input" id="shareWithCommunity" 
+                                                        style="border-color: #22c55e; cursor: pointer;"
+                                                        onchange="document.getElementById('communitySelectGroup').style.display = this.checked ? 'block' : 'none'">
+                                                    <label class="form-check-label" for="shareWithCommunity" style="cursor: pointer; color: #166534;">
+                                                        <i class="fas fa-users me-1"></i>Compartir en comunidad
+                                                    </label>
+                                                </div>
+                                                
+                                                <div id="communitySelectGroup" style="display: none; margin-top: 0.5rem; margin-left: 1.5rem;">
+                                                    <label for="communitySelect" class="form-label mb-1" style="font-size: 0.875rem; color: #166534;">
+                                                        <i class="fas fa-layer-group me-1"></i>Seleccionar comunidad
+                                                    </label>
+                                                    <select class="form-select" id="communitySelect" style="border-color: #86efac;">
+                                                        <option value="">-- Selecciona una comunidad --</option>
+                                                        <!-- Se cargará dinámicamente -->
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
                                             <div class="d-flex gap-2">
                                                 <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); border: none; padding: 0.625rem 1.25rem; font-weight: 600; border-radius: 8px; box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px rgba(139, 92, 246, 0.3)'">
                                                     <i class="fas fa-paper-plane me-1"></i>
-                                                    Asignar Video
+                                                    Publicar Contenido
                                                 </button>
                                                 <button type="button" class="btn btn-secondary" onclick="resetAssignForm()" style="background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; padding: 0.625rem 1.25rem; font-weight: 600; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
                                                     <i class="fas fa-undo me-1"></i>
@@ -7595,36 +7639,96 @@
                                 </div>
                             </div>
                             
-                            <!-- Selector de coachees -->
-                            <div style="margin-bottom: 1rem;">
-                                <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 0.5rem; font-size: 0.875rem;">
-                                    <i class="fas fa-users me-1" style="color: #764ba2; font-size: 0.875rem;"></i>Compartir con:
-                                </label>
-                                
-                                <!-- Search box -->
-                                <div style="position: relative; margin-bottom: 0.75rem;">
-                                    <input type="text" id="shareCoacheeSearch" placeholder="Buscar coachee..." 
-                                           style="width: 100%; padding: 0.625rem 0.875rem 0.625rem 2.5rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; transition: all 0.2s;"
-                                           onfocus="this.style.borderColor='#764ba2'; this.style.boxShadow='0 0 0 3px rgba(118, 75, 162, 0.1)'"
-                                           onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'"
-                                           onkeyup="filterCoachees(this.value)">
-                                    <i class="fas fa-search" style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #a0aec0; font-size: 0.875rem;"></i>
-                                </div>
-                                
-                                <!-- Lista de coachees -->
-                                <div id="shareCoacheesList" style="max-height: 200px; overflow-y: auto; border: 2px solid #e2e8f0; border-radius: 10px; padding: 0.375rem;">
-                                    <!-- Se llenará dinámicamente -->
-                                </div>
-                            </div>
+                            <!-- Pestañas: Coachees / Comunidades -->
+                            <ul class="nav nav-pills mb-3" role="tablist" style="background: #f9fafb; padding: 0.375rem; border-radius: 10px; gap: 0.375rem; display: grid; grid-template-columns: repeat(2, 1fr);">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active w-100" id="share-coachees-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#share-coachees-pane" type="button" role="tab"
+                                        style="border-radius: 8px; font-weight: 600; padding: 0.5rem; transition: all 0.2s; font-size: 0.875rem;">
+                                        <i class="fas fa-user-friends me-1"></i>Coachees
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link w-100" id="share-communities-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#share-communities-pane" type="button" role="tab"
+                                        style="border-radius: 8px; font-weight: 600; padding: 0.5rem; transition: all 0.2s; font-size: 0.875rem;">
+                                        <i class="fas fa-users me-1"></i>Comunidades
+                                    </button>
+                                </li>
+                            </ul>
                             
-                            <!-- Contador de seleccionados -->
-                            <div style="background: #f0f4ff; border-left: 3px solid #764ba2; padding: 0.625rem 0.875rem; border-radius: 6px;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <i class="fas fa-info-circle" style="color: #764ba2; font-size: 1rem;"></i>
-                                    <p style="margin: 0; color: #4a5568; font-size: 0.875rem;">
-                                        <span id="shareSelectedCount" style="font-weight: 700; color: #764ba2;">0</span> 
-                                        coachee(s) seleccionado(s)
-                                    </p>
+                            <!-- Contenido de las pestañas -->
+                            <div class="tab-content">
+                                <!-- Panel de Coachees -->
+                                <div class="tab-pane fade show active" id="share-coachees-pane" role="tabpanel">
+                                    <!-- Selector de coachees -->
+                                    <div style="margin-bottom: 1rem;">
+                                        <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                            <i class="fas fa-user-friends me-1" style="color: #764ba2; font-size: 0.875rem;"></i>Compartir con:
+                                        </label>
+                                        
+                                        <!-- Search box -->
+                                        <div style="position: relative; margin-bottom: 0.75rem;">
+                                            <input type="text" id="shareCoacheeSearch" placeholder="Buscar coachee..." 
+                                                   style="width: 100%; padding: 0.625rem 0.875rem 0.625rem 2.5rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; transition: all 0.2s;"
+                                                   onfocus="this.style.borderColor='#764ba2'; this.style.boxShadow='0 0 0 3px rgba(118, 75, 162, 0.1)'"
+                                                   onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'"
+                                                   onkeyup="filterCoachees(this.value)">
+                                            <i class="fas fa-search" style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #a0aec0; font-size: 0.875rem;"></i>
+                                        </div>
+                                        
+                                        <!-- Lista de coachees -->
+                                        <div id="shareCoacheesList" style="max-height: 200px; overflow-y: auto; border: 2px solid #e2e8f0; border-radius: 10px; padding: 0.375rem;">
+                                            <!-- Se llenará dinámicamente -->
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Contador de seleccionados -->
+                                    <div style="background: #f0f4ff; border-left: 3px solid #764ba2; padding: 0.625rem 0.875rem; border-radius: 6px;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fas fa-info-circle" style="color: #764ba2; font-size: 1rem;"></i>
+                                            <p style="margin: 0; color: #4a5568; font-size: 0.875rem;">
+                                                <span id="shareSelectedCount" style="font-weight: 700; color: #764ba2;">0</span> 
+                                                coachee(s) seleccionado(s)
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Panel de Comunidades -->
+                                <div class="tab-pane fade" id="share-communities-pane" role="tabpanel">
+                                    <!-- Selector de comunidades -->
+                                    <div style="margin-bottom: 1rem;">
+                                        <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                            <i class="fas fa-users me-1" style="color: #764ba2; font-size: 0.875rem;"></i>Compartir con:
+                                        </label>
+                                        
+                                        <!-- Search box -->
+                                        <div style="position: relative; margin-bottom: 0.75rem;">
+                                            <input type="text" id="shareCommunitySearch" placeholder="Buscar comunidad..." 
+                                                   style="width: 100%; padding: 0.625rem 0.875rem 0.625rem 2.5rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; transition: all 0.2s;"
+                                                   onfocus="this.style.borderColor='#764ba2'; this.style.boxShadow='0 0 0 3px rgba(118, 75, 162, 0.1)'"
+                                                   onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'"
+                                                   onkeyup="filterCommunities(this.value)">
+                                            <i class="fas fa-search" style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #a0aec0; font-size: 0.875rem;"></i>
+                                        </div>
+                                        
+                                        <!-- Lista de comunidades -->
+                                        <div id="shareCommunitiesList" style="max-height: 200px; overflow-y: auto; border: 2px solid #e2e8f0; border-radius: 10px; padding: 0.375rem;">
+                                            <!-- Se llenará dinámicamente -->
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Contador de seleccionados -->
+                                    <div style="background: #f0f4ff; border-left: 3px solid #764ba2; padding: 0.625rem 0.875rem; border-radius: 6px;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fas fa-info-circle" style="color: #764ba2; font-size: 1rem;"></i>
+                                            <p style="margin: 0; color: #4a5568; font-size: 0.875rem;">
+                                                <span id="shareSelectedCommunitiesCount" style="font-weight: 700; color: #764ba2;">0</span> 
+                                                comunidad(es) seleccionada(s)
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -8728,6 +8832,52 @@
 
 .coachee-item.selected {
     background: #f0f4ff;
+}
+
+/* Estilos para items de comunidad */
+.community-item {
+    padding: 0.625rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 0.375rem;
+}
+
+.community-item:hover {
+    background: #f8f9fa;
+}
+
+.community-item.selected {
+    background: #f0f4ff;
+}
+
+.community-checkbox {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #cbd5e0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    background: white;
+}
+
+.community-checkbox i {
+    color: white;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.community-checkbox.checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+}
+
+.community-checkbox.checked i {
+    opacity: 1;
 }
 
 /* Botones hover */
@@ -9836,6 +9986,8 @@ window.dashboardApp = function() {
                     case 'contenido':
                         // Poblar selectores de coachees primero
                         await this.populateCoacheeSelectors();
+                        // Cargar comunidades para compartir contenido
+                        await this.loadCommunitiesForContentSharing();
                         // Luego cargar contenido
                         await this.loadAssignedContent();
                         break;
@@ -12616,6 +12768,50 @@ window.dashboardApp = function() {
             }
         },
         
+        // Cargar comunidades para compartir contenido
+        async loadCommunitiesForContentSharing() {
+            try {
+                console.log('🔍 Cargando comunidades para compartir...');
+                const response = await fetch('/api/communities', {
+                    credentials: 'include',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                console.log('📡 Response status:', response.status);
+                const data = await response.json();
+                console.log('📦 Data received:', data);
+                
+                if (data.success && data.communities) {
+                    console.log(`✅ ${data.communities.length} comunidades encontradas`);
+                    const select = document.getElementById('communitySelect');
+                    if (select) {
+                        // Limpiar opciones existentes excepto la primera
+                        select.innerHTML = '<option value="">-- Selecciona una comunidad --</option>';
+                        
+                        // Agregar comunidades donde soy miembro
+                        data.communities.forEach(comm => {
+                            console.log(`   Agregando comunidad: ${comm.name} (ID: ${comm.id})`);
+                            const option = document.createElement('option');
+                            option.value = comm.id;
+                            option.textContent = comm.name;
+                            // Marcar visualmente si soy el creador
+                            if (comm.is_creator) {
+                                option.textContent += ' ⭐';
+                            }
+                            select.appendChild(option);
+                        });
+                        console.log(`✅ Dropdown actualizado con ${data.communities.length} opciones`);
+                    } else {
+                        console.error('❌ No se encontró el elemento #communitySelect');
+                    }
+                } else {
+                    console.warn('⚠️ No hay comunidades o respuesta incorrecta:', data);
+                }
+            } catch (error) {
+                console.error('❌ Error loading communities for sharing:', error);
+            }
+        },
+        
         // Cargar contenido asignado
         async loadAssignedContent() {
             try {
@@ -15308,8 +15504,14 @@ Para acceder, usa estas credenciales:
             const description = document.getElementById('contentDescription').value;
             const duration = document.getElementById('videoDuration').value;
             
-            if (!coacheeId) {
-                showNotification('Por favor selecciona un coachee', 'error');
+            // Obtener opciones de publicación
+            const saveToLibrary = document.getElementById('saveToLibrary').checked;
+            const shareWithCommunity = document.getElementById('shareWithCommunity').checked;
+            const communityId = shareWithCommunity ? document.getElementById('communitySelect').value : null;
+            
+            // Validar que al menos se seleccione una opción
+            if (!saveToLibrary && !shareWithCommunity && !coacheeId) {
+                showNotification('Debes seleccionar al menos una opción: biblioteca, comunidad o coachee', 'error');
                 return;
             }
             
@@ -15323,6 +15525,12 @@ Para acceder, usa estas credenciales:
                 return;
             }
             
+            // Validar comunidad si está marcado para compartir
+            if (shareWithCommunity && !communityId) {
+                showNotification('Por favor selecciona una comunidad para compartir', 'error');
+                return;
+            }
+            
             // Detectar plataforma y validar URL
             const platform = detectVideoPlatform(videoUrl);
             if (!platform) {
@@ -15332,7 +15540,7 @@ Para acceder, usa estas credenciales:
             
             // Extraer ID del video según la plataforma
             let videoId = null;
-            const contentType = 'video'; // Siempre usar 'video' como tipo
+            const contentType = 'video';
             
             if (platform === 'youtube') {
                 videoId = extractYouTubeVideoId(videoUrl);
@@ -15349,23 +15557,44 @@ Para acceder, usa estas credenciales:
             }
             
             try {
+                // Preparar payload base
+                const payload = {
+                    title: title,
+                    description: description,
+                    content_type: contentType,
+                    content_url: videoUrl,
+                    duration: duration ? parseInt(duration) : null,
+                    save_to_library: saveToLibrary
+                };
+                
+                // Agregar coachee si se seleccionó
+                if (coacheeId) {
+                    payload.coachee_id = coacheeId;
+                }
+                
+                // Agregar datos de comunidad si aplica
+                if (shareWithCommunity && communityId) {
+                    payload.community_id = parseInt(communityId);
+                    payload.shared_with_community = true;
+                }
+                
                 const response = await fetch('/api/coach/content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        coachee_id: coacheeId,
-                        title: title,
-                        description: description,
-                        content_type: contentType,
-                        content_url: videoUrl,
-                        duration: duration ? parseInt(duration) : null
-                    })
+                    body: JSON.stringify(payload)
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    showNotification('✅ Video asignado correctamente', 'success');
+                    // Construir mensaje de éxito dinámico
+                    let destinations = [];
+                    if (saveToLibrary) destinations.push('tu biblioteca');
+                    if (coacheeId) destinations.push('coachee');
+                    if (shareWithCommunity) destinations.push('comunidad');
+                    
+                    const msg = `✅ Contenido publicado en: ${destinations.join(', ')}`;
+                    showNotification(msg, 'success');
                     resetAssignForm();
                 } else {
                     showNotification('❌ ' + (data.error || 'Error al asignar video'), 'error');
@@ -18305,6 +18534,9 @@ function shareContent(contentId) {
         // Cargar lista de coachees
         loadCoacheesList();
         
+        // Cargar lista de comunidades
+        loadCommunitiesList();
+        
         // Abrir modal
         console.log('🔄 Intentando abrir modal...');
         const modal = new bootstrap.Modal(modalElement, {
@@ -18487,23 +18719,137 @@ function filterCoachees(searchTerm) {
     });
 }
 
+// ============================================
+// FUNCIONES PARA COMPARTIR CON COMUNIDADES
+// ============================================
+
+// Cargar lista de comunidades
+async function loadCommunitiesList() {
+    const listEl = document.getElementById('shareCommunitiesList');
+    listEl.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;"><i class="fas fa-spinner fa-spin me-2"></i>Cargando comunidades...</div>';
+    
+    try {
+        const response = await fetch('/api/communities');
+        if (!response.ok) throw new Error('Error al cargar comunidades');
+        
+        const data = await response.json();
+        const communities = data.communities || [];
+        
+        if (communities.length === 0) {
+            listEl.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #718096;">
+                    <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p style="margin: 0; font-weight: 500;">No hay comunidades disponibles</p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Crea o únete a una comunidad primero</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Renderizar lista de comunidades
+        let html = '';
+        communities.forEach(community => {
+            const isCreator = community.is_creator ? '⭐' : '';
+            html += `
+                <div class="community-item" data-community-id="${community.id}" onclick="toggleCommunitySelection(${community.id})">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div class="community-checkbox" id="community-checkbox-${community.id}">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-users" style="color: white; font-size: 1.125rem;"></i>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #2d3748; font-size: 0.938rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${isCreator} ${community.name || 'Sin nombre'}
+                            </div>
+                            <div style="font-size: 0.813rem; color: #718096; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${community.members_count || 0} miembro(s) · ${community.my_role || 'member'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        listEl.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ Error cargando comunidades:', error);
+        listEl.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #e53e3e;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                <p style="margin: 0; font-weight: 500;">Error al cargar comunidades</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Alternar selección de comunidad
+function toggleCommunitySelection(communityId) {
+    const checkbox = document.getElementById(`community-checkbox-${communityId}`);
+    const item = checkbox.closest('.community-item');
+    
+    if (checkbox.classList.contains('checked')) {
+        checkbox.classList.remove('checked');
+        item.classList.remove('selected');
+    } else {
+        checkbox.classList.add('checked');
+        item.classList.add('selected');
+    }
+    
+    updateSelectedCommunitiesCount();
+}
+
+// Actualizar contador de comunidades seleccionadas
+function updateSelectedCommunitiesCount() {
+    const selected = document.querySelectorAll('.community-checkbox.checked').length;
+    document.getElementById('shareSelectedCommunitiesCount').textContent = selected;
+}
+
+// Filtrar comunidades por búsqueda
+function filterCommunities(searchTerm) {
+    const items = document.querySelectorAll('.community-item');
+    const term = searchTerm.toLowerCase().trim();
+    
+    items.forEach(item => {
+        const name = item.querySelector('div > div:nth-child(1)').textContent.toLowerCase();
+        
+        if (name.includes(term)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
 // Confirmar compartir contenido
 async function confirmShareContent() {
     const contentId = document.getElementById('shareContentModal').dataset.contentId;
-    const selectedCheckboxes = document.querySelectorAll('.coachee-checkbox.checked');
+    const selectedCoacheesCheckboxes = document.querySelectorAll('.coachee-checkbox.checked');
+    const selectedCommunitiesCheckboxes = document.querySelectorAll('.community-checkbox.checked');
     
-    if (selectedCheckboxes.length === 0) {
-        showToast('Selecciona al menos un coachee', 'warning');
+    if (selectedCoacheesCheckboxes.length === 0 && selectedCommunitiesCheckboxes.length === 0) {
+        showToast('Selecciona al menos un coachee o comunidad', 'warning');
         return;
     }
     
     // Obtener IDs de coachees seleccionados
-    const coacheeIds = Array.from(selectedCheckboxes).map(checkbox => {
+    const coacheeIds = Array.from(selectedCoacheesCheckboxes).map(checkbox => {
         const item = checkbox.closest('.coachee-item');
         return parseInt(item.dataset.coacheeId);
     });
     
-    console.log('📤 Compartiendo contenido', contentId, 'con coachees:', coacheeIds);
+    // Obtener IDs de comunidades seleccionadas
+    const communityIds = Array.from(selectedCommunitiesCheckboxes).map(checkbox => {
+        const item = checkbox.closest('.community-item');
+        return parseInt(item.dataset.communityId);
+    });
+    
+    console.log('📤 Compartiendo contenido', contentId);
+    console.log('   - Con coachees:', coacheeIds);
+    console.log('   - Con comunidades:', communityIds);
     
     // Deshabilitar botón y mostrar loading
     const btnShare = event.target;
@@ -18518,7 +18864,8 @@ async function confirmShareContent() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                coachee_ids: coacheeIds
+                coachee_ids: coacheeIds,
+                community_ids: communityIds
             })
         });
         
@@ -18533,16 +18880,34 @@ async function confirmShareContent() {
         const modal = bootstrap.Modal.getInstance(document.getElementById('shareContentModal'));
         modal.hide();
         
-        // Mostrar mensaje de éxito
-        showToast(result.message || `Contenido compartido con ${coacheeIds.length} coachee(s)`, 'success');
+        // Preparar mensaje de éxito
+        let successMsg = 'Contenido compartido exitosamente';
+        if (coacheeIds.length > 0 && communityIds.length > 0) {
+            successMsg = `Contenido compartido con ${coacheeIds.length} coachee(s) y ${communityIds.length} comunidad(es)`;
+        } else if (coacheeIds.length > 0) {
+            successMsg = `Contenido compartido con ${coacheeIds.length} coachee(s)`;
+        } else if (communityIds.length > 0) {
+            successMsg = `Contenido compartido con ${communityIds.length} comunidad(es)`;
+        }
         
-        // Limpiar selecciones
+        showToast(result.message || successMsg, 'success');
+        
+        // Limpiar selecciones de coachees
         document.querySelectorAll('.coachee-checkbox.checked').forEach(cb => {
             cb.classList.remove('checked');
             cb.closest('.coachee-item').classList.remove('selected');
         });
+        
+        // Limpiar selecciones de comunidades
+        document.querySelectorAll('.community-checkbox.checked').forEach(cb => {
+            cb.classList.remove('checked');
+            cb.closest('.community-item').classList.remove('selected');
+        });
+        
         document.getElementById('shareCoacheeSearch').value = '';
+        document.getElementById('shareCommunitySearch').value = '';
         updateSelectedCount();
+        updateSelectedCommunitiesCount();
         
     } catch (error) {
         console.error('❌ Error compartiendo contenido:', error);
