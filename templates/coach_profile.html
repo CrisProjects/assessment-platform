@@ -319,9 +319,117 @@
             height: 100%;
             object-fit: cover;
         }
+        
+        /* Dashboard Drawer - Grid Style */
+        .dashboard-drawer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 24px;
+            padding-bottom: calc(72px + 24px);
+            z-index: 10500;
+            box-shadow: 
+                0 -10px 25px -5px rgba(0, 0, 0, 0.1),
+                0 -4px 10px -3px rgba(0, 0, 0, 0.05);
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .drawer-handle {
+            width: 40px;
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 999px;
+            margin: 0 auto 0.75rem;
+        }
+        
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        
+        .drawer-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+        
+        .drawer-close {
+            background: rgba(0, 0, 0, 0.05);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #6b7280;
+        }
+        
+        .drawer-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .drawer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .drawer-menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 12px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 16px;
+            text-decoration: none;
+            color: #374151;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .drawer-menu-item:hover {
+            background: rgba(79, 70, 229, 0.08);
+            border-color: rgba(79, 70, 229, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .drawer-menu-item i {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #4F46E5;
+        }
+        
+        .drawer-menu-item span {
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body>
+<body x-data="{ showDrawer: false }">
     <!-- Header -->
     <div class="feed-header">
         <a href="/coach-dashboard" class="back-btn">
@@ -416,15 +524,15 @@
             <span>Comunidad</span>
         </a>
         
-        <a href="/coach/dashboard-v2" class="nav-item">
-            <i class="fas fa-th-large"></i>
-            <span>Dashboard</span>
+        <a href="/coach/dashboard-v2?section=overview" class="nav-item">
+            <i class="fas fa-chart-pie"></i>
+            <span>Overview</span>
         </a>
         
-        <a href="/coach-profile" class="nav-item active">
-            <i class="fas fa-user-circle"></i>
-            <span>Perfil</span>
-        </a>
+        <button class="nav-item" @click="showDrawer = true">
+            <i class="fas fa-ellipsis-h"></i>
+            <span>Más</span>
+        </button>
     </nav>
     
     <!-- Avatar Gallery Modal -->
@@ -878,5 +986,77 @@
             }
         });
     </script>
+    
+    <!-- Dashboard Drawer -->
+    <div x-show="showDrawer" 
+         x-cloak
+         @click="showDrawer = false"
+         class="dashboard-drawer-backdrop"
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+        <div class="dashboard-drawer" 
+             @click.stop
+             x-show="showDrawer"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-full"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform translate-y-full">
+            
+            <div class="drawer-handle"></div>
+            
+            <div class="drawer-header">
+                <h3>Navegación Rápida</h3>
+                <button class="drawer-close" @click="showDrawer = false">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="drawer-grid">
+                <a href="/coach/dashboard-v2?section=overview" class="drawer-menu-item">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Overview</span>
+                </a>
+                
+                <a href="/coach/dashboard-v2?section=mis-coachees" class="drawer-menu-item">
+                    <i class="fas fa-users"></i>
+                    <span>Mis Coachees</span>
+                </a>
+                
+                <a href="/coach/dashboard-v2?section=evaluaciones" class="drawer-menu-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Evaluaciones</span>
+                </a>
+                
+                <a href="/coach/dashboard-v2?section=gestion-tareas" class="drawer-menu-item">
+                    <i class="fas fa-tasks"></i>
+                    <span>Gestión de Tareas</span>
+                </a>
+                
+                <a href="/coach/dashboard-v2?section=planes-desarrollo" class="drawer-menu-item">
+                    <i class="fas fa-bullseye"></i>
+                    <span>Planes de Desarrollo</span>
+                </a>
+                
+                <a href="/coach/dashboard-v2?section=contenido" class="drawer-menu-item">
+                    <i class="fas fa-book-open"></i>
+                    <span>Contenido</span>
+                </a>
+                
+                <a href="/coach/dashboard-v2?section=mi-agenda" class="drawer-menu-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Mi Agenda</span>
+                </a>
+                
+                <a href="/coach-profile" class="drawer-menu-item">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Mi Perfil</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>

@@ -5179,12 +5179,12 @@
             <span>Comunidad</span>
         </a>
         
-        <button class="bottom-nav-item" 
-                :class="{ 'active': activeModule === 'overview' }"
-                @click="showModule('overview', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+        <a href="/coach/dashboard-v2?section=overview" class="bottom-nav-item" 
+           :class="{ 'active': activeModule === 'overview' }"
+           @click.prevent="showModule('overview', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
             <i class="fas fa-chart-pie"></i>
             <span>Overview</span>
-        </button>
+        </a>
         
         <button class="bottom-nav-item" @click="showDashboardDrawer = true">
             <i class="fas fa-ellipsis-h"></i>
@@ -9917,9 +9917,9 @@ window.dashboardApp = function() {
                 module.style.display = 'none';
             });
             
-            // Primero verificar si hay un parámetro 'module' en la URL
+            // Primero verificar si hay un parámetro 'module' o 'section' en la URL
             const urlParams = new URLSearchParams(window.location.search);
-            const moduleFromUrl = urlParams.get('module');
+            const moduleFromUrl = urlParams.get('module') || urlParams.get('section');
             
             let moduleToShow;
             if (moduleFromUrl) {
