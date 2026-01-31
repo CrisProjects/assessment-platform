@@ -9624,11 +9624,14 @@
                                         <p style="color: white; margin-top: 1rem; opacity: 0.9;">Cargando tu progreso...</p>
                                     </div>
 
-                                    <!-- Error State -->
+                                    <!-- Error/Welcome State -->
                                     <div id="errorState" style="display: none; text-align: center; padding: 2rem;">
-                                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: #fef3c7;"></i>
-                                        <p id="errorMessage" style="color: white; margin-top: 1rem; font-weight: 600;"></p>
-                                        <p style="color: rgba(255,255,255,0.8); margin-top: 0.5rem; font-size: 0.875rem;">Intenta recargar la página</p>
+                                        <i id="errorIcon" class="fas fa-rocket" style="font-size: 2.5rem; color: #fef3c7;"></i>
+                                        <p id="errorMessage" style="color: white; margin-top: 1rem; font-weight: 600; font-size: 1.125rem;"></p>
+                                        <p id="errorSubMessage" style="color: rgba(255,255,255,0.9); margin-top: 0.75rem; font-size: 0.9375rem; line-height: 1.5;"></p>
+                                        <button id="errorActionBtn" onclick="showTab('tasks')" style="display: none; margin-top: 1rem; padding: 0.75rem 2rem; background: white; color: #667eea; border: none; border-radius: 12px; font-weight: 600; font-size: 0.9375rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'">
+                                            <i class="fas fa-tasks me-2"></i>Ver Acciones y Metas
+                                        </button>
                                     </div>
 
                                     <!-- Content -->
@@ -26483,7 +26486,9 @@
                     if (!response.ok) {
                         const text = await response.text();
                         console.error('🎮 Response error text:', text);
-                        throw new Error('Error al cargar tu progreso');
+                        const error = new Error('Error al cargar tu progreso');
+                        error.status = response.status;
+                        throw error;
                     }
                     
                     const data = await response.json();
@@ -26507,11 +26512,31 @@
                     // Hide loading
                     if (loadingState) loadingState.style.display = 'none';
                     
-                    // Show error
+                    // Show error or welcome message
                     if (errorState) {
                         errorState.style.display = 'block';
                         const errorMessage = document.getElementById('errorMessage');
-                        if (errorMessage) errorMessage.textContent = error.message;
+                        const errorSubMessage = document.getElementById('errorSubMessage');
+                        const errorIcon = document.getElementById('errorIcon');
+                        const errorActionBtn = document.getElementById('errorActionBtn');
+                        
+                        // Detectar si es coachee nuevo (sin puntos aún)
+                        const isNewCoachee = error.message.includes('Error al cargar') || 
+                                           error.status === 401;
+                        
+                        if (isNewCoachee) {
+                            // Mensaje de bienvenida para coachee nuevo
+                            if (errorIcon) errorIcon.className = 'fas fa-rocket';
+                            if (errorMessage) errorMessage.textContent = '¡Bienvenido a tu camino de crecimiento!';
+                            if (errorSubMessage) errorSubMessage.textContent = 'Comienza completando las acciones y metas que tu coach ha preparado para ti. Cada logro te acercará a tus objetivos.';
+                            if (errorActionBtn) errorActionBtn.style.display = 'inline-block';
+                        } else {
+                            // Error real
+                            if (errorIcon) errorIcon.className = 'fas fa-exclamation-circle';
+                            if (errorMessage) errorMessage.textContent = error.message;
+                            if (errorSubMessage) errorSubMessage.textContent = 'Intenta recargar la página';
+                            if (errorActionBtn) errorActionBtn.style.display = 'none';
+                        }
                     }
                 }
             };
