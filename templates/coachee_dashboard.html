@@ -9611,43 +9611,110 @@
                             </p>
                         </div>
 
-                        <!-- Stats Cards -->
+                        <!-- 🎮 GAMIFICACIÓN: Card "Tu Nivel" - ETAPA 3 -->
                         <div class="row g-4 mb-4">
-                            <div class="col-12 col-md-4">
-                                <div class="overview-stat-card" style="background: white !important; border-radius: 1.25rem; padding: 1.5rem; border: 1px solid #e5e7eb; transition: all 0.2s;">
-                                    <div style="display: flex; align-items: center; gap: 1rem;">
-                                        <div style="padding: 1rem; border-radius: 1.25rem; background: linear-gradient(to bottom right, #facc15, #f59e0b) !important;">
-                                            <i class="fas fa-star" style="font-size: 1.5rem; color: white !important;"></i>
-                                        </div>
-                                        <div>
-                                            <p style="font-size: 2rem; font-weight: 600; color: #111827; margin: 0; line-height: 1;">12,450</p>
-                                            <p style="font-size: 0.875rem; color: #6b7280; margin: 0; margin-top: 0.25rem;">Puntos Totales</p>
+                            <div class="col-12">
+                                <div id="gamificationCard" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; border-radius: 1.25rem; padding: 2rem; box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); position: relative; overflow: hidden; min-height: 200px;">
+                                    <!-- Background decoration -->
+                                    <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(40px);"></div>
+                                    
+                                    <!-- Loading State -->
+                                    <div id="loadingState" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: white;"></i>
+                                        <p style="color: white; margin-top: 1rem; opacity: 0.9;">Cargando tu progreso...</p>
+                                    </div>
+
+                                    <!-- Error State -->
+                                    <div id="errorState" style="display: none; text-align: center; padding: 2rem;">
+                                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: #fef3c7;"></i>
+                                        <p id="errorMessage" style="color: white; margin-top: 1rem; font-weight: 600;"></p>
+                                        <p style="color: rgba(255,255,255,0.8); margin-top: 0.5rem; font-size: 0.875rem;">Intenta recargar la página</p>
+                                    </div>
+
+                                    <!-- Content -->
+                                    <div id="contentState" style="display: none;">
+                                        <div class="row align-items-center">
+                                            <!-- Level Icon & Info -->
+                                            <div class="col-md-3 text-center mb-3 mb-md-0">
+                                                <div style="position: relative; display: inline-block;">
+                                                    <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.2) !important; display: flex !important; align-items: center !important; justify-content: center !important; backdrop-filter: blur(10px); border: 3px solid rgba(255,255,255,0.3); overflow: visible !important;">
+                                                        <i id="levelIcon" class="fas fa-seedling" style="font-size: 3rem !important; color: white !important; display: inline-block !important; visibility: visible !important; opacity: 1 !important; line-height: 1 !important;"></i>
+                                                    </div>
+                                                    <div style="position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); background: white; border-radius: 20px; padding: 0.375rem 0.875rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 600; font-size: 0.875rem; color: #667eea; white-space: nowrap;">
+                                                        Nivel <span id="currentLevel">1</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Level Details -->
+                                            <div class="col-md-6 mb-3 mb-md-0">
+                                                <h2 id="levelName" style="font-size: 1.75rem; font-weight: 700; color: white; margin: 0 0 0.5rem 0;">Novato</h2>
+                                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                                                    <span style="color: rgba(255,255,255,0.9); font-size: 1.125rem; font-weight: 500;">
+                                                        <span id="totalPoints">0</span> puntos
+                                                    </span>
+                                                    <span style="color: rgba(255,255,255,0.7); font-size: 0.875rem;">•</span>
+                                                    <span style="color: rgba(255,255,255,0.7); font-size: 0.875rem;">
+                                                        <span id="pointsToNext">100</span> pts para <span id="nextLevelName">Aprendiz</span>
+                                                    </span>
+                                                </div>
+                                                
+                                                <!-- Progress Bar -->
+                                                <div style="background: rgba(255,255,255,0.2); border-radius: 9999px; height: 12px; overflow: hidden; backdrop-filter: blur(10px);">
+                                                    <div id="progressBar"
+                                                        style="width: 0%; height: 100%; border-radius: 9999px; transition: width 0.6s ease;">
+                                                    </div>
+                                                </div>
+                                                <p style="color: rgba(255,255,255,0.8); font-size: 0.75rem; margin-top: 0.5rem; margin-bottom: 0;">
+                                                    <span id="progressText">0</span>% completado
+                                                </p>
+                                            </div>
+
+                                            <!-- Stats -->
+                                            <div class="col-md-3">
+                                                <div style="background: rgba(255,255,255,0.15) !important; border-radius: 1rem; padding: 1.25rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                                                    <div style="text-align: center;">
+                                                        <p style="color: rgba(255,255,255,0.8) !important; font-size: 0.875rem; margin: 0 0 0.5rem 0;">Siguiente Nivel</p>
+                                                        <p id="nextLevelNameCard" style="color: white !important; font-size: 1.5rem; font-weight: 700; margin: 0;">Aprendiz</p>
+                                                        <p style="color: rgba(255,255,255,0.7) !important; font-size: 0.75rem; margin: 0.5rem 0 0 0;">
+                                                            <i class="fas fa-arrow-up" style="margin-right: 0.25rem; color: rgba(255,255,255,0.7) !important;"></i>
+                                                            <span id="pointsToNextCard">100</span> puntos
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-12 col-md-4">
-                                <div class="overview-stat-card" style="background: white !important; border-radius: 1.25rem; padding: 1.5rem; border: 1px solid #e5e7eb; transition: all 0.2s;">
-                                    <div style="display: flex; align-items: center; gap: 1rem;">
-                                        <div style="padding: 1rem; border-radius: 1.25rem; background: linear-gradient(to bottom right, #3b82f6, #06b6d4) !important;">
-                                            <i class="fas fa-chart-line" style="font-size: 1.5rem; color: white !important;"></i>
-                                        </div>
-                                        <div>
-                                            <p style="font-size: 2rem; font-weight: 600; color: #111827; margin: 0; line-height: 1;">15</p>
-                                            <p style="font-size: 0.875rem; color: #6b7280; margin: 0; margin-top: 0.25rem;">Nivel Actual</p>
+                        </div>
+
+                        <!-- Stats Cards (ETAPA 9 - Gamificación) -->
+                        <div id="gamificationStatsCards" style="display: none; margin-bottom: 1.5rem;">
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 250px;">
+                                    <div class="overview-stat-card" style="background: white !important; border-radius: 1.25rem; padding: 1.5rem; border: 1px solid #e5e7eb; transition: all 0.2s;">
+                                        <div style="display: flex; align-items: center; gap: 1rem;">
+                                            <div style="padding: 1rem; border-radius: 1.25rem; background: linear-gradient(to bottom right, #facc15, #f59e0b) !important;">
+                                                <i class="fas fa-star" style="font-size: 1.5rem; color: white !important;"></i>
+                                            </div>
+                                            <div>
+                                                <p id="statTotalPoints" style="font-size: 2rem; font-weight: 600; color: #111827; margin: 0; line-height: 1;">0</p>
+                                                <p style="font-size: 0.875rem; color: #6b7280; margin: 0; margin-top: 0.25rem;">Puntos Totales</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-12 col-md-4">
-                                <div class="overview-stat-card" style="background: white !important; border-radius: 1.25rem; padding: 1.5rem; border: 1px solid #e5e7eb; transition: all 0.2s;">
-                                    <div style="display: flex; align-items: center; gap: 1rem;">
-                                        <div style="padding: 1rem; border-radius: 1.25rem; background: linear-gradient(to bottom right, #a855f7, #ec4899) !important;">
-                                            <i class="fas fa-award" style="font-size: 1.5rem; color: white !important;"></i>
-                                        </div>
-                                        <div>
-                                            <p style="font-size: 2rem; font-weight: 600; color: #111827; margin: 0; line-height: 1;">18/30</p>
-                                            <p style="font-size: 0.875rem; color: #6b7280; margin: 0; margin-top: 0.25rem;">Logros Desbloqueados</p>
+                                <div style="flex: 1; min-width: 250px;">
+                                    <div class="overview-stat-card" style="background: white !important; border-radius: 1.25rem; padding: 1.5rem; border: 1px solid #e5e7eb; transition: all 0.2s;">
+                                        <div style="display: flex; align-items: center; gap: 1rem;">
+                                            <div style="padding: 1rem; border-radius: 1.25rem; background: linear-gradient(to bottom right, #a855f7, #ec4899) !important;">
+                                                <i class="fas fa-award" style="font-size: 1.5rem; color: white !important;"></i>
+                                            </div>
+                                            <div>
+                                                <p id="statTasksCompleted" style="font-size: 2rem; font-weight: 600; color: #111827; margin: 0; line-height: 1;">0</p>
+                                                <p style="font-size: 0.875rem; color: #6b7280; margin: 0; margin-top: 0.25rem;">Tareas Completadas</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -13001,6 +13068,110 @@
         </div>
     </div>
 
+    <!-- GAMIFICACIÓN: Modal Level Up (Etapa 8) -->
+    <div class="modal fade" id="levelUpModal" tabindex="-1" aria-labelledby="levelUpModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px !important; border: none !important; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; overflow: hidden; box-shadow: 0 20px 60px rgba(102, 126, 234, 0.5) !important;">
+                <div class="modal-body text-center" style="padding: 3rem 2rem;">
+                    <!-- Animación de confetti (usando emojis) -->
+                    <div style="font-size: 3rem; margin-bottom: 1rem; animation: float 3s ease-in-out infinite;">
+                        🎉 ✨ 🎊
+                    </div>
+                    
+                    <!-- Ícono del nivel -->
+                    <div style="margin: 0 auto 1.5rem;">
+                        <i id="levelUpIcon" class="fas fa-star"></i>
+                    </div>
+                    
+                    <!-- Texto principal -->
+                    <h2 style="color: white; font-weight: 700; font-size: 2rem; margin-bottom: 0.5rem;">
+                        ¡Nivel Alcanzado!
+                    </h2>
+                    
+                    <div style="background: white; border: none; border-radius: 50px; padding: 0.5rem 1.5rem; display: inline-block; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        <span id="levelUpNumberContainer" style="font-size: 1.5rem; font-weight: 700;">
+                            Nivel <span id="levelUpNumber">2</span>
+                        </span>
+                    </div>
+                    
+                    <h3 id="levelUpName" style="color: white; font-weight: 600; font-size: 1.75rem; margin-bottom: 1.5rem;">
+                        Aprendiz
+                    </h3>
+                    
+                    <p style="color: rgba(255,255,255,0.9); font-size: 1.125rem; margin-bottom: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                        ¡Felicitaciones! Has demostrado dedicación y progreso constante en tu desarrollo personal.
+                    </p>
+                    
+                    <!-- Botón cerrar -->
+                    <button type="button" class="btn btn-light btn-lg" data-bs-dismiss="modal" style="border-radius: 12px; padding: 0.875rem 2.5rem; font-weight: 600; font-size: 1.125rem; background: white; color: #667eea; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)'">
+                        <i class="fas fa-check me-2"></i>¡Genial!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        #levelUpModal .modal-content {
+            animation: modalZoomIn 0.5s ease-out;
+        }
+        
+        @keyframes modalZoomIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Estilos específicos para el ícono del modal de level up */
+        #levelUpIcon {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            font-size: 3.5rem !important;
+            color: white !important;
+            line-height: 1 !important;
+            width: auto !important;
+            height: auto !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-style: normal !important;
+            font-variant: normal !important;
+            text-rendering: auto !important;
+        }
+        
+        #levelUpIcon::before {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            display: inline-block !important;
+        }
+        
+        /* Forzar contenido de los iconos específicos */
+        #levelUpIcon.fa-seedling::before { content: "\f4d8" !important; }
+        #levelUpIcon.fa-book::before { content: "\f02d" !important; }
+        #levelUpIcon.fa-compass::before { content: "\f14e" !important; }
+        #levelUpIcon.fa-running::before { content: "\f70c" !important; }
+        #levelUpIcon.fa-medal::before { content: "\f5a2" !important; }
+        #levelUpIcon.fa-crown::before { content: "\f521" !important; }
+        #levelUpIcon.fa-gem::before { content: "\f3a5" !important; }
+        #levelUpIcon.fa-star::before { content: "\f005" !important; }
+        
+        
+        /* Asegurar contraste - SOLO para textos específicos, NO para el badge */
+        #levelUpModal .modal-body > h2,
+        #levelUpModal .modal-body > h3,
+        #levelUpModal .modal-body > p {
+            color: white !important;
+        }
+    </style>
+
     <!-- Task Progress Modal -->
     <div class="modal fade" id="taskProgressModal" tabindex="-1" aria-labelledby="taskProgressModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -16044,6 +16215,87 @@
                 delay: 5000
             });
             toast.show();
+        }
+
+        // GAMIFICACIÓN: Mostrar modal de Level Up (Etapa 8)
+        function showLevelUpModal(levelInfo) {
+            console.log('🎉 Mostrando modal Level Up:', levelInfo);
+            console.log('📊 Datos del nivel:', {
+                level_number: levelInfo.level_number,
+                level_name: levelInfo.level_name,
+                icon_class: levelInfo.icon_class,
+                color_hex: levelInfo.color_hex
+            });
+            
+            // Actualizar contenido del modal
+            document.getElementById('levelUpNumber').textContent = levelInfo.level_number;
+            document.getElementById('levelUpName').textContent = levelInfo.level_name;
+            
+            // Aplicar color del nivel al badge
+            const levelBadgeContainer = document.getElementById('levelUpNumberContainer');
+            if (levelInfo.color_hex) {
+                levelBadgeContainer.style.color = levelInfo.color_hex;
+            }
+            
+            // Actualizar ícono - usar SVG como fallback si Font Awesome falla
+            const iconElement = document.getElementById('levelUpIcon');
+            const iconClass = levelInfo.icon_class.startsWith('fas ') 
+                ? levelInfo.icon_class 
+                : 'fas ' + levelInfo.icon_class;
+            console.log('🎨 Aplicando clase de ícono:', iconClass);
+            
+            // Mapeo de iconos a emojis como fallback visual
+            const iconEmojis = {
+                'fa-seedling': '🌱',
+                'fa-book': '📚',
+                'fa-compass': '🧭',
+                'fa-running': '🏃',
+                'fa-medal': '🏅',
+                'fa-crown': '👑',
+                'fa-gem': '💎',
+                'fa-star': '⭐'
+            };
+            
+            const iconName = iconClass.replace('fas ', '');
+            
+            // Intentar con Font Awesome primero
+            iconElement.textContent = '';
+            iconElement.className = iconClass;
+            iconElement.style.cssText = 'font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; font-size: 3.5rem !important; color: white !important; display: inline-block !important;';
+            
+            // Después de un momento, verificar si el ícono se renderizó
+            setTimeout(() => {
+                const computed = window.getComputedStyle(iconElement, '::before');
+                const content = computed.getPropertyValue('content');
+                console.log('🎨 Contenido del ::before:', content);
+                
+                // Si el ::before está vacío, usar emoji como fallback
+                if (!content || content === 'none' || content === '""') {
+                    console.log('⚠️ Font Awesome no renderizó, usando emoji fallback');
+                    iconElement.className = ''; // Remover clases de FA
+                    iconElement.textContent = iconEmojis[iconName] || '⭐';
+                    iconElement.style.cssText = 'font-size: 4rem !important; color: white !important; display: inline-block !important; line-height: 1 !important;';
+                }
+            }, 100);
+            
+            console.log('🎨 Clase aplicada:', iconElement.className);
+            
+            // Actualizar color de fondo del modal con gradiente
+            const modalContent = document.querySelector('#levelUpModal .modal-content');
+            if (levelInfo.color_hex) {
+                const gradient = `linear-gradient(135deg, ${levelInfo.color_hex} 0%, ${levelInfo.color_hex}dd 100%)`;
+                console.log('🎨 Aplicando gradiente con color del nivel:', gradient);
+                // Crear gradiente con el color del nivel (usando !important)
+                modalContent.style.setProperty('background', gradient, 'important');
+            } else {
+                console.log('⚠️ No hay color_hex, usando gradiente por defecto');
+                // Si no hay color específico, usar el gradiente por defecto
+                modalContent.style.setProperty('background', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'important');
+            }
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('levelUpModal'));
+            modal.show();
         }
 
         // Load user profile
@@ -20269,8 +20521,35 @@
                         }
                     }
                     
-                    // Show success message
-                    showToast('Progreso actualizado exitosamente', 'success');
+                    // GAMIFICACIÓN: Mostrar notificaciones de puntos (Etapa 7-8)
+                    if (data.gamification && data.gamification.points_awarded > 0) {
+                        const pointsAwarded = data.gamification.points_awarded;
+                        const levelUp = data.gamification.level_up;
+                        const newLevel = data.gamification.new_level;
+                        
+                        console.log('🎮 GAMIFICACIÓN: Puntos otorgados:', pointsAwarded);
+                        
+                        // Toast de puntos ganados
+                        showToast(`¡Tarea completada! +${pointsAwarded} puntos 🎉`, 'success');
+                        
+                        // Si hubo level up, mostrar modal de celebración
+                        if (levelUp && newLevel) {
+                            console.log('🎉 LEVEL UP:', newLevel);
+                            setTimeout(() => {
+                                showLevelUpModal(newLevel);
+                            }, 1000);
+                        }
+                        
+                        // Recargar badge de gamificación
+                        setTimeout(() => {
+                            if (typeof loadGamificationData === 'function') {
+                                loadGamificationData();
+                            }
+                        }, 1500);
+                    } else {
+                        // Show standard success message
+                        showToast('Progreso actualizado exitosamente', 'success');
+                    }
                     
                     // Refresh tasks and summary in background without blocking UI
                     setTimeout(async () => {
@@ -26165,6 +26444,272 @@
             </div>
         </div>
     </div>
+
+    <!-- 🎮 GAMIFICACIÓN: Script para Card "Tu Nivel" - ETAPA 3 -->
+    <script>
+        // JavaScript puro para cargar gamificación
+        (function() {
+            console.log('🎮 Gamification vanilla script loaded');
+            
+            let dataLoaded = false;
+            let loadedData = null;
+            
+            // Hacer loadGamificationData global para que pueda ser llamada desde saveTaskProgress
+            window.loadGamificationData = async function loadGamificationData() {
+                console.log('🎮 Starting to load gamification data...');
+                
+                const loadingState = document.getElementById('loadingState');
+                const errorState = document.getElementById('errorState');
+                const contentState = document.getElementById('contentState');
+                const gamificationCard = document.getElementById('gamificationCard');
+                
+                if (!loadingState || !gamificationCard) {
+                    console.warn('🎮 Gamification card elements not found, skipping...');
+                    return;
+                }
+                
+                // Si el card no es visible, esperar a que lo sea
+                const overviewTab = document.getElementById('overview');
+                if (overviewTab && window.getComputedStyle(overviewTab).display === 'none') {
+                    console.log('🎮 Overview tab not visible yet, data will be applied when visible');
+                }
+                
+                try {
+                    // Usar el mismo patrón que dashboard-init (que funciona)
+                    const response = await fetch('/api/coachee/points/summary');
+                    
+                    console.log('🎮 Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        const text = await response.text();
+                        console.error('🎮 Response error text:', text);
+                        throw new Error('Error al cargar tu progreso');
+                    }
+                    
+                    const data = await response.json();
+                    console.log('🎮 Data received:', data);
+                    
+                    if (data.success) {
+                        // Guardar datos para aplicar cuando sea visible
+                        loadedData = data.data;
+                        dataLoaded = true;
+                        
+                        // Aplicar datos inmediatamente
+                        applyGamificationData();
+                        
+                        console.log('🎮 Gamification card data loaded successfully!');
+                    } else {
+                        throw new Error(data.error || 'Error desconocido');
+                    }
+                } catch (error) {
+                    console.error('🎮 Error loading gamification:', error);
+                    
+                    // Hide loading
+                    if (loadingState) loadingState.style.display = 'none';
+                    
+                    // Show error
+                    if (errorState) {
+                        errorState.style.display = 'block';
+                        const errorMessage = document.getElementById('errorMessage');
+                        if (errorMessage) errorMessage.textContent = error.message;
+                    }
+                }
+            };
+            
+            function applyGamificationData() {
+                if (!dataLoaded || !loadedData) {
+                    console.log('🎮 No data to apply yet');
+                    return;
+                }
+                
+                console.log('🎮 Applying gamification data to DOM...');
+                
+                const loadingState = document.getElementById('loadingState');
+                const contentState = document.getElementById('contentState');
+                
+                // Hide loading, show content - usar setProperty para forzar
+                if (loadingState) {
+                    loadingState.style.setProperty('display', 'none', 'important');
+                    console.log('🎮 Loading hidden');
+                }
+                if (contentState) {
+                    contentState.style.setProperty('display', 'block', 'important');
+                    console.log('🎮 Content shown');
+                }
+                
+                // Update all fields - with safety checks
+                const updateElement = (id, value, isClass = false) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (isClass) {
+                            // Preserve inline styles when updating class
+                            const currentStyle = el.getAttribute('style');
+                            el.className = value;
+                            if (currentStyle) {
+                                el.setAttribute('style', currentStyle);
+                            }
+                            console.log('🎮 Updated class for', id, ':', value);
+                        } else {
+                            el.textContent = value;
+                        }
+                    } else {
+                        console.warn('🎮 Element not found:', id);
+                    }
+                };
+                
+                const updateStyle = (id, property, value) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style[property] = value;
+                    }
+                };
+                
+                // Ensure icon class has 'fas' prefix
+                const iconClass = loadedData.level_icon.startsWith('fas ') ? loadedData.level_icon : 'fas ' + loadedData.level_icon;
+                updateElement('levelIcon', iconClass, true);
+                updateElement('currentLevel', loadedData.current_level);
+                updateElement('levelName', loadedData.level_name);
+                updateElement('totalPoints', loadedData.total_points);
+                updateElement('pointsToNext', loadedData.points_to_next);
+                updateElement('nextLevelName', loadedData.next_level_name);
+                updateElement('nextLevelNameCard', loadedData.next_level_name);
+                updateElement('pointsToNextCard', loadedData.points_to_next);
+                updateStyle('progressBar', 'width', loadedData.progress + '%');
+                updateElement('progressText', loadedData.progress);
+                
+                // Actualizar color de la barra de progreso - siempre verde
+                const progressBar = document.getElementById('progressBar');
+                if (progressBar) {
+                    const greenColor = '#10b981'; // Verde fijo para el progreso
+                    progressBar.style.setProperty('background', `linear-gradient(90deg, ${greenColor}, ${greenColor}dd)`, 'important');
+                    progressBar.style.setProperty('box-shadow', `0 0 10px ${greenColor}80`, 'important');
+                }
+                
+                // ETAPA 9: Actualizar stats cards
+                updateElement('statTotalPoints', loadedData.total_points.toLocaleString());
+                updateElement('statTasksCompleted', window.tasksData ? window.tasksData.filter(t => t.status === 'completed').length : 0);
+                
+                // Actualizar color de fondo del icono de nivel en stat card
+                const statIconContainer = document.getElementById('statLevelIconContainer');
+                if (statIconContainer && loadedData.level_color) {
+                    statIconContainer.style.background = `linear-gradient(to bottom right, ${loadedData.level_color}, ${loadedData.level_color}dd)`;
+                }
+                
+                // Contar tareas completadas (si hay datos de tareas)
+                if (window.tasksData) {
+                    const completedTasks = window.tasksData.filter(t => t.status === 'completed').length;
+                    updateElement('statTasksCompleted', completedTasks);
+                }
+                
+                // Mostrar stats cards si tiene puntos
+                if (loadedData.total_points > 0) {
+                    const statsCards = document.getElementById('gamificationStatsCards');
+                    if (statsCards) {
+                        statsCards.style.display = 'block';
+                        console.log('🎮 Stats cards shown');
+                    }
+                }
+                
+                console.log('🎮 Gamification card rendered successfully!');
+            }
+            
+            // Observer para detectar cuando el tab overview se hace visible
+            const observeOverviewTab = () => {
+                const overviewTab = document.getElementById('overview');
+                if (!overviewTab) {
+                    console.warn('🎮 Overview tab not found');
+                    return;
+                }
+                
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.attributeName === 'style') {
+                            const display = window.getComputedStyle(overviewTab).display;
+                            if (display !== 'none' && dataLoaded) {
+                                console.log('🎮 Overview tab became visible, applying data...');
+                                applyGamificationData();
+                            }
+                        }
+                    });
+                });
+                
+                observer.observe(overviewTab, { attributes: true });
+                
+                // También verificar inmediatamente
+                if (window.getComputedStyle(overviewTab).display !== 'none' && dataLoaded) {
+                    applyGamificationData();
+                }
+            };
+            
+            // Ejecutar cuando la página esté completamente lista
+            // Esperar a que otros scripts se inicialicen primero
+            window.addEventListener('load', function() {
+                setTimeout(() => {
+                    loadGamificationData();
+                    observeOverviewTab();
+                }, 1000); // Esperar 1 segundo después del load completo
+            });
+        })();
+    </script>
+
+    <!-- Alpine.js component registration (unused for now) -->
+    <script>
+        // Registrar componente cuando Alpine.js esté listo
+        document.addEventListener('alpine:init', () => {
+            console.log('🎮 Registrando componente de gamificación...');
+            
+            Alpine.data('gamificationCard', () => ({
+                points: null,
+                loading: true,
+                error: null,
+
+                init() {
+                    console.log('🎮 Gamification card init() called');
+                    this.loadPoints();
+                },
+
+                async loadPoints() {
+                    console.log('🎮 Starting loadPoints()...');
+                    try {
+                        this.loading = true;
+                        this.error = null;
+
+                        console.log('🎮 Fetching /api/coachee/points/summary...');
+                        const response = await fetch('/api/coachee/points/summary', {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'same-origin'
+                        });
+
+                        console.log('🎮 Response status:', response.status);
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('🎮 API Error:', errorText);
+                            
+                            if (response.status === 401) {
+                                throw new Error('Sesión no válida - Por favor recarga la página');
+                            }
+                            throw new Error('Error al cargar puntos (' + response.status + ')');
+                        }
+
+                        const data = await response.json();
+                        console.log('🎮 Gamificación cargada:', data);
+                        this.points = data;
+
+                    } catch (err) {
+                        console.error('🎮 Error cargando gamificación:', err);
+                        this.error = err.message || 'Error al cargar tu progreso';
+                    } finally {
+                        this.loading = false;
+                        console.log('🎮 Loading finished. Points:', this.points, 'Error:', this.error);
+                    }
+                }
+            }));
+        });
+    </script>
 
 </body>
 </html>
