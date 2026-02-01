@@ -26620,10 +26620,10 @@
                     statIconContainer.style.background = `linear-gradient(to bottom right, ${loadedData.level_color}, ${loadedData.level_color}dd)`;
                 }
                 
-                // Contar tareas completadas (si hay datos de tareas)
-                if (window.tasksData) {
-                    const completedTasks = window.tasksData.filter(t => t.status === 'completed').length;
-                    updateElement('statTasksCompleted', completedTasks);
+                // Actualizar tareas completadas (desde API de gamificación)
+                if (loadedData.completed_tasks !== undefined) {
+                    updateElement('statTasksCompleted', loadedData.completed_tasks);
+                    console.log(`📊 Tareas completadas: ${loadedData.completed_tasks}`);
                 }
                 
                 // Mostrar stats cards si tiene puntos

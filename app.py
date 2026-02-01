@@ -16216,6 +16216,26 @@ def get_coachee_points_summary():
             }
         }
         
+        # Agregar estadísticas de tareas completadas
+        try:
+            completed_tasks_count = db.session.execute(
+                text("""
+                    SELECT COUNT(DISTINCT t.id)
+                    FROM task t
+                    JOIN task_progress tp ON tp.task_id = t.id
+                    WHERE t.coachee_id = :coachee_id
+                    AND t.is_active = true
+                    AND tp.status = 'completed'
+                """),
+                {'coachee_id': coachee_id}
+            ).scalar()
+            
+            response['data']['completed_tasks'] = completed_tasks_count or 0
+            logger.info(f"📊 GAMIFICACIÓN: Coachee {coachee_id} - {completed_tasks_count} tareas completadas")
+        except Exception as task_error:
+            logger.warning(f"⚠️ No se pudieron obtener tareas completadas: {str(task_error)}")
+            response['data']['completed_tasks'] = 0
+        
         logger.info(f"✅ GAMIFICACIÓN: Coachee {coachee_id} - {points_data['total_points']} pts, Nivel {points_data['current_level']}")
         
         return jsonify(response), 200
