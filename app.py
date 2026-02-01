@@ -12779,57 +12779,57 @@ def api_coach_share_content(content_id):
         
         db.session.commit()
         
-        # Compartir con comunidades
+        # Compartir con comunidades - DESHABILITADO: columnas community no existen en producción
         community_shared_count = 0
-        if community_ids:
-            logger.info(f"🔄 Compartiendo con {len(community_ids)} comunidad(es)...")
-            
-            for community_id in community_ids:
-                # Verificar que la comunidad existe y el coach es miembro
-                membership = CommunityMembership.query.filter_by(
-                    community_id=community_id,
-                    coach_id=current_coach.id,
-                    is_active=True
-                ).first()
-                
-                if not membership:
-                    logger.warning(f"⚠️ Coach no es miembro de la comunidad {community_id}, saltando...")
-                    continue
-                
-                # Verificar si ya existe este contenido compartido en esta comunidad
-                existing_community_content = Content.query.filter_by(
-                    coach_id=current_coach.id,
-                    community_id=community_id,
-                    content_url=original_content.content_url,
-                    is_active=True,
-                    shared_with_community=True
-                ).first()
-                
-                if existing_community_content:
-                    logger.info(f"⚠️ Contenido ya existe en comunidad {community_id}, saltando...")
-                    continue
-                
-                # Crear nueva instancia del contenido para la comunidad
-                community_content = Content(
-                    coach_id=current_coach.id,
-                    community_id=community_id,
-                    coachee_id=None,  # No asignado a coachee específico
-                    title=original_content.title,
-                    description=original_content.description,
-                    content_type=original_content.content_type,
-                    content_url=original_content.content_url,
-                    thumbnail_url=original_content.thumbnail_url,
-                    duration=original_content.duration,
-                    is_active=True,
-                    is_viewed=False,
-                    shared_with_community=True,
-                    shared_at=datetime.utcnow()
-                )
-                db.session.add(community_content)
-                community_shared_count += 1
-                logger.info(f"✅ Contenido compartido con comunidad {community_id}")
-            
-            db.session.commit()
+        # if community_ids:
+        #     logger.info(f"🔄 Compartiendo con {len(community_ids)} comunidad(es)...")
+        #     
+        #     for community_id in community_ids:
+        #         # Verificar que la comunidad existe y el coach es miembro
+        #         membership = CommunityMembership.query.filter_by(
+        #             community_id=community_id,
+        #             coach_id=current_coach.id,
+        #             is_active=True
+        #         ).first()
+        #         
+        #         if not membership:
+        #             logger.warning(f"⚠️ Coach no es miembro de la comunidad {community_id}, saltando...")
+        #             continue
+        #         
+        #         # Verificar si ya existe este contenido compartido en esta comunidad
+        #         existing_community_content = Content.query.filter_by(
+        #             coach_id=current_coach.id,
+        #             community_id=community_id,
+        #             content_url=original_content.content_url,
+        #             is_active=True,
+        #             shared_with_community=True
+        #         ).first()
+        #         
+        #         if existing_community_content:
+        #             logger.info(f"⚠️ Contenido ya existe en comunidad {community_id}, saltando...")
+        #             continue
+        #         
+        #         # Crear nueva instancia del contenido para la comunidad
+        #         community_content = Content(
+        #             coach_id=current_coach.id,
+        #             community_id=community_id,
+        #             coachee_id=None,  # No asignado a coachee específico
+        #             title=original_content.title,
+        #             description=original_content.description,
+        #             content_type=original_content.content_type,
+        #             content_url=original_content.content_url,
+        #             thumbnail_url=original_content.thumbnail_url,
+        #             duration=original_content.duration,
+        #             is_active=True,
+        #             is_viewed=False,
+        #             shared_with_community=True,
+        #             shared_at=datetime.utcnow()
+        #         )
+        #         db.session.add(community_content)
+        #         community_shared_count += 1
+        #         logger.info(f"✅ Contenido compartido con comunidad {community_id}")
+        #     
+        #     db.session.commit()
         
         # Preparar mensaje de respuesta
         total_shared = shared_count + community_shared_count
