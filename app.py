@@ -1722,10 +1722,10 @@ class Content(db.Model):
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
-    # NUEVOS CAMPOS PARA COMUNIDADES
-    community_id = db.Column(db.Integer, db.ForeignKey('coach_community.id'), nullable=True, index=True)  # comunidad donde se comparte
-    shared_with_community = db.Column(db.Boolean, default=False, index=True)  # si está compartido en comunidad
-    shared_at = db.Column(db.DateTime, nullable=True)  # cuándo se compartió
+    # NUEVOS CAMPOS PARA COMUNIDADES - COMENTADOS: No existen en producción
+    # community_id = db.Column(db.Integer, db.ForeignKey('coach_community.id'), nullable=True, index=True)  # comunidad donde se comparte
+    # shared_with_community = db.Column(db.Boolean, default=False, index=True)  # si está compartido en comunidad
+    # shared_at = db.Column(db.DateTime, nullable=True)  # cuándo se compartió
     
     coach = db.relationship('User', foreign_keys=[coach_id], backref='assigned_content')
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_content')
