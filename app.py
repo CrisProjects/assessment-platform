@@ -9175,7 +9175,7 @@ def api_coach_tasks_post():
                     INSERT INTO task_points_config 
                     (task_id, difficulty_level, base_points, bonus_multiplier, category_bonus, 
                      is_repeatable, max_repetitions, created_by_coach_id, created_at)
-                    VALUES (:task_id, :difficulty, :points, 1.0, 0, 0, 1, :coach_id, :created_at)
+                    VALUES (:task_id, :difficulty, :points, 1.0, 0, FALSE, 1, :coach_id, :created_at)
                 """),
                 {
                     'task_id': new_task.id,
