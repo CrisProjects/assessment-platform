@@ -1731,8 +1731,16 @@ class Content(db.Model):
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='received_content')
 
     def __init__(self, **kwargs):
+        # Solo asignar atributos que existen en la base de datos
+        # Ignorar community_id, shared_with_community, shared_at si no existen
+        valid_attrs = ['id', 'coach_id', 'coachee_id', 'title', 'description', 
+                      'content_type', 'content_url', 'thumbnail_url', 'duration',
+                      'is_viewed', 'viewed_at', 'assigned_at', 'is_active']
+        
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if key in valid_attrs or hasattr(self, key):
+                setattr(self, key, value)
+        
         self.assigned_at = kwargs.get('assigned_at', datetime.utcnow())
     
     def mark_as_viewed(self):
@@ -12352,12 +12360,12 @@ def api_coach_assign_content():
         # Obtener opciones de publicación
         coachee_id = data.get('coachee_id')
         save_to_library = data.get('save_to_library', False)
-        share_with_community = data.get('shared_with_community', False)
-        community_id = data.get('community_id')
+        # share_with_community = data.get('shared_with_community', False)  # DESHABILITADO: columnas no existen en producción
+        # community_id = data.get('community_id')  # DESHABILITADO: columnas no existen en producción
         
         # Validar que al menos se seleccione una opción
-        if not coachee_id and not save_to_library and not share_with_community:
-            return jsonify({'error': 'Debes seleccionar al menos una opción: biblioteca, coachee o comunidad'}), 400
+        if not coachee_id and not save_to_library:
+            return jsonify({'error': 'Debes seleccionar al menos una opción: biblioteca o coachee'}), 400
         
         # Si se especifica coachee, verificar que pertenezca al coach
         if coachee_id:
@@ -12389,20 +12397,20 @@ def api_coach_assign_content():
                 }), 409
         
         # Validar comunidad si se especifica
-        if share_with_community and community_id:
-            # Verificar que la comunidad existe y el coach es miembro
-            community = CoachCommunity.query.filter_by(id=community_id, is_active=True).first()
-            if not community:
-                return jsonify({'error': 'Comunidad no encontrada'}), 404
-            
-            membership = CommunityMembership.query.filter_by(
-                community_id=community_id,
-                coach_id=current_coach.id,
-                is_active=True
-            ).first()
-            
-            if not membership:
-                return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
+        # DESHABILITADO: Funcionalidad de comunidades requiere migración de BD
+        # if share_with_community and community_id:
+        #     community = CoachCommunity.query.filter_by(id=community_id, is_active=True).first()
+        #     if not community:
+        #         return jsonify({'error': 'Comunidad no encontrada'}), 404
+        #     
+        #     membership = CommunityMembership.query.filter_by(
+        #         community_id=community_id,
+        #         coach_id=current_coach.id,
+        #         is_active=True
+        #     ).first()
+        #     
+        #     if not membership:
+        #         return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
         
         logger.info(f"✅ PUBLICANDO: Creando contenido para coach {current_coach.id}")
         
@@ -12416,10 +12424,8 @@ def api_coach_assign_content():
             content_type=data.get('content_type', 'video'),
             content_url=data['content_url'],
             thumbnail_url=data.get('thumbnail_url'),
-            duration=data.get('duration'),
-            community_id=community_id if share_with_community else None,
-            shared_with_community=share_with_community,
-            shared_at=datetime.utcnow() if share_with_community else None
+            duration=data.get('duration')
+            # community_id y shared_with_community removidos - columnas no existen en producción
         )
         
         db.session.add(content)
@@ -12431,8 +12437,8 @@ def api_coach_assign_content():
             destinations.append('biblioteca')
         if coachee_id:
             destinations.append('coachee')
-        if share_with_community:
-            destinations.append('comunidad')
+        # if share_with_community:  # DESHABILITADO
+        #     destinations.append('comunidad')
         
         message = f'Contenido publicado en: {", ".join(destinations)}'
         
