@@ -1941,7 +1941,7 @@ class CoachCommunity(db.Model):
     # Relaciones
     creator = db.relationship('User', foreign_keys=[creator_id], backref='created_communities')
     memberships = db.relationship('CommunityMembership', backref='community', lazy='dynamic', cascade='all, delete-orphan')
-    shared_content = db.relationship('Content', backref='community', lazy='dynamic')
+    # shared_content = db.relationship('Content', backref='community', lazy='dynamic')  # COMENTADO: Content.community_id no existe en producción
     
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
