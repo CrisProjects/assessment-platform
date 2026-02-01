@@ -13179,23 +13179,23 @@ def api_coach_get_unified_feed():
             is_active=True
         ).all()
         
-        # 2. Obtener comunidades donde es miembro activo
-        my_memberships = CommunityMembership.query.filter_by(
-            coach_id=current_coach.id,
-            is_active=True
-        ).all()
+        # 2. Obtener comunidades donde es miembro activo - DESHABILITADO: columnas community no existen
+        # my_memberships = CommunityMembership.query.filter_by(
+        #     coach_id=current_coach.id,
+        #     is_active=True
+        # ).all()
+        # 
+        # community_ids = [m.community_id for m in my_memberships]
         
-        community_ids = [m.community_id for m in my_memberships]
-        
-        # 3. Obtener contenido compartido en esas comunidades (excluir propio)
+        # 3. Obtener contenido compartido en esas comunidades - DESHABILITADO
         community_content = []
-        if community_ids:
-            community_content = Content.query.filter(
-                Content.community_id.in_(community_ids),
-                Content.shared_with_community == True,
-                Content.is_active == True,
-                Content.coach_id != current_coach.id  # Excluir contenido propio
-            ).all()
+        # if community_ids:
+        #     community_content = Content.query.filter(
+        #         Content.community_id.in_(community_ids),
+        #         Content.shared_with_community == True,
+        #         Content.is_active == True,
+        #         Content.coach_id != current_coach.id  # Excluir contenido propio
+        #     ).all()
         
         # 4. Combinar y formatear todo el contenido
         unified_feed = []
@@ -13211,14 +13211,14 @@ def api_coach_get_unified_feed():
                     document_id = match.group(1)
                     content_url = f"/api/coach/documents/{document_id}/view"
             
-            community_info = None
-            if content.shared_with_community and content.community_id:
-                community = CoachCommunity.query.get(content.community_id)
-                if community:
-                    community_info = {
-                        'id': community.id,
-                        'name': community.name
-                    }
+            # community_info = None  # DESHABILITADO: columnas community no existen
+            # if content.shared_with_community and content.community_id:
+            #     community = CoachCommunity.query.get(content.community_id)
+            #     if community:
+            #         community_info = {
+            #             'id': community.id,
+            #             'name': community.name
+            #         }
             
             unified_feed.append({
                 'id': content.id,
@@ -13227,12 +13227,12 @@ def api_coach_get_unified_feed():
                 'content_type': content.content_type,
                 'content_url': content_url,
                 'thumbnail_url': content.thumbnail_url,
-                'created_at': (content.shared_at or content.assigned_at).isoformat() if (content.shared_at or content.assigned_at) else None,
+                'created_at': content.assigned_at.isoformat() if content.assigned_at else None,  # Solo assigned_at
                 'source_type': 'own',  # Contenido propio
                 'author_name': current_coach.full_name,
                 'author_id': current_coach.id,
                 'author_avatar': current_coach.avatar_url,
-                'community': community_info
+                'community': None  # Sin comunidades por ahora
             })
         
         # Procesar contenido de comunidades
