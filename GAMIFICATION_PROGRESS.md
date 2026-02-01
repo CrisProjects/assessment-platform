@@ -1,8 +1,8 @@
 # 🎮 Sistema de Gamificación - Tracking de Progreso
 
 **Fecha inicio:** 31 de Enero 2026  
-**Última actualización:** 31 Ene 2026 - 10:00  
-**Estado general:** ✅ En progreso
+**Última actualización:** 31 Ene 2026 - 11:22  
+**Estado general:** ✅ Etapa 3 completada
 
 ---
 
@@ -10,17 +10,54 @@
 
 | Etapa | Nombre | Estado | Fecha | Duración | Notas |
 |-------|--------|--------|-------|----------|-------|
-| 0 | Preparación | ✅ En curso | 31-Ene | - | Archivos creados |
-| 1 | Base de Datos | ⏳ Pendiente | - | - | - |
-| 2 | API Básica | ⏳ Pendiente | - | - | - |
-| 3 | UI Card Nivel | ⏳ Pendiente | - | - | - |
-| 4 | Modal Coach | ⏳ Pendiente | - | - | - |
+| 0 | Preparación | ✅ Completado | 31-Ene | 15min | Backups, docs, scripts |
+| 1 | Base de Datos | ✅ Completado | 31-Ene | 20min | 7 tablas + 7 niveles |
+| 2 | API Básica | ✅ Completado | 31-Ene | 25min | 3 helpers + 1 endpoint |
+| 3 | UI Card Nivel | ✅ Completado | 31-Ene | 30min | Card dinámico Alpine.js |
+| 4 | Modal Coach | ⏳ Pendiente | - | - | Agregar campo dificultad |
 | 5 | Guardar Puntos | ⏳ Pendiente | - | - | - |
 | 6 | Otorgar Puntos | ⏳ Pendiente | - | - | - |
 | 7 | Notificación | ⏳ Pendiente | - | - | - |
 | 8 | Niveles | ⏳ Pendiente | - | - | - |
 | 9 | Estadísticas | ⏳ Pendiente | - | - | - |
 | 10 | Logros | ⏳ Pendiente | - | - | - |
+
+---
+
+## ✅ ETAPA 3: UI CARD "TU NIVEL" (COMPLETADA)
+
+### Objetivo
+Crear card visual dinámico que muestre puntos y nivel del coachee.
+
+### Tareas Completadas
+- [x] Card agregado al dashboard del coachee (tab Overview)
+- [x] Diseño premium con gradiente morado (#667eea → #764ba2)
+- [x] Componente Alpine.js `gamificationCard()` implementado
+- [x] Estados: loading, error, contenido
+- [x] Responsive (3 columnas en desktop)
+- [x] Barra de progreso animada (0-100%)
+- [x] Ícono de nivel dinámico desde API
+- [x] Llamada automática al API `/api/coachee/points/summary`
+
+### Archivos Modificados
+- `templates/coachee_dashboard.html` (+160 líneas aprox)
+  - HTML del card (línea ~9604)
+  - Script Alpine.js (línea ~26253)
+
+### Verificaciones Realizadas
+- ✅ Servidor reiniciado correctamente
+- ✅ No hay errores en logs
+- ✅ Dashboard coachee carga sin errores
+- ✅ Card se ve correctamente en tab Overview
+
+### Elementos Visuales Implementados
+1. **Ícono de nivel:** Círculo con backdrop blur + badge nivel
+2. **Detalles:** Nombre nivel + puntos totales + puntos faltantes
+3. **Progreso:** Barra animada con gradient dorado
+4. **Siguiente nivel:** Card lateral con datos del siguiente nivel
+
+### Issues Encontrados
+Ninguno.
 
 ---
 

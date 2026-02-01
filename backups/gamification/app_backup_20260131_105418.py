@@ -9162,32 +9162,7 @@ def api_coach_tasks_post():
         db.session.add(new_task)
         db.session.flush()
         app.logger.info(f"Tarea agregada con ID: {new_task.id}")
-        
-        # GAMIFICACIÓN: Guardar configuración de puntos (Etapa 4.3)
-        difficulty = data.get('difficulty')
-        points = data.get('points')
-        
-        if difficulty and points:
-            app.logger.info(f"🎮 GAMIFICACIÓN: Guardando configuración - Dificultad: {difficulty}, Puntos: {points}")
-            
-            points_config = db.session.execute(
-                text("""
-                    INSERT INTO task_points_config 
-                    (task_id, difficulty_level, base_points, bonus_multiplier, category_bonus, 
-                     is_repeatable, max_repetitions, created_by_coach_id, created_at)
-                    VALUES (:task_id, :difficulty, :points, 1.0, 0, 0, 1, :coach_id, :created_at)
-                """),
-                {
-                    'task_id': new_task.id,
-                    'difficulty': difficulty,
-                    'points': points,
-                    'coach_id': g.current_user.id,
-                    'created_at': datetime.utcnow()
-                }
-            )
-            app.logger.info(f"✅ GAMIFICACIÓN: Configuración guardada para tarea {new_task.id}")
-        else:
-            app.logger.info(f"⚠️ GAMIFICACIÓN: No se proporcionó dificultad/puntos, tarea sin configuración de puntos")
+        app.logger.info(f"Tarea agregada con ID: {new_task.id}")
         
         # Crear entrada inicial de progreso
         app.logger.info(f"Creando progreso inicial...")
@@ -11905,149 +11880,22 @@ def api_coachee_update_task_progress(task_id):
         if not data:
             return jsonify({'error': 'No se recibieron datos'}), 400
         
-        new_status = data.get('status', 'in_progress')
-        
         # Crear nueva entrada de progreso
         progress_entry = TaskProgress(
             task_id=task_id,
-            status=new_status,
+            status=data.get('status', 'in_progress'),
             progress_percentage=data.get('progress_percentage', 0),
             notes=data.get('notes', ''),
             updated_by=current_user.id
         )
         
         db.session.add(progress_entry)
-        
-        # GAMIFICACIÓN: Otorgar puntos cuando se completa la tarea (Etapa 5-6)
-        points_awarded = 0
-        level_up = False
-        new_level_info = None
-        
-        if new_status == 'completed':
-            app.logger.info(f"🎮 GAMIFICACIÓN: Tarea {task_id} completada por coachee {current_user.id}")
-            
-            # Buscar configuración de puntos para esta tarea
-            points_config = db.session.execute(
-                text("""
-                    SELECT difficulty_level, base_points 
-                    FROM task_points_config 
-                    WHERE task_id = :task_id
-                """),
-                {'task_id': task_id}
-            ).fetchone()
-            
-            if points_config:
-                difficulty = points_config[0]
-                points_value = points_config[1]
-                
-                app.logger.info(f"🎮 Configuración encontrada: {difficulty} = {points_value} puntos")
-                
-                # Crear transacción de puntos
-                db.session.execute(
-                    text("""
-                        INSERT INTO point_transactions 
-                        (coachee_id, task_id, points_earned, transaction_type, description, created_at)
-                        VALUES (:coachee_id, :task_id, :points, 'task_completed', :description, :created_at)
-                    """),
-                    {
-                        'coachee_id': current_user.id,
-                        'task_id': task_id,
-                        'points': points_value,
-                        'description': f'Tarea completada: {task.title} (Dificultad: {difficulty})',
-                        'created_at': datetime.utcnow()
-                    }
-                )
-                app.logger.info(f"✅ Transacción registrada: +{points_value} puntos")
-                
-                # Obtener puntos actuales del coachee
-                current_points_row = db.session.execute(
-                    text("SELECT total_points, current_level FROM coachee_points WHERE coachee_id = :coachee_id"),
-                    {'coachee_id': current_user.id}
-                ).fetchone()
-                
-                if current_points_row:
-                    old_points = current_points_row[0]
-                    old_level = current_points_row[1]
-                    new_points = old_points + points_value
-                    
-                    # Actualizar puntos
-                    db.session.execute(
-                        text("""
-                            UPDATE coachee_points 
-                            SET total_points = :new_points, updated_at = :updated_at
-                            WHERE coachee_id = :coachee_id
-                        """),
-                        {
-                            'new_points': new_points,
-                            'updated_at': datetime.utcnow(),
-                            'coachee_id': current_user.id
-                        }
-                    )
-                    app.logger.info(f"✅ Puntos actualizados: {old_points} → {new_points}")
-                    
-                    # Recalcular nivel
-                    new_level_row = db.session.execute(
-                        text("""
-                            SELECT level_number, level_name, icon_class, color_hex 
-                            FROM levels_system 
-                            WHERE points_required <= :points 
-                            ORDER BY points_required DESC 
-                            LIMIT 1
-                        """),
-                        {'points': new_points}
-                    ).fetchone()
-                    
-                    if new_level_row:
-                        new_level = new_level_row[0]
-                        
-                        if new_level > old_level:
-                            # ¡Level up!
-                            level_up = True
-                            new_level_info = {
-                                'level_number': new_level_row[0],
-                                'level_name': new_level_row[1],
-                                'icon_class': new_level_row[2],
-                                'color_hex': new_level_row[3]
-                            }
-                            
-                            # Actualizar nivel
-                            db.session.execute(
-                                text("""
-                                    UPDATE coachee_points 
-                                    SET current_level = :new_level
-                                    WHERE coachee_id = :coachee_id
-                                """),
-                                {
-                                    'new_level': new_level,
-                                    'coachee_id': current_user.id
-                                }
-                            )
-                            app.logger.info(f"🎉 ¡LEVEL UP! Nivel {old_level} → {new_level}: {new_level_info['level_name']}")
-                        else:
-                            app.logger.info(f"📊 Mismo nivel: {new_level}")
-                    
-                    points_awarded = points_value
-                else:
-                    app.logger.warning(f"⚠️ No se encontró registro en coachee_points para coachee {current_user.id}")
-            else:
-                app.logger.warning(f"⚠️ No hay configuración de puntos para tarea {task_id}")
-        
         db.session.commit()
         
-        response_data = {
+        return jsonify({
             'success': True,
             'message': 'Progreso actualizado exitosamente'
-        }
-        
-        # Añadir información de gamificación a la respuesta
-        if points_awarded > 0:
-            response_data['gamification'] = {
-                'points_awarded': points_awarded,
-                'level_up': level_up,
-                'new_level': new_level_info
-            }
-        
-        return jsonify(response_data), 200
+        }), 200
         
     except Exception as e:
         db.session.rollback()
@@ -16081,142 +15929,6 @@ def api_reject_community_invitation(token):
         db.session.rollback()
         logger.error(f"Error rechazando invitación: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error rechazando invitación'}), 500
-
-# ============================================================================
-# SISTEMA DE GAMIFICACIÓN - ETAPA 2: API BÁSICA
-# ============================================================================
-
-# --- Helper Functions para Gamificación ---
-
-def get_coachee_points(coachee_id):
-    """Obtiene los puntos y nivel actual de un coachee"""
-    try:
-        from sqlalchemy import text
-        result = db.session.execute(
-            text("SELECT total_points, current_level FROM coachee_points WHERE coachee_id = :coachee_id"),
-            {'coachee_id': coachee_id}
-        )
-        row = result.fetchone()
-        
-        if row:
-            return {
-                'total_points': row[0],
-                'current_level': row[1]
-            }
-        else:
-            # Si no existe, crear registro inicial
-            db.session.execute(
-                text("INSERT INTO coachee_points (coachee_id, total_points, current_level, created_at, updated_at) VALUES (:id, 0, 1, datetime('now'), datetime('now'))"),
-                {'id': coachee_id}
-            )
-            db.session.commit()
-            return {
-                'total_points': 0,
-                'current_level': 1
-            }
-    except Exception as e:
-        logger.error(f"Error obteniendo puntos del coachee {coachee_id}: {e}")
-        return {
-            'total_points': 0,
-            'current_level': 1
-        }
-
-def get_level_info(level_number):
-    """Obtiene información de un nivel específico"""
-    try:
-        from sqlalchemy import text
-        result = db.session.execute(
-            text("SELECT level_name, points_required, icon_class, color_hex, description, unlock_message FROM levels_system WHERE level_number = :level"),
-            {'level': level_number}
-        )
-        row = result.fetchone()
-        
-        if row:
-            return {
-                'level_number': level_number,
-                'level_name': row[0],
-                'points_required': row[1],
-                'icon_class': row[2],
-                'color_hex': row[3],
-                'description': row[4],
-                'unlock_message': row[5]
-            }
-        else:
-            return None
-    except Exception as e:
-        logger.error(f"Error obteniendo info del nivel {level_number}: {e}")
-        return None
-
-def get_next_level_info(current_level):
-    """Obtiene información del siguiente nivel"""
-    return get_level_info(current_level + 1)
-
-# --- API Endpoints de Gamificación ---
-
-@app.route('/api/coachee/points/summary', methods=['GET'])
-def get_coachee_points_summary():
-    """
-    Obtiene resumen de puntos y nivel del coachee actual (SOLO LECTURA)
-    Retorna: {success, data: {total_points, current_level, level_name, points_to_next, progress, next_level_info}}
-    """
-    # DEBUG: Ver qué cookies llegaron
-    logger.info(f"🍪 GAMIFICACIÓN: Cookies recibidas: {request.cookies.keys()}")
-    logger.info(f"🔐 GAMIFICACIÓN: Session data: {dict(session)}")
-    
-    # Verificar que es coachee (compatibilidad con ambos nombres de variable)
-    coachee_id = session.get('coachee_id') or session.get('coachee_user_id')
-    
-    if not coachee_id:
-        logger.warning("⚠️ GAMIFICACIÓN: Intento de acceso sin sesión de coachee")
-        return jsonify({'success': False, 'error': 'No autorizado - sesión de coachee requerida'}), 401
-    
-    try:
-        logger.info(f"🎮 GAMIFICACIÓN: Coachee {coachee_id} solicita resumen de puntos")
-        
-        # Obtener puntos actuales
-        points_data = get_coachee_points(coachee_id)
-        
-        # Obtener info del nivel actual
-        current_level_info = get_level_info(points_data['current_level'])
-        
-        # Obtener info del siguiente nivel
-        next_level_info = get_next_level_info(points_data['current_level'])
-        
-        # Calcular progreso
-        if next_level_info:
-            current_level_base = current_level_info['points_required'] if current_level_info else 0
-            next_level_points = next_level_info['points_required']
-            points_for_next = next_level_points - current_level_base
-            current_progress = points_data['total_points'] - current_level_base
-            progress_percentage = int((current_progress / points_for_next) * 100) if points_for_next > 0 else 0
-            points_to_next = next_level_points - points_data['total_points']
-        else:
-            # Nivel máximo alcanzado
-            progress_percentage = 100
-            points_to_next = 0
-        
-        response = {
-            'success': True,
-            'data': {
-                'total_points': points_data['total_points'],
-                'current_level': points_data['current_level'],
-                'level_name': current_level_info['level_name'] if current_level_info else 'Novato',
-                'level_icon': current_level_info['icon_class'] if current_level_info else 'fa-seedling',
-                'level_color': current_level_info['color_hex'] if current_level_info else '#10b981',
-                'points_to_next': points_to_next,
-                'progress': progress_percentage,
-                'next_level_name': next_level_info['level_name'] if next_level_info else 'Máximo',
-                'is_max_level': next_level_info is None
-            }
-        }
-        
-        logger.info(f"✅ GAMIFICACIÓN: Coachee {coachee_id} - {points_data['total_points']} pts, Nivel {points_data['current_level']}")
-        
-        return jsonify(response), 200
-        
-    except Exception as e:
-        logger.error(f"❌ GAMIFICACIÓN: Error en get_coachee_points_summary: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Error obteniendo puntos'}), 500
 
 # ============================================================================
 # INICIALIZACIÓN DE LA APP

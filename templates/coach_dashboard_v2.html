@@ -6821,6 +6821,22 @@
                                                required
                                                style="border-radius: 8px; border: 2px solid #e2e8f0;">
                                     </div>
+                                    <!-- GAMIFICACIÓN: Selector de Dificultad (Etapa 4.1) -->
+                                    <div class="col-md-6">
+                                        <label class="form-label text-dark small fw-bold">
+                                            <i class="fas fa-star me-1 text-warning"></i>Dificultad (Puntos) <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" id="modalTaskDifficulty" required
+                                                style="border-radius: 8px; border: 2px solid #e2e8f0;">
+                                            <option value="">Seleccionar dificultad</option>
+                                            <option value="facil" data-points="50">🟢 FÁCIL - 50 puntos</option>
+                                            <option value="media" data-points="100">🟡 MEDIA - 100 puntos</option>
+                                            <option value="dificil" data-points="150">🔴 DIFÍCIL - 150 puntos</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fas fa-info-circle me-1"></i>Los coachees ganan estos puntos al completar la tarea
+                                        </small>
+                                    </div>
                                     <div class="col-12">
                                         <label class="form-label text-dark small fw-bold">
                                             <i class="fas fa-align-left me-1 text-primary"></i>Descripción
@@ -9572,25 +9588,30 @@ window.openCreateEvaluationModal = function() {
             const modal = new bootstrap.Modal(document.getElementById('createTaskModal'));
             const coacheeSelect = document.getElementById('modalTaskCoachee');
             
-            // Si no hay coachees cargados, cargarlos primero
-            if (window.coachDashboard && (!window.coachDashboard.coacheesData || window.coachDashboard.coacheesData.length === 0)) {
-                coacheeSelect.innerHTML = '<option value="">Cargando coachees...</option>';
-                await window.coachDashboard.loadCoachees();
-            }
+            // Cargar coachees directamente desde el API
+            coacheeSelect.innerHTML = '<option value="">Cargando coachees...</option>';
             
-            // Cargar lista de coachees en el select
-            if (window.coachDashboard && window.coachDashboard.coacheesData && window.coachDashboard.coacheesData.length > 0) {
-                const coachees = window.coachDashboard.coacheesData;
+            try {
+                const response = await fetch('/api/coach/coachees');
+                const data = await response.json();
                 
-                coacheeSelect.innerHTML = '<option value="">Seleccionar coachee</option>';
-                coachees.forEach(coachee => {
-                    const option = document.createElement('option');
-                    option.value = coachee.id;
-                    option.textContent = `${coachee.name} ${coachee.last_name || ''}`.trim();
-                    coacheeSelect.appendChild(option);
-                });
-            } else {
-                coacheeSelect.innerHTML = '<option value="">No hay coachees disponibles</option>';
+                console.log('📋 Coachees cargados:', data);
+                
+                if (data.coachees && data.coachees.length > 0) {
+                    coacheeSelect.innerHTML = '<option value="">Seleccionar coachee</option>';
+                    data.coachees.forEach(coachee => {
+                        const option = document.createElement('option');
+                        option.value = coachee.id;
+                        option.textContent = coachee.name;
+                        coacheeSelect.appendChild(option);
+                    });
+                } else {
+                    coacheeSelect.innerHTML = '<option value="">No hay coachees disponibles</option>';
+                    console.warn('⚠️ No se encontraron coachees');
+                }
+            } catch (error) {
+                console.error('Error cargando coachees:', error);
+                coacheeSelect.innerHTML = '<option value="">Error cargando coachees</option>';
             }
             
             modal.show();
@@ -9599,19 +9620,26 @@ window.submitCreateTask = async function() {
     console.log('📝 [CREATE-TASK] Iniciando creación de tarea...');
     
     // Recolectar datos del formulario del modal
+    const difficultySelect = document.getElementById('modalTaskDifficulty');
+    const selectedOption = difficultySelect.options[difficultySelect.selectedIndex];
+    
     const taskData = {
         title: document.getElementById('modalTaskTitle').value.trim(),
         category: document.getElementById('modalTaskCategory').value,
         type: document.getElementById('modalTaskType').value,
         coachee_id: document.getElementById('modalTaskCoachee').value,
         due_date: document.getElementById('modalTaskDueDate').value,
-        description: document.getElementById('modalTaskDescription').value.trim()
+        description: document.getElementById('modalTaskDescription').value.trim(),
+        // GAMIFICACIÓN: Añadir dificultad y puntos (Etapa 4.2)
+        difficulty: difficultySelect.value,
+        points: parseInt(selectedOption.getAttribute('data-points') || '0')
     };
     
     console.log('📦 [CREATE-TASK] Datos recolectados:', taskData);
+    console.log('🎮 [GAMIFICACIÓN] Dificultad:', taskData.difficulty, 'Puntos:', taskData.points);
     
     // Validar campos requeridos
-    if (!taskData.title || !taskData.category || !taskData.type || !taskData.coachee_id || !taskData.due_date) {
+    if (!taskData.title || !taskData.category || !taskData.type || !taskData.coachee_id || !taskData.due_date || !taskData.difficulty) {
         showToast('Por favor completa todos los campos requeridos', 'warning');
         return;
     }
