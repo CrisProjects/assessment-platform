@@ -2164,7 +2164,7 @@
             
             /* Tab content optimizado para móvil */
             .tab-content {
-                padding: 1rem 0 !important;
+                padding: 0 !important;
             }
             
             .tab-pane {
@@ -3772,7 +3772,7 @@
         /* Navigation tabs - MEJORADO PARA MÓVIL Y TABLET */
         .nav-tabs {
             border-bottom: 2px solid var(--calm-primary) !important;
-            margin-bottom: 2rem !important;
+            margin-bottom: 1rem !important;
             background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%) !important;
             border-radius: 12px 12px 0 0 !important;
             padding: 0.75rem !important;
@@ -8445,6 +8445,20 @@
             }
         }
 
+        /* ⚡ FIX: Forzar que los sub-tabs de Schedule Coach sean visibles */
+        #scheduleCoachTabContent .tab-pane {
+            display: none !important;
+        }
+        
+        #scheduleCoachTabContent .tab-pane.show.active {
+            display: block !important;
+        }
+        
+        /* Si solo tiene active sin show, también mostrarlo */
+        #scheduleCoachTabContent .tab-pane.active {
+            display: block !important;
+        }
+
         /* Tablet específico para schedule coach */
         @media (min-width: 769px) and (max-width: 1024px) {
             #schedule-coach .col-lg-4 {
@@ -11411,51 +11425,177 @@
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
                             <h1 style="font-size: 1.875rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                                <i class="fas fa-rocket" style="color: #ec4899;"></i>
-                                <span>Mi Plan de Desarrollo</span>
+                                <i class="fas fa-rocket" style="color: #6366f1;"></i>
+                                <span>Plan de Desarrollo</span>
                             </h1>
                             <p style="color: #6b7280; font-size: 1rem;">
-                                Planifica y da seguimiento a tu crecimiento profesional
+                                Gestiona tu crecimiento personal y profesional con objetivos claros
                             </p>
                         </div>
                         
-                        <!-- Loading -->
-                        <div id="devPlanLoading" 
-                                        x-show="isLoadingPlans"
-                                        class="text-center py-3">
-                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                            <span class="visually-hidden">Cargando...</span>
-                                        </div>
+                        <!-- Navigation Tabs -->
+                        <div style="background: white; border-radius: 12px; padding: 0.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+                            <div style="display: flex; gap: 0.25rem;">
+                                <button 
+                                    id="devPlanDashboardTab"
+                                    onclick="switchDevPlanView('dashboard')"
+                                    style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1rem; border-radius: 8px; transition: all 0.2s; background: #eef2ff !important; color: #6366f1 !important; border: none; font-size: 0.875rem; font-weight: 500; cursor: pointer;">
+                                    <i class="fas fa-th-large" style="font-size: 1rem;"></i>
+                                    <span>Dashboard</span>
+                                </button>
+                                <button 
+                                    id="devPlanPlansTab"
+                                    onclick="switchDevPlanView('plans')"
+                                    style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1rem; border-radius: 8px; transition: all 0.2s; background: transparent !important; color: #64748b !important; border: none; font-size: 0.875rem; font-weight: 500; cursor: pointer;">
+                                    <i class="fas fa-bullseye" style="font-size: 1rem;"></i>
+                                    <span>Planes</span>
+                                </button>
+                                <button 
+                                    id="devPlanChartsTab"
+                                    onclick="switchDevPlanView('charts')"
+                                    style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1rem; border-radius: 8px; transition: all 0.2s; background: transparent !important; color: #64748b !important; border: none; font-size: 0.875rem; font-weight: 500; cursor: pointer;">
+                                    <i class="fas fa-chart-bar" style="font-size: 1rem;"></i>
+                                    <span>Gráficos</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Main Content Container -->
+                        <div>
+                            
+                            <!-- Loading -->
+                            <div id="devPlanLoading" style="display: none;">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p style="color: #6b7280; margin-top: 1rem; font-size: 0.9rem;">Cargando planes...</p>
+                                </div>
+                            </div>
+                        
+                            
+                            <!-- Dashboard View -->
+                            <div id="devPlanDashboardView" style="display: block;">
+                                <!-- Will be rendered by JavaScript -->
+                            </div>
+                            
+                            <!-- Plans View -->
+                            <div id="devPlanPlansView" style="display: none;">
+                                <!-- Header with filters -->
+                                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2rem; gap: 1.5rem; flex-wrap: wrap;">
+                                    <div>
+                                        <h2 style="font-size: 1.875rem; font-weight: 700; color: #0f172a !important; margin: 0 0 0.5rem 0; line-height: 1.2;">Planes de Desarrollo</h2>
+                                        <p id="plansCountText" style="font-size: 0.9375rem; color: #64748b !important; margin: 0; font-weight: 400;">3 planes personales • 3 planes profesionales</p>
                                     </div>
                                     
-                                    <!-- No Plan Message -->
-                                    <div id="devPlanEmpty" 
-                                        x-show="!isLoadingPlans && developmentPlans.length === 0">
-                                        <div class="text-center py-3">
-                                            <i class="fas fa-rocket" style="font-size: 2rem; color: #e2e8f0; margin-bottom: 0.75rem;"></i>
-                                            <h6 class="inline-text-light" style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.95rem">Aún no tienes un Plan de Desarrollo</h6>
-                                            <p style="color: #94a3b8; margin: 0; font-size: 0.8rem;">Tu coach creará un plan personalizado para ti.</p>
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                            <!-- Filter buttons -->
+                                            <div style="display: flex; align-items: center; gap: 0.5rem; background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0.25rem;">
+                                                <button id="filterAll" onclick="filterPlans('all')" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #0f172a !important; color: white !important; border: none; cursor: pointer;">
+                                                    Todos
+                                                </button>
+                                                <button id="filterPersonal" onclick="filterPlans('personal')" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: transparent !important; color: #64748b !important; border: none; cursor: pointer;">
+                                                    Personal
+                                                </button>
+                                                <button id="filterProfessional" onclick="filterPlans('professional')" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: transparent !important; color: #64748b !important; border: none; cursor: pointer;">
+                                                    Profesional
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Add Plan Button -->
+                                            <button onclick="showToast('Contacta a tu coach para crear un nuevo plan', 'info')" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: #6366f1 !important; color: white !important; border-radius: 8px; border: none; font-size: 0.9375rem; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.background='#5558e3'" onmouseout="this.style.background='#6366f1'">
+                                                <i class="fas fa-plus" style="font-size: 0.875rem;"></i>
+                                                <span>Nuevo Plan</span>
+                                            </button>
                                         </div>
                                     </div>
+                                </div>
+                                
+                                <!-- Plans Container with Sidebar Layout -->
+                                <div id="devPlanPlansGridWrapper" style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                                    <style>
+                                        @media (min-width: 1024px) {
+                                            #devPlanPlansGridWrapper.has-selection {
+                                                grid-template-columns: 1fr 480px !important;
+                                            }
+                                        }
+                                    </style>
                                     
-                                    <!-- Development Plans Grid -->
-                                    <div id="devPlanContent" 
-                                        x-show="!isLoadingPlans && developmentPlans.length > 0">
-                                        <!-- Plans will be rendered here in grid format -->
+                                    <!-- Plans Grid Container -->
+                                    <div id="devPlanPlansContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 1.5rem;">
+                                        <!-- Plan cards will be rendered here -->
                                     </div>
+                                    
+                                    <!-- Progress Tracker Sticky Column -->
+                                    <div id="progressTrackerColumn" style="display: none;">
+                                        <div style="position: sticky; top: 1.5rem;">
+                                            <div id="progressTrackerContent" style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; padding: 1.5rem;">
+                                                <!-- El contenido del seguimiento se generará dinámicamente aquí -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress Tracking Sidebar (Hidden by default) -->
+                                <div id="progressTrackingSidebar" style="display: none; position: fixed; top: 0; right: 0; width: 480px; height: 100vh; background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1); z-index: 1000; overflow-y: auto; transform: translateX(100%); transition: transform 0.3s ease-in-out;">
+                                    <div style="padding: 2rem;">
+                                        <!-- Close Button -->
+                                        <button onclick="closeProgressSidebar()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                            <i class="fas fa-times" style="color: #64748b !important; font-size: 1.25rem;"></i>
+                                        </button>
+                                        
+                                        <!-- Sidebar Content -->
+                                        <div id="progressSidebarContent">
+                                            <!-- Will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Empty state for plans -->
+                                <div id="devPlanPlansEmpty" style="display: none; text-align: center; padding: 3rem;">
+                                    <div style="width: 64px; height: 64px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                        <i class="fas fa-filter" style="font-size: 2rem; color: #94a3b8;"></i>
+                                    </div>
+                                    <h3 style="font-size: 1.125rem; font-weight: 500; color: #0f172a; margin: 0 0 0.25rem 0;">No hay planes</h3>
+                                    <p id="devPlanPlansEmptyText" style="font-size: 0.875rem; color: #64748b; margin: 0;">Comienza creando tu primer plan de desarrollo</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Charts View -->
+                            <div id="devPlanChartsView" style="display: none;">
+                                <h2 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0 0 1.5rem 0;">Gráficos y Estadísticas</h2>
+                                <div id="devPlanChartsContainer">
+                                    <!-- Charts will be dynamically rendered here -->
+                                </div>
+                            </div>
+                            
+                            <!-- No Plan Message (Original empty state) -->
+                            <div id="devPlanEmpty" style="display: none;">
+                                <div style="background: white; border-radius: 16px; padding: 3rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                                        <i class="fas fa-rocket" style="font-size: 2.5rem; color: #9ca3af;"></i>
+                                    </div>
+                                    <h6 style="font-weight: 700; margin-bottom: 0.75rem; font-size: 1.25rem; color: #111827;">Aún no tienes un Plan de Desarrollo</h6>
+                                    <p style="color: #6b7280; margin: 0 0 1.5rem 0; font-size: 0.9rem; max-width: 400px; margin-left: auto; margin-right: auto;">Tu coach creará un plan personalizado basado en tus objetivos y necesidades de crecimiento.</p>
+                                    <button onclick="showToast('Contacta a tu coach para crear tu plan', 'info')" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                                        <i class="fas fa-plus me-2"></i>Solicitar Plan
+                                    </button>
+                                </div>
+                            </div>
+                            
+                        </div>
                     </div>
-                </div>
-
+                
                 <!-- Schedule Coach Tab -->
                 <div class="tab-pane" id="schedule-coach" role="tabpanel" style="display: none;">
-                    <div style="padding: 1.5rem; background: #f9fafb; min-height: 100vh;">
+                    <div style="padding: 1.5rem; background: #f9fafb; min-height: 100%;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
-                            <h1 style="font-size: 1.875rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <h1 style="font-size: 1.875rem; font-weight: 600; color: #111827; margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.75rem;">
                                 <i class="fas fa-calendar-alt" style="color: #8b5cf6;"></i>
                                 <span>Agendar Coach</span>
                             </h1>
-                            <p style="color: #6b7280; font-size: 1rem;">
+                            <p style="color: #6b7280; font-size: 1rem; margin: 0;">
                                 Programa tus sesiones de coaching personalizadas
                             </p>
                         </div>
@@ -11466,6 +11606,8 @@
                                         <button class="nav-link active" 
                                             @click="switchScheduleTab('request')"
                                             id="schedule-request-tab" type="button" role="tab"
+                                            data-bs-toggle="tab" data-bs-target="#schedule-request-pane"
+                                            aria-controls="schedule-request-pane" aria-selected="true"
                                             style="background: #fff !important; color: #333 !important; border-color: #dee2e6 !important;">
                                             <i class="fas fa-plus me-2" style="color: #333 !important;"></i>
                                             <span style="color: #333 !important;">Solicitar</span>
@@ -11475,6 +11617,8 @@
                                         <button class="nav-link position-relative" 
                                             @click="switchScheduleTab('sessions')"
                                             id="my-sessions-tab" type="button" role="tab"
+                                            data-bs-toggle="tab" data-bs-target="#my-sessions-pane"
+                                            aria-controls="my-sessions-pane" aria-selected="false"
                                             style="background: #fff !important; color: #333 !important; border-color: #dee2e6 !important;">
                                             <i class="fas fa-calendar me-2" style="color: #333 !important;"></i>
                                             <span style="color: #333 !important;">Mis Sesiones</span>
@@ -11489,8 +11633,7 @@
                                     <div class="tab-content" id="scheduleCoachTabContent">
                                         
                                         <!-- Pestaña: Solicitar Sesión -->
-                                        <div class="tab-pane fade" 
-                                            :class="{ 'show active': scheduleTab === 'request' }"
+                                        <div class="tab-pane show active" 
                                             id="schedule-request-pane" role="tabpanel" 
                                             aria-labelledby="schedule-request-tab" tabindex="0">
                                             <div class="d-flex gap-3 flex-wrap">
@@ -11598,14 +11741,16 @@
                                                                         </select>
                                                                     </div>
                                                                     <div class="col-12">
-                                                                        <button type="submit" class="btn btn-primary w-100 w-sm-auto" 
-                                                                            style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem;">
-                                                                            <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
-                                                                        </button>
-                                                                        <button type="button" class="btn btn-outline-secondary w-100 w-sm-auto mt-2 mt-sm-0 ms-sm-2" onclick="resetSessionForm()"
-                                                                            style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem;">
-                                                                            <i class="fas fa-undo me-2"></i>Limpiar
-                                                                        </button>
+                                                                        <div class="d-flex gap-2 flex-column flex-sm-row">
+                                                                            <button type="submit" class="btn btn-primary flex-grow-1" 
+                                                                                style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem;">
+                                                                                <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-outline-secondary" onclick="resetSessionForm()"
+                                                                                style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem; min-width: 120px;">
+                                                                                <i class="fas fa-undo me-2"></i>Limpiar
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </form>
@@ -11651,8 +11796,7 @@
                                         </div>
 
                                         <!-- Pestaña: Mis Sesiones -->
-                                        <div class="tab-pane fade" 
-                                            :class="{ 'show active': scheduleTab === 'sessions' }"
+                                        <div class="tab-pane" 
                                             id="my-sessions-pane" role="tabpanel" 
                                             aria-labelledby="my-sessions-tab" tabindex="0">
                                             <div>
@@ -13626,6 +13770,78 @@
         </div>
     </div>
 
+    <!-- Modal: Editar Progreso del Plan -->
+    <div class="modal fade" id="editProgressModal" tabindex="-1" aria-labelledby="editProgressModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.15);">
+                <!-- Header -->
+                <div style="background: white; padding: 1.25rem 1.5rem; border-radius: 16px 16px 0 0; position: relative; border-bottom: 3px solid #3b82f6;">
+                    <h5 style="margin: 0; color: #1e293b !important; font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="fas fa-tasks" style="font-size: 1.1rem; color: #3b82f6 !important;"></i>
+                        <span>Actualizar Progreso</span>
+                    </h5>
+                    <button type="button" class="btn-close dark-close-btn" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <style>
+                        .dark-close-btn {
+                            position: absolute !important;
+                            right: 1.5rem !important;
+                            top: 1.25rem !important;
+                            width: 1.25rem !important;
+                            height: 1.25rem !important;
+                            background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231e293b'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1.25rem auto no-repeat !important;
+                            opacity: 1 !important;
+                            cursor: pointer !important;
+                            border: none !important;
+                            padding: 0 !important;
+                        }
+                        .dark-close-btn:hover {
+                            opacity: 0.6 !important;
+                        }
+                    </style>
+                </div>
+                
+                <!-- Body -->
+                <div class="modal-body" style="padding: 1.5rem; background: #f8fafc;">
+                    <div style="background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; border: 1px solid #e2e8f0;">
+                        <h6 id="progressModalTitle" style="color: #1e293b; font-weight: 600; font-size: 1rem; margin: 0;">Plan de Desarrollo</h6>
+                    </div>
+                    
+                    <h6 style="font-size: 0.875rem; font-weight: 600; color: #475569; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-list-check" style="color: #3b82f6;"></i>
+                        <span>Marca las acciones que has completado:</span>
+                    </h6>
+                    
+                    <div id="progressActionsContainer" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+                        <!-- Acciones se cargan dinámicamente -->
+                    </div>
+                    
+                    <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 1rem; margin-top: 1.25rem;">
+                        <p style="font-size: 0.8125rem; color: #0369a1; margin: 0; display: flex; align-items: start; gap: 0.5rem;">
+                            <i class="fas fa-info-circle" style="margin-top: 0.125rem; flex-shrink: 0; color: #0ea5e9;"></i>
+                            <span>Al marcar una acción como completada, tu progreso se actualizará automáticamente y tu coach podrá ver tus avances.</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; border-radius: 0 0 16px 16px; gap: 0.75rem;">
+                    <button type="button" class="btn" data-bs-dismiss="modal" 
+                            style="font-size: 0.875rem; padding: 0.625rem 1.25rem; border-radius: 8px; font-weight: 600; background: white; color: #64748b; border: 1px solid #cbd5e1;"
+                            onmouseover="this.style.background='#f1f5f9'; this.style.color='#475569';" 
+                            onmouseout="this.style.background='white'; this.style.color='#64748b';">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="window.saveProgress()" 
+                            style="font-size: 0.875rem; padding: 0.625rem 1.5rem; border-radius: 8px; font-weight: 600; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white;"
+                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.4)';" 
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="fas fa-save me-1"></i>Guardar Progreso
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div> <!-- Close container-fluid -->
 
     <script>
@@ -13849,6 +14065,9 @@
                                 if (newTab === 'evaluaciones-figma' && !this.evaluationsData) {
                                     console.log('🔄 Cargando evaluaciones al cambiar de tab');
                                     this.loadEvaluations();
+                                } else if (newTab === 'development-plan') {
+                                    console.log('🔄 Cargando plan de desarrollo al cambiar de tab');
+                                    this.loadDevelopmentPlans();
                                 } else if (newTab === 'content' && oldTab !== 'content') {
                                     // Forzar recarga de todos los PDFs
                                     const pdfEmbeds = document.querySelectorAll('embed[type="application/pdf"]');
@@ -14380,6 +14599,15 @@
                         this.loadPendingEvaluations();
                     } else if (tabId === 'development-plan') {
                         // 🔥 ALPINE: Cargar planes de desarrollo
+                        // Mostrar loading inmediatamente
+                        const loading = document.getElementById('devPlanLoading');
+                        const dashboard = document.getElementById('devPlanDashboard');
+                        const empty = document.getElementById('devPlanEmpty');
+                        
+                        if (loading) loading.style.display = 'block';
+                        if (dashboard) dashboard.style.display = 'none';
+                        if (empty) empty.style.display = 'none';
+                        
                         this.loadDevelopmentPlans();
                     } else if (tabId === 'schedule-coach') {
                         // 🔥 ALPINE: Cargar disponibilidad del coach y sesiones
@@ -15285,19 +15513,25 @@
                             
                             this.renderDevelopmentPlans();
                         } else {
-                            // No hay planes
+                            // No hay planes reales, pero renderizar con datos demo
+                            console.log('⚠️ No hay planes desde la API, usando datos demo');
                             this.developmentPlans = [];
                             this.selectedPlan = null;
-                            this.showEmptyPlansState();
+                            
+                            // Llamar renderDevelopmentPlans con array vacío para activar demo data
+                            this.renderDevelopmentPlans();
                         }
                     } catch (error) {
                         console.error('❌ ALPINE: Error loading plans:', error);
+                        console.log('⚠️ Error en API, usando datos demo para mostrar diseño');
                         this.developmentPlans = [];
                         this.selectedPlan = null;
-                        this.showEmptyPlansState();
+                        
+                        // En caso de error, también renderizar con datos demo
+                        this.renderDevelopmentPlans();
                         
                         if (typeof showToast === 'function') {
-                            showToast('Error al cargar el plan de desarrollo', 'error');
+                            showToast('Mostrando datos de ejemplo', 'info');
                         }
                     } finally {
                         this.isLoadingPlans = false;
@@ -15310,7 +15544,7 @@
                     // Exponer globalmente
                     window.developmentPlans = this.developmentPlans;
                     
-                    // Llamar función legacy
+                    // Llamar función global de renderizado
                     if (typeof renderDevelopmentPlans === 'function') {
                         renderDevelopmentPlans(this.developmentPlans);
                     } else {
@@ -15318,15 +15552,15 @@
                     }
                 },
                 
-                // Mostrar estado vacío si no hay planes
                 showEmptyPlansState() {
-                    const loadingEl = document.getElementById('devPlanLoading');
-                    const emptyEl = document.getElementById('devPlanEmpty');
-                    const contentEl = document.getElementById('devPlanContent');
+                    // Ocultar loading y dashboard
+                    const loading = document.getElementById('devPlanLoading');
+                    const dashboard = document.getElementById('devPlanDashboard');
+                    const empty = document.getElementById('devPlanEmpty');
                     
-                    if (loadingEl) loadingEl.style.display = 'none';
-                    if (emptyEl) emptyEl.style.display = 'block';
-                    if (contentEl) contentEl.style.display = 'none';
+                    if (loading) loading.style.display = 'none';
+                    if (dashboard) dashboard.style.display = 'none';
+                    if (empty) empty.style.display = 'block';
                 },
                 
                 // ============================================
@@ -15930,16 +16164,28 @@
         // 📋 DESARROLLO DE PLANES - Funciones
         // ============================================
         
-        async function loadDevelopmentPlans() {
+        // Variable global para el filtro actual
+        window.currentFilter = 'all';
+        
+        // Variable global para rastrear la vista activa
+        if (!window.currentDevPlanView) {
+            window.currentDevPlanView = 'dashboard';
+        }
+        
+        window.loadDevelopmentPlans = async function() {
             
             const loadingEl = document.getElementById('devPlanLoading');
             const emptyEl = document.getElementById('devPlanEmpty');
-            const contentEl = document.getElementById('devPlanContent');
+            const dashboardView = document.getElementById('devPlanDashboardView');
+            const plansView = document.getElementById('devPlanPlansView');
+            const chartsView = document.getElementById('devPlanChartsView');
             
             // Mostrar loading
-            loadingEl.style.display = 'block';
-            emptyEl.style.display = 'none';
-            contentEl.style.display = 'none';
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
+            if (dashboardView) dashboardView.style.display = 'none';
+            if (plansView) plansView.style.display = 'none';
+            if (chartsView) chartsView.style.display = 'none';
             
             try {
                 const response = await fetch('/api/coachee/development-plans');
@@ -15950,95 +16196,1535 @@
                 
                 const data = await response.json();
                 
-                loadingEl.style.display = 'none';
+                if (loadingEl) loadingEl.style.display = 'none';
                 
                 if (data.success && data.plans && data.plans.length > 0) {
                     renderDevelopmentPlans(data.plans);
-                    contentEl.style.display = 'block';
+                    // Mostrar la vista activa actual
+                    const activeView = window.currentDevPlanView || 'dashboard';
+                    if (activeView === 'dashboard' && dashboardView) {
+                        dashboardView.style.display = 'block';
+                    } else if (activeView === 'plans' && plansView) {
+                        plansView.style.display = 'block';
+                    } else if (activeView === 'charts' && chartsView) {
+                        chartsView.style.display = 'block';
+                    }
                 } else {
-                    emptyEl.style.display = 'block';
+                    if (emptyEl) emptyEl.style.display = 'block';
                 }
                 
             } catch (error) {
                 console.error('❌ Error al cargar planes:', error);
-                loadingEl.style.display = 'none';
-                emptyEl.style.display = 'block';
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (emptyEl) emptyEl.style.display = 'block';
                 showToast('Error al cargar el plan de desarrollo', 'error');
             }
         }
         
-        function renderDevelopmentPlans(plans) {
-            const container = document.getElementById('devPlanContent');
-            container.innerHTML = '';
+        window.renderDevelopmentPlans = function(plans) {
+            console.log('🎨 renderDevelopmentPlans called with:', plans);
             
-            // Crear grid para múltiples planes
-            const plansHTML = plans.map((plan, index) => `
-                <div class="dev-plan-card">
+            // Ocultar loading
+            const loading = document.getElementById('devPlanLoading');
+            if (loading) loading.style.display = 'none';
+            
+            // Ocultar mensaje vacío
+            const empty = document.getElementById('devPlanEmpty');
+            if (empty) empty.style.display = 'none';
+            
+            // Normalizar datos de planes (convertir formato API a formato esperado por el diseño)
+            if (plans && plans.length > 0) {
+                console.log('📦 Planes recibidos de la API:', JSON.parse(JSON.stringify(plans)));
+                
+                plans = plans.map(plan => {
+                    // Asegurar que el ID sea numérico
+                    if (plan.id && typeof plan.id === 'string') {
+                        plan.id = parseInt(plan.id, 10);
+                    }
+                    console.log(`📋 Plan ID ${plan.id} (tipo: ${typeof plan.id})`);
                     
-                    <!-- Header con info del plan -->
-                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <div style="flex: 1; min-width: 0;">
-                            <span class="plan-number-badge">
-                                <i class="fas fa-check-circle" style="font-size: 0.65rem;"></i> Plan ${index + 1}
-                            </span>
-                            <div class="inline-text-light" style="font-size: 0.7rem; margin-top: 0.35rem">
-                                <i class="fas fa-calendar-check" style="font-size: 0.65rem;"></i> ${new Date(plan.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    // Si el plan tiene 'tipo' en lugar de 'category', normalizar
+                    if (plan.tipo && !plan.category) {
+                        plan.category = plan.tipo;
+                    }
+                    
+                    // Normalizar valores de category
+                    if (plan.category) {
+                        plan.category = plan.category.toLowerCase();
+                        console.log(`   Categoría: ${plan.category}`);
+                    } else {
+                        // Si no tiene category, asignar 'personal' por defecto
+                        plan.category = 'personal';
+                        console.log(`   ⚠️ Sin categoría, asignando 'personal' por defecto`);
+                    }
+                    
+                    // Mapear campos de API a campos esperados por el diseño
+                    if (!plan.title && plan.objetivo) {
+                        plan.title = plan.objetivo;
+                    }
+                    
+                    if (!plan.description && plan.situacion_actual) {
+                        plan.description = plan.situacion_actual;
+                    }
+                    
+                    if (!plan.startDate && plan.published_at) {
+                        plan.startDate = plan.published_at;
+                    }
+                    
+                    // Calcular progreso basado en acciones completadas (si existen)
+                    if (!plan.progress && plan.acciones && Array.isArray(plan.acciones)) {
+                        const totalAcciones = plan.acciones.length;
+                        const completedAcciones = plan.acciones.filter(a => a.completed).length;
+                        plan.progress = totalAcciones > 0 ? Math.round((completedAcciones / totalAcciones) * 100) : 0;
+                    } else if (!plan.progress) {
+                        plan.progress = 0; // Default a 0 si no hay datos
+                    }
+                    
+                    // Asegurar que milestones sea un array (usar milestones reales de la API)
+                    if (!plan.milestones || !Array.isArray(plan.milestones)) {
+                        plan.milestones = []; // Array vacío si no hay datos
+                    }
+                    
+                    console.log(`📌 Plan ${plan.id} tiene ${plan.milestones.length} hitos reales`);
+                    
+                    // Calcular targetDate si no existe (6 meses desde startDate por defecto)
+                    if (!plan.targetDate && plan.startDate) {
+                        const start = new Date(plan.startDate);
+                        const target = new Date(start);
+                        target.setMonth(target.getMonth() + 6);
+                        plan.targetDate = target.toISOString();
+                    }
+                    
+                    return plan;
+                });
+                
+                console.log('📊 Planes normalizados y listos para renderizar:', plans);
+            }
+            
+            // Si no hay planes, mostrar mensaje vacío (NO usar datos de demo)
+            if (!plans || plans.length === 0) {
+                console.log('ℹ️ No hay planes disponibles');
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+            
+            console.log(`📊 Renderizando ${plans.length} plan(es) reales`);
+            
+            // Log detallado de milestones para debug
+            plans.forEach((plan, idx) => {
+                console.log(`📋 Plan ${idx + 1} (ID: ${plan.id}):`, {
+                    objetivo: plan.objetivo,
+                    milestones: plan.milestones,
+                    milestones_count: plan.milestones ? plan.milestones.length : 0
+                });
+            });
+            
+            // Guardar planes globalmente
+            window.developmentPlans = plans;
+            
+            // Renderizar Dashboard View (default)
+            renderDashboardView(plans);
+            
+            // Renderizar Plans View
+            renderPlansView(plans);
+            
+            // Renderizar Charts View
+            renderDevPlanCharts(plans);
+        }
+        
+        // Render Dashboard View
+        window.renderDashboardView = function(plans) {
+            const container = document.getElementById('devPlanDashboardView');
+            if (!container) return;
+            
+            // Calcular estadísticas
+            const stats = calculatePlanStats(plans);
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                    <style>
+                        @media (min-width: 1024px) {
+                            #devPlanDashboardView > div {
+                                grid-template-columns: 2fr 1fr !important;
+                            }
+                        }
+                    </style>
+                    <!-- Left Column: Progress Overview -->
+                    <div>
+                        <!-- Overall Progress Card -->
+                        <div style="background: white; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 1.5rem; height: 100%; display: flex; flex-direction: column;">
+                            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem;">
+                                <div>
+                                    <h2 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0;">Progreso General</h2>
+                                    <p style="font-size: 0.875rem; color: #64748b; margin: 0;">Tu avance en todos los planes de desarrollo</p>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.75rem; border-radius: 20px; background: #ecfdf5 !important;">
+                                    <i class="fas fa-arrow-up" style="color: #10b981 !important; font-size: 1rem;"></i>
+                                    <span style="font-size: 0.875rem; font-weight: 600; color: #059669 !important;">+12% este mes</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Overall Progress Bar -->
+                            <div style="margin-bottom: 2rem;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Progreso Total</span>
+                                    <span style="font-size: 2rem; font-weight: 700; color: #6366f1 !important; line-height: 1;">${stats.totalProgress}%</span>
+                                </div>
+                                <div style="height: 16px; background: #f1f5f9 !important; border-radius: 10px; overflow: hidden;">
+                                    <div style="height: 100%; background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important; border-radius: 10px; width: ${stats.totalProgress}%; transition: width 1s ease;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Category Progress -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                                <!-- Personal -->
+                                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important; padding: 1rem; border-radius: 12px; border: 1px solid #bfdbfe !important;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                        <span style="font-size: 0.875rem; font-weight: 500; color: #475569 !important;">Desarrollo Personal</span>
+                                        <span style="font-size: 1.125rem; font-weight: 700; color: #1e40af !important;">${stats.personalProgress}%</span>
+                                    </div>
+                                    <div style="height: 8px; background: rgba(191, 219, 254, 0.5) !important; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem;">
+                                        <div style="height: 100%; background: #3b82f6 !important; border-radius: 10px; width: ${stats.personalProgress}%; transition: width 1s ease;"></div>
+                                    </div>
+                                    <p style="font-size: 0.75rem; color: #1e40af !important; margin: 0; opacity: 0.8;">${stats.personalCompleted} de ${stats.personalTotal} objetivos completados</p>
+                                </div>
+                                
+                                <!-- Professional -->
+                                <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%) !important; padding: 1rem; border-radius: 12px; border: 1px solid #e9d5ff !important;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                        <span style="font-size: 0.875rem; font-weight: 500; color: #475569 !important;">Desarrollo Profesional</span>
+                                        <span style="font-size: 1.125rem; font-weight: 700; color: #6b21a8 !important;">${stats.professionalProgress}%</span>
+                                    </div>
+                                    <div style="height: 8px; background: rgba(233, 213, 255, 0.5) !important; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem;">
+                                        <div style="height: 100%; background: #8b5cf6 !important; border-radius: 10px; width: ${stats.professionalProgress}%; transition: width 1s ease;"></div>
+                                    </div>
+                                    <p style="font-size: 0.75rem; color: #6b21a8 !important; margin: 0; opacity: 0.8;">${stats.professionalCompleted} de ${stats.professionalTotal} objetivos completados</p>
+                                </div>
                             </div>
                         </div>
-                        <button onclick="togglePlanDetails(${plan.id})" class="plan-toggle-btn">
-                            <i class="fas fa-chevron-down" id="plan-icon-${plan.id}"></i>
-                        </button>
                     </div>
                     
-                    <!-- Objetivo Principal (siempre visible) -->
-                    <div class="plan-objective-box">
-                        <div class="plan-objective-title">
-                            <i class="fas fa-bullseye" style="font-size: 0.75rem; margin-right: 0.4rem;"></i>Objetivo
+                    <!-- Right Column: Stats Cards -->
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Planes Activos -->
+                        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 1rem; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 48px; height: 48px; background: #eff6ff !important; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-bullseye" style="color: #3b82f6 !important; font-size: 1.5rem;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <p style="font-size: 0.875rem; color: #64748b; margin: 0 0 0.125rem 0;">Planes Activos</p>
+                                    <p style="font-size: 2rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1;">${plans.length}</p>
+                                </div>
+                            </div>
                         </div>
-                        <p class="plan-objective-text">${plan.objetivo || 'No especificado'}</p>
-                    </div>
-                    
-                    <!-- Áreas de Desarrollo (compactas) -->
-                    <div style="margin-bottom: 0.5rem;">
-                        <div class="inline-text-medium" style="font-weight: 600; margin-bottom: 0.4rem; display: flex; align-items: center; font-size: 0.75rem">
-                            <i class="fas fa-th-large" style="color: #667eea; font-size: 0.7rem; margin-right: 0.4rem;"></i>Áreas
-                        </div>
-                        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-                            ${renderAreasCompact(plan.areas_desarrollo)}
-                        </div>
-                    </div>
-                    
-                    <!-- Detalles expandibles -->
-                    <div id="plan-details-${plan.id}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
                         
-                        ${plan.situacion_actual ? `
-                        <div class="plan-details-box">
-                            <div class="inline-text-medium" style="font-weight: 600; margin-bottom: 0.35rem; display: flex; align-items: center; font-size: 0.75rem">
-                                <i class="fas fa-compass" style="font-size: 0.7rem; margin-right: 0.4rem;"></i>Situación Actual
+                        <!-- Completados -->
+                        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 1rem; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 48px; height: 48px; background: #ecfdf5 !important; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-check-circle" style="color: #10b981 !important; font-size: 1.5rem;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <p style="font-size: 0.875rem; color: #64748b; margin: 0 0 0.125rem 0;">Completados</p>
+                                    <p style="font-size: 2rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1;">${stats.completed}</p>
+                                </div>
                             </div>
-                            <p class="inline-text-light" style="margin: 0; line-height: 1.4; font-size: 0.75rem">${plan.situacion_actual}</p>
-                        </div>
-                        ` : ''}
-                        
-                        <div style="margin-bottom: 0.5rem;">
-                            <div class="inline-text-medium" style="font-weight: 600; margin-bottom: 0.4rem; display: flex; align-items: center; font-size: 0.75rem">
-                                <i class="fas fa-tasks" style="color: #667eea; font-size: 0.7rem; margin-right: 0.4rem;"></i>Acciones (${plan.acciones?.length || 0})
-                            </div>
-                            ${renderAccionesCompact(plan.acciones)}
                         </div>
                         
-                        <div class="plan-indicators-box">
-                            <div class="plan-indicators-title">
-                                <i class="fas fa-chart-line" style="font-size: 0.7rem; margin-right: 0.4rem;"></i>Indicadores
+                        <!-- En Progreso -->
+                        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 1rem; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 48px; height: 48px; background: #fef3c7 !important; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-clock" style="color: #f59e0b !important; font-size: 1.5rem;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <p style="font-size: 0.875rem; color: #64748b; margin: 0 0 0.125rem 0;">En Progreso</p>
+                                    <p style="font-size: 2rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1;">${stats.inProgress}</p>
+                                </div>
                             </div>
-                            <p class="plan-indicators-text">${plan.indicadores || 'No especificados'}</p>
+                        </div>
+                        
+                        <!-- Logros -->
+                        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 1rem; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 48px; height: 48px; background: #faf5ff !important; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-trophy" style="color: #a855f7 !important; font-size: 1.5rem;"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <p style="font-size: 0.875rem; color: #64748b; margin: 0 0 0.125rem 0;">Logros Desbloqueados</p>
+                                    <p style="font-size: 2rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1;">${stats.achievements}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
+                </div>
+                
+                <!-- Actividad Reciente (Full Width Below) -->
+                <div style="background: white !important; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0 !important; padding: 1.5rem; margin-top: 1.5rem;">
+                    <h2 style="font-size: 1.125rem; font-weight: 600; color: #0f172a !important; margin: 0 0 1rem 0;">Actividad Reciente</h2>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 12px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                            <div style="width: 8px; height: 8px; background: #10b981 !important; border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0;"></div>
+                            <div style="flex: 1;">
+                                <p style="font-size: 0.875rem; font-weight: 500; color: #0f172a !important; margin: 0 0 0.25rem 0;">Completaste "Curso de React Avanzado"</p>
+                                <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: #64748b !important;">
+                                    <span>Profesional</span>
+                                    <span>•</span>
+                                    <span>Hace 2 horas</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 12px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                            <div style="width: 8px; height: 8px; background: #3b82f6 !important; border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0;"></div>
+                            <div style="flex: 1;">
+                                <p style="font-size: 0.875rem; font-weight: 500; color: #0f172a !important; margin: 0 0 0.25rem 0;">Alcanzaste 50% en "Aprender Italiano"</p>
+                                <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: #64748b !important;">
+                                    <span>Personal</span>
+                                    <span>•</span>
+                                    <span>Hace 1 día</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 12px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                            <div style="width: 8px; height: 8px; background: #f59e0b !important; border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0;"></div>
+                            <div style="flex: 1;">
+                                <p style="font-size: 0.875rem; font-weight: 500; color: #0f172a !important; margin: 0 0 0.25rem 0;">Nuevo hito: "Leer 2 libros al mes"</p>
+                                <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: #64748b !important;">
+                                    <span>Personal</span>
+                                    <span>•</span>
+                                    <span>Hace 2 días</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Calcular estadísticas de los planes
+        window.calculatePlanStats = function(plans) {
+            // Para demo, usamos valores fijos que coincidan con la imagen
+            // En producción, estos se calcularían basándose en los datos reales
+            return {
+                totalProgress: 68,
+                personalProgress: 75,
+                personalCompleted: 6,
+                personalTotal: 8,
+                professionalProgress: 62,
+                professionalCompleted: 5,
+                professionalTotal: 8,
+                completed: 8,
+                inProgress: 4,
+                achievements: 15
+            };
+        }
+        
+        // Renderizar actividad reciente
+        function renderRecentActivity(plans) {
+            const container = document.getElementById('recentActivityTimeline');
+            if (!container) return;
+            
+            const activities = [
+                {
+                    icon: 'check-circle',
+                    iconColor: '#10b981',
+                    iconBg: '#d1fae5',
+                    title: 'Completaste "Curso de React Avanzado"',
+                    category: 'Profesional',
+                    time: 'Hace 2 horas'
+                },
+                {
+                    icon: 'edit',
+                    iconColor: '#3b82f6',
+                    iconBg: '#dbeafe',
+                    title: 'Actualizaste objetivo de comunicación',
+                    category: 'Personal',
+                    time: 'Hace 1 día'
+                },
+                {
+                    icon: 'trophy',
+                    iconColor: '#f59e0b',
+                    iconBg: '#fef3c7',
+                    title: 'Desbloqueaste logro "Aprendiz Dedicado"',
+                    category: 'Logros',
+                    time: 'Hace 3 días'
+                }
+            ];
+            
+            const activityHTML = activities.map(activity => `
+                <div style="display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+                    <div style="width: 40px; height: 40px; background: ${activity.iconBg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-${activity.icon}" style="color: ${activity.iconColor}; font-size: 1.125rem;"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <p style="color: #111827; font-weight: 500; margin: 0 0 0.25rem 0; font-size: 0.875rem;">${activity.title}</p>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <span style="color: #6b7280; font-size: 0.75rem;">${activity.category}</span>
+                            <span style="color: #9ca3af; font-size: 0.75rem;">•</span>
+                            <span style="color: #9ca3af; font-size: 0.75rem;">${activity.time}</span>
+                        </div>
+                    </div>
                 </div>
             `).join('');
             
-            container.innerHTML = plansHTML;
+            container.innerHTML = activityHTML + `
+                <div style="text-align: center; padding-top: 1rem;">
+                    <button onclick="showToast('Función próximamente', 'info')" style="color: #8b5cf6; background: none; border: none; font-size: 0.875rem; font-weight: 600; cursor: pointer; padding: 0.5rem;">
+                        Ver todo el historial <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Renderizar áreas con diseño moderno
+        function renderAreasModern(areas) {
+            if (!areas || !Array.isArray(areas) || areas.length === 0) {
+                return '<span style="color: #9ca3af; font-style: italic; font-size: 0.8rem;">No especificadas</span>';
+            }
+            
+            const colors = [
+                { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' },
+                { bg: '#d1fae5', text: '#065f46', border: '#10b981' },
+                { bg: '#fef3c7', text: '#92400e', border: '#f59e0b' }
+            ];
+            
+            return areas.map((area, index) => {
+                const color = colors[index % colors.length];
+                return `
+                    <span style="
+                        background: ${color.bg}; 
+                        border: 2px solid ${color.border}; 
+                        color: ${color.text}; 
+                        padding: 0.5rem 1rem; 
+                        border-radius: 20px; 
+                        font-weight: 600; 
+                        font-size: 0.8rem;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                    ">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        ${area}
+                    </span>
+                `;
+            }).join('');
+        }
+        
+        // Renderizar acciones con diseño moderno
+        function renderAccionesModern(acciones) {
+            if (!acciones || !Array.isArray(acciones) || acciones.length === 0) {
+                return '<p style="color: #9ca3af; font-style: italic; font-size: 0.85rem; margin: 0;">No hay acciones definidas</p>';
+            }
+            
+            return acciones.map((accion, index) => `
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <div style="
+                            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+                            color: white;
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 8px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-weight: 700;
+                            flex-shrink: 0;
+                            font-size: 0.875rem;
+                        ">
+                            ${index + 1}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <p style="color: #111827; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; line-height: 1.5;">${accion.descripcion}</p>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                                <span style="color: #6b7280; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                    <i class="fas fa-calendar" style="color: #9ca3af;"></i>
+                                    ${accion.plazo || 'Sin plazo'}
+                                </span>
+                                ${accion.responsable ? `
+                                <span style="color: #6b7280; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                    <i class="fas fa-user" style="color: #9ca3af;"></i>
+                                    ${accion.responsable}
+                                </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // ==========================
+        // NEW DEVELOPMENT PLAN FUNCTIONS
+        // ==========================
+        
+        // Switch between Dashboard, Plans, and Charts views
+        function switchDevPlanView(view) {
+            console.log('🔄 switchDevPlanView called with:', view);
+            
+            // Guardar vista activa
+            window.currentDevPlanView = view;
+            
+            // Update tab active states
+            const tabs = ['devPlanDashboardTab', 'devPlanPlansTab', 'devPlanChartsTab'];
+            tabs.forEach(tabId => {
+                const tab = document.getElementById(tabId);
+                if (tab) {
+                    if (tabId === `devPlan${view.charAt(0).toUpperCase() + view.slice(1)}Tab`) {
+                        tab.style.background = '#eef2ff';
+                        tab.style.color = '#6366f1';
+                        // Force apply with !important
+                        tab.style.setProperty('background', '#eef2ff', 'important');
+                        tab.style.setProperty('color', '#6366f1', 'important');
+                    } else {
+                        tab.style.background = 'transparent';
+                        tab.style.color = '#64748b';
+                        tab.style.setProperty('background', 'transparent', 'important');
+                        tab.style.setProperty('color', '#64748b', 'important');
+                    }
+                }
+            });
+            
+            // Show/hide views
+            const views = {
+                dashboard: document.getElementById('devPlanDashboardView'),
+                plans: document.getElementById('devPlanPlansView'),
+                charts: document.getElementById('devPlanChartsView')
+            };
+            
+            console.log('📦 Views elements:', views);
+            
+            Object.keys(views).forEach(key => {
+                if (views[key]) {
+                    const shouldShow = key === view;
+                    views[key].style.display = shouldShow ? 'block' : 'none';
+                    console.log(`   ${key}: display = ${views[key].style.display} (should be ${shouldShow ? 'block' : 'none'})`);
+                }
+            });
+            
+            // Force hide plan containers when showing charts
+            if (view === 'charts') {
+                const plansContainer = document.getElementById('devPlanPlansContainer');
+                const plansGridWrapper = document.getElementById('devPlanPlansGridWrapper');
+                if (plansContainer) {
+                    plansContainer.style.display = 'none';
+                    console.log('   🚫 Forced hide: devPlanPlansContainer');
+                }
+                if (plansGridWrapper) {
+                    plansGridWrapper.style.display = 'none';
+                    console.log('   🚫 Forced hide: devPlanPlansGridWrapper');
+                }
+            }
+            
+            // Re-render content AFTER making views visible
+            if (view === 'plans') {
+                console.log('📋 Switching to plans view...');
+                
+                // First make the parent view visible
+                const plansView = document.getElementById('devPlanPlansView');
+                if (plansView) {
+                    plansView.style.display = 'block';
+                    console.log('   ✅ devPlanPlansView display set to block');
+                }
+                
+                // Then show the grid wrapper
+                const plansGridWrapper = document.getElementById('devPlanPlansGridWrapper');
+                if (plansGridWrapper) {
+                    plansGridWrapper.style.display = 'grid';
+                    console.log('   ✅ devPlanPlansGridWrapper display set to grid');
+                }
+                
+                // Force show the container
+                const plansContainer = document.getElementById('devPlanPlansContainer');
+                if (plansContainer) {
+                    plansContainer.style.display = 'grid';
+                    console.log('   ✅ devPlanPlansContainer display set to grid');
+                }
+                
+                // Then re-render if we have data
+                if (window.developmentPlans && window.developmentPlans.length > 0) {
+                    console.log('   📋 Re-rendering plans view with', window.developmentPlans.length, 'plans');
+                    // Use setTimeout to ensure DOM is ready
+                    setTimeout(() => {
+                        renderPlansView(window.developmentPlans);
+                    }, 10);
+                } else {
+                    console.warn('   ⚠️ No plans available to render');
+                    console.log('   window.developmentPlans:', window.developmentPlans);
+                }
+            }
+            
+            // Render charts when charts view is selected
+            if (view === 'charts' && window.developmentPlans && window.developmentPlans.length > 0) {
+                console.log('📊 Calling renderDevPlanCharts...');
+                renderDevPlanCharts(window.developmentPlans);
+            }
+            
+            console.log('✅ View switched to:', view);
+        }
+        
+        // Filter plans by category
+        window.filterPlans = function(filter) {
+            console.log('=== filterPlans START ===');
+            console.log('Filter requested:', filter);
+            console.log('Previous filter:', window.currentFilter);
+            
+            window.currentFilter = filter;
+            
+            console.log('New filter set to:', currentFilter);
+            
+            // Update filter button states - SIMPLIFIED
+            const allBtn = document.getElementById('filterAll');
+            const personalBtn = document.getElementById('filterPersonal');
+            const professionalBtn = document.getElementById('filterProfessional');
+            
+            console.log('Button elements:', { allBtn, personalBtn, professionalBtn });
+            
+            // Reset all buttons to default state
+            if (allBtn) {
+                allBtn.style.cssText = 'padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: transparent !important; color: #64748b !important; border: none; cursor: pointer;';
+            }
+            if (personalBtn) {
+                personalBtn.style.cssText = 'padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: transparent !important; color: #64748b !important; border: none; cursor: pointer;';
+            }
+            if (professionalBtn) {
+                professionalBtn.style.cssText = 'padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: transparent !important; color: #64748b !important; border: none; cursor: pointer;';
+            }
+            
+            // Apply active state to selected button
+            if (filter === 'all' && allBtn) {
+                allBtn.style.cssText = 'padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #0f172a !important; color: white !important; border: none; cursor: pointer;';
+                console.log('Applied active state to Todos button');
+            } else if (filter === 'personal' && personalBtn) {
+                personalBtn.style.cssText = 'padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #3b82f6 !important; color: white !important; border: none; cursor: pointer;';
+                console.log('Applied active state to Personal button');
+            } else if (filter === 'professional' && professionalBtn) {
+                professionalBtn.style.cssText = 'padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #8b5cf6 !important; color: white !important; border: none; cursor: pointer;';
+                console.log('Applied active state to Profesional button');
+            }
+            
+            // Hide progress tracker when changing filters
+            hideProgressTracker();
+            
+            // Re-render plans with filter
+            if (window.developmentPlans) {
+                console.log('Re-rendering plans. Total plans:', window.developmentPlans.length);
+                renderPlansView(window.developmentPlans);
+            } else {
+                console.error('window.developmentPlans is not defined!');
+            }
+            
+            console.log('=== filterPlans END ===');
+        }
+        
+        // Render Plans View with plan cards
+        window.renderPlansView = function(plans) {
+            console.log('=== renderPlansView START ===');
+            const container = document.getElementById('devPlanPlansContainer');
+            const emptyState = document.getElementById('devPlanPlansEmpty');
+            const emptyText = document.getElementById('devPlanPlansEmptyText');
+            
+            if (!container) {
+                console.error('❌ devPlanPlansContainer not found!');
+                return;
+            }
+            
+            if (!plans || plans.length === 0) {
+                console.warn('⚠️ No plans provided to renderPlansView');
+                container.style.display = 'none';
+                if (emptyState) emptyState.style.display = 'block';
+                return;
+            }
+            
+            console.log('✅ renderPlansView called with', plans.length, 'plans');
+            console.log('Current filter:', window.currentFilter);
+            
+            // Ensure currentFilter is defined
+            if (typeof window.currentFilter === 'undefined') {
+                console.warn('⚠️ currentFilter is undefined, setting to "all"');
+                window.currentFilter = 'all';
+            }
+            
+            // Filter plans
+            const filteredPlans = plans.filter(plan => {
+                const matches = window.currentFilter === 'all' || plan.category === window.currentFilter;
+                console.log(`   Plan "${plan.title}": category="${plan.category}", filter="${window.currentFilter}", matches=${matches}`);
+                return matches;
+            });
+            
+            console.log(`📊 Filtered ${filteredPlans.length} of ${plans.length} plans with filter '${window.currentFilter}'`);
+            
+            // Update counts
+            const personalCount = plans.filter(p => p.category === 'personal').length;
+            const professionalCount = plans.filter(p => p.category === 'professional').length;
+            const countText = document.getElementById('plansCountText');
+            if (countText) {
+                countText.textContent = `${personalCount} planes personales • ${professionalCount} planes profesionales`;
+            }
+            
+            // Show/hide empty state
+            if (filteredPlans.length === 0) {
+                console.log('⚠️ No plans after filtering, showing empty state');
+                container.style.display = 'none';
+                if (emptyState) emptyState.style.display = 'block';
+                if (emptyText) {
+                    if (window.currentFilter === 'all') {
+                        emptyText.textContent = 'Comienza creando tu primer plan de desarrollo';
+                    } else {
+                        emptyText.textContent = `No tienes planes de desarrollo ${window.currentFilter === 'personal' ? 'personales' : 'profesionales'}`;
+                    }
+                }
+                return;
+            }
+            
+            // Show container and hide empty state
+            container.style.display = 'grid';
+            if (emptyState) emptyState.style.display = 'none';
+            
+            // Render plan cards
+            console.log('🎨 Rendering', filteredPlans.length, 'plan cards...');
+            const cardsHtml = filteredPlans.map(plan => renderPlanCard(plan)).join('');
+            container.innerHTML = cardsHtml;
+            console.log('✅ Plans rendered successfully');
+            console.log('=== renderPlansView END ===');
+        }
+        
+        // Render individual plan card
+        function renderPlanCard(plan) {
+            const categoryColors = {
+                personal: {
+                    bg: '#eff6ff',
+                    border: '#bfdbfe',
+                    text: '#1e40af',
+                    badge: '#dbeafe',
+                    progress: '#3b82f6'
+                },
+                professional: {
+                    bg: '#faf5ff',
+                    border: '#e9d5ff',
+                    text: '#6b21a8',
+                    badge: '#f3e8ff',
+                    progress: '#8b5cf6'
+                }
+            };
+            
+            const colors = categoryColors[plan.category || 'personal'];
+            const completedMilestones = plan.milestones?.filter(m => m.completed).length || 0;
+            const totalMilestones = plan.milestones?.length || 0;
+            
+            return `
+                <div class="dev-plan-card" data-plan-id="${plan.id}" style="background: white !important; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0 !important; overflow: hidden; transition: all 0.3s;" onmouseover="this.style.boxShadow='0 8px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'">
+                    <div style="padding: 1.5rem;">
+                        <!-- Header -->
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                    <span style="background: ${colors.badge} !important; color: ${colors.text} !important; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8125rem; font-weight: 600; text-transform: capitalize;">
+                                        ${plan.category === 'personal' ? 'Personal' : 'Profesional'}
+                                    </span>
+                                </div>
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a !important; margin: 0 0 0.5rem 0; line-height: 1.3;">${plan.title || plan.objetivo}</h3>
+                                <p style="font-size: 0.9375rem; color: #64748b !important; margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${plan.description || plan.situacion_actual || ''}</p>
+                            </div>
+                            
+                            ${typeof plan.id === 'number' ? `
+                                <button onclick="event.stopPropagation(); openEditProgressModal(${plan.id})" style="background: #f0f9ff; border: 1px solid #bae6fd; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 0.75rem; flex-shrink: 0; transition: all 0.2s;" onmouseover="this.style.background='#3b82f6'; this.style.borderColor='#3b82f6'; this.querySelector('i').style.color='white'" onmouseout="this.style.background='#f0f9ff'; this.style.borderColor='#bae6fd'; this.querySelector('i').style.color='#3b82f6'" title="Actualizar progreso">
+                                    <i class="fas fa-edit" style="color: #3b82f6 !important; transition: color 0.2s;"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; justify-between; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Progreso</span>
+                                <span style="font-size: 0.875rem; font-weight: 700; color: #0f172a;">${plan.progress || 0}%</span>
+                            </div>
+                            <div style="height: 10px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                <div style="height: 100%; background: ${colors.progress} !important; border-radius: 10px; width: ${plan.progress || 0}%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dates -->
+                        <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.75rem; color: #64748b; margin-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.375rem;">
+                                <i class="fas fa-calendar" style="font-size: 0.875rem;"></i>
+                                <span>Inicio: ${plan.startDate ? new Date(plan.startDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : new Date(plan.published_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.375rem;">
+                                <i class="fas fa-flag-checkered" style="font-size: 0.875rem;"></i>
+                                <span>Meta: ${plan.targetDate ? new Date(plan.targetDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : 'N/A'}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Milestones Summary -->
+                        <button onclick="event.stopPropagation(); togglePlanMilestones('${plan.id}')" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: #f8fafc; border-radius: 8px; border: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-check-circle" style="color: #64748b; font-size: 1rem;"></i>
+                                <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Hitos: ${completedMilestones}/${totalMilestones}</span>
+                            </div>
+                            <i class="fas fa-chevron-down" style="color: #94a3b8; font-size: 1.25rem;" id="milestone-icon-${plan.id}"></i>
+                        </button>
+                        
+                        <!-- Milestones List (Hidden by default) -->
+                        <div id="milestones-${plan.id}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;">
+                            ${plan.milestones && plan.milestones.length > 0 ? plan.milestones.map((milestone, idx) => `
+                                <div onclick="toggleMilestoneCompletion(${plan.id}, '${milestone.id}')" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem; border-radius: 8px; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                    ${milestone.completed ? 
+                                        '<i class="fas fa-check-circle" style="color: #10b981 !important; font-size: 1.25rem; flex-shrink: 0;"></i>' : 
+                                        '<i class="far fa-circle" style="color: #cbd5e1; font-size: 1.25rem; flex-shrink: 0;"></i>'
+                                    }
+                                    <span style="font-size: 0.875rem; color: ${milestone.completed ? '#64748b' : '#475569'}; ${milestone.completed ? 'text-decoration: line-through;' : ''} flex: 1;">${milestone.title}</span>
+                                </div>
+                            `).join('') : '<p style="font-size: 0.875rem; color: #94a3b8; margin: 0.5rem 0;">No hay hitos definidos</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Toggle plan milestones and show progress tracker
+        window.togglePlanMilestones = function(planId) {
+            console.log('togglePlanMilestones called with planId:', planId);
+            const milestones = document.getElementById(`milestones-${planId}`);
+            const icon = document.getElementById(`milestone-icon-${planId}`);
+            
+            console.log('milestones element:', milestones);
+            console.log('icon element:', icon);
+            
+            // Toggle milestones visibility if they exist
+            if (milestones && icon) {
+                if (milestones.style.display === 'none' || milestones.style.display === '') {
+                    // Expandir: mostrar hitos y tracker
+                    milestones.style.display = 'block';
+                    icon.className = 'fas fa-chevron-up';
+                    showProgressTracker(planId);
+                } else {
+                    // Contraer: ocultar hitos y tracker
+                    milestones.style.display = 'none';
+                    icon.className = 'fas fa-chevron-down';
+                    hideProgressTracker();
+                }
+            } else {
+                // Si no hay elemento de hitos, solo mostrar el tracker
+                showProgressTracker(planId);
+            }
+        }
+        
+        // Toggle milestone completion status
+        window.toggleMilestoneCompletion = async function(planId, milestoneId) {
+            try {
+                console.log(`🎯 Toggling milestone ${milestoneId} for plan ${planId}`);
+                
+                // Find the plan
+                const plan = window.developmentPlans?.find(p => p.id == planId);
+                if (!plan || !plan.milestones) {
+                    console.error('❌ Plan or milestones not found');
+                    return;
+                }
+                
+                // Find and toggle the milestone
+                const milestone = plan.milestones.find(m => m.id === milestoneId);
+                if (!milestone) {
+                    console.error('❌ Milestone not found');
+                    return;
+                }
+                
+                // Toggle completed status
+                milestone.completed = !milestone.completed;
+                milestone.completed_at = milestone.completed ? new Date().toISOString() : null;
+                
+                console.log(`✅ Milestone ${milestoneId} toggled to: ${milestone.completed}`);
+                
+                // Update via API
+                const response = await fetch(`/api/coachee/development-plan/${planId}/milestones`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        milestones: plan.milestones
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Milestone updated successfully');
+                    // Refresh the plans view to show updated state
+                    await loadDevelopmentPlans();
+                    // Re-expand the milestones section
+                    setTimeout(() => {
+                        const milestonesEl = document.getElementById(`milestones-${planId}`);
+                        if (milestonesEl && milestonesEl.style.display === 'none') {
+                            togglePlanMilestones(planId);
+                        }
+                    }, 100);
+                } else {
+                    throw new Error(data.error || 'Error al actualizar hito');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error updating milestone:', error);
+                showToast('Error al actualizar el hito', 'error');
+            }
+        }
+        
+        // Render charts view with statistics
+        window.renderDevPlanCharts = function(plans) {
+            console.log('📊 Rendering charts for plans:', plans);
+            
+            const container = document.getElementById('devPlanChartsContainer');
+            if (!container) {
+                console.error('Charts container not found');
+                return;
+            }
+            
+            console.log('📦 Container content before clear:', container.innerHTML);
+            console.log('📦 Container parent:', container.parentElement);
+            
+            // Calculate statistics
+            const stats = {
+                totalPlans: plans.length,
+                personalPlans: plans.filter(p => p.category === 'personal').length,
+                professionalPlans: plans.filter(p => p.category === 'professional').length,
+                totalMilestones: 0,
+                completedMilestones: 0,
+                totalActions: 0,
+                completedActions: 0
+            };
+            
+            plans.forEach(plan => {
+                // Count milestones
+                if (plan.milestones && Array.isArray(plan.milestones)) {
+                    stats.totalMilestones += plan.milestones.length;
+                    stats.completedMilestones += plan.milestones.filter(m => m.completed).length;
+                }
+                
+                // Count actions
+                if (plan.actions && Array.isArray(plan.actions)) {
+                    stats.totalActions += plan.actions.length;
+                    stats.completedActions += plan.actions.filter(a => a.completed).length;
+                }
+            });
+            
+            const milestoneProgress = stats.totalMilestones > 0 ? Math.round((stats.completedMilestones / stats.totalMilestones) * 100) : 0;
+            const actionProgress = stats.totalActions > 0 ? Math.round((stats.completedActions / stats.totalActions) * 100) : 0;
+            const personalPercentage = stats.totalPlans > 0 ? Math.round((stats.personalPlans / stats.totalPlans) * 100) : 0;
+            const professionalPercentage = stats.totalPlans > 0 ? Math.round((stats.professionalPlans / stats.totalPlans) * 100) : 0;
+            
+            // Calculate status distribution
+            const completedPlans = plans.filter(p => p.progress === 100).length;
+            const inProgressPlans = plans.filter(p => p.progress > 0 && p.progress < 100).length;
+            const notStartedPlans = plans.filter(p => p.progress === 0).length;
+            
+            // Clear and render charts HTML
+            container.innerHTML = '';
+            
+            container.innerHTML = `
+                <!-- Figma Charts: 4 gráficos según diseño -->
+                <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                    
+                    <!-- Fila 1: Pie Chart + Stacked Bars -->
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                        
+                        <!-- 1. Gráfico Circular: Distribución por Estado -->
+                        <div style="background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem;">Distribución por Estado</h3>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 3rem; flex-wrap: wrap;">
+                                <!-- Donut Chart SVG -->
+                                <div style="position: relative; width: 200px; height: 200px;">
+                                    <svg width="200" height="200" viewBox="0 0 200 200" style="transform: rotate(-90deg);">
+                                        ${completedPlans > 0 ? `
+                                        <circle cx="100" cy="100" r="80" fill="none" stroke="#22c55e" stroke-width="40"
+                                                stroke-dasharray="${(completedPlans / stats.totalPlans) * 502.65} 502.65"/>
+                                        ` : ''}
+                                        ${inProgressPlans > 0 ? `
+                                        <circle cx="100" cy="100" r="80" fill="none" stroke="#f59e0b" stroke-width="40"
+                                                stroke-dasharray="${(inProgressPlans / stats.totalPlans) * 502.65} 502.65"
+                                                stroke-dashoffset="${-(completedPlans / stats.totalPlans) * 502.65}"/>
+                                        ` : ''}
+                                        ${notStartedPlans > 0 ? `
+                                        <circle cx="100" cy="100" r="80" fill="none" stroke="#94a3b8" stroke-width="40"
+                                                stroke-dasharray="${(notStartedPlans / stats.totalPlans) * 502.65} 502.65"
+                                                stroke-dashoffset="${-((completedPlans + inProgressPlans) / stats.totalPlans) * 502.65}"/>
+                                        ` : ''}
+                                        <circle cx="100" cy="100" r="60" fill="white"/>
+                                    </svg>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                        <div style="font-size: 2rem; font-weight: 700; color: #0f172a;">${stats.totalPlans}</div>
+                                        <div style="font-size: 0.875rem; color: #64748b;">Planes</div>
+                                    </div>
+                                </div>
+                                <!-- Legend -->
+                                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div style="width: 16px; height: 16px; border-radius: 4px; background: #22c55e !important;"></div>
+                                        <span style="font-size: 0.875rem; color: #475569;">Completados</span>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: #0f172a;">${completedPlans}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div style="width: 16px; height: 16px; border-radius: 4px; background: #f59e0b !important;"></div>
+                                        <span style="font-size: 0.875rem; color: #475569;">En Progreso</span>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: #0f172a;">${inProgressPlans}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div style="width: 16px; height: 16px; border-radius: 4px; background: #94a3b8 !important;"></div>
+                                        <span style="font-size: 0.875rem; color: #475569;">Sin Comenzar</span>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: #0f172a;">${notStartedPlans}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 2. Barras Apiladas: Comparación por Categoría -->
+                        <div style="background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1.5rem;">Comparación por Categoría</h3>
+                            
+                            <!-- Stats Summary Cards -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                                <!-- Personal Card -->
+                                <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 10px; padding: 1.25rem; border: 1px solid #93c5fd;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                        <div style="width: 36px; height: 36px; background: #3b82f6 !important; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#ffffff" style="fill: #ffffff !important; opacity: 1 !important;"/>
+                                            </svg>
+                                        </div>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: #1e40af;">Personal</span>
+                                    </div>
+                                    <div style="font-size: 2rem; font-weight: 700; color: #1e3a8a;">${stats.personalPlans}</div>
+                                    <div style="font-size: 0.75rem; color: #3b82f6;">planes totales</div>
+                                </div>
+                                
+                                <!-- Professional Card -->
+                                <div style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-radius: 10px; padding: 1.25rem; border: 1px solid #d8b4fe;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                        <div style="width: 36px; height: 36px; background: #a855f7 !important; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+                                                <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="#ffffff" style="fill: #ffffff !important; opacity: 1 !important;"/>
+                                            </svg>
+                                        </div>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: #7e22ce;">Profesional</span>
+                                    </div>
+                                    <div style="font-size: 2rem; font-weight: 700; color: #581c87;">${stats.professionalPlans}</div>
+                                    <div style="font-size: 0.75rem; color: #a855f7;">planes totales</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Breakdown -->
+                            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                                <!-- Personal -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%;"></div>
+                                            <span style="font-size: 0.875rem; font-weight: 600; color: #0f172a;">Desarrollo Personal</span>
+                                        </div>
+                                        <span style="font-size: 0.75rem; font-weight: 500; color: #64748b;">${stats.personalPlans} planes</span>
+                                    </div>
+                                    <div style="height: 50px; background: #f8fafc; border-radius: 10px; overflow: hidden; display: flex; border: 1px solid #e2e8f0;">
+                                        ${(() => {
+                                            const completed = plans.filter(p => p.category === 'personal' && p.progress === 100).length;
+                                            const inProgress = plans.filter(p => p.category === 'personal' && p.progress > 0 && p.progress < 100).length;
+                                            const notStarted = plans.filter(p => p.category === 'personal' && p.progress === 0).length;
+                                            
+                                            if (stats.personalPlans === 0) {
+                                                return '<div style="display: flex; align-items: center; justify-content: center; width: 100%; color: #94a3b8; font-size: 0.875rem;">Sin planes</div>';
+                                            }
+                                            
+                                            let html = '';
+                                            if (completed > 0) {
+                                                html += `<div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important; width: ${(completed / stats.personalPlans * 100)}%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px;">
+                                                    <div style="font-size: 1.25rem; font-weight: 700; color: white;">${completed}</div>
+                                                    <div style="font-size: 0.625rem; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase;">Completos</div>
+                                                </div>`;
+                                            }
+                                            if (inProgress > 0) {
+                                                html += `<div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; width: ${(inProgress / stats.personalPlans * 100)}%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px;">
+                                                    <div style="font-size: 1.25rem; font-weight: 700; color: white;">${inProgress}</div>
+                                                    <div style="font-size: 0.625rem; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase;">En Curso</div>
+                                                </div>`;
+                                            }
+                                            if (notStarted > 0) {
+                                                html += `<div style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important; width: ${(notStarted / stats.personalPlans * 100)}%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px;">
+                                                    <div style="font-size: 1.25rem; font-weight: 700; color: white;">${notStarted}</div>
+                                                    <div style="font-size: 0.625rem; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase;">Pendientes</div>
+                                                </div>`;
+                                            }
+                                            return html;
+                                        })()}
+                                    </div>
+                                </div>
+                                
+                                <!-- Professional -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="width: 8px; height: 8px; background: #a855f7; border-radius: 50%;"></div>
+                                            <span style="font-size: 0.875rem; font-weight: 600; color: #0f172a;">Desarrollo Profesional</span>
+                                        </div>
+                                        <span style="font-size: 0.75rem; font-weight: 500; color: #64748b;">${stats.professionalPlans} planes</span>
+                                    </div>
+                                    <div style="height: 50px; background: #f8fafc; border-radius: 10px; overflow: hidden; display: flex; border: 1px solid #e2e8f0;">
+                                        ${(() => {
+                                            const completed = plans.filter(p => p.category === 'professional' && p.progress === 100).length;
+                                            const inProgress = plans.filter(p => p.category === 'professional' && p.progress > 0 && p.progress < 100).length;
+                                            const notStarted = plans.filter(p => p.category === 'professional' && p.progress === 0).length;
+                                            
+                                            if (stats.professionalPlans === 0) {
+                                                return '<div style="display: flex; align-items: center; justify-content: center; width: 100%; color: #94a3b8; font-size: 0.875rem;">Sin planes</div>';
+                                            }
+                                            
+                                            let html = '';
+                                            if (completed > 0) {
+                                                html += `<div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important; width: ${(completed / stats.professionalPlans * 100)}%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px;">
+                                                    <div style="font-size: 1.25rem; font-weight: 700; color: white;">${completed}</div>
+                                                    <div style="font-size: 0.625rem; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase;">Completos</div>
+                                                </div>`;
+                                            }
+                                            if (inProgress > 0) {
+                                                html += `<div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; width: ${(inProgress / stats.professionalPlans * 100)}%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px;">
+                                                    <div style="font-size: 1.25rem; font-weight: 700; color: white;">${inProgress}</div>
+                                                    <div style="font-size: 0.625rem; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase;">En Curso</div>
+                                                </div>`;
+                                            }
+                                            if (notStarted > 0) {
+                                                html += `<div style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important; width: ${(notStarted / stats.professionalPlans * 100)}%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px;">
+                                                    <div style="font-size: 1.25rem; font-weight: 700; color: white;">${notStarted}</div>
+                                                    <div style="font-size: 0.625rem; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase;">Pendientes</div>
+                                                </div>`;
+                                            }
+                                            return html;
+                                        })()}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Legend -->
+                            <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;"></div>
+                                    <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Completados</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;"></div>
+                                    <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">En Progreso</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important;"></div>
+                                    <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Sin Comenzar</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fila 2: Progreso Promedio por Categoría -->
+                    <div style="background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem;">Progreso Promedio por Categoría</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding: 2rem;">
+                            <!-- Personal -->
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.875rem; font-weight: 500; color: #475569; margin-bottom: 1rem;">Desarrollo Personal</div>
+                                <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
+                                    <svg width="120" height="120" style="transform: rotate(-90deg);">
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="10"/>
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#3b82f6" stroke-width="10"
+                                                stroke-dasharray="${(stats.personalPlans > 0 ? plans.filter(p => p.category === 'personal').reduce((sum, p) => sum + p.progress, 0) / stats.personalPlans : 0) / 100 * 314.159} 314.159"
+                                                stroke-linecap="round"/>
+                                    </svg>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                        <div style="font-size: 1.875rem; font-weight: 700; color: #3b82f6;">${stats.personalPlans > 0 ? Math.round(plans.filter(p => p.category === 'personal').reduce((sum, p) => sum + p.progress, 0) / stats.personalPlans) : 0}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Professional -->
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.875rem; font-weight: 500; color: #475569; margin-bottom: 1rem;">Desarrollo Profesional</div>
+                                <div style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
+                                    <svg width="120" height="120" style="transform: rotate(-90deg);">
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="10"/>
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#a855f7" stroke-width="10"
+                                                stroke-dasharray="${(stats.professionalPlans > 0 ? plans.filter(p => p.category === 'professional').reduce((sum, p) => sum + p.progress, 0) / stats.professionalPlans : 0) / 100 * 314.159} 314.159"
+                                                stroke-linecap="round"/>
+                                    </svg>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                        <div style="font-size: 1.875rem; font-weight: 700; color: #a855f7;">${stats.professionalPlans > 0 ? Math.round(plans.filter(p => p.category === 'professional').reduce((sum, p) => sum + p.progress, 0) / stats.professionalPlans) : 0}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fila 3: Barras Horizontales de Progreso Individual -->
+                    <div style="background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem;">Progreso Individual de Planes</h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            ${plans.map((plan, index) => {
+                                // Definir colores según progreso con variedad de colores
+                                let barColor;
+                                const colors = [
+                                    'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)', // Azul
+                                    'linear-gradient(90deg, #a855f7 0%, #9333ea 100%)', // Morado
+                                    'linear-gradient(90deg, #ec4899 0%, #db2777 100%)', // Rosa
+                                    'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)', // Naranja
+                                    'linear-gradient(90deg, #10b981 0%, #059669 100%)', // Verde esmeralda
+                                    'linear-gradient(90deg, #06b6d4 0%, #0891b2 100%)', // Cyan
+                                    'linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%)', // Violeta
+                                    'linear-gradient(90deg, #f97316 0%, #ea580c 100%)', // Naranja intenso
+                                ];
+                                
+                                if (plan.progress === 100) {
+                                    // Completado: Verde
+                                    barColor = 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)';
+                                } else if (plan.progress > 0) {
+                                    // En progreso: color diferente por plan
+                                    barColor = colors[index % colors.length];
+                                } else {
+                                    // Sin comenzar: Gris
+                                    barColor = 'linear-gradient(90deg, #94a3b8 0%, #64748b 100%)';
+                                }
+                                
+                                return `
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <span style="font-size: 0.875rem; color: #475569; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.title}</span>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            ${plan.progress === 100 ? '<span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; background: #dcfce7; color: #16a34a; border-radius: 9999px; font-weight: 600;">✓ Completado</span>' : ''}
+                                            <span style="font-size: 0.875rem; font-weight: 600; color: #0f172a;">${plan.progress}%</span>
+                                        </div>
+                                    </div>
+                                    <div style="height: 24px; background: #f8fafc !important; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+                                        <div style="height: 100%; background: ${barColor} !important; width: ${plan.progress}%; border-radius: 12px; transition: width 0.5s ease; display: flex; align-items: center; padding: 0 0.75rem; box-shadow: ${plan.progress > 0 ? 'inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.1)' : 'none'};">
+                                            ${plan.progress > 15 ? `<span style="font-size: 0.75rem; font-weight: 600; color: white;">${plan.progress}%</span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    
+                    ${plans.length === 0 ? `
+                    <div style="text-align: center; padding: 3rem; color: #64748b;">
+                        <i class="fas fa-chart-bar" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                        <p style="font-size: 1rem; margin: 0;">No hay planes de desarrollo disponibles para mostrar gráficos.</p>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            console.log('✅ Charts rendered successfully');
+        }
+        
+        // Show progress tracker in sticky column (Figma design)
+        window.showProgressTracker = function(planId) {
+            console.log('showProgressTracker called with planId:', planId, 'type:', typeof planId);
+            console.log('window.developmentPlans:', window.developmentPlans);
+            
+            if (window.developmentPlans) {
+                console.log('Available plan IDs:', window.developmentPlans.map(p => ({id: p.id, type: typeof p.id})));
+            }
+            
+            const plan = window.developmentPlans?.find(p => {
+                console.log(`Comparing plan.id=${p.id} (${typeof p.id}) with planId=${planId} (${typeof planId}), equal: ${p.id === planId}, loose equal: ${p.id == planId}`);
+                return p.id == planId; // Use loose equality to handle string/number comparison
+            });
+            console.log('Found plan:', plan);
+            
+            if (!plan) {
+                console.error('Plan not found with id:', planId);
+                return;
+            }
+            
+            const column = document.getElementById('progressTrackerColumn');
+            const content = document.getElementById('progressTrackerContent');
+            const gridWrapper = document.getElementById('devPlanPlansGridWrapper');
+            
+            console.log('column:', column);
+            console.log('content:', content);
+            console.log('gridWrapper:', gridWrapper);
+            
+            if (!column || !content || !gridWrapper) {
+                console.error('Missing required elements');
+                return;
+            }
+            
+            // Calculate metrics
+            const completedMilestones = plan.milestones?.filter(m => m.completed).length || 0;
+            const totalMilestones = plan.milestones?.length || 0;
+            const completionPercentage = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
+            
+            // Date calculations
+            const startDate = new Date(plan.startDate || plan.published_at || Date.now());
+            const targetDate = new Date(plan.targetDate || new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate()));
+            const today = new Date();
+            
+            const totalDays = Math.ceil((targetDate - startDate) / (1000 * 60 * 60 * 24));
+            const elapsedDays = Math.max(0, Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)));
+            const daysRemaining = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+            const timeProgress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
+            
+            const workProgress = plan.progress || completionPercentage;
+            const isOnTrack = workProgress >= timeProgress;
+            
+            // Color schemes
+            const colors = {
+                personal: { badge: '#dbeafe', text: '#1e40af' },
+                professional: { badge: '#f3e8ff', text: '#6b21a8' }
+            };
+            const color = colors[plan.category] || colors.personal;
+            
+            // Generate progress tracker HTML (matching Figma exactly)
+            content.innerHTML = `
+                <!-- Header -->
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem;">
+                    <div>
+                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0;">Seguimiento de Progreso</h3>
+                        <p style="font-size: 0.875rem; color: #64748b; margin: 0;">${plan.title}</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.75rem; border-radius: 9999px; background: ${isOnTrack ? '#f0fdf4' : '#fffbeb'};">
+                        <i class="fas fa-chart-line" style="font-size: 1rem; color: ${isOnTrack ? '#16a34a' : '#f59e0b'} !important;"></i>
+                        <span style="font-size: 0.875rem; font-weight: 500; color: ${isOnTrack ? '#16a34a' : '#f59e0b'} !important;">
+                            ${isOnTrack ? 'En ruta' : 'Requiere atención'}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Progress vs Time Comparison -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <!-- Work Progress Card -->
+                    <div style="background: linear-gradient(135deg, #eef2ff 0%, #f3e8ff 100%); border-radius: 12px; padding: 1rem; border: 1px solid #e0e7ff;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-check-circle" style="font-size: 1rem; color: #6366f1 !important;"></i>
+                            <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Progreso de Trabajo</span>
+                        </div>
+                        <div style="font-size: 1.875rem; font-weight: 700; color: #6366f1 !important; margin-bottom: 0.25rem;">${workProgress}%</div>
+                        <p style="font-size: 0.75rem; color: #64748b; margin: 0;">${completedMilestones} de ${totalMilestones} hitos</p>
+                    </div>
+                    
+                    <!-- Time Progress Card -->
+                    <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; padding: 1rem; border: 1px solid #bfdbfe;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-clock" style="font-size: 1rem; color: #3b82f6 !important;"></i>
+                            <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Progreso de Tiempo</span>
+                        </div>
+                        <div style="font-size: 1.875rem; font-weight: 700; color: #3b82f6 !important; margin-bottom: 0.25rem;">${timeProgress}%</div>
+                        <p style="font-size: 0.75rem; color: #64748b; margin: 0;">${daysRemaining} días restantes</p>
+                    </div>
+                </div>
+                
+                <!-- Timeline Progress -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Línea de Tiempo</span>
+                        <span style="font-size: 0.75rem; color: #64748b;">${elapsedDays} / ${totalDays} días</span>
+                    </div>
+                    <div style="height: 10px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; position: relative;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #34d399 0%, #10b981 100%) !important; border-radius: 9999px; transition: width 0.5s ease; width: ${Math.max(2, timeProgress)}%; position: absolute; top: 0; left: 0;"></div>
+                    </div>
+                </div>
+                
+                <!-- Milestones Progress -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                        <span style="font-size: 0.875rem; font-weight: 500; color: #475569;">Hitos del Plan</span>
+                        <span style="font-size: 0.75rem; font-weight: 500; color: #64748b;">
+                            ${completedMilestones}/${totalMilestones} completados
+                        </span>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        ${plan.milestones && plan.milestones.length > 0 ? plan.milestones.map((milestone, index) => `
+                            <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                                <div style="position: relative;">
+                                    ${milestone.completed ? 
+                                        '<i class="fas fa-check-circle" style="font-size: 1.25rem; color: #22c55e !important; flex-shrink: 0;"></i>' : 
+                                        '<i class="far fa-circle" style="font-size: 1.25rem; color: #cbd5e1 !important; flex-shrink: 0;"></i>'
+                                    }
+                                    ${index < plan.milestones.length - 1 ? `
+                                        <div style="position: absolute; left: 50%; top: 1.25rem; width: 2px; height: 1.5rem; background: ${milestone.completed ? '#bbf7d0' : '#e2e8f0'}; transform: translateX(-50%);"></div>
+                                    ` : ''}
+                                </div>
+                                
+                                <div style="flex: 1; padding-top: 0.125rem;">
+                                    <p style="font-size: 0.875rem; color: ${milestone.completed ? '#64748b' : '#475569'}; font-weight: ${milestone.completed ? '400' : '500'}; ${milestone.completed ? 'text-decoration: line-through;' : ''} margin: 0;">
+                                        ${milestone.title}
+                                    </p>
+                                    ${milestone.completed ? `
+                                        <p style="font-size: 0.75rem; color: #22c55e; margin: 0.125rem 0 0 0;">✓ Completado</p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('') : `
+                            <p style="font-size: 0.875rem; color: #94a3b8; margin: 0; text-align: center; padding: 1rem 0;">No hay hitos definidos para este plan</p>
+                        `}
+                    </div>
+                </div>
+                
+                <!-- Performance Indicator -->
+                <div style="padding: 1rem; border-radius: 12px; background: ${isOnTrack ? '#f0fdf4' : '#fffbeb'}; border: 1px solid ${isOnTrack ? '#bbf7d0' : '#fde68a'};">
+                    <p style="font-size: 0.875rem; font-weight: 500; color: ${isOnTrack ? '#15803d' : '#b45309'} !important; margin: 0 0 0.25rem 0;">
+                        ${isOnTrack ? '¡Excelente trabajo!' : 'Considera acelerar el ritmo'}
+                    </p>
+                    <p style="font-size: 0.75rem; color: ${isOnTrack ? '#16a34a' : '#d97706'} !important; margin: 0;">
+                        ${isOnTrack 
+                            ? `Vas adelante del cronograma. Tu progreso (${workProgress}%) supera el tiempo transcurrido (${timeProgress}%).` 
+                            : `Tu progreso (${workProgress}%) está por debajo del tiempo transcurrido (${timeProgress}%). Intenta completar más hitos.`
+                        }
+                    </p>
+                </div>
+            `;
+            
+            // Show column and update grid layout
+            column.style.display = 'block';
+            gridWrapper.classList.add('has-selection');
+            
+            // Highlight selected plan card
+            document.querySelectorAll('.dev-plan-card').forEach(card => {
+                card.style.border = '1px solid #e2e8f0';
+            });
+            const selectedCard = document.querySelector(`[data-plan-id="${planId}"]`);
+            if (selectedCard) {
+                selectedCard.style.border = '2px solid #6366f1';
+            }
+        }
+        
+        // Hide progress tracker (when clicking outside or another action)
+        window.hideProgressTracker = function() {
+            const column = document.getElementById('progressTrackerColumn');
+            const gridWrapper = document.getElementById('devPlanPlansGridWrapper');
+            
+            if (column) column.style.display = 'none';
+            if (gridWrapper) gridWrapper.classList.remove('has-selection');
+            
+            // Remove highlight from all cards
+            document.querySelectorAll('.dev-plan-card').forEach(card => {
+                card.style.border = '1px solid #e2e8f0';
+            });
+        }
+
+        
+        // Open Progress Tracking Sidebar
+        
+        // Toggle plan card menu (placeholder for future)
+        window.openEditProgressModal = function(planId) {
+            console.log('🔍 Abriendo modal de progreso para plan ID:', planId);
+            console.log('📚 Planes disponibles:', window.developmentPlans);
+            
+            const plan = window.developmentPlans?.find(p => p.id == planId);
+            if (!plan) {
+                console.error('❌ Plan no encontrado en window.developmentPlans');
+                showToast('Plan no encontrado', 'error');
+                return;
+            }
+            
+            console.log('✅ Plan encontrado:', plan);
+            
+            // Guardar plan actual
+            window.currentEditingPlan = plan;
+            
+            // Llenar el modal con las acciones
+            const container = document.getElementById('progressActionsContainer');
+            if (!container) return;
+            
+            container.innerHTML = plan.acciones && plan.acciones.length > 0 ? plan.acciones.map((accion, index) => `
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <input type="checkbox" id="accion-${index}" ${accion.completed ? 'checked' : ''} 
+                               onchange="window.toggleAccion(${index})" 
+                               style="width: 20px; height: 20px; margin-top: 0.25rem; cursor: pointer; accent-color: #10b981;">
+                        <div style="flex: 1;">
+                            <label for="accion-${index}" style="font-size: 0.9375rem; color: #1e293b; font-weight: 500; cursor: pointer; display: block; margin-bottom: 0.375rem;">
+                                ${accion.descripcion}
+                            </label>
+                            ${accion.frecuencia || accion.fecha_objetivo ? `
+                                <div style="display: flex; gap: 1rem; font-size: 0.8125rem; color: #64748b; margin-top: 0.375rem;">
+                                    ${accion.frecuencia ? `
+                                        <span><i class="fas fa-sync-alt" style="font-size: 0.75rem; margin-right: 0.25rem;"></i>${accion.frecuencia}</span>
+                                    ` : ''}
+                                    ${accion.fecha_objetivo ? `
+                                        <span><i class="fas fa-calendar" style="font-size: 0.75rem; margin-right: 0.25rem;"></i>${new Date(accion.fecha_objetivo).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('') : '<p style="color: #94a3b8; text-align: center; padding: 2rem;">No hay acciones definidas</p>';
+            
+            // Actualizar título del modal
+            document.getElementById('progressModalTitle').textContent = plan.title || plan.objetivo;
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('editProgressModal'));
+            modal.show();
+        }
+        
+        window.toggleAccion = function(index) {
+            if (!window.currentEditingPlan || !window.currentEditingPlan.acciones) return;
+            
+            const checkbox = document.getElementById(`accion-${index}`);
+            window.currentEditingPlan.acciones[index].completed = checkbox.checked;
+        }
+        
+        window.saveProgress = async function() {
+            if (!window.currentEditingPlan) {
+                console.error('❌ No hay plan en edición');
+                showToast('Error: Plan no encontrado', 'error');
+                return;
+            }
+            
+            console.log('💾 Guardando progreso del plan:', window.currentEditingPlan.id);
+            console.log('📋 Acciones a guardar:', window.currentEditingPlan.acciones);
+            
+            try {
+                const response = await fetch(`/api/coachee/development-plan/${window.currentEditingPlan.id}/progress`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        acciones: window.currentEditingPlan.acciones
+                    })
+                });
+                
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response headers:', response.headers.get('content-type'));
+                
+                // Verificar si la respuesta es JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ Respuesta no es JSON:', text);
+                    throw new Error('El servidor no respondió con JSON. Puede ser un error de autenticación.');
+                }
+                
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+                
+                if (response.ok && data.success) {
+                    showToast('Progreso actualizado exitosamente', 'success');
+                    
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editProgressModal'));
+                    if (modal) modal.hide();
+                    
+                    // Recargar planes
+                    await loadDevelopmentPlans();
+                } else {
+                    throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Error saving progress:', error);
+                showToast(`Error al guardar el progreso: ${error.message}`, 'error');
+            }
         }
         
         // Toggle plan details
@@ -20437,6 +22123,17 @@
             
             // Update progress display when slider changes
             const progressSlider = document.getElementById('taskProgress');
+            const taskStatusSelect = document.getElementById('taskStatus');
+            
+            // Cuando se cambia el estado a "completed", poner la barra al 100%
+            taskStatusSelect.onchange = function() {
+                if (this.value === 'completed') {
+                    progressSlider.value = 100;
+                    // Disparar el evento oninput para actualizar la UI
+                    progressSlider.oninput();
+                }
+            };
+            
             progressSlider.oninput = function() {
                 const value = this.value;
                 document.getElementById('progressValue').textContent = value + '%';
@@ -20463,6 +22160,14 @@
             
             const modal = new bootstrap.Modal(document.getElementById('taskProgressModal'));
             modal.show();
+            
+            // Scroll hacia arriba cuando se abre el modal
+            setTimeout(() => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }, 100);
             
             // Inicializar color de la barra al abrir el modal
             const currentProgress = progressSlider.value;

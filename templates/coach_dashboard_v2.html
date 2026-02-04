@@ -6278,6 +6278,11 @@
                                         <div class="step-number" style="width: 26px; height: 26px; border-radius: 50%; background: #e9ecef; color: #6c757d; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.25rem; font-weight: 600; font-size: 0.75rem; transition: all 0.3s;">5</div>
                                         <div class="step-label" style="font-size: 0.65rem; color: #6c757d; font-weight: 500;">Indicadores</div>
                                     </div>
+                                    <div class="step-connector" style="flex: 0.5; height: 2px; background: #e9ecef; margin: 0 0 0.9rem;"></div>
+                                    <div class="wizard-step" data-step="6" style="flex: 1; text-align: center; position: relative;">
+                                        <div class="step-number" style="width: 26px; height: 26px; border-radius: 50%; background: #e9ecef; color: #6c757d; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.25rem; font-weight: 600; font-size: 0.75rem; transition: all 0.3s;">6</div>
+                                        <div class="step-label" style="font-size: 0.65rem; color: #6c757d; font-weight: 500;">Hitos</div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -6317,6 +6322,46 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                        
+                                        <!-- Category Selector -->
+                                        <div class="mb-4">
+                                            <label class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 0.6rem;">
+                                                Categoría del plan <span style="color: #e53e3e;">*</span>
+                                            </label>
+                                            <div style="display: flex; gap: 1rem;">
+                                                <div class="category-option" onclick="selectPlanCategory('personal')" data-category="personal"
+                                                    style="flex: 1; border: 2px solid #3b82f6; border-radius: 12px; padding: 1rem; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <div class="d-flex align-items-center">
+                                                            <div style="font-size: 1.5rem; margin-right: 0.75rem;">🏠</div>
+                                                            <div>
+                                                                <h6 style="color: #1e40af; font-weight: 600; margin-bottom: 0.25rem;">Personal</h6>
+                                                                <p style="font-size: 0.85rem; color: #3b82f6; margin: 0;">Vida personal, bienestar</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="category-check" style="width: 24px; height: 24px; border: 2px solid #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #3b82f6;">
+                                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white;"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="category-option" onclick="selectPlanCategory('professional')" data-category="professional"
+                                                    style="flex: 1; border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem; cursor: pointer; transition: all 0.3s; background: white;">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <div class="d-flex align-items-center">
+                                                            <div style="font-size: 1.5rem; margin-right: 0.75rem;">💼</div>
+                                                            <div>
+                                                                <h6 style="color: #2d3748; font-weight: 600; margin-bottom: 0.25rem;">Profesional</h6>
+                                                                <p style="font-size: 0.85rem; color: #718096; margin: 0;">Carrera, trabajo, habilidades</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="category-check" style="width: 24px; height: 24px; border: 2px solid #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: transparent;">
+                                                            <i class="fas fa-check" style="font-size: 0.75rem; color: white; display: none;"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" id="planCategory" value="personal">
                                         </div>
                                         
                                         <div class="mb-4">
@@ -6542,6 +6587,37 @@
                                                 <p class="mb-0" style="font-size: 0.9rem; color: #4a5568;">
                                                     <i class="fas fa-chart-line me-2" style="color: #4299e1;"></i>
                                                     <strong>Piensa en:</strong> Cambios observables, comentarios de otros, sensaciones internas. Todo cuenta.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    <!-- Step 6: Hitos -->
+                                    <div class="wizard-content" id="step6" style="display: none;">
+                                        <div style="text-align: center; margin-bottom: 0.6rem;">
+                                            <div style="font-size: 2rem; color: #667eea; margin-bottom: 0.5rem;">🎯</div>
+                                            <h5 style="color: #2d3748; font-weight: 600; margin-bottom: 0.35rem; font-size: 1.1rem;">Define los hitos del plan</h5>
+                                            <p style="color: #718096; font-size: 0.85rem; margin-bottom: 0;">Los hitos son puntos de control que el coachee puede marcar como completados</p>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <label class="form-label" style="font-weight: 600; color: #2d3748; margin-bottom: 0.6rem;">
+                                                Hitos del plan <span style="color: #718096; font-weight: 400;">(opcional)</span>
+                                            </label>
+                                            
+                                            <div id="milestonesContainer" style="margin-bottom: 1rem;">
+                                                <!-- Milestones will be rendered here -->
+                                            </div>
+                                            
+                                            <button type="button" class="btn btn-outline-primary" onclick="addMilestone()" style="border-radius: 8px; padding: 0.5rem 1rem;">
+                                                <i class="fas fa-plus me-2"></i>Agregar hito
+                                            </button>
+                                            
+                                            <div class="mt-3" style="background: #ebf4ff; padding: 1rem; border-radius: 8px; border-left: 4px solid #4299e1;">
+                                                <p class="mb-0" style="font-size: 0.9rem; color: #4a5568;">
+                                                    <i class="fas fa-lightbulb me-2" style="color: #4299e1;"></i>
+                                                    <strong>Ejemplos:</strong> Completar módulo 1, Practicar técnica X, Recibir feedback del equipo, etc.
                                                 </p>
                                             </div>
                                         </div>
@@ -16479,11 +16555,116 @@ function showToast(message, type = 'info') {
 let currentStep = 1;
 let selectedAreas = [];
 let acciones = [{descripcion: '', frecuencia: '', fecha_objetivo: ''}];
+let milestones = []; // Array of {id, title, description, completed, completed_at}
 let currentCoacheeId = null;
 let currentRequestTaskId = null;
 
+// Edit existing plan
+async function editPlan(planId) {
+    try {
+        // Fetch plan details
+        const response = await fetch(`/api/coach/development-plans/${planId}`);
+        const data = await response.json();
+        
+        if (!data.success || !data.plan) {
+            showToast('Error al cargar el plan', 'error');
+            return;
+        }
+        
+        const plan = data.plan;
+        
+        // Set editing mode
+        window.editingPlanId = planId;
+        currentCoacheeId = plan.coachee_id;
+        currentRequestTaskId = plan.request_task_id;
+        
+        // Reset wizard
+        resetWizard();
+        
+        // Change modal title
+        document.getElementById('createDevPlanModalLabel').innerHTML = '<i class="fas fa-edit me-2" style="font-size: 0.9rem;"></i>Editar Plan de Desarrollo Personal';
+        
+        // Pre-fill form fields
+        document.getElementById('objetivo').value = plan.objetivo || '';
+        document.getElementById('situacion').value = plan.situacion_actual || '';
+        document.getElementById('indicadores').value = plan.indicadores || '';
+        
+        // Set category
+        if (plan.category) {
+            selectPlanCategory(plan.category);
+        }
+        
+        // Set areas
+        if (plan.areas_desarrollo && Array.isArray(plan.areas_desarrollo)) {
+            selectedAreas = [...plan.areas_desarrollo];
+            plan.areas_desarrollo.forEach(area => {
+                const card = document.querySelector(`.area-card[data-area="${area}"]`);
+                if (card) {
+                    card.style.borderColor = '#667eea';
+                    card.style.background = '#f0f4ff';
+                    const check = card.querySelector('.area-check');
+                    if (check) {
+                        check.style.background = '#667eea';
+                        check.style.borderColor = '#667eea';
+                        const icon = check.querySelector('i');
+                        if (icon) icon.style.display = 'block';
+                    }
+                }
+            });
+        }
+        
+        // Set acciones
+        if (plan.acciones && Array.isArray(plan.acciones)) {
+            acciones = plan.acciones.map(a => ({
+                descripcion: a.descripcion || '',
+                frecuencia: a.frecuencia || '',
+                fecha_objetivo: a.fecha_objetivo || ''
+            }));
+            renderAcciones();
+        }
+        
+        // Set milestones
+        if (plan.milestones && Array.isArray(plan.milestones)) {
+            milestones = plan.milestones.map(m => ({
+                id: m.id || `m${Date.now()}_${Math.random()}`,
+                title: m.title || '',
+                description: m.description || '',
+                completed: m.completed || false,
+                completed_at: m.completed_at || null
+            }));
+            renderMilestones();
+        } else {
+            milestones = [];
+        }
+        
+        // Setup coachee display (read-only when editing)
+        const coacheeSelector = document.getElementById('coacheeSelector');
+        const selectedDisplay = document.getElementById('selectedCoacheeDisplay');
+        
+        if (coacheeSelector && selectedDisplay) {
+            coacheeSelector.style.display = 'none';
+            selectedDisplay.style.display = 'block';
+            document.getElementById('selectedCoacheeName').textContent = plan.coachee_name || 'Coachee';
+        }
+        
+        // Open modal
+        const modal = new bootstrap.Modal(document.getElementById('createDevPlanModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error loading plan for edit:', error);
+        showToast('Error al cargar el plan', 'error');
+    }
+}
+
 // Open wizard modal
 function openCreatePlanModal() {
+    // Clear editing mode
+    window.editingPlanId = null;
+    
+    // Reset modal title
+    document.getElementById('createDevPlanModalLabel').innerHTML = '<i class="fas fa-rocket me-2" style="font-size: 0.9rem;"></i>Crear Plan de Desarrollo Personal';
+    
     // Get coachee ID from request details modal
     const coacheeIdEl = document.getElementById('requestCoacheeId');
     const requestIdEl = document.getElementById('currentRequestId');
@@ -16630,6 +16811,7 @@ function resetWizard() {
     currentStep = 1;
     selectedAreas = [];
     acciones = [{descripcion: '', frecuencia: '', fecha_objetivo: ''}];
+    milestones = []; // Reset milestones
     
     document.getElementById('objetivo').value = '';
     document.getElementById('situacion').value = '';
@@ -16653,6 +16835,7 @@ function resetWizard() {
     });
     
     renderAcciones();
+    renderMilestones();
     goToStep(1);
 }
 
@@ -16660,7 +16843,7 @@ function resetWizard() {
 function nextStep() {
     
     if (validateStep(currentStep)) {
-        if (currentStep < 5) {
+        if (currentStep < 6) {
             goToStep(currentStep + 1);
         }
     } else {
@@ -16718,15 +16901,90 @@ function goToStep(step) {
     
     // Update buttons
     document.getElementById('btnPrevious').style.display = step > 1 ? 'inline-block' : 'none';
-    document.getElementById('btnNext').style.display = step < 5 ? 'inline-block' : 'none';
-    document.getElementById('btnPublish').style.display = step === 5 ? 'inline-block' : 'none';
+    document.getElementById('btnNext').style.display = step < 6 ? 'inline-block' : 'none';
+    document.getElementById('btnPublish').style.display = step === 6 ? 'inline-block' : 'none';
     
-    // Render summary on step 5
-    if (step === 5) {
+    // Render summary on step 6
+    if (step === 6) {
+        renderMilestones();
         renderPlanSummary();
     }
     
     currentStep = step;
+}
+
+// Milestone management functions
+function addMilestone() {
+    const newMilestone = {
+        id: `m${Date.now()}`,
+        title: '',
+        description: '',
+        completed: false,
+        completed_at: null
+    };
+    milestones.push(newMilestone);
+    renderMilestones();
+}
+
+function removeMilestone(id) {
+    milestones = milestones.filter(m => m.id !== id);
+    renderMilestones();
+}
+
+function updateMilestone(id, field, value) {
+    const milestone = milestones.find(m => m.id === id);
+    if (milestone) {
+        milestone[field] = value;
+    }
+}
+
+function renderMilestones() {
+    const container = document.getElementById('milestonesContainer');
+    if (!container) return;
+    
+    if (milestones.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
+                <i class="fas fa-flag" style="font-size: 2rem; color: #adb5bd; margin-bottom: 0.5rem;"></i>
+                <p style="color: #6c757d; margin: 0;">No hay hitos definidos aún</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = milestones.map((milestone, index) => `
+        <div class="milestone-item" style="background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+            <div class="d-flex align-items-start justify-content-between mb-3">
+                <div style="flex: 1;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fas fa-flag" style="color: #667eea;"></i>
+                        <strong style="color: #2d3748; font-size: 0.9rem;">Hito ${index + 1}</strong>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMilestone('${milestone.id}')" style="border-radius: 6px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            
+            <div class="mb-2">
+                <input type="text" 
+                    class="form-control" 
+                    placeholder="Título del hito (ej: Completar módulo 1)" 
+                    value="${milestone.title || ''}" 
+                    oninput="updateMilestone('${milestone.id}', 'title', this.value)"
+                    style="border-radius: 8px; border: 2px solid #e2e8f0; padding: 0.6rem; font-size: 0.95rem;">
+            </div>
+            
+            <div>
+                <textarea 
+                    class="form-control" 
+                    rows="2" 
+                    placeholder="Descripción (opcional)" 
+                    oninput="updateMilestone('${milestone.id}', 'description', this.value)"
+                    style="border-radius: 8px; border: 2px solid #e2e8f0; padding: 0.6rem; font-size: 0.9rem; resize: none;">${milestone.description || ''}</textarea>
+            </div>
+        </div>
+    `).join('');
 }
 
 // Validation
@@ -16910,6 +17168,16 @@ function renderPlanSummary() {
                 `).join('')}
             </ul>
         </div>
+        ${milestones.length > 0 ? `
+            <div class="mb-3">
+                <strong style="color: #667eea;"><i class="fas fa-flag me-2"></i>Hitos (${milestones.length}):</strong>
+                <ul class="mt-1 mb-0" style="color: #2d3748;">
+                    ${milestones.map(m => `
+                        <li>${m.title}${m.description ? ` - <em style="font-size: 0.9em; color: #718096;">${m.description}</em>` : ''}</li>
+                    `).join('')}
+                </ul>
+            </div>
+        ` : ''}
         ${indicadores ? `
             <div class="mb-0">
                 <strong style="color: #667eea;"><i class="fas fa-chart-line me-2"></i>Indicadores:</strong>
@@ -16919,6 +17187,46 @@ function renderPlanSummary() {
     `;
     
     document.getElementById('planSummary').innerHTML = html;
+}
+
+// Select plan category
+function selectPlanCategory(category) {
+    console.log('🎯 Seleccionando categoría:', category);
+    
+    // Update hidden input
+    document.getElementById('planCategory').value = category;
+    console.log('✅ Valor actualizado en input:', document.getElementById('planCategory').value);
+    
+    // Update UI for all category options
+    const options = document.querySelectorAll('.category-option');
+    options.forEach(option => {
+        const isSelected = option.dataset.category === category;
+        const check = option.querySelector('.category-check');
+        const icon = check.querySelector('i');
+        
+        if (isSelected) {
+            // Style for selected
+            if (category === 'personal') {
+                option.style.border = '2px solid #3b82f6';
+                option.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)';
+                check.style.borderColor = '#3b82f6';
+                check.style.background = '#3b82f6';
+            } else {
+                option.style.border = '2px solid #8b5cf6';
+                option.style.background = 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)';
+                check.style.borderColor = '#8b5cf6';
+                check.style.background = '#8b5cf6';
+            }
+            icon.style.display = 'block';
+        } else {
+            // Style for unselected
+            option.style.border = '2px solid #e2e8f0';
+            option.style.background = 'white';
+            check.style.borderColor = '#cbd5e0';
+            check.style.background = 'transparent';
+            icon.style.display = 'none';
+        }
+    });
 }
 
 // Save draft
@@ -16934,7 +17242,7 @@ async function saveDraft() {
 
 // Publish plan
 async function publishPlan() {
-    // Validate all steps
+    // Validate all steps (steps 1-5 required, step 6 optional)
     for (let i = 1; i <= 5; i++) {
         if (!validateStep(i)) {
             return;
@@ -16947,42 +17255,77 @@ async function publishPlan() {
 // Submit plan to API
 async function submitPlan(status) {
     try {
+        const isEditing = window.editingPlanId !== undefined && window.editingPlanId !== null;
+        
+        const categoryValue = document.getElementById('planCategory').value;
+        console.log('📝 Categoría seleccionada:', categoryValue);
+        
         const data = {
             coachee_id: currentCoacheeId,
             request_task_id: currentRequestTaskId,
             objetivo: document.getElementById('objetivo').value.trim(),
             situacion_actual: document.getElementById('situacion').value.trim() || null,
+            category: categoryValue,
             areas_desarrollo: selectedAreas,
             acciones: acciones.map(a => ({
                 descripcion: a.descripcion.trim(),
                 frecuencia: a.frecuencia || null,
                 fecha_objetivo: a.fecha_objetivo || null
             })),
+            milestones: milestones.map(m => ({
+                id: m.id,
+                title: m.title.trim(),
+                description: m.description ? m.description.trim() : '',
+                completed: false,
+                completed_at: null
+            })),
             indicadores: document.getElementById('indicadores').value.trim() || null,
             status: status
         };
         
         
-        const response = await fetch('/api/coach/development-plan', {
-            method: 'POST',
+        // Determinar si es creación o actualización
+        const url = isEditing 
+            ? `/api/coach/development-plan/${window.editingPlanId}`
+            : '/api/coach/development-plan';
+        
+        const method = isEditing ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
         });
         
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', response.headers.get('content-type'));
+        
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('❌ Respuesta no es JSON:', text);
+            throw new Error('El servidor no respondió con JSON. Puede ser un error de autenticación.');
+        }
+        
         const result = await response.json();
+        console.log('📦 Response data:', result);
         
         if (response.ok) {
-            const message = status === 'draft' 
-                ? 'Borrador guardado exitosamente'
-                : 'Plan publicado exitosamente';
+            const message = isEditing
+                ? (status === 'draft' ? 'Plan actualizado exitosamente' : 'Plan actualizado y publicado exitosamente')
+                : (status === 'draft' ? 'Borrador guardado exitosamente' : 'Plan publicado exitosamente');
             showToast(message, 'success');
             
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('createDevPlanModal'));
             modal.hide();
             resetWizard();
+            
+            // Limpiar variable de edición
+            window.editingPlanId = null;
             
             // Reload plans lists
             loadDevelopmentPlans();
@@ -17093,18 +17436,26 @@ async function loadDevelopmentPlans() {
                                 </div>
                             ` : ''}
                             
-                            <!-- Footer con fecha y acción -->
+                            <!-- Footer con fecha y acciones -->
                             <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.875rem; border-top: 1px solid #f3f4f6; gap: 0.5rem;">
                                 <div style="display: flex; align-items: center; gap: 0.375rem; color: #6b7280; font-size: 0.75rem;">
                                     <i class="fas fa-calendar-alt" style="color: #9ca3af; font-size: 0.7rem;"></i>
                                     <span>${formattedDate}</span>
                                 </div>
-                                <button onclick="event.preventDefault(); event.stopPropagation(); viewPlanDetails(${plan.id})" 
-                                        style="background: #f3f4f6; color: #667eea; border: 1px solid #e5e7eb; padding: 0.5rem 0.875rem; font-size: 0.75rem; border-radius: 8px; font-weight: 600; transition: all 0.2s ease; white-space: nowrap;"
-                                        onmouseover="this.style.background='#667eea'; this.style.color='white'; this.style.borderColor='#667eea'" 
-                                        onmouseout="this.style.background='#f3f4f6'; this.style.color='#667eea'; this.style.borderColor='#e5e7eb'">
-                                    <i class="fas fa-eye me-1"></i>Ver
-                                </button>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button onclick="event.preventDefault(); event.stopPropagation(); editPlan(${plan.id})" 
+                                            style="background: #f3f4f6; color: #3b82f6; border: 1px solid #e5e7eb; padding: 0.5rem 0.875rem; font-size: 0.75rem; border-radius: 8px; font-weight: 600; transition: all 0.2s ease; white-space: nowrap;"
+                                            onmouseover="this.style.background='#3b82f6'; this.style.color='white'; this.style.borderColor='#3b82f6'" 
+                                            onmouseout="this.style.background='#f3f4f6'; this.style.color='#3b82f6'; this.style.borderColor='#e5e7eb'">
+                                        <i class="fas fa-edit me-1"></i>Editar
+                                    </button>
+                                    <button onclick="event.preventDefault(); event.stopPropagation(); viewPlanDetails(${plan.id})" 
+                                            style="background: #f3f4f6; color: #667eea; border: 1px solid #e5e7eb; padding: 0.5rem 0.875rem; font-size: 0.75rem; border-radius: 8px; font-weight: 600; transition: all 0.2s ease; white-space: nowrap;"
+                                            onmouseover="this.style.background='#667eea'; this.style.color='white'; this.style.borderColor='#667eea'" 
+                                            onmouseout="this.style.background='#f3f4f6'; this.style.color='#667eea'; this.style.borderColor='#e5e7eb'">
+                                        <i class="fas fa-eye me-1"></i>Ver
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;

@@ -1651,8 +1651,10 @@ class DevelopmentPlan(db.Model):
     # Contenido del plan
     objetivo = db.Column(db.Text, nullable=False)
     situacion_actual = db.Column(db.Text, nullable=True)
+    category = db.Column(db.String(20), default='personal')  # personal, professional
     areas_desarrollo = db.Column(db.JSON, nullable=False)  # Array de strings
-    acciones = db.Column(db.JSON, nullable=False)  # Array de objetos {descripcion, frecuencia, fecha_objetivo}
+    acciones = db.Column(db.JSON, nullable=False)  # Array de objetos {descripcion, frecuencia, fecha_objetivo, completed}
+    milestones = db.Column(db.JSON, nullable=True)  # Array de objetos {id, title, description, completed, completed_at}
     indicadores = db.Column(db.Text, nullable=True)
     
     # Estado y metadata
@@ -2148,7 +2150,12 @@ def coach_session_required(f):
         coach_user_id = session.get('coach_user_id')
         
         # Detectar si es petición de API (JSON) o HTML
-        is_api_request = request.path.startswith('/api/') or request.headers.get('Accept', '').find('application/json') != -1
+        is_api_request = (
+            request.path.startswith('/api/') or 
+            request.headers.get('Accept', '').find('application/json') != -1 or
+            request.headers.get('Content-Type', '').find('application/json') != -1 or
+            request.method in ['PUT', 'DELETE', 'PATCH']
+        )
         
         if not coach_user_id:
             log_unauthorized_access(required_role='coach')
@@ -2195,7 +2202,12 @@ def coachee_session_required(f):
         coachee_user_id = session.get('coachee_user_id')
         
         # Detectar si es petición de API (JSON) o HTML
-        is_api_request = request.path.startswith('/api/') or request.headers.get('Accept', '').find('application/json') != -1
+        is_api_request = (
+            request.path.startswith('/api/') or 
+            request.headers.get('Accept', '').find('application/json') != -1 or
+            request.headers.get('Content-Type', '').find('application/json') != -1 or
+            request.method in ['PUT', 'DELETE', 'PATCH']
+        )
         
         if not coachee_user_id:
             # Si es petición HTML, redirigir al login
@@ -8258,8 +8270,10 @@ def api_coach_create_development_plan():
             request_task_id=data.get('request_task_id'),
             objetivo=data.get('objetivo'),
             situacion_actual=data.get('situacion_actual'),
+            category=data.get('category', 'personal'),
             areas_desarrollo=data.get('areas_desarrollo'),
             acciones=data.get('acciones'),
+            milestones=data.get('milestones', []),  # Hitos personalizados
             indicadores=data.get('indicadores'),
             status=data.get('status', 'draft')  # draft o published
         )
@@ -8298,6 +8312,87 @@ def api_coach_create_development_plan():
         logger.error(f"Error en api_coach_create_development_plan: {str(e)}", exc_info=True)
         db.session.rollback()
         return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/coach/development-plan/<int:plan_id>', methods=['PUT'])
+@coach_session_required
+def api_coach_update_development_plan(plan_id):
+    """Actualizar un plan de desarrollo existente"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        
+        logger.info(f"📝 COACH-UPDATE: Coach {current_coach.id if current_coach else 'None'} attempting to update plan {plan_id}")
+        
+        if not current_coach or current_coach.role != 'coach':
+            logger.warning(f"⚠️ COACH-UPDATE: Access denied - user role: {current_coach.role if current_coach else 'None'}")
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        logger.info(f"📦 COACH-UPDATE: Received data - category: {data.get('category')}")
+        
+        # Buscar el plan
+        plan = DevelopmentPlan.query.filter_by(
+            id=plan_id,
+            coach_id=current_coach.id
+        ).first()
+        
+        if not plan:
+            logger.warning(f"⚠️ COACH-UPDATE: Plan {plan_id} not found for coach {current_coach.id}")
+            return jsonify({'error': 'Plan no encontrado o no autorizado'}), 404
+        
+        logger.info(f"📋 COACH-UPDATE: Current category: {plan.category}")
+        
+        # Actualizar campos permitidos
+        if 'objetivo' in data:
+            plan.objetivo = data['objetivo']
+        
+        if 'situacion_actual' in data:
+            plan.situacion_actual = data['situacion_actual']
+        
+        if 'category' in data:
+            plan.category = data['category']
+            logger.info(f"✅ COACH-UPDATE: Category updated to: {plan.category}")
+        
+        if 'areas_desarrollo' in data:
+            plan.areas_desarrollo = data['areas_desarrollo']
+        
+        if 'acciones' in data:
+            plan.acciones = data['acciones']
+        
+        if 'milestones' in data:
+            plan.milestones = data['milestones']
+            logger.info(f"✅ COACH-UPDATE: Milestones updated: {len(data['milestones'])} hitos")
+        
+        if 'indicadores' in data:
+            plan.indicadores = data['indicadores']
+        
+        if 'status' in data and data['status'] in ['draft', 'published']:
+            old_status = plan.status
+            plan.status = data['status']
+            
+            # Si se está publicando, actualizar published_at
+            if data['status'] == 'published' and old_status == 'draft':
+                plan.published_at = datetime.utcnow()
+        
+        plan.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        logger.info(f"✅ DEV-PLAN-UPDATE: Coach {current_coach.id} updated plan {plan_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Plan actualizado exitosamente',
+            'plan': {
+                'id': plan.id,
+                'status': plan.status,
+                'updated_at': plan.updated_at.isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coach_update_development_plan: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al actualizar plan: {str(e)}'}), 500
 
 @app.route('/api/coach/development-plans', methods=['GET'])
 @coach_session_required
@@ -8379,6 +8474,7 @@ def api_coach_get_development_plan(plan_id):
                 'situacion_actual': plan.situacion_actual,
                 'areas_desarrollo': plan.areas_desarrollo,
                 'acciones': plan.acciones,
+                'milestones': plan.milestones if plan.milestones else [],
                 'indicadores': plan.indicadores,
                 'status': plan.status,
                 'created_at': plan.created_at.isoformat(),
@@ -8464,8 +8560,10 @@ def api_coachee_development_plans():
                 'coach_name': coach.full_name or coach.username if coach else 'N/A',
                 'objetivo': plan.objetivo,
                 'situacion_actual': plan.situacion_actual,
+                'category': getattr(plan, 'category', 'personal'),  # Default a personal si no existe
                 'areas_desarrollo': plan.areas_desarrollo,
                 'acciones': plan.acciones,
+                'milestones': plan.milestones if plan.milestones else [],  # Hitos personalizados
                 'indicadores': plan.indicadores,
                 'status': plan.status,
                 'created_at': plan.created_at.isoformat(),
@@ -8482,6 +8580,101 @@ def api_coachee_development_plans():
     except Exception as e:
         logger.error(f"Error en api_coachee_development_plans: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error: {str(e)}'}), 500
+
+@app.route('/api/coachee/development-plan/<int:plan_id>/progress', methods=['PUT'])
+@coachee_session_required
+def api_coachee_update_plan_progress(plan_id):
+    """Actualizar progreso del plan (solo coachee puede actualizar acciones completadas)"""
+    try:
+        current_coachee = getattr(g, 'current_user', None)
+        
+        logger.info(f"📝 COACHEE-PROGRESS: Coachee {current_coachee.id if current_coachee else 'None'} attempting to update plan {plan_id}")
+        
+        if not current_coachee or current_coachee.role != 'coachee':
+            logger.warning(f"⚠️ COACHEE-PROGRESS: Access denied - user role: {current_coachee.role if current_coachee else 'None'}")
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        logger.info(f"📦 COACHEE-PROGRESS: Received data: {data}")
+        
+        # Buscar el plan
+        plan = DevelopmentPlan.query.filter_by(
+            id=plan_id,
+            coachee_id=current_coachee.id,
+            status='published'
+        ).first()
+        
+        if not plan:
+            logger.warning(f"⚠️ COACHEE-PROGRESS: Plan {plan_id} not found for coachee {current_coachee.id}")
+            return jsonify({'error': 'Plan no encontrado o no autorizado'}), 404
+        
+        # Actualizar acciones completadas
+        if 'acciones' in data and isinstance(data['acciones'], list):
+            plan.acciones = data['acciones']
+            logger.info(f"✅ COACHEE-PROGRESS: Updated {len(data['acciones'])} actions")
+        
+        plan.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        logger.info(f"✅ COACHEE-PROGRESS: Coachee {current_coachee.id} updated progress for plan {plan_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progreso actualizado exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coachee_update_plan_progress: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al actualizar progreso: {str(e)}'}), 500
+
+@app.route('/api/coachee/development-plan/<int:plan_id>/milestones', methods=['PUT'])
+@coachee_session_required
+def api_coachee_update_milestones(plan_id):
+    """Actualizar hitos del plan (solo coachee puede marcarlos como completados)"""
+    try:
+        current_coachee = getattr(g, 'current_user', None)
+        
+        logger.info(f"🎯 COACHEE-MILESTONES: Coachee {current_coachee.id if current_coachee else 'None'} updating milestones for plan {plan_id}")
+        
+        if not current_coachee or current_coachee.role != 'coachee':
+            logger.warning(f"⚠️ COACHEE-MILESTONES: Access denied")
+            return jsonify({'error': 'Acceso denegado'}), 403
+        
+        data = request.get_json()
+        logger.info(f"📦 COACHEE-MILESTONES: Received data: {data}")
+        
+        # Buscar el plan
+        plan = DevelopmentPlan.query.filter_by(
+            id=plan_id,
+            coachee_id=current_coachee.id,
+            status='published'
+        ).first()
+        
+        if not plan:
+            logger.warning(f"⚠️ COACHEE-MILESTONES: Plan {plan_id} not found")
+            return jsonify({'error': 'Plan no encontrado o no autorizado'}), 404
+        
+        # Actualizar hitos
+        if 'milestones' in data and isinstance(data['milestones'], list):
+            plan.milestones = data['milestones']
+            logger.info(f"✅ COACHEE-MILESTONES: Updated {len(data['milestones'])} milestones")
+        
+        plan.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        logger.info(f"✅ COACHEE-MILESTONES: Milestones updated successfully")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Hitos actualizados exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_coachee_update_milestones: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': f'Error al actualizar hitos: {str(e)}'}), 500
 
 # ============================================
 # 📝 ENDPOINTS DE CREACIÓN DE EVALUACIONES
