@@ -2602,11 +2602,57 @@ def auto_initialize_database():
         # Crear evaluaciones adicionales
         create_additional_assessments()
         
+        # Ejecutar migraciones automáticas
+        run_auto_migrations()
+        
         logger.info("🎉 AUTO-INIT: Inicialización completa finalizada")
         return True
         
     except Exception as e:
         logger.error(f"❌ AUTO-INIT: Error en inicialización automática: {e}")
+        return False
+
+def run_auto_migrations():
+    """Ejecutar migraciones automáticas de esquema"""
+    try:
+        logger.info("🔧 MIGRACIONES: Verificando y aplicando migraciones...")
+        
+        # Migración 1: Agregar columna 'category' a development_plan
+        try:
+            db.session.execute(text("""
+                ALTER TABLE development_plan 
+                ADD COLUMN IF NOT EXISTS category VARCHAR(20) DEFAULT 'personal'
+            """))
+            db.session.commit()
+            logger.info("✅ MIGRACIÓN: Campo 'category' verificado/agregado")
+        except Exception as e:
+            db.session.rollback()
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+                logger.info("ℹ️ MIGRACIÓN: Campo 'category' ya existe")
+            else:
+                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'category': {e}")
+        
+        # Migración 2: Agregar columna 'milestones' a development_plan
+        try:
+            db.session.execute(text("""
+                ALTER TABLE development_plan 
+                ADD COLUMN IF NOT EXISTS milestones TEXT DEFAULT '[]'
+            """))
+            db.session.commit()
+            logger.info("✅ MIGRACIÓN: Campo 'milestones' verificado/agregado")
+        except Exception as e:
+            db.session.rollback()
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+                logger.info("ℹ️ MIGRACIÓN: Campo 'milestones' ya existe")
+            else:
+                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'milestones': {e}")
+        
+        logger.info("✅ MIGRACIONES: Completadas exitosamente")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ MIGRACIONES: Error ejecutando migraciones: {e}")
+        db.session.rollback()
         return False
 
 def create_additional_assessments():
