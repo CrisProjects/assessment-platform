@@ -1808,6 +1808,45 @@ class CoachingSession(db.Model):
             setattr(self, key, value)
         self.created_at = kwargs.get('created_at', datetime.utcnow())
         self.updated_at = kwargs.get('updated_at', datetime.utcnow())
+
+
+class SessionRequest(db.Model):
+    """Solicitudes de sesión gratuita de coachees"""
+    __tablename__ = 'session_request'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    evaluation_id = db.Column(db.Integer, nullable=True, index=True)  # De AssessmentHistory o AssessmentResult
+    session_type = db.Column(db.String(50), default='free_consultation')
+    
+    # Información de contacto
+    name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(200), nullable=False)
+    phone = db.Column(db.String(50), nullable=False)
+    whatsapp = db.Column(db.String(50), nullable=True)
+    preferred_method = db.Column(db.String(20), default='email')  # email, phone, whatsapp
+    
+    # Información adicional
+    availability = db.Column(db.Text, nullable=True)
+    message = db.Column(db.Text, nullable=True)
+    
+    # Estado de la solicitud
+    status = db.Column(db.String(20), default='pending', index=True)  # pending, contacted, scheduled, completed, cancelled
+    
+    # Coach asignado (opcional)
+    assigned_coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    
+    # Notas del coach
+    coach_notes = db.Column(db.Text, nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    contacted_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='session_requests')
+    assigned_coach = db.relationship('User', foreign_keys=[assigned_coach_id], backref='assigned_session_requests')
     
     @property
     def coachee_name(self):
@@ -6427,6 +6466,152 @@ def api_coach_get_profile():
         
     except Exception as e:
         return jsonify({'error': f'Error obteniendo perfil: {str(e)}'}), 500
+
+
+@app.route('/api/coach/session-requests', methods=['GET'])
+@coach_session_required
+def api_coach_session_requests():
+    """Obtener solicitudes de sesión para el coach"""
+    try:
+        current_coach = g.current_user
+        
+        # Obtener parámetro de estado (por defecto: pending)
+        status = request.args.get('status', 'pending')
+        
+        # Query base
+        query = SessionRequest.query
+        
+        # Si el coach está asignado a coachees específicos, filtrar por ellos
+        # Si no, mostrar todas las solicitudes pendientes (para asignación)
+        if status == 'all':
+            # Mostrar todas las solicitudes (propias o sin asignar)
+            query = query.filter(
+                db.or_(
+                    SessionRequest.assigned_coach_id == current_coach.id,
+                    SessionRequest.assigned_coach_id == None
+                )
+            )
+        elif status == 'assigned':
+            # Solo las asignadas a este coach
+            query = query.filter(SessionRequest.assigned_coach_id == current_coach.id)
+        else:
+            # Filtrar por estado específico
+            query = query.filter(SessionRequest.status == status)
+            # Mostrar propias o sin asignar
+            query = query.filter(
+                db.or_(
+                    SessionRequest.assigned_coach_id == current_coach.id,
+                    SessionRequest.assigned_coach_id == None
+                )
+            )
+        
+        # Ordenar por más recientes primero
+        requests = query.order_by(SessionRequest.created_at.desc()).all()
+        
+        # Formatear respuesta
+        requests_data = []
+        for req in requests:
+            coachee_user = User.query.get(req.coachee_id)
+            assigned_coach_name = None
+            if req.assigned_coach_id:
+                assigned_coach = User.query.get(req.assigned_coach_id)
+                assigned_coach_name = assigned_coach.full_name if assigned_coach else None
+            
+            # Obtener información de la evaluación si existe
+            evaluation_info = None
+            if req.evaluation_id:
+                eval_history = AssessmentHistory.query.get(req.evaluation_id)
+                if not eval_history:
+                    eval_history = AssessmentResult.query.get(req.evaluation_id)
+                
+                if eval_history:
+                    evaluation_info = {
+                        'id': eval_history.id,
+                        'assessment_id': eval_history.assessment_id,
+                        'assessment_title': eval_history.assessment_title,
+                        'score': eval_history.score,
+                        'completed_at': eval_history.completed_at.isoformat() if eval_history.completed_at else None
+                    }
+            
+            requests_data.append({
+                'id': req.id,
+                'coachee_id': req.coachee_id,
+                'coachee_name': coachee_user.full_name if coachee_user else 'Usuario desconocido',
+                'coachee_email': coachee_user.email if coachee_user else None,
+                'name': req.name,
+                'email': req.email,
+                'phone': req.phone,
+                'whatsapp': req.whatsapp,
+                'preferred_method': req.preferred_method,
+                'availability': req.availability,
+                'message': req.message,
+                'session_type': req.session_type,
+                'status': req.status,
+                'assigned_coach_id': req.assigned_coach_id,
+                'assigned_coach_name': assigned_coach_name,
+                'coach_notes': req.coach_notes,
+                'evaluation': evaluation_info,
+                'created_at': req.created_at.isoformat() if req.created_at else None,
+                'updated_at': req.updated_at.isoformat() if req.updated_at else None,
+                'contacted_at': req.contacted_at.isoformat() if req.contacted_at else None
+            })
+        
+        logger.info(f"📋 Coach {current_coach.username} retrieved {len(requests_data)} session requests (status: {status})")
+        
+        return jsonify({
+            'success': True,
+            'requests': requests_data,
+            'total': len(requests_data)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting session requests: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo solicitudes: {str(e)}'}), 500
+
+
+@app.route('/api/coach/session-requests/<int:request_id>', methods=['PUT'])
+@coach_session_required
+def api_coach_update_session_request(request_id):
+    """Actualizar estado de una solicitud de sesión"""
+    try:
+        current_coach = g.current_user
+        data = request.get_json()
+        
+        session_request = SessionRequest.query.get(request_id)
+        if not session_request:
+            return jsonify({'error': 'Solicitud no encontrada'}), 404
+        
+        # Actualizar campos permitidos
+        if 'status' in data:
+            session_request.status = data['status']
+            if data['status'] == 'contacted' and not session_request.contacted_at:
+                session_request.contacted_at = datetime.utcnow()
+        
+        if 'coach_notes' in data:
+            session_request.coach_notes = data['coach_notes']
+        
+        if 'assigned_coach_id' in data:
+            session_request.assigned_coach_id = data['assigned_coach_id']
+        elif not session_request.assigned_coach_id:
+            # Auto-asignar al coach actual si no está asignada
+            session_request.assigned_coach_id = current_coach.id
+        
+        session_request.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        logger.info(f"✅ Coach {current_coach.username} updated session request {request_id}: {data.get('status', 'notes updated')}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Solicitud actualizada exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating session request: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error actualizando solicitud: {str(e)}'}), 500
+
 
 @app.route('/api/coach/upload-avatar', methods=['POST'])
 @coach_session_required
@@ -14777,6 +14962,40 @@ def contact_coach_session():
         evaluation_id = data.get('evaluation_id')
         session_type = data.get('session_type', 'free_consultation')
         
+        logger.info(f"🔍 DEBUG - Received evaluation_id: {evaluation_id} (type: {type(evaluation_id).__name__})")
+        
+        # Verificar que la evaluación pertenece al coachee (si se proporciona y no es null)
+        evaluation = None
+        if evaluation_id and evaluation_id != 'null' and evaluation_id is not None:
+            logger.info(f"🔍 DEBUG - Querying evaluation with ID: {evaluation_id} for user: {current_coachee.id}")
+            
+            # Buscar primero en AssessmentHistory (incluye todos los intentos históricos)
+            evaluation = AssessmentHistory.query.filter_by(
+                id=evaluation_id,
+                user_id=current_coachee.id
+            ).first()
+            
+            # Si no se encuentra, buscar en AssessmentResult (solo resultados activos)
+            if not evaluation:
+                evaluation = AssessmentResult.query.filter_by(
+                    id=evaluation_id,
+                    user_id=current_coachee.id
+                ).first()
+            
+            if not evaluation:
+                logger.warning(f"❌ Evaluation ID {evaluation_id} not found for coachee {current_coachee.id}")
+                # Listar las evaluaciones disponibles para debug
+                available_history = AssessmentHistory.query.filter_by(user_id=current_coachee.id).all()
+                available_results = AssessmentResult.query.filter_by(user_id=current_coachee.id).all()
+                logger.info(f"📋 Available in history: {[e.id for e in available_history]}")
+                logger.info(f"📋 Available in results: {[e.id for e in available_results]}")
+                return jsonify({'error': 'Evaluación no encontrada'}), 404
+            else:
+                logger.info(f"✅ Evaluation found: {evaluation.id} (from {'history' if isinstance(evaluation, AssessmentHistory) else 'results'})")
+        else:
+            evaluation_id = None
+            logger.info(f"ℹ️ No evaluation provided or null value")
+        
         # Extraer contact_data (nuevo formato) o message (formato legacy)
         contact_data = data.get('contact_data', {})
         if contact_data:
@@ -14798,16 +15017,6 @@ def contact_coach_session():
             availability = ''
             message = data.get('message', 'Solicito una sesión gratuita de 30 minutos.')
         
-        # Verificar que la evaluación pertenece al coachee (si se proporciona)
-        if evaluation_id:
-            evaluation = AssessmentResult.query.filter_by(
-                id=evaluation_id,
-                user_id=current_coachee.id
-            ).first()
-            
-            if not evaluation:
-                return jsonify({'error': 'Evaluación no encontrada'}), 404
-        
         # Loggear la solicitud de sesión gratuita con información detallada
         logger.info(f"🎯 FREE SESSION REQUEST: Coachee {current_coachee.username} (ID: {current_coachee.id}) "
                    f"requested {session_type} session")
@@ -14816,8 +15025,36 @@ def contact_coach_session():
         if availability:
             logger.info(f"🕐 AVAILABILITY: {availability}")
         logger.info(f"💬 MESSAGE: {message}")
-        if evaluation_id:
+        if evaluation_id and evaluation:
             logger.info(f"📊 RELATED EVALUATION: ID {evaluation_id}, Assessment ID: {evaluation.assessment_id}, Score: {evaluation.score}")
+        else:
+            logger.info(f"📊 NO EVALUATION PROVIDED - General session request")
+        
+        # Guardar la solicitud en la base de datos
+        try:
+            session_request = SessionRequest(
+                coachee_id=current_coachee.id,
+                evaluation_id=evaluation_id,
+                session_type=session_type,
+                name=name,
+                email=email,
+                phone=phone,
+                whatsapp=whatsapp,
+                preferred_method=preferred_method,
+                availability=availability,
+                message=message,
+                status='pending'
+            )
+            
+            db.session.add(session_request)
+            db.session.commit()
+            
+            logger.info(f"✅ Session request saved with ID: {session_request.id}")
+            
+        except Exception as db_error:
+            db.session.rollback()
+            logger.error(f"❌ Error saving session request: {str(db_error)}", exc_info=True)
+            # Continuar aunque falle el guardado (fallback a logs)
         
         return jsonify({
             'success': True,

@@ -26556,7 +26556,6 @@
                 const name = document.getElementById('contactName').value.trim();
                 const email = document.getElementById('contactEmail').value.trim();
                 const phone = document.getElementById('contactPhone').value.trim();
-                const whatsapp = document.getElementById('contactWhatsApp').value.trim();
                 const contactMethod = document.querySelector('input[name="contactMethod"]:checked').value;
                 const availability = document.getElementById('contactAvailability').value.trim();
                 const message = document.getElementById('contactMessage').value.trim();
@@ -26567,25 +26566,38 @@
                     return;
                 }
                 
+                // Preparar el evaluation_id - solo enviar si existe y es válido
+                const evaluationId = window.currentEvaluationId && window.currentEvaluationId !== 'undefined' 
+                    ? window.currentEvaluationId 
+                    : null;
+                
+                console.log('🔍 DEBUG - window.currentEvaluationId:', window.currentEvaluationId);
+                console.log('🔍 DEBUG - evaluationId preparado:', evaluationId);
+                console.log('🔍 DEBUG - tipo:', typeof evaluationId);
+                
                 // Enviar solicitud al backend
+                const requestBody = {
+                    evaluation_id: evaluationId,
+                    session_type: 'free_consultation',
+                    contact_data: {
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        whatsapp: phone,
+                        preferred_method: contactMethod,
+                        availability: availability,
+                        message: message || 'Solicito una sesión gratuita de 30 minutos para desarrollar mis habilidades.'
+                    }
+                };
+                
+                console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
+                
                 const response = await fetch(`${API_BASE_URL}/api/coachee/contact-coach-session`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        evaluation_id: window.currentEvaluationId,
-                        session_type: 'free_consultation',
-                        contact_data: {
-                            name: name,
-                            email: email,
-                            phone: phone,
-                            whatsapp: whatsapp || phone,
-                            preferred_method: contactMethod,
-                            availability: availability,
-                            message: message || 'Solicito una sesión gratuita de 30 minutos para desarrollar mis habilidades.'
-                        }
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
