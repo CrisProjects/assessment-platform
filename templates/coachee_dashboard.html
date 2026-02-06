@@ -26082,12 +26082,17 @@
                 return;
             }
             
-            // Ordenar sesiones por fecha descendente (más reciente primero)
-            sessions.sort((a, b) => new Date(b.session_date + 'T12:00:00') - new Date(a.session_date + 'T12:00:00'));
+            // Ordenar por fecha de creación (más reciente primero)
+            sessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             
             const html = sessions.map(session => {
+                const isRequest = session.type === 'session_request';
+                
+                // Colores y textos de estado
                 const statusColors = {
                     'pending': 'warning',
+                    'contacted': 'info',
+                    'scheduled': 'primary',
                     'confirmed': 'success',
                     'proposed': 'info',
                     'cancelled': 'danger',
@@ -26095,86 +26100,177 @@
                 };
                 
                 const statusTexts = {
-                    'pending': 'Pendiente de confirmación',
+                    'pending': isRequest ? 'Solicitud pendiente' : 'Pendiente de confirmación',
+                    'contacted': 'Coach te contactó',
+                    'scheduled': 'Agendada',
                     'confirmed': 'Confirmada',
                     'proposed': 'Propuesta pendiente',
                     'cancelled': 'Cancelada',
                     'completed': 'Completada'
                 };
                 
-                const sessionDate = new Date(session.session_date + 'T12:00:00');
-                const isProposal = session.status === 'proposed' && session.original_session_id;
-                const isDirectAppointment = session.created_by_coach && session.status === 'pending';
-                
-                return `
-                    <div class="card mb-3 my-session-card">
-                        <div class="card-body my-session-card-body">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <h6 class="mb-1 my-session-title">${session.title}</h6>
-                                    <p class="mb-1 my-session-text">
-                                        <i class="fas fa-user me-1"></i>
-                                        Coach: ${session.coach_name}
-                                    </p>
-                                    <p class="mb-1 my-session-text">
-                                        <i class="fas fa-calendar me-1"></i>
-                                        ${sessionDate.toLocaleDateString('es-ES', { 
-                                            weekday: 'long', 
-                                            year: 'numeric', 
-                                            month: 'long', 
-                                            day: 'numeric' 
-                                        })} a las ${session.start_time}
-                                    </p>
-                                    <p class="mb-1 my-session-text">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        ${session.location || 'Por definir'}
-                                    </p>
-                                    ${session.description ? `<p class="mb-1 my-session-description">${session.description}</p>` : ''}
-                                    ${isProposal && session.proposal_message ? 
-                                        `<div class="alert alert-info alert-sm mt-2 mb-0">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            <strong>Mensaje del coach:</strong> ${session.proposal_message}
-                                        </div>` : ''
-                                    }
-                                    ${isDirectAppointment && session.notification_message ? 
-                                        `<div class="alert alert-primary alert-sm mt-2 mb-0">
-                                            <i class="fas fa-envelope me-1"></i>
-                                            <strong>Mensaje del coach:</strong> ${session.notification_message}
-                                        </div>` : ''
-                                    }
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <span class="badge bg-${statusColors[session.status]} mb-2 d-block">
-                                        ${statusTexts[session.status]}
-                                    </span>
-                                    ${isProposal ? `
-                                        <div class="d-flex gap-1 justify-content-end">
-                                            <button class="btn btn-success btn-sm" onclick="respondToProposal(${session.id}, 'accept_proposal')">
-                                                <i class="fas fa-check me-1"></i>Aceptar
-                                            </button>
-                                            <button class="btn btn-danger btn-sm" onclick="respondToProposal(${session.id}, 'reject_proposal')">
-                                                <i class="fas fa-times me-1"></i>Rechazar
-                                            </button>
-                                        </div>
-                                    ` : ''}
-                                    ${isDirectAppointment ? `
-                                        <div class="d-flex gap-1 justify-content-end">
-                                            <button class="btn btn-success btn-sm" onclick="respondToProposal(${session.id}, 'accept_direct')">
-                                                <i class="fas fa-check me-1"></i>Aceptar
-                                            </button>
-                                            <button class="btn btn-danger btn-sm" onclick="respondToProposal(${session.id}, 'reject_direct')">
-                                                <i class="fas fa-times me-1"></i>Rechazar
-                                            </button>
-                                        </div>
-                                    ` : ''}
+                if (isRequest) {
+                    // Tarjeta para SessionRequest
+                    const hasProposal = session.coach_notes && session.status === 'contacted';
+                    
+                    return `
+                        <div class="card mb-3 my-session-card border-start border-${statusColors[session.status]} border-3">
+                            <div class="card-body my-session-card-body">
+                                <div class="row align-items-start">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-1 my-session-title">
+                                            <i class="fas fa-clock me-2"></i>${session.title}
+                                        </h6>
+                                        <p class="mb-1 my-session-text">
+                                            <i class="fas fa-user me-1"></i>
+                                            ${session.coach_name}
+                                        </p>
+                                        ${session.availability ? `
+                                            <p class="mb-1 my-session-text">
+                                                <i class="fas fa-calendar-alt me-1"></i>
+                                                Tu disponibilidad: ${session.availability}
+                                            </p>
+                                        ` : ''}
+                                        ${session.preferred_method ? `
+                                            <p class="mb-1 my-session-text">
+                                                <i class="fas fa-phone me-1"></i>
+                                                Método preferido: ${session.preferred_method}
+                                            </p>
+                                        ` : ''}
+                                        ${session.description ? `
+                                            <p class="mb-1 my-session-description">${session.description}</p>
+                                        ` : ''}
+                                        ${hasProposal ? `
+                                            <div class="alert alert-info alert-sm mt-2 mb-0" style="font-size: 0.875rem;">
+                                                <i class="fas fa-envelope me-1"></i>
+                                                <strong>Respuesta del coach:</strong><br>
+                                                ${session.coach_notes}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <span class="badge bg-${statusColors[session.status]} mb-2 d-block">
+                                            ${statusTexts[session.status]}
+                                        </span>
+                                        <small class="text-muted d-block mb-2">
+                                            Solicitada: ${new Date(session.created_at).toLocaleDateString('es-ES')}
+                                        </small>
+                                        ${session.status === 'contacted' && hasProposal ? `
+                                            <div class="d-flex gap-1 justify-content-end flex-wrap">
+                                                <button class="btn btn-success btn-sm" onclick="acceptSessionRequest(${session.id})">
+                                                    <i class="fas fa-check me-1"></i>OK, coordinemos
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                        ${session.status === 'pending' ? `
+                                            <small class="text-muted d-block">
+                                                <i class="fas fa-hourglass-half me-1"></i>
+                                                Esperando respuesta
+                                            </small>
+                                        ` : ''}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    // Tarjeta para CoachingSession (legacy)
+                    const sessionDate = new Date(session.session_date + 'T12:00:00');
+                    const isProposal = session.status === 'proposed' && session.original_session_id;
+                    const isDirectAppointment = session.created_by_coach && session.status === 'pending';
+                    
+                    return `
+                        <div class="card mb-3 my-session-card">
+                            <div class="card-body my-session-card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-1 my-session-title">${session.title}</h6>
+                                        <p class="mb-1 my-session-text">
+                                            <i class="fas fa-user me-1"></i>
+                                            Coach: ${session.coach_name}
+                                        </p>
+                                        <p class="mb-1 my-session-text">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            ${sessionDate.toLocaleDateString('es-ES', { 
+                                                weekday: 'long', 
+                                                year: 'numeric', 
+                                                month: 'long', 
+                                                day: 'numeric' 
+                                            })} a las ${session.start_time}
+                                        </p>
+                                        <p class="mb-1 my-session-text">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            ${session.location || 'Por definir'}
+                                        </p>
+                                        ${session.description ? `<p class="mb-1 my-session-description">${session.description}</p>` : ''}
+                                        ${isProposal && session.proposal_message ? 
+                                            `<div class="alert alert-info alert-sm mt-2 mb-0">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                <strong>Mensaje del coach:</strong> ${session.proposal_message}
+                                            </div>` : ''
+                                        }
+                                        ${isDirectAppointment && session.notification_message ? 
+                                            `<div class="alert alert-primary alert-sm mt-2 mb-0">
+                                                <i class="fas fa-envelope me-1"></i>
+                                                <strong>Mensaje del coach:</strong> ${session.notification_message}
+                                            </div>` : ''
+                                        }
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <span class="badge bg-${statusColors[session.status]} mb-2 d-block">
+                                            ${statusTexts[session.status]}
+                                        </span>
+                                        ${isProposal ? `
+                                            <div class="d-flex gap-1 justify-content-end">
+                                                <button class="btn btn-success btn-sm" onclick="respondToProposal(${session.id}, 'accept_proposal')">
+                                                    <i class="fas fa-check me-1"></i>Aceptar
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="respondToProposal(${session.id}, 'reject_proposal')">
+                                                    <i class="fas fa-times me-1"></i>Rechazar
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                        ${isDirectAppointment ? `
+                                            <div class="d-flex gap-1 justify-content-end">
+                                                <button class="btn btn-success btn-sm" onclick="respondToProposal(${session.id}, 'accept_direct')">
+                                                    <i class="fas fa-check me-1"></i>Aceptar
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="respondToProposal(${session.id}, 'reject_direct')">
+                                                    <i class="fas fa-times me-1"></i>Rechazar
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
             }).join('');
             
             container.innerHTML = html;
+        }
+
+        function acceptSessionRequest(requestId) {
+            if (!confirm('¿Confirmar que coordinaste con tu coach?')) return;
+            
+            fetch(`/api/coachee/session-request/${requestId}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('¡Perfecto! Tu solicitud fue marcada como coordinada', 'success');
+                    loadMySessions();
+                } else {
+                    showNotification(data.error || 'Error al actualizar', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error al actualizar solicitud', 'error');
+            });
         }
 
         function updateMySessionsCount(count) {
