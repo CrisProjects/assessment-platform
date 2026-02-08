@@ -65,16 +65,33 @@ try:
                 ("last_login", "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS last_login TIMESTAMP"),
             ]
             
+            # Migraciones críticas para coach_community
+            coach_community_migrations = [
+                ("image_url", "ALTER TABLE coach_community ADD COLUMN IF NOT EXISTS image_url TEXT"),
+                ("image_type", "ALTER TABLE coach_community ADD COLUMN IF NOT EXISTS image_type VARCHAR(20) DEFAULT 'catalog'"),
+            ]
+            
             migrations_applied = []
             for column_name, migration_sql in migrations:
                 try:
                     db.session.execute(text(migration_sql))
                     db.session.commit()
                     migrations_applied.append(column_name)
-                    logger.info(f"✅ RAILWAY: Migración {column_name} aplicada")
+                    logger.info(f"✅ RAILWAY: Migración user.{column_name} aplicada")
                 except Exception as migration_error:
                     db.session.rollback()
-                    logger.warning(f"⚠️ RAILWAY: Migración {column_name} ya existe o error: {migration_error}")
+                    logger.warning(f"⚠️ RAILWAY: Migración user.{column_name} ya existe o error: {migration_error}")
+            
+            # Ejecutar migraciones de coach_community
+            for column_name, migration_sql in coach_community_migrations:
+                try:
+                    db.session.execute(text(migration_sql))
+                    db.session.commit()
+                    migrations_applied.append(f"coach_community.{column_name}")
+                    logger.info(f"✅ RAILWAY: Migración coach_community.{column_name} aplicada")
+                except Exception as migration_error:
+                    db.session.rollback()
+                    logger.warning(f"⚠️ RAILWAY: Migración coach_community.{column_name} ya existe o error: {migration_error}")
             
             if migrations_applied:
                 logger.info(f"✅ RAILWAY: {len(migrations_applied)} migraciones aplicadas: {migrations_applied}")
