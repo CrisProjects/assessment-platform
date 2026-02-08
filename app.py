@@ -2446,8 +2446,12 @@ def coach_required(f):
     """Decorador que verifica si el usuario es coach (usando sesión de coach)"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # DEBUG: Log session state
+        logger.info(f"🔍 DEBUG @coach_required - Path: {request.path}, Session keys: {list(session.keys())}, coach_user_id: {session.get('coach_user_id')}")
+        
         # Verificar si hay sesión de coach activa
         if 'coach_user_id' not in session:
+            logger.warning(f"❌ DEBUG @coach_required - NO coach_user_id in session for {request.path}")
             log_unauthorized_access(username='Anonymous', required_role='coach')
             if request.path.startswith('/api/'):
                 return jsonify({'error': 'Autenticación requerida. Debes iniciar sesión como coach.'}), 401
@@ -2694,6 +2698,35 @@ def run_auto_migrations():
                 logger.info("ℹ️ MIGRACIÓN: Campo 'milestones' ya existe")
             else:
                 logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'milestones': {e}")
+        
+        # Migración 3: Agregar columnas 'image_url' e 'image_type' a coach_community
+        try:
+            db.session.execute(text("""
+                ALTER TABLE coach_community 
+                ADD COLUMN IF NOT EXISTS image_url TEXT
+            """))
+            db.session.commit()
+            logger.info("✅ MIGRACIÓN: Campo 'image_url' verificado/agregado en coach_community")
+        except Exception as e:
+            db.session.rollback()
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+                logger.info("ℹ️ MIGRACIÓN: Campo 'image_url' ya existe en coach_community")
+            else:
+                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'image_url': {e}")
+        
+        try:
+            db.session.execute(text("""
+                ALTER TABLE coach_community 
+                ADD COLUMN IF NOT EXISTS image_type VARCHAR(20) DEFAULT 'catalog'
+            """))
+            db.session.commit()
+            logger.info("✅ MIGRACIÓN: Campo 'image_type' verificado/agregado en coach_community")
+        except Exception as e:
+            db.session.rollback()
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+                logger.info("ℹ️ MIGRACIÓN: Campo 'image_type' ya existe en coach_community")
+            else:
+                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'image_type': {e}")
         
         logger.info("✅ MIGRACIONES: Completadas exitosamente")
         return True
@@ -6386,6 +6419,10 @@ def api_coach_login():
     try:
         data = request.get_json()
         
+        # DEBUG: Log incoming data
+        logger.info(f"🔍 DEBUG Coach Login - Raw data: {data}")
+        logger.info(f"🔍 DEBUG Coach Login - Headers: User-Agent={request.headers.get('User-Agent')}")
+        
         # Validar y sanitizar inputs
         valid, result = validate_and_sanitize_login_input(data)
         if not valid:
@@ -6394,6 +6431,9 @@ def api_coach_login():
         
         username = result['username_or_email']
         password = result['password']
+        
+        # DEBUG: Log sanitized credentials
+        logger.info(f"🔍 DEBUG Coach Login - Username: '{username}', Password length: {len(password)}")
         
         # SEGURIDAD: Verificar bloqueo de cuenta por intentos fallidos
         is_locked, remaining_time, attempts = check_account_lockout(username)
@@ -16128,43 +16168,29 @@ def api_list_communities():
         
         communities = []
         for membership in memberships:
-            # Usar sqlite3 directo para obtener TODAS las columnas (incluyendo image_url/image_type)
-            import sqlite3
-            conn = sqlite3.connect('assessments.db')
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+            # Usar SQLAlchemy para obtener la comunidad
+            community = CoachCommunity.query.get(membership.community_id)
             
-            cursor.execute("""
-                SELECT id, name, description, creator_id, 
-                       created_at, updated_at, is_active, privacy,
-                       image_url, image_type
-                FROM coach_community 
-                WHERE id = ?
-            """, (membership.community_id,))
-            
-            result = cursor.fetchone()
-            conn.close()
-            
-            if result and result['is_active']:  # is_active
-                logger.info(f"   - Comunidad: {result['name']} (ID: {result['id']}, activa: {result['is_active']})")
+            if community and community.is_active:
+                logger.info(f"   - Comunidad: {community.name} (ID: {community.id}, activa: {community.is_active})")
                 
                 # Construir dict con TODOS los campos incluyendo image_url/image_type
                 community_dict = {
-                    'id': result['id'],
-                    'name': result['name'],
-                    'description': result['description'],
-                    'image_url': result['image_url'],  # Desde DB
-                    'image_type': result['image_type'] or 'catalog',  # Desde DB con fallback
-                    'creator_id': result['creator_id'],
-                    'created_at': result['created_at'],
-                    'updated_at': result['updated_at'],
-                    'is_active': result['is_active'],
-                    'privacy': result['privacy'],
+                    'id': community.id,
+                    'name': community.name,
+                    'description': community.description,
+                    'image_url': community.image_url,
+                    'image_type': community.image_type or 'catalog',
+                    'creator_id': community.creator_id,
+                    'created_at': community.created_at.isoformat() if community.created_at else None,
+                    'updated_at': community.updated_at.isoformat() if community.updated_at else None,
+                    'is_active': community.is_active,
+                    'privacy': community.privacy,
                     'my_role': membership.role,
                     'joined_at': membership.joined_at.isoformat() if membership.joined_at else None,
-                    'is_creator': (result['creator_id'] == coach.id),
+                    'is_creator': (community.creator_id == coach.id),
                     'members_count': CommunityMembership.query.filter_by(
-                        community_id=result['id'],
+                        community_id=community.id,
                         is_active=True
                     ).count(),
                     'content_count': 0
@@ -16174,7 +16200,7 @@ def api_list_communities():
         # Ordenar: primero las creadas por el usuario, luego por fecha de creación
         communities.sort(key=lambda x: (
             0 if x['creator_id'] == coach.id else 1,
-            -datetime.fromisoformat(x['created_at']).timestamp()
+            -datetime.fromisoformat(x['created_at']).timestamp() if x['created_at'] else 0
         ))
         
         logger.info(f"✅ COMMUNITIES: Devolviendo {len(communities)} comunidades activas")
@@ -16194,24 +16220,10 @@ def api_list_communities():
 def api_get_community(community_id):
     """Obtener detalle de una comunidad"""
     try:
-        # Usar sqlite3 directo para obtener TODAS las columnas (incluyendo image_url/image_type)
-        import sqlite3
-        conn = sqlite3.connect('assessments.db')
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        # Usar SQLAlchemy para obtener la comunidad
+        community = CoachCommunity.query.get(community_id)
         
-        cursor.execute("""
-            SELECT id, name, description, creator_id, 
-                   created_at, updated_at, is_active, privacy,
-                   image_url, image_type
-            FROM coach_community 
-            WHERE id = ?
-        """, (community_id,))
-        
-        result = cursor.fetchone()
-        conn.close()
-        
-        if not result or not result['is_active']:
+        if not community or not community.is_active:
             return jsonify({'error': 'Comunidad no encontrada'}), 404
         
         # Verificar que el usuario es miembro
@@ -16224,20 +16236,20 @@ def api_get_community(community_id):
         if not membership:
             return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
         
-        # Construir dict manualmente CON image_url/image_type
+        # Construir dict con TODOS los campos incluyendo image_url/image_type
         community_dict = {
-            'id': result['id'],
-            'name': result['name'],
-            'description': result['description'],
-            'image_url': result['image_url'],  # Desde DB
-            'image_type': result['image_type'] or 'catalog',  # Desde DB con fallback
-            'creator_id': result['creator_id'],
-            'created_at': result['created_at'],
-            'updated_at': result['updated_at'],
-            'is_active': result['is_active'],
-            'privacy': result['privacy']
+            'id': community.id,
+            'name': community.name,
+            'description': community.description,
+            'image_url': community.image_url,
+            'image_type': community.image_type or 'catalog',
+            'creator_id': community.creator_id,
+            'created_at': community.created_at.isoformat() if community.created_at else None,
+            'updated_at': community.updated_at.isoformat() if community.updated_at else None,
+            'is_active': community.is_active,
+            'privacy': community.privacy,
+            'my_role': membership.role
         }
-        community_dict['my_role'] = membership.role
         
         # Obtener miembros
         members = []
