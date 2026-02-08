@@ -16052,73 +16052,47 @@ def api_create_community():
         if image_url:
             image_url = sanitize_string(image_url, 3000)
         
-        # Crear comunidad usando sqlite3 directamente
-        import sqlite3
+        # Crear comunidad usando SQLAlchemy (funciona con SQLite y PostgreSQL)
         from datetime import datetime
         
-        conn = sqlite3.connect('assessments.db')
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        community = CoachCommunity(
+            name=sanitize_string(name, 200),
+            description=sanitize_string(description, 1000) if description else None,
+            image_url=image_url,
+            image_type=image_type,
+            creator_id=g.current_user.id,
+            privacy=privacy,
+            is_active=True
+        )
         
-        now = datetime.utcnow().isoformat()
+        db.session.add(community)
+        db.session.flush()  # Para obtener el ID antes del commit
         
-        cursor.execute("""
-            INSERT INTO coach_community 
-            (name, description, image_url, image_type, creator_id, privacy, 
-             created_at, updated_at, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-        """, (
-            sanitize_string(name, 200),
-            sanitize_string(description, 1000) if description else None,
-            image_url,
-            image_type,
-            g.current_user.id,
-            privacy,
-            now,
-            now
-        ))
+        # Crear membresía automática del creador como creator
+        membership = CommunityMembership(
+            community_id=community.id,
+            coach_id=g.current_user.id,
+            role='creator',
+            is_active=True
+        )
         
-        community_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
+        db.session.add(membership)
+        db.session.commit()
         
-        # Verificar si ya existe una membresía (por ejemplo, huérfana de migraciones anteriores)
-        existing_membership = CommunityMembership.query.filter_by(
-            community_id=community_id,
-            coach_id=g.current_user.id
-        ).first()
+        logger.info(f"✅ Comunidad creada: {name} (ID: {community.id}) por coach {g.current_user.username}")
         
-        if not existing_membership:
-            # Crear membresía automática del creador como admin
-            membership = CommunityMembership(
-                community_id=community_id,
-                coach_id=g.current_user.id,
-                role='creator'
-            )
-            db.session.add(membership)
-            db.session.commit()
-            logger.info(f"✅ Membresía creada para coach {g.current_user.id} en comunidad {community_id}")
-        else:
-            # Actualizar la membresía existente para asegurar que sea 'creator'
-            existing_membership.role = 'creator'
-            existing_membership.is_active = True
-            db.session.commit()
-            logger.info(f"ℹ️ Membresía existente actualizada para coach {g.current_user.id} en comunidad {community_id}")
-        
-        logger.info(f"✅ Comunidad creada: {name} (ID: {community_id}) por coach {g.current_user.username}")
-        
-        # Construir respuesta manualmente
+        # Construir respuesta
         community_dict = {
-            'id': community_id,
-            'name': name,
-            'description': description,
-            'image_url': image_url,
-            'image_type': image_type,
-            'creator_id': g.current_user.id,
-            'privacy': privacy,
-            'created_at': now,
-            'updated_at': now,
-            'is_active': True,
+            'id': community.id,
+            'name': community.name,
+            'description': community.description,
+            'image_url': community.image_url,
+            'image_type': community.image_type,
+            'creator_id': community.creator_id,
+            'privacy': community.privacy,
+            'created_at': community.created_at.isoformat() if community.created_at else None,
+            'updated_at': community.updated_at.isoformat() if community.updated_at else None,
+            'is_active': community.is_active,
             'members_count': 1,
             'my_role': 'creator'
         }
@@ -16308,20 +16282,10 @@ def api_get_community(community_id):
 def api_update_community(community_id):
     """Actualizar información de una comunidad (solo admin)"""
     try:
-        from sqlalchemy import text
+        # Buscar comunidad usando SQLAlchemy
+        community = CoachCommunity.query.get(community_id)
         
-        # Verificar que la comunidad existe
-        result = db.session.execute(
-            text("""
-                SELECT id, name, description, creator_id, 
-                       created_at, updated_at, is_active, privacy
-                FROM coach_community 
-                WHERE id = :community_id
-            """),
-            {'community_id': community_id}
-        ).fetchone()
-        
-        if not result or not result[6]:  # is_active
+        if not community or not community.is_active:
             return jsonify({'error': 'Comunidad no encontrada'}), 404
         
         # Verificar que el usuario es admin o creator
@@ -16349,93 +16313,46 @@ def api_update_community(community_id):
                 return jsonify({'error': 'El nombre debe tener al menos 3 caracteres'}), 400
             if len(name) > 200:
                 return jsonify({'error': 'El nombre no puede exceder 200 caracteres'}), 400
-            name = sanitize_string(name, 200)
-        
-        if description is not None and description:
-            if len(description) > 1000:
-                return jsonify({'error': 'La descripción no puede exceder 1000 caracteres'}), 400
-            description = sanitize_string(description, 1000)
-        
-        if privacy is not None and privacy not in ['private', 'public']:
-            return jsonify({'error': 'Privacy debe ser "private" o "public"'}), 400
-        
-        if image_type is not None and image_type not in ['emoji', 'catalog', 'upload']:
-            image_type = 'catalog'
-        
-        # Construir query de actualización dinámicamente
-        update_parts = []
-        params = {'community_id': community_id}
-        
-        if name is not None:
-            update_parts.append("name = :name")
-            params['name'] = name
+            community.name = sanitize_string(name, 200)
         
         if description is not None:
-            update_parts.append("description = :description")
-            params['description'] = description
+            if description and len(description) > 1000:
+                return jsonify({'error': 'La descripción no puede exceder 1000 caracteres'}), 400
+            community.description = sanitize_string(description, 1000) if description else None
         
         if privacy is not None:
-            update_parts.append("privacy = :privacy")
-            params['privacy'] = privacy
+            if privacy not in ['private', 'public']:
+                return jsonify({'error': 'Privacy debe ser "private" o "public"'}), 400
+            community.privacy = privacy
         
         if image_url is not None:
-            update_parts.append("image_url = :image_url")
-            params['image_url'] = image_url if image_url else None
+            community.image_url = image_url if image_url else None
         
         if image_type is not None:
-            update_parts.append("image_type = :image_type")
-            params['image_type'] = image_type
+            if image_type not in ['emoji', 'catalog', 'upload']:
+                image_type = 'catalog'
+            community.image_type = image_type
         
-        # SQLite usa datetime('now') en lugar de CURRENT_TIMESTAMP
-        update_parts.append("updated_at = datetime('now')")
+        # Actualizar timestamp
+        from datetime import datetime
+        community.updated_at = datetime.utcnow()
         
-        if update_parts:
-            # Usar sqlite3 directamente para evitar problemas con SQLAlchemy metadata cache
-            import sqlite3
-            conn = sqlite3.connect('assessments.db')
-            cursor = conn.cursor()
-            
-            query = f"""
-                UPDATE coach_community 
-                SET {', '.join(update_parts)}
-                WHERE id = ?
-            """
-            # Convertir params dict a lista en el orden correcto
-            param_values = []
-            for part in update_parts[:-1]:  # Excluir el updated_at que no tiene parámetro
-                param_name = part.split(' = :')[1] if ' = :' in part else None
-                if param_name:
-                    param_values.append(params.get(param_name))
-            param_values.append(community_id)
-            
-            cursor.execute(query, param_values)
-            conn.commit()
-            conn.close()
+        db.session.commit()
         
         logger.info(f"✅ Comunidad actualizada: ID {community_id}")
         
-        # Obtener datos actualizados
-        updated = db.session.execute(
-            text("""
-                SELECT id, name, description, creator_id, 
-                       created_at, updated_at, is_active, privacy
-                FROM coach_community 
-                WHERE id = :community_id
-            """),
-            {'community_id': community_id}
-        ).fetchone()
-        
+        # Construir respuesta
         community_dict = {
-            'id': updated[0],
-            'name': updated[1],
-            'description': updated[2],
-            'image_url': params.get('image_url'),
-            'image_type': params.get('image_type', 'catalog'),
-            'creator_id': updated[3],
-            'created_at': updated[4],
-            'updated_at': updated[5],
-            'is_active': updated[6],
-            'privacy': updated[7]
+            'id': community.id,
+            'name': community.name,
+            'description': community.description,
+            'image_url': community.image_url,
+            'image_type': community.image_type,
+            'creator_id': community.creator_id,
+            'created_at': community.created_at.isoformat() if community.created_at else None,
+            'updated_at': community.updated_at.isoformat() if community.updated_at else None,
+            'is_active': community.is_active,
+            'privacy': community.privacy
         }
         
         return jsonify({
