@@ -1987,12 +1987,6 @@ class CoachCommunity(db.Model):
     memberships = db.relationship('CommunityMembership', backref='community', lazy='dynamic', cascade='all, delete-orphan')
     # shared_content = db.relationship('Content', backref='community', lazy='dynamic')  # COMENTADO: Content.community_id no existe en producción
     
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        self.created_at = kwargs.get('created_at', datetime.utcnow())
-        self.updated_at = kwargs.get('updated_at', datetime.utcnow())
-    
     def to_dict(self):
         return {
             'id': self.id,
@@ -2029,11 +2023,6 @@ class CommunityMembership(db.Model):
         db.UniqueConstraint('community_id', 'coach_id', name='uq_community_coach'),
         db.Index('idx_community_active', 'community_id', 'is_active'),
     )
-    
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        self.joined_at = kwargs.get('joined_at', datetime.utcnow())
     
     def to_dict(self):
         return {
@@ -2684,7 +2673,7 @@ def run_auto_migrations():
         
         # Migración 2: Agregar columna 'milestones' a development_plan
         try:
-            db.session.execute(text("ALTER TABLE development_plan ADD COLUMN milestones TEXT DEFAULT '[]'"))
+            db.session.execute(text("ALTER TABLE development_plan ADD COLUMN milestones TEXT"))
             db.session.commit()
             logger.info("✅ MIGRACIÓN: Campo 'milestones' agregado")
         except Exception as e:
@@ -16079,8 +16068,6 @@ def api_create_community():
             image_url = sanitize_string(image_url, 3000)
         
         # Crear comunidad usando SQLAlchemy (funciona con SQLite y PostgreSQL)
-        from datetime import datetime
-        
         community = CoachCommunity(
             name=sanitize_string(name, 200),
             description=sanitize_string(description, 1000) if description else None,
