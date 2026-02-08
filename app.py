@@ -6408,10 +6408,6 @@ def api_coach_login():
         # SEGURIDAD: Solo aceptar username (no email) para reducir vector de ataque
         coach_user = User.query.filter(User.username == username, User.role == 'coach').first()  # type: ignore
         
-        # Forzar recarga desde BD para evitar caché desactualizado
-        if coach_user:
-            db.session.refresh(coach_user)
-        
         if coach_user and coach_user.check_password(password) and coach_user.is_active:
             # Usar sesión específica para coach (sin limpiar otras sesiones)
             session['coach_user_id'] = coach_user.id
