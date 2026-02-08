@@ -2684,28 +2684,42 @@ def run_auto_migrations():
                 logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'milestones': {e}")
         
         # Migración 3: Agregar columnas 'image_url' e 'image_type' a coach_community
-        # PostgreSQL no soporta IF NOT EXISTS en ALTER TABLE, usar try/catch
+        # Verificación robusta: consultar esquema de la base de datos para ver si las columnas existen
         try:
-            db.session.execute(text("ALTER TABLE coach_community ADD COLUMN image_url TEXT"))
-            db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'image_url' agregado en coach_community")
-        except Exception as e:
-            db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
+            # Detectar si es PostgreSQL o SQLite
+            db_type = db.session.bind.dialect.name
+            
+            if db_type == 'postgresql':
+                # PostgreSQL: consultar information_schema
+                result = db.session.execute(text("""
+                    SELECT column_name FROM information_schema.columns 
+                    WHERE table_name='coach_community' AND column_name IN ('image_url', 'image_type')
+                """))
+                existing_columns = [row[0] for row in result]
+            else:
+                # SQLite: consultar pragma
+                result = db.session.execute(text("PRAGMA table_info(coach_community)"))
+                existing_columns = [row[1] for row in result if row[1] in ['image_url', 'image_type']]
+            
+            # Agregar image_url si no existe
+            if 'image_url' not in existing_columns:
+                db.session.execute(text("ALTER TABLE coach_community ADD COLUMN image_url TEXT"))
+                db.session.commit()
+                logger.info("✅ MIGRACIÓN: Campo 'image_url' agregado en coach_community")
+            else:
                 logger.info("ℹ️ MIGRACIÓN: Campo 'image_url' ya existe en coach_community")
+            
+            # Agregar image_type si no existe
+            if 'image_type' not in existing_columns:
+                db.session.execute(text("ALTER TABLE coach_community ADD COLUMN image_type VARCHAR(20) DEFAULT 'catalog'"))
+                db.session.commit()
+                logger.info("✅ MIGRACIÓN: Campo 'image_type' agregado en coach_community")
             else:
-                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'image_url': {e}")
-        
-        try:
-            db.session.execute(text("ALTER TABLE coach_community ADD COLUMN image_type VARCHAR(20) DEFAULT 'catalog'"))
-            db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'image_type' agregado en coach_community")
+                logger.info("ℹ️ MIGRACIÓN: Campo 'image_type' ya existe en coach_community")
+                
         except Exception as e:
             db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
-                logger.info("ℹ️ MIGRACIÓN: Campo 'image_type' ya existe en coach_community")
-            else:
-                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'image_type': {e}")
+            logger.error(f"❌ MIGRACIÓN: Error en migración de coach_community: {e}", exc_info=True)
         
         logger.info("✅ MIGRACIONES: Completadas exitosamente")
         return True
