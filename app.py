@@ -2658,30 +2658,43 @@ def run_auto_migrations():
     try:
         logger.info("🔧 MIGRACIONES: Verificando y aplicando migraciones...")
         
-        # Migración 1: Agregar columna 'category' a development_plan
-        # PostgreSQL no soporta IF NOT EXISTS en ALTER TABLE, usar try/catch
-        try:
-            db.session.execute(text("ALTER TABLE development_plan ADD COLUMN category VARCHAR(20) DEFAULT 'personal'"))
-            db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'category' agregado")
-        except Exception as e:
-            db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
-                logger.info("ℹ️ MIGRACIÓN: Campo 'category' ya existe")
-            else:
-                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'category': {e}")
+        # Detectar tipo de base de datos
+        db_type = db.session.bind.dialect.name
         
-        # Migración 2: Agregar columna 'milestones' a development_plan
+        # Migración 1 y 2: Agregar columnas 'category' y 'milestones' a development_plan
+        # Usar information_schema para verificación robusta (mismo patrón que coach_community)
         try:
-            db.session.execute(text("ALTER TABLE development_plan ADD COLUMN milestones TEXT"))
-            db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'milestones' agregado")
+            if db_type == 'postgresql':
+                # PostgreSQL: consultar information_schema
+                result = db.session.execute(text("""
+                    SELECT column_name FROM information_schema.columns 
+                    WHERE table_name='development_plan' AND column_name IN ('category', 'milestones')
+                """))
+                existing_columns = [row[0] for row in result]
+            else:
+                # SQLite: consultar pragma
+                result = db.session.execute(text("PRAGMA table_info(development_plan)"))
+                existing_columns = [row[1] for row in result if row[1] in ['category', 'milestones']]
+            
+            # Agregar category si no existe
+            if 'category' not in existing_columns:
+                db.session.execute(text("ALTER TABLE development_plan ADD COLUMN category VARCHAR(20) DEFAULT 'personal'"))
+                db.session.commit()
+                logger.info("✅ MIGRACIÓN: Campo 'category' agregado en development_plan")
+            else:
+                logger.info("ℹ️ MIGRACIÓN: Campo 'category' ya existe en development_plan")
+            
+            # Agregar milestones si no existe
+            if 'milestones' not in existing_columns:
+                db.session.execute(text("ALTER TABLE development_plan ADD COLUMN milestones TEXT"))
+                db.session.commit()
+                logger.info("✅ MIGRACIÓN: Campo 'milestones' agregado en development_plan")
+            else:
+                logger.info("ℹ️ MIGRACIÓN: Campo 'milestones' ya existe en development_plan")
+                
         except Exception as e:
             db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
-                logger.info("ℹ️ MIGRACIÓN: Campo 'milestones' ya existe")
-            else:
-                logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'milestones': {e}")
+            logger.error(f"❌ MIGRACIÓN: Error en migración de development_plan: {e}", exc_info=True)
         
         # Migración 3: Agregar columnas 'image_url' e 'image_type' a coach_community
         # Verificación robusta: consultar esquema de la base de datos para ver si las columnas existen
