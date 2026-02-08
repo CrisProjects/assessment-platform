@@ -2670,60 +2670,50 @@ def run_auto_migrations():
         logger.info("🔧 MIGRACIONES: Verificando y aplicando migraciones...")
         
         # Migración 1: Agregar columna 'category' a development_plan
+        # PostgreSQL no soporta IF NOT EXISTS en ALTER TABLE, usar try/catch
         try:
-            db.session.execute(text("""
-                ALTER TABLE development_plan 
-                ADD COLUMN IF NOT EXISTS category VARCHAR(20) DEFAULT 'personal'
-            """))
+            db.session.execute(text("ALTER TABLE development_plan ADD COLUMN category VARCHAR(20) DEFAULT 'personal'"))
             db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'category' verificado/agregado")
+            logger.info("✅ MIGRACIÓN: Campo 'category' agregado")
         except Exception as e:
             db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
                 logger.info("ℹ️ MIGRACIÓN: Campo 'category' ya existe")
             else:
                 logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'category': {e}")
         
         # Migración 2: Agregar columna 'milestones' a development_plan
         try:
-            db.session.execute(text("""
-                ALTER TABLE development_plan 
-                ADD COLUMN IF NOT EXISTS milestones TEXT DEFAULT '[]'
-            """))
+            db.session.execute(text("ALTER TABLE development_plan ADD COLUMN milestones TEXT DEFAULT '[]'"))
             db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'milestones' verificado/agregado")
+            logger.info("✅ MIGRACIÓN: Campo 'milestones' agregado")
         except Exception as e:
             db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
                 logger.info("ℹ️ MIGRACIÓN: Campo 'milestones' ya existe")
             else:
                 logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'milestones': {e}")
         
         # Migración 3: Agregar columnas 'image_url' e 'image_type' a coach_community
+        # PostgreSQL no soporta IF NOT EXISTS en ALTER TABLE, usar try/catch
         try:
-            db.session.execute(text("""
-                ALTER TABLE coach_community 
-                ADD COLUMN IF NOT EXISTS image_url TEXT
-            """))
+            db.session.execute(text("ALTER TABLE coach_community ADD COLUMN image_url TEXT"))
             db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'image_url' verificado/agregado en coach_community")
+            logger.info("✅ MIGRACIÓN: Campo 'image_url' agregado en coach_community")
         except Exception as e:
             db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
                 logger.info("ℹ️ MIGRACIÓN: Campo 'image_url' ya existe en coach_community")
             else:
                 logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'image_url': {e}")
         
         try:
-            db.session.execute(text("""
-                ALTER TABLE coach_community 
-                ADD COLUMN IF NOT EXISTS image_type VARCHAR(20) DEFAULT 'catalog'
-            """))
+            db.session.execute(text("ALTER TABLE coach_community ADD COLUMN image_type VARCHAR(20) DEFAULT 'catalog'"))
             db.session.commit()
-            logger.info("✅ MIGRACIÓN: Campo 'image_type' verificado/agregado en coach_community")
+            logger.info("✅ MIGRACIÓN: Campo 'image_type' agregado en coach_community")
         except Exception as e:
             db.session.rollback()
-            if "already exists" in str(e).lower() or "duplicate" in str(e).lower():
+            if "already exists" in str(e).lower() or "duplicate" in str(e).lower() or "column" in str(e).lower():
                 logger.info("ℹ️ MIGRACIÓN: Campo 'image_type' ya existe en coach_community")
             else:
                 logger.warning(f"⚠️ MIGRACIÓN: Error agregando 'image_type': {e}")
