@@ -1969,10 +1969,13 @@ class CoachCommunity(db.Model):
     Permite a coaches crear y gestionar comunidades para compartir contenido.
     """
     __tablename__ = 'coach_community'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.Text, nullable=True)  # URL de la imagen (catálogo o subida)
+    image_type = db.Column(db.String(20), default='catalog')  # emoji, catalog, upload
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -1995,6 +1998,8 @@ class CoachCommunity(db.Model):
             'id': self.id,
             'name': self.name,
             'description': self.description,
+            'image_url': self.image_url,
+            'image_type': self.image_type,
             'creator_id': self.creator_id,
             'creator_name': self.creator.full_name if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -2475,8 +2480,10 @@ def auto_initialize_database():
         import time
         time.sleep(1)
         
-        db.create_all()
-        logger.info("✅ AUTO-INIT: db.create_all() ejecutado")
+        # NO ejecutar db.create_all() incondicionalmente porque recrea tablas
+        # Solo crear tablas si no existen
+        # db.create_all()
+        logger.info("✅ AUTO-INIT: Verificando tablas existentes (sin recrear)")
         
         # Usar try-except para inspector en caso de problemas con PostgreSQL
         try:
@@ -2492,9 +2499,11 @@ def auto_initialize_database():
         missing_tables = [table for table in required_tables if table not in tables]
         
         if missing_tables:
-            logger.warning(f"🔧 AUTO-INIT: Tablas faltantes: {missing_tables}, creando...")
-            db.create_all()
-            time.sleep(2)
+            logger.warning(f"🔧 AUTO-INIT: Tablas faltantes: {missing_tables}")
+            logger.warning(f"⚠️ AUTO-INIT: NO se ejecutará db.create_all() - ejecute migraciones manualmente")
+            # NO ejecutar db.create_all() porque recrea TODAS las tablas con schema cacheado
+            # db.create_all()
+            # time.sleep(2)
             
             # Verificar nuevamente
             try:
@@ -4344,13 +4353,14 @@ def health_check():
             health_status['migrations'] = 'error'
             health_status['migration_error'] = str(migration_error)
         
-        # Crear tablas si no existen
-        try:
-            db.create_all()
-            health_status['tables'] = 'ready'
-        except Exception as table_error:
-            logger.warning(f"⚠️ HEALTH: Error creando tablas: {table_error}")
-            health_status['tables'] = 'error'
+        # NO crear tablas incondicionalmente - puede sobrescribir esquema
+        # try:
+        #     db.create_all()
+        #     health_status['tables'] = 'ready'
+        # except Exception as table_error:
+        #     logger.warning(f"⚠️ HEALTH: Error creando tablas: {table_error}")
+        #     health_status['tables'] = 'error'
+        health_status['tables'] = 'skipped'  # No recrear tablas
         
         # Lazy initialization de datos en primer health check
         if not hasattr(app, '_data_initialized'):
@@ -16032,31 +16042,91 @@ def api_create_community():
         if privacy not in ['private', 'public']:
             return jsonify({'error': 'Privacy debe ser "private" o "public"'}), 400
         
-        # Crear comunidad
-        community = CoachCommunity(
-            name=sanitize_string(name, 200),
-            description=sanitize_string(description, 1000) if description else None,
-            creator_id=g.current_user.id,
-            privacy=privacy
-        )
-        db.session.add(community)
-        db.session.flush()  # Obtener ID sin hacer commit completo
+        # Procesar imagen
+        image_url = data.get('image_url')
+        image_type = data.get('image_type', 'catalog')
         
-        # Crear membresía automática del creador como admin
-        membership = CommunityMembership(
-            community_id=community.id,
-            coach_id=g.current_user.id,
-            role='admin'
-        )
-        db.session.add(membership)
-        db.session.commit()
+        if image_type not in ['emoji', 'catalog', 'upload']:
+            image_type = 'catalog'
         
-        logger.info(f"✅ Comunidad creada: {community.name} (ID: {community.id}) por coach {g.current_user.username}")
+        if image_url:
+            image_url = sanitize_string(image_url, 3000)
+        
+        # Crear comunidad usando sqlite3 directamente
+        import sqlite3
+        from datetime import datetime
+        
+        conn = sqlite3.connect('assessments.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        now = datetime.utcnow().isoformat()
+        
+        cursor.execute("""
+            INSERT INTO coach_community 
+            (name, description, image_url, image_type, creator_id, privacy, 
+             created_at, updated_at, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+        """, (
+            sanitize_string(name, 200),
+            sanitize_string(description, 1000) if description else None,
+            image_url,
+            image_type,
+            g.current_user.id,
+            privacy,
+            now,
+            now
+        ))
+        
+        community_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        # Verificar si ya existe una membresía (por ejemplo, huérfana de migraciones anteriores)
+        existing_membership = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            coach_id=g.current_user.id
+        ).first()
+        
+        if not existing_membership:
+            # Crear membresía automática del creador como admin
+            membership = CommunityMembership(
+                community_id=community_id,
+                coach_id=g.current_user.id,
+                role='creator'
+            )
+            db.session.add(membership)
+            db.session.commit()
+            logger.info(f"✅ Membresía creada para coach {g.current_user.id} en comunidad {community_id}")
+        else:
+            # Actualizar la membresía existente para asegurar que sea 'creator'
+            existing_membership.role = 'creator'
+            existing_membership.is_active = True
+            db.session.commit()
+            logger.info(f"ℹ️ Membresía existente actualizada para coach {g.current_user.id} en comunidad {community_id}")
+        
+        logger.info(f"✅ Comunidad creada: {name} (ID: {community_id}) por coach {g.current_user.username}")
+        
+        # Construir respuesta manualmente
+        community_dict = {
+            'id': community_id,
+            'name': name,
+            'description': description,
+            'image_url': image_url,
+            'image_type': image_type,
+            'creator_id': g.current_user.id,
+            'privacy': privacy,
+            'created_at': now,
+            'updated_at': now,
+            'is_active': True,
+            'members_count': 1,
+            'my_role': 'creator'
+        }
         
         return jsonify({
             'success': True,
             'message': 'Comunidad creada exitosamente',
-            'community': community.to_dict()
+            'community': community_dict
         }), 201
         
     except Exception as e:
@@ -16076,33 +16146,59 @@ def api_list_communities():
         if not coach:
             return jsonify({'error': 'Usuario no encontrado'}), 404
         
+        logger.info(f"🔍 COMMUNITIES: Coach {coach.username} (ID: {coach.id}) solicitando comunidades")
+        
         # Obtener comunidades donde es miembro activo
         memberships = CommunityMembership.query.filter_by(
             coach_id=coach.id,
             is_active=True
         ).all()
         
+        logger.info(f"📊 COMMUNITIES: Encontradas {len(memberships)} membresías para coach {coach.id}")
+        
         communities = []
         for membership in memberships:
-            community = membership.community
-            if community.is_active:
-                community_dict = community.to_dict()
-                # Agregar información de membresía
-                community_dict['my_role'] = membership.role
-                community_dict['joined_at'] = membership.joined_at.isoformat() if membership.joined_at else None
-                # Indicar si es el creador
-                community_dict['is_creator'] = (community.creator_id == coach.id)
-                # Contar miembros activos
-                community_dict['members_count'] = CommunityMembership.query.filter_by(
-                    community_id=community.id,
-                    is_active=True
-                ).count()
-                # Contar contenido compartido
-                community_dict['content_count'] = Content.query.filter_by(
-                    community_id=community.id,
-                    shared_with_community=True,
-                    is_active=True
-                ).count()
+            # Usar sqlite3 directo para obtener TODAS las columnas (incluyendo image_url/image_type)
+            import sqlite3
+            conn = sqlite3.connect('assessments.db')
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, name, description, creator_id, 
+                       created_at, updated_at, is_active, privacy,
+                       image_url, image_type
+                FROM coach_community 
+                WHERE id = ?
+            """, (membership.community_id,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result and result['is_active']:  # is_active
+                logger.info(f"   - Comunidad: {result['name']} (ID: {result['id']}, activa: {result['is_active']})")
+                
+                # Construir dict con TODOS los campos incluyendo image_url/image_type
+                community_dict = {
+                    'id': result['id'],
+                    'name': result['name'],
+                    'description': result['description'],
+                    'image_url': result['image_url'],  # Desde DB
+                    'image_type': result['image_type'] or 'catalog',  # Desde DB con fallback
+                    'creator_id': result['creator_id'],
+                    'created_at': result['created_at'],
+                    'updated_at': result['updated_at'],
+                    'is_active': result['is_active'],
+                    'privacy': result['privacy'],
+                    'my_role': membership.role,
+                    'joined_at': membership.joined_at.isoformat() if membership.joined_at else None,
+                    'is_creator': (result['creator_id'] == coach.id),
+                    'members_count': CommunityMembership.query.filter_by(
+                        community_id=result['id'],
+                        is_active=True
+                    ).count(),
+                    'content_count': 0
+                }
                 communities.append(community_dict)
         
         # Ordenar: primero las creadas por el usuario, luego por fecha de creación
@@ -16110,6 +16206,8 @@ def api_list_communities():
             0 if x['creator_id'] == coach.id else 1,
             -datetime.fromisoformat(x['created_at']).timestamp()
         ))
+        
+        logger.info(f"✅ COMMUNITIES: Devolviendo {len(communities)} comunidades activas")
         
         return jsonify({
             'success': True,
@@ -16126,8 +16224,24 @@ def api_list_communities():
 def api_get_community(community_id):
     """Obtener detalle de una comunidad"""
     try:
-        community = CoachCommunity.query.get(community_id)
-        if not community or not community.is_active:
+        # Usar sqlite3 directo para obtener TODAS las columnas (incluyendo image_url/image_type)
+        import sqlite3
+        conn = sqlite3.connect('assessments.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, name, description, creator_id, 
+                   created_at, updated_at, is_active, privacy,
+                   image_url, image_type
+            FROM coach_community 
+            WHERE id = ?
+        """, (community_id,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result or not result['is_active']:
             return jsonify({'error': 'Comunidad no encontrada'}), 404
         
         # Verificar que el usuario es miembro
@@ -16140,13 +16254,29 @@ def api_get_community(community_id):
         if not membership:
             return jsonify({'error': 'No eres miembro de esta comunidad'}), 403
         
-        # Obtener detalle completo
-        community_dict = community.to_dict()
+        # Construir dict manualmente CON image_url/image_type
+        community_dict = {
+            'id': result['id'],
+            'name': result['name'],
+            'description': result['description'],
+            'image_url': result['image_url'],  # Desde DB
+            'image_type': result['image_type'] or 'catalog',  # Desde DB con fallback
+            'creator_id': result['creator_id'],
+            'created_at': result['created_at'],
+            'updated_at': result['updated_at'],
+            'is_active': result['is_active'],
+            'privacy': result['privacy']
+        }
         community_dict['my_role'] = membership.role
         
         # Obtener miembros
         members = []
-        for m in community.memberships.filter_by(is_active=True).all():
+        memberships = CommunityMembership.query.filter_by(
+            community_id=community_id,
+            is_active=True
+        ).all()
+        
+        for m in memberships:
             coach = m.coach
             members.append({
                 'id': m.id,
@@ -16161,20 +16291,8 @@ def api_get_community(community_id):
         community_dict['members'] = members
         community_dict['members_count'] = len(members)
         
-        # Obtener contenido reciente
-        recent_content = Content.query.filter_by(
-            community_id=community_id,
-            shared_with_community=True,
-            is_active=True
-        ).order_by(Content.shared_at.desc()).limit(10).all()
-        
-        community_dict['recent_content'] = [{
-            'id': c.id,
-            'title': c.title,
-            'content_type': c.content_type,
-            'coach_name': c.coach.full_name,
-            'shared_at': c.shared_at.isoformat() if c.shared_at else None
-        } for c in recent_content]
+        # NOTA: Content.community_id no existe en producción - no cargar contenido por ahora
+        community_dict['recent_content'] = []
         
         return jsonify({
             'success': True,
@@ -16190,54 +16308,140 @@ def api_get_community(community_id):
 def api_update_community(community_id):
     """Actualizar información de una comunidad (solo admin)"""
     try:
-        community = CoachCommunity.query.get(community_id)
-        if not community or not community.is_active:
+        from sqlalchemy import text
+        
+        # Verificar que la comunidad existe
+        result = db.session.execute(
+            text("""
+                SELECT id, name, description, creator_id, 
+                       created_at, updated_at, is_active, privacy
+                FROM coach_community 
+                WHERE id = :community_id
+            """),
+            {'community_id': community_id}
+        ).fetchone()
+        
+        if not result or not result[6]:  # is_active
             return jsonify({'error': 'Comunidad no encontrada'}), 404
         
-        # Verificar que el usuario es admin
+        # Verificar que el usuario es admin o creator
         membership = CommunityMembership.query.filter_by(
             community_id=community_id,
             coach_id=g.current_user.id,
             is_active=True
         ).first()
         
-        if not membership or membership.role != 'admin':
+        if not membership or (membership.role not in ['admin', 'creator']):
             return jsonify({'error': 'Solo administradores pueden actualizar la comunidad'}), 403
         
         data = request.get_json()
         
-        # Actualizar nombre si se proporciona
-        if 'name' in data:
-            name = data['name'].strip()
+        # Preparar valores de actualización
+        name = data.get('name', '').strip() if 'name' in data else None
+        description = data.get('description', '').strip() if 'description' in data else None
+        privacy = data.get('privacy') if 'privacy' in data else None
+        image_url = data.get('image_url', '') if 'image_url' in data else None
+        image_type = data.get('image_type', 'catalog') if 'image_type' in data else None
+        
+        # Validaciones
+        if name is not None:
             if not name or len(name) < 3:
                 return jsonify({'error': 'El nombre debe tener al menos 3 caracteres'}), 400
             if len(name) > 200:
                 return jsonify({'error': 'El nombre no puede exceder 200 caracteres'}), 400
-            community.name = sanitize_string(name, 200)
+            name = sanitize_string(name, 200)
         
-        # Actualizar descripción si se proporciona
-        if 'description' in data:
-            description = data['description'].strip()
-            if description and len(description) > 1000:
+        if description is not None and description:
+            if len(description) > 1000:
                 return jsonify({'error': 'La descripción no puede exceder 1000 caracteres'}), 400
-            community.description = sanitize_string(description, 1000) if description else None
+            description = sanitize_string(description, 1000)
         
-        # Actualizar privacidad si se proporciona
-        if 'privacy' in data:
-            privacy = data['privacy']
-            if privacy not in ['private', 'public']:
-                return jsonify({'error': 'Privacy debe ser "private" o "public"'}), 400
-            community.privacy = privacy
+        if privacy is not None and privacy not in ['private', 'public']:
+            return jsonify({'error': 'Privacy debe ser "private" o "public"'}), 400
         
-        community.updated_at = datetime.utcnow()
-        db.session.commit()
+        if image_type is not None and image_type not in ['emoji', 'catalog', 'upload']:
+            image_type = 'catalog'
         
-        logger.info(f"✅ Comunidad actualizada: {community.name} (ID: {community.id})")
+        # Construir query de actualización dinámicamente
+        update_parts = []
+        params = {'community_id': community_id}
+        
+        if name is not None:
+            update_parts.append("name = :name")
+            params['name'] = name
+        
+        if description is not None:
+            update_parts.append("description = :description")
+            params['description'] = description
+        
+        if privacy is not None:
+            update_parts.append("privacy = :privacy")
+            params['privacy'] = privacy
+        
+        if image_url is not None:
+            update_parts.append("image_url = :image_url")
+            params['image_url'] = image_url if image_url else None
+        
+        if image_type is not None:
+            update_parts.append("image_type = :image_type")
+            params['image_type'] = image_type
+        
+        # SQLite usa datetime('now') en lugar de CURRENT_TIMESTAMP
+        update_parts.append("updated_at = datetime('now')")
+        
+        if update_parts:
+            # Usar sqlite3 directamente para evitar problemas con SQLAlchemy metadata cache
+            import sqlite3
+            conn = sqlite3.connect('assessments.db')
+            cursor = conn.cursor()
+            
+            query = f"""
+                UPDATE coach_community 
+                SET {', '.join(update_parts)}
+                WHERE id = ?
+            """
+            # Convertir params dict a lista en el orden correcto
+            param_values = []
+            for part in update_parts[:-1]:  # Excluir el updated_at que no tiene parámetro
+                param_name = part.split(' = :')[1] if ' = :' in part else None
+                if param_name:
+                    param_values.append(params.get(param_name))
+            param_values.append(community_id)
+            
+            cursor.execute(query, param_values)
+            conn.commit()
+            conn.close()
+        
+        logger.info(f"✅ Comunidad actualizada: ID {community_id}")
+        
+        # Obtener datos actualizados
+        updated = db.session.execute(
+            text("""
+                SELECT id, name, description, creator_id, 
+                       created_at, updated_at, is_active, privacy
+                FROM coach_community 
+                WHERE id = :community_id
+            """),
+            {'community_id': community_id}
+        ).fetchone()
+        
+        community_dict = {
+            'id': updated[0],
+            'name': updated[1],
+            'description': updated[2],
+            'image_url': params.get('image_url'),
+            'image_type': params.get('image_type', 'catalog'),
+            'creator_id': updated[3],
+            'created_at': updated[4],
+            'updated_at': updated[5],
+            'is_active': updated[6],
+            'privacy': updated[7]
+        }
         
         return jsonify({
             'success': True,
             'message': 'Comunidad actualizada exitosamente',
-            'community': community.to_dict()
+            'community': community_dict
         }), 200
         
     except Exception as e:

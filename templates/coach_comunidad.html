@@ -72,6 +72,7 @@
                 // State
                 showDrawer: false,
                 showCreateModal: false,
+                showEditModal: false,
                 showDetailModal: false,
                 showInviteModal: false,
                 communities: [],
@@ -85,8 +86,28 @@
                 newCommunity: {
                     name: '',
                     description: '',
-                    is_private: false
+                    is_private: false,
+                    image_url: '',
+                    image_type: 'catalog'
                 },
+                editCommunity: {
+                    id: null,
+                    name: '',
+                    description: '',
+                    privacy: 'private',
+                    image_url: '',
+                    image_type: 'catalog'
+                },
+                catalogImages: [
+                    { url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400', name: 'Equipo' },
+                    { url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400', name: 'Reunión' },
+                    { url: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400', name: 'Crecimiento' },
+                    { url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400', name: 'Colaboración' },
+                    { url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400', name: 'Inspiración' },
+                    { url: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400', name: 'Comunidad' },
+                    { url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400', name: 'Liderazgo' },
+                    { url: 'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400', name: 'Mentoría' }
+                ],
                 inviteEmail: '',
                 inviteName: '',
                 inviteMessage: '',
@@ -156,12 +177,16 @@
                         }
                         
                         const data = await response.json();
-                        console.log('Communities loaded:', data);
+                        console.log('✅ Communities loaded:', data);
+                        console.log('📊 Total communities:', data.communities?.length || 0);
                         
                         if (data.success) {
                             this.communities = data.communities || [];
+                            console.log('🔍 All communities:', this.communities);
                             this.myCommunities = this.communities.filter(c => c.my_role === 'creator' || c.my_role === 'admin');
                             this.otherCommunities = this.communities.filter(c => c.my_role !== 'creator' && c.my_role !== 'admin');
+                            console.log('👤 My communities:', this.myCommunities.length);
+                            console.log('🌐 Other communities:', this.otherCommunities.length);
                             
                             // Update DOM
                             this.displayCommunities();
@@ -200,11 +225,20 @@
                     groups.forEach(group => {
                         const icon = group.is_private ? '🔒' : '🌐';
                         const role = group.my_role === 'creator' ? 'Creador' : group.my_role === 'admin' ? 'Admin' : 'Miembro';
+                        const canEdit = group.my_role === 'creator' || group.my_role === 'admin';
+                        
+                        // Determinar qué mostrar como imagen
+                        let imageHTML = '';
+                        if (group.image_url) {
+                            imageHTML = `<img src="${group.image_url}" alt="${group.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                        } else {
+                            imageHTML = icon;
+                        }
                         
                         groupsHTML += `
                             <div class="group-card" onclick="window.communityAppInstance.openCommunity(${group.id})">
                                 <div class="group-image">
-                                    ${icon}
+                                    ${imageHTML}
                                 </div>
                                 <div class="group-body">
                                     <div class="group-title">${group.name}</div>
@@ -229,10 +263,43 @@
                     this.newCommunity = {
                         name: '',
                         description: '',
-                        is_private: false
+                        is_private: false,
+                        image_url: this.catalogImages[0].url,  // Primera imagen por defecto
+                        image_type: 'catalog'
                     };
                     this.error = null;
                     this.showCreateModal = true;
+                },
+                
+                // Handle image upload
+                async handleImageUpload(event, target = null) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    // Validar tamaño (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        this.error = 'La imagen no puede superar 5MB';
+                        return;
+                    }
+                    
+                    // Validar tipo
+                    if (!file.type.startsWith('image/')) {
+                        this.error = 'Solo se permiten archivos de imagen';
+                        return;
+                    }
+                    
+                    // Convertir a base64
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // Si se pasa un target, usar ese, si no usar newCommunity
+                        const communityObj = target || this.newCommunity;
+                        communityObj.image_url = e.target.result;
+                        this.error = null;
+                    };
+                    reader.onerror = () => {
+                        this.error = 'Error al cargar la imagen';
+                    };
+                    reader.readAsDataURL(file);
                 },
                 
                 // Create new community
@@ -246,6 +313,14 @@
                     this.error = null;
                     
                     try {
+                        const payload = {
+                            name: this.newCommunity.name,
+                            description: this.newCommunity.description,
+                            privacy: this.newCommunity.is_private ? 'private' : 'public',
+                            image_url: this.newCommunity.image_url,
+                            image_type: this.newCommunity.image_type
+                        };
+                        
                         const response = await fetch('/api/communities', {
                             method: 'POST',
                             credentials: 'include',
@@ -253,7 +328,7 @@
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify(this.newCommunity)
+                            body: JSON.stringify(payload)
                         });
                         
                         const data = await response.json();
@@ -272,6 +347,78 @@
                     } catch (error) {
                         console.error('Error creating community:', error);
                         this.error = error.message || 'Error al crear la comunidad';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                // Open edit modal
+                openEditModal(community) {
+                    console.log('🔧 openEditModal llamado con:', community);
+                    
+                    // Preparar datos de edición
+                    this.editCommunity = {
+                        id: community.id,
+                        name: community.name,
+                        description: community.description || '',
+                        privacy: community.privacy || 'private',
+                        image_url: community.image_url || '',
+                        image_type: community.image_type || 'catalog'
+                    };
+                    console.log('📝 editCommunity configurado:', this.editCommunity);
+                    this.error = null;
+                    
+                    // NO cerrar el modal de detalle - simplemente abrir el de edición por encima
+                    this.showEditModal = true;
+                    console.log('✅ Modal de edición abierto:', this.showEditModal);
+                },
+                
+                // Update community
+                async updateCommunity() {
+                    if (!this.editCommunity.name || this.editCommunity.name.trim().length < 3) {
+                        this.error = 'El nombre debe tener al menos 3 caracteres';
+                        return;
+                    }
+                    
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const response = await fetch(`/api/communities/${this.editCommunity.id}`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name: this.editCommunity.name.trim(),
+                                description: this.editCommunity.description.trim(),
+                                privacy: this.editCommunity.privacy,
+                                image_url: this.editCommunity.image_url,
+                                image_type: this.editCommunity.image_type
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.showEditModal = false;
+                            await this.loadCommunities();
+                            // Si el modal de detalle está abierto, actualizar
+                            if (this.showDetailModal && this.selectedCommunity && this.selectedCommunity.id === this.editCommunity.id) {
+                                this.selectedCommunity = data.community;
+                            }
+                        } else {
+                            this.error = data.error || 'Error al actualizar la comunidad';
+                        }
+                    } catch (error) {
+                        console.error('Error updating community:', error);
+                        this.error = error.message || 'Error al actualizar la comunidad';
                     } finally {
                         this.loading = false;
                     }
@@ -562,8 +709,8 @@
     <!-- InstaCoach Design System -->
     <link rel="stylesheet" href="/static/css/instacoach-design-system.css?v={{ get_file_version('css/instacoach-design-system.css') }}">
     
-    <!-- Pacifico Font for Logo -->
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <!-- Dancing Script for InstaCoach logo -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap');
@@ -1062,10 +1209,8 @@
     <header class="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-xl" style="border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: var(--z-sticky); width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
         <div class="flex h-16 items-center justify-between px-4" style="display: flex; height: 4rem; align-items: center; justify-content: space-between; padding: 0 1rem;">
             <!-- Logo -->
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; border: none !important; outline: none !important; box-shadow: none !important;">
-                    <h1 style="font-family: 'Pacifico', cursive; font-size: 1.875rem; font-weight: 400; margin: 0; padding: 0; color: transparent !important; background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important;">InstaCoach</h1>
-                </div>
+            <div style="display: flex; align-items: center; border: none !important; outline: none !important; box-shadow: none !important;">
+                <span class="instacoach-logo-header" style="font-family: 'Dancing Script', cursive !important; font-size: 42.24px !important; font-weight: 600 !important; line-height: 1 !important; letter-spacing: 0.5px !important; background: linear-gradient(90deg, #93c5fd 0%, #8b5cf6 55%, #ec4899 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; -webkit-text-fill-color: transparent !important; text-rendering: optimizeLegibility !important; -webkit-font-smoothing: antialiased !important; user-select: none !important; display: inline-block !important; margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; box-shadow: none !important;">InstaCoach</span>
             </div>
 
             <!-- Right Section -->
@@ -1347,9 +1492,9 @@
          x-cloak
          @click.self="showCreateModal = false"
          class="dashboard-drawer-backdrop"
-         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10001; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;">
-        <div class="modal-content" @click.stop style="background: white; border-radius: var(--radius-2xl); padding: 2rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-xl);">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10001; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="modal-content" @click.stop style="background: white; border-radius: var(--radius-2xl); max-width: 500px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-xl); overflow: hidden;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; border-bottom: 1px solid var(--gray-200); flex-shrink: 0;">
                 <h3 style="margin: 0; font-size: 1.5rem; font-weight: var(--font-weight-semibold);">
                     <i class="fas fa-users me-2" style="color: var(--purple-start);"></i>
                     Crear Nueva Comunidad
@@ -1359,7 +1504,8 @@
                 </button>
             </div>
             
-            <form @submit.prevent="createCommunity">
+            <form @submit.prevent="createCommunity" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                <div style="flex: 1; overflow-y: auto; padding: 1.5rem 2rem;">
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">Nombre *</label>
                     <input x-model="newCommunity.name" type="text" required maxlength="100" 
@@ -1372,6 +1518,70 @@
                     <textarea x-model="newCommunity.description" maxlength="500" rows="4"
                               style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); font-size: 1rem; resize: vertical;"
                               placeholder="Describe el propósito de tu comunidad..."></textarea>
+                </div>
+                
+                <!-- Selector de imagen -->
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.75rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">
+                        <i class="fas fa-image me-2" style="color: var(--purple-start);"></i>Imagen de la comunidad
+                    </label>
+                    
+                    <!-- Tabs para seleccionar tipo -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--gray-200); padding-bottom: 0.5rem;">
+                        <button type="button" 
+                                @click="newCommunity.image_type = 'catalog'"
+                                :style="newCommunity.image_type === 'catalog' ? 'background: var(--purple-start); color: white;' : 'background: var(--gray-100); color: var(--gray-600);'"
+                                style="padding: 0.5rem 1rem; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: var(--font-weight-medium); transition: all 0.2s;">
+                            <i class="fas fa-images me-1"></i>Catálogo
+                        </button>
+                        <button type="button" 
+                                @click="newCommunity.image_type = 'upload'"
+                                :style="newCommunity.image_type === 'upload' ? 'background: var(--purple-start); color: white;' : 'background: var(--gray-100); color: var(--gray-600);'"
+                                style="padding: 0.5rem 1rem; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: var(--font-weight-medium); transition: all 0.2s;">
+                            <i class="fas fa-upload me-1"></i>Subir Imagen
+                        </button>
+                    </div>
+                    
+                    <!-- Catálogo de imágenes -->
+                    <div x-show="newCommunity.image_type === 'catalog'" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; max-height: 200px; overflow-y: auto; padding: 0.5rem;">
+                        <template x-for="img in catalogImages" :key="img.url">
+                            <div @click="newCommunity.image_url = img.url" 
+                                 :style="newCommunity.image_url === img.url ? 'border: 3px solid var(--purple-start); transform: scale(1.05);' : 'border: 2px solid var(--gray-200);'"
+                                 style="aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; cursor: pointer; transition: all 0.2s; position: relative;">
+                                <img :src="img.url" :alt="img.name" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div x-show="newCommunity.image_url === img.url" style="position: absolute; top: 0.25rem; right: 0.25rem; background: var(--purple-start); color: white; border-radius: 50%; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-check" style="font-size: 0.75rem;"></i>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Upload de imagen -->
+                    <div x-show="newCommunity.image_type === 'upload'" style="border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;">
+                        <input type="file" id="communityImageUpload" accept="image/*" 
+                               @change="handleImageUpload"
+                               style="display: none;">
+                        <label for="communityImageUpload" style="cursor: pointer;">
+                            <div style="color: var(--gray-500); margin-bottom: 0.5rem;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem;"></i>
+                            </div>
+                            <div style="color: var(--gray-700); font-weight: var(--font-weight-medium); margin-bottom: 0.25rem;">
+                                Haz clic para subir una imagen
+                            </div>
+                            <div style="color: var(--gray-500); font-size: 0.75rem;">
+                                PNG, JPG hasta 5MB
+                            </div>
+                        </label>
+                        <div x-show="newCommunity.image_url" x-text="'Imagen seleccionada'" 
+                             style="margin-top: 0.5rem; color: var(--success); font-size: 0.875rem; font-weight: var(--font-weight-medium);">
+                        </div>
+                    </div>
+                    
+                    <!-- Preview de la imagen seleccionada -->
+                    <div x-show="newCommunity.image_url" style="margin-top: 0.75rem; text-align: center;">
+                        <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">Vista previa:</div>
+                        <img :src="newCommunity.image_url" style="max-height: 100px; border-radius: var(--radius-lg); border: 2px solid var(--gray-200);">
+                    </div>
                 </div>
                 
                 <div style="margin-bottom: 1.5rem;">
@@ -1388,8 +1598,9 @@
                 <div x-show="error" x-text="error" 
                      style="background: var(--error-light); color: var(--error); padding: 0.75rem; border-radius: var(--radius-lg); margin-bottom: 1rem; font-size: 0.875rem;">
                 </div>
+                </div>
                 
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; padding: 1rem 2rem; border-top: 1px solid var(--gray-200); background: var(--gray-50); flex-shrink: 0;">
                     <button type="button" @click="showCreateModal = false" 
                             style="padding: 0.75rem 1.5rem; border: 1px solid var(--gray-300); background: white; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--font-weight-medium);">
                         Cancelar
@@ -1433,9 +1644,26 @@
                     </div>
                     
                     <!-- Admin Actions -->
-                    <div x-show="selectedCommunity.my_role === 'admin' || selectedCommunity.my_role === 'creator'" style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem;">
-                        <button @click="showInviteModal = true" 
-                                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); color: white; border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: 0.875rem;">
+                    <div x-show="selectedCommunity && (selectedCommunity.my_role === 'admin' || selectedCommunity.my_role === 'creator')" style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem;">
+                        <button onclick="event.stopPropagation(); openEditModalVanilla({
+                                    id: communityAppInstance.selectedCommunity.id,
+                                    name: communityAppInstance.selectedCommunity.name,
+                                    description: communityAppInstance.selectedCommunity.description || '',
+                                    privacy: communityAppInstance.selectedCommunity.privacy || 'private',
+                                    image_url: communityAppInstance.selectedCommunity.image_url || '',
+                                    image_type: communityAppInstance.selectedCommunity.image_type || 'catalog'
+                                }); return false;" 
+                                type="button"
+                                style="padding: 0.5rem 1rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); border-radius: var(--radius-lg); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;"
+                                onmouseover="this.style.background='var(--gray-200)'"
+                                onmouseout="this.style.background='var(--gray-100)'">
+                            <i class="fas fa-edit me-2"></i>Editar
+                        </button>
+                        <button @click="console.log('Abriendo modal de invitación'); showInviteModal = true" 
+                                type="button"
+                                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); color: white; border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: 0.875rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(124, 58, 237, 0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(124, 58, 237, 0.2)'">
                             <i class="fas fa-user-plus me-2"></i>Invitar Coach
                         </button>
                     </div>
@@ -1492,7 +1720,7 @@
          x-cloak
          @click.self="showInviteModal = false"
          class="modal-backdrop-custom"
-         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); z-index: 10002; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); z-index: 10003; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
         <div class="modal-content" @click.stop style="background: white; border-radius: 20px; padding: 0; max-width: 520px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05); max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
             <form @submit.prevent="inviteMember" style="display: flex; flex-direction: column; height: 100%;">
             <div style="flex: 1; overflow-y: auto;">
@@ -1667,6 +1895,127 @@
         </div>
     </div>
     
+    <!-- Edit Community Modal -->
+    <div @click.self="showEditModal = false; console.log('Cerrando modal de edición')"
+         :style="`position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.75); z-index: 10002; backdrop-filter: blur(4px); display: ${showEditModal ? 'flex' : 'none'}; align-items: center; justify-content: center;`">
+        <div @click.stop 
+             style="background: white; border-radius: var(--radius-2xl); max-width: 600px; width: 90%; max-height: 90vh; box-shadow: var(--shadow-xl); display: flex; flex-direction: column; overflow: hidden;">
+            
+            <!-- Header fijo -->
+            <div style="flex-shrink: 0; border-bottom: 1px solid var(--gray-200); padding: 1.5rem 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 1.5rem; font-weight: var(--font-weight-semibold); color: var(--gray-900);">Editar Comunidad</h3>
+                    <button @click="showEditModal = false" style="background: none; border: none; font-size: 1.5rem; color: var(--gray-500); cursor: pointer; padding: 0; line-height: 1;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form @submit.prevent="updateCommunity" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                <!-- Contenido scrolleable -->
+                <div style="flex: 1; overflow-y: auto; padding: 1.5rem 2rem;">
+                    <div x-show="error" style="padding: 0.75rem; background: var(--error-light); border: 1px solid var(--error); border-radius: var(--radius-lg); color: var(--error); margin-bottom: 1rem;">
+                        <span x-text="error"></span>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">Nombre *</label>
+                        <input type="text" 
+                               x-model="editCommunity.name"
+                               required 
+                               style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); font-size: 1rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">Descripción</label>
+                        <textarea x-model="editCommunity.description"
+                                  rows="4"
+                                  style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); font-size: 1rem; resize: vertical;"></textarea>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">Privacidad</label>
+                        <select x-model="editCommunity.privacy"
+                                style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); font-size: 1rem;">
+                            <option value="private">Privada</option>
+                            <option value="public">Pública</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Image Selector -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium); color: var(--gray-700);">Imagen</label>
+                        
+                        <!-- Tab buttons -->
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <button type="button" 
+                                    @click="editCommunity.image_type = 'catalog'"
+                                    :style="editCommunity.image_type === 'catalog' ? 'background: var(--purple-start); color: white;' : 'background: var(--gray-100); color: var(--gray-700);'"
+                                    style="padding: 0.5rem 1rem; border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
+                                Catálogo
+                            </button>
+                            <button type="button" 
+                                    @click="editCommunity.image_type = 'upload'"
+                                    :style="editCommunity.image_type === 'upload' ? 'background: var(--purple-start); color: white;' : 'background: var(--gray-100); color: var(--gray-700);'"
+                                    style="padding: 0.5rem 1rem; border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
+                                Subir Imagen
+                            </button>
+                        </div>
+                        
+                        <!-- Catalog images -->
+                        <div x-show="editCommunity.image_type === 'catalog'" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; max-height: 200px; overflow-y: auto; padding: 0.5rem; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);">
+                            <template x-for="img in catalogImages" :key="img.url">
+                                <div @click="editCommunity.image_url = img.url" 
+                                     :style="editCommunity.image_url === img.url ? 'border: 3px solid var(--purple-start);' : 'border: 2px solid var(--gray-200);'"
+                                     style="cursor: pointer; border-radius: var(--radius-lg); overflow: hidden; position: relative; aspect-ratio: 1; transition: all 0.2s;">
+                                    <img :src="img.url" :alt="img.name" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div x-show="editCommunity.image_url === img.url" style="position: absolute; top: 0.25rem; right: 0.25rem; background: var(--purple-start); color: white; border-radius: 50%; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-check" style="font-size: 0.75rem;"></i>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Upload -->
+                        <div x-show="editCommunity.image_type === 'upload'" style="border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer;"
+                             @click="$refs.editImageUpload.click()">
+                            <input type="file" 
+                                   x-ref="editImageUpload"
+                                   accept="image/*"
+                                   @change="handleImageUpload($event, editCommunity)"
+                                   style="display: none;">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--gray-400); margin-bottom: 0.5rem;"></i>
+                            <p style="color: var(--gray-600); margin: 0; font-size: 0.875rem;">
+                                <span x-show="!editCommunity.image_url">Click para seleccionar una imagen</span>
+                                <span x-show="editCommunity.image_url" style="color: var(--success);">✓ Imagen seleccionada</span>
+                            </p>
+                        </div>
+                        
+                        <!-- Preview -->
+                        <div x-show="editCommunity.image_url" style="margin-top: 1rem;">
+                            <img :src="editCommunity.image_url" alt="Preview" style="width: 100%; max-height: 100px; object-fit: cover; border-radius: var(--radius-lg); border: 1px solid var(--gray-200);">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer fijo -->
+                <div style="flex-shrink: 0; border-top: 1px solid var(--gray-200); padding: 1rem 2rem; background: var(--gray-50); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" 
+                            @click="showEditModal = false"
+                            style="padding: 0.75rem 1.5rem; background: white; color: var(--gray-700); border: 1px solid var(--gray-300); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--font-weight-medium);">
+                        Cancelar
+                    </button>
+                    <button type="submit" 
+                            :disabled="loading"
+                            style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--purple-start) 0%, var(--purple-end) 100%); color: white; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--font-weight-medium);">
+                        <span x-show="!loading">Guardar cambios</span>
+                        <span x-show="loading"><i class="fas fa-spinner fa-spin"></i> Guardando...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -1720,6 +2069,293 @@
         function openCreateGroupModal() {
             if (window.communityAppInstance) {
                 window.communityAppInstance.openCreateModal();
+            }
+        }
+        
+        // Modal de edición con JavaScript vanilla (sin Alpine.js)
+        function openEditModalVanilla(communityData) {
+            console.log('🚀 openEditModalVanilla llamado con:', communityData);
+            
+            // Crear el modal si no existe
+            let modal = document.getElementById('vanillaEditModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'vanillaEditModal';
+                modal.innerHTML = `
+                    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.75); z-index: 10005; display: flex; align-items: center; justify-content: center;" onclick="closeEditModalVanilla(event)">
+                        <div style="background: white; border-radius: 16px; max-width: 600px; width: 90%; max-height: 90vh; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; overflow: hidden;" onclick="event.stopPropagation()">
+                            
+                            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827;">Editar Comunidad</h3>
+                                    <button onclick="closeEditModalVanilla()" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0; line-height: 1;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <form id="editCommunityForm" style="flex: 1; overflow-y: auto; padding: 1.5rem 2rem;">
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Nombre *</label>
+                                    <input type="text" id="editName" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Descripción</label>
+                                    <textarea id="editDescription" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; resize: vertical;"></textarea>
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Privacidad</label>
+                                    <select id="editPrivacy" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+                                        <option value="private">Privada</option>
+                                        <option value="public">Pública</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.75rem; font-weight: 500; color: #374151;">
+                                        <i class="fas fa-image" style="margin-right: 0.5rem; color: #7c3aed;"></i>Imagen de la comunidad
+                                    </label>
+                                    
+                                    <!-- Tabs -->
+                                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">
+                                        <button type="button" id="editTabCatalog" onclick="switchEditImageTab('catalog')" 
+                                                style="padding: 0.5rem 1rem; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #7c3aed; color: white;">
+                                            <i class="fas fa-images" style="margin-right: 0.5rem;"></i>Catálogo
+                                        </button>
+                                        <button type="button" id="editTabUpload" onclick="switchEditImageTab('upload')" 
+                                                style="padding: 0.5rem 1rem; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #f3f4f6; color: #6b7280;">
+                                            <i class="fas fa-upload" style="margin-right: 0.5rem;"></i>Subir Imagen
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Catálogo -->
+                                    <div id="editCatalogSection" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; max-height: 200px; overflow-y: auto; padding: 0.5rem;">
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400" alt="Equipo" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400" alt="Reunión" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400" alt="Crecimiento" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400" alt="Colaboración" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1552664730-d307ca884978?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400" alt="Inspiración" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400" alt="Comunidad" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400" alt="Liderazgo" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div onclick="selectEditImage('https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
+                                            <img src="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400" alt="Mentoría" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Upload -->
+                                    <div id="editUploadSection" style="display: none; border: 2px dashed #d1d5db; border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer;" onclick="document.getElementById('editImageUpload').click()">
+                                        <input type="file" id="editImageUpload" accept="image/*" onchange="handleEditImageUpload(event)" style="display: none;">
+                                        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.5rem; display: block;"></i>
+                                        <p style="color: #6b7280; margin: 0; font-size: 0.875rem;" id="editUploadText">Click para seleccionar una imagen</p>
+                                    </div>
+                                    
+                                    <!-- Preview -->
+                                    <div id="editImagePreview" style="margin-top: 1rem; display: none;">
+                                        <img id="editPreviewImg" src="" alt="Preview" style="width: 100%; max-height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" id="editCommunityId">
+                                <input type="hidden" id="editImageUrl">
+                                <input type="hidden" id="editImageType" value="catalog">
+                            </form>
+                            
+                            <div style="padding: 1rem 2rem; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; gap: 0.75rem; justify-content: flex-end;">
+                                <button onclick="closeEditModalVanilla()" type="button" style="padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; font-size: 0.875rem;">
+                                    Cancelar
+                                </button>
+                                <button onclick="saveEditCommunity()" type="button" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.875rem;">
+                                    Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            // Llenar los campos con los datos
+            document.getElementById('editCommunityId').value = communityData.id;
+            document.getElementById('editName').value = communityData.name || '';
+            document.getElementById('editDescription').value = communityData.description || '';
+            document.getElementById('editPrivacy').value = communityData.privacy || 'private';
+            
+            // Configurar imagen
+            const imageUrl = communityData.image_url || '';
+            const imageType = communityData.image_type || 'catalog';
+            document.getElementById('editImageUrl').value = imageUrl;
+            document.getElementById('editImageType').value = imageType;
+            
+            // Si hay imagen, mostrar preview
+            if (imageUrl) {
+                document.getElementById('editPreviewImg').src = imageUrl;
+                document.getElementById('editImagePreview').style.display = 'block';
+                
+                // Marcar imagen seleccionada en catálogo
+                document.querySelectorAll('.edit-catalog-img').forEach(img => {
+                    if (img.dataset.url === imageUrl) {
+                        img.style.border = '3px solid #7c3aed';
+                        img.style.transform = 'scale(1.05)';
+                    }
+                });
+            }
+            
+            // Mostrar el modal
+            modal.style.display = 'block';
+        }
+        
+        function switchEditImageTab(tab) {
+            const catalogTab = document.getElementById('editTabCatalog');
+            const uploadTab = document.getElementById('editTabUpload');
+            const catalogSection = document.getElementById('editCatalogSection');
+            const uploadSection = document.getElementById('editUploadSection');
+            
+            if (tab === 'catalog') {
+                catalogTab.style.background = '#7c3aed';
+                catalogTab.style.color = 'white';
+                uploadTab.style.background = '#f3f4f6';
+                uploadTab.style.color = '#6b7280';
+                catalogSection.style.display = 'grid';
+                uploadSection.style.display = 'none';
+                document.getElementById('editImageType').value = 'catalog';
+            } else {
+                uploadTab.style.background = '#7c3aed';
+                uploadTab.style.color = 'white';
+                catalogTab.style.background = '#f3f4f6';
+                catalogTab.style.color = '#6b7280';
+                uploadSection.style.display = 'block';
+                catalogSection.style.display = 'none';
+                document.getElementById('editImageType').value = 'upload';
+            }
+        }
+        
+        function selectEditImage(url, type) {
+            // Actualizar campos hidden
+            document.getElementById('editImageUrl').value = url;
+            document.getElementById('editImageType').value = type;
+            
+            // Actualizar preview
+            document.getElementById('editPreviewImg').src = url;
+            document.getElementById('editImagePreview').style.display = 'block';
+            
+            // Actualizar bordes de selección
+            document.querySelectorAll('.edit-catalog-img').forEach(img => {
+                if (img.dataset.url === url) {
+                    img.style.border = '3px solid #7c3aed';
+                    img.style.transform = 'scale(1.05)';
+                } else {
+                    img.style.border = '2px solid #e5e7eb';
+                    img.style.transform = 'scale(1)';
+                }
+            });
+        }
+        
+        function handleEditImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validar tamaño (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La imagen es muy grande. Máximo 5MB.');
+                return;
+            }
+            
+            // Validar tipo
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen válido.');
+                return;
+            }
+            
+            // Convertir a base64
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageUrl = e.target.result;
+                document.getElementById('editImageUrl').value = imageUrl;
+                document.getElementById('editImageType').value = 'upload';
+                document.getElementById('editPreviewImg').src = imageUrl;
+                document.getElementById('editImagePreview').style.display = 'block';
+                document.getElementById('editUploadText').textContent = '✓ Imagen cargada';
+                document.getElementById('editUploadText').style.color = '#10b981';
+            };
+            reader.onerror = () => {
+                alert('Error al cargar la imagen');
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function closeEditModalVanilla(event) {
+            if (event && event.target !== event.currentTarget) return;
+            const modal = document.getElementById('vanillaEditModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        async function saveEditCommunity() {
+            const id = document.getElementById('editCommunityId').value;
+            const name = document.getElementById('editName').value.trim();
+            const description = document.getElementById('editDescription').value.trim();
+            const privacy = document.getElementById('editPrivacy').value;
+            const imageUrl = document.getElementById('editImageUrl').value || '';
+            const imageType = document.getElementById('editImageType').value || 'catalog';
+            
+            if (name.length < 3) {
+                alert('El nombre debe tener al menos 3 caracteres');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/communities/${id}`, {
+                    method: 'PUT',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        description: description,
+                        privacy: privacy,
+                        image_url: imageUrl,
+                        image_type: imageType
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeEditModalVanilla();
+                    // Recargar comunidades
+                    if (window.communityAppInstance) {
+                        await window.communityAppInstance.loadCommunities();
+                    }
+                    alert('✅ Comunidad actualizada exitosamente');
+                } else {
+                    alert('Error: ' + (data.error || 'Error al actualizar la comunidad'));
+                }
+            } catch (error) {
+                console.error('Error updating community:', error);
+                alert('Error al actualizar la comunidad: ' + error.message);
             }
         }
     </script>
