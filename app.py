@@ -16088,7 +16088,7 @@ def api_create_community():
         image_url = data.get('image_url')
         image_type = data.get('image_type', 'catalog')
         
-        if image_type not in ['emoji', 'catalog', 'upload']:
+        if image_type not in ['emoji', 'catalog', 'upload', 'url']:
             image_type = 'catalog'
         
         if image_url:
@@ -16312,12 +16312,17 @@ def api_update_community(community_id):
         
         data = request.get_json()
         
+        logger.info(f"📥 UPDATE COMMUNITY - Data recibida: {data}")
+        
         # Preparar valores de actualización
         name = data.get('name', '').strip() if 'name' in data else None
         description = data.get('description', '').strip() if 'description' in data else None
         privacy = data.get('privacy') if 'privacy' in data else None
         image_url = data.get('image_url', '') if 'image_url' in data else None
         image_type = data.get('image_type', 'catalog') if 'image_type' in data else None
+        
+        logger.info(f"   image_url extraída: {image_url}")
+        logger.info(f"   image_type extraída: {image_type}")
         
         # Validaciones
         if name is not None:
@@ -16341,9 +16346,11 @@ def api_update_community(community_id):
             community.image_url = image_url if image_url else None
         
         if image_type is not None:
-            if image_type not in ['emoji', 'catalog', 'upload']:
+            if image_type not in ['emoji', 'catalog', 'upload', 'url']:
+                logger.warning(f"   ⚠️ image_type inválido '{image_type}', usando 'catalog'")
                 image_type = 'catalog'
             community.image_type = image_type
+            logger.info(f"   ✅ image_type guardado: {image_type}")
         
         # Actualizar timestamp
         from datetime import datetime
@@ -16351,7 +16358,7 @@ def api_update_community(community_id):
         
         db.session.commit()
         
-        logger.info(f"✅ Comunidad actualizada: ID {community_id}")
+        logger.info(f"✅ Comunidad actualizada: ID {community_id}, image_type final en DB: {community.image_type}")
         
         # Construir respuesta
         community_dict = {
@@ -16570,6 +16577,123 @@ def api_invite_to_community(community_id):
         db.session.rollback()
         logger.error(f"Error creando invitación: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error creando invitación'}), 500
+
+@app.route('/api/extract-og-image', methods=['POST'])
+@login_required
+def extract_og_image():
+    """Extrae la imagen Open Graph de una URL de página web"""
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        from urllib.parse import urljoin, urlparse
+        
+        data = request.get_json()
+        url = data.get('url', '').strip()
+        
+        if not url:
+            return jsonify({'error': 'URL requerida'}), 400
+        
+        # Validar que sea una URL válida
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return jsonify({'error': 'URL inválida'}), 400
+        
+        logger.info(f"🔍 Extrayendo imagen Open Graph de: {url}")
+        
+        # Hacer request a la página con timeout
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            logger.warning(f"⚠️ Error accediendo a URL: {str(e)}")
+            return jsonify({'error': 'No se pudo acceder a la URL'}), 400
+        
+        # Parsear HTML
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Buscar imagen Open Graph (og:image)
+        og_image = soup.find('meta', property='og:image')
+        if og_image and og_image.get('content'):
+            image_url = og_image['content']
+            # Convertir URL relativa a absoluta
+            image_url = urljoin(url, image_url)
+            logger.info(f"✅ Imagen Open Graph encontrada: {image_url}")
+            return jsonify({
+                'success': True,
+                'image_url': image_url,
+                'type': 'og:image'
+            }), 200
+        
+        # Buscar Twitter Card
+        twitter_image = soup.find('meta', attrs={'name': 'twitter:image'})
+        if twitter_image and twitter_image.get('content'):
+            image_url = twitter_image['content']
+            image_url = urljoin(url, image_url)
+            logger.info(f"✅ Imagen Twitter Card encontrada: {image_url}")
+            return jsonify({
+                'success': True,
+                'image_url': image_url,
+                'type': 'twitter:image'
+            }), 200
+        
+        # Buscar link rel="image_src"
+        link_image = soup.find('link', rel='image_src')
+        if link_image and link_image.get('href'):
+            image_url = link_image['href']
+            image_url = urljoin(url, image_url)
+            logger.info(f"✅ Imagen link rel encontrada: {image_url}")
+            return jsonify({
+                'success': True,
+                'image_url': image_url,
+                'type': 'link:image_src'
+            }), 200
+        
+        # Buscar primera imagen grande en el contenido
+        images = soup.find_all('img')
+        for img in images:
+            src = img.get('src') or img.get('data-src')
+            if src:
+                # Filtrar imágenes muy pequeñas (probablemente iconos)
+                width = img.get('width')
+                height = img.get('height')
+                if width and height:
+                    try:
+                        if int(width) >= 200 and int(height) >= 200:
+                            image_url = urljoin(url, src)
+                            logger.info(f"✅ Primera imagen grande encontrada: {image_url}")
+                            return jsonify({
+                                'success': True,
+                                'image_url': image_url,
+                                'type': 'first_large_image'
+                            }), 200
+                    except ValueError:
+                        pass
+        
+        # Si no hay dimensiones, devolver primera imagen
+        if images and len(images) > 0:
+            src = images[0].get('src') or images[0].get('data-src')
+            if src:
+                image_url = urljoin(url, src)
+                logger.info(f"ℹ️ Primera imagen encontrada: {image_url}")
+                return jsonify({
+                    'success': True,
+                    'image_url': image_url,
+                    'type': 'first_image'
+                }), 200
+        
+        logger.warning(f"⚠️ No se encontró ninguna imagen en: {url}")
+        return jsonify({'error': 'No se encontró ninguna imagen en la página'}), 404
+        
+    except ImportError:
+        logger.error("❌ beautifulsoup4 no está instalado")
+        return jsonify({'error': 'Funcionalidad no disponible - falta dependencia'}), 500
+    except Exception as e:
+        logger.error(f"❌ Error extrayendo imagen: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error procesando la URL'}), 500
 
 @app.route('/api/my-community-invitations', methods=['GET'])
 @coach_required

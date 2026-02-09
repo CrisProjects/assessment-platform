@@ -113,6 +113,7 @@
                 inviteMessage: '',
                 inviteMethod: 'email',
                 invitePhone: '',
+                extracting: false,
                 
                 // Initialize
                 async init() {
@@ -227,6 +228,11 @@
                         const role = group.my_role === 'creator' ? 'Creador' : group.my_role === 'admin' ? 'Admin' : 'Miembro';
                         const canEdit = group.my_role === 'creator' || group.my_role === 'admin';
                         
+                        console.log(`🖼️ Renderizando grupo "${group.name}":`, {
+                            image_url: group.image_url,
+                            image_type: group.image_type
+                        });
+                        
                         // Determinar qué mostrar como imagen
                         let imageHTML = '';
                         if (group.image_url) {
@@ -321,6 +327,8 @@
                             image_type: this.newCommunity.image_type
                         };
                         
+                        console.log('🚀 Creando comunidad con payload:', payload);
+                        
                         const response = await fetch('/api/communities', {
                             method: 'POST',
                             credentials: 'include',
@@ -333,12 +341,16 @@
                         
                         const data = await response.json();
                         
+                        console.log('📥 Respuesta del servidor:', data);
+                        
                         if (!response.ok) {
                             throw new Error(data.error || 'Error al crear la comunidad');
                         }
                         
                         if (data.success) {
-                            console.log('Community created:', data.community);
+                            console.log('✅ Comunidad creada:', data.community);
+                            console.log('   - image_url:', data.community.image_url);
+                            console.log('   - image_type:', data.community.image_type);
                             this.showCreateModal = false;
                             await this.loadCommunities();
                         } else {
@@ -421,6 +433,50 @@
                         this.error = error.message || 'Error al actualizar la comunidad';
                     } finally {
                         this.loading = false;
+                    }
+                },
+                
+                // Extract image from webpage URL
+                async extractImageFromUrl() {
+                    const url = this.newCommunity.image_url.trim();
+                    
+                    if (!url) {
+                        alert('Por favor ingresa una URL primero');
+                        return;
+                    }
+                    
+                    // Si ya es una URL de imagen directa, no hacer nada
+                    if (url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        return;
+                    }
+                    
+                    this.extracting = true;
+                    
+                    try {
+                        const response = await fetch('/api/extract-og-image', {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ url })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            this.newCommunity.image_url = data.image_url;
+                            console.log('✅ Imagen extraída:', data.image_url);
+                            console.log('   Tipo:', data.type);
+                        } else {
+                            alert(data.error || 'No se pudo extraer la imagen de la página');
+                        }
+                    } catch (error) {
+                        console.error('Error extracting image:', error);
+                        alert('Error al extraer la imagen de la página');
+                    } finally {
+                        this.extracting = false;
                     }
                 },
                 
@@ -1529,13 +1585,19 @@
                     <!-- Tabs para seleccionar tipo -->
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--gray-200); padding-bottom: 0.5rem;">
                         <button type="button" 
-                                @click="newCommunity.image_type = 'catalog'"
+                                @click="newCommunity.image_type = 'catalog'; newCommunity.image_url = catalogImages[0].url; console.log('📑 Cambiado a catalog');"
                                 :style="newCommunity.image_type === 'catalog' ? 'background: var(--purple-start); color: white;' : 'background: var(--gray-100); color: var(--gray-600);'"
                                 style="padding: 0.5rem 1rem; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: var(--font-weight-medium); transition: all 0.2s;">
                             <i class="fas fa-images me-1"></i>Catálogo
                         </button>
                         <button type="button" 
-                                @click="newCommunity.image_type = 'upload'"
+                                @click="newCommunity.image_type = 'url'; newCommunity.image_url = ''; console.log('🔗 Cambiado a URL');"
+                                :style="newCommunity.image_type === 'url' ? 'background: var(--purple-start); color: white;' : 'background: var(--gray-100); color: var(--gray-600);'"
+                                style="padding: 0.5rem 1rem; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: var(--font-weight-medium); transition: all 0.2s;">
+                            <i class="fas fa-link me-1"></i>URL
+                        </button>
+                        <button type="button" 
+                                @click="newCommunity.image_type = 'upload'; newCommunity.image_url = ''; console.log('📤 Cambiado a upload');"
                                 :style="newCommunity.image_type === 'upload' ? 'background: var(--purple-start); color: white;' : 'background: var(--gray-100); color: var(--gray-600);'"
                                 style="padding: 0.5rem 1rem; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: var(--font-weight-medium); transition: all 0.2s;">
                             <i class="fas fa-upload me-1"></i>Subir Imagen
@@ -1554,6 +1616,29 @@
                                 </div>
                             </div>
                         </template>
+                    </div>
+                    
+                    <!-- Input de URL -->
+                    <div x-show="newCommunity.image_type === 'url'" style="padding: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="url" 
+                                   x-model="newCommunity.image_url"
+                                   placeholder="https://ejemplo.com/imagen.jpg o https://sitio.com"
+                                   style="flex: 1; padding: 0.75rem; border: 2px solid var(--gray-300); border-radius: var(--radius-md); font-size: 0.875rem; transition: border-color 0.2s;"
+                                   @focus="$el.style.borderColor = 'var(--purple-start)'"
+                                   @blur="$el.style.borderColor = 'var(--gray-300)'">
+                            <button type="button" @click="extractImageFromUrl()"
+                                    x-show="newCommunity.image_url && !newCommunity.image_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)"
+                                    style="padding: 0.75rem 1rem; background: linear-gradient(135deg, var(--purple-start), var(--purple-end)); color: white; border: none; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: var(--font-weight-medium); cursor: pointer; white-space: nowrap; transition: all 0.2s;"
+                                    :disabled="extracting"
+                                    :style="extracting ? 'opacity: 0.6; cursor: not-allowed;' : ''">
+                                <i class="fas" :class="extracting ? 'fa-spinner fa-spin' : 'fa-magic'" style="margin-right: 0.25rem;"></i>
+                                <span x-text="extracting ? 'Extrayendo...' : 'Extraer imagen'"></span>
+                            </button>
+                        </div>
+                        <div style="margin-top: 0.5rem; color: var(--gray-500); font-size: 0.75rem;">
+                            <i class="fas fa-info-circle me-1"></i>Pega una URL de imagen directa o de una página web para extraer su imagen
+                        </div>
                     </div>
                     
                     <!-- Upload de imagen -->
@@ -2124,6 +2209,10 @@
                                                 style="padding: 0.5rem 1rem; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #7c3aed; color: white;">
                                             <i class="fas fa-images" style="margin-right: 0.5rem;"></i>Catálogo
                                         </button>
+                                        <button type="button" id="editTabUrl" onclick="switchEditImageTab('url')" 
+                                                style="padding: 0.5rem 1rem; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #f3f4f6; color: #6b7280;">
+                                            <i class="fas fa-link" style="margin-right: 0.5rem;"></i>URL
+                                        </button>
                                         <button type="button" id="editTabUpload" onclick="switchEditImageTab('upload')" 
                                                 style="padding: 0.5rem 1rem; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; background: #f3f4f6; color: #6b7280;">
                                             <i class="fas fa-upload" style="margin-right: 0.5rem;"></i>Subir Imagen
@@ -2155,6 +2244,18 @@
                                         </div>
                                         <div onclick="selectEditImage('https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400', 'catalog')" class="edit-catalog-img" data-url="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400" style="cursor: pointer; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; aspect-ratio: 1; transition: all 0.2s; position: relative;">
                                             <img src="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400" alt="Mentoría" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- URL Input -->
+                                    <div id="editUrlSection" style="display: none; padding: 0.5rem;">
+                                        <input type="url" 
+                                               id="editUrlInput"
+                                               placeholder="https://ejemplo.com/imagen.jpg"
+                                               style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 0.875rem;"
+                                               oninput="handleEditUrlInput(event)">
+                                        <div style="margin-top: 0.5rem; color: #6b7280; font-size: 0.75rem;">
+                                            <i class="fas fa-info-circle" style="margin-right: 0.25rem;"></i>Pega la URL de una imagen externa
                                         </div>
                                     </div>
                                     
@@ -2214,7 +2315,20 @@
                         img.style.transform = 'scale(1.05)';
                     }
                 });
+                
+                // Si es URL, llenar el input
+                if (imageType === 'url') {
+                    setTimeout(() => {
+                        const urlInput = document.getElementById('editUrlInput');
+                        if (urlInput) {
+                            urlInput.value = imageUrl;
+                        }
+                    }, 100);
+                }
             }
+            
+            // Activar el tab correcto
+            switchEditImageTab(imageType);
             
             // Mostrar el modal
             modal.style.display = 'block';
@@ -2222,25 +2336,39 @@
         
         function switchEditImageTab(tab) {
             const catalogTab = document.getElementById('editTabCatalog');
+            const urlTab = document.getElementById('editTabUrl');
             const uploadTab = document.getElementById('editTabUpload');
             const catalogSection = document.getElementById('editCatalogSection');
+            const urlSection = document.getElementById('editUrlSection');
             const uploadSection = document.getElementById('editUploadSection');
+            
+            // Reset all tabs
+            catalogTab.style.background = '#f3f4f6';
+            catalogTab.style.color = '#6b7280';
+            urlTab.style.background = '#f3f4f6';
+            urlTab.style.color = '#6b7280';
+            uploadTab.style.background = '#f3f4f6';
+            uploadTab.style.color = '#6b7280';
+            catalogSection.style.display = 'none';
+            urlSection.style.display = 'none';
+            uploadSection.style.display = 'none';
             
             if (tab === 'catalog') {
                 catalogTab.style.background = '#7c3aed';
                 catalogTab.style.color = 'white';
-                uploadTab.style.background = '#f3f4f6';
-                uploadTab.style.color = '#6b7280';
                 catalogSection.style.display = 'grid';
-                uploadSection.style.display = 'none';
                 document.getElementById('editImageType').value = 'catalog';
+                console.log('📑 Modal edición: Cambiado a catalog');
+            } else if (tab === 'url') {
+                urlTab.style.background = '#7c3aed';
+                urlTab.style.color = 'white';
+                urlSection.style.display = 'block';
+                document.getElementById('editImageType').value = 'url';
+                console.log('🔗 Modal edición: Cambiado a URL');
             } else {
                 uploadTab.style.background = '#7c3aed';
                 uploadTab.style.color = 'white';
-                catalogTab.style.background = '#f3f4f6';
-                catalogTab.style.color = '#6b7280';
                 uploadSection.style.display = 'block';
-                catalogSection.style.display = 'none';
                 document.getElementById('editImageType').value = 'upload';
             }
         }
@@ -2264,6 +2392,30 @@
                     img.style.transform = 'scale(1)';
                 }
             });
+        }
+        
+        function handleEditUrlInput(event) {
+            const url = event.target.value.trim();
+            
+            if (url) {
+                // Actualizar campos hidden
+                document.getElementById('editImageUrl').value = url;
+                document.getElementById('editImageType').value = 'url';
+                
+                console.log('✏️ URL pegada en edición:', url);
+                console.log('   image_type actualizado a: url');
+                
+                // Actualizar preview
+                document.getElementById('editPreviewImg').src = url;
+                document.getElementById('editImagePreview').style.display = 'block';
+                
+                // Manejar error de carga de imagen
+                document.getElementById('editPreviewImg').onerror = function() {
+                    document.getElementById('editImagePreview').style.display = 'none';
+                };
+            } else {
+                document.getElementById('editImagePreview').style.display = 'none';
+            }
         }
         
         function handleEditImageUpload(event) {
@@ -2315,12 +2467,27 @@
             const imageUrl = document.getElementById('editImageUrl').value || '';
             const imageType = document.getElementById('editImageType').value || 'catalog';
             
+            console.log('💾 GUARDANDO COMUNIDAD:');
+            console.log('   ID:', id);
+            console.log('   Name:', name);
+            console.log('   image_url:', imageUrl);
+            console.log('   image_type:', imageType);
+            
             if (name.length < 3) {
                 alert('El nombre debe tener al menos 3 caracteres');
                 return;
             }
             
             try {
+                const payload = {
+                    name: name,
+                    description: description,
+                    privacy: privacy,
+                    image_url: imageUrl,
+                    image_type: imageType
+                };
+                console.log('📤 Payload que se enviará:', payload);
+                
                 const response = await fetch(`/api/communities/${id}`, {
                     method: 'PUT',
                     credentials: 'include',
@@ -2328,13 +2495,7 @@
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        name: name,
-                        description: description,
-                        privacy: privacy,
-                        image_url: imageUrl,
-                        image_type: imageType
-                    })
+                    body: JSON.stringify(payload)
                 });
                 
                 if (!response.ok) {
