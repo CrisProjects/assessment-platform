@@ -739,7 +739,7 @@ def send_coach_request_email(coach_request):
                 
                 <div style="text-align: center; margin: 30px 0;">
                     <p style="color: #666;">Para aprobar esta solicitud, inicia sesión en el panel de administración:</p>
-                    <a href="http://localhost:5002/admin-dashboard" 
+                    <a href="http://localhost:5002/admin/dashboard-alpine" 
                        style="background: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin: 10px 5px;">
                         Ir al Panel de Admin
                     </a>
@@ -778,7 +778,7 @@ Estilo de Coaching: {coach_request.estilo or 'No especificado'}
 Fecha de solicitud: {coach_request.created_at.strftime('%d/%m/%Y %H:%M')}
 
 Para revisar y aprobar esta solicitud, accede al panel de administración:
-http://localhost:5002/admin-dashboard
+http://localhost:5002/admin/dashboard-alpine
 
 ---
 Sistema InstaCoach Assessment Platform
@@ -800,6 +800,228 @@ Sistema InstaCoach Assessment Platform
     except Exception as e:
         logger.error(f"❌ Error enviando email de solicitud de coach: {str(e)}", exc_info=True)
         return False
+
+
+def send_welcome_email_to_new_coach(coach, password, admin_name):
+    """
+    Envía email de bienvenida a un nuevo coach creado por el admin.
+    
+    Args:
+        coach: Instancia de User con role='coach'
+        password: Contraseña en texto plano para incluir en el email
+        admin_name: Nombre del administrador que creó la cuenta
+    
+    Returns:
+        dict con resultado del envío
+    """
+    try:
+        smtp_server = os.environ.get('SMTP_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+        smtp_username = os.environ.get('SMTP_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        support_email = 'support@instacoach.cl'
+        
+        if not all([smtp_server, smtp_username, smtp_password]):
+            logger.warning("⚠️ SMTP not configured - Welcome email not sent")
+            return {'success': False, 'message': 'SMTP no configurado'}
+        
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        msg = MIMEMultipart()
+        msg['From'] = support_email
+        msg['To'] = coach.email
+        msg['Subject'] = '🎉 Bienvenido a InstaCoach - Credenciales de Acceso'
+        
+        dashboard_url = f"{request.host_url}coach-dashboard"
+        login_url = f"{request.host_url}coach-login"
+        
+        # HTML body
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 40px; border-radius: 12px 12px 0 0; text-align: center;">
+                    <h1 style="margin: 0; font-size: 32px;">🎉 ¡Bienvenido a InstaCoach!</h1>
+                    <p style="margin: 15px 0 0 0; font-size: 18px; opacity: 0.95;">Tu cuenta de Coach ha sido creada exitosamente</p>
+                </div>
+                
+                <div style="background: white; padding: 35px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <p style="font-size: 16px; margin-top: 0;">Hola <strong>{coach.full_name}</strong>,</p>
+                    
+                    <p>Tu cuenta de coach ha sido creada por {admin_name}. Ahora puedes acceder a la plataforma InstaCoach Assessment Platform y comenzar a trabajar con tus coachees.</p>
+                    
+                    <div style="background: #f0f4ff; padding: 25px; border-radius: 10px; margin: 25px 0; border-left: 5px solid #6366f1;">
+                        <h3 style="color: #6366f1; margin-top: 0; display: flex; align-items: center;">
+                            🔑 Tus credenciales de acceso
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                            <tr>
+                                <td style="padding: 10px 0; font-weight: bold; color: #555; width: 140px;">Usuario:</td>
+                                <td style="padding: 10px 0; font-family: 'Courier New', monospace; background: white; padding: 8px 12px; border-radius: 6px;"><strong>{coach.username}</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; font-weight: bold; color: #555;">Email:</td>
+                                <td style="padding: 10px 0; font-family: 'Courier New', monospace; background: white; padding: 8px 12px; border-radius: 6px;">{coach.email}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; font-weight: bold; color: #555;">Contraseña:</td>
+                                <td style="padding: 10px 0; font-family: 'Courier New', monospace; background: #fff3cd; padding: 8px 12px; border-radius: 6px; color: #856404;"><strong>{password}</strong></td>
+                            </tr>
+                        </table>
+                        <p style="margin: 15px 0 0 0; font-size: 13px; color: #856404; background: #fff3cd; padding: 12px; border-radius: 6px;">
+                            ⚠️ <strong>Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
+                        </p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 35px 0;">
+                        <a href="{login_url}" 
+                           style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);">
+                            Iniciar Sesión Ahora →
+                        </a>
+                    </div>
+                    
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 25px 0; border-left: 5px solid #4caf50;">
+                        <h3 style="color: #2e7d32; margin-top: 0;">✨ ¿Qué puedes hacer en InstaCoach?</h3>
+                        <ul style="color: #555; line-height: 1.8; margin: 10px 0; padding-left: 20px;">
+                            <li>Gestionar tus coachees y su progreso</li>
+                            <li>Asignar y revisar evaluaciones personalizadas</li>
+                            <li>Programar sesiones de coaching</li>
+                            <li>Compartir contenido y recursos</li>
+                            <li>Crear planes de desarrollo personalizados</li>
+                            <li>Unirte a comunidades de coaches</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #fff3e0; padding: 20px; border-radius: 10px; margin: 25px 0; border-left: 5px solid #ff9800;">
+                        <h3 style="color: #e65100; margin-top: 0;">📞 ¿Necesitas ayuda?</h3>
+                        <p style="margin: 5px 0; color: #555;">Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos:</p>
+                        <p style="margin: 10px 0;"><strong>📧 Email:</strong> <a href="mailto:{support_email}" style="color: #6366f1; text-decoration: none;">{support_email}</a></p>
+                    </div>
+                    
+                    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+                    
+                    <p style="color: #999; font-size: 13px; text-align: center; margin: 0;">
+                        Sistema InstaCoach Assessment Platform<br>
+                        Este email fue enviado automáticamente. Por favor no responder directamente.
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text version
+        text_body = f"""
+¡Bienvenido a InstaCoach!
+
+Hola {coach.full_name},
+
+Tu cuenta de coach ha sido creada por {admin_name}. Ahora puedes acceder a la plataforma InstaCoach Assessment Platform.
+
+CREDENCIALES DE ACCESO
+-----------------------
+Usuario: {coach.username}
+Email: {coach.email}
+Contraseña: {password}
+
+⚠️ IMPORTANTE: Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
+
+Inicia sesión aquí: {login_url}
+
+¿QUÉ PUEDES HACER EN INSTACOACH?
+- Gestionar tus coachees y su progreso
+- Asignar y revisar evaluaciones personalizadas
+- Programar sesiones de coaching
+- Compartir contenido y recursos
+- Crear planes de desarrollo personalizados
+- Unirte a comunidades de coaches
+
+¿NECESITAS AYUDA?
+Si tienes alguna pregunta o necesitas asistencia, contáctanos:
+Email: {support_email}
+
+---
+Sistema InstaCoach Assessment Platform
+        """.strip()
+        
+        msg.attach(MIMEText(html_body, 'html'))
+        msg.attach(MIMEText(text_body, 'plain'))
+        
+        # Enviar email
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        
+        logger.info(f"📧 Email de bienvenida enviado a {coach.email}")
+        return {'success': True, 'message': 'Email enviado exitosamente', 'method': 'email'}
+        
+    except Exception as e:
+        logger.error(f"❌ Error enviando email de bienvenida: {str(e)}", exc_info=True)
+        return {'success': False, 'message': f'Error: {str(e)}', 'method': 'email'}
+
+
+def generate_whatsapp_welcome_message(coach, password, admin_name):
+    """
+    Genera mensaje de bienvenida para WhatsApp.
+    
+    Args:
+        coach: Instancia de User con role='coach'
+        password: Contraseña en texto plano
+        admin_name: Nombre del administrador
+    
+    Returns:
+        dict con el mensaje y link de WhatsApp
+    """
+    try:
+        from urllib.parse import quote as url_quote
+        
+        login_url = f"{request.host_url}coach-login"
+        
+        message = f"""🎉 *¡Bienvenido a InstaCoach!*
+
+Hola *{coach.full_name}*,
+
+Tu cuenta de coach ha sido creada por {admin_name}.
+
+🔑 *Credenciales de Acceso:*
+👤 Usuario: {coach.username}
+📧 Email: {coach.email}
+🔒 Contraseña: {password}
+
+⚠️ *Importante:* Cambia tu contraseña después del primer inicio de sesión.
+
+Inicia sesión aquí: {login_url}
+
+✨ *En InstaCoach puedes:*
+• Gestionar tus coachees
+• Asignar evaluaciones
+• Programar sesiones
+• Compartir contenido
+• Crear planes de desarrollo
+
+📞 ¿Necesitas ayuda?
+Contáctanos: support@instacoach.cl
+
+---
+InstaCoach Assessment Platform"""
+        
+        logger.info(f"📱 Mensaje de WhatsApp generado para {coach.full_name}")
+        return {
+            'success': True,
+            'message': 'Mensaje generado exitosamente',
+            'whatsapp_text': message,
+            'whatsapp_message': message,
+            'method': 'whatsapp',
+            'note': 'Copia este mensaje y envíalo por WhatsApp'
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error generando mensaje WhatsApp: {str(e)}", exc_info=True)
+        return {'success': False, 'message': f'Error: {str(e)}', 'method': 'whatsapp'}
 
 
 def send_confirmation_email_to_applicant(coach_request):
@@ -1364,6 +1586,11 @@ class User(UserMixin, db.Model):
     coach_notes = db.Column(db.Text, nullable=True)  # Notas del coach sobre el coachee (JSON array)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     last_login = db.Column(db.DateTime, index=True)
+    
+    # Campos para soft delete
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)  # Fecha de eliminación
+    deleted_by = db.Column(db.Integer, nullable=True)  # ID del admin que eliminó
+    deletion_reason = db.Column(db.Text, nullable=True)  # Razón de eliminación
     
     # Relaciones
     coach = db.relationship('User', remote_side=[id], backref='coachees')
@@ -3118,7 +3345,7 @@ def create_demo_data_for_coachee(coachee_user):
 def get_dashboard_url(role):
     """Retorna la URL del dashboard según el rol"""
     urls = {
-        'platform_admin': '/platform-admin-dashboard',
+        'platform_admin': '/admin/dashboard-alpine',
         'coach': '/coach-feed',
         'coachee': '/coachee-feed'  # Feed principal del coachee
     }
@@ -4342,7 +4569,7 @@ def api_status():
         'status': 'success',
         'message': 'Assessment Platform API is running',
         'version': '2.0.0',
-        'available_endpoints': ['/coachee-dashboard', '/coach-dashboard', '/admin-dashboard']
+        'available_endpoints': ['/coachee-dashboard', '/coach-dashboard', '/admin/dashboard-alpine']
     })
 
 @app.route('/health')
@@ -5347,7 +5574,7 @@ def api_register():
     """
     Endpoint para solicitudes de registro de coach.
     Ahora crea una solicitud pendiente de aprobación en vez de crear el usuario directamente.
-    El administrador debe aprobar la solicitud desde el admin-dashboard.
+    El administrador debe aprobar la solicitud desde el dashboard de administración.
     
     Security:
     - Rate limited: 3 requests per hour per IP
@@ -5511,7 +5738,7 @@ def api_admin_login():
             return jsonify({
                 'success': True,
                 'user': create_user_response(admin_user),
-                'redirect_url': '/platform-admin-dashboard'
+                'redirect_url': '/admin/dashboard-alpine'
             }), 200
         else:
             # Registrar intento fallido de admin (crítico)
@@ -6175,6 +6402,7 @@ def api_admin_create_coach():
             return jsonify({'error': f'Campos requeridos: {", ".join(missing_fields)}'}), 400
         
         username, email, full_name, password = data['username'], data['email'], data['full_name'], data['password']
+        notification_method = data.get('notification_method', 'email')  # 'email', 'whatsapp', 'none'
         
         # Validaciones
         if '@' not in email:
@@ -6200,7 +6428,19 @@ def api_admin_create_coach():
         db.session.add(new_coach)
         db.session.commit()
         
-        return jsonify({
+        # Obtener nombre del admin actual
+        admin_user = getattr(g, 'current_user', None)
+        admin_name = admin_user.full_name if admin_user else 'Administrador'
+        
+        # Enviar notificación según método seleccionado
+        notification_result = {'success': True, 'message': 'No se envió notificación'}
+        
+        if notification_method == 'email':
+            notification_result = send_welcome_email_to_new_coach(new_coach, password, admin_name)
+        elif notification_method == 'whatsapp':
+            notification_result = generate_whatsapp_welcome_message(new_coach, password, admin_name)
+        
+        response_data = {
             'success': True,
             'message': f'Coach {full_name} creado exitosamente',
             'coach': {
@@ -6210,11 +6450,17 @@ def api_admin_create_coach():
                 'full_name': new_coach.full_name,
                 'role': new_coach.role,
                 'created_at': new_coach.created_at.isoformat() if new_coach.created_at else None
-            }
-        }), 201
+            },
+            'notification': notification_result
+        }
+        
+        logger.info(f"✅ Coach creado: {full_name} (ID: {new_coach.id}), notificación: {notification_method}")
+        
+        return jsonify(response_data), 201
         
     except Exception as e:
         db.session.rollback()
+        logger.error(f"❌ Error creando coach: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error creando coach: {str(e)}'}), 500
 
 @app.route('/api/admin/coaches', methods=['GET'])
@@ -6253,12 +6499,15 @@ def api_admin_get_coaches():
 @admin_required
 def api_admin_platform_stats():
     try:
-        # Estadísticas básicas
-        total_users = User.query.count()
-        total_coaches = User.query.filter_by(role='coach').count()
-        total_coachees = User.query.filter_by(role='coachee').count()
-        total_admins = User.query.filter_by(role='platform_admin').count()
+        # Estadísticas básicas - EXCLUIR usuarios eliminados (soft delete)
+        total_users = User.query.filter(User.deleted_at.is_(None)).count()
+        total_coaches = User.query.filter_by(role='coach').filter(User.deleted_at.is_(None)).count()
+        total_coachees = User.query.filter_by(role='coachee').filter(User.deleted_at.is_(None)).count()
+        total_admins = User.query.filter_by(role='platform_admin').filter(User.deleted_at.is_(None)).count()
         total_assessments = AssessmentResult.query.count()
+        
+        # Usuarios eliminados (soft delete)
+        deleted_users = User.query.filter(User.deleted_at.isnot(None)).count()
         
         # Puntuación promedio
         avg_score_result = db.session.query(func.avg(AssessmentResult.score)).scalar()
@@ -6268,9 +6517,9 @@ def api_admin_platform_stats():
         last_month = datetime.utcnow() - timedelta(days=30)
         recent_assessments = AssessmentResult.query.filter(AssessmentResult.completed_at >= last_month).count()  # type: ignore
         
-        # Usuarios activos/inactivos
-        active_users = User.query.filter_by(active=True).count()
-        inactive_users = User.query.filter_by(active=False).count()
+        # Usuarios activos/inactivos (excluyendo eliminados)
+        active_users = User.query.filter_by(active=True).filter(User.deleted_at.is_(None)).count()
+        inactive_users = User.query.filter_by(active=False).filter(User.deleted_at.is_(None)).count()
         
         return jsonify({
             'success': True,
@@ -6279,6 +6528,7 @@ def api_admin_platform_stats():
             'total_coachees': total_coachees,
             'total_admins': total_admins,
             'total_assessments': total_assessments,
+            'deleted_users': deleted_users,
             'avg_score': avg_score,
             'recent_assessments': recent_assessments,
             'active_users': active_users,
@@ -6428,8 +6678,11 @@ def api_admin_get_all_users():
         status = request.args.get('status')  # 'active', 'inactive', or None for all
         search = request.args.get('search', '').strip()
         
-        # Query base
-        query = User.query.filter(User.role.in_(['coach', 'coachee']))
+        # Query base - EXCLUIR usuarios eliminados (soft delete)
+        query = User.query.filter(
+            User.role.in_(['coach', 'coachee']),
+            User.deleted_at.is_(None)  # Solo usuarios NO eliminados
+        )
         
         # Aplicar filtros
         if role:
@@ -6618,7 +6871,74 @@ def api_admin_toggle_user_status(user_id):
 @app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
 @admin_required
 def api_admin_delete_user(user_id):
-    """Eliminar un usuario permanentemente"""
+    """SOFT DELETE - Marcar usuario como eliminado (recuperable)"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Verificar si ya está eliminado
+        if user.deleted_at:
+            return jsonify({'error': 'Usuario ya está eliminado'}), 400
+        
+        # No permitir eliminar admins
+        if user.role == 'platform_admin':
+            return jsonify({'error': 'No se pueden eliminar cuentas de administrador'}), 403
+        
+        # No permitirse eliminar a sí mismo
+        if user.id == current_user.id:
+            return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 403
+        
+        # Obtener datos del request
+        data = request.get_json() or {}
+        deletion_reason = data.get('reason', '').strip()
+        
+        # Validar razón de eliminación
+        if not deletion_reason or len(deletion_reason) < 10:
+            return jsonify({'error': 'Debes proporcionar una razón de eliminación (mínimo 10 caracteres)'}), 400
+        
+        username = user.username
+        user_email = user.email
+        
+        # SOFT DELETE: Marcar como eliminado
+        user.deleted_at = datetime.utcnow()
+        user.deleted_by = current_user.id
+        user.deletion_reason = deletion_reason[:1000]  # Limitar a 1000 caracteres
+        user.active = False  # Desactivar cuenta
+        
+        # Si es coach, desasignar sus coachees (no eliminar la relación, solo marcar)
+        if user.role == 'coach':
+            coachees = User.query.filter_by(coach_id=user_id).all()
+            for coachee in coachees:
+                coachee.coach_id = None  # Desasignar coach
+            logger.info(f"✅ ADMIN: Coachees del coach {username} desasignados")
+        
+        db.session.commit()
+        
+        logger.info(f"🗑️ ADMIN: Usuario marcado como eliminado (SOFT DELETE) - {username} (ID: {user_id})")
+        logger.info(f"   Razón: {deletion_reason}")
+        log_security_event('user_soft_deleted', 'warning',
+                          user_id=current_user.id,
+                          username=current_user.username,
+                          description=f'Admin soft-deleted user {username} (ID: {user_id}). Reason: {deletion_reason}')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Usuario {username} eliminado correctamente (recuperable)',
+            'deletion_type': 'soft',
+            'deleted_at': user.deleted_at.isoformat() if user.deleted_at else None,
+            'can_restore': True
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN: Error eliminando usuario: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error eliminando usuario: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>/hard-delete', methods=['DELETE'])
+@admin_required
+def api_admin_hard_delete_user(user_id):
+    """HARD DELETE - Eliminar usuario PERMANENTEMENTE (no recuperable)"""
     try:
         user = User.query.get(user_id)
         if not user:
@@ -6632,16 +6952,28 @@ def api_admin_delete_user(user_id):
         if user.id == current_user.id:
             return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 403
         
+        # Requiere confirmación explícita
+        data = request.get_json() or {}
+        confirmation = data.get('confirm', '').strip().upper()
+        
+        if confirmation != 'DELETE PERMANENTLY':
+            return jsonify({
+                'error': 'Confirmación requerida',
+                'required_confirmation': 'DELETE PERMANENTLY',
+                'warning': 'Esta acción es IRREVERSIBLE y eliminará TODOS los datos del usuario'
+            }), 400
+        
         username = user.username
         user_email = user.email
+        user_role = user.role
         
-        # IMPORTANTE: Primero eliminar relaciones dependientes
+        # ELIMINACIÓN EN CASCADA - PERMANENTE
         try:
-            # Si es coach, reasignar o eliminar coachees
+            # Si es coach, reasignar coachees a NULL
             if user.role == 'coach':
                 coachees = User.query.filter_by(coach_id=user_id).all()
                 for coachee in coachees:
-                    coachee.coach_id = None  # Desasignar coach
+                    coachee.coach_id = None
                 
                 # Eliminar evaluaciones creadas por este coach
                 AssessmentResult.query.filter_by(coach_id=user_id).delete()
@@ -6652,19 +6984,19 @@ def api_admin_delete_user(user_id):
                 Response.query.filter_by(user_id=user_id).delete()
                 AssessmentHistory.query.filter_by(user_id=user_id).delete()
                 
-                # Eliminar progreso de tareas asignadas a este coachee
+                # Eliminar progreso de tareas
                 coachee_tasks = Task.query.filter_by(coachee_id=user_id).all()
                 for task in coachee_tasks:
                     TaskProgress.query.filter_by(task_id=task.id).delete()
             
-            # Eliminar tokens de reseteo de contraseña
+            # Eliminar tokens de reseteo
             PasswordResetToken.query.filter_by(user_id=user_id).delete()
             
             # Eliminar invitaciones
             Invitation.query.filter_by(coach_id=user_id).delete()
             Invitation.query.filter_by(coachee_id=user_id).delete()
             
-            # Eliminar tareas (como coach o coachee)
+            # Eliminar tareas
             Task.query.filter_by(coach_id=user_id).delete()
             Task.query.filter_by(coachee_id=user_id).delete()
             
@@ -6679,35 +7011,126 @@ def api_admin_delete_user(user_id):
             # Eliminar notificaciones
             Notification.query.filter_by(user_id=user_id).delete()
             
-            # Eliminar usuario usando SQL directo para evitar cargar relaciones con columnas inexistentes
-            # Primero actualizar las FKs que apuntan a este usuario
+            # Actualizar FKs que apuntan a este usuario
             if user.role == 'platform_admin':
                 db.session.execute(db.text("UPDATE coach_request SET reviewed_by = NULL WHERE reviewed_by = :user_id"), {'user_id': user_id})
             
-            # Eliminar el usuario directamente sin cargar el objeto completo
+            # Eliminar el usuario PERMANENTEMENTE
             db.session.execute(db.text("DELETE FROM user WHERE id = :user_id"), {'user_id': user_id})
             db.session.commit()
             
-            logger.info(f"🗑️ ADMIN: Usuario eliminado permanentemente - ID: {user_id}, Username: {username}")
-            log_security_event('user_deleted', 'warning',
+            logger.warning(f"🔥 ADMIN: Usuario ELIMINADO PERMANENTEMENTE (HARD DELETE) - {username} (ID: {user_id})")
+            log_security_event('user_hard_deleted', 'critical',
                               user_id=current_user.id,
                               username=current_user.username,
-                              description=f'Admin eliminó usuario {username} (ID: {user_id}, Email: {user_email})')
+                              description=f'Admin PERMANENTLY deleted user {username} (ID: {user_id}, Role: {user_role}, Email: {user_email})')
             
             return jsonify({
                 'success': True,
-                'message': 'Usuario eliminado exitosamente'
+                'message': f'Usuario {username} eliminado PERMANENTEMENTE',
+                'deletion_type': 'hard',
+                'warning': 'Esta eliminación es IRREVERSIBLE. Todos los datos han sido destruidos.',
+                'can_restore': False
             }), 200
             
         except Exception as delete_error:
             db.session.rollback()
-            logger.error(f"❌ ADMIN: Error eliminando relaciones del usuario: {str(delete_error)}", exc_info=True)
-            return jsonify({'error': f'Error eliminando datos relacionados: {str(delete_error)}'}), 500
+            logger.error(f"❌ ADMIN: Error en eliminación permanente: {str(delete_error)}", exc_info=True)
+            return jsonify({'error': f'Error en eliminación permanente: {str(delete_error)}'}), 500
         
     except Exception as e:
         db.session.rollback()
-        logger.error(f"❌ ADMIN: Error eliminando usuario: {str(e)}", exc_info=True)
-        return jsonify({'error': f'Error eliminando usuario: {str(e)}'}), 500
+        logger.error(f"❌ ADMIN: Error en eliminación permanente: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error en eliminación permanente: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>/restore', methods=['POST'])
+@admin_required
+def api_admin_restore_user(user_id):
+    """RESTAURAR usuario eliminado (soft delete)"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Verificar que el usuario está eliminado
+        if not user.deleted_at:
+            return jsonify({'error': 'Este usuario no está eliminado'}), 400
+        
+        # Restaurar usuario
+        user.deleted_at = None
+        user.deleted_by = None
+        user.deletion_reason = None
+        user.active = True
+        
+        db.session.commit()
+        
+        logger.info(f"♻️ ADMIN: Usuario restaurado - {user.username} (ID: {user_id})")
+        log_security_event('user_restored', 'info',
+                          user_id=current_user.id,
+                          username=current_user.username,
+                          description=f'Admin restored user {user.username} (ID: {user_id})')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Usuario {user.username} restaurado correctamente',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role,
+                'active': user.active,
+                'restored_at': datetime.utcnow().isoformat()
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN: Error restaurando usuario: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error restaurando usuario: {str(e)}'}), 500
+
+@app.route('/api/admin/users/deleted', methods=['GET'])
+@admin_required
+def api_admin_list_deleted_users():
+    """Listar usuarios eliminados (soft delete) - recuperables"""
+    try:
+        deleted_users = User.query.filter(
+            User.deleted_at.isnot(None)
+        ).order_by(User.deleted_at.desc()).all()
+        
+        users_data = []
+        for user in deleted_users:
+            deleted_by_admin = None
+            if user.deleted_by:
+                admin = User.query.get(user.deleted_by)
+                if admin:
+                    deleted_by_admin = {
+                        'id': admin.id,
+                        'username': admin.username,
+                        'full_name': admin.full_name
+                    }
+            
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role,
+                'deleted_at': user.deleted_at.isoformat() if user.deleted_at else None,
+                'deleted_by': deleted_by_admin,
+                'deletion_reason': user.deletion_reason,
+                'can_restore': True
+            })
+        
+        return jsonify({
+            'success': True,
+            'deleted_users': users_data,
+            'count': len(users_data)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ ADMIN: Error listando usuarios eliminados: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error listando usuarios eliminados: {str(e)}'}), 500
 
 @app.route('/api/admin/users/<int:user_id>/reset-password', methods=['POST'])
 @admin_required
@@ -7846,7 +8269,8 @@ def platform_admin_dashboard():
 
 @app.route('/admin-dashboard')
 def admin_dashboard():
-    return redirect(url_for('platform_admin_dashboard'))
+    """Redirección al dashboard Alpine para compatibilidad"""
+    return redirect('/admin/dashboard-alpine')
 
 @app.route('/admin/dashboard-alpine')
 @admin_required

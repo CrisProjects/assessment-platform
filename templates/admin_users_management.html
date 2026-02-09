@@ -322,6 +322,65 @@
             color: #92400e;
         }
 
+        .dropdown-menu-actions {
+            position: absolute;
+            background: white;
+            border: 1px solid var(--calm-border);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            min-width: 200px;
+            padding: 0.5rem 0;
+        }
+
+        .dropdown-item {
+            padding: 0.625rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--calm-light);
+        }
+
+        .dropdown-item.danger {
+            color: #dc2626;
+        }
+
+        .dropdown-item.danger:hover {
+            background-color: #fee2e2;
+        }
+
+        .badge-deleted {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid var(--calm-border);
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--calm-dark);
+            padding: 0.75rem 1.5rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border-bottom-color: var(--calm-secondary);
+        }
+
+        .nav-tabs .nav-link.active {
+            border-bottom-color: var(--calm-primary);
+            font-weight: 600;
+        }
+
         @media (max-width: 768px) {
             .user-table {
                 font-size: 0.875rem;
@@ -364,8 +423,33 @@
 
     <!-- Main Content -->
     <main class="container-fluid py-4">
-        <!-- Filters and Search -->
-        <div class="main-card p-4 mb-4">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link" 
+                   :class="{ 'active': currentTab === 'active' }"
+                   @click="currentTab = 'active'; loadUsers()"
+                   href="javascript:void(0)">
+                    <i class="fas fa-users me-2"></i>
+                    Usuarios Activos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" 
+                   :class="{ 'active': currentTab === 'deleted' }"
+                   @click="currentTab = 'deleted'; loadDeletedUsers()"
+                   href="javascript:void(0)">
+                    <i class="fas fa-trash-restore me-2"></i>
+                    Usuarios Eliminados
+                    <span x-show="deletedUsersCount > 0" 
+                          class="badge bg-danger ms-1" 
+                          x-text="deletedUsersCount"></span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Filters and Search (solo para usuarios activos) -->
+        <div class="main-card p-4 mb-4" x-show="currentTab === 'active'">
             <div class="row g-3 align-items-center">
                 <!-- Search -->
                 <div class="col-12 col-md-4">
@@ -427,7 +511,7 @@
         </div>
 
         <!-- Users Table -->
-        <div class="main-card">
+        <div class="main-card" x-show="currentTab === 'active'">
             <div class="p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 class="h5 mb-0">
@@ -493,7 +577,7 @@
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <div class="btn-group" role="group">
+                                        <div class="d-flex justify-content-end gap-2 position-relative">
                                             <button class="action-btn action-btn-edit" 
                                                     @click="openEditModal(user)"
                                                     title="Editar">
@@ -510,12 +594,117 @@
                                                     :title="user.is_active ? 'Bloquear' : 'Desbloquear'">
                                                 <i class="fas" :class="user.is_active ? 'fa-ban' : 'fa-check'"></i>
                                             </button>
-                                            <button class="action-btn action-btn-delete" 
-                                                    @click="confirmDeleteUser(user)"
-                                                    title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <!-- Dropdown button -->
+                                            <div class="position-relative">
+                                                <button class="action-btn action-btn-delete" 
+                                                        @click="toggleDeleteMenu(user.id)"
+                                                        title="Opciones de eliminación">
+                                                    <i class="fas fa-trash"></i>
+                                                    <i class="fas fa-chevron-down ms-1" style="font-size: 0.7em;"></i>
+                                                </button>
+                                                <!-- Dropdown menu -->
+                                                <div x-show="deleteMenuOpen === user.id" 
+                                                     @click.away="deleteMenuOpen = null"
+                                                     class="dropdown-menu-actions"
+                                                     style="right: 0; top: 100%; margin-top: 0.25rem;">
+                                                    <div class="dropdown-item" 
+                                                         @click="openSoftDeleteModal(user)">
+                                                        <i class="fas fa-archive text-warning"></i>
+                                                        <span>Eliminar (recuperable)</span>
+                                                    </div>
+                                                    <div class="dropdown-item danger" 
+                                                         @click="openHardDeleteModal(user)">
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                        <span>Eliminar permanentemente</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deleted Users Table -->
+        <div class="main-card" x-show="currentTab === 'deleted'" x-cloak>
+            <div class="p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">
+                        <span x-text="deletedUsers.length"></span> usuarios eliminados
+                    </h2>
+                    <button class="btn btn-sm btn-primary" @click="loadDeletedUsers()">
+                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+                        Actualizar
+                    </button>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="loading" class="text-center py-5">
+                    <div class="loading-spinner mx-auto mb-3"></div>
+                    <p class="text-muted">Cargando usuarios eliminados...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="!loading && deletedUsers.length === 0" class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    No hay usuarios eliminados.
+                </div>
+
+                <!-- Table -->
+                <div x-show="!loading && deletedUsers.length > 0" class="table-responsive">
+                    <table class="table user-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th class="d-none d-md-table-cell">Eliminado por</th>
+                                <th class="d-none d-lg-table-cell">Fecha eliminación</th>
+                                <th>Razón</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="user in deletedUsers" :key="user.id">
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold" x-text="user.full_name"></div>
+                                        <div class="small text-muted" x-text="user.username"></div>
+                                        <div class="small text-muted" x-text="user.email"></div>
+                                    </td>
+                                    <td>
+                                        <span class="badge" 
+                                              :class="user.role === 'coach' ? 'badge-coach' : 'badge-coachee'"
+                                              x-text="user.role === 'coach' ? 'Coach' : 'Coachee'">
+                                        </span>
+                                    </td>
+                                    <td class="d-none d-md-table-cell">
+                                        <span x-text="user.deleted_by ? user.deleted_by.full_name : '-'"></span>
+                                    </td>
+                                    <td class="d-none d-lg-table-cell">
+                                        <span x-text="formatDate(user.deleted_at)"></span>
+                                    </td>
+                                    <td>
+                                        <small x-text="user.deletion_reason || '-'"></small>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="action-btn me-2" 
+                                                style="background-color: #10b981; color: white;"
+                                                @click="restoreUser(user)"
+                                                title="Restaurar usuario">
+                                            <i class="fas fa-undo"></i>
+                                            Restaurar
+                                        </button>
+                                        <button class="action-btn" 
+                                                style="background-color: #dc3545; color: white;"
+                                                @click="openHardDeleteFromDeletedModal(user)"
+                                                title="Eliminar permanentemente">
+                                            <i class="fas fa-trash"></i>
+                                            Eliminar Permanente
+                                        </button>
                                     </td>
                                 </tr>
                             </template>
@@ -642,26 +831,167 @@
         </div>
     </div>
 
+    <!-- Soft Delete Modal -->
+    <div class="modal" :class="{ 'show': showSoftDeleteModal }" @click.self="showSoftDeleteModal = false">
+        <div class="modal-content" @click.stop>
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-archive me-2 text-warning"></i>
+                    Eliminar Usuario (Recuperable)
+                </h5>
+                <button type="button" class="btn-close" @click="showSoftDeleteModal = false"></button>
+            </div>
+            <div class="modal-body">
+                <template x-if="deletingUser">
+                    <div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Soft Delete:</strong> El usuario será marcado como eliminado pero sus datos se conservarán y podrá ser restaurado posteriormente.
+                        </div>
+                        
+                        <p class="mb-3">
+                            Vas a eliminar (recuperable) a:
+                            <strong x-text="deletingUser.full_name"></strong>
+                        </p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Razón de eliminación <span class="text-danger">*</span></label>
+                            <textarea class="form-control" 
+                                      x-model="deletionReason" 
+                                      rows="3"
+                                      placeholder="Explica por qué se está eliminando este usuario (mínimo 10 caracteres)"
+                                      required></textarea>
+                            <small class="text-muted">
+                                Caracteres: <span x-text="deletionReason.length"></span>/10 mínimo
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Se conservarán:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Todos los datos del usuario</li>
+                                <li>Evaluaciones y resultados</li>
+                                <li>Historial de actividad</li>
+                            </ul>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="showSoftDeleteModal = false">
+                    Cancelar
+                </button>
+                <button type="button" 
+                        class="btn btn-warning" 
+                        @click="confirmSoftDelete()" 
+                        :disabled="deletionReason.length < 10 || deletingInProgress">
+                    <i class="fas" :class="deletingInProgress ? 'fa-spinner fa-spin' : 'fa-archive'"></i>
+                    Eliminar (Recuperable)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hard Delete Modal -->
+    <div class="modal" :class="{ 'show': showHardDeleteModal }" @click.self="showHardDeleteModal = false">
+        <div class="modal-content" @click.stop>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ⚠️ ELIMINACIÓN PERMANENTE
+                </h5>
+                <button type="button" class="btn-close btn-close-white" @click="showHardDeleteModal = false"></button>
+            </div>
+            <div class="modal-body">
+                <template x-if="deletingUser">
+                    <div>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-skull-crossbones me-2"></i>
+                            <strong>¡ADVERTENCIA CRÍTICA!</strong> Esta acción es IRREVERSIBLE y eliminará PERMANENTEMENTE todos los datos.
+                        </div>
+                        
+                        <p class="mb-3">
+                            Vas a eliminar PERMANENTEMENTE a:
+                            <strong x-text="deletingUser.full_name"></strong>
+                        </p>
+
+                        <div class="alert alert-danger">
+                            <strong>Se eliminarán PERMANENTEMENTE:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>👤 Cuenta del usuario</li>
+                                <li>📊 Todas sus evaluaciones y resultados</li>
+                                <li>📝 Respuestas y progreso de tareas</li>
+                                <li>📈 Planes de desarrollo</li>
+                                <li>📧 Invitaciones enviadas/recibidas</li>
+                                <li>🔔 Notificaciones</li>
+                                <li>📚 Contenidos asociados</li>
+                                <li>🗂️ Historial completo</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Para confirmar, escribe exactamente: 
+                                <code class="bg-dark text-white px-2 py-1">DELETE PERMANENTLY</code>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   x-model="hardDeleteConfirmation" 
+                                   placeholder="DELETE PERMANENTLY"
+                                   required>
+                            <small class="text-danger">
+                                ⚠️ Esta acción NO se puede deshacer. Los datos se perderán para siempre.
+                            </small>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="showHardDeleteModal = false">
+                    Cancelar
+                </button>
+                <button type="button" 
+                        class="btn btn-danger" 
+                        @click="confirmHardDelete()" 
+                        :disabled="hardDeleteConfirmation !== 'DELETE PERMANENTLY' || deletingInProgress">
+                    <i class="fas" :class="deletingInProgress ? 'fa-spinner fa-spin' : 'fa-skull-crossbones'"></i>
+                    ELIMINAR PERMANENTEMENTE
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function userManagement() {
             return {
                 users: [],
+                deletedUsers: [],
+                deletedUsersCount: 0,
                 availableCoaches: [],
                 loading: false,
                 error: null,
                 search: '',
                 roleFilter: null,
                 statusFilter: null,
+                currentTab: 'active',
                 showEditModal: false,
                 showPasswordModal: false,
+                showSoftDeleteModal: false,
+                showHardDeleteModal: false,
                 editingUser: null,
+                deletingUser: null,
                 savingUser: false,
                 resettingPassword: false,
+                deletingInProgress: false,
                 tempPassword: null,
+                deleteMenuOpen: null,
+                deletionReason: '',
+                hardDeleteConfirmation: '',
 
                 async init() {
                     await this.loadUsers();
                     await this.loadCoaches();
+                    await this.loadDeletedUsersCount();
                 },
 
                 async loadUsers() {
@@ -690,6 +1020,41 @@
                     }
                 },
 
+                async loadDeletedUsers() {
+                    this.loading = true;
+                    this.error = null;
+
+                    try {
+                        const response = await fetch('/api/admin/users/deleted');
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.deletedUsers = data.deleted_users || [];
+                            this.deletedUsersCount = data.count || 0;
+                        } else {
+                            throw new Error(data.error || 'Error cargando usuarios eliminados');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.error = error.message;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async loadDeletedUsersCount() {
+                    try {
+                        const response = await fetch('/api/admin/users/deleted');
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            this.deletedUsersCount = data.count || 0;
+                        }
+                    } catch (error) {
+                        console.error('Error loading deleted users count:', error);
+                    }
+                },
+
                 async loadCoaches() {
                     try {
                         const response = await fetch('/api/admin/coaches');
@@ -701,6 +1066,10 @@
                     } catch (error) {
                         console.error('Error cargando coaches:', error);
                     }
+                },
+
+                toggleDeleteMenu(userId) {
+                    this.deleteMenuOpen = this.deleteMenuOpen === userId ? null : userId;
                 },
 
                 openEditModal(user) {
@@ -761,25 +1130,119 @@
                     }
                 },
 
-                async confirmDeleteUser(user) {
-                    if (!confirm(`⚠️ ¿CONFIRMAS ELIMINAR PERMANENTEMENTE a ${user.full_name}?\n\nEsta acción NO se puede deshacer y eliminará:\n- Todos sus datos\n- Sus evaluaciones\n- Su historial completo\n\n¿Continuar?`)) return;
+                openSoftDeleteModal(user) {
+                    this.deletingUser = { ...user };
+                    this.deletionReason = '';
+                    this.showSoftDeleteModal = true;
+                    this.deleteMenuOpen = null;
+                },
+
+                openHardDeleteModal(user) {
+                    this.deletingUser = { ...user };
+                    this.hardDeleteConfirmation = '';
+                    this.showHardDeleteModal = true;
+                    this.deleteMenuOpen = null;
+                },
+
+                async confirmSoftDelete() {
+                    if (this.deletionReason.length < 10) {
+                        alert('❌ La razón debe tener al menos 10 caracteres');
+                        return;
+                    }
+
+                    this.deletingInProgress = true;
 
                     try {
-                        const response = await fetch(`/api/admin/users/${user.id}`, {
-                            method: 'DELETE'
+                        const response = await fetch(`/api/admin/users/${this.deletingUser.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                reason: this.deletionReason
+                            })
                         });
 
                         const data = await response.json();
 
                         if (response.ok) {
-                            alert('✅ Usuario eliminado exitosamente');
+                            alert(`✅ ${data.message}\n\n✓ Usuario eliminado (recuperable)\n✓ Puede ser restaurado desde la pestaña "Usuarios Eliminados"`);
+                            this.showSoftDeleteModal = false;
                             await this.loadUsers();
+                            await this.loadDeletedUsersCount();
                         } else {
                             throw new Error(data.error || 'Error eliminando usuario');
                         }
                     } catch (error) {
                         alert('❌ Error: ' + error.message);
+                    } finally {
+                        this.deletingInProgress = false;
                     }
+                },
+
+                async confirmHardDelete() {
+                    if (this.hardDeleteConfirmation !== 'DELETE PERMANENTLY') {
+                        alert('❌ Debes escribir exactamente "DELETE PERMANENTLY" para confirmar');
+                        return;
+                    }
+
+                    this.deletingInProgress = true;
+
+                    try {
+                        const response = await fetch(`/api/admin/users/${this.deletingUser.id}/hard-delete`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                confirm: 'DELETE PERMANENTLY'
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            alert(`✅ ${data.message}\n\n⚠️ ${data.warning}`);
+                            this.showHardDeleteModal = false;
+                            
+                            // Recargar la lista apropiada según la pestaña actual
+                            if (this.currentTab === 'deleted') {
+                                await this.loadDeletedUsers();
+                            } else {
+                                await this.loadUsers();
+                            }
+                        } else {
+                            throw new Error(data.error || 'Error eliminando usuario permanentemente');
+                        }
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    } finally {
+                        this.deletingInProgress = false;
+                    }
+                },
+
+                async restoreUser(user) {
+                    if (!confirm(`¿Restaurar a ${user.full_name}?\n\nEl usuario volverá a estar activo.`)) return;
+
+                    try {
+                        const response = await fetch(`/api/admin/users/${user.id}/restore`, {
+                            method: 'POST'
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            alert(`✅ ${data.message}\n\n✓ Usuario restaurado exitosamente`);
+                            await this.loadDeletedUsers();
+                            await this.loadUsers();
+                        } else {
+                            throw new Error(data.error || 'Error restaurando usuario');
+                        }
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    }
+                },
+
+                openHardDeleteFromDeletedModal(user) {
+                    this.deletingUser = { ...user };
+                    this.hardDeleteConfirmation = '';
+                    this.showHardDeleteModal = true;
                 },
 
                 openResetPasswordModal(user) {
@@ -813,6 +1276,18 @@
                 copyPassword() {
                     navigator.clipboard.writeText(this.tempPassword);
                     alert('✅ Contraseña copiada al portapapeles');
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return '-';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 }
             }
         }
