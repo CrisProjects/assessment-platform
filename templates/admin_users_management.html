@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaCoach - Gestión de Usuarios</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        :root {
+            --calm-primary: #1E3A8A;
+            --calm-secondary: #3B82F6;
+            --calm-accent: #06B6D4;
+            --calm-light: #EFF6FF;
+            --calm-dark: #1E293B;
+            --calm-white: #FFFFFF;
+            --calm-background: #F8FAFC;
+            --calm-surface: #FFFFFF;
+            --calm-border: rgba(59, 130, 246, 0.3);
+            --calm-gradient-primary: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--calm-background);
+            color: var(--calm-dark);
+        }
+
+        [x-cloak] { display: none !important; }
+
+        .admin-header {
+            background: var(--calm-gradient-primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(30, 58, 138, 0.15);
+        }
+
+        .main-card {
+            background: var(--calm-surface);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--calm-border);
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--calm-border);
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: var(--calm-primary);
+            color: white;
+            border-color: var(--calm-primary);
+        }
+
+        .filter-btn:hover:not(.active) {
+            background: var(--calm-light);
+        }
+
+        .user-table {
+            margin-bottom: 0;
+        }
+
+        .user-table th {
+            background-color: var(--calm-background);
+            font-weight: 600;
+            border-bottom: 2px solid var(--calm-border);
+            font-size: 0.875rem;
+            padding: 1rem 0.75rem;
+        }
+
+        .user-table td {
+            vertical-align: middle;
+            padding: 1rem 0.75rem;
+        }
+
+        .user-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .user-table tbody tr:hover {
+            background-color: var(--calm-light);
+        }
+
+        .badge {
+            padding: 0.375rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            border-radius: 0.375rem;
+        }
+
+        .badge-active {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .badge-inactive {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .badge-coach {
+            background-color: #06b6d4;
+            color: white;
+        }
+
+        .badge-coachee {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .action-btn {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn-edit {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .action-btn-edit:hover {
+            background-color: #2563eb;
+        }
+
+        .action-btn-block {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .action-btn-block:hover {
+            background-color: #d97706;
+        }
+
+        .action-btn-unblock {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .action-btn-unblock:hover {
+            background-color: #059669;
+        }
+
+        .action-btn-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .action-btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        .action-btn-password {
+            background-color: #6366f1;
+            color: white;
+        }
+
+        .action-btn-password:hover {
+            background-color: #4f46e5;
+        }
+
+        .search-box {
+            border: 2px solid var(--calm-border);
+            border-radius: 0.5rem;
+            padding: 0.625rem 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--calm-primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .loading-spinner {
+            border: 3px solid var(--calm-light);
+            border-top-color: var(--calm-primary);
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex !important;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 0.75rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--calm-border);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--calm-border);
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--calm-dark);
+        }
+
+        .form-control {
+            border: 2px solid var(--calm-border);
+            border-radius: 0.5rem;
+            padding: 0.625rem 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--calm-primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--calm-primary);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            border: none;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .password-display {
+            background-color: var(--calm-light);
+            border: 2px dashed var(--calm-primary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 1.1rem;
+            text-align: center;
+            user-select: all;
+            cursor: pointer;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .alert-warning {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+
+        @media (max-width: 768px) {
+            .user-table {
+                font-size: 0.875rem;
+            }
+
+            .action-btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body x-data="userManagement()" x-init="init()">
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="container-fluid">
+            <div class="row align-items-center py-3">
+                <div class="col-12 col-md-8">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-users-cog me-2"></i>
+                        Gestión de Usuarios
+                    </h1>
+                </div>
+                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                    <div class="d-flex align-items-center justify-content-md-end gap-3">
+                        <a href="/admin/dashboard-alpine" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Volver al Dashboard
+                        </a>
+                        <button onclick="adminLogout()" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            Salir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container-fluid py-4">
+        <!-- Filters and Search -->
+        <div class="main-card p-4 mb-4">
+            <div class="row g-3 align-items-center">
+                <!-- Search -->
+                <div class="col-12 col-md-4">
+                    <input type="text" 
+                           class="form-control search-box" 
+                           placeholder="Buscar por nombre, email o username..." 
+                           x-model="search"
+                           @input.debounce.500ms="loadUsers()">
+                </div>
+
+                <!-- Role Filter -->
+                <div class="col-12 col-md-4">
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" 
+                                class="filter-btn" 
+                                :class="{ 'active': roleFilter === null }"
+                                @click="roleFilter = null; loadUsers()">
+                            Todos
+                        </button>
+                        <button type="button" 
+                                class="filter-btn" 
+                                :class="{ 'active': roleFilter === 'coach' }"
+                                @click="roleFilter = 'coach'; loadUsers()">
+                            Coaches
+                        </button>
+                        <button type="button" 
+                                class="filter-btn" 
+                                :class="{ 'active': roleFilter === 'coachee' }"
+                                @click="roleFilter = 'coachee'; loadUsers()">
+                            Coachees
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="col-12 col-md-4">
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" 
+                                class="filter-btn" 
+                                :class="{ 'active': statusFilter === null }"
+                                @click="statusFilter = null; loadUsers()">
+                            Todos
+                        </button>
+                        <button type="button" 
+                                class="filter-btn" 
+                                :class="{ 'active': statusFilter === 'active' }"
+                                @click="statusFilter = 'active'; loadUsers()">
+                            Activos
+                        </button>
+                        <button type="button" 
+                                class="filter-btn" 
+                                :class="{ 'active': statusFilter === 'inactive' }"
+                                @click="statusFilter = 'inactive'; loadUsers()">
+                            Bloqueados
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="main-card">
+            <div class="p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">
+                        <span x-text="users.length"></span> usuarios encontrados
+                    </h2>
+                    <button class="btn btn-sm btn-primary" @click="loadUsers()">
+                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+                        Actualizar
+                    </button>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="loading" x-cloak class="text-center py-5">
+                    <div class="loading-spinner mx-auto mb-3"></div>
+                    <p class="text-muted">Cargando usuarios...</p>
+                </div>
+
+                <!-- Error State -->
+                <div x-show="!loading && error" x-cloak class="alert alert-danger" x-text="error"></div>
+
+                <!-- Empty State -->
+                <div x-show="!loading && !error && users.length === 0" x-cloak class="alert alert-warning">
+                    No se encontraron usuarios con los filtros aplicados.
+                </div>
+
+                <!-- Table -->
+                <div x-show="!loading && users.length > 0" x-cloak class="table-responsive">
+                    <table class="table user-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th class="d-none d-md-table-cell">Coach Asignado</th>
+                                <th class="d-none d-lg-table-cell">Evaluaciones</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="user in users" :key="user.id">
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold" x-text="user.full_name"></div>
+                                        <div class="small text-muted" x-text="user.username"></div>
+                                        <div class="small text-muted" x-text="user.email"></div>
+                                    </td>
+                                    <td>
+                                        <span class="badge" 
+                                              :class="user.role === 'coach' ? 'badge-coach' : 'badge-coachee'"
+                                              x-text="user.role === 'coach' ? 'Coach' : 'Coachee'">
+                                        </span>
+                                    </td>
+                                    <td class="d-none d-md-table-cell">
+                                        <span x-text="user.coach_name || '-'"></span>
+                                    </td>
+                                    <td class="d-none d-lg-table-cell">
+                                        <span class="badge bg-primary" x-text="user.assessments_count || 0"></span>
+                                    </td>
+                                    <td>
+                                        <span class="badge" 
+                                              :class="user.is_active ? 'badge-active' : 'badge-inactive'"
+                                              x-text="user.is_active ? 'Activo' : 'Bloqueado'">
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <button class="action-btn action-btn-edit" 
+                                                    @click="openEditModal(user)"
+                                                    title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="action-btn action-btn-password" 
+                                                    @click="openResetPasswordModal(user)"
+                                                    title="Resetear contraseña">
+                                                <i class="fas fa-key"></i>
+                                            </button>
+                                            <button class="action-btn" 
+                                                    :class="user.is_active ? 'action-btn-block' : 'action-btn-unblock'"
+                                                    @click="toggleUserStatus(user)"
+                                                    :title="user.is_active ? 'Bloquear' : 'Desbloquear'">
+                                                <i class="fas" :class="user.is_active ? 'fa-ban' : 'fa-check'"></i>
+                                            </button>
+                                            <button class="action-btn action-btn-delete" 
+                                                    @click="confirmDeleteUser(user)"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit User Modal -->
+    <div class="modal" :class="{ 'show': showEditModal }" @click.self="showEditModal = false">
+        <div class="modal-content" @click.stop>
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Editar Usuario
+                </h5>
+                <button type="button" class="btn-close" @click="showEditModal = false"></button>
+            </div>
+            <div class="modal-body">
+                <template x-if="editingUser">
+                    <form @submit.prevent="saveUser()">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   x-model="editingUser.full_name" 
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   x-model="editingUser.username" 
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   x-model="editingUser.email" 
+                                   required>
+                        </div>
+                        <div class="mb-3" x-show="editingUser.role === 'coachee'">
+                            <label class="form-label">Coach Asignado (opcional)</label>
+                            <select class="form-control" x-model="editingUser.coach_id">
+                                <option value="">Sin asignar</option>
+                                <template x-for="coach in availableCoaches" :key="coach.id">
+                                    <option :value="coach.id" x-text="coach.full_name"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </form>
+                </template>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="showEditModal = false">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" @click="saveUser()" :disabled="savingUser">
+                    <i class="fas" :class="savingUser ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal" :class="{ 'show': showPasswordModal }" @click.self="showPasswordModal = false">
+        <div class="modal-content" @click.stop>
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-key me-2"></i>
+                    Resetear Contraseña
+                </h5>
+                <button type="button" class="btn-close" @click="showPasswordModal = false"></button>
+            </div>
+            <div class="modal-body">
+                <template x-if="editingUser">
+                    <div>
+                        <p class="mb-3">
+                            Se generará una contraseña temporal para:
+                            <strong x-text="editingUser.full_name"></strong>
+                        </p>
+
+                        <div x-show="!tempPassword" class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            El usuario deberá cambiar esta contraseña en su próximo inicio de sesión.
+                        </div>
+
+                        <div x-show="tempPassword" x-cloak>
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Contraseña temporal generada exitosamente
+                            </div>
+                            <label class="form-label">Contraseña Temporal:</label>
+                            <div class="password-display" 
+                                 x-text="tempPassword"
+                                 @click="copyPassword()"
+                                 title="Click para copiar">
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Haz click en la contraseña para copiarla al portapapeles
+                            </small>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="showPasswordModal = false">
+                    Cerrar
+                </button>
+                <button type="button" 
+                        class="btn btn-primary" 
+                        @click="resetPassword()" 
+                        :disabled="resettingPassword || tempPassword"
+                        x-show="!tempPassword">
+                    <i class="fas" :class="resettingPassword ? 'fa-spinner fa-spin' : 'fa-redo'"></i>
+                    Generar Nueva Contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function userManagement() {
+            return {
+                users: [],
+                availableCoaches: [],
+                loading: false,
+                error: null,
+                search: '',
+                roleFilter: null,
+                statusFilter: null,
+                showEditModal: false,
+                showPasswordModal: false,
+                editingUser: null,
+                savingUser: false,
+                resettingPassword: false,
+                tempPassword: null,
+
+                async init() {
+                    await this.loadUsers();
+                    await this.loadCoaches();
+                },
+
+                async loadUsers() {
+                    this.loading = true;
+                    this.error = null;
+
+                    try {
+                        const params = new URLSearchParams();
+                        if (this.roleFilter) params.append('role', this.roleFilter);
+                        if (this.statusFilter) params.append('status', this.statusFilter);
+                        if (this.search) params.append('search', this.search);
+
+                        const response = await fetch(`/api/admin/users?${params}`);
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.users = data.users;
+                        } else {
+                            throw new Error(data.error || 'Error cargando usuarios');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.error = error.message;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async loadCoaches() {
+                    try {
+                        const response = await fetch('/api/admin/coaches');
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            this.availableCoaches = data.coaches || [];
+                        }
+                    } catch (error) {
+                        console.error('Error cargando coaches:', error);
+                    }
+                },
+
+                openEditModal(user) {
+                    this.editingUser = { ...user };
+                    this.showEditModal = true;
+                },
+
+                async saveUser() {
+                    this.savingUser = true;
+
+                    try {
+                        const response = await fetch(`/api/admin/users/${this.editingUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                full_name: this.editingUser.full_name,
+                                username: this.editingUser.username,
+                                email: this.editingUser.email,
+                                coach_id: this.editingUser.coach_id
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            alert('✅ Usuario actualizado exitosamente');
+                            this.showEditModal = false;
+                            await this.loadUsers();
+                        } else {
+                            throw new Error(data.error || 'Error actualizando usuario');
+                        }
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    } finally {
+                        this.savingUser = false;
+                    }
+                },
+
+                async toggleUserStatus(user) {
+                    const action = user.is_active ? 'bloquear' : 'desbloquear';
+                    if (!confirm(`¿Estás seguro de ${action} a ${user.full_name}?`)) return;
+
+                    try {
+                        const response = await fetch(`/api/admin/users/${user.id}/toggle-status`, {
+                            method: 'POST'
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            alert(`✅ Usuario ${data.is_active ? 'desbloqueado' : 'bloqueado'} exitosamente`);
+                            await this.loadUsers();
+                        } else {
+                            throw new Error(data.error || 'Error cambiando estado');
+                        }
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    }
+                },
+
+                async confirmDeleteUser(user) {
+                    if (!confirm(`⚠️ ¿CONFIRMAS ELIMINAR PERMANENTEMENTE a ${user.full_name}?\n\nEsta acción NO se puede deshacer y eliminará:\n- Todos sus datos\n- Sus evaluaciones\n- Su historial completo\n\n¿Continuar?`)) return;
+
+                    try {
+                        const response = await fetch(`/api/admin/users/${user.id}`, {
+                            method: 'DELETE'
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            alert('✅ Usuario eliminado exitosamente');
+                            await this.loadUsers();
+                        } else {
+                            throw new Error(data.error || 'Error eliminando usuario');
+                        }
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    }
+                },
+
+                openResetPasswordModal(user) {
+                    this.editingUser = { ...user };
+                    this.tempPassword = null;
+                    this.showPasswordModal = true;
+                },
+
+                async resetPassword() {
+                    this.resettingPassword = true;
+
+                    try {
+                        const response = await fetch(`/api/admin/users/${this.editingUser.id}/reset-password`, {
+                            method: 'POST'
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.tempPassword = data.temp_password;
+                        } else {
+                            throw new Error(data.error || 'Error reseteando contraseña');
+                        }
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    } finally {
+                        this.resettingPassword = false;
+                    }
+                },
+
+                copyPassword() {
+                    navigator.clipboard.writeText(this.tempPassword);
+                    alert('✅ Contraseña copiada al portapapeles');
+                }
+            }
+        }
+
+        async function adminLogout() {
+            try {
+                const response = await fetch('/api/admin/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = data.redirect_url || '/admin-login';
+                } else {
+                    window.location.href = '/admin-login';
+                }
+            } catch (error) {
+                console.error('Error en logout:', error);
+                window.location.href = '/admin-login';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -6414,6 +6414,386 @@ def api_admin_check_coach_ids():
     except Exception as e:
         return jsonify({'error': f'Error verificando coach_ids: {str(e)}'}), 500
 
+# ============================================================================
+# ENDPOINTS DE GESTIÓN DE USUARIOS (ADMIN)
+# ============================================================================
+
+@app.route('/api/admin/users', methods=['GET'])
+@admin_required
+def api_admin_get_all_users():
+    """Obtener todos los usuarios (coaches y coachees) con filtros opcionales"""
+    try:
+        # Parámetros de filtrado
+        role = request.args.get('role')  # 'coach', 'coachee', or None for all
+        status = request.args.get('status')  # 'active', 'inactive', or None for all
+        search = request.args.get('search', '').strip()
+        
+        # Query base
+        query = User.query.filter(User.role.in_(['coach', 'coachee']))
+        
+        # Aplicar filtros
+        if role:
+            query = query.filter_by(role=role)
+        
+        if status:
+            is_active = status == 'active'
+            query = query.filter_by(active=is_active)
+        
+        if search:
+            query = query.filter(
+                or_(
+                    User.username.ilike(f'%{search}%'),
+                    User.email.ilike(f'%{search}%'),
+                    User.full_name.ilike(f'%{search}%')
+                )
+            )
+        
+        # Ordenar por fecha de creación (más recientes primero)
+        users = query.order_by(desc(User.created_at)).all()
+        
+        users_data = []
+        for user in users:
+            user_dict = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role,
+                'is_active': user.is_active,
+                'avatar_url': user.avatar_url,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_login': user.last_login.isoformat() if user.last_login else None,
+            }
+            
+            # Datos específicos por rol
+            if user.role == 'coach':
+                coachees_count = User.query.filter_by(coach_id=user.id, role='coachee').count()
+                assessments_count = AssessmentResult.query.filter_by(coach_id=user.id).count()
+                user_dict['coachees_count'] = coachees_count
+                user_dict['assessments_count'] = assessments_count
+            elif user.role == 'coachee':
+                coach = User.query.get(user.coach_id) if user.coach_id else None
+                assessments_count = AssessmentResult.query.filter_by(user_id=user.id).count()
+                user_dict['coach_name'] = coach.full_name if coach else 'Sin asignar'
+                user_dict['coach_id'] = user.coach_id
+                user_dict['assessments_count'] = assessments_count
+            
+            users_data.append(user_dict)
+        
+        logger.info(f"✅ ADMIN: Listado de usuarios - Total: {len(users_data)}, Filtros: role={role}, status={status}, search={search}")
+        
+        return jsonify({
+            'success': True,
+            'users': users_data,
+            'total': len(users_data)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ ADMIN: Error obteniendo usuarios: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error obteniendo usuarios: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@admin_required
+def api_admin_update_user(user_id):
+    """Actualizar información de un usuario"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # No permitir editar admins
+        if user.role == 'platform_admin':
+            return jsonify({'error': 'No se pueden editar cuentas de administrador'}), 403
+        
+        data = request.get_json()
+        
+        # Campos editables
+        if 'full_name' in data:
+            full_name = data.get('full_name', '').strip()
+            if not full_name or len(full_name) < 3:
+                return jsonify({'error': 'El nombre completo debe tener al menos 3 caracteres'}), 400
+            user.full_name = sanitize_string(full_name, 200)
+        
+        if 'email' in data:
+            email = data.get('email', '').strip().lower()
+            if not validate_email(email):
+                return jsonify({'error': 'Email inválido'}), 400
+            
+            # Verificar que el email no esté en uso por otro usuario
+            existing = User.query.filter(User.email == email, User.id != user_id).first()
+            if existing:
+                return jsonify({'error': 'El email ya está en uso'}), 400
+            
+            user.email = email
+        
+        if 'username' in data:
+            username = data.get('username', '').strip().lower()
+            if not validate_username(username):
+                return jsonify({'error': 'Username inválido (mínimo 3 caracteres, solo letras, números, guiones y guiones bajos)'}), 400
+            
+            # Verificar que el username no esté en uso por otro usuario
+            existing = User.query.filter(User.username == username, User.id != user_id).first()
+            if existing:
+                return jsonify({'error': 'El username ya está en uso'}), 400
+            
+            user.username = username
+        
+        # Solo para coachees: cambiar coach asignado
+        if user.role == 'coachee' and 'coach_id' in data:
+            coach_id = data.get('coach_id')
+            if coach_id:
+                coach = User.query.filter_by(id=coach_id, role='coach').first()
+                if not coach:
+                    return jsonify({'error': 'Coach no encontrado'}), 404
+                user.coach_id = coach_id
+            else:
+                user.coach_id = None
+        
+        db.session.commit()
+        
+        logger.info(f"✅ ADMIN: Usuario actualizado - ID: {user_id}, Username: {user.username}")
+        log_security_event('user_updated', 'info', 
+                          user_id=current_user.id, 
+                          username=current_user.username,
+                          description=f'Admin actualizó usuario {user.username} (ID: {user_id})')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Usuario actualizado exitosamente',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role,
+                'is_active': user.is_active,
+                'coach_id': user.coach_id
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN: Error actualizando usuario: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error actualizando usuario: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>/toggle-status', methods=['POST'])
+@admin_required
+def api_admin_toggle_user_status(user_id):
+    """Activar/Desactivar (bloquear/desbloquear) un usuario"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # No permitir bloquear admins
+        if user.role == 'platform_admin':
+            return jsonify({'error': 'No se pueden bloquear cuentas de administrador'}), 403
+        
+        # No permitirse bloquear a sí mismo
+        if user.id == current_user.id:
+            return jsonify({'error': 'No puedes bloquear tu propia cuenta'}), 403
+        
+        # Toggle status
+        user.active = not user.active
+        db.session.commit()
+        
+        status_text = 'activado' if user.active else 'bloqueado'
+        logger.info(f"✅ ADMIN: Usuario {status_text} - ID: {user_id}, Username: {user.username}")
+        log_security_event('user_status_changed', 'warning' if not user.active else 'info',
+                          user_id=current_user.id,
+                          username=current_user.username,
+                          description=f'Admin {status_text} usuario {user.username} (ID: {user_id})')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Usuario {status_text} exitosamente',
+            'is_active': user.active
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN: Error cambiando estado de usuario: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error cambiando estado: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_user(user_id):
+    """Eliminar un usuario permanentemente"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # No permitir eliminar admins
+        if user.role == 'platform_admin':
+            return jsonify({'error': 'No se pueden eliminar cuentas de administrador'}), 403
+        
+        # No permitirse eliminar a sí mismo
+        if user.id == current_user.id:
+            return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 403
+        
+        username = user.username
+        user_email = user.email
+        
+        # IMPORTANTE: Primero eliminar relaciones dependientes
+        try:
+            # Si es coach, reasignar o eliminar coachees
+            if user.role == 'coach':
+                coachees = User.query.filter_by(coach_id=user_id).all()
+                for coachee in coachees:
+                    coachee.coach_id = None  # Desasignar coach
+                
+                # Eliminar evaluaciones creadas por este coach
+                AssessmentResult.query.filter_by(coach_id=user_id).delete()
+            
+            # Si es coachee, eliminar sus evaluaciones
+            if user.role == 'coachee':
+                AssessmentResult.query.filter_by(user_id=user_id).delete()
+                Response.query.filter_by(user_id=user_id).delete()
+                AssessmentHistory.query.filter_by(user_id=user_id).delete()
+                
+                # Eliminar progreso de tareas asignadas a este coachee
+                coachee_tasks = Task.query.filter_by(coachee_id=user_id).all()
+                for task in coachee_tasks:
+                    TaskProgress.query.filter_by(task_id=task.id).delete()
+            
+            # Eliminar tokens de reseteo de contraseña
+            PasswordResetToken.query.filter_by(user_id=user_id).delete()
+            
+            # Eliminar invitaciones
+            Invitation.query.filter_by(coach_id=user_id).delete()
+            Invitation.query.filter_by(coachee_id=user_id).delete()
+            
+            # Eliminar tareas (como coach o coachee)
+            Task.query.filter_by(coach_id=user_id).delete()
+            Task.query.filter_by(coachee_id=user_id).delete()
+            
+            # Eliminar planes de desarrollo
+            DevelopmentPlan.query.filter_by(coach_id=user_id).delete()
+            DevelopmentPlan.query.filter_by(coachee_id=user_id).delete()
+            
+            # Eliminar contenido
+            Content.query.filter_by(coach_id=user_id).delete()
+            Content.query.filter_by(coachee_id=user_id).delete()
+            
+            # Eliminar notificaciones
+            Notification.query.filter_by(user_id=user_id).delete()
+            
+            # Eliminar usuario usando SQL directo para evitar cargar relaciones con columnas inexistentes
+            # Primero actualizar las FKs que apuntan a este usuario
+            if user.role == 'platform_admin':
+                db.session.execute(db.text("UPDATE coach_request SET reviewed_by = NULL WHERE reviewed_by = :user_id"), {'user_id': user_id})
+            
+            # Eliminar el usuario directamente sin cargar el objeto completo
+            db.session.execute(db.text("DELETE FROM user WHERE id = :user_id"), {'user_id': user_id})
+            db.session.commit()
+            
+            logger.info(f"🗑️ ADMIN: Usuario eliminado permanentemente - ID: {user_id}, Username: {username}")
+            log_security_event('user_deleted', 'warning',
+                              user_id=current_user.id,
+                              username=current_user.username,
+                              description=f'Admin eliminó usuario {username} (ID: {user_id}, Email: {user_email})')
+            
+            return jsonify({
+                'success': True,
+                'message': 'Usuario eliminado exitosamente'
+            }), 200
+            
+        except Exception as delete_error:
+            db.session.rollback()
+            logger.error(f"❌ ADMIN: Error eliminando relaciones del usuario: {str(delete_error)}", exc_info=True)
+            return jsonify({'error': f'Error eliminando datos relacionados: {str(delete_error)}'}), 500
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN: Error eliminando usuario: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error eliminando usuario: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>/reset-password', methods=['POST'])
+@admin_required
+def api_admin_reset_user_password(user_id):
+    """Resetear contraseña de un usuario - genera contraseña temporal y fuerza cambio"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # No permitir resetear contraseñas de admins
+        if user.role == 'platform_admin':
+            return jsonify({'error': 'No se pueden resetear contraseñas de administrador'}), 403
+        
+        # Generar contraseña temporal segura
+        temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+        
+        # Actualizar contraseña
+        user.set_password(temp_password)
+        user.original_password = temp_password  # Guardar para mostrar al admin
+        db.session.commit()
+        
+        logger.info(f"🔐 ADMIN: Contraseña reseteada - Usuario: {user.username} (ID: {user_id})")
+        log_security_event('password_reset_by_admin', 'warning',
+                          user_id=current_user.id,
+                          username=current_user.username,
+                          description=f'Admin reseteó contraseña de {user.username} (ID: {user_id})')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña reseteada exitosamente',
+            'temp_password': temp_password,
+            'instructions': 'El usuario deberá cambiar esta contraseña en su próximo inicio de sesión'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN: Error reseteando contraseña: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error reseteando contraseña: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>/change-password', methods=['POST'])
+@admin_required
+def api_admin_change_user_password(user_id):
+    """Cambiar contraseña de un usuario a una específica"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # No permitir cambiar contraseñas de admins
+        if user.role == 'platform_admin':
+            return jsonify({'error': 'No se pueden cambiar contraseñas de administrador'}), 403
+        
+        data = request.get_json()
+        new_password = data.get('new_password', '').strip()
+        
+        # Validar contraseña
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # Actualizar contraseña
+        user.set_password(new_password)
+        user.original_password = None  # Limpiar contraseña original si existía
+        db.session.commit()
+        
+        logger.info(f"🔐 ADMIN: Contraseña cambiada - Usuario: {user.username} (ID: {user_id})")
+        log_security_event('password_changed_by_admin', 'warning',
+                          user_id=current_user.id,
+                          username=current_user.username,
+                          description=f'Admin cambió contraseña de {user.username} (ID: {user_id})')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña actualizada exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN: Error cambiando contraseña: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Error cambiando contraseña: {str(e)}'}), 500
+
+# ============================================================================
+# FIN DE ENDPOINTS DE GESTIÓN DE USUARIOS (ADMIN)
+# ============================================================================
+
 # Rutas de coach
 @app.route('/coach-login')
 def coach_login_page():
@@ -7487,6 +7867,22 @@ def admin_dashboard_alpine():
         session['last_activity_admin'] = datetime.utcnow().isoformat()
     
     return render_template('admin_dashboard_alpine.html')
+
+@app.route('/admin/users-management')
+@admin_required
+def admin_users_management():
+    """Panel de gestión completa de usuarios (coaches y coachees)"""
+    # Validar sesión activa de admin
+    if not current_user.is_authenticated:
+        logger.warning("Intento de acceso a users management sin autenticación")
+        flash('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'warning')
+        return redirect(url_for('admin_login_page'))
+    
+    if current_user.role != 'platform_admin':
+        logger.warning(f"Usuario {current_user.username} (role: {current_user.role}) intentó acceder a users management")
+        return redirect(url_for('dashboard_selection'))
+    
+    return render_template('admin_users_management.html')
 
 
 
