@@ -7050,7 +7050,7 @@ def api_admin_hard_delete_user(user_id):
             SessionRequest.query.filter_by(assigned_coach_id=user_id).delete()
             
             # 4. Eliminar disponibilidad del coach
-            AvailabilitySlot.query.filter_by(coach_id=user_id).delete()
+            CoachAvailability.query.filter_by(coach_id=user_id).delete()
             
             # ====== FASE 9: ELIMINAR DOCUMENTOS ======
             # 1. Obtener documentos para eliminar archivos
