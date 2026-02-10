@@ -6969,22 +6969,42 @@ def api_admin_hard_delete_user(user_id):
         
         # ELIMINACIÓN EN CASCADA - PERMANENTE
         try:
-            # Si es coach, reasignar coachees a NULL
+            # Si es coach, eliminar TODAS sus dependencias
             if user.role == 'coach':
+                # 1. Obtener todos los assessment_result del coach
+                coach_assessments = AssessmentResult.query.filter_by(coach_id=user_id).all()
+                assessment_ids = [a.id for a in coach_assessments]
+                
+                # 2. Eliminar respuestas asociadas a esos assessments PRIMERO
+                if assessment_ids:
+                    Response.query.filter(Response.assessment_result_id.in_(assessment_ids)).delete(synchronize_session=False)
+                
+                # 3. Ahora sí eliminar los assessment_result
+                AssessmentResult.query.filter_by(coach_id=user_id).delete()
+                
+                # 4. Reasignar coachees a NULL (no eliminarlos)
                 coachees = User.query.filter_by(coach_id=user_id).all()
                 for coachee in coachees:
                     coachee.coach_id = None
-                
-                # Eliminar evaluaciones creadas por este coach
-                AssessmentResult.query.filter_by(coach_id=user_id).delete()
             
             # Si es coachee, eliminar sus evaluaciones
             if user.role == 'coachee':
+                # 1. Obtener IDs de assessments del coachee
+                coachee_assessments = AssessmentResult.query.filter_by(user_id=user_id).all()
+                assessment_ids = [a.id for a in coachee_assessments]
+                
+                # 2. Eliminar respuestas PRIMERO
+                if assessment_ids:
+                    Response.query.filter(Response.assessment_result_id.in_(assessment_ids)).delete(synchronize_session=False)
+                
+                # 3. Eliminar assessment_result
                 AssessmentResult.query.filter_by(user_id=user_id).delete()
-                Response.query.filter_by(user_id=user_id).delete()
+                
+                # 4. Eliminar otras dependencias
+                Response.query.filter_by(user_id=user_id).delete()  # Por si quedaron algunas
                 AssessmentHistory.query.filter_by(user_id=user_id).delete()
                 
-                # Eliminar progreso de tareas
+                # 5. Eliminar progreso de tareas
                 coachee_tasks = Task.query.filter_by(coachee_id=user_id).all()
                 for task in coachee_tasks:
                     TaskProgress.query.filter_by(task_id=task.id).delete()
