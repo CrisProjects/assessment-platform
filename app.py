@@ -7098,7 +7098,7 @@ def api_admin_hard_delete_user(user_id):
                 db.session.execute(db.text("UPDATE coach_request SET reviewed_by = NULL WHERE reviewed_by = :user_id"), {'user_id': user_id})
             
             # ====== FASE 13: ELIMINAR EL USUARIO ======
-            db.session.execute(db.text("DELETE FROM user WHERE id = :user_id"), {'user_id': user_id})
+            db.session.execute(db.text('DELETE FROM "user" WHERE id = :user_id'), {'user_id': user_id})
             db.session.commit()
             
             logger.warning(f"🔥 ADMIN: Usuario ELIMINADO PERMANENTEMENTE (HARD DELETE) - {username} (ID: {user_id})")
