@@ -6967,9 +6967,9 @@ def api_admin_hard_delete_user(user_id):
         user_email = user.email
         user_role = user.role
         
-        # ELIMINACIÓN EN CASCADA - PERMANENTE
+        # ELIMINACIÓN EN CASCADA - PERMANENTE (ORDEN CRÍTICO)
         try:
-            # Si es coach, eliminar TODAS sus dependencias
+            # ====== FASE 1: ELIMINAR DEPENDENCIAS DE COACH ======
             if user.role == 'coach':
                 # 1. Obtener todos los assessment_result del coach
                 coach_assessments = AssessmentResult.query.filter_by(coach_id=user_id).all()
@@ -6987,7 +6987,7 @@ def api_admin_hard_delete_user(user_id):
                 for coachee in coachees:
                     coachee.coach_id = None
             
-            # Si es coachee, eliminar sus evaluaciones
+            # ====== FASE 2: ELIMINAR DEPENDENCIAS DE COACHEE ======
             if user.role == 'coachee':
                 # 1. Obtener IDs de assessments del coachee
                 coachee_assessments = AssessmentResult.query.filter_by(user_id=user_id).all()
@@ -7003,39 +7003,101 @@ def api_admin_hard_delete_user(user_id):
                 # 4. Eliminar otras dependencias
                 Response.query.filter_by(user_id=user_id).delete()  # Por si quedaron algunas
                 AssessmentHistory.query.filter_by(user_id=user_id).delete()
-                
-                # 5. Eliminar progreso de tareas
-                coachee_tasks = Task.query.filter_by(coachee_id=user_id).all()
-                for task in coachee_tasks:
-                    TaskProgress.query.filter_by(task_id=task.id).delete()
             
-            # Eliminar tokens de reseteo
+            # ====== FASE 3: ELIMINAR TOKENS Y AUTENTICACIÓN ======
             PasswordResetToken.query.filter_by(user_id=user_id).delete()
             
-            # Eliminar invitaciones
+            # ====== FASE 4: ELIMINAR INVITACIONES ======
             Invitation.query.filter_by(coach_id=user_id).delete()
             Invitation.query.filter_by(coachee_id=user_id).delete()
             
-            # Eliminar tareas
+            # ====== FASE 5: ELIMINAR TAREAS Y SU PROGRESO (ORDEN CRÍTICO) ======
+            # 1. Obtener todas las tareas del usuario
+            all_tasks = Task.query.filter((Task.coach_id == user_id) | (Task.coachee_id == user_id)).all()
+            task_ids = [t.id for t in all_tasks]
+            
+            # 2. Eliminar DevelopmentPlan que referencian tasks (request_task_id)
+            if task_ids:
+                DevelopmentPlan.query.filter(DevelopmentPlan.request_task_id.in_(task_ids)).delete(synchronize_session=False)
+            
+            # 3. Eliminar TaskProgress
+            if task_ids:
+                TaskProgress.query.filter(TaskProgress.task_id.in_(task_ids)).delete(synchronize_session=False)
+            
+            # 4. Ahora sí eliminar las tareas
             Task.query.filter_by(coach_id=user_id).delete()
             Task.query.filter_by(coachee_id=user_id).delete()
             
-            # Eliminar planes de desarrollo
+            # ====== FASE 6: ELIMINAR PLANES DE DESARROLLO ======
+            # Los que no tienen request_task_id
             DevelopmentPlan.query.filter_by(coach_id=user_id).delete()
             DevelopmentPlan.query.filter_by(coachee_id=user_id).delete()
             
-            # Eliminar contenido
+            # ====== FASE 7: ELIMINAR CONTENIDO ======
             Content.query.filter_by(coach_id=user_id).delete()
             Content.query.filter_by(coachee_id=user_id).delete()
             
-            # Eliminar notificaciones
-            Notification.query.filter_by(user_id=user_id).delete()
+            # ====== FASE 8: ELIMINAR SESIONES DE COACHING ======
+            # 1. Eliminar propuestas de sesiones (original_session_id)
+            CoachingSession.query.filter_by(original_session_id=user_id).delete()
             
-            # Actualizar FKs que apuntan a este usuario
+            # 2. Eliminar sesiones como coach o coachee
+            CoachingSession.query.filter_by(coach_id=user_id).delete()
+            CoachingSession.query.filter_by(coachee_id=user_id).delete()
+            
+            # 3. Eliminar solicitudes de sesiones
+            SessionRequest.query.filter_by(coachee_id=user_id).delete()
+            SessionRequest.query.filter_by(assigned_coach_id=user_id).delete()
+            
+            # 4. Eliminar disponibilidad del coach
+            AvailabilitySlot.query.filter_by(coach_id=user_id).delete()
+            
+            # ====== FASE 9: ELIMINAR DOCUMENTOS ======
+            # 1. Obtener documentos para eliminar archivos
+            user_documents = Document.query.filter((Document.coach_id == user_id) | (Document.coachee_id == user_id)).all()
+            doc_ids = [d.id for d in user_documents]
+            
+            # 2. Eliminar DocumentFile PRIMERO
+            if doc_ids:
+                DocumentFile.query.filter(DocumentFile.document_id.in_(doc_ids)).delete(synchronize_session=False)
+            
+            # 3. Eliminar Document
+            Document.query.filter_by(coach_id=user_id).delete()
+            Document.query.filter_by(coachee_id=user_id).delete()
+            
+            # ====== FASE 10: ELIMINAR COMUNIDADES Y MEMBRESÍAS ======
+            # 1. Obtener comunidades creadas por el usuario
+            user_communities = CoachCommunity.query.filter_by(creator_id=user_id).all()
+            community_ids = [c.id for c in user_communities]
+            
+            # 2. Eliminar invitaciones de esas comunidades PRIMERO
+            if community_ids:
+                CommunityInvitation.query.filter(CommunityInvitation.community_id.in_(community_ids)).delete(synchronize_session=False)
+            
+            # 3. Eliminar membresías de esas comunidades
+            if community_ids:
+                CommunityMembership.query.filter(CommunityMembership.community_id.in_(community_ids)).delete(synchronize_session=False)
+            
+            # 4. Eliminar las comunidades
+            CoachCommunity.query.filter_by(creator_id=user_id).delete()
+            
+            # 5. Eliminar membresías del usuario en otras comunidades
+            CommunityMembership.query.filter_by(coach_id=user_id).delete()
+            
+            # 6. Eliminar invitaciones enviadas o aceptadas por el usuario
+            CommunityInvitation.query.filter_by(inviter_id=user_id).delete()
+            CommunityInvitation.query.filter_by(accepted_by_user_id=user_id).delete()
+            
+            # ====== FASE 11: ELIMINAR NOTIFICACIONES Y LOGS ======
+            Notification.query.filter_by(user_id=user_id).delete()
+            SecurityLog.query.filter_by(user_id=user_id).delete()
+            
+            # ====== FASE 12: ACTUALIZAR REFERENCIAS NULL ======
+            # Actualizar referencias que no se pueden eliminar
             if user.role == 'platform_admin':
                 db.session.execute(db.text("UPDATE coach_request SET reviewed_by = NULL WHERE reviewed_by = :user_id"), {'user_id': user_id})
             
-            # Eliminar el usuario PERMANENTEMENTE
+            # ====== FASE 13: ELIMINAR EL USUARIO ======
             db.session.execute(db.text("DELETE FROM user WHERE id = :user_id"), {'user_id': user_id})
             db.session.commit()
             
