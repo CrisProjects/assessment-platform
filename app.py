@@ -903,7 +903,7 @@ def send_welcome_email_to_new_coach(coach, password, admin_name):
                     <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
                     
                     <p style="color: #999; font-size: 13px; text-align: center; margin: 0;">
-                        Sistema InstaCoach Assessment Platform<br>
+                        <strong>Equipo InstaCoach</strong><br>
                         Este email fue enviado automáticamente. Por favor no responder directamente.
                     </p>
                 </div>
@@ -943,7 +943,7 @@ Si tienes alguna pregunta o necesitas asistencia, contáctanos:
 Email: {support_email}
 
 ---
-Sistema InstaCoach Assessment Platform
+Equipo InstaCoach
         """.strip()
         
         msg.attach(MIMEText(html_body, 'html'))
@@ -1007,7 +1007,7 @@ Inicia sesión aquí: {login_url}
 Contáctanos: support@instacoach.cl
 
 ---
-InstaCoach Assessment Platform"""
+Equipo InstaCoach"""
         
         logger.info(f"📱 Mensaje de WhatsApp generado para {coach.full_name}")
         return {

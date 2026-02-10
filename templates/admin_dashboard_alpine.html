@@ -604,6 +604,25 @@
                         </div>
                         
                         <div class="col-12">
+                            <div class="form-floating">
+                                <select x-model="coachForm.notification_method" class="form-select">
+                                    <option value="email">📧 Email (envío automático)</option>
+                                    <option value="whatsapp">📱 WhatsApp (copiar mensaje)</option>
+                                    <option value="none">🚫 No enviar notificación</option>
+                                </select>
+                                <label>
+                                    <i class="fas fa-paper-plane me-1 text-muted"></i>
+                                    Método de Notificación
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                <span x-show="coachForm.notification_method === 'email'">✅ Se enviará email automáticamente desde support@instacoach.cl</span>
+                                <span x-show="coachForm.notification_method === 'whatsapp'">📋 Se generará mensaje para copiar y enviar por WhatsApp</span>
+                                <span x-show="coachForm.notification_method === 'none'">⚠️ Deberás enviar las credenciales manualmente</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-admin btn-lg" :disabled="loading.createCoach">
                                     <template x-if="!loading.createCoach">
@@ -726,6 +745,55 @@
         </div>
     </main>
 
+    <!-- Modal: Mensaje de Bienvenida -->
+    <div class="modal fade" id="welcomeMessageModal" tabindex="-1" aria-labelledby="welcomeMessageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" :class="welcomeModalHeaderClass">
+                    <h5 class="modal-title" id="welcomeMessageModalLabel">
+                        <i :class="welcomeModalIcon" class="me-2"></i>
+                        <span x-text="welcomeModalTitle"></span>
+                    </h5>
+                    <button type="button" class="btn-close" :class="{'btn-close-white': notificationMethod === 'whatsapp'}" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert" :class="welcomeModalAlertClass">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong x-text="welcomeModalAlertTitle"></strong>
+                        <span x-text="welcomeModalAlertText"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <span x-show="notificationMethod === 'email'">Vista previa del email enviado:</span>
+                            <span x-show="notificationMethod === 'whatsapp'">Mensaje para copiar y enviar:</span>
+                            <span x-show="notificationMethod === 'none'">Credenciales del coach:</span>
+                        </label>
+                        <textarea 
+                            class="form-control font-monospace" 
+                            :rows="notificationMethod === 'none' ? 8 : 15"
+                            readonly 
+                            x-model="welcomeMessage"
+                            style="font-size: 0.9rem; white-space: pre-wrap;"></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button 
+                            x-show="notificationMethod === 'whatsapp' || notificationMethod === 'none'" 
+                            type="button" 
+                            class="btn btn-success btn-lg" 
+                            @click="copyWelcomeMessage()">
+                            <i class="fas fa-copy me-2"></i>Copiar Mensaje
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Cambiar Contraseña -->
     <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -827,14 +895,72 @@
                     username: '',
                     email: '',
                     full_name: '',
-                    password: ''
+                    password: '',
+                    notification_method: 'email'
                 },
                 passwordForm: {
                     current_password: '',
                     new_password: '',
                     confirm_password: ''
                 },
+                welcomeMessage: '',
+                notificationMethod: '',
                 chart: null,
+
+                // Computed properties para el modal
+                get welcomeModalTitle() {
+                    const titles = {
+                        'email': '📧 Email de Bienvenida Enviado',
+                        'whatsapp': '📱 Mensaje de Bienvenida - WhatsApp',
+                        'none': '📋 Credenciales del Coach'
+                    };
+                    return titles[this.notificationMethod] || 'Mensaje de Bienvenida';
+                },
+
+                get welcomeModalIcon() {
+                    const icons = {
+                        'email': 'fas fa-envelope',
+                        'whatsapp': 'fab fa-whatsapp',
+                        'none': 'fas fa-key'
+                    };
+                    return icons[this.notificationMethod] || 'fas fa-info-circle';
+                },
+
+                get welcomeModalHeaderClass() {
+                    const classes = {
+                        'email': 'bg-primary text-white',
+                        'whatsapp': 'bg-success text-white',
+                        'none': 'bg-warning text-dark'
+                    };
+                    return classes[this.notificationMethod] || 'bg-primary text-white';
+                },
+
+                get welcomeModalAlertClass() {
+                    const classes = {
+                        'email': 'alert-success',
+                        'whatsapp': 'alert-info',
+                        'none': 'alert-warning'
+                    };
+                    return classes[this.notificationMethod] || 'alert-info';
+                },
+
+                get welcomeModalAlertTitle() {
+                    const titles = {
+                        'email': '✅ Email enviado correctamente. ',
+                        'whatsapp': 'Instrucciones: ',
+                        'none': '⚠️ Atención: '
+                    };
+                    return titles[this.notificationMethod] || '';
+                },
+
+                get welcomeModalAlertText() {
+                    const texts = {
+                        'email': 'El coach recibirá sus credenciales en su email.',
+                        'whatsapp': 'Copia el mensaje de abajo y envíalo por WhatsApp al nuevo coach.',
+                        'none': 'No se envió notificación automática. Debes enviar estas credenciales manualmente al coach.'
+                    };
+                    return texts[this.notificationMethod] || '';
+                },
 
                 // Inicialización
                 init() {
@@ -945,18 +1071,56 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            alert(
-                                `✅ Coach ${this.coachForm.full_name} creado exitosamente!\n\n` +
-                                `Credenciales:\nUsuario: ${this.coachForm.username}\nContraseña: ${this.coachForm.password}\n\n` +
-                                `El coach puede cambiar su contraseña desde /coach-login`
-                            );
+                            // Guardar método de notificación para el modal
+                            this.notificationMethod = this.coachForm.notification_method || 'none';
+                            
+                            // Preparar mensaje según el método
+                            if (data.notification && data.notification.whatsapp_message) {
+                                // Mensaje de WhatsApp
+                                this.welcomeMessage = data.notification.whatsapp_message;
+                            } else {
+                                // Credenciales básicas (para email o none)
+                                const loginUrl = `${this.apiBaseUrl}/coach-login`;
+                                this.welcomeMessage = `🎉 ¡Bienvenido a InstaCoach!
+
+Hola ${this.coachForm.full_name},
+
+Tu cuenta de coach ha sido creada exitosamente.
+
+🔑 CREDENCIALES DE ACCESO:
+👤 Usuario: ${this.coachForm.username}
+📧 Email: ${this.coachForm.email}
+🔒 Contraseña: ${this.coachForm.password}
+
+⚠️ Importante: Cambia tu contraseña después del primer inicio de sesión.
+
+Inicia sesión aquí: ${loginUrl}
+
+✨ En InstaCoach puedes:
+• Gestionar tus coachees
+• Asignar evaluaciones
+• Programar sesiones
+• Compartir contenido
+• Crear planes de desarrollo
+
+📞 ¿Necesitas ayuda?
+Contáctanos: support@instacoach.cl
+
+---
+Equipo InstaCoach`;
+                            }
+                            
+                            // Abrir modal SIEMPRE
+                            const modal = new bootstrap.Modal(document.getElementById('welcomeMessageModal'));
+                            modal.show();
                             
                             // Reset form
                             this.coachForm = {
                                 username: '',
                                 email: '',
                                 full_name: '',
-                                password: ''
+                                password: '',
+                                notification_method: 'email'
                             };
                             
                             // Recargar datos
@@ -1060,6 +1224,31 @@
 
                 viewSystemLogs() {
                     alert('Logs del sistema disponibles en el panel de Railway');
+                },
+
+                // Copiar mensaje de bienvenida
+                async copyWelcomeMessage() {
+                    try {
+                        await navigator.clipboard.writeText(this.welcomeMessage);
+                        const messageType = this.notificationMethod === 'whatsapp' ? 'WhatsApp' : 'credenciales';
+                        alert(`✅ Mensaje copiado al portapapeles!\n\nAhora puedes enviarlo por ${messageType}.`);
+                    } catch (error) {
+                        // Fallback si clipboard API no está disponible
+                        const textArea = document.createElement('textarea');
+                        textArea.value = this.welcomeMessage;
+                        textArea.style.position = 'fixed';
+                        textArea.style.left = '-999999px';
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            const messageType = this.notificationMethod === 'whatsapp' ? 'WhatsApp' : 'credenciales';
+                            alert(`✅ Mensaje copiado al portapapeles!\n\nAhora puedes enviarlo por ${messageType}.`);
+                        } catch (err) {
+                            alert('❌ Error copiando mensaje. Por favor, cópialo manualmente.');
+                        }
+                        document.body.removeChild(textArea);
+                    }
                 },
 
                 // Cambiar contraseña
