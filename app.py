@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Imports principales
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, send_file, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, send_file, make_response, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
@@ -2030,6 +2030,21 @@ class CoachingSession(db.Model):
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='coaching_sessions_as_coachee')
     original_session = db.relationship('CoachingSession', remote_side=[id], backref='proposals')
 
+    @property
+    def coachee_name(self):
+        """Obtener el nombre del coachee para mostrar en el calendario"""
+        return self.coachee.full_name if self.coachee else 'Sin nombre'
+
+    @property
+    def session_datetime(self):
+        """Combinar fecha y hora de inicio para el calendario"""
+        return datetime.combine(self.session_date, self.start_time)
+
+    @property
+    def session_end_datetime(self):
+        """Combinar fecha y hora de fin para el calendario"""
+        return datetime.combine(self.session_date, self.end_time)
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -2074,21 +2089,6 @@ class SessionRequest(db.Model):
     # Relationships
     coachee = db.relationship('User', foreign_keys=[coachee_id], backref='session_requests')
     assigned_coach = db.relationship('User', foreign_keys=[assigned_coach_id], backref='assigned_session_requests')
-    
-    @property
-    def coachee_name(self):
-        """Obtener el nombre del coachee para mostrar en el calendario"""
-        return self.coachee.full_name if self.coachee else 'Sin nombre'
-    
-    @property
-    def session_datetime(self):
-        """Combinar fecha y hora de inicio para el calendario"""
-        return datetime.combine(self.session_date, self.start_time)
-    
-    @property
-    def session_end_datetime(self):
-        """Combinar fecha y hora de fin para el calendario"""
-        return datetime.combine(self.session_date, self.end_time)
 
 # ============================================================================
 # MODELO DE AUDITORÍA DE SEGURIDAD
@@ -2144,6 +2144,79 @@ class SecurityLog(db.Model):
 
 # ============================================================================
 # FIN DE MODELO DE AUDITORÍA
+# ============================================================================
+
+# ============================================================================
+# MODELO: Registro de Sesiones de Coaching
+# ============================================================================
+class SessionRecord(db.Model):
+    """Registro estructurado de sesiones de coaching (Sesión Cero, Sesión 1, etc.)"""
+    __tablename__ = 'session_record'
+
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    session_number = db.Column(db.Integer, nullable=False)  # 0=Sesión Cero, 1=Sesión 1, ...
+    name = db.Column(db.String(200), nullable=False)        # Nombre editable
+    objective = db.Column(db.Text, nullable=True)           # Objetivo de la sesión
+    participants = db.Column(db.Text, nullable=True)        # JSON: lista de coachee IDs
+    content = db.Column(db.Text, nullable=True)             # Contenido/notas de la sesión
+    commitments = db.Column(db.Text, nullable=True)         # JSON: lista de compromisos con fechas
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='session_records')
+
+# ============================================================================
+# FIN MODELO SessionRecord
+# ============================================================================
+
+# ============================================================================
+# MODELO: Contratos de Suscripción
+# ============================================================================
+class SubscriptionContract(db.Model):
+    """Contrato enviado por el coach al coachee para suscripción"""
+    __tablename__ = 'subscription_contract'
+
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    filename = db.Column(db.String(300), nullable=False)        # Nombre original del archivo
+    file_path = db.Column(db.String(500), nullable=False)       # Ruta local o URL S3
+    num_sessions = db.Column(db.Integer, nullable=True)         # Número de sesiones contratadas
+    summary = db.Column(db.Text, nullable=True)                 # Resumen del contrato
+    status = db.Column(db.String(30), default='pending', index=True)  # pending, signed, payment_pending, active
+    sent_at = db.Column(db.DateTime, nullable=True)
+    signed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='contracts_as_coach')
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='contracts_as_coachee')
+
+# ============================================================================
+# FIN MODELO SubscriptionContract
+# ============================================================================
+
+# ============================================================================
+# MODELO: Acuerdo de Compromiso de Coaching
+# ============================================================================
+class CoachingAgreement(db.Model):
+    """Acuerdo de compromiso generado por el coach para un coachee"""
+    __tablename__ = 'coaching_agreement'
+
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    coachee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)  # Puede ser null si se ingresa manualmente
+    status = db.Column(db.String(20), default='borrador', index=True)  # borrador, enviado, firmado
+    contract_data = db.Column(db.Text, nullable=True)   # JSON con todos los campos del formulario
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    coach = db.relationship('User', foreign_keys=[coach_id], backref='coaching_agreements_as_coach')
+    coachee = db.relationship('User', foreign_keys=[coachee_id], backref='coaching_agreements_as_coachee')
+
+# ============================================================================
+# FIN MODELO CoachingAgreement
 # ============================================================================
 
 # Modelos para el sistema de documentos
@@ -6967,138 +7040,56 @@ def api_admin_hard_delete_user(user_id):
         user_email = user.email
         user_role = user.role
         
-        # ELIMINACIÓN EN CASCADA - PERMANENTE (ORDEN CRÍTICO)
+        # ELIMINACIÓN EN CASCADA - PERMANENTE
         try:
-            # ====== FASE 1: ELIMINAR DEPENDENCIAS DE COACH ======
+            # Si es coach, reasignar coachees a NULL
             if user.role == 'coach':
-                # 1. Obtener todos los assessment_result del coach
-                coach_assessments = AssessmentResult.query.filter_by(coach_id=user_id).all()
-                assessment_ids = [a.id for a in coach_assessments]
-                
-                # 2. Eliminar respuestas asociadas a esos assessments PRIMERO
-                if assessment_ids:
-                    Response.query.filter(Response.assessment_result_id.in_(assessment_ids)).delete(synchronize_session=False)
-                
-                # 3. Ahora sí eliminar los assessment_result
-                AssessmentResult.query.filter_by(coach_id=user_id).delete()
-                
-                # 4. Reasignar coachees a NULL (no eliminarlos)
                 coachees = User.query.filter_by(coach_id=user_id).all()
                 for coachee in coachees:
                     coachee.coach_id = None
+                
+                # Eliminar evaluaciones creadas por este coach
+                AssessmentResult.query.filter_by(coach_id=user_id).delete()
             
-            # ====== FASE 2: ELIMINAR DEPENDENCIAS DE COACHEE ======
+            # Si es coachee, eliminar sus evaluaciones
             if user.role == 'coachee':
-                # 1. Obtener IDs de assessments del coachee
-                coachee_assessments = AssessmentResult.query.filter_by(user_id=user_id).all()
-                assessment_ids = [a.id for a in coachee_assessments]
-                
-                # 2. Eliminar respuestas PRIMERO
-                if assessment_ids:
-                    Response.query.filter(Response.assessment_result_id.in_(assessment_ids)).delete(synchronize_session=False)
-                
-                # 3. Eliminar assessment_result
                 AssessmentResult.query.filter_by(user_id=user_id).delete()
-                
-                # 4. Eliminar otras dependencias
-                Response.query.filter_by(user_id=user_id).delete()  # Por si quedaron algunas
+                Response.query.filter_by(user_id=user_id).delete()
                 AssessmentHistory.query.filter_by(user_id=user_id).delete()
+                
+                # Eliminar progreso de tareas
+                coachee_tasks = Task.query.filter_by(coachee_id=user_id).all()
+                for task in coachee_tasks:
+                    TaskProgress.query.filter_by(task_id=task.id).delete()
             
-            # ====== FASE 3: ELIMINAR TOKENS Y AUTENTICACIÓN ======
+            # Eliminar tokens de reseteo
             PasswordResetToken.query.filter_by(user_id=user_id).delete()
             
-            # ====== FASE 4: ELIMINAR INVITACIONES ======
+            # Eliminar invitaciones
             Invitation.query.filter_by(coach_id=user_id).delete()
             Invitation.query.filter_by(coachee_id=user_id).delete()
             
-            # ====== FASE 5: ELIMINAR TAREAS Y SU PROGRESO (ORDEN CRÍTICO) ======
-            # 1. Obtener todas las tareas del usuario
-            all_tasks = Task.query.filter((Task.coach_id == user_id) | (Task.coachee_id == user_id)).all()
-            task_ids = [t.id for t in all_tasks]
-            
-            # 2. Eliminar DevelopmentPlan que referencian tasks (request_task_id)
-            if task_ids:
-                DevelopmentPlan.query.filter(DevelopmentPlan.request_task_id.in_(task_ids)).delete(synchronize_session=False)
-            
-            # 3. Eliminar TaskProgress
-            if task_ids:
-                TaskProgress.query.filter(TaskProgress.task_id.in_(task_ids)).delete(synchronize_session=False)
-            
-            # 4. Ahora sí eliminar las tareas
+            # Eliminar tareas
             Task.query.filter_by(coach_id=user_id).delete()
             Task.query.filter_by(coachee_id=user_id).delete()
             
-            # ====== FASE 6: ELIMINAR PLANES DE DESARROLLO ======
-            # Los que no tienen request_task_id
+            # Eliminar planes de desarrollo
             DevelopmentPlan.query.filter_by(coach_id=user_id).delete()
             DevelopmentPlan.query.filter_by(coachee_id=user_id).delete()
             
-            # ====== FASE 7: ELIMINAR CONTENIDO ======
+            # Eliminar contenido
             Content.query.filter_by(coach_id=user_id).delete()
             Content.query.filter_by(coachee_id=user_id).delete()
             
-            # ====== FASE 8: ELIMINAR SESIONES DE COACHING ======
-            # 1. Eliminar propuestas de sesiones (original_session_id)
-            CoachingSession.query.filter_by(original_session_id=user_id).delete()
-            
-            # 2. Eliminar sesiones como coach o coachee
-            CoachingSession.query.filter_by(coach_id=user_id).delete()
-            CoachingSession.query.filter_by(coachee_id=user_id).delete()
-            
-            # 3. Eliminar solicitudes de sesiones
-            SessionRequest.query.filter_by(coachee_id=user_id).delete()
-            SessionRequest.query.filter_by(assigned_coach_id=user_id).delete()
-            
-            # 4. Eliminar disponibilidad del coach
-            CoachAvailability.query.filter_by(coach_id=user_id).delete()
-            
-            # ====== FASE 9: ELIMINAR DOCUMENTOS ======
-            # 1. Obtener documentos para eliminar archivos
-            user_documents = Document.query.filter((Document.coach_id == user_id) | (Document.coachee_id == user_id)).all()
-            doc_ids = [d.id for d in user_documents]
-            
-            # 2. Eliminar DocumentFile PRIMERO
-            if doc_ids:
-                DocumentFile.query.filter(DocumentFile.document_id.in_(doc_ids)).delete(synchronize_session=False)
-            
-            # 3. Eliminar Document
-            Document.query.filter_by(coach_id=user_id).delete()
-            Document.query.filter_by(coachee_id=user_id).delete()
-            
-            # ====== FASE 10: ELIMINAR COMUNIDADES Y MEMBRESÍAS ======
-            # 1. Obtener comunidades creadas por el usuario
-            user_communities = CoachCommunity.query.filter_by(creator_id=user_id).all()
-            community_ids = [c.id for c in user_communities]
-            
-            # 2. Eliminar invitaciones de esas comunidades PRIMERO
-            if community_ids:
-                CommunityInvitation.query.filter(CommunityInvitation.community_id.in_(community_ids)).delete(synchronize_session=False)
-            
-            # 3. Eliminar membresías de esas comunidades
-            if community_ids:
-                CommunityMembership.query.filter(CommunityMembership.community_id.in_(community_ids)).delete(synchronize_session=False)
-            
-            # 4. Eliminar las comunidades
-            CoachCommunity.query.filter_by(creator_id=user_id).delete()
-            
-            # 5. Eliminar membresías del usuario en otras comunidades
-            CommunityMembership.query.filter_by(coach_id=user_id).delete()
-            
-            # 6. Eliminar invitaciones enviadas o aceptadas por el usuario
-            CommunityInvitation.query.filter_by(inviter_id=user_id).delete()
-            CommunityInvitation.query.filter_by(accepted_by_user_id=user_id).delete()
-            
-            # ====== FASE 11: ELIMINAR NOTIFICACIONES Y LOGS ======
+            # Eliminar notificaciones
             Notification.query.filter_by(user_id=user_id).delete()
-            SecurityLog.query.filter_by(user_id=user_id).delete()
             
-            # ====== FASE 12: ACTUALIZAR REFERENCIAS NULL ======
-            # Actualizar referencias que no se pueden eliminar
+            # Actualizar FKs que apuntan a este usuario
             if user.role == 'platform_admin':
                 db.session.execute(db.text("UPDATE coach_request SET reviewed_by = NULL WHERE reviewed_by = :user_id"), {'user_id': user_id})
             
-            # ====== FASE 13: ELIMINAR EL USUARIO ======
-            db.session.execute(db.text('DELETE FROM "user" WHERE id = :user_id'), {'user_id': user_id})
+            # Eliminar el usuario PERMANENTEMENTE
+            db.session.execute(db.text("DELETE FROM user WHERE id = :user_id"), {'user_id': user_id})
             db.session.commit()
             
             logger.warning(f"🔥 ADMIN: Usuario ELIMINADO PERMANENTEMENTE (HARD DELETE) - {username} (ID: {user_id})")
@@ -7408,106 +7399,50 @@ def api_coach_get_profile():
 @app.route('/api/coach/session-requests', methods=['GET'])
 @coach_session_required
 def api_coach_session_requests():
-    """Obtener solicitudes de sesión para el coach"""
+    """Obtener solicitudes de sesión pendientes (CoachingSession con proposed_by='coachee' y status='pending')"""
     try:
         current_coach = g.current_user
-        
-        # Obtener parámetro de estado (por defecto: pending)
         status = request.args.get('status', 'pending')
-        
-        # Query base
-        query = SessionRequest.query
-        
-        # Si el coach está asignado a coachees específicos, filtrar por ellos
-        # Si no, mostrar todas las solicitudes pendientes (para asignación)
-        if status == 'all':
-            # Mostrar todas las solicitudes (propias o sin asignar)
-            query = query.filter(
-                db.or_(
-                    SessionRequest.assigned_coach_id == current_coach.id,
-                    SessionRequest.assigned_coach_id == None
-                )
-            )
-        elif status == 'assigned':
-            # Solo las asignadas a este coach
-            query = query.filter(SessionRequest.assigned_coach_id == current_coach.id)
-        else:
-            # Filtrar por estado específico
-            query = query.filter(SessionRequest.status == status)
-            # Mostrar propias o sin asignar
-            query = query.filter(
-                db.or_(
-                    SessionRequest.assigned_coach_id == current_coach.id,
-                    SessionRequest.assigned_coach_id == None
-                )
-            )
-        
-        # Ordenar por más recientes primero
-        requests = query.order_by(SessionRequest.created_at.desc()).all()
-        
-        # Formatear respuesta
+
+        # Consultar CoachingSession creadas por coachees para este coach
+        query = CoachingSession.query.filter(
+            CoachingSession.coach_id == current_coach.id,
+            CoachingSession.proposed_by == 'coachee'
+        )
+
+        if status != 'all':
+            query = query.filter(CoachingSession.status == status)
+
+        sessions = query.order_by(CoachingSession.created_at.desc()).all()
+
         requests_data = []
-        for req in requests:
-            coachee_user = User.query.get(req.coachee_id)
-            assigned_coach_name = None
-            if req.assigned_coach_id:
-                assigned_coach = User.query.get(req.assigned_coach_id)
-                assigned_coach_name = assigned_coach.full_name if assigned_coach else None
-            
-            # Obtener información de la evaluación si existe
-            evaluation_info = None
-            if req.evaluation_id:
-                eval_history = AssessmentHistory.query.get(req.evaluation_id)
-                if not eval_history:
-                    eval_history = AssessmentResult.query.get(req.evaluation_id)
-                
-                if eval_history:
-                    # Obtener el título del assessment
-                    assessment_title = 'Evaluación'
-                    if eval_history.assessment_id:
-                        assessment = Assessment.query.get(eval_history.assessment_id)
-                        if assessment:
-                            assessment_title = assessment.title
-                    
-                    evaluation_info = {
-                        'id': eval_history.id,
-                        'assessment_id': eval_history.assessment_id,
-                        'assessment_title': assessment_title,
-                        'score': eval_history.score,
-                        'completed_at': eval_history.completed_at.isoformat() if eval_history.completed_at else None
-                    }
-            
+        for s in sessions:
+            coachee_user = User.query.get(s.coachee_id) if s.coachee_id else None
             requests_data.append({
-                'id': req.id,
-                'coachee_id': req.coachee_id,
-                'coachee_name': coachee_user.full_name if coachee_user else 'Usuario desconocido',
+                'id': s.id,
+                'coachee_id': s.coachee_id,
+                'coachee_name': coachee_user.full_name if coachee_user else 'Coachee',
                 'coachee_email': coachee_user.email if coachee_user else None,
-                'name': req.name,
-                'email': req.email,
-                'phone': req.phone,
-                'whatsapp': req.whatsapp,
-                'preferred_method': req.preferred_method,
-                'availability': req.availability,
-                'message': req.message,
-                'session_type': req.session_type,
-                'status': req.status,
-                'assigned_coach_id': req.assigned_coach_id,
-                'assigned_coach_name': assigned_coach_name,
-                'coach_notes': req.coach_notes,
-                'evaluation': evaluation_info,
-                'created_at': req.created_at.isoformat() if req.created_at else None,
-                'updated_at': req.updated_at.isoformat() if req.updated_at else None,
-                'contacted_at': req.contacted_at.isoformat() if req.contacted_at else None
+                'title': s.title or 'Sesión de Coaching',
+                'description': s.description,
+                'preferred_date': s.session_date.isoformat() if s.session_date else None,
+                'start_time': s.start_time.strftime('%H:%M') if s.start_time else None,
+                'end_time': s.end_time.strftime('%H:%M') if s.end_time else None,
+                'location': s.location or 'Virtual',
+                'status': s.status,
+                'notes': s.notes,
+                'created_at': s.created_at.isoformat() if s.created_at else None,
+                'updated_at': s.updated_at.isoformat() if s.updated_at else None
             })
-        
+
         logger.info(f"📋 Coach {current_coach.username} retrieved {len(requests_data)} session requests (status: {status})")
-        
+
         return jsonify({
             'success': True,
             'requests': requests_data,
             'total': len(requests_data)
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error getting session requests: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo solicitudes: {str(e)}'}), 500
@@ -7516,41 +7451,30 @@ def api_coach_session_requests():
 @app.route('/api/coach/session-requests/<int:request_id>', methods=['PUT'])
 @coach_session_required
 def api_coach_update_session_request(request_id):
-    """Actualizar estado de una solicitud de sesión"""
+    """Actualizar notas de una solicitud de sesión"""
     try:
         current_coach = g.current_user
         data = request.get_json()
-        
-        session_request = SessionRequest.query.get(request_id)
-        if not session_request:
+
+        session = CoachingSession.query.filter_by(id=request_id, coach_id=current_coach.id).first()
+        if not session:
             return jsonify({'error': 'Solicitud no encontrada'}), 404
-        
-        # Actualizar campos permitidos
+
         if 'status' in data:
-            session_request.status = data['status']
-            if data['status'] == 'contacted' and not session_request.contacted_at:
-                session_request.contacted_at = datetime.utcnow()
-        
-        if 'coach_notes' in data:
-            session_request.coach_notes = data['coach_notes']
-        
-        if 'assigned_coach_id' in data:
-            session_request.assigned_coach_id = data['assigned_coach_id']
-        elif not session_request.assigned_coach_id:
-            # Auto-asignar al coach actual si no está asignada
-            session_request.assigned_coach_id = current_coach.id
-        
-        session_request.updated_at = datetime.utcnow()
-        
+            session.status = data['status']
+        if 'notes' in data:
+            session.notes = data['notes']
+
+        session.updated_at = datetime.utcnow()
         db.session.commit()
-        
-        logger.info(f"✅ Coach {current_coach.username} updated session request {request_id}: {data.get('status', 'notes updated')}")
-        
+
+        logger.info(f"✅ Coach {current_coach.username} updated session request {request_id}")
+
         return jsonify({
             'success': True,
             'message': 'Solicitud actualizada exitosamente'
         }), 200
-        
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error updating session request: {str(e)}", exc_info=True)
@@ -7560,41 +7484,48 @@ def api_coach_update_session_request(request_id):
 @app.route('/api/coach/session-requests/<int:request_id>/accept', methods=['POST'])
 @coach_session_required
 def api_coach_accept_session_request_v2(request_id):
-    """Aceptar una solicitud de sesión (versión SessionRequest)"""
+    """Aceptar una solicitud de sesión — confirma la CoachingSession"""
     try:
         current_coach = g.current_user
-        
-        # Buscar la solicitud en SessionRequest
-        session_request = SessionRequest.query.filter_by(
+
+        session = CoachingSession.query.filter_by(
             id=request_id,
-            status='pending'
+            coach_id=current_coach.id,
+            status='pending',
+            proposed_by='coachee'
         ).first()
-        
-        if not session_request:
-            logger.warning(f"❌ ACEPTAR: SessionRequest {request_id} no encontrada o no está pendiente")
+
+        if not session:
+            logger.warning(f"❌ ACEPTAR: CoachingSession {request_id} no encontrada o no está pendiente")
             return jsonify({'error': 'Solicitud no encontrada'}), 404
-        
-        # Asignar al coach actual si no está asignada
-        if not session_request.assigned_coach_id:
-            session_request.assigned_coach_id = current_coach.id
-        
-        # Actualizar estado a 'scheduled'
-        session_request.status = 'scheduled'
-        session_request.contacted_at = datetime.utcnow()
-        session_request.updated_at = datetime.utcnow()
-        
-        # TODO: Crear CoachingSession en el calendario con la información de disponibilidad
-        # Por ahora solo actualizamos el estado de la solicitud
-        
+
+        session.status = 'confirmed'
+        session.updated_at = datetime.utcnow()
+
+        # Notificar al coachee
+        if session.coachee_id:
+            coachee_name = session.coachee.full_name if session.coachee else 'Coachee'
+            date_str = session.session_date.strftime('%d/%m/%Y') if session.session_date else ''
+            time_str = session.start_time.strftime('%H:%M') if session.start_time else ''
+            notif = Notification(
+                user_id=session.coachee_id,
+                type='session_confirmed',
+                title='Sesión confirmada',
+                message=f'Tu sesión del {date_str} a las {time_str} ha sido confirmada por tu coach.',
+                related_id=session.id,
+                related_type='session'
+            )
+            db.session.add(notif)
+
         db.session.commit()
-        
-        logger.info(f"✅ ACEPTADA: SessionRequest {request_id} confirmada por coach {current_coach.username}")
-        
+
+        logger.info(f"✅ ACEPTADA: CoachingSession {request_id} confirmada por coach {current_coach.username}")
+
         return jsonify({
             'success': True,
-            'message': 'Sesión confirmada exitosamente. Coordinarás con el coachee según su disponibilidad.'
+            'message': 'Sesión confirmada exitosamente.'
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error en api_coach_accept_session_request_v2: {str(e)}", exc_info=True)
         db.session.rollback()
@@ -7604,41 +7535,49 @@ def api_coach_accept_session_request_v2(request_id):
 @app.route('/api/coach/session-requests/<int:request_id>/reject', methods=['POST'])
 @coach_session_required
 def api_coach_reject_session_request_v2(request_id):
-    """Rechazar una solicitud de sesión (versión SessionRequest)"""
+    """Rechazar una solicitud de sesión — cancela la CoachingSession"""
     try:
         current_coach = g.current_user
         data = request.get_json() or {}
         reason = data.get('reason', 'Sin motivo especificado')
-        
-        # Buscar la solicitud en SessionRequest
-        session_request = SessionRequest.query.filter_by(
+
+        session = CoachingSession.query.filter_by(
             id=request_id,
-            status='pending'
+            coach_id=current_coach.id,
+            status='pending',
+            proposed_by='coachee'
         ).first()
-        
-        if not session_request:
-            logger.warning(f"❌ RECHAZAR: SessionRequest {request_id} no encontrada o no está pendiente")
+
+        if not session:
+            logger.warning(f"❌ RECHAZAR: CoachingSession {request_id} no encontrada o no está pendiente")
             return jsonify({'error': 'Solicitud no encontrada'}), 404
-        
-        # Asignar al coach actual si no está asignada
-        if not session_request.assigned_coach_id:
-            session_request.assigned_coach_id = current_coach.id
-        
-        # Actualizar estado a 'cancelled' y guardar motivo
-        session_request.status = 'cancelled'
-        session_request.coach_notes = f"Rechazada por coach: {reason}"
-        session_request.contacted_at = datetime.utcnow()
-        session_request.updated_at = datetime.utcnow()
-        
+
+        session.status = 'cancelled'
+        session.notes = f"Rechazada por coach: {reason}"
+        session.updated_at = datetime.utcnow()
+
+        # Notificar al coachee
+        if session.coachee_id:
+            date_str = session.session_date.strftime('%d/%m/%Y') if session.session_date else ''
+            notif = Notification(
+                user_id=session.coachee_id,
+                type='session_rejected',
+                title='Sesión no confirmada',
+                message=f'Tu solicitud de sesión del {date_str} no fue confirmada. Motivo: {reason}',
+                related_id=session.id,
+                related_type='session'
+            )
+            db.session.add(notif)
+
         db.session.commit()
-        
-        logger.info(f"❌ RECHAZADA: SessionRequest {request_id} rechazada por {current_coach.username}. Motivo: {reason}")
-        
+
+        logger.info(f"❌ RECHAZADA: CoachingSession {request_id} rechazada por {current_coach.username}. Motivo: {reason}")
+
         return jsonify({
             'success': True,
             'message': 'Solicitud rechazada correctamente'
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error en api_coach_reject_session_request_v2: {str(e)}", exc_info=True)
         db.session.rollback()
@@ -7648,57 +7587,78 @@ def api_coach_reject_session_request_v2(request_id):
 @app.route('/api/coach/session-requests/<int:request_id>/propose', methods=['POST'])
 @coach_session_required
 def api_coach_propose_session_time_v2(request_id):
-    """Proponer un horario alternativo para una solicitud de sesión (versión SessionRequest)"""
+    """Proponer un horario alternativo — crea nueva CoachingSession con status='proposed'"""
     try:
         current_coach = g.current_user
         data = request.get_json() or {}
-        
-        # Buscar la solicitud original en SessionRequest
-        original_request = SessionRequest.query.filter_by(
+
+        original = CoachingSession.query.filter_by(
             id=request_id,
-            status='pending'
+            coach_id=current_coach.id,
+            status='pending',
+            proposed_by='coachee'
         ).first()
-        
-        if not original_request:
-            logger.warning(f"❌ PROPONER: SessionRequest {request_id} no encontrada o no está pendiente")
+
+        if not original:
+            logger.warning(f"❌ PROPONER: CoachingSession {request_id} no encontrada o no está pendiente")
             return jsonify({'error': 'Solicitud no encontrada'}), 404
-        
-        # Obtener datos de la propuesta
+
         proposed_date_str = data.get('proposed_date')
         proposed_start_time_str = data.get('proposed_start_time')
         proposed_end_time_str = data.get('proposed_end_time')
         message = data.get('message', '')
-        
+
         if not all([proposed_date_str, proposed_start_time_str, proposed_end_time_str]):
             return jsonify({'error': 'Faltan datos requeridos (fecha, hora inicio, hora fin)'}), 400
-        
-        # Asignar al coach actual si no está asignada
-        if not original_request.assigned_coach_id:
-            original_request.assigned_coach_id = current_coach.id
-        
-        # Actualizar estado a 'contacted' y guardar la propuesta en las notas
-        original_request.status = 'contacted'
-        proposal_text = f"Coach propuso horario alternativo: {proposed_date_str} de {proposed_start_time_str} a {proposed_end_time_str}"
-        if message:
-            proposal_text += f"\nMensaje: {message}"
-        
-        original_request.coach_notes = proposal_text
-        original_request.contacted_at = datetime.utcnow()
-        original_request.updated_at = datetime.utcnow()
-        
-        # TODO: Crear una CoachingSession con status='proposed' para que aparezca en calendario del coachee
-        # y pueda aceptar/rechazar la propuesta
-        
+
+        # Marcar la solicitud original como resuelta con propuesta
+        original.status = 'proposed'
+        original.proposal_message = message or None
+        original.updated_at = datetime.utcnow()
+
+        # Crear nueva sesión propuesta por el coach
+        proposed_date = datetime.strptime(proposed_date_str, '%Y-%m-%d').date()
+        proposed_start = datetime.strptime(proposed_start_time_str, '%H:%M').time()
+        proposed_end = datetime.strptime(proposed_end_time_str, '%H:%M').time()
+
+        new_session = CoachingSession(
+            coach_id=current_coach.id,
+            coachee_id=original.coachee_id,
+            session_date=proposed_date,
+            start_time=proposed_start,
+            end_time=proposed_end,
+            status='proposed',
+            title=original.title or 'Sesión de Coaching',
+            description=original.description,
+            location=original.location,
+            proposed_by='coach',
+            proposal_message=message or None,
+            original_session_id=original.id,
+            session_type='coaching'
+        )
+        db.session.add(new_session)
+
+        # Notificar al coachee
+        if original.coachee_id:
+            notif = Notification(
+                user_id=original.coachee_id,
+                type='session_proposed',
+                title='Propuesta de horario',
+                message=f'Tu coach propuso un nuevo horario: {proposed_date_str} de {proposed_start_time_str} a {proposed_end_time_str}.',
+                related_id=original.id,
+                related_type='session'
+            )
+            db.session.add(notif)
+
         db.session.commit()
-        
-        logger.info(f"📅 PROPUESTA: Coach {current_coach.username} propuso horario alternativo para SessionRequest {request_id}")
-        logger.info(f"  Propuesta: {proposed_date_str} de {proposed_start_time_str} a {proposed_end_time_str}")
-        
+
+        logger.info(f"📅 PROPUESTA: Coach {current_coach.username} propuso horario alternativo para CoachingSession {request_id}")
+
         return jsonify({
             'success': True,
-            'message': 'Propuesta registrada. Coordinarás el horario directamente con el coachee.'
+            'message': 'Propuesta de horario enviada al coachee.'
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error en api_coach_propose_session_time_v2: {str(e)}", exc_info=True)
         db.session.rollback()
@@ -8418,6 +8378,7 @@ def api_coach_create_invitation_v2():
         email = data.get('email')
         message = data.get('message', '')
         assigned_assessment_id = data.get('assigned_assessment_id')  # Nueva funcionalidad
+        initial_session_id = data.get('initial_session_id')  # Sesión inicial del coachee
         
         if not full_name or not email:
             logger.warning("❌ INVITATION: Missing required fields")
@@ -8516,6 +8477,24 @@ def api_coach_create_invitation_v2():
         for v_coachee in verification_query:
             logger.info(f"🔍 INVITATION: Verification coachee: ID={v_coachee.id}, Name={v_coachee.full_name}, Coach_ID={v_coachee.coach_id}")
         
+        # Agregar coachee como participante de la sesión inicial si se especificó
+        session_name_assigned = None
+        if initial_session_id is not None:
+            try:
+                session_rec = SessionRecord.query.filter_by(
+                    session_number=int(initial_session_id), coach_id=current_coach.id
+                ).first()
+                if session_rec:
+                    current_participants = json.loads(session_rec.participants) if session_rec.participants else []
+                    if new_coachee.id not in current_participants:
+                        current_participants.append(new_coachee.id)
+                        session_rec.participants = json.dumps(current_participants)
+                        db.session.commit()
+                    session_name_assigned = session_rec.name
+                    logger.info(f"✅ INVITATION: Coachee {new_coachee.id} agregado a sesión '{session_rec.name}'")
+            except Exception as se:
+                logger.warning(f"⚠️ INVITATION: No se pudo asignar sesión inicial: {se}")
+
         # Asignar evaluación si se especificó - Optimizado para Railway
         assessment_assigned = False
         assigned_assessment_title = None
@@ -8590,7 +8569,8 @@ def api_coach_create_invitation_v2():
                 'password': password,
                 'invitation_url': invitation_url,  # Nueva URL con token
                 'login_url': f"{request.url_root}participant-access",  # Backup
-                'assigned_assessment': assigned_assessment_title if assessment_assigned else None
+                'assigned_assessment': assigned_assessment_title if assessment_assigned else None,
+                'initial_session': session_name_assigned
             }
         }), 201
         
@@ -12679,6 +12659,52 @@ def api_coach_self_scheduled_activities():
         logger.error(f"Error en self-scheduled-activities: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error al obtener actividades: {str(e)}'}), 500
 
+@app.route('/api/coach/upcoming-sessions', methods=['GET'])
+@coach_session_required
+def api_coach_upcoming_sessions():
+    """Sesiones programadas para hoy y los próximos 7 días"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+
+        from datetime import datetime, timedelta
+        today = get_santiago_today()
+        limit  = today + timedelta(days=7)
+
+        sessions = CoachingSession.query.filter(
+            and_(
+                CoachingSession.coach_id == current_coach.id,
+                CoachingSession.session_date >= today.strftime('%Y-%m-%d'),
+                CoachingSession.session_date <= limit.strftime('%Y-%m-%d'),
+                CoachingSession.session_type.in_(['coaching', 'direct_appointment'])
+            )
+        ).order_by(CoachingSession.session_date, CoachingSession.start_time).all()
+
+        result = []
+        for s in sessions:
+            coachee = User.query.get(s.coachee_id) if s.coachee_id else None
+            date_obj = s.session_date if isinstance(s.session_date, date) else datetime.strptime(str(s.session_date), '%Y-%m-%d').date()
+            result.append({
+                'id':           s.id,
+                'date':         date_obj.strftime('%Y-%m-%d'),
+                'is_today':     date_obj == today,
+                'start_time':   s.start_time.strftime('%H:%M') if s.start_time else None,
+                'end_time':     s.end_time.strftime('%H:%M')   if s.end_time   else None,
+                'coachee_id':   s.coachee_id or None,
+                'coachee_name': coachee.full_name if coachee else 'Coachee',
+                'session_type': s.session_type,
+                'status':       s.status or 'scheduled',
+                'notes':        s.notes or '',
+            })
+
+        return jsonify({'success': True, 'sessions': result}), 200
+
+    except Exception as e:
+        logger.error(f"Error en upcoming-sessions: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/coach/direct-appointments', methods=['GET'])
 @coach_session_required
 def api_coach_direct_appointments():
@@ -15373,12 +15399,12 @@ def api_coach_block_time():
         if end_time <= start_time:
             return jsonify({'error': 'La hora de fin debe ser posterior a la hora de inicio'}), 400
         
-        # Verificar que no haya conflictos de horario
+        # Verificar que no haya conflictos de horario (solo sesiones confirmadas o propuestas)
         conflicts = CoachingSession.query.filter_by(
             coach_id=current_coach.id,
             session_date=session_date
         ).filter(
-            CoachingSession.status.in_(['confirmed', 'pending']),
+            CoachingSession.status.in_(['confirmed', 'proposed']),
             db.or_(
                 db.and_(
                     CoachingSession.start_time < end_time,
@@ -15386,10 +15412,10 @@ def api_coach_block_time():
                 )
             )
         ).all()
-        
+
         if conflicts:
             return jsonify({'error': 'Ya tienes una sesión o bloqueo en ese horario'}), 400
-        
+
         # Crear el bloqueo de tiempo
         block = CoachingSession(
             coach_id=current_coach.id,
@@ -15485,7 +15511,7 @@ def api_coach_direct_appointment():
             coach_id=current_coach.id,
             session_date=session_date
         ).filter(
-            CoachingSession.status.in_(['confirmed', 'pending']),
+            CoachingSession.status.in_(['confirmed', 'proposed']),
             db.or_(
                 db.and_(
                     CoachingSession.start_time < end_time,
@@ -15497,14 +15523,14 @@ def api_coach_direct_appointment():
         if conflicts:
             return jsonify({'error': 'Ya tienes una sesión o bloqueo en ese horario'}), 400
         
-        # Crear la cita directa
+        # Crear la cita directa — confirmada de inmediato porque la inicia el coach
         appointment = CoachingSession(
             coach_id=current_coach.id,
             coachee_id=coachee_id,
             session_date=session_date,
             start_time=start_time,
             end_time=end_time,
-            status='pending',  # Pendiente de aceptación del coachee
+            status='confirmed',
             session_type='direct_appointment',
             title=title,
             description=description,
@@ -15524,7 +15550,7 @@ def api_coach_direct_appointment():
         
         return jsonify({
             'success': True,
-            'message': f'Cita enviada a {coachee.full_name}',
+            'message': f'Cita confirmada con {coachee.full_name}',
             'session_id': appointment.id
         }), 200
         
@@ -16938,6 +16964,62 @@ def api_mark_all_notifications_read():
         logger.error(f"Error marcando todas: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error marcando notificaciones'}), 500
 
+# ── COACH NOTIFICATION ENDPOINTS (usa coach_session_required) ──────────────
+
+@app.route('/api/coach/notifications', methods=['GET'])
+@coach_session_required
+def api_coach_get_notifications():
+    """Notificaciones del coach autenticado"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        limit = request.args.get('limit', 20, type=int)
+        notifications = Notification.query.filter_by(
+            user_id=current_coach.id
+        ).order_by(Notification.created_at.desc()).limit(limit).all()
+        return jsonify({'success': True, 'notifications': [n.to_dict() for n in notifications]}), 200
+    except Exception as e:
+        logger.error(f"Error obteniendo notificaciones coach: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coach/notifications/unread-count', methods=['GET'])
+@coach_session_required
+def api_coach_notifications_unread_count():
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        count = Notification.query.filter_by(user_id=current_coach.id, is_read=False).count()
+        return jsonify({'success': True, 'count': count}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coach/notifications/<int:notification_id>/mark-read', methods=['POST'])
+@coach_session_required
+def api_coach_mark_notification_read(notification_id):
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        notif = Notification.query.filter_by(id=notification_id, user_id=current_coach.id).first()
+        if not notif:
+            return jsonify({'error': 'No encontrada'}), 404
+        notif.is_read = True
+        db.session.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coach/notifications/mark-all-read', methods=['POST'])
+@coach_session_required
+def api_coach_mark_all_notifications_read():
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        Notification.query.filter_by(user_id=current_coach.id, is_read=False).update({'is_read': True})
+        db.session.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# ────────────────────────────────────────────────────────────────────────────
+
 # Función helper para crear notificaciones
 def create_notification(user_id, type, title, message, related_id=None, related_type=None):
     """Helper para crear notificaciones"""
@@ -18119,6 +18201,761 @@ def get_coachee_points_summary():
     except Exception as e:
         logger.error(f"❌ GAMIFICACIÓN: Error en get_coachee_points_summary: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': 'Error obteniendo puntos'}), 500
+
+# ============================================================================
+# ENDPOINTS: Contratos de Suscripción
+# ============================================================================
+
+CONTRACTS_FOLDER = 'uploads/contracts'
+
+def ensure_contracts_folder():
+    if not os.path.exists(CONTRACTS_FOLDER):
+        os.makedirs(CONTRACTS_FOLDER)
+
+ALLOWED_CONTRACT_EXTENSIONS = {'pdf', 'doc', 'docx'}
+
+def allowed_contract_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_CONTRACT_EXTENSIONS
+
+
+@app.route('/api/coach/contracts', methods=['GET'])
+@login_required
+def get_contracts():
+    """Listar contratos enviados por el coach"""
+    try:
+        current_coach = User.query.get(current_user.id)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        contracts = SubscriptionContract.query.filter_by(coach_id=current_coach.id)\
+            .order_by(SubscriptionContract.created_at.desc()).all()
+
+        result = []
+        for c in contracts:
+            coachee = User.query.get(c.coachee_id)
+            result.append({
+                'id': c.id,
+                'coachee_id': c.coachee_id,
+                'coachee_name': coachee.full_name or coachee.username if coachee else '—',
+                'filename': c.filename,
+                'num_sessions': c.num_sessions,
+                'summary': c.summary,
+                'status': c.status,
+                'sent_at': c.sent_at.isoformat() if c.sent_at else None,
+                'signed_at': c.signed_at.isoformat() if c.signed_at else None,
+                'created_at': c.created_at.isoformat() if c.created_at else None,
+            })
+        return jsonify({'success': True, 'contracts': result})
+
+    except Exception as e:
+        logger.error(f"❌ CONTRACTS GET: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error obteniendo contratos'}), 500
+
+
+@app.route('/api/coach/contracts/upload', methods=['POST'])
+@login_required
+def upload_contract():
+    """Subir archivo de contrato y crear registro"""
+    try:
+        current_coach = User.query.get(current_user.id)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        if 'contract_file' not in request.files:
+            return jsonify({'success': False, 'error': 'No se recibió ningún archivo'}), 400
+
+        file = request.files['contract_file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'Nombre de archivo vacío'}), 400
+
+        if not allowed_contract_file(file.filename):
+            return jsonify({'success': False, 'error': 'Formato no permitido. Usa PDF, DOC o DOCX'}), 400
+
+        coachee_id = request.form.get('coachee_id')
+        num_sessions = request.form.get('num_sessions')
+        summary = request.form.get('summary', '')
+
+        if not coachee_id:
+            return jsonify({'success': False, 'error': 'Debes seleccionar un coachee'}), 400
+
+        coachee = User.query.filter_by(id=int(coachee_id), coach_id=current_coach.id, role='coachee').first()
+        if not coachee:
+            return jsonify({'success': False, 'error': 'Coachee no encontrado'}), 404
+
+        ensure_contracts_folder()
+        original_name = secure_filename(file.filename)
+        unique_filename = f"contract_{current_coach.id}_{coachee_id}_{secrets.token_hex(8)}_{original_name}"
+        file_path = os.path.join(CONTRACTS_FOLDER, unique_filename)
+        file.save(file_path)
+
+        contract = SubscriptionContract(
+            coach_id=current_coach.id,
+            coachee_id=int(coachee_id),
+            filename=original_name,
+            file_path=file_path,
+            num_sessions=int(num_sessions) if num_sessions else None,
+            summary=summary,
+            status='pending',
+        )
+        db.session.add(contract)
+        db.session.commit()
+
+        return jsonify({'success': True, 'contract_id': contract.id, 'message': 'Contrato subido correctamente'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ CONTRACTS UPLOAD: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error subiendo contrato'}), 500
+
+
+@app.route('/api/coach/contracts/<int:contract_id>/send', methods=['POST'])
+@login_required
+def send_contract(contract_id):
+    """Enviar invitación de suscripción al coachee (email + notificación interna)"""
+    try:
+        current_coach = User.query.get(current_user.id)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        contract = SubscriptionContract.query.filter_by(id=contract_id, coach_id=current_coach.id).first()
+        if not contract:
+            return jsonify({'success': False, 'error': 'Contrato no encontrado'}), 404
+
+        coachee = User.query.get(contract.coachee_id)
+        if not coachee:
+            return jsonify({'success': False, 'error': 'Coachee no encontrado'}), 404
+
+        sessions_text = f'{contract.num_sessions} sesiones' if contract.num_sessions else 'sesiones según acuerdo'
+        coach_name = current_coach.full_name or current_coach.username
+        coachee_name = coachee.full_name or coachee.username
+
+        # 1. Notificación interna
+        notification = Notification(
+            user_id=coachee.id,
+            type='subscription_contract',
+            title='Tienes un contrato de coaching pendiente',
+            message=f'{coach_name} te ha enviado un contrato de coaching ({sessions_text}). '
+                    f'Ingresa a la plataforma para leerlo, firmarlo y elegir tu medio de pago.',
+            related_id=contract.id,
+            related_type='subscription_contract',
+            is_read=False,
+        )
+        db.session.add(notification)
+
+        contract.status = 'pending'
+        contract.sent_at = datetime.utcnow()
+        db.session.commit()
+
+        # 2. Email
+        email_sent = False
+        try:
+            smtp_server = os.environ.get('SMTP_SERVER')
+            smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+            smtp_username = os.environ.get('SMTP_USERNAME')
+            smtp_password = os.environ.get('SMTP_PASSWORD')
+
+            if all([smtp_server, smtp_username, smtp_password]):
+                import smtplib
+                from email.mime.text import MIMEText
+                from email.mime.multipart import MIMEMultipart
+
+                platform_url = request.url_root.rstrip('/')
+                summary_html = f'<p style="background:#f0f4ff;padding:1rem;border-left:4px solid #6366f1;border-radius:4px;">{contract.summary}</p>' if contract.summary else ''
+
+                html_body = f"""
+                <html><body style="font-family:Arial,sans-serif;color:#333;line-height:1.6;">
+                <div style="max-width:620px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:12px;">
+                    <h2 style="color:#6366f1;margin-bottom:0.5rem;">Tu contrato de coaching está listo</h2>
+                    <p>Hola <strong>{coachee_name}</strong>,</p>
+                    <p><strong>{coach_name}</strong> te ha enviado un contrato de coaching por <strong>{sessions_text}</strong>.</p>
+                    {summary_html}
+                    <h3 style="color:#111827;margin-top:1.5rem;">Pasos a completar:</h3>
+                    <ol style="padding-left:1.2rem;">
+                        <li style="margin-bottom:0.5rem;"><strong>Leer el contrato</strong> — Revisa todos los términos y condiciones.</li>
+                        <li style="margin-bottom:0.5rem;"><strong>Firmar el contrato</strong> — Confirma tu aceptación desde la plataforma.</li>
+                        <li style="margin-bottom:0.5rem;"><strong>Elegir medio de pago</strong> — Selecciona cómo deseas pagar tu plan de coaching.</li>
+                    </ol>
+                    <div style="text-align:center;margin:2rem 0;">
+                        <a href="{platform_url}/coachee-dashboard"
+                           style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:14px 32px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:bold;font-size:1rem;">
+                            Ver mi contrato
+                        </a>
+                    </div>
+                    <hr style="border:none;border-top:1px solid #e5e7eb;margin:1.5rem 0;">
+                    <p style="color:#9ca3af;font-size:0.82rem;">InstaCoach · Este mensaje fue generado automáticamente.</p>
+                </div>
+                </body></html>
+                """
+
+                msg = MIMEMultipart('alternative')
+                msg['From'] = smtp_username
+                msg['To'] = coachee.email
+                msg['Subject'] = f'📄 Tu contrato de coaching — {sessions_text}'
+                msg.attach(MIMEText(html_body, 'html'))
+
+                server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+                server.starttls()
+                server.login(smtp_username, smtp_password)
+                server.send_message(msg)
+                server.quit()
+                email_sent = True
+                logger.info(f"✅ CONTRACTS: Email enviado a {coachee.email}")
+        except Exception as email_err:
+            logger.warning(f"⚠️ CONTRACTS: Email no enviado: {email_err}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Invitación enviada correctamente',
+            'email_sent': email_sent,
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ CONTRACTS SEND: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error enviando contrato'}), 500
+
+
+@app.route('/uploads/contracts/<path:filename>')
+@login_required
+def serve_contract_file(filename):
+    """Servir archivo de contrato"""
+    return send_from_directory(os.path.abspath(CONTRACTS_FOLDER), filename)
+
+
+@app.route('/api/coachee/contracts', methods=['GET'])
+@login_required
+def get_coachee_contracts():
+    """Contratos pendientes del coachee"""
+    try:
+        contracts = SubscriptionContract.query.filter_by(coachee_id=current_user.id)\
+            .order_by(SubscriptionContract.created_at.desc()).all()
+        result = []
+        for c in contracts:
+            coach = User.query.get(c.coach_id)
+            result.append({
+                'id': c.id,
+                'coach_name': coach.full_name or coach.username if coach else '—',
+                'filename': c.filename,
+                'file_url': f'/uploads/contracts/{os.path.basename(c.file_path)}',
+                'num_sessions': c.num_sessions,
+                'summary': c.summary,
+                'status': c.status,
+                'sent_at': c.sent_at.isoformat() if c.sent_at else None,
+                'signed_at': c.signed_at.isoformat() if c.signed_at else None,
+            })
+        return jsonify({'success': True, 'contracts': result})
+    except Exception as e:
+        logger.error(f"❌ COACHEE CONTRACTS GET: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error obteniendo contratos'}), 500
+
+
+@app.route('/api/coachee/contracts/<int:contract_id>/sign', methods=['POST'])
+@login_required
+def sign_contract(contract_id):
+    """Coachee firma el contrato"""
+    try:
+        contract = SubscriptionContract.query.filter_by(id=contract_id, coachee_id=current_user.id).first()
+        if not contract:
+            return jsonify({'success': False, 'error': 'Contrato no encontrado'}), 404
+        contract.status = 'signed'
+        contract.signed_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Contrato firmado correctamente'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# ENDPOINTS: Registros de Sesiones de Coaching
+# ============================================================================
+
+@app.route('/api/coach/session-records', methods=['GET'])
+@coach_required
+def get_session_records():
+    """Listar todas las sesiones de coaching del coach actual"""
+    try:
+        current_coach = User.query.get(session['coach_user_id'])
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        records = SessionRecord.query.filter_by(coach_id=current_coach.id)\
+            .order_by(SessionRecord.session_number.asc()).all()
+
+        result = []
+        for r in records:
+            participants_ids = json.loads(r.participants) if r.participants else []
+            participants_info = []
+            for pid in participants_ids:
+                u = User.query.get(pid)
+                if u:
+                    participants_info.append({'id': u.id, 'name': u.username, 'email': u.email})
+
+            commitments = json.loads(r.commitments) if r.commitments else []
+
+            result.append({
+                'id': r.id,
+                'session_number': r.session_number,
+                'name': r.name,
+                'objective': r.objective,
+                'participants': participants_info,
+                'content': r.content,
+                'commitments': commitments,
+                'created_at': r.created_at.isoformat() if r.created_at else None,
+                'updated_at': r.updated_at.isoformat() if r.updated_at else None,
+            })
+
+        return jsonify({'success': True, 'sessions': result})
+
+    except Exception as e:
+        logger.error(f"❌ SESSION-RECORDS GET: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error obteniendo sesiones'}), 500
+
+
+@app.route('/api/coach/session-records', methods=['POST'])
+@coach_required
+def create_session_record():
+    """Crear una nueva sesión de coaching"""
+    try:
+        current_coach = User.query.get(session['coach_user_id'])
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        # Determinar el número de sesión siguiente
+        last = SessionRecord.query.filter_by(coach_id=current_coach.id)\
+            .order_by(SessionRecord.session_number.desc()).first()
+        next_number = 0 if last is None else last.session_number + 1
+        auto_name = 'Sesión Cero' if next_number == 0 else f'Sesión {next_number}'
+
+        data = request.get_json() or {}
+        participants = data.get('participants', [])
+        commitments = data.get('commitments', [])
+
+        record = SessionRecord(
+            coach_id=current_coach.id,
+            session_number=next_number,
+            name=data.get('name', auto_name),
+            objective=data.get('objective', ''),
+            participants=json.dumps(participants),
+            content=data.get('content', ''),
+            commitments=json.dumps(commitments),
+        )
+        db.session.add(record)
+        db.session.commit()
+
+        return jsonify({'success': True, 'session': {
+            'id': record.id,
+            'session_number': record.session_number,
+            'name': record.name,
+            'auto_name': auto_name,
+        }}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ SESSION-RECORDS CREATE: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error creando sesión'}), 500
+
+
+@app.route('/api/coach/session-records/<int:session_id>', methods=['GET'])
+@coach_required
+def get_session_record(session_id):
+    """Obtener detalle de una sesión"""
+    try:
+        current_coach = User.query.get(session['coach_user_id'])
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        r = SessionRecord.query.filter_by(id=session_id, coach_id=current_coach.id).first()
+        if not r:
+            return jsonify({'success': False, 'error': 'Sesión no encontrada'}), 404
+
+        participants_ids = json.loads(r.participants) if r.participants else []
+        participants_info = []
+        for pid in participants_ids:
+            u = User.query.get(pid)
+            if u:
+                participants_info.append({'id': u.id, 'name': u.username, 'email': u.email})
+
+        commitments = json.loads(r.commitments) if r.commitments else []
+
+        return jsonify({'success': True, 'session': {
+            'id': r.id,
+            'session_number': r.session_number,
+            'name': r.name,
+            'objective': r.objective,
+            'participants': participants_info,
+            'content': r.content,
+            'commitments': commitments,
+            'created_at': r.created_at.isoformat() if r.created_at else None,
+            'updated_at': r.updated_at.isoformat() if r.updated_at else None,
+        }})
+
+    except Exception as e:
+        logger.error(f"❌ SESSION-RECORDS GET ONE: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error obteniendo sesión'}), 500
+
+
+@app.route('/api/coach/session-records/<int:session_id>', methods=['PUT'])
+@coach_required
+def update_session_record(session_id):
+    """Guardar/actualizar una sesión de coaching"""
+    try:
+        current_coach = User.query.get(session['coach_user_id'])
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        r = SessionRecord.query.filter_by(id=session_id, coach_id=current_coach.id).first()
+        if not r:
+            return jsonify({'success': False, 'error': 'Sesión no encontrada'}), 404
+
+        data = request.get_json() or {}
+        if 'name' in data:
+            r.name = data['name']
+        if 'objective' in data:
+            r.objective = data['objective']
+        if 'participants' in data:
+            r.participants = json.dumps(data['participants'])
+        if 'content' in data:
+            r.content = data['content']
+        if 'commitments' in data:
+            r.commitments = json.dumps(data['commitments'])
+        r.updated_at = datetime.utcnow()
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Sesión guardada correctamente'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ SESSION-RECORDS UPDATE: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error guardando sesión'}), 500
+
+
+@app.route('/api/coach/session-records/next-name', methods=['GET'])
+@coach_required
+def get_next_session_name():
+    """Retorna el nombre automático para la próxima sesión"""
+    try:
+        current_coach = User.query.get(session['coach_user_id'])
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        last = SessionRecord.query.filter_by(coach_id=current_coach.id)\
+            .order_by(SessionRecord.session_number.desc()).first()
+        next_number = 0 if last is None else last.session_number + 1
+        auto_name = 'Sesión Cero' if next_number == 0 else f'Sesión {next_number}'
+
+        return jsonify({'success': True, 'next_number': next_number, 'auto_name': auto_name})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# API: Acuerdos de Compromiso de Coaching
+# ============================================================================
+
+@app.route('/api/coach/profile', methods=['GET'])
+@coach_required
+def api_coach_profile():
+    """Retorna los datos de perfil del coach actual para auto-rellenar formularios"""
+    try:
+        coach = User.query.get(session['coach_user_id'])
+        if not coach or coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+        return jsonify({
+            'success': True,
+            'profile': {
+                'id': coach.id,
+                'full_name': coach.full_name or coach.username,
+                'email': coach.email,
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/agreements', methods=['GET'])
+@coach_required
+def list_agreements():
+    """Lista los acuerdos de compromiso del coach"""
+    try:
+        coach = User.query.get(session['coach_user_id'])
+        if not coach or coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        agreements = CoachingAgreement.query.filter_by(coach_id=coach.id)\
+            .order_by(CoachingAgreement.updated_at.desc()).all()
+
+        result = []
+        for ag in agreements:
+            data = {}
+            if ag.contract_data:
+                try:
+                    data = json.loads(ag.contract_data)
+                except Exception:
+                    pass
+            coachee_name = ''
+            if ag.coachee_id:
+                coachee = User.query.get(ag.coachee_id)
+                if coachee:
+                    coachee_name = coachee.full_name or coachee.username
+            result.append({
+                'id': ag.id,
+                'status': ag.status,
+                'coachee_id': ag.coachee_id,
+                'coachee_name': coachee_name or data.get('cliente_nombre', ''),
+                'contract_data': data,
+                'created_at': ag.created_at.isoformat() if ag.created_at else None,
+                'updated_at': ag.updated_at.isoformat() if ag.updated_at else None,
+            })
+
+        return jsonify({'success': True, 'agreements': result})
+    except Exception as e:
+        logger.error(f'Error listing agreements: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/agreements', methods=['POST'])
+@coach_required
+def create_agreement():
+    """Crea o actualiza un acuerdo de compromiso"""
+    try:
+        coach = User.query.get(session['coach_user_id'])
+        if not coach or coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        payload = request.get_json(force=True) or {}
+        coachee_id = payload.get('coachee_id') or None
+        status = payload.get('status', 'borrador')
+        contract_data = payload.get('contract_data', {})
+
+        ag = CoachingAgreement(
+            coach_id=coach.id,
+            coachee_id=int(coachee_id) if coachee_id else None,
+            status=status,
+            contract_data=json.dumps(contract_data, ensure_ascii=False),
+        )
+        db.session.add(ag)
+        db.session.commit()
+
+        return jsonify({'success': True, 'id': ag.id, 'message': 'Acuerdo guardado'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error creating agreement: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/agreements/<int:ag_id>', methods=['PUT'])
+@coach_required
+def update_agreement(ag_id):
+    """Actualiza un acuerdo existente"""
+    try:
+        coach = User.query.get(session['coach_user_id'])
+        if not coach or coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        ag = CoachingAgreement.query.filter_by(id=ag_id, coach_id=coach.id).first()
+        if not ag:
+            return jsonify({'success': False, 'error': 'Acuerdo no encontrado'}), 404
+
+        payload = request.get_json(force=True) or {}
+        if 'coachee_id' in payload:
+            ag.coachee_id = int(payload['coachee_id']) if payload['coachee_id'] else None
+        if 'status' in payload:
+            ag.status = payload['status']
+        if 'contract_data' in payload:
+            ag.contract_data = json.dumps(payload['contract_data'], ensure_ascii=False)
+        ag.updated_at = datetime.utcnow()
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Acuerdo actualizado'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error updating agreement: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/agreements/<int:ag_id>', methods=['DELETE'])
+@coach_required
+def delete_agreement(ag_id):
+    """Elimina un acuerdo"""
+    try:
+        coach = User.query.get(session['coach_user_id'])
+        if not coach or coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        ag = CoachingAgreement.query.filter_by(id=ag_id, coach_id=coach.id).first()
+        if not ag:
+            return jsonify({'success': False, 'error': 'Acuerdo no encontrado'}), 404
+
+        db.session.delete(ag)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Acuerdo eliminado'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/agreements/<int:ag_id>/status', methods=['PATCH'])
+@coach_required
+def patch_agreement_status(ag_id):
+    """Actualiza solo el estado de un acuerdo"""
+    try:
+        coach = User.query.get(session['coach_user_id'])
+        if not coach or coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        ag = CoachingAgreement.query.filter_by(id=ag_id, coach_id=coach.id).first()
+        if not ag:
+            return jsonify({'success': False, 'error': 'Acuerdo no encontrado'}), 404
+
+        payload = request.get_json(force=True) or {}
+        new_status = payload.get('status')
+        if new_status not in ('borrador', 'enviado', 'firmado'):
+            return jsonify({'success': False, 'error': 'Estado inválido'}), 400
+
+        ag.status = new_status
+        ag.updated_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({'success': True, 'status': ag.status})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# FIN API Acuerdos de Compromiso
+# ============================================================================
+
+# ============================================================================
+# API: Estadísticas de Comportamiento por Sesión
+# ============================================================================
+
+@app.route('/api/coach/session-stats', methods=['GET'])
+@coach_required
+def get_session_stats():
+    """
+    Retorna estadísticas de comportamiento del coachee por sesión.
+    Parsea el campo 'comportamiento' dentro del JSON de 'content' de cada session_record.
+    Opcionalmente filtra por coachee_id.
+    """
+    try:
+        coach = User.query.get(session['coach_user_id'])
+        if not coach or coach.role != 'coach':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        filter_coachee_id = request.args.get('coachee_id', type=int)
+
+        # Sesiones regulares (session_number > 0) del coach
+        query = SessionRecord.query.filter_by(coach_id=coach.id)\
+            .filter(SessionRecord.session_number > 0)\
+            .order_by(SessionRecord.session_number.asc())
+        sessions = query.all()
+
+        # Obtener todos los coachees del coach para mapear nombres
+        coachees_map = {}
+        for c in User.query.filter_by(coach_id=coach.id, role='coachee').all():
+            coachees_map[c.id] = c.full_name or c.username
+
+        stats_by_coachee = {}
+
+        for ses in sessions:
+            # Parsear participants para obtener IDs de coachees
+            participants = []
+            try:
+                raw = json.loads(ses.participants or '[]')
+                if isinstance(raw, list):
+                    participants = [int(x) for x in raw if x]
+            except Exception:
+                pass
+
+            if not participants:
+                continue
+
+            # Parsear content para obtener comportamiento
+            content = {}
+            try:
+                content = json.loads(ses.content or '{}')
+            except Exception:
+                pass
+
+            comp = content.get('comportamiento', {}) if isinstance(content, dict) else {}
+
+            ses_data = {
+                'session_number': ses.session_number,
+                'name': ses.name,
+                'created_at': ses.created_at.strftime('%Y-%m-%d') if ses.created_at else '',
+                'asistio':      comp.get('asistio'),
+                'puntual':      comp.get('puntual'),
+                'completo':     comp.get('completo'),
+                'compromisos':  comp.get('compromisos'),
+                'tareas':       comp.get('tareas'),
+                'preparado':    comp.get('preparado'),
+                'disposicion':  comp.get('disposicion'),
+                'situacion':    comp.get('situacion'),
+            }
+
+            for cid in participants:
+                if filter_coachee_id and cid != filter_coachee_id:
+                    continue
+                if cid not in stats_by_coachee:
+                    stats_by_coachee[cid] = {
+                        'coachee_id': cid,
+                        'coachee_name': coachees_map.get(cid, f'Coachee {cid}'),
+                        'total_sesiones': 0,
+                        'asistio_si': 0,
+                        'puntual_si': 0,
+                        'completo_si': 0,
+                        'compromisos_si': 0,
+                        'total_con_compromisos': 0,
+                        'tareas_si': 0,
+                        'total_con_tareas': 0,
+                        'preparado_si': 0,
+                        'disposicion_si': 0,
+                        'situacion_si': 0,
+                        'sesiones': [],
+                    }
+
+                s = stats_by_coachee[cid]
+                s['total_sesiones'] += 1
+                if comp.get('asistio') == 'si':   s['asistio_si'] += 1
+                if comp.get('puntual') == 'si':    s['puntual_si'] += 1
+                if comp.get('completo') == 'si':   s['completo_si'] += 1
+                if comp.get('compromisos') is not None:
+                    s['total_con_compromisos'] += 1
+                    if comp.get('compromisos') == 'si': s['compromisos_si'] += 1
+                if comp.get('tareas') is not None:
+                    s['total_con_tareas'] += 1
+                    if comp.get('tareas') == 'si': s['tareas_si'] += 1
+                if comp.get('preparado') == 'si':  s['preparado_si'] += 1
+                if comp.get('disposicion') == 'si': s['disposicion_si'] += 1
+                if comp.get('situacion') == 'si':  s['situacion_si'] += 1
+                s['sesiones'].append(ses_data)
+
+        # Calcular porcentajes
+        def pct(val, total):
+            return round((val / total) * 100) if total > 0 else None
+
+        for cid, s in stats_by_coachee.items():
+            t = s['total_sesiones']
+            s['pct_asistencia']   = pct(s['asistio_si'], t)
+            s['pct_puntualidad']  = pct(s['puntual_si'], t)
+            s['pct_completo']     = pct(s['completo_si'], t)
+            s['pct_compromisos']  = pct(s['compromisos_si'], s['total_con_compromisos'])
+            s['pct_tareas']       = pct(s['tareas_si'], s['total_con_tareas'])
+            s['pct_preparado']    = pct(s['preparado_si'], t)
+            s['pct_disposicion']  = pct(s['disposicion_si'], t)
+            s['pct_situacion']    = pct(s['situacion_si'], t)
+
+        return jsonify({
+            'success': True,
+            'stats_by_coachee': stats_by_coachee,
+        })
+
+    except Exception as e:
+        logger.error(f'Error en session-stats: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# FIN API Estadísticas de Comportamiento
+# ============================================================================
 
 # ============================================================================
 # INICIALIZACIÓN DE LA APP

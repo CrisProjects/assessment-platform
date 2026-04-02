@@ -47,8 +47,65 @@ def apply_migrations():
                 # No fallar la app por esto
                 pass
             
-            # Aquí puedes agregar más migraciones en el futuro
-            
+            # MIGRACIÓN 2: Crear tabla 'session_record' si no existe
+            try:
+                existing_tables = inspector.get_table_names()
+                if 'session_record' not in existing_tables:
+                    logger.info("🔧 Aplicando migración: Crear tabla 'session_record'")
+                    conn.execute(text("""
+                        CREATE TABLE session_record (
+                            id SERIAL PRIMARY KEY,
+                            coach_id INTEGER NOT NULL REFERENCES "user"(id),
+                            session_number INTEGER NOT NULL,
+                            name VARCHAR(200) NOT NULL,
+                            objective TEXT,
+                            participants TEXT,
+                            content TEXT,
+                            commitments TEXT,
+                            created_at TIMESTAMP DEFAULT NOW(),
+                            updated_at TIMESTAMP DEFAULT NOW()
+                        );
+                    """))
+                    conn.execute(text("""
+                        CREATE INDEX ix_session_record_coach_id ON session_record (coach_id);
+                    """))
+                    conn.execute(text("""
+                        CREATE INDEX ix_session_record_created_at ON session_record (created_at);
+                    """))
+                    conn.commit()
+                    logger.info("✅ Migración aplicada: tabla 'session_record' creada")
+                else:
+                    logger.info("✅ Tabla 'session_record' ya existe")
+            except Exception as e:
+                logger.error(f"❌ Error en migración session_record: {e}")
+                pass
+
+            # MIGRACIÓN 3: Crear tabla 'coaching_agreement' si no existe
+            try:
+                existing_tables = inspector.get_table_names()
+                if 'coaching_agreement' not in existing_tables:
+                    logger.info("🔧 Aplicando migración: Crear tabla 'coaching_agreement'")
+                    conn.execute(text("""
+                        CREATE TABLE coaching_agreement (
+                            id SERIAL PRIMARY KEY,
+                            coach_id INTEGER NOT NULL REFERENCES "user"(id),
+                            coachee_id INTEGER REFERENCES "user"(id),
+                            status VARCHAR(20) DEFAULT 'borrador',
+                            contract_data TEXT,
+                            created_at TIMESTAMP DEFAULT NOW(),
+                            updated_at TIMESTAMP DEFAULT NOW()
+                        );
+                    """))
+                    conn.execute(text("CREATE INDEX ix_coaching_agreement_coach_id ON coaching_agreement (coach_id);"))
+                    conn.execute(text("CREATE INDEX ix_coaching_agreement_status ON coaching_agreement (status);"))
+                    conn.commit()
+                    logger.info("✅ Migración aplicada: tabla 'coaching_agreement' creada")
+                else:
+                    logger.info("✅ Tabla 'coaching_agreement' ya existe")
+            except Exception as e:
+                logger.error(f"❌ Error en migración coaching_agreement: {e}")
+                pass
+
         engine.dispose()
         return True
         
