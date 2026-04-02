@@ -12677,7 +12677,7 @@ def api_coach_upcoming_sessions():
                 CoachingSession.coach_id == current_coach.id,
                 CoachingSession.session_date >= today.strftime('%Y-%m-%d'),
                 CoachingSession.session_date <= limit.strftime('%Y-%m-%d'),
-                CoachingSession.session_type.in_(['coaching', 'direct_appointment'])
+                CoachingSession.session_type.in_(['coaching', 'direct_appointment', 'self_activity'])
             )
         ).order_by(CoachingSession.session_date, CoachingSession.start_time).all()
 
@@ -12686,16 +12686,18 @@ def api_coach_upcoming_sessions():
             coachee = User.query.get(s.coachee_id) if s.coachee_id else None
             date_obj = s.session_date if isinstance(s.session_date, date) else datetime.strptime(str(s.session_date), '%Y-%m-%d').date()
             result.append({
-                'id':           s.id,
-                'date':         date_obj.strftime('%Y-%m-%d'),
-                'is_today':     date_obj == today,
-                'start_time':   s.start_time.strftime('%H:%M') if s.start_time else None,
-                'end_time':     s.end_time.strftime('%H:%M')   if s.end_time   else None,
-                'coachee_id':   s.coachee_id or None,
-                'coachee_name': coachee.full_name if coachee else 'Coachee',
-                'session_type': s.session_type,
-                'status':       s.status or 'scheduled',
-                'notes':        s.notes or '',
+                'id':              s.id,
+                'date':            date_obj.strftime('%Y-%m-%d'),
+                'is_today':        date_obj == today,
+                'start_time':      s.start_time.strftime('%H:%M') if s.start_time else None,
+                'end_time':        s.end_time.strftime('%H:%M')   if s.end_time   else None,
+                'coachee_id':      s.coachee_id or None,
+                'coachee_name':    coachee.full_name if coachee else 'Coachee',
+                'session_type':    s.session_type,
+                'status':          s.status or 'scheduled',
+                'title':           s.title or '',
+                'activity_title':  s.activity_title or '',
+                'notes':           s.notes or '',
             })
 
         return jsonify({'success': True, 'sessions': result}), 200
@@ -15039,47 +15041,60 @@ def api_coach_availability():
             }), 200
         
         elif request.method == 'POST':
-            # Crear/actualizar disponibilidad
             data = request.get_json()
-            
-            # El frontend envía: available_days (JSON string con array de días), start_time, end_time
-            available_days_str = data.get('available_days', '[]')
-            start_time_str = data.get('start_time')
-            end_time_str = data.get('end_time')
-            
-            if not start_time_str or not end_time_str:
-                return jsonify({'error': 'Horarios de inicio y fin son requeridos'}), 400
-            
-            # Parsear días disponibles
-            try:
-                available_days = json.loads(available_days_str) if isinstance(available_days_str, str) else available_days_str
-            except:
-                available_days = []
-            
-            if not available_days:
-                return jsonify({'error': 'Debes seleccionar al menos un día'}), 400
-            
-            # Parsear horarios
-            start_time = datetime.strptime(start_time_str, '%H:%M').time()
-            end_time = datetime.strptime(end_time_str, '%H:%M').time()
-            
+
+            # Soportar formato múltiple: { slots: [...] } o legacy { available_days, start_time, end_time }
+            slots = data.get('slots')
+            if not slots:
+                # Legacy: convertir formato antiguo a slots
+                available_days_str = data.get('available_days', '[]')
+                start_time_str = data.get('start_time')
+                end_time_str = data.get('end_time')
+                if not start_time_str or not end_time_str:
+                    return jsonify({'error': 'Horarios de inicio y fin son requeridos'}), 400
+                try:
+                    available_days = json.loads(available_days_str) if isinstance(available_days_str, str) else available_days_str
+                except:
+                    available_days = []
+                if not available_days:
+                    return jsonify({'error': 'Debes seleccionar al menos un día'}), 400
+                slots = [{'days': available_days, 'start_time': start_time_str, 'end_time': end_time_str}]
+
+            # Validar que haya al menos un slot
+            if not slots or len(slots) == 0:
+                return jsonify({'error': 'Debes configurar al menos una franja horaria'}), 400
+
             # Eliminar disponibilidad existente
             CoachAvailability.query.filter_by(coach_id=current_coach.id).delete()
-            
-            # Crear nueva disponibilidad (un slot por cada día seleccionado)
-            for day in available_days:
-                new_slot = CoachAvailability(
-                    coach_id=current_coach.id,
-                    day_of_week=int(day),
-                    start_time=start_time,
-                    end_time=end_time,
-                    is_active=True
-                )
-                db.session.add(new_slot)
-            
+
+            total_created = 0
+            for slot in slots:
+                days = slot.get('days', [])
+                st = slot.get('start_time')
+                et = slot.get('end_time')
+                if not days or not st or not et:
+                    continue
+                start_time = datetime.strptime(st, '%H:%M').time()
+                end_time = datetime.strptime(et, '%H:%M').time()
+                if end_time <= start_time:
+                    continue
+                for day in days:
+                    new_slot = CoachAvailability(
+                        coach_id=current_coach.id,
+                        day_of_week=int(day),
+                        start_time=start_time,
+                        end_time=end_time,
+                        is_active=True
+                    )
+                    db.session.add(new_slot)
+                    total_created += 1
+
+            if total_created == 0:
+                return jsonify({'error': 'No se crearon franjas válidas. Revisa los datos.'}), 400
+
             db.session.commit()
-            
-            logger.info(f"✅ Disponibilidad guardada para coach {current_coach.id}: {len(available_days)} días, {start_time_str}-{end_time_str}")
+
+            logger.info(f"✅ Disponibilidad guardada para coach {current_coach.id}: {total_created} slots desde {len(slots)} franjas")
             
             return jsonify({
                 'success': True,

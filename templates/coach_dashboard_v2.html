@@ -3154,12 +3154,17 @@
     .fc-timegrid-slot {
         height: 2em !important;
     }
-    
+
     .fc-timegrid-slot-label {
         color: #6c757d !important;
         font-size: 0.85rem !important;
     }
-    
+
+    /* Eventos en vista semana/día: permitir wrap */
+    .fc-timegrid-event .fc-event-main {
+        overflow: hidden !important;
+    }
+
     /* Vista de día */
     .fc-timegrid-day {
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
@@ -3167,23 +3172,63 @@
     
     /* Eventos del calendario */
     .fc-event {
-        border-radius: 6px !important;
+        border-radius: 5px !important;
         border: none !important;
-        font-size: 0.85rem !important;
+        font-size: 0.7rem !important;
         font-weight: 500 !important;
-        margin: 1px !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        transition: all 0.3s ease !important;
+        margin: 1px 2px !important;
+        padding: 1px 3px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+        transition: all 0.2s ease !important;
         cursor: pointer !important;
+        line-height: 1.3 !important;
+        overflow: hidden !important;
     }
-    
+
     .fc-event:hover {
         transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.18) !important;
+        z-index: 10 !important;
     }
-    
+
     .fc-event-title {
-        padding: 2px 6px !important;
+        padding: 0 2px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .fc-daygrid-event {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+    }
+
+    /* Custom event content inside month view */
+    .fc-event .cal-ev {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 2px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .fc-event .cal-ev .cal-icon {
+        flex-shrink: 0;
+        font-size: 0.55rem;
+        opacity: 0.85;
+    }
+    .fc-event .cal-ev .cal-time {
+        flex-shrink: 0;
+        font-size: 0.6rem;
+        font-weight: 700;
+        opacity: 0.9;
+    }
+    .fc-event .cal-ev .cal-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.65rem;
     }
     
     /* Responsivo para calendario */
@@ -9312,14 +9357,17 @@
                                     <h6 class="mb-2" style="color: #111827; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
                                         <i class="fas fa-clock me-1" style="color: #667eea; font-size: 0.875rem;"></i>Próximas Sesiones - Semana Actual
                                     </h6>
-                                    <div id="upcomingSessionsCards" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                        <!-- Las cards se generarán dinámicamente aquí -->
-                                        <div style="text-align: center; padding: 2rem 1rem;">
-                                            <div style="width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; opacity: 0.15;">
-                                                <i class="fas fa-calendar-day" style="color: white; font-size: 1.5rem;"></i>
-                                            </div>
-                                            <p class="mb-0" style="color: #6b7280; font-size: 0.8125rem; font-weight: 500;">No hay sesiones programadas para esta semana</p>
+                                    <div id="upcomingSessionsCards" style="display:flex;flex-direction:column;gap:0;">
+                                        <div style="text-align:center;padding:1.25rem 0.5rem;color:#9ca3af;">
+                                            <i class="fas fa-calendar-check" style="font-size:1.25rem;opacity:0.3;margin-bottom:0.4rem;display:block;"></i>
+                                            <span style="font-size:0.8125rem;">Cargando agenda...</span>
                                         </div>
+                                    </div>
+                                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #f3f4f6;">
+                                        <span style="font-size:0.65rem;color:#9ca3af;display:flex;align-items:center;gap:0.25rem;"><i class="fas fa-comments" style="color:#10b981;font-size:0.55rem;"></i>Coaching</span>
+                                        <span style="font-size:0.65rem;color:#9ca3af;display:flex;align-items:center;gap:0.25rem;"><i class="fas fa-user-clock" style="color:#6366f1;font-size:0.55rem;"></i>Cita directa</span>
+                                        <span style="font-size:0.65rem;color:#9ca3af;display:flex;align-items:center;gap:0.25rem;"><i class="fas fa-lock" style="color:#8b5cf6;font-size:0.55rem;"></i>Bloqueado</span>
+                                        <span style="font-size:0.65rem;color:#9ca3af;display:flex;align-items:center;gap:0.2rem;margin-left:auto;"><span style="width:5px;height:5px;border-radius:50%;background:#10b981;"></span>OK <span style="width:5px;height:5px;border-radius:50%;background:#f59e0b;"></span>Pend <span style="width:5px;height:5px;border-radius:50%;background:#3b82f6;"></span>Prop</span>
                                     </div>
                                 </div>
 
@@ -9701,161 +9749,47 @@
 
                             <!-- Tab: Disponibilidad -->
                             <div class="tab-pane fade" id="disponibilidad-pane" role="tabpanel">
-                                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
-                                    <div style="background: white; padding: 0.875rem; border-bottom: 1px solid #e5e7eb;">
-                                        <h6 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1rem;">
-                                            <i class="fas fa-clock me-2" style="color: #10b981;"></i>Mi Disponibilidad
-                                        </h6>
-                                        <p class="mb-0 d-none d-sm-block" style="color: #6b7280; font-size: 0.8125rem;">
-                                            Define los horarios en los que estás disponible para sesiones
-                                        </p>
-                                    </div>
-                                    <div style="padding: 0.75rem;">
-                                        <form id="availabilityForm">
-                                            <div style="display: flex; flex-direction: column; gap: 0.875rem;">
-                                                <!-- Días de la semana -->
-                                                <div>
-                                                    <label class="form-label mb-2" style="color: #111827; font-weight: 600; font-size: 0.875rem;">
-                                                        <i class="fas fa-calendar-week me-2" style="color: #667eea;"></i>Días Disponibles
-                                                    </label>
-                                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.625rem;" class="days-selector">
-                                                        <div class="form-check" style="background: #f9fafb; padding: 0.625rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
-                                                            <input class="form-check-input" type="checkbox" id="day1" value="1" style="cursor: pointer;">
-                                                            <label class="form-check-label" for="day1" style="cursor: pointer; font-weight: 500; font-size: 0.8125rem;">Lunes</label>
-                                                        </div>
-                                                        <div class="form-check" style="background: #f9fafb; padding: 0.625rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
-                                                            <input class="form-check-input" type="checkbox" id="day2" value="2" style="cursor: pointer;">
-                                                            <label class="form-check-label" for="day2" style="cursor: pointer; font-weight: 500; font-size: 0.8125rem;">Martes</label>
-                                                        </div>
-                                                        <div class="form-check" style="background: #f9fafb; padding: 0.625rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
-                                                            <input class="form-check-input" type="checkbox" id="day3" value="3" style="cursor: pointer;">
-                                                            <label class="form-check-label" for="day3" style="cursor: pointer; font-weight: 500; font-size: 0.8125rem;">Miércoles</label>
-                                                        </div>
-                                                        <div class="form-check" style="background: #f9fafb; padding: 0.625rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
-                                                            <input class="form-check-input" type="checkbox" id="day4" value="4" style="cursor: pointer;">
-                                                            <label class="form-check-label" for="day4" style="cursor: pointer; font-weight: 500; font-size: 0.8125rem;">Jueves</label>
-                                                        </div>
-                                                        <div class="form-check" style="background: #f9fafb; padding: 0.625rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
-                                                            <input class="form-check-input" type="checkbox" id="day5" value="5" style="cursor: pointer;">
-                                                            <label class="form-check-label" for="day5" style="cursor: pointer; font-weight: 500; font-size: 0.8125rem;">Viernes</label>
-                                                        </div>
-                                                        <div class="form-check" style="background: #f9fafb; padding: 0.625rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
-                                                            <input class="form-check-input" type="checkbox" id="day6" value="6" style="cursor: pointer;">
-                                                            <label class="form-check-label" for="day6" style="cursor: pointer; font-weight: 500; font-size: 0.8125rem;">Sábado</label>
-                                                        </div>
-                                                        <div class="form-check" style="background: #f9fafb; padding: 0.625rem; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s;">
-                                                            <input class="form-check-input" type="checkbox" id="day0" value="0" style="cursor: pointer;">
-                                                            <label class="form-check-label" for="day0" style="cursor: pointer; font-weight: 500; font-size: 0.8125rem;">Domingo</label>
-                                                        </div>
-                                                    </div>
-                                                    <style>
-                                                        .days-selector .form-check:hover {
-                                                            border-color: #667eea !important;
-                                                            background: #f3f4f6 !important;
-                                                        }
-                                                        .days-selector .form-check input:checked + label {
-                                                            color: #667eea;
-                                                        }
-                                                        @media (min-width: 576px) {
-                                                            .days-selector {
-                                                                grid-template-columns: repeat(3, 1fr) !important;
-                                                            }
-                                                        }
-                                                        @media (min-width: 768px) {
-                                                            .days-selector {
-                                                                grid-template-columns: repeat(4, 1fr) !important;
-                                                            }
-                                                        }
-                                                    </style>
-                                                </div>
-                                        
-                                                <!-- Horarios -->
-                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem;">
-                                                    <div>
-                                                        <label for="startTime" class="form-label" style="font-size: 0.8125rem; font-weight: 600; color: #111827;">Hora de Inicio</label>
-                                                        <select class="form-select time-select-24h" id="startTime" style="font-size: 0.8125rem;">
-                                                            <option value="00:00">00:00</option>
-                                                            <option value="01:00">01:00</option>
-                                                            <option value="02:00">02:00</option>
-                                                            <option value="03:00">03:00</option>
-                                                            <option value="04:00">04:00</option>
-                                                            <option value="05:00">05:00</option>
-                                                            <option value="06:00">06:00</option>
-                                                            <option value="07:00">07:00</option>
-                                                            <option value="08:00">08:00</option>
-                                                            <option value="09:00" selected>09:00</option>
-                                                            <option value="10:00">10:00</option>
-                                                            <option value="11:00">11:00</option>
-                                                            <option value="12:00">12:00</option>
-                                                            <option value="13:00">13:00</option>
-                                                            <option value="14:00">14:00</option>
-                                                            <option value="15:00">15:00</option>
-                                                            <option value="16:00">16:00</option>
-                                                            <option value="17:00">17:00</option>
-                                                            <option value="18:00">18:00</option>
-                                                            <option value="19:00">19:00</option>
-                                                            <option value="20:00">20:00</option>
-                                                            <option value="21:00">21:00</option>
-                                                            <option value="22:00">22:00</option>
-                                                            <option value="23:00">23:00</option>
-                                                            <option value="24:00">24:00</option>
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label for="endTime" class="form-label" style="font-size: 0.8125rem; font-weight: 600; color: #111827;">Hora de Fin</label>
-                                                        <select class="form-select time-select-24h" id="endTime" style="font-size: 0.8125rem;">
-                                                            <option value="00:00">00:00</option>
-                                                            <option value="01:00">01:00</option>
-                                                            <option value="02:00">02:00</option>
-                                                            <option value="03:00">03:00</option>
-                                                            <option value="04:00">04:00</option>
-                                                            <option value="05:00">05:00</option>
-                                                            <option value="06:00">06:00</option>
-                                                            <option value="07:00">07:00</option>
-                                                            <option value="08:00">08:00</option>
-                                                            <option value="09:00">09:00</option>
-                                                            <option value="10:00">10:00</option>
-                                                            <option value="11:00">11:00</option>
-                                                            <option value="12:00">12:00</option>
-                                                            <option value="13:00">13:00</option>
-                                                            <option value="14:00">14:00</option>
-                                                            <option value="15:00">15:00</option>
-                                                            <option value="16:00">16:00</option>
-                                                            <option value="17:00" selected>17:00</option>
-                                                            <option value="18:00">18:00</option>
-                                                            <option value="19:00">19:00</option>
-                                                            <option value="20:00">20:00</option>
-                                                            <option value="21:00">21:00</option>
-                                                            <option value="22:00">22:00</option>
-                                                            <option value="23:00">23:00</option>
-                                                            <option value="24:00">24:00</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div>
-                                                    <button type="submit" class="btn w-100" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.625rem 1rem; font-weight: 600; font-size: 0.8125rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px rgba(16, 185, 129, 0.3)'">
-                                                        <i class="fas fa-save me-2"></i>Guardar Disponibilidad
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                        
-                                        <!-- Disponibilidad Actual -->
-                                        <div style="margin-top: 1rem; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.875rem;">
-                                            <h6 class="mb-2" style="color: #111827; font-weight: 600; font-size: 0.875rem;">
-                                                <i class="fas fa-info-circle me-2" style="color: #667eea;"></i>Disponibilidad Actual
+                                <div style="display:flex;flex-direction:column;gap:0.875rem;">
+
+                                    <!-- Grilla semanal visual -->
+                                    <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+                                        <div style="padding:0.75rem 0.875rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+                                            <h6 class="mb-0" style="color:#111827;font-weight:600;font-size:0.9375rem;">
+                                                <i class="fas fa-th me-2" style="color:#667eea;"></i>Vista Semanal
                                             </h6>
-                                            <div id="currentAvailability">
-                                                <div style="text-align: center; padding: 1.5rem;">
-                                                    <div class="spinner-border spinner-border-sm" role="status" style="color: #8b5cf6;">
-                                                        <span class="visually-hidden">Cargando...</span>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <span id="availTotalHours" style="font-size:0.75rem;color:#6b7280;"></span>
+                                        </div>
+                                        <div id="availWeekGrid" style="padding:0.5rem;overflow-x:auto;">
+                                            <div style="text-align:center;padding:1.5rem;color:#9ca3af;font-size:0.8125rem;">Cargando...</div>
                                         </div>
                                     </div>
+
+                                    <!-- Formulario de franjas -->
+                                    <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+                                        <div style="padding:0.75rem 0.875rem;border-bottom:1px solid #e5e7eb;">
+                                            <h6 class="mb-1" style="color:#111827;font-weight:600;font-size:0.9375rem;">
+                                                <i class="fas fa-clock me-2" style="color:#10b981;"></i>Configurar Disponibilidad
+                                            </h6>
+                                            <p class="mb-0" style="color:#6b7280;font-size:0.75rem;">Agrega una o más franjas horarias con sus días</p>
+                                        </div>
+                                        <div style="padding:0.75rem;">
+                                            <form id="availabilityForm">
+                                                <div id="availSlotsList">
+                                                    <!-- Slots se generan dinámicamente -->
+                                                </div>
+                                                <button type="button" onclick="addAvailSlot()" style="width:100%;padding:0.5rem;border:2px dashed #d1d5db;border-radius:8px;background:transparent;color:#6b7280;font-size:0.8125rem;font-weight:500;cursor:pointer;transition:all 0.2s;margin-bottom:0.75rem;" onmouseover="this.style.borderColor='#10b981';this.style.color='#10b981'" onmouseout="this.style.borderColor='#d1d5db';this.style.color='#6b7280'">
+                                                    <i class="fas fa-plus me-1"></i>Agregar franja horaria
+                                                </button>
+                                                <button type="submit" class="btn w-100" style="background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;padding:0.625rem 1rem;font-weight:600;font-size:0.8125rem;border-radius:8px;box-shadow:0 2px 6px rgba(16,185,129,0.3);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 6px rgba(16,185,129,0.3)'">
+                                                    <i class="fas fa-save me-2"></i>Guardar Disponibilidad
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+
                                 </div>
+                                <!-- Hidden container for legacy compatibility -->
+                                <div id="currentAvailability" style="display:none;"></div>
                             </div>
                             
                         </div>
@@ -14023,11 +13957,15 @@ window.dashboardApp = function() {
             // Detectar si es móvil
             const isMobile = window.innerWidth < 768;
             
+            const typeIcons = { self_activity: 'fa-lock', direct_appointment: 'fa-user-clock', coaching: 'fa-comments' };
+
             this.calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: isMobile ? 'listWeek' : 'dayGridMonth',
                 locale: 'es',
-                firstDay: 1, // Comenzar semana el lunes (0=domingo, 1=lunes)
+                firstDay: 1,
                 height: isMobile ? 'auto' : 'auto',
+                dayMaxEvents: 3,
+                moreLinkText: 'más',
                 headerToolbar: {
                     left: isMobile ? 'prev,next' : 'prev,next today',
                     center: 'title',
@@ -14065,12 +14003,60 @@ window.dashboardApp = function() {
                             successCallback(events);
                         } else {
                             console.warn('[Calendario] API retornó error:', data.error || 'unknown');
-                            successCallback([]); // evitar que FullCalendar quede cargando
+                            successCallback([]);
                         }
                     } catch (error) {
                         console.error('[Calendario] Error cargando eventos:', error);
                         failureCallback(error);
                     }
+                },
+                eventContent: (arg) => {
+                    const view = arg.view.type;
+                    const props = arg.event.extendedProps;
+                    const sType = props.session_type || 'coaching';
+                    const icon = typeIcons[sType] || 'fa-comments';
+                    const isSelf = sType === 'self_activity';
+                    const name = isSelf
+                        ? (props.activity_title || props.title || 'Bloqueado')
+                        : (props.coachee_name || 'Coachee');
+                    const subtitle = isSelf ? '' : (props.title || 'Sesión');
+                    const startTime = arg.event.start
+                        ? arg.event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                        : '';
+                    const endTime = arg.event.end
+                        ? arg.event.end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                        : '';
+
+                    if (view === 'dayGridMonth') {
+                        return {
+                            html: `<div class="cal-ev">
+                                <i class="fas ${icon} cal-icon"></i>
+                                <span class="cal-time">${startTime}</span>
+                                <span class="cal-name">${name}</span>
+                            </div>`
+                        };
+                    }
+
+                    // Vista semanal y diaria — más espacio, mostrar detalle
+                    const timeRange = endTime ? `${startTime} – ${endTime}` : startTime;
+                    const statusLabels = { confirmed:'Confirmada', pending:'Pendiente', proposed:'Propuesta', completed:'Completada', cancelled:'Cancelada' };
+                    const statusColors = { confirmed:'#10b981', pending:'#f59e0b', proposed:'#3b82f6', completed:'#6b7280', cancelled:'#ef4444' };
+                    const stLabel = statusLabels[props.status] || '';
+                    const stColor = statusColors[props.status] || '#6b7280';
+                    const location = props.location || '';
+
+                    return {
+                        html: `<div style="padding:2px 4px;line-height:1.35;overflow:hidden;">
+                            <div style="display:flex;align-items:center;gap:4px;">
+                                <i class="fas ${icon}" style="font-size:0.65rem;opacity:0.8;flex-shrink:0;"></i>
+                                <strong style="font-size:0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</strong>
+                            </div>
+                            ${subtitle ? `<div style="font-size:0.65rem;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${subtitle}</div>` : ''}
+                            <div style="font-size:0.625rem;opacity:0.75;margin-top:1px;">${timeRange}</div>
+                            ${location ? `<div style="font-size:0.6rem;opacity:0.65;"><i class="fas fa-map-marker-alt" style="margin-right:2px;"></i>${location}</div>` : ''}
+                            ${stLabel ? `<div style="margin-top:2px;"><span style="font-size:0.55rem;background:${stColor};color:white;padding:1px 5px;border-radius:3px;">${stLabel}</span></div>` : ''}
+                        </div>`
+                    };
                 },
                 eventClick: (info) => {
                     this.showSessionDetails(info.event);
@@ -14089,100 +14075,98 @@ window.dashboardApp = function() {
         async loadUpcomingSessions() {
             const container = document.getElementById('upcomingSessionsCards');
             if (!container) return;
-            
+
+            const emptyHtml = `<div style="text-align:center;padding:1.25rem 0.5rem;color:#9ca3af;">
+                <i class="fas fa-calendar-check" style="font-size:1.25rem;opacity:0.3;margin-bottom:0.4rem;display:block;"></i>
+                <span style="font-size:0.8125rem;">Sin eventos esta semana</span>
+            </div>`;
+
             try {
-                // Obtener sesiones desde hoy hasta 7 días
                 const now = new Date();
-                const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+                const todayStr = now.toLocaleDateString('en-CA');
                 const endDay = new Date(now);
                 endDay.setDate(now.getDate() + 7);
                 const endStr = endDay.toLocaleDateString('en-CA');
 
                 const response = await fetch(`/api/coach/sessions?start_date=${todayStr}&end_date=${endStr}`);
                 const data = await response.json();
-                
-                if (data.success && data.sessions && data.sessions.length > 0) {
-                    // Filtrar sesiones de hoy en adelante (comparar por fecha, no por hora)
-                    const upcomingSessions = data.sessions
-                        .filter(session => (session.session_date || session.start.split('T')[0]) >= todayStr)
-                        .sort((a, b) => new Date(a.start) - new Date(b.start))
-                        .slice(0, 4); // Máximo 4 sesiones
-                    
-                    if (upcomingSessions.length > 0) {
-                        container.innerHTML = upcomingSessions.map(session => {
-                            const startDate = new Date(session.start);
-                            const dayName = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][startDate.getDay()];
-                            const day = startDate.getDate();
-                            const month = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][startDate.getMonth()];
-                            const time = startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                            
-                            const statusColors = {
-                                'pending': 'warning',
-                                'confirmed': 'success',
-                                'proposed': 'info',
-                                'cancelled': 'danger',
-                                'completed': 'secondary'
-                            };
-                            const statusColor = statusColors[session.status] || 'secondary';
-                            
-                            const statusLabels = {
-                                'pending': 'Pendiente',
-                                'confirmed': 'Confirmada',
-                                'proposed': 'Propuesta',
-                                'cancelled': 'Cancelada',
-                                'completed': 'Completada'
-                            };
-                            const statusLabel = statusLabels[session.status] || session.status;
-                            
-                            return `
-                                <div class="col-12 col-md-6 col-lg-3">
-                                    <div class="card h-100" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
-                                        <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 0.75rem; border: none; text-align: center;">
-                                            <div style="color: white; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">${dayName}</div>
-                                            <div style="color: white; font-size: 1.75rem; font-weight: 700; line-height: 1;">${day}</div>
-                                            <div style="color: rgba(255,255,255,0.9); font-size: 0.7rem;">${month}</div>
-                                        </div>
-                                        <div class="card-body" style="padding: 0.875rem;">
-                                            <div class="d-flex align-items-center mb-2">
-                                                <i class="fas fa-clock me-2" style="color: #667eea; font-size: 0.85rem;"></i>
-                                                <span style="font-size: 0.85rem; font-weight: 600; color: #111827;">${time}</span>
-                                            </div>
-                                            <div class="mb-2">
-                                                <div style="font-size: 0.8rem; font-weight: 600; color: #111827; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                                                    ${session.session_type === 'self_activity' ? '🔒 ' + (session.activity_title || 'Tiempo Bloqueado') : session.coachee_name}
-                                                </div>
-                                                ${session.session_type !== 'self_activity' ? `<div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">${session.title || 'Sesión'}</div>` : ''}
-                                            </div>
-                                            <span class="badge bg-${statusColor}" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;">${statusLabel}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('');
-                    } else {
-                        container.innerHTML = `
-                            <div class="col-12 text-center py-3 text-muted">
-                                <i class="fas fa-calendar-day fa-2x mb-2" style="opacity: 0.3;"></i>
-                                <p class="mb-0" style="font-size: 0.85rem;">No hay sesiones programadas para esta semana</p>
-                            </div>
-                        `;
-                    }
-                } else {
-                    container.innerHTML = `
-                        <div class="col-12 text-center py-3 text-muted">
-                            <i class="fas fa-calendar-day fa-2x mb-2" style="opacity: 0.3;"></i>
-                            <p class="mb-0" style="font-size: 0.85rem;">No hay sesiones programadas para esta semana</p>
-                        </div>
-                    `;
+
+                if (!data.success || !data.sessions || data.sessions.length === 0) {
+                    container.innerHTML = emptyHtml;
+                    return;
                 }
+
+                const sessions = data.sessions
+                    .filter(s => (s.session_date || s.start.split('T')[0]) >= todayStr)
+                    .sort((a, b) => new Date(a.start) - new Date(b.start))
+                    .slice(0, 8);
+
+                if (sessions.length === 0) { container.innerHTML = emptyHtml; return; }
+
+                const typeConfig = {
+                    self_activity:      { icon: 'fa-lock',       color: '#8b5cf6', bg: '#f5f3ff', label: 'Bloqueado' },
+                    direct_appointment: { icon: 'fa-user-clock', color: '#6366f1', bg: '#eef2ff', label: 'Cita directa' },
+                    coaching:           { icon: 'fa-comments',   color: '#10b981', bg: '#ecfdf5', label: 'Coaching' }
+                };
+                const statusDot = { confirmed: '#10b981', pending: '#f59e0b', proposed: '#3b82f6', completed: '#6b7280', cancelled: '#ef4444' };
+                const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+                // Agrupar por fecha
+                const grouped = {};
+                sessions.forEach(s => {
+                    const dateKey = s.session_date || s.start.split('T')[0];
+                    if (!grouped[dateKey]) grouped[dateKey] = [];
+                    grouped[dateKey].push(s);
+                });
+
+                let html = '';
+                Object.entries(grouped).forEach(([dateKey, items]) => {
+                    const d = new Date(dateKey + 'T12:00:00');
+                    const esHoy = dateKey === todayStr;
+                    const dayLabel = esHoy
+                        ? '<span style="color:#4f46e5;font-weight:700;">Hoy</span>'
+                        : `<span>${dias[d.getDay()]} ${d.getDate()}</span>`;
+
+                    html += `<div style="margin-bottom:0.5rem;">
+                        <div style="font-size:0.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.3px;padding:0.2rem 0;margin-bottom:0.2rem;${esHoy ? 'color:#4f46e5;' : ''}">${dayLabel}</div>`;
+
+                    items.forEach(s => {
+                        const startDate = new Date(s.start);
+                        const time = startDate.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+                        const endTime = s.end ? new Date(s.end).toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' }) : '';
+                        const cfg = typeConfig[s.session_type] || typeConfig.coaching;
+                        const dotColor = statusDot[s.status] || '#6b7280';
+                        const isSelf = s.session_type === 'self_activity';
+                        const nombre = isSelf
+                            ? (s.activity_title || s.title || 'Tiempo bloqueado')
+                            : (s.coachee_name || 'Coachee');
+                        const subtitulo = isSelf ? '' : (s.title || 'Sesión');
+
+                        html += `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.5rem;border-radius:8px;background:${esHoy ? '#fafafe' : 'transparent'};transition:background 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='${esHoy ? '#fafafe' : 'transparent'}'">
+                            <div style="width:28px;height:28px;border-radius:7px;background:${cfg.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas ${cfg.icon}" style="font-size:0.65rem;color:${cfg.color};"></i>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:0.8rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div>
+                                ${subtitulo ? `<div style="font-size:0.675rem;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${subtitulo}</div>` : ''}
+                            </div>
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-size:0.75rem;font-weight:600;color:#374151;">${time}</div>
+                                ${endTime ? `<div style="font-size:0.625rem;color:#9ca3af;">${endTime}</div>` : ''}
+                            </div>
+                            <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;" title="${s.status}"></span>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                });
+
+                container.innerHTML = html;
+
             } catch (error) {
                 console.error('Error al cargar próximas sesiones:', error);
-                container.innerHTML = `
-                    <div class="col-12 text-center py-3 text-danger">
-                        <i class="fas fa-exclamation-triangle mb-2"></i>
-                        <p class="mb-0" style="font-size: 0.85rem;">Error al cargar sesiones</p>
-                    </div>
-                `;
+                container.innerHTML = `<div style="text-align:center;padding:1rem;color:#ef4444;font-size:0.8125rem;">
+                    <i class="fas fa-exclamation-triangle" style="margin-right:0.3rem;"></i>Error al cargar sesiones
+                </div>`;
             }
         },
         
@@ -14239,53 +14223,115 @@ window.dashboardApp = function() {
             openProposeModal(sessionId, coacheeName);
         },
         
-        // Cargar disponibilidad actual del coach
+        // Cargar disponibilidad actual del coach — renderiza grilla semanal y llena formulario
         async loadMyAvailability() {
-            const container = document.getElementById('currentAvailability');
-            if (!container) return;
-            
+            const gridContainer = document.getElementById('availWeekGrid');
+            const totalLabel = document.getElementById('availTotalHours');
+
             try {
                 const response = await fetch('/api/coach/availability');
                 const data = await response.json();
-                
-                if (data.success && data.availability && data.availability.length > 0) {
-                    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-                    let html = '';
-                    data.availability.forEach((availability, idx) => {
-                        const selectedDays = JSON.parse(availability.available_days || '[]');
-                        html += `
-                        <div class="${idx > 0 ? 'mt-3 pt-3 border-top' : ''}">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="fas fa-clock text-primary me-2"></i>
-                                <strong>Horario:</strong>
-                                <span class="ms-2">${availability.start_time} - ${availability.end_time}</span>
-                            </div>
-                            <div class="d-flex align-items-center flex-wrap gap-1">
-                                <i class="fas fa-calendar-week text-primary me-2"></i>`;
-                        selectedDays.forEach(dayNum => {
-                            html += `<span class="badge bg-primary me-1">${days[dayNum]}</span>`;
+                const avail = (data.success && data.availability) ? data.availability : [];
+                const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+                const dayOrder = [1,2,3,4,5,6,0]; // Lun-Dom
+
+                // Build slot map: day -> [{start, end}]
+                const slotMap = {}; // day_num -> [{start, end}]
+                avail.forEach(a => {
+                    const days = JSON.parse(a.available_days || '[]');
+                    days.forEach(d => {
+                        if (!slotMap[d]) slotMap[d] = [];
+                        slotMap[d].push({ start: a.start_time, end: a.end_time });
+                    });
+                });
+
+                // Determine hour range for grid (min start, max end across all slots)
+                let minH = 22, maxH = 7;
+                Object.values(slotMap).flat().forEach(s => {
+                    const sh = parseInt(s.start.split(':')[0]);
+                    const eh = parseInt(s.end.split(':')[0]) + (parseInt(s.end.split(':')[1]) > 0 ? 1 : 0);
+                    if (sh < minH) minH = sh;
+                    if (eh > maxH) maxH = eh;
+                });
+                if (minH >= maxH) { minH = 7; maxH = 20; }
+                // Ensure reasonable range
+                minH = Math.max(6, minH);
+                maxH = Math.min(23, maxH + 1);
+                const hours = [];
+                for (let h = minH; h < maxH; h++) hours.push(h);
+
+                // Calculate total hours
+                let totalMins = 0;
+                avail.forEach(a => {
+                    const days = JSON.parse(a.available_days || '[]');
+                    const [sh, sm] = a.start_time.split(':').map(Number);
+                    const [eh, em] = a.end_time.split(':').map(Number);
+                    totalMins += days.length * ((eh * 60 + em) - (sh * 60 + sm));
+                });
+                if (totalLabel) {
+                    totalLabel.textContent = totalMins > 0
+                        ? `${Math.floor(totalMins / 60)}h ${totalMins % 60 > 0 ? (totalMins % 60) + 'min' : ''} / semana`
+                        : '';
+                }
+
+                if (avail.length === 0) {
+                    if (gridContainer) gridContainer.innerHTML = `<div style="text-align:center;padding:1.5rem;color:#9ca3af;">
+                        <i class="fas fa-calendar-times" style="font-size:1.5rem;opacity:0.25;display:block;margin-bottom:0.5rem;"></i>
+                        <span style="font-size:0.8125rem;">No hay disponibilidad configurada</span>
+                    </div>`;
+                    return;
+                }
+
+                // Render grid
+                if (gridContainer) {
+                    let html = '<table style="width:100%;border-collapse:collapse;font-size:0.7rem;">';
+                    // Header
+                    html += '<thead><tr><th style="padding:0.3rem 0.4rem;color:#9ca3af;font-weight:600;text-align:left;width:40px;"></th>';
+                    dayOrder.forEach(d => {
+                        const hasSlots = slotMap[d] && slotMap[d].length > 0;
+                        html += `<th style="padding:0.3rem;text-align:center;font-weight:600;color:${hasSlots ? '#111827' : '#d1d5db'};font-size:0.7rem;">${dayNames[d]}</th>`;
+                    });
+                    html += '</tr></thead><tbody>';
+
+                    // Rows per hour
+                    hours.forEach(h => {
+                        html += `<tr><td style="padding:0.15rem 0.4rem;color:#9ca3af;font-size:0.65rem;font-weight:500;white-space:nowrap;vertical-align:middle;">${String(h).padStart(2,'0')}:00</td>`;
+                        dayOrder.forEach(d => {
+                            const slots = slotMap[d] || [];
+                            // Check if this hour falls within any slot
+                            const isAvail = slots.some(s => {
+                                const sh = parseInt(s.start.split(':')[0]) + (parseInt(s.start.split(':')[1]) > 0 ? 0.5 : 0);
+                                const eh = parseInt(s.end.split(':')[0]) + (parseInt(s.end.split(':')[1]) > 0 ? 0.5 : 0);
+                                return h >= Math.floor(sh) && h < Math.ceil(eh);
+                            });
+                            if (isAvail) {
+                                html += `<td style="padding:0.15rem;"><div style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);border-radius:4px;height:22px;border:1px solid #6ee7b7;"></div></td>`;
+                            } else {
+                                html += `<td style="padding:0.15rem;"><div style="background:#f9fafb;border-radius:4px;height:22px;border:1px solid #f3f4f6;"></div></td>`;
+                            }
                         });
-                        html += `</div></div>`;
+                        html += '</tr>';
                     });
 
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = `
-                        <div class="text-center text-muted py-3">
-                            <i class="fas fa-info-circle mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                            <p class="mb-0">No has configurado tu disponibilidad aún</p>
-                        </div>
-                    `;
+                    html += '</tbody></table>';
+                    gridContainer.innerHTML = html;
                 }
+
+                // Populate form slots from existing data
+                const slotsContainer = document.getElementById('availSlotsList');
+                if (slotsContainer) {
+                    slotsContainer.innerHTML = '';
+                    availSlotCounter = 0;
+                    avail.forEach(a => {
+                        const days = JSON.parse(a.available_days || '[]');
+                        addAvailSlot(days, a.start_time, a.end_time);
+                    });
+                }
+
             } catch (error) {
-                console.error('❌ Error loading availability:', error);
-                container.innerHTML = `
-                    <div class="alert alert-danger mb-0">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error al cargar disponibilidad
-                    </div>
-                `;
+                console.error('Error loading availability:', error);
+                if (gridContainer) gridContainer.innerHTML = `<div style="text-align:center;padding:1rem;color:#ef4444;font-size:0.8125rem;"><i class="fas fa-exclamation-triangle me-1"></i>Error al cargar</div>`;
             }
         },
         
@@ -19983,35 +20029,111 @@ async function deleteDraftAssessment(assessmentId) {
 // EVENT LISTENERS PARA FORMULARIOS DE AGENDA
 // ==========================================
 
+// ── Disponibilidad: gestión de franjas múltiples ──
+let availSlotCounter = 0;
+const AVAIL_DAYS = [
+    { value: 1, short: 'Lun' },
+    { value: 2, short: 'Mar' },
+    { value: 3, short: 'Mié' },
+    { value: 4, short: 'Jue' },
+    { value: 5, short: 'Vie' },
+    { value: 6, short: 'Sáb' },
+    { value: 0, short: 'Dom' }
+];
+
+function buildTimeOptions(selected, start, end) {
+    let html = '';
+    for (let h = start; h <= end; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            if (h === end && m > 0) break;
+            const val = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+            html += `<option value="${val}" ${val === selected ? 'selected' : ''}>${val}</option>`;
+        }
+    }
+    return html;
+}
+
+function addAvailSlot(days, startTime, endTime) {
+    const idx = availSlotCounter++;
+    const container = document.getElementById('availSlotsList');
+    const selectedDays = days || [];
+    const st = startTime || '09:00';
+    const et = endTime || '17:00';
+
+    const daysHtml = AVAIL_DAYS.map(d => {
+        const active = selectedDays.includes(d.value);
+        return `<button type="button" data-day="${d.value}" class="avail-day-btn ${active ? 'active' : ''}" onclick="this.classList.toggle('active')" style="padding:0.3rem 0.55rem;border-radius:6px;font-size:0.75rem;font-weight:600;border:1.5px solid ${active ? '#10b981' : '#d1d5db'};background:${active ? '#ecfdf5' : 'white'};color:${active ? '#059669' : '#6b7280'};cursor:pointer;transition:all 0.15s;line-height:1;" onmouseover="if(!this.classList.contains('active')){this.style.borderColor='#10b981';this.style.color='#059669'}" onmouseout="if(!this.classList.contains('active')){this.style.borderColor='#d1d5db';this.style.color='#6b7280'}">${d.short}</button>`;
+    }).join('');
+
+    const slotHtml = `<div id="avail-slot-${idx}" style="border:1px solid #e5e7eb;border-radius:10px;padding:0.75rem;margin-bottom:0.625rem;background:#fafafa;position:relative;">
+        <button type="button" onclick="removeAvailSlot(${idx})" style="position:absolute;top:0.4rem;right:0.5rem;background:none;border:none;color:#d1d5db;cursor:pointer;font-size:0.9rem;padding:0.15rem;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#d1d5db'" title="Eliminar franja">
+            <i class="fas fa-times"></i>
+        </button>
+        <div style="font-size:0.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:0.4rem;">Franja ${idx + 1}</div>
+        <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.5rem;" data-role="days">${daysHtml}</div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+            <select data-role="start" style="flex:1;font-size:0.8rem;padding:0.35rem 0.5rem;border:1.5px solid #e5e7eb;border-radius:6px;background:white;color:#111827;">${buildTimeOptions(st, 7, 22)}</select>
+            <span style="color:#9ca3af;font-size:0.75rem;font-weight:600;">a</span>
+            <select data-role="end" style="flex:1;font-size:0.8rem;padding:0.35rem 0.5rem;border:1.5px solid #e5e7eb;border-radius:6px;background:white;color:#111827;">${buildTimeOptions(et, 7, 22)}</select>
+        </div>
+    </div>`;
+    container.insertAdjacentHTML('beforeend', slotHtml);
+
+    // Re-apply active styles (since inline styles don't auto-update on toggle)
+    const slotEl = document.getElementById(`avail-slot-${idx}`);
+    slotEl.querySelectorAll('.avail-day-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains('active')) {
+                this.style.borderColor = '#10b981';
+                this.style.background = '#ecfdf5';
+                this.style.color = '#059669';
+            } else {
+                this.style.borderColor = '#d1d5db';
+                this.style.background = 'white';
+                this.style.color = '#6b7280';
+            }
+        });
+    });
+}
+
+function removeAvailSlot(idx) {
+    const el = document.getElementById(`avail-slot-${idx}`);
+    if (el) el.remove();
+    // Renumber labels
+    document.querySelectorAll('#availSlotsList > div').forEach((slot, i) => {
+        const label = slot.querySelector('div[style*="text-transform"]');
+        if (label) label.textContent = `Franja ${i + 1}`;
+    });
+}
+
+function collectAvailSlots() {
+    const slots = [];
+    document.querySelectorAll('#availSlotsList > div').forEach(slotEl => {
+        const days = [];
+        slotEl.querySelectorAll('.avail-day-btn.active').forEach(btn => {
+            days.push(parseInt(btn.dataset.day));
+        });
+        const st = slotEl.querySelector('[data-role="start"]')?.value;
+        const et = slotEl.querySelector('[data-role="end"]')?.value;
+        if (days.length > 0 && st && et && et > st) {
+            slots.push({ days, start_time: st, end_time: et });
+        }
+    });
+    return slots;
+}
+
 // Formulario de disponibilidad
 const availabilityForm = document.getElementById('availabilityForm');
 if (availabilityForm) {
+    // Agregar primera franja por defecto
+    addAvailSlot();
+
     availabilityForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
-        const selectedDays = [];
-        for (let i = 0; i <= 6; i++) {
-            const checkbox = document.getElementById(`day${i}`);
-            if (checkbox && checkbox.checked) {
-                selectedDays.push(parseInt(checkbox.value));
-            }
-        }
-        
-        if (selectedDays.length === 0) {
-            showNotification('Por favor selecciona al menos un día', 'error');
-            return;
-        }
-        
-        const startTime = document.getElementById('startTime').value;
-        const endTime = document.getElementById('endTime').value;
-        
-        if (!startTime || !endTime) {
-            showNotification('Por favor completa los horarios', 'error');
-            return;
-        }
 
-        if (endTime <= startTime) {
-            showNotification('La hora de fin debe ser posterior a la hora de inicio', 'error');
+        const slots = collectAvailSlots();
+        if (slots.length === 0) {
+            showNotification('Agrega al menos una franja con días y horarios válidos', 'error');
             return;
         }
 
@@ -20019,18 +20141,13 @@ if (availabilityForm) {
             const response = await fetch('/api/coach/availability', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    available_days: JSON.stringify(selectedDays),
-                    start_time: startTime,
-                    end_time: endTime
-                })
+                body: JSON.stringify({ slots })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 showNotification('Disponibilidad guardada exitosamente', 'success');
-                // Recargar disponibilidad actual
                 if (window.coachDashboard && typeof window.coachDashboard.loadMyAvailability === 'function') {
                     window.coachDashboard.loadMyAvailability();
                 }
@@ -20082,6 +20199,7 @@ if (selfScheduleForm) {
             
             if (data.success) {
                 showNotification('Tiempo bloqueado exitosamente', 'success');
+                showGoogleCalendarButton(title, date, startTime, endTime, description, 'Personal');
                 clearSelfScheduleForm();
                 // Refrescar calendario
                 if (window.coachDashboard && window.coachDashboard.calendar) {
@@ -20137,6 +20255,7 @@ if (directAppointmentForm) {
             
             if (data.success) {
                 showNotification('Cita creada exitosamente', 'success');
+                showGoogleCalendarButton(title, date, startTime, endTime, description, location);
                 directAppointmentForm.reset();
                 // Refrescar calendario
                 if (window.coachDashboard && window.coachDashboard.calendar) {
@@ -20164,6 +20283,39 @@ function clearSelfScheduleForm() {
             dateInput.value = today;
         }
     }
+}
+
+// ── Helper: generar URL de Google Calendar ──
+function buildGoogleCalendarUrl(title, date, startTime, endTime, description, location) {
+    // date: 'YYYY-MM-DD', startTime/endTime: 'HH:MM'
+    const fmt = (d, t) => d.replace(/-/g, '') + 'T' + t.replace(/:/g, '') + '00';
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: title || 'Evento',
+        dates: fmt(date, startTime) + '/' + fmt(date, endTime),
+        details: description || '',
+        location: location || ''
+    });
+    return 'https://calendar.google.com/calendar/render?' + params.toString();
+}
+
+function showGoogleCalendarButton(title, date, startTime, endTime, description, location) {
+    const url = buildGoogleCalendarUrl(title, date, startTime, endTime, description, location);
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;right:2rem;z-index:99999;background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;animation:fadeInUp 0.3s ease;max-width:420px;border:1px solid #e5e7eb;';
+    toast.innerHTML = `
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" alt="GCal" style="width:28px;height:28px;flex-shrink:0;">
+        <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:0.875rem;color:#111827;margin-bottom:0.15rem;">¿Agregar a Google Calendar?</div>
+            <div style="font-size:0.75rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title || 'Evento'} — ${date}</div>
+        </div>
+        <a href="${url}" target="_blank" rel="noopener" style="background:linear-gradient(135deg,#4285f4,#3367d6);color:white;padding:0.5rem 1rem;border-radius:8px;font-size:0.8125rem;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+            <i class="fas fa-calendar-plus me-1"></i>Agregar
+        </a>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:1.1rem;padding:0 0.25rem;flex-shrink:0;">✕</button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentElement) toast.remove(); }, 15000);
 }
 
 // Funciones para gestión de calendario
@@ -20198,6 +20350,10 @@ async function submitBlockTime(event) {
         
         if (result.success) {
             showNotification('Tiempo bloqueado exitosamente', 'success');
+            showGoogleCalendarButton(
+                data.activity_title, data.session_date, data.start_time, data.end_time,
+                data.description, 'Personal'
+            );
             form.reset();
             // Refrescar calendario
             if (window.coachDashboard && window.coachDashboard.calendar) {
@@ -20249,6 +20405,10 @@ async function submitDirectAppointment(event) {
         
         if (result.success) {
             showNotification(result.message || 'Cita enviada exitosamente', 'success');
+            showGoogleCalendarButton(
+                data.title, data.session_date, data.start_time, data.end_time,
+                data.description, data.location
+            );
             form.reset();
             // Refrescar calendario
             if (window.coachDashboard && window.coachDashboard.calendar) {
@@ -20299,17 +20459,28 @@ async function loadCoacheesForDirectAppointment() {
 // Funciones para gestión de solicitudes de sesión
 async function acceptSessionRequest(requestId) {
     if (!confirm('¿Confirmar esta sesión?')) return;
-    
+
+    // Obtener datos de la solicitud antes de aceptar (para Google Calendar)
+    const reqData = (window.coachDashboard?.sessionRequests || []).find(r => r.id === requestId);
+
     try {
         const response = await fetch(`/api/coach/session-requests/${requestId}/accept`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('Sesión confirmada exitosamente', 'success');
+            if (reqData) {
+                showGoogleCalendarButton(
+                    reqData.title || 'Sesión de Coaching',
+                    reqData.preferred_date, reqData.start_time, reqData.end_time,
+                    reqData.description || ('Sesión con ' + reqData.coachee_name),
+                    reqData.location
+                );
+            }
             // Recargar solicitudes
             if (window.coachDashboard && typeof window.coachDashboard.loadSessionRequests === 'function') {
                 window.coachDashboard.loadSessionRequests();
@@ -22537,7 +22708,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ? `<i class="fas fa-user" onclick="window.irACoachee(${s.coachee_id})" title="Ver coachee" style="font-size:0.7rem;color:#a5b4fc;cursor:pointer;flex-shrink:0;" onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='#a5b4fc'"></i>`
                         : '';
                     const nombre = s.session_type === 'self_activity'
-                        ? `<span style="font-size:0.82rem;color:#6b7280;font-style:italic;">Tiempo personal</span>`
+                        ? `<span style="font-size:0.82rem;color:#6b7280;font-style:italic;">🔒 ${s.activity_title || s.title || 'Tiempo personal'}</span>`
                         : `${iconoCoachee}<span style="font-size:0.82rem;font-weight:600;color:#111827;">${s.coachee_name}</span>`;
                     const btnCoachee = s.coachee_id
                         ? `<button onclick="window.irACoachee(${s.coachee_id})" title="Ver coachee" style="flex-shrink:0;padding:0.2rem 0.45rem;font-size:0.7rem;border:1px solid #e5e7eb;border-radius:6px;background:white;color:#6366f1;cursor:pointer;line-height:1;" onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='white'"><i class="fas fa-user"></i></button>`
