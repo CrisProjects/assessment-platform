@@ -8692,6 +8692,29 @@ def api_coach_dashboard_init():
             CoachingSession.session_date >= today
         ).count()
         
+        # Compromisos creados (desde registros de sesión)
+        total_commitments = 0
+        commitments_completed = 0
+        commitments_partial = 0
+        commitments_pending = 0
+        session_records = SessionRecord.query.filter_by(coach_id=current_coach.id).all()
+        for sr in session_records:
+            if sr.commitments:
+                try:
+                    comms = json.loads(sr.commitments)
+                    if isinstance(comms, list):
+                        total_commitments += len(comms)
+                        for c in comms:
+                            st = c.get('status', 'pendiente') if isinstance(c, dict) else 'pendiente'
+                            if st == 'completado':
+                                commitments_completed += 1
+                            elif st == 'parcial':
+                                commitments_partial += 1
+                            else:
+                                commitments_pending += 1
+                except:
+                    pass
+
         stats_data = {
             'total_coachees': total_coachees,
             'completed_assessments': completed_assessments,
@@ -8699,7 +8722,11 @@ def api_coach_dashboard_init():
             'average_score': average_score,
             'published_content': published_content,
             'scheduled_sessions': scheduled_sessions,
-            'assigned_evaluation_tasks': total_assigned_tasks
+            'assigned_evaluation_tasks': total_assigned_tasks,
+            'total_commitments': total_commitments,
+            'commitments_completed': commitments_completed,
+            'commitments_partial': commitments_partial,
+            'commitments_pending': commitments_pending
         }
         
         # 4. RESPONSE COMBINADA
