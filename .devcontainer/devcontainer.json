@@ -1,0 +1,25 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "InstaCoach",
+	"image": "mcr.microsoft.com/devcontainers/python:3-3.11-trixie",
+
+	// Install Python dependencies and create a proper .venv on container creation
+	"postCreateCommand": "python3 -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -r requirements.txt",
+
+	// Forward Flask dev port
+	"forwardPorts": [5002],
+
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+				"python.terminal.activateEnvironment": true
+			},
+			"extensions": [
+				"ms-python.python",
+				"ms-python.pylance"
+			]
+		}
+	}
+}

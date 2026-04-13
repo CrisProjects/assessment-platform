@@ -2959,8 +2959,8 @@ def run_auto_migrations():
         logger.info("🔧 MIGRACIONES: Verificando y aplicando migraciones...")
         
         # Detectar tipo de base de datos
-        db_type = db.session.bind.dialect.name
-        
+        db_type = db.engine.dialect.name
+
         # Migración 1 y 2: Agregar columnas 'category' y 'milestones' a development_plan
         # Usar information_schema para verificación robusta (mismo patrón que coach_community)
         try:
@@ -3000,8 +3000,8 @@ def run_auto_migrations():
         # Verificación robusta: consultar esquema de la base de datos para ver si las columnas existen
         try:
             # Detectar si es PostgreSQL o SQLite
-            db_type = db.session.bind.dialect.name
-            
+            db_type = db.engine.dialect.name
+
             if db_type == 'postgresql':
                 # PostgreSQL: consultar information_schema
                 result = db.session.execute(text("""
@@ -5140,11 +5140,9 @@ def api_coach_logout():
         if coach_id:
             try:
                 log_security_event(
-                    user_id=coach_id,
                     event_type='logout',
-                    details=f'Coach {coach_username} cerró sesión',
-                    ip_address=request.remote_addr,
-                    user_agent=request.headers.get('User-Agent')
+                    user_id=coach_id,
+                    description=f'Coach {coach_username} cerró sesión'
                 )
             except Exception as e:
                 logger.error(f"Error logging security event: {str(e)}")
@@ -16917,90 +16915,90 @@ def api_testpersonal_calculate():
 # ============================================================================
 
 @app.route('/api/notifications', methods=['GET'])
-@login_required
-def api_get_notifications():
-    """Obtener notificaciones del usuario actual"""
+@coachee_api_required
+def api_get_notifications(current_coachee):
+    """Obtener notificaciones del coachee actual"""
     try:
-        limit = request.args.get('limit', 10, type=int)
-        
+        limit = request.args.get('limit', 20, type=int)
+
         notifications = Notification.query.filter_by(
-            user_id=current_user.id
+            user_id=current_coachee.id
         ).order_by(
             Notification.created_at.desc()
         ).limit(limit).all()
-        
+
         return jsonify({
             'success': True,
             'notifications': [n.to_dict() for n in notifications],
             'total': len(notifications)
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error obteniendo notificaciones: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error obteniendo notificaciones'}), 500
 
 @app.route('/api/notifications/unread-count', methods=['GET'])
-@login_required
-def api_get_unread_count():
-    """Obtener contador de notificaciones no leídas"""
+@coachee_api_required
+def api_get_unread_count(current_coachee):
+    """Obtener contador de notificaciones no leídas del coachee"""
     try:
         count = Notification.query.filter_by(
-            user_id=current_user.id,
+            user_id=current_coachee.id,
             is_read=False
         ).count()
-        
+
         return jsonify({
             'success': True,
             'count': count
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error obteniendo contador: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error obteniendo contador'}), 500
 
 @app.route('/api/notifications/<int:notification_id>/mark-read', methods=['POST'])
-@login_required
-def api_mark_notification_read(notification_id):
+@coachee_api_required
+def api_mark_notification_read(current_coachee, notification_id):
     """Marcar notificación como leída"""
     try:
         notification = Notification.query.filter_by(
             id=notification_id,
-            user_id=current_user.id
+            user_id=current_coachee.id
         ).first()
-        
+
         if not notification:
             return jsonify({'error': 'Notificación no encontrada'}), 404
-        
+
         notification.is_read = True
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
             'message': 'Notificación marcada como leída'
         }), 200
-        
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error marcando notificación: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error marcando notificación'}), 500
 
 @app.route('/api/notifications/mark-all-read', methods=['POST'])
-@login_required
-def api_mark_all_notifications_read():
-    """Marcar todas las notificaciones como leídas"""
+@coachee_api_required
+def api_mark_all_notifications_read(current_coachee):
+    """Marcar todas las notificaciones del coachee como leídas"""
     try:
         Notification.query.filter_by(
-            user_id=current_user.id,
+            user_id=current_coachee.id,
             is_read=False
         ).update({'is_read': True})
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
             'message': 'Todas las notificaciones marcadas como leídas'
         }), 200
-        
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error marcando todas: {str(e)}", exc_info=True)
@@ -18508,6 +18506,84 @@ def sign_contract(contract_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================================
+# ENDPOINTS: Compromisos del Coachee (desde registros de sesión)
+# ============================================================================
+
+@app.route('/api/coachee/commitments', methods=['GET'])
+@coachee_api_required
+def api_coachee_commitments(current_coachee):
+    """Devuelve todos los compromisos del coachee extraídos de los registros de sesión"""
+    try:
+        records = SessionRecord.query.filter(
+            SessionRecord.participants.like(f'%{current_coachee.id}%')
+        ).order_by(SessionRecord.session_number.asc()).all()
+
+        result = []
+        for r in records:
+            try:
+                participant_ids = json.loads(r.participants) if r.participants else []
+            except Exception:
+                participant_ids = []
+            if current_coachee.id not in participant_ids:
+                continue
+            try:
+                commitments = json.loads(r.commitments) if r.commitments else []
+            except Exception:
+                commitments = []
+            for c in commitments:
+                if isinstance(c, dict) and c.get('texto', '').strip():
+                    result.append({
+                        'session_id': r.id,
+                        'session_name': r.name,
+                        'texto': c.get('texto', ''),
+                        'fecha': c.get('fecha', ''),
+                        'status': c.get('status', 'pendiente'),
+                    })
+
+        return jsonify({'success': True, 'commitments': result})
+    except Exception as e:
+        logger.error(f"❌ COACHEE-COMMITMENTS: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/coachee/upcoming-sessions', methods=['GET'])
+@coachee_api_required
+def api_coachee_upcoming_sessions(current_coachee):
+    """Devuelve las próximas sesiones de coaching del coachee"""
+    try:
+        today = datetime.utcnow().date()
+        # Try upcoming first; fall back to last 5 past sessions if none exist
+        sessions = CoachingSession.query.filter(
+            CoachingSession.coachee_id == current_coachee.id,
+            CoachingSession.session_date >= today,
+            CoachingSession.status.in_(['confirmed', 'pending', 'completed'])
+        ).order_by(CoachingSession.session_date.asc(), CoachingSession.start_time.asc()).limit(5).all()
+
+        if not sessions:
+            sessions = CoachingSession.query.filter(
+                CoachingSession.coachee_id == current_coachee.id,
+                CoachingSession.status.in_(['confirmed', 'pending', 'completed'])
+            ).order_by(CoachingSession.session_date.desc(), CoachingSession.start_time.desc()).limit(5).all()
+            sessions = list(reversed(sessions))
+
+        result = []
+        for s in sessions:
+            coach = User.query.get(s.coach_id)
+            result.append({
+                'id': s.id,
+                'title': s.title or 'Sesión de Coaching',
+                'session_date': s.session_date.isoformat(),
+                'start_time': s.start_time.strftime('%H:%M'),
+                'end_time': s.end_time.strftime('%H:%M'),
+                'status': s.status,
+                'location': s.location or '',
+                'coach_name': coach.full_name or coach.username if coach else '',
+            })
+        return jsonify({'success': True, 'sessions': result})
+    except Exception as e:
+        logger.error(f"❌ COACHEE-UPCOMING-SESSIONS: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
 # ENDPOINTS: Registros de Sesiones de Coaching
 # ============================================================================
 
@@ -18584,6 +18660,22 @@ def create_session_record():
         db.session.add(record)
         db.session.commit()
 
+        # Notify each participant about their new commitments
+        if commitments and participants:
+            session_name = data.get('name', auto_name)
+            count = len(commitments)
+            first_text = commitments[0].get('texto', '') if isinstance(commitments[0], dict) else ''
+            preview = f': "{first_text[:60]}"' if first_text else ''
+            for coachee_id in participants:
+                create_notification(
+                    user_id=coachee_id,
+                    type='commitment_created',
+                    title='Nuevos compromisos de sesión',
+                    message=f'Tu coach registró {count} compromiso{"s" if count != 1 else ""} en {session_name}{preview}.',
+                    related_id=record.id,
+                    related_type='session_record'
+                )
+
         return jsonify({'success': True, 'session': {
             'id': record.id,
             'session_number': record.session_number,
@@ -18658,11 +18750,36 @@ def update_session_record(session_id):
             r.participants = json.dumps(data['participants'])
         if 'content' in data:
             r.content = data['content']
+        old_commitment_count = len(json.loads(r.commitments)) if r.commitments else 0
+        new_commitments = None
         if 'commitments' in data:
-            r.commitments = json.dumps(data['commitments'])
+            new_commitments = data['commitments']
+            r.commitments = json.dumps(new_commitments)
         r.updated_at = datetime.utcnow()
 
         db.session.commit()
+
+        # Notify coachees when new commitments are added
+        if new_commitments is not None:
+            new_count = len(new_commitments)
+            added = new_count - old_commitment_count
+            if added > 0:
+                participants = json.loads(r.participants) if r.participants else []
+                if participants:
+                    session_name = r.name or f'Sesión {r.session_number}'
+                    first_new = new_commitments[old_commitment_count] if old_commitment_count < new_count else new_commitments[0]
+                    first_text = first_new.get('texto', '') if isinstance(first_new, dict) else ''
+                    preview = f': "{first_text[:60]}"' if first_text else ''
+                    for coachee_id in participants:
+                        create_notification(
+                            user_id=coachee_id,
+                            type='commitment_created',
+                            title='Nuevos compromisos de sesión',
+                            message=f'Tu coach agregó {added} compromiso{"s" if added != 1 else ""} en {session_name}{preview}.',
+                            related_id=r.id,
+                            related_type='session_record'
+                        )
+
         return jsonify({'success': True, 'message': 'Sesión guardada correctamente'})
 
     except Exception as e:

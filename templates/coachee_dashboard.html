@@ -9478,11 +9478,41 @@
 
             <!-- Right Section -->
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <!-- Notifications -->
-                <button style="position: relative; border-radius: 12px; padding: 0.5rem; border: none !important; outline: none !important; background: transparent; cursor: pointer; transition: background 0.2s; box-shadow: none !important;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-bell" style="color: #475569; font-size: 1.25rem; border: none !important; outline: none !important; text-decoration: none !important; background: transparent !important;"></i>
-                    <span style="position: absolute; right: 0.25rem; top: 0.25rem; height: 0.5rem; width: 0.5rem; border-radius: 50%; background: #ef4444; border: 2px solid white;"></span>
-                </button>
+                <!-- Notifications Bell -->
+                <div style="position: relative;" id="notifBellWrapper">
+                    <button id="notifBellBtn"
+                            onclick="toggleNotifDropdown(event)"
+                            style="position: relative; border-radius: 12px; padding: 0.5rem; border: none !important; outline: none !important; background: transparent; cursor: pointer; transition: background 0.2s; box-shadow: none !important;"
+                            onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                        <i class="fas fa-bell" style="color: #475569; font-size: 1.25rem;"></i>
+                        <span id="notifBadge"
+                              style="display: none; position: absolute; right: 0.2rem; top: 0.2rem; min-width: 1rem; height: 1rem; padding: 0 0.25rem; border-radius: 10px; background: #ef4444; border: 2px solid white; color: white; font-size: 0.6rem; font-weight: 700; line-height: 0.8rem; text-align: center;">
+                        </span>
+                    </button>
+
+                    <!-- Dropdown panel -->
+                    <div id="notifDropdown"
+                         style="display: none; position: absolute; right: 0; top: calc(100% + 0.5rem); width: 22rem; background: white; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12); z-index: 2000; overflow: hidden;">
+
+                        <!-- Header -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.875rem 1rem; border-bottom: 1px solid #f1f5f9;">
+                            <span style="font-weight: 600; font-size: 0.9rem; color: #111827;">Notificaciones</span>
+                            <button onclick="markAllNotifsRead()"
+                                    style="font-size: 0.75rem; color: #6366f1; background: none; border: none; cursor: pointer; font-weight: 500; padding: 0;">
+                                Marcar todas como leídas
+                            </button>
+                        </div>
+
+                        <!-- List -->
+                        <div id="notifList"
+                             style="max-height: 22rem; overflow-y: auto;">
+                            <div id="notifEmpty" style="padding: 2rem 1rem; text-align: center; color: #9ca3af; font-size: 0.85rem;">
+                                <i class="fas fa-bell-slash" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+                                Sin notificaciones nuevas
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Profile Dropdown -->
                 <div style="position: relative;" id="feedProfileDropdown">
@@ -9530,90 +9560,107 @@
         <!-- Sidebar Navigation - Figma Design -->
         <aside style="width: 16rem; border-right: 1px solid #e5e7eb; background: #f9fafb; height: calc(100vh - 4rem); position: sticky; top: 4rem;" class="sidebar-desktop" id="mainSidebar">
             <nav style="flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                <a href="javascript:void(0)" 
-                   class="sidebar-nav-item" 
+                <!-- Overview (standalone) -->
+                <a href="javascript:void(0)"
+                   class="sidebar-nav-item"
                    :class="{ 'sidebar-nav-item-active': activeTab === 'overview' }"
-                   @click.prevent="showTab('overview')" 
+                   @click.prevent="showTab('overview')"
                    data-tab="overview">
                     <i class="fas fa-home"></i>
                     <span>Overview</span>
                 </a>
-                
-                <a href="javascript:void(0)" 
-                   class="sidebar-nav-item" 
-                   :class="{ 'sidebar-nav-item-active': activeTab === 'evaluaciones-figma' }"
-                   @click.prevent="showTab('evaluaciones-figma')" 
-                   data-tab="evaluaciones-figma">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Evaluaciones</span>
-                </a>
-                        
-                        <a href="javascript:void(0)" 
-                           class="sidebar-nav-item" 
+
+                <!-- Herramientas collapsible group -->
+                <div style="margin-top: 0.25rem;">
+                    <!-- Group header toggle -->
+                    <button @click="herramientasOpen = !herramientasOpen"
+                            style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0.75rem; background:none; border:none; cursor:pointer; border-radius:0.5rem; color:#6b7280; font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; transition:background 0.15s;"
+                            onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
+                        <span>Herramientas</span>
+                        <i class="fas" :class="herramientasOpen ? 'fa-chevron-down' : 'fa-chevron-right'" style="font-size:0.65rem; transition:transform 0.2s;"></i>
+                    </button>
+
+                    <!-- Group items -->
+                    <div x-show="herramientasOpen" x-transition:enter="transition-all duration-200" style="display:flex; flex-direction:column; gap:0.25rem; margin-top:0.125rem;">
+
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
+                           :class="{ 'sidebar-nav-item-active': activeTab === 'evaluaciones-figma' }"
+                           @click.prevent="showTab('evaluaciones-figma')"
+                           data-tab="evaluaciones-figma">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Evaluaciones</span>
+                        </a>
+
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
                            :class="{ 'sidebar-nav-item-active': activeTab === 'assessment' }"
-                           id="assessment-sidebar-item" 
+                           id="assessment-sidebar-item"
                            x-show="isAssessmentActive"
-                           @click.prevent="showTab('assessment')" 
+                           @click.prevent="showTab('assessment')"
                            data-tab="assessment">
                             <i class="fas fa-play-circle"></i>
                             <span>Evaluación Activa</span>
                         </a>
-                        
-                        <a href="javascript:void(0)" 
-                           class="sidebar-nav-item" 
+
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
                            :class="{ 'sidebar-nav-item-active': activeTab === 'tasks' }"
-                           @click.prevent="showTab('tasks')" 
+                           @click.prevent="showTab('tasks')"
                            data-tab="tasks">
                             <i class="fas fa-tasks"></i>
                             <span>Mis Acciones y Metas</span>
                         </a>
-                        
-                        <a href="javascript:void(0)" 
-                           class="sidebar-nav-item" 
+
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
                            :class="{ 'sidebar-nav-item-active': activeTab === 'content' }"
-                           @click.prevent="showTab('content')" 
+                           @click.prevent="showTab('content')"
                            data-tab="content">
                             <i class="fas fa-folder-open"></i>
                             <span>Mi Contenido</span>
                         </a>
-                        
-                        <a href="javascript:void(0)" 
-                           class="sidebar-nav-item" 
+
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
                            :class="{ 'sidebar-nav-item-active': activeTab === 'progress' }"
-                           @click.prevent="showTab('progress')" 
+                           @click.prevent="showTab('progress')"
                            data-tab="progress">
                             <i class="fas fa-chart-line"></i>
                             <span>Mi Progreso</span>
                         </a>
-                        
-                        <a href="javascript:void(0)" 
-                           class="sidebar-nav-item" 
+
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
                            :class="{ 'sidebar-nav-item-active': activeTab === 'development-plan' }"
-                           @click.prevent="showTab('development-plan')" 
+                           @click.prevent="showTab('development-plan')"
                            data-tab="development-plan">
                             <i class="fas fa-rocket"></i>
                             <span>Mi Plan de Desarrollo</span>
                         </a>
-                        
-                <a href="javascript:void(0)"
-                   class="sidebar-nav-item"
-                   :class="{ 'sidebar-nav-item-active': activeTab === 'schedule-coach' }"
-                   @click.prevent="showTab('schedule-coach')"
-                   data-tab="schedule-coach">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Agendar Coach</span>
-                </a>
 
-                <a href="javascript:void(0)"
-                   class="sidebar-nav-item"
-                   :class="{ 'sidebar-nav-item-active': activeTab === 'mis-contratos' }"
-                   @click.prevent="showTab('mis-contratos')"
-                   data-tab="mis-contratos"
-                   style="position:relative;">
-                    <i class="fas fa-file-signature"></i>
-                    <span>Mi Contrato</span>
-                    <span id="contratos-badge" style="display:none;position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:#ef4444;color:white;font-size:0.65rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:20px;">!</span>
-                </a>
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
+                           :class="{ 'sidebar-nav-item-active': activeTab === 'schedule-coach' }"
+                           @click.prevent="showTab('schedule-coach')"
+                           data-tab="schedule-coach">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Agendar Coach</span>
+                        </a>
+
+                        <a href="javascript:void(0)"
+                           class="sidebar-nav-item"
+                           :class="{ 'sidebar-nav-item-active': activeTab === 'mis-contratos' }"
+                           @click.prevent="showTab('mis-contratos')"
+                           data-tab="mis-contratos"
+                           style="position:relative;">
+                            <i class="fas fa-file-signature"></i>
+                            <span>Mi Contrato</span>
+                            <span id="contratos-badge" style="display:none;position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:#ef4444;color:white;font-size:0.65rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:20px;">!</span>
+                        </a>
+
+                    </div>
+                </div>
             </nav>
         </aside>
 
@@ -9636,6 +9683,84 @@
                                 Motiva tu progreso con logros, puntos y rankings
                             </p>
                         </div>
+
+                        <!-- 📋 COMPROMISOS DEL COACH -->
+                        <div id="overviewCompromisosSection" style="margin-bottom: 0.85rem; display: none;">
+                            <button id="overviewCompromisosToggle" onclick="toggleOverviewSection('compromisos')"
+                                style="width:100%; display:flex !important; align-items:center !important; justify-content:space-between !important; text-align:left !important;
+                                       background:linear-gradient(135deg,#fff7ed 0%,#fef3c7 100%) !important;
+                                       border:1.5px solid #fed7aa !important; border-radius:14px !important;
+                                       padding:0.85rem 1.1rem !important; cursor:pointer !important;
+                                       box-shadow:0 2px 8px rgba(251,146,60,0.12) !important; transition:all 0.18s !important;">
+                                <div style="display:flex; align-items:center; gap:0.75rem; flex:1; min-width:0;">
+                                    <span style="width:2.2rem; height:2.2rem; background:linear-gradient(135deg,#f97316,#ef4444) !important; border-radius:10px !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0; box-shadow:0 3px 8px rgba(249,115,22,0.35);">
+                                        <i class="fas fa-handshake" style="color:#fff !important; font-size:0.82rem !important; font-weight:900 !important;"></i>
+                                    </span>
+                                    <div style="text-align:left;">
+                                        <span style="font-size:0.9rem; font-weight:700; color:#9a3412 !important; display:block; line-height:1.2;">Mis Compromisos</span>
+                                        <span id="overviewCompromisosCount" style="font-size:0.72rem; color:#c2410c !important; font-weight:500;"></span>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
+                                    <span style="font-size:0.7rem; color:#fb923c !important; font-weight:600; background:#ffedd5 !important; padding:0.2rem 0.55rem; border-radius:20px;">Compromisos</span>
+                                    <i id="overviewCompromisosChevron" class="fas fa-chevron-down" style="font-size:0.7rem; color:#fb923c !important; transition:transform 0.2s; font-weight:900 !important;"></i>
+                                </div>
+                            </button>
+                            <div id="overviewCompromisosBody" style="display:none; padding:0.65rem 0.1rem 0.1rem;">
+                                <div id="overviewCompromisosGrid" style="display:flex; flex-direction:column; gap:0.6rem;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 📅 PRÓXIMAS SESIONES -->
+                        <div id="overviewSesionesSection" style="margin-bottom: 0.85rem; display: none;">
+                            <button id="overviewSesionesToggle" onclick="toggleOverviewSection('sesiones')"
+                                style="width:100%; display:flex !important; align-items:center !important; justify-content:space-between !important; text-align:left !important;
+                                       background:linear-gradient(135deg,#eef2ff 0%,#ede9fe 100%) !important;
+                                       border:1.5px solid #c7d2fe !important; border-radius:14px !important;
+                                       padding:0.85rem 1.1rem !important; cursor:pointer !important;
+                                       box-shadow:0 2px 8px rgba(99,102,241,0.12) !important; transition:all 0.18s !important;">
+                                <div style="display:flex; align-items:center; gap:0.75rem; flex:1; min-width:0;">
+                                    <span style="width:2.2rem; height:2.2rem; background:linear-gradient(135deg,#6366f1,#8b5cf6) !important; border-radius:10px !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0; box-shadow:0 3px 8px rgba(99,102,241,0.35);">
+                                        <i class="fas fa-calendar-check" style="color:#fff !important; font-size:0.82rem !important; font-weight:900 !important;"></i>
+                                    </span>
+                                    <div style="text-align:left;">
+                                        <span style="font-size:0.9rem; font-weight:700; color:#3730a3 !important; display:block; line-height:1.2;" id="overviewSesionesTitle">Próximas Sesiones</span>
+                                        <span id="overviewSesionesCount" style="font-size:0.72rem; color:#4f46e5 !important; font-weight:500;"></span>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
+                                    <span style="font-size:0.7rem; color:#6366f1 !important; font-weight:600; background:#e0e7ff !important; padding:0.2rem 0.55rem; border-radius:20px;">Agenda</span>
+                                    <i id="overviewSesionesChevron" class="fas fa-chevron-down" style="font-size:0.7rem; color:#6366f1 !important; transition:transform 0.2s; font-weight:900 !important;"></i>
+                                </div>
+                            </button>
+                            <div id="overviewSesionesBody" style="display:none; padding:0.65rem 0.1rem 0.1rem;">
+                                <div id="overviewSesionesGrid" style="display:flex; flex-direction:column; gap:0.6rem;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 🏆 MIS LOGROS (collapsible) -->
+                        <div style="margin-bottom: 0.85rem;">
+                            <button id="overviewLogrosToggle" onclick="toggleOverviewSection('logros')"
+                                style="width:100%; display:flex !important; align-items:center !important; justify-content:space-between !important; text-align:left !important;
+                                       background:linear-gradient(135deg,#fdf4ff 0%,#fce7f3 100%) !important;
+                                       border:1.5px solid #f0abfc !important; border-radius:14px !important;
+                                       padding:0.85rem 1.1rem !important; cursor:pointer !important;
+                                       box-shadow:0 2px 8px rgba(168,85,247,0.12) !important; transition:all 0.18s !important;">
+                                <div style="display:flex; align-items:center; gap:0.75rem; flex:1; min-width:0;">
+                                    <span style="width:2.2rem; height:2.2rem; background:linear-gradient(135deg,#a855f7,#ec4899) !important; border-radius:10px !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0; box-shadow:0 3px 8px rgba(168,85,247,0.35);">
+                                        <i class="fas fa-trophy" style="color:#fff !important; font-size:0.82rem !important; font-weight:900 !important;"></i>
+                                    </span>
+                                    <div style="text-align:left;">
+                                        <span style="font-size:0.9rem; font-weight:700; color:#6b21a8 !important; display:block; line-height:1.2;">Mis Logros</span>
+                                        <span style="font-size:0.72rem; color:#9333ea !important; font-weight:500;">Nivel, puntos y ranking</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
+                                    <span style="font-size:0.7rem; color:#a855f7 !important; font-weight:600; background:#f3e8ff !important; padding:0.2rem 0.55rem; border-radius:20px;">Gamificación</span>
+                                    <i id="overviewLogrosChevron" class="fas fa-chevron-down" style="font-size:0.7rem; color:#a855f7 !important; transition:transform 0.2s; font-weight:900 !important;"></i>
+                                </div>
+                            </button>
+                            <div id="overviewLogrosBody" style="display:none; padding-top:0.75rem;">
 
                         <!-- 🎮 GAMIFICACIÓN: Card "Tu Nivel" - ETAPA 3 -->
                         <div class="row g-4 mb-4">
@@ -11081,9 +11206,13 @@
                                 }
                             </style>
                         </div>
+
+                            </div><!-- /overviewLogrosBody -->
+                        </div><!-- /Mis Logros collapsible -->
+
                     </div>
                 </div>
-                
+
                 <!-- Evaluations Tab - Unified with Internal Tabs -->
                 <!-- Assessment Tab (Hidden by default) -->
                 <div class="tab-pane fade" id="assessment" role="tabpanel" style="display: none;">
@@ -13931,6 +14060,7 @@
             const dashboardInstance = {
                 // Estado Global
                 activeTab: 'overview', // Mostrar overview por defecto
+                herramientasOpen: false, // Collapsible sidebar group
                 evaluationsSubTab: 'disponibles', // Sub-tab para evaluaciones: disponibles, completadas, pendientes
                 coacheeName: '',
                 coacheeEmail: '',
@@ -14501,6 +14631,11 @@
                 
                 showTab(tabId) {
                     console.log('🎯 showTab called:', tabId);
+                    // Auto-open Herramientas if navigating to one of its items
+                    const herramientasTabs = ['evaluaciones-figma','assessment','tasks','content','progress','development-plan','schedule-coach','mis-contratos'];
+                    if (herramientasTabs.includes(tabId)) {
+                        this.herramientasOpen = true;
+                    }
                     
                     // Colapsar categorías de evaluaciones disponibles ANTES de cambiar de pestaña
                     if (this.activeTab === 'evaluations' && tabId !== 'evaluations') {
@@ -28895,6 +29030,425 @@
             }
         } catch(e) { alert('Error de conexión'); }
     };
+})();
+</script>
+
+<!-- ── Notification Bell ────────────────────────────────────────────── -->
+<script>
+(function () {
+    'use strict';
+
+    const POLL_INTERVAL = 30000; // 30 s
+    let _notifOpen = false;
+    let _pollTimer  = null;
+
+    /* ── helpers ── */
+    function bellBtn()      { return document.getElementById('notifBellBtn'); }
+    function badge()        { return document.getElementById('notifBadge'); }
+    function dropdown()     { return document.getElementById('notifDropdown'); }
+    function list()         { return document.getElementById('notifList'); }
+    function emptyMsg()     { return document.getElementById('notifEmpty'); }
+
+    function relativeTime(isoStr) {
+        if (!isoStr) return '';
+        const diff = Date.now() - new Date(isoStr).getTime();
+        const m = Math.floor(diff / 60000);
+        if (m < 1)  return 'ahora';
+        if (m < 60) return `hace ${m} min`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `hace ${h} h`;
+        return `hace ${Math.floor(h / 24)} d`;
+    }
+
+    function iconForType(type) {
+        const map = {
+            session_request:       'fa-calendar-check',
+            session_confirmed:     'fa-calendar-check',
+            session_cancelled:     'fa-calendar-times',
+            evaluation_assigned:   'fa-clipboard-list',
+            evaluation_completed:  'fa-chart-bar',
+            content_assigned:      'fa-folder-open',
+            development_plan:      'fa-rocket',
+            task_assigned:         'fa-tasks',
+            commitment_created:    'fa-handshake',
+            message:               'fa-comment',
+        };
+        return map[type] || 'fa-bell';
+    }
+
+    /* ── badge update ── */
+    function updateBadge(count) {
+        const el = badge();
+        if (!el) return;
+        if (count > 0) {
+            el.textContent = count > 99 ? '99+' : count;
+            el.style.display = 'inline-block';
+        } else {
+            el.style.display = 'none';
+        }
+    }
+
+    /* ── fetch unread count (lightweight poll) ── */
+    async function fetchUnreadCount() {
+        try {
+            const r = await fetch('/api/notifications/unread-count', { credentials: 'same-origin' });
+            if (!r.ok) return;
+            const data = await r.json();
+            if (data.success) updateBadge(data.count);
+        } catch (_) {}
+    }
+
+    /* ── fetch and render full list ── */
+    async function fetchAndRender() {
+        try {
+            const r = await fetch('/api/notifications?limit=20', { credentials: 'same-origin' });
+            if (!r.ok) return;
+            const data = await r.json();
+            if (!data.success) return;
+            renderNotifications(data.notifications);
+        } catch (_) {}
+    }
+
+    function renderNotifications(notifications) {
+        const container = list();
+        if (!container) return;
+
+        // Remove old items (keep empty placeholder)
+        container.querySelectorAll('.notif-item').forEach(el => el.remove());
+
+        if (!notifications || notifications.length === 0) {
+            if (emptyMsg()) emptyMsg().style.display = 'block';
+            return;
+        }
+
+        if (emptyMsg()) emptyMsg().style.display = 'none';
+
+        notifications.forEach(n => {
+            const item = document.createElement('div');
+            item.className = 'notif-item';
+            item.dataset.id = n.id;
+            item.style.cssText = `
+                display: flex; gap: 0.75rem; align-items: flex-start;
+                padding: 0.75rem 1rem; cursor: pointer; transition: background 0.15s;
+                border-bottom: 1px solid #f8fafc;
+                background: ${n.is_read ? 'white' : '#f0f4ff'};
+            `;
+            item.onmouseover = () => item.style.background = '#f9fafb';
+            item.onmouseout  = () => item.style.background = n.is_read ? 'white' : '#f0f4ff';
+            item.onclick     = () => markOneRead(n.id, item);
+
+            item.innerHTML = `
+                <div style="flex-shrink:0; width:2rem; height:2rem; border-radius:50%;
+                             background:${n.is_read ? '#e5e7eb' : '#e0e7ff'}; display:flex;
+                             align-items:center; justify-content:center;">
+                    <i class="fas ${iconForType(n.type)}"
+                       style="font-size:0.75rem; color:${n.is_read ? '#9ca3af' : '#6366f1'};"></i>
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <p style="margin:0; font-size:0.8rem; font-weight:${n.is_read ? '400' : '600'};
+                               color:#111827; line-height:1.3;">
+                        ${escapeHtml(n.title)}
+                    </p>
+                    <p style="margin:0.2rem 0 0; font-size:0.75rem; color:#6b7280;
+                               white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${escapeHtml(n.message)}
+                    </p>
+                    <p style="margin:0.25rem 0 0; font-size:0.7rem; color:#9ca3af;">
+                        ${relativeTime(n.created_at)}
+                    </p>
+                </div>
+                ${!n.is_read ? '<span style="flex-shrink:0;width:0.5rem;height:0.5rem;border-radius:50%;background:#6366f1;margin-top:0.35rem;"></span>' : ''}
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ── mark one as read ── */
+    async function markOneRead(id, itemEl) {
+        try {
+            const r = await fetch(`/api/notifications/${id}/mark-read`, {
+                method: 'POST',
+                credentials: 'same-origin'
+            });
+            if (!r.ok) return;
+            if (itemEl) {
+                itemEl.style.background = 'white';
+                itemEl.dataset.read = 'true';
+                const dot  = itemEl.querySelector('span[style*="0.5rem"]');
+                const icon = itemEl.querySelector('i');
+                const title = itemEl.querySelector('p');
+                if (dot)   dot.remove();
+                if (icon)  { icon.style.color = '#9ca3af'; icon.closest('div').style.background = '#e5e7eb'; }
+                if (title) title.style.fontWeight = '400';
+            }
+            fetchUnreadCount();
+        } catch (_) {}
+    }
+
+    /* ── mark all as read (global) ── */
+    window.markAllNotifsRead = async function () {
+        try {
+            const r = await fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                credentials: 'same-origin'
+            });
+            if (!r.ok) return;
+            updateBadge(0);
+            await fetchAndRender();
+        } catch (_) {}
+    };
+
+    /* ── toggle dropdown ── */
+    window.toggleNotifDropdown = function (event) {
+        event.stopPropagation();
+        _notifOpen = !_notifOpen;
+        const dd = dropdown();
+        if (!dd) return;
+        if (_notifOpen) {
+            dd.style.display = 'block';
+            fetchAndRender();
+        } else {
+            dd.style.display = 'none';
+        }
+    };
+
+    /* ── close on outside click ── */
+    document.addEventListener('click', function (e) {
+        if (!_notifOpen) return;
+        const wrapper = document.getElementById('notifBellWrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            _notifOpen = false;
+            const dd = dropdown();
+            if (dd) dd.style.display = 'none';
+        }
+    });
+
+    /* ── start polling ── */
+    function startPolling() {
+        fetchUnreadCount();
+        _pollTimer = setInterval(fetchUnreadCount, POLL_INTERVAL);
+    }
+
+    /* ── init on DOMContentLoaded ── */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startPolling);
+    } else {
+        startPolling();
+    }
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   COMPROMISOS + PRÓXIMAS SESIONES — Overview widgets
+   ═══════════════════════════════════════════════════════ */
+(function () {
+
+    /* ── toggle collapse ── */
+    window.toggleOverviewSection = function(which) {
+        const ids = { compromisos: 'overviewCompromisosBody', sesiones: 'overviewSesionesBody', logros: 'overviewLogrosBody' };
+        const chevronIds = { compromisos: 'overviewCompromisosChevron', sesiones: 'overviewSesionesChevron', logros: 'overviewLogrosChevron' };
+        const body    = document.getElementById(ids[which]);
+        const chevron = document.getElementById(chevronIds[which]);
+        if (!body) return;
+        const open = body.style.display === 'none';
+        body.style.display      = open ? 'block' : 'none';
+        if (chevron) chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+    };
+
+    /* ── helpers ── */
+    const STATUS_CFG = {
+        pendiente:  { label: 'Pendiente',   color: '#f59e0b', bg: '#fffbeb', icon: 'fa-clock' },
+        parcial:    { label: 'En progreso', color: '#3b82f6', bg: '#eff6ff', icon: 'fa-spinner' },
+        completado: { label: 'Completado',  color: '#10b981', bg: '#ecfdf5', icon: 'fa-check-circle' },
+    };
+    const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+    function fmtFecha(iso) {
+        if (!iso) return '';
+        const d = new Date(iso + 'T00:00:00');
+        if (isNaN(d)) return iso;
+        return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    function isOverdue(iso, status) {
+        if (!iso || status === 'completado') return false;
+        return new Date(iso + 'T00:00:00') < new Date(new Date().toDateString());
+    }
+
+    function daysUntil(iso) {
+        const today = new Date(new Date().toDateString());
+        const d     = new Date(iso + 'T00:00:00');
+        return Math.round((d - today) / 86400000);
+    }
+
+    /* ── compromiso card ── */
+    function buildCompromisoCard(c) {
+        const cfg  = STATUS_CFG[c.status] || STATUS_CFG.pendiente;
+        const over = isOverdue(c.fecha, c.status);
+        const el   = document.createElement('div');
+        el.style.cssText = `display:flex;align-items:flex-start;gap:0.75rem;background:white;
+            border:1px solid #e5e7eb;border-left:4px solid ${over ? '#ef4444' : cfg.color};
+            border-radius:10px;padding:0.75rem 1rem;box-shadow:0 1px 4px rgba(0,0,0,0.05);`;
+
+        const dot = document.createElement('div');
+        dot.style.cssText = `flex-shrink:0;width:2rem;height:2rem;border-radius:50%;
+            background:${over ? '#fee2e2' : cfg.bg};display:flex;align-items:center;
+            justify-content:center;margin-top:0.1rem;`;
+        dot.innerHTML = `<i class="fas ${over ? 'fa-exclamation-circle' : cfg.icon}"
+            style="font-size:0.78rem;color:${over ? '#ef4444' : cfg.color};"></i>`;
+
+        const body = document.createElement('div');
+        body.style.cssText = 'flex:1;min-width:0;';
+        body.innerHTML = `
+            <p style="margin:0 0 0.25rem;font-size:0.88rem;font-weight:600;color:#111827;line-height:1.35;">${c.texto}</p>
+            <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                <span style="font-size:0.72rem;color:#6b7280;">${c.session_name}</span>
+                ${c.fecha ? `<span style="color:#d1d5db;font-size:0.7rem;">·</span>
+                <span style="font-size:0.72rem;font-weight:500;color:${over ? '#ef4444' : '#6b7280'};">
+                    <i class="fas fa-calendar-alt" style="margin-right:0.2rem;font-size:0.62rem;"></i>
+                    ${fmtFecha(c.fecha)}${over ? ' · vencido' : ''}
+                </span>` : ''}
+            </div>`;
+
+        const badge = document.createElement('span');
+        badge.style.cssText = `font-size:0.68rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;
+            padding:0.15rem 0.5rem;border-radius:20px;background:${over ? '#fee2e2' : cfg.bg};
+            color:${over ? '#ef4444' : cfg.color};margin-left:auto;white-space:nowrap;align-self:flex-start;`;
+        badge.textContent = over ? 'Vencido' : cfg.label;
+
+        el.appendChild(dot);
+        el.appendChild(body);
+        el.appendChild(badge);
+        return el;
+    }
+
+    /* ── session card ── */
+    function buildSessionCard(s) {
+        const days   = daysUntil(s.session_date);
+        const d      = new Date(s.session_date + 'T00:00:00');
+        const dayStr = `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`;
+        const isConfirmed = s.status === 'confirmed';
+        const accentColor = isConfirmed ? '#6366f1' : '#f59e0b';
+        const accentBg    = isConfirmed ? '#eef2ff' : '#fffbeb';
+
+        const daysLabel = days === 0 ? 'Hoy' : days === 1 ? 'Mañana' : days > 0 ? `En ${days} días` : days === -1 ? 'Ayer' : `Hace ${Math.abs(days)} días`;
+
+        const el = document.createElement('div');
+        el.style.cssText = `display:flex;align-items:stretch;gap:0;background:white;
+            border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;
+            box-shadow:0 1px 4px rgba(0,0,0,0.05);`;
+
+        /* left accent strip with date */
+        const strip = document.createElement('div');
+        strip.style.cssText = `flex-shrink:0;width:4.5rem;background:${accentBg};
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            padding:0.75rem 0.5rem;border-right:1px solid #e5e7eb;`;
+        strip.innerHTML = `
+            <span style="font-size:1.5rem;font-weight:800;color:${accentColor};line-height:1;">${d.getDate()}</span>
+            <span style="font-size:0.7rem;font-weight:600;color:${accentColor};text-transform:uppercase;letter-spacing:0.05em;">${MESES[d.getMonth()]}</span>
+            <span style="font-size:0.65rem;color:#9ca3af;margin-top:0.2rem;">${DIAS[d.getDay()]}</span>`;
+
+        /* right body */
+        const body = document.createElement('div');
+        body.style.cssText = 'flex:1;min-width:0;padding:0.75rem 1rem;display:flex;flex-direction:column;justify-content:center;gap:0.3rem;';
+        body.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+                <p style="margin:0;font-size:0.88rem;font-weight:700;color:#111827;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title}</p>
+                <span style="flex-shrink:0;font-size:0.68rem;font-weight:700;text-transform:uppercase;
+                    letter-spacing:0.03em;padding:0.15rem 0.5rem;border-radius:20px;
+                    background:${accentBg};color:${accentColor};">${daysLabel}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                <span style="font-size:0.75rem;color:#6b7280;">
+                    <i class="fas fa-clock" style="margin-right:0.2rem;font-size:0.65rem;"></i>${s.start_time} – ${s.end_time}
+                </span>
+                ${s.coach_name ? `<span style="color:#d1d5db;font-size:0.7rem;">·</span>
+                <span style="font-size:0.75rem;color:#6b7280;">
+                    <i class="fas fa-user-tie" style="margin-right:0.2rem;font-size:0.65rem;"></i>${s.coach_name}
+                </span>` : ''}
+                ${s.location ? `<span style="color:#d1d5db;font-size:0.7rem;">·</span>
+                <span style="font-size:0.75rem;color:#6b7280;">
+                    <i class="fas fa-map-marker-alt" style="margin-right:0.2rem;font-size:0.65rem;"></i>${s.location}
+                </span>` : ''}
+            </div>`;
+
+        el.appendChild(strip);
+        el.appendChild(body);
+        return el;
+    }
+
+    /* ── load compromisos ── */
+    async function loadCompromisos() {
+        try {
+            const res  = await fetch('/api/coachee/commitments', { credentials: 'same-origin' });
+            const data = await res.json();
+            if (!data.success) return;
+            const items = data.commitments || [];
+            if (!items.length) return;
+
+            const grid    = document.getElementById('overviewCompromisosGrid');
+            const countEl = document.getElementById('overviewCompromisosCount');
+            const section = document.getElementById('overviewCompromisosSection');
+            if (!grid || !section) return;
+
+            grid.innerHTML = '';
+            items.forEach(c => grid.appendChild(buildCompromisoCard(c)));
+
+            const pending = items.filter(c => c.status !== 'completado').length;
+            countEl.textContent = pending > 0
+                ? `${pending} pendiente${pending !== 1 ? 's' : ''} · ${items.length} total`
+                : `${items.length} · todos completados`;
+
+            section.style.display = 'block';
+        } catch (_) {}
+    }
+
+    /* ── load próximas sesiones ── */
+    async function loadSesiones() {
+        try {
+            const res  = await fetch('/api/coachee/upcoming-sessions', { credentials: 'same-origin' });
+            const data = await res.json();
+            if (!data.success) return;
+            const items = data.sessions || [];
+            if (!items.length) return;
+
+            const grid    = document.getElementById('overviewSesionesGrid');
+            const countEl = document.getElementById('overviewSesionesCount');
+            const section = document.getElementById('overviewSesionesSection');
+            const title   = document.getElementById('overviewSesionesTitle');
+            if (!grid || !section) return;
+
+            const today = new Date(new Date().toDateString());
+            const hasUpcoming = items.some(s => new Date(s.session_date + 'T00:00:00') >= today);
+
+            if (title) title.textContent = hasUpcoming ? 'Próximas Sesiones' : 'Sesiones Recientes';
+            countEl.textContent = `${items.length} sesión${items.length !== 1 ? 'es' : ''}`;
+
+            grid.innerHTML = '';
+            items.forEach(s => grid.appendChild(buildSessionCard(s)));
+            section.style.display = 'block';
+        } catch (_) {}
+    }
+
+    function init() {
+        loadCompromisos();
+        loadSesiones();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
 </script>
 
