@@ -642,10 +642,71 @@ Expira en 7 días."""
         }
 
 
+def send_coach_lead_email(nombre, lead_email, detalle):
+    """
+    Envía email a support@instacoach.cl cuando un coachee solicita que le
+    busquen un coach ("Encontrar un Coach Para Mí").
+    """
+    try:
+        smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+        smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
+        support_email = 'support@instacoach.cl'
+
+        if not all([smtp_server, smtp_username, smtp_password]):
+            logger.warning("⚠️ SMTP not configured - Coach lead email not sent")
+            return False
+
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = support_email
+        msg['Reply-To'] = lead_email
+        msg['Subject'] = f'🎯 Nuevo lead de coachee - {nombre}'
+
+        detalle_html = detalle.replace('\n', '<br>')
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
+                <h2 style="color: #2C5AA8; border-bottom: 3px solid #2C5AA8; padding-bottom: 10px;">
+                    Nuevo lead: un coachee busca coach
+                </h2>
+                <p>Se recibió una solicitud desde "Encontrar un Coach Para Mí":</p>
+                <div style="background: white; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    {detalle_html}
+                </div>
+                <p style="margin-top: 16px; color: #666;">
+                    Responde directamente a este correo para contactar a {nombre}
+                    (Reply-To: {lead_email}).
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(msg)
+
+        logger.info(f"📧 COACH-LEAD: Email enviado a {support_email} por lead de {nombre}")
+        return True
+
+    except Exception as e:
+        logger.error(f"❌ COACH-LEAD: Error enviando email: {str(e)}")
+        return False
+
+
 def send_coach_request_email(coach_request):
     """
     Envía email a support@instacoach.cl cuando se recibe una nueva solicitud de coach.
-    
+
     Args:
         coach_request: Instancia de CoachRequest con la información del solicitante
     """
@@ -5696,7 +5757,7 @@ def api_coach_leads():
     (sin cambio de schema) y deja rastro en el log.
     """
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
         if not data:
             return jsonify({'success': False, 'error': 'Datos JSON requeridos'}), 400
 
@@ -5732,7 +5793,14 @@ def api_coach_leads():
                 message=detalle
             )
 
-        return jsonify({'success': True, 'message': 'Solicitud recibida. Te contactaremos pronto.'}), 200
+        # Entrega principal: email a soporte (mismo canal que las solicitudes de coach)
+        email_sent = send_coach_lead_email(nombre, email, detalle)
+
+        return jsonify({
+            'success': True,
+            'message': 'Solicitud recibida. Te contactaremos pronto.',
+            'email_sent': email_sent
+        }), 200
 
     except Exception as e:
         db.session.rollback()
