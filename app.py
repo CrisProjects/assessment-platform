@@ -141,10 +141,10 @@ logger.info("✅ Compresión GZIP habilitada")
 # Aplicar migraciones automáticas en producción
 if IS_PRODUCTION:
     try:
-        from auto_migrate import apply_migrations
-        logger.info("🔧 Aplicando migraciones automáticas...")
-        apply_migrations()
-        logger.info("✅ Migraciones completadas")
+        # from auto_migrate import apply_migrations
+        logger.info("🔧 (auto_migrate deshabilitado) Saltando migraciones automáticas...")
+        # apply_migrations()
+        logger.info("✅ (auto_migrate deshabilitado) Migraciones automáticas omitidas")
     except Exception as e:
         logger.warning(f"⚠️ Error en auto-migrations (continuando): {e}")
 
@@ -2408,6 +2408,35 @@ class CommunityInvitation(db.Model):
 # FIN DE MODELOS DE COMUNIDADES
 # ============================================================================
         self.uploaded_at = kwargs.get('uploaded_at', datetime.utcnow())
+
+class Message(db.Model):
+    """Direct messages between a coach and a coachee."""
+    __tablename__ = 'message'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    sender_id   = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    recipient_id= db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    body        = db.Column(db.Text, nullable=False)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    read_at     = db.Column(db.DateTime, nullable=True)
+
+    sender    = db.relationship('User', foreign_keys=[sender_id],    backref='sent_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')
+
+    __table_args__ = (
+        db.Index('idx_message_pair', 'sender_id', 'recipient_id'),
+        db.Index('idx_message_created', 'created_at'),
+    )
+
+    def to_dict(self, current_user_id):
+        return {
+            'id':         self.id,
+            'body':       self.body,
+            'from_me':    self.sender_id == current_user_id,
+            'sender_name': self.sender.full_name or self.sender.username,
+            'created_at': self.created_at.isoformat(),
+            'read_at':    self.read_at.isoformat() if self.read_at else None,
+        }
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -8204,13 +8233,11 @@ def coach_dashboard_v2():
                          coach_avatar_url=current_coach.avatar_url or '/static/img/default-avatar.png',
                          deploy_version=deploy_version))
     
-    # Prevenir cacheo del HTML para forzar actualizaciones
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
+    # Cache privado corto: el HTML es un shell estático (los datos llegan por API).
+    # Evita re-descargar ~200KB gzip en cada navegación sin arriesgar datos obsoletos.
+    response.headers['Cache-Control'] = 'private, max-age=300'
     response.headers['X-Version'] = deploy_version
-    response.headers['ETag'] = f'"{deploy_version}"'
-    response.headers['Vary'] = 'Accept-Encoding'
+    response.headers['Vary'] = 'Accept-Encoding, Cookie'
     
     # Agregar CSP para permitir recursos externos (avatares, Chart.js, estilos CDN)
     response.headers['Content-Security-Policy'] = (
@@ -8225,10 +8252,6 @@ def coach_dashboard_v2():
         "worker-src 'self' blob:; "  # Permite Web Workers para Chart.js
         "child-src 'self' blob:;"  # Soporte legacy para workers
     )
-    
-    # Agregar headers de cache control para prevenir acceso con botón atrás
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
     
     return response
 
@@ -8255,8 +8278,16 @@ def coachee_dashboard():
     if session.get('first_login') and session.get('target_assessment_id'):
         auto_start_assessment = session.pop('target_assessment_id')
         session.pop('first_login')
-    
-    return render_template('coachee_dashboard.html', auto_start_assessment=auto_start_assessment)
+
+    response = make_response(render_template('coachee_dashboard.html', auto_start_assessment=auto_start_assessment))
+    if auto_start_assessment:
+        # Respuesta con auto-inicio de evaluación: nunca cachear (es de un solo uso)
+        response.headers['Cache-Control'] = 'no-store'
+    else:
+        # Shell estático (~230KB gzip): cache privado corto evita re-descargas por navegación
+        response.headers['Cache-Control'] = 'private, max-age=300'
+        response.headers['Vary'] = 'Accept-Encoding, Cookie'
+    return response
 
 @app.route('/coachee-feed')
 @coachee_session_required
@@ -8652,7 +8683,8 @@ def api_coach_dashboard_init():
             coachees_data.append(coachee_data)
         
         # 3. STATS DATA
-        total_coachees = User.query.filter_by(
+        # Si la lista no llegó al límite de 50, el total es len(); evita un COUNT extra
+        total_coachees = len(coachees) if len(coachees) < 50 else User.query.filter_by(
             coach_id=current_coach.id,
             role='coachee'
         ).count()
@@ -8691,27 +8723,32 @@ def api_coach_dashboard_init():
         ).count()
         
         # Compromisos creados (desde registros de sesión)
+        # Solo se trae la columna commitments (no el registro completo) y se
+        # descartan filas sin compromisos directamente en SQL.
         total_commitments = 0
         commitments_completed = 0
         commitments_partial = 0
         commitments_pending = 0
-        session_records = SessionRecord.query.filter_by(coach_id=current_coach.id).all()
-        for sr in session_records:
-            if sr.commitments:
-                try:
-                    comms = json.loads(sr.commitments)
-                    if isinstance(comms, list):
-                        total_commitments += len(comms)
-                        for c in comms:
-                            st = c.get('status', 'pendiente') if isinstance(c, dict) else 'pendiente'
-                            if st == 'completado':
-                                commitments_completed += 1
-                            elif st == 'parcial':
-                                commitments_partial += 1
-                            else:
-                                commitments_pending += 1
-                except:
-                    pass
+        commitment_rows = db.session.query(SessionRecord.commitments).filter(
+            SessionRecord.coach_id == current_coach.id,
+            SessionRecord.commitments.isnot(None),
+            SessionRecord.commitments != ''
+        ).all()
+        for (commitments_json,) in commitment_rows:
+            try:
+                comms = json.loads(commitments_json)
+                if isinstance(comms, list):
+                    total_commitments += len(comms)
+                    for c in comms:
+                        st = c.get('status', 'pendiente') if isinstance(c, dict) else 'pendiente'
+                        if st == 'completado':
+                            commitments_completed += 1
+                        elif st == 'parcial':
+                            commitments_partial += 1
+                        else:
+                            commitments_pending += 1
+            except:
+                pass
 
         stats_data = {
             'total_coachees': total_coachees,
@@ -8879,89 +8916,79 @@ def api_coach_overview_charts():
         
         logger.info(f"📊 OVERVIEW-CHARTS: Generating charts for coach {current_coach.username}")
         
-        # 1. Activity Chart - Coachees activos por semana (últimas 4 semanas)
+        # Optimización: una sola query por gráfico (timestamps crudos, bucketing
+        # en Python — portable entre SQLite y PostgreSQL, sin date_trunc por dialecto).
         from datetime import datetime, timedelta
         now = datetime.now()
-        weeks_data = []
-        weeks_labels = []
-        
-        for i in range(3, -1, -1):  # 4 semanas atrás hasta ahora
-            week_start = now - timedelta(weeks=i+1)
-            week_end = now - timedelta(weeks=i)
-            weeks_labels.append(f'Sem {4-i}')
-            
-            # Contar coachees con actividad en esa semana
-            active_coachees = User.query.filter(
-                User.coach_id == current_coach.id,
-                User.role == 'coachee',
-                User.last_login >= week_start,
-                User.last_login < week_end
-            ).count()
-            weeks_data.append(active_coachees)
-        
-        # 2. Content Type Chart - Distribución de tipos de contenido
-        # Contar contenido publicado de la tabla Content por tipo
-        video_count = Content.query.filter(
+
+        # 1. Activity Chart - Coachees activos por semana (últimas 4 semanas)
+        four_weeks_ago = now - timedelta(weeks=4)
+        weeks_labels = [f'Sem {n}' for n in range(1, 5)]
+        weeks_data = [0, 0, 0, 0]
+        recent_logins = db.session.query(User.last_login).filter(
+            User.coach_id == current_coach.id,
+            User.role == 'coachee',
+            User.last_login >= four_weeks_ago,
+            User.last_login < now
+        ).all()
+        for (last_login,) in recent_logins:
+            weeks_back = int((now - last_login).days // 7)  # 0 = semana más reciente
+            if 0 <= weeks_back < 4:
+                weeks_data[3 - weeks_back] += 1
+
+        # 2. Content Type Chart - Distribución de tipos de contenido (un GROUP BY)
+        content_counts = dict(db.session.query(
+            Content.content_type, func.count(Content.id)
+        ).filter(
             Content.coach_id == current_coach.id,
-            Content.content_type == 'video',
-            Content.is_active == True
-        ).count()
-        
-        document_count = Content.query.filter(
-            Content.coach_id == current_coach.id,
-            Content.content_type == 'document',
-            Content.is_active == True
-        ).count()
-        
-        article_count = Content.query.filter(
-            Content.coach_id == current_coach.id,
-            Content.content_type == 'article',
-            Content.is_active == True
-        ).count()
-        
+            Content.is_active == True,
+            Content.content_type.in_(['video', 'document', 'article'])
+        ).group_by(Content.content_type).all())
+
+        video_count = content_counts.get('video', 0)
+        document_count = content_counts.get('document', 0)
+        article_count = content_counts.get('article', 0)
         total_content = video_count + document_count + article_count
-        
+
         if total_content > 0:
             content_labels = ['Videos', 'Documentos', 'Artículos']
             content_data = [video_count, document_count, article_count]
         else:
             content_labels = []
             content_data = []
-        
+
         # 3. Evaluations Chart - Evaluaciones completadas por mes (últimos 6 meses)
-        # Obtener IDs de coachees para filtrar evaluaciones
         coachee_ids = [c.id for c in User.query.filter_by(
             coach_id=current_coach.id,
             role='coachee'
         ).with_entities(User.id).all()]
-        
-        months_data = []
-        months_labels = []
-        
-        for i in range(5, -1, -1):  # 6 meses atrás hasta ahora
-            month_date = now - timedelta(days=30*i)
-            month_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            
-            if i == 0:
-                month_end = now
-            else:
-                next_month = month_start + timedelta(days=32)
-                month_end = next_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            
-            # Nombre del mes en español
-            month_names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-            months_labels.append(month_names[month_start.month - 1])
-            
-            # Contar evaluaciones completadas en ese mes
-            if coachee_ids:
-                completed = AssessmentResult.query.filter(
-                    AssessmentResult.user_id.in_(coachee_ids),
-                    AssessmentResult.completed_at >= month_start,
-                    AssessmentResult.completed_at < month_end
-                ).count()
-                months_data.append(completed)
-            else:
-                months_data.append(0)
+
+        month_names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        # Claves (año, mes) de los últimos 6 meses, del más antiguo al actual
+        month_keys = []
+        y, m = now.year, now.month
+        for _ in range(6):
+            month_keys.append((y, m))
+            m -= 1
+            if m == 0:
+                y, m = y - 1, 12
+        month_keys.reverse()
+
+        months_labels = [month_names[m - 1] for (_, m) in month_keys]
+        months_data = [0] * 6
+        month_index = {key: idx for idx, key in enumerate(month_keys)}
+
+        if coachee_ids:
+            oldest_start = datetime(month_keys[0][0], month_keys[0][1], 1)
+            completed_dates = db.session.query(AssessmentResult.completed_at).filter(
+                AssessmentResult.user_id.in_(coachee_ids),
+                AssessmentResult.completed_at >= oldest_start,
+                AssessmentResult.completed_at <= now
+            ).all()
+            for (completed_at,) in completed_dates:
+                idx = month_index.get((completed_at.year, completed_at.month))
+                if idx is not None:
+                    months_data[idx] += 1
         
         result = {
             'activity_chart': {
@@ -11589,9 +11616,15 @@ def api_coachee_evaluations():
         ).all()
         logger.info(f"🔍 DEBUG: Evaluaciones completadas encontradas: {len(completed_results)}")
         
+        # Batch: un solo query para los títulos en vez de uno por resultado (N+1)
+        result_assessment_ids = {r.assessment_id for r in completed_results}
+        assessments_by_id = {
+            a.id: a for a in Assessment.query.filter(Assessment.id.in_(result_assessment_ids)).all()
+        } if result_assessment_ids else {}
+
         completed_evaluations = []
         for result in completed_results:
-            assessment = Assessment.query.get(result.assessment_id)
+            assessment = assessments_by_id.get(result.assessment_id)
             completed_evaluations.append({
                 'id': result.id,
                 'assessment_id': result.assessment_id,
@@ -11649,11 +11682,26 @@ def api_coachee_evaluations():
         
         logger.info(f"🔍 DEBUG: IDs de evaluaciones asignadas: {assigned_assessment_ids}")
         
-        # Obtener solo las evaluaciones asignadas
-        available_assessments = Assessment.query.filter(
-            Assessment.id.in_(assigned_assessment_ids),
-            Assessment.is_active == True
-        ).all() if assigned_assessment_ids else []
+        # Obtener las evaluaciones asignadas. Si el coach aún no asignó una
+        # evaluación explícita, mostrar las evaluaciones activas disponibles
+        # para evitar que el dashboard del coachee quede vacío.
+        if assigned_assessment_ids:
+            available_assessments = Assessment.query.filter(
+                Assessment.id.in_(assigned_assessment_ids),
+                Assessment.is_active == True
+            ).all()
+            fallback_available_catalog = False
+        else:
+            available_assessments = Assessment.query.filter(
+                Assessment.is_active == True,
+                Assessment.status == 'published',
+                or_(Assessment.coach_id.is_(None), Assessment.coach_id == current_user.coach_id)
+            ).order_by(Assessment.id.asc()).all()
+            fallback_available_catalog = True
+            logger.info(
+                f"ℹ️ DEBUG: No hay evaluaciones asignadas; usando catálogo activo "
+                f"({len(available_assessments)} evaluaciones)"
+            )
         
         logger.info(f"🔍 DEBUG: Evaluaciones asignadas encontradas: {len(available_assessments)}")
         
@@ -11665,7 +11713,8 @@ def api_coachee_evaluations():
             ).order_by(Question.order.asc()).all()
             
             # 🔥 LÓGICA CORRECTA: Una evaluación está completada para esta asignación si:
-            # Existe un resultado completado DESPUÉS de la fecha de asignación (Task.created_at)
+            # Existe un resultado completado DESPUÉS de la fecha de asignación (Task.created_at).
+            # En modo catálogo fallback no hay tarea, así que se usa el historial del usuario.
             task = assessment_task_map.get(assessment.id)
             task_created_at = task.created_at if task else None
             
@@ -11674,7 +11723,10 @@ def api_coachee_evaluations():
             previous_attempts = len(all_results)
             
             # Verificar si fue completada DESPUÉS de la asignación actual
-            if task_created_at:
+            if fallback_available_catalog:
+                has_completed = previous_attempts > 0
+                logger.info(f"🔍 DEBUG: Assessment {assessment.id} - Catálogo fallback, intentos previos: {previous_attempts}")
+            elif task_created_at:
                 results_after_assignment = [r for r in all_results if r.completed_at > task_created_at]
                 has_completed = len(results_after_assignment) > 0
                 logger.info(f"🔍 DEBUG: Assessment {assessment.id} - Task created: {task_created_at}, Resultados después de asignación: {len(results_after_assignment)}")
@@ -13160,9 +13212,15 @@ def api_coachee_dashboard_init():
             AssessmentResult.completed_at.isnot(None)
         ).order_by(AssessmentResult.completed_at.desc()).limit(10).all()
         
+        # Batch: un solo query para los títulos en vez de uno por resultado (N+1)
+        result_assessment_ids = {r.assessment_id for r in completed_results}
+        assessments_by_id = {
+            a.id: a for a in Assessment.query.filter(Assessment.id.in_(result_assessment_ids)).all()
+        } if result_assessment_ids else {}
+
         completed_evaluations = []
         for result in completed_results:
-            assessment = Assessment.query.get(result.assessment_id)
+            assessment = assessments_by_id.get(result.assessment_id)
             completed_evaluations.append({
                 'id': result.id,
                 'assessment_id': result.assessment_id,
@@ -13174,30 +13232,90 @@ def api_coachee_dashboard_init():
                 'dimensional_scores': result.dimensional_scores
             })
         
-        # Evaluaciones disponibles (asignadas por tareas)
+        # Evaluaciones disponibles. Primero usar asignaciones explícitas por tarea;
+        # si no existen, exponer el catálogo activo disponible para este coachee.
         assigned_tasks = Task.query.filter_by(
             coachee_id=current_coachee.id,
             is_active=True,
             category='evaluation'
         ).all()
-        
-        available_evaluations = {}
+
+        assigned_assessment_ids = []
+        assessment_task_map = {}
+        active_assessments = Assessment.query.filter(Assessment.is_active == True).all()
+
         for task in assigned_tasks:
-            # Parsear título de la tarea para obtener assessment_id
-            if 'assessment_id:' in task.description:
-                try:
-                    assessment_id = int(task.description.split('assessment_id:')[1].split()[0])
-                    assessment = Assessment.query.get(assessment_id)
-                    if assessment and assessment.is_active:
-                        available_evaluations[assessment.category] = {
-                            'id': assessment.id,
-                            'title': assessment.title,
-                            'description': assessment.description,
-                            'category': assessment.category,
-                            'task_id': task.id
-                        }
-                except (ValueError, IndexError):
-                    continue
+            assessment_title_from_task = task.title.replace('Completar: ', '').strip()
+            # active_assessments ya está en memoria: match exacto sin query por tarea (N+1)
+            matching_assessment = next(
+                (a for a in active_assessments if a.title == assessment_title_from_task),
+                None
+            )
+
+            if not matching_assessment:
+                matching_assessment = next(
+                    (
+                        assessment for assessment in active_assessments
+                        if assessment.title in task.title or assessment.title == assessment_title_from_task
+                    ),
+                    None
+                )
+
+            if matching_assessment and matching_assessment.id not in assigned_assessment_ids:
+                assigned_assessment_ids.append(matching_assessment.id)
+                assessment_task_map[matching_assessment.id] = task
+
+        if assigned_assessment_ids:
+            available_assessments = Assessment.query.filter(
+                Assessment.id.in_(assigned_assessment_ids),
+                Assessment.is_active == True
+            ).order_by(Assessment.id.asc()).all()
+            fallback_available_catalog = False
+        else:
+            available_assessments = Assessment.query.filter(
+                Assessment.is_active == True,
+                Assessment.status == 'published',
+                or_(Assessment.coach_id.is_(None), Assessment.coach_id == current_coachee.coach_id)
+            ).order_by(Assessment.id.asc()).all()
+            fallback_available_catalog = True
+
+        # Un solo GROUP BY para los conteos de preguntas en vez de un COUNT por evaluación (N+1)
+        question_counts = dict(db.session.query(
+            Question.assessment_id, func.count(Question.id)
+        ).filter(
+            Question.assessment_id.in_([a.id for a in available_assessments]),
+            Question.is_active == True
+        ).group_by(Question.assessment_id).all()) if available_assessments else {}
+
+        available_evaluations = {}
+        for assessment in available_assessments:
+            questions_count = question_counts.get(assessment.id, 0)
+            all_results = [r for r in completed_results if r.assessment_id == assessment.id]
+            previous_attempts = len(all_results)
+            task = assessment_task_map.get(assessment.id)
+
+            if fallback_available_catalog:
+                is_completed = previous_attempts > 0
+            elif task and task.created_at:
+                is_completed = any(
+                    r.completed_at and r.completed_at > task.created_at
+                    for r in all_results
+                )
+            else:
+                is_completed = previous_attempts > 0
+
+            available_evaluations[str(assessment.id)] = {
+                'id': assessment.id,
+                'title': assessment.title,
+                'description': assessment.description,
+                'category': assessment.category,
+                'task_id': task.id if task else None,
+                'total_questions': questions_count,
+                'previous_attempts': previous_attempts,
+                'is_completed': is_completed,
+                'created_at': assessment.created_at.isoformat() if assessment.created_at else None,
+                'coach_name': current_coachee.coach.full_name if current_coachee.coach else 'Sin asignar'
+            }
         
         # 3. TASKS STATS
         tasks = Task.query.filter(
@@ -13206,15 +13324,21 @@ def api_coachee_dashboard_init():
             Task.category != 'evaluation'
         ).all()
         
+        # Un solo query trae todo el progreso de esas tareas; el último por tarea
+        # se resuelve en memoria (antes: un query por tarea, N+1)
         pending_tasks = 0
-        current_date = date.today()
-        
-        for task in tasks:
-            latest_progress = TaskProgress.query.filter_by(task_id=task.id)\
-                .order_by(TaskProgress.created_at.desc()).first()
-            
-            if latest_progress and latest_progress.status in ['pending', 'in_progress']:
-                pending_tasks += 1
+        if tasks:
+            progress_rows = TaskProgress.query.filter(
+                TaskProgress.task_id.in_([t.id for t in tasks])
+            ).order_by(TaskProgress.created_at.desc()).all()
+            latest_by_task = {}
+            for p in progress_rows:
+                if p.task_id not in latest_by_task:
+                    latest_by_task[p.task_id] = p
+            for task in tasks:
+                latest_progress = latest_by_task.get(task.id)
+                if latest_progress and latest_progress.status in ['pending', 'in_progress']:
+                    pending_tasks += 1
         
         # 4. RESPONSE COMBINADA
         response = {
@@ -18582,6 +18706,200 @@ def api_coachee_upcoming_sessions(current_coachee):
     except Exception as e:
         logger.error(f"❌ COACHEE-UPCOMING-SESSIONS: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# ENDPOINTS: Mensajes directos (chat coach ↔ coachee)
+# ============================================================================
+
+@app.route('/api/coachee/messages', methods=['GET'])
+@coachee_api_required
+def api_coachee_messages_get(current_coachee):
+    """Devuelve el hilo de mensajes entre el coachee y su coach."""
+    try:
+        if not current_coachee.coach_id:
+            return jsonify({'success': True, 'messages': [], 'coach': None})
+
+        coach = User.query.get(current_coachee.coach_id)
+        # ?since=<id> permite al polling traer solo mensajes nuevos
+        since_id = request.args.get('since', type=int)
+        msgs_query = Message.query.filter(
+            db.or_(
+                db.and_(Message.sender_id == current_coachee.id, Message.recipient_id == current_coachee.coach_id),
+                db.and_(Message.sender_id == current_coachee.coach_id, Message.recipient_id == current_coachee.id),
+            )
+        )
+        if since_id:
+            msgs_query = msgs_query.filter(Message.id > since_id)
+        msgs = msgs_query.order_by(Message.created_at.asc()).all()
+
+        # Mark unread messages from coach as read
+        unread = [m for m in msgs if m.recipient_id == current_coachee.id and m.read_at is None]
+        if unread:
+            now = datetime.utcnow()
+            for m in unread:
+                m.read_at = now
+            db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'messages': [m.to_dict(current_coachee.id) for m in msgs],
+            'coach': {
+                'id': coach.id,
+                'name': coach.full_name or coach.username,
+                'avatar_url': getattr(coach, 'avatar_url', None),
+            } if coach else None,
+        })
+    except Exception as e:
+        logger.error(f"❌ COACHEE-MESSAGES-GET: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coachee/messages', methods=['POST'])
+@coachee_api_required
+def api_coachee_messages_post(current_coachee):
+    """Coachee envía un mensaje a su coach."""
+    try:
+        if not current_coachee.coach_id:
+            return jsonify({'success': False, 'error': 'No tienes un coach asignado'}), 400
+        data = request.get_json()
+        body = (data or {}).get('body', '').strip()
+        if not body:
+            return jsonify({'success': False, 'error': 'El mensaje no puede estar vacío'}), 400
+        if len(body) > 4000:
+            return jsonify({'success': False, 'error': 'Mensaje demasiado largo'}), 400
+
+        msg = Message(sender_id=current_coachee.id, recipient_id=current_coachee.coach_id, body=body)
+        db.session.add(msg)
+
+        create_notification(
+            user_id=current_coachee.coach_id,
+            type='message',
+            title=f'Mensaje de {current_coachee.full_name or current_coachee.username}',
+            message=body[:120],
+            related_id=current_coachee.id,
+            related_type='coachee',
+        )
+        db.session.commit()
+        logger.info(f"💬 MSG: coachee {current_coachee.id} → coach {current_coachee.coach_id}")
+        return jsonify({'success': True, 'message': msg.to_dict(current_coachee.id)}), 201
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ COACHEE-MESSAGES-POST: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/conversations', methods=['GET'])
+@coach_session_required
+def api_coach_conversations():
+    """Lista todas las conversaciones activas del coach (una por coachee)."""
+    try:
+        coach_id = g.current_user.id
+        coachees = User.query.filter_by(coach_id=coach_id, role='coachee', active=True).filter(User.deleted_at.is_(None)).order_by(User.full_name).all()
+        result = []
+        for c in coachees:
+            last_msg = Message.query.filter(
+                db.or_(
+                    db.and_(Message.sender_id == c.id, Message.recipient_id == coach_id),
+                    db.and_(Message.sender_id == coach_id, Message.recipient_id == c.id),
+                )
+            ).order_by(Message.created_at.desc()).first()
+
+            unread_count = Message.query.filter(
+                Message.sender_id == c.id,
+                Message.recipient_id == coach_id,
+                Message.read_at.is_(None),
+            ).count()
+
+            result.append({
+                'coachee_id':   c.id,
+                'coachee_name': c.full_name or c.username,
+                'avatar_url':   getattr(c, 'avatar_url', None),
+                'last_message': last_msg.body[:80] if last_msg else None,
+                'last_at':      last_msg.created_at.isoformat() if last_msg else None,
+                'unread':       unread_count,
+            })
+        result.sort(key=lambda x: x['last_at'] or '', reverse=True)
+        return jsonify({'success': True, 'conversations': result})
+    except Exception as e:
+        logger.error(f"❌ COACH-CONVERSATIONS: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/messages/<int:coachee_id>', methods=['GET'])
+@coach_session_required
+def api_coach_messages_get(coachee_id):
+    """Coach obtiene los mensajes con un coachee específico."""
+    try:
+        coach_id = g.current_user.id
+        coachee = User.query.filter_by(id=coachee_id, coach_id=coach_id, role='coachee').first()
+        if not coachee:
+            return jsonify({'success': False, 'error': 'Coachee no encontrado'}), 404
+
+        # ?since=<id> permite al polling traer solo mensajes nuevos
+        since_id = request.args.get('since', type=int)
+        msgs_query = Message.query.filter(
+            db.or_(
+                db.and_(Message.sender_id == coachee_id, Message.recipient_id == coach_id),
+                db.and_(Message.sender_id == coach_id,   Message.recipient_id == coachee_id),
+            )
+        )
+        if since_id:
+            msgs_query = msgs_query.filter(Message.id > since_id)
+        msgs = msgs_query.order_by(Message.created_at.asc()).all()
+
+        unread = [m for m in msgs if m.recipient_id == coach_id and m.read_at is None]
+        if unread:
+            now = datetime.utcnow()
+            for m in unread:
+                m.read_at = now
+            db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'messages': [m.to_dict(coach_id) for m in msgs],
+            'coachee': {'id': coachee.id, 'name': coachee.full_name or coachee.username},
+        })
+    except Exception as e:
+        logger.error(f"❌ COACH-MESSAGES-GET: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/coach/messages/<int:coachee_id>', methods=['POST'])
+@coach_session_required
+def api_coach_messages_post(coachee_id):
+    """Coach envía un mensaje a un coachee."""
+    try:
+        coach_id = g.current_user.id
+        coachee = User.query.filter_by(id=coachee_id, coach_id=coach_id, role='coachee').first()
+        if not coachee:
+            return jsonify({'success': False, 'error': 'Coachee no encontrado'}), 404
+
+        data = request.get_json()
+        body = (data or {}).get('body', '').strip()
+        if not body:
+            return jsonify({'success': False, 'error': 'El mensaje no puede estar vacío'}), 400
+        if len(body) > 4000:
+            return jsonify({'success': False, 'error': 'Mensaje demasiado largo'}), 400
+
+        msg = Message(sender_id=coach_id, recipient_id=coachee_id, body=body)
+        db.session.add(msg)
+
+        create_notification(
+            user_id=coachee_id,
+            type='message',
+            title=f'Mensaje de tu coach',
+            message=body[:120],
+            related_id=coach_id,
+            related_type='coach',
+        )
+        db.session.commit()
+        logger.info(f"💬 MSG: coach {coach_id} → coachee {coachee_id}")
+        return jsonify({'success': True, 'message': msg.to_dict(coach_id)}), 201
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ COACH-MESSAGES-POST: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 # ============================================================================
 # ENDPOINTS: Registros de Sesiones de Coaching
