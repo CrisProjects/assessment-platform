@@ -534,10 +534,10 @@ Equipo InstaCoach
         
         if method == 'email':
             # Enviar por email
-            smtp_server = os.environ.get('SMTP_SERVER')
-            smtp_port = int(os.environ.get('SMTP_PORT', '587'))
-            smtp_username = os.environ.get('SMTP_USERNAME')
-            smtp_password = os.environ.get('SMTP_PASSWORD')
+            smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+            smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+            smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+            smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
             
             if not all([smtp_server, smtp_username, smtp_password]):
                 logger.warning("SMTP not configured, returning invitation link only")
@@ -651,10 +651,10 @@ def send_coach_request_email(coach_request):
     """
     try:
         # Obtener configuración SMTP
-        smtp_server = os.environ.get('SMTP_SERVER')
-        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
-        smtp_username = os.environ.get('SMTP_USERNAME')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+        smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
         support_email = 'support@instacoach.cl'
         
         if not all([smtp_server, smtp_username, smtp_password]):
@@ -815,10 +815,10 @@ def send_welcome_email_to_new_coach(coach, password, admin_name):
         dict con resultado del envío
     """
     try:
-        smtp_server = os.environ.get('SMTP_SERVER')
-        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
-        smtp_username = os.environ.get('SMTP_USERNAME')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+        smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
         support_email = 'support@instacoach.cl'
         
         if not all([smtp_server, smtp_username, smtp_password]):
@@ -1033,10 +1033,10 @@ def send_confirmation_email_to_applicant(coach_request):
     """
     try:
         # Obtener configuración SMTP
-        smtp_server = os.environ.get('SMTP_SERVER')
-        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
-        smtp_username = os.environ.get('SMTP_USERNAME')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+        smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
         
         if not all([smtp_server, smtp_username, smtp_password]):
             logger.warning("⚠️ SMTP not configured - Confirmation email not sent")
@@ -1159,10 +1159,10 @@ def send_security_alert(event_type, details):
             return
         
         # Obtener configuración SMTP
-        smtp_server = os.environ.get('SMTP_SERVER')
-        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
-        smtp_username = os.environ.get('SMTP_USERNAME')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+        smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
         alert_email = os.environ.get('ALERT_EMAIL')
         
         # Si no hay configuración SMTP, solo registrar en log
@@ -4835,7 +4835,26 @@ def invitation_landing(token):
 @app.route('/dashboard_selection')
 @app.route('/dashboard-selection')
 def dashboard_selection():
-    return render_template('dashboard_selection.html')
+    # Prueba social con datos reales; solo se muestra si superan un mínimo creíble
+    try:
+        coach_count = User.query.filter_by(role='coach').count()
+        session_count = CoachingSession.query.count()
+        assessment_count = AssessmentResult.query.filter(
+            AssessmentResult.completed_at.isnot(None)
+        ).count()
+    except Exception:
+        coach_count = session_count = assessment_count = 0
+
+    response = make_response(render_template(
+        'dashboard_selection.html',
+        coach_count=coach_count,
+        session_count=session_count,
+        assessment_count=assessment_count,
+        show_social_proof=(coach_count >= 5 and assessment_count >= 20)
+    ))
+    # Página pública de aterrizaje: cache corto para navegaciones repetidas
+    response.headers['Cache-Control'] = 'public, max-age=300'
+    return response
 
 
 
@@ -5667,6 +5686,59 @@ def coachee_change_password():
 # ============================================================================
 # FIN DE ENDPOINTS DE CAMBIO DE CONTRASEÑA
 # ============================================================================
+
+@app.route('/api/coach-leads', methods=['POST'])
+@limiter.limit("5 per hour")  # Endpoint público: limitar spam
+def api_coach_leads():
+    """
+    Recibe solicitudes "Encontrar un Coach" desde la página pública de selección.
+    Persiste cada lead como notificación para los administradores de la plataforma
+    (sin cambio de schema) y deja rastro en el log.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'Datos JSON requeridos'}), 400
+
+        from markupsafe import escape
+        nombre = str(escape(data.get('nombre', '').strip()))[:200]
+        email = data.get('email', '').strip().lower()[:200]
+        mensaje = str(escape(data.get('mensaje', '').strip()))[:2000]
+        areas = [str(escape(str(a)))[:50] for a in data.get('areas', [])][:10]
+        experiencia = str(escape(data.get('experiencia', '').strip()))[:50]
+        estilo = str(escape(data.get('estilo', '').strip()))[:50]
+
+        if not nombre or not email:
+            return jsonify({'success': False, 'error': 'Nombre y email son requeridos'}), 400
+        if '@' not in email or '.' not in email.split('@')[-1]:
+            return jsonify({'success': False, 'error': 'Email inválido'}), 400
+
+        detalle = (
+            f"Nombre: {nombre}\n"
+            f"Email: {email}\n"
+            f"Áreas: {', '.join(areas) if areas else '—'}\n"
+            f"Experiencia buscada: {experiencia or '—'}\n"
+            f"Estilo preferido: {estilo or '—'}\n"
+            f"Mensaje: {mensaje or '—'}"
+        )
+        logger.info(f"🎯 COACH-LEAD: Nueva solicitud de coachee — {detalle}")
+
+        admins = User.query.filter_by(role='platform_admin').all()
+        for admin in admins:
+            create_notification(
+                user_id=admin.id,
+                type='coach_lead',
+                title=f'Nuevo lead: {nombre} busca coach',
+                message=detalle
+            )
+
+        return jsonify({'success': True, 'message': 'Solicitud recibida. Te contactaremos pronto.'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ COACH-LEAD: Error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error interno del servidor'}), 500
+
 
 @app.route('/api/register', methods=['POST'])
 @limiter.limit("3 per hour")  # Máximo 3 solicitudes por hora por IP
@@ -18513,10 +18585,10 @@ def send_contract(contract_id):
         # 2. Email
         email_sent = False
         try:
-            smtp_server = os.environ.get('SMTP_SERVER')
-            smtp_port = int(os.environ.get('SMTP_PORT', '587'))
-            smtp_username = os.environ.get('SMTP_USERNAME')
-            smtp_password = os.environ.get('SMTP_PASSWORD')
+            smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+            smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+            smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+            smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
 
             if all([smtp_server, smtp_username, smtp_password]):
                 import smtplib
