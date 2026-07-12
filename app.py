@@ -642,6 +642,76 @@ Expira en 7 días."""
         }
 
 
+def get_email_confirm_serializer():
+    """Serializer firmado para links de confirmación de email (sin almacenar tokens)."""
+    from itsdangerous import URLSafeTimedSerializer
+    return URLSafeTimedSerializer(app.config['SECRET_KEY'], salt='email-confirm-v1')
+
+
+def send_email_confirmation_link(to_email, nombre, confirm_url, tipo_solicitud):
+    """
+    Envía el email de doble opt-in: la solicitud solo se procesa cuando el
+    usuario hace clic en el enlace. Devuelve True si el email salió.
+    """
+    try:
+        smtp_server = os.environ.get('SMTP_SERVER') or os.environ.get('MAIL_SERVER')
+        smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or '587')
+        smtp_username = os.environ.get('SMTP_USERNAME') or os.environ.get('MAIL_USERNAME')
+        smtp_password = os.environ.get('SMTP_PASSWORD') or os.environ.get('MAIL_PASSWORD')
+
+        if not all([smtp_server, smtp_username, smtp_password]):
+            logger.warning("⚠️ SMTP not configured - Confirmation link email not sent")
+            return False
+
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = to_email
+        msg['Subject'] = 'Confirma tu solicitud - InstaCoach'
+
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 560px; margin: 0 auto; padding: 24px; background: #f9f9f9;">
+                <h2 style="color: #2C5AA8; border-bottom: 3px solid #2C5AA8; padding-bottom: 10px;">
+                    Hola {nombre}, confirma tu solicitud
+                </h2>
+                <p>Recibimos tu {tipo_solicitud} en InstaCoach. Para verificar que este
+                   email te pertenece y procesar tu solicitud, haz clic en el botón:</p>
+                <p style="text-align: center; margin: 28px 0;">
+                    <a href="{confirm_url}"
+                       style="background: linear-gradient(135deg, #2C5AA8, #3A6CC4); color: white;
+                              padding: 14px 36px; border-radius: 50px; text-decoration: none;
+                              font-weight: 700; display: inline-block;">
+                        ✅ Confirmar mi solicitud
+                    </a>
+                </p>
+                <p style="color: #666; font-size: 0.9rem;">
+                    El enlace es válido por 48 horas. Si no hiciste esta solicitud,
+                    simplemente ignora este correo y no se procesará nada.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(msg)
+
+        logger.info(f"📧 CONFIRM-LINK: Email de confirmación enviado a {to_email}")
+        return True
+
+    except Exception as e:
+        logger.error(f"❌ CONFIRM-LINK: Error enviando email: {str(e)}")
+        return False
+
+
 def send_coach_lead_email(nombre, lead_email, detalle):
     """
     Envía email a support@instacoach.cl cuando un coachee solicita que le
@@ -5784,20 +5854,45 @@ def api_coach_leads():
         )
         logger.info(f"🎯 COACH-LEAD: Nueva solicitud de coachee — {detalle}")
 
+        # Crear notificaciones en estado pendiente de confirmación de email
         admins = User.query.filter_by(role='platform_admin').all()
+        notif_ids = []
         for admin in admins:
-            create_notification(
+            notif = create_notification(
                 user_id=admin.id,
-                type='coach_lead',
+                type='coach_lead_pending',
                 title=f'Nuevo lead: {nombre} busca coach',
                 message=detalle
             )
+            if notif:
+                notif_ids.append(notif.id)
 
-        # Entrega principal: email a soporte (mismo canal que las solicitudes de coach)
+        # Doble opt-in: el lead solo se entrega a soporte cuando el coachee
+        # confirma su email mediante el link firmado (48h de validez).
+        token = get_email_confirm_serializer().dumps({
+            'k': 'lead', 'ids': notif_ids, 'n': nombre, 'e': email, 'd': detalle[:1200]
+        })
+        confirm_url = request.url_root.rstrip('/') + '/confirmar/' + token
+        confirm_sent = send_email_confirmation_link(email, nombre, confirm_url, 'solicitud para encontrar coach')
+
+        if confirm_sent:
+            return jsonify({
+                'success': True,
+                'confirmation_required': True,
+                'message': '¡Ya casi! Revisa tu email y confirma tu solicitud desde el enlace.'
+            }), 200
+
+        # Fallback sin SMTP: entregar de inmediato como antes
+        for nid in notif_ids:
+            notif = db.session.get(Notification, nid)
+            if notif:
+                notif.type = 'coach_lead'
+        db.session.commit()
         email_sent = send_coach_lead_email(nombre, email, detalle)
 
         return jsonify({
             'success': True,
+            'confirmation_required': False,
             'message': 'Solicitud recibida. Te contactaremos pronto.',
             'email_sent': email_sent
         }), 200
@@ -5806,6 +5901,94 @@ def api_coach_leads():
         db.session.rollback()
         logger.error(f"❌ COACH-LEAD: Error: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': 'Error interno del servidor'}), 500
+
+
+def _render_confirm_page(titulo, mensaje, ok=True):
+    """Página HTML simple y con marca para el resultado de la confirmación."""
+    icono = '✅' if ok else '⚠️'
+    color = '#2C5AA8' if ok else '#B45309'
+    return f"""<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{titulo} - InstaCoach</title></head>
+<body style="font-family: Arial, sans-serif; background: #f8fafc; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    <div style="background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); padding: 48px 40px; max-width: 480px; text-align: center; margin: 20px;">
+        <div style="font-size: 3.5rem; margin-bottom: 12px;">{icono}</div>
+        <h1 style="color: {color}; font-size: 1.5rem; margin: 0 0 12px;">{titulo}</h1>
+        <p style="color: #4a4a4a; line-height: 1.6; margin: 0 0 28px;">{mensaje}</p>
+        <a href="/dashboard-selection" style="background: linear-gradient(135deg, #2C5AA8, #3A6CC4); color: white; padding: 12px 32px; border-radius: 50px; text-decoration: none; font-weight: 700;">Ir a InstaCoach</a>
+    </div>
+</body></html>"""
+
+
+@app.route('/confirmar/<token>')
+def confirmar_solicitud(token):
+    """
+    Destino del link de doble opt-in. Verifica el token firmado y, si es válido,
+    procesa la solicitud: la de coach pasa a 'pending' y se notifica a soporte;
+    el lead de coachee se entrega a soporte por email.
+    """
+    from itsdangerous import SignatureExpired, BadSignature
+    try:
+        payload = get_email_confirm_serializer().loads(token, max_age=60 * 60 * 48)
+    except SignatureExpired:
+        return _render_confirm_page(
+            'Enlace expirado',
+            'Este enlace de confirmación venció (48 horas). Vuelve a enviar tu solicitud desde la página principal.',
+            ok=False), 410
+    except BadSignature:
+        return _render_confirm_page(
+            'Enlace inválido',
+            'Este enlace no es válido. Verifica que copiaste la URL completa del email.',
+            ok=False), 400
+
+    try:
+        kind = payload.get('k')
+
+        if kind == 'cr':
+            coach_request = db.session.get(CoachRequest, payload.get('id'))
+            if not coach_request:
+                return _render_confirm_page('Solicitud no encontrada',
+                    'No encontramos tu solicitud. Vuelve a registrarte desde la página principal.', ok=False), 404
+            if coach_request.status != 'email_pending':
+                return _render_confirm_page('Ya estaba confirmada',
+                    'Tu solicitud ya fue confirmada anteriormente. Te contactaremos en 2-3 días hábiles.')
+
+            coach_request.status = 'pending'
+            db.session.commit()
+            send_coach_request_email(coach_request)
+            send_confirmation_email_to_applicant(coach_request)
+            logger.info(f"✅ CONFIRM: Solicitud de coach #{coach_request.id} confirmada por email ({coach_request.email})")
+            return _render_confirm_page('¡Solicitud confirmada!',
+                'Verificamos tu email y tu solicitud de registro como coach ya está en revisión. Te contactaremos en 2-3 días hábiles.')
+
+        if kind == 'lead':
+            notif_ids = payload.get('ids', [])
+            ya_confirmado = False
+            for nid in notif_ids:
+                notif = db.session.get(Notification, nid)
+                if notif and notif.type == 'coach_lead_pending':
+                    notif.type = 'coach_lead'
+                elif notif and notif.type == 'coach_lead':
+                    ya_confirmado = True
+            db.session.commit()
+
+            if ya_confirmado:
+                return _render_confirm_page('Ya estaba confirmada',
+                    'Tu solicitud ya fue confirmada anteriormente. Te contactaremos pronto con una propuesta de coach.')
+
+            send_coach_lead_email(payload.get('n', ''), payload.get('e', ''), payload.get('d', ''))
+            logger.info(f"✅ CONFIRM: Lead de coachee confirmado por email ({payload.get('e')})")
+            return _render_confirm_page('¡Solicitud confirmada!',
+                'Verificamos tu email. Nuestro equipo revisará tus respuestas y te contactará pronto con una propuesta de coach.')
+
+        return _render_confirm_page('Enlace inválido', 'Este enlace no es reconocido.', ok=False), 400
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ CONFIRM: Error procesando confirmación: {str(e)}", exc_info=True)
+        return _render_confirm_page('Error',
+            'Ocurrió un error procesando tu confirmación. Intenta nuevamente en unos minutos.', ok=False), 500
 
 
 @app.route('/api/register', methods=['POST'])
@@ -5868,16 +6051,22 @@ def api_register():
         if existing_user:
             return jsonify({'error': 'El email ya está registrado en el sistema'}), 409
         
-        # Verificar si ya existe una solicitud pendiente con ese email
-        existing_request = CoachRequest.query.filter_by(email=email, status='pending').first()
+        # Verificar si ya existe una solicitud pendiente (confirmada o no) con ese email
+        existing_request = CoachRequest.query.filter(
+            CoachRequest.email == email,
+            CoachRequest.status.in_(['pending', 'email_pending'])
+        ).first()
         if existing_request:
+            if existing_request.status == 'email_pending':
+                return jsonify({'error': 'Ya enviamos un email de confirmación a esa dirección. Revisa tu bandeja de entrada (y spam).'}), 409
             return jsonify({'error': 'Ya existe una solicitud pendiente con este email'}), 409
-        
+
         # Convertir áreas a JSON string si es array
         import json
         areas_json = json.dumps(areas) if isinstance(areas, list) else areas
-        
-        # Crear nueva solicitud de coach
+
+        # Crear la solicitud en estado 'email_pending': solo pasa a 'pending'
+        # (visible para revisión) cuando el solicitante confirma su email.
         coach_request = CoachRequest(
             full_name=full_name,
             email=email,
@@ -5886,23 +6075,39 @@ def api_register():
             experiencia=experiencia,
             estilo=estilo,
             bio=bio,
-            status='pending'
+            status='email_pending'
         )
-        
+
         db.session.add(coach_request)
         db.session.commit()
-        
-        # Enviar emails de manera asíncrona para no bloquear la respuesta
+
+        # Doble opt-in: enviar link de confirmación firmado (48h de validez)
+        token = get_email_confirm_serializer().dumps({'k': 'cr', 'id': coach_request.id})
+        confirm_url = request.url_root.rstrip('/') + '/confirmar/' + token
+        confirm_sent = send_email_confirmation_link(email, str(full_name), confirm_url, 'solicitud de registro como coach')
+
+        if confirm_sent:
+            logger.info(f"✅ Solicitud de coach creada (esperando confirmación de email): {full_name} ({email}) - ID: {coach_request.id}")
+            return jsonify({
+                'success': True,
+                'message': 'Solicitud creada, falta confirmar email',
+                'confirmation_required': True,
+                'note': '¡Ya casi! Te enviamos un email de confirmación. Haz clic en el enlace para completar tu solicitud (revisa también spam).'
+            }), 201
+
+        # Fallback sin SMTP: no bloquear el registro — procesar como antes
+        coach_request.status = 'pending'
+        db.session.commit()
         email_to_support_sent = send_coach_request_email(coach_request)
         email_to_applicant_sent = send_confirmation_email_to_applicant(coach_request)
-        
-        logger.info(f"✅ Nueva solicitud de coach recibida: {full_name} ({email}) - ID: {coach_request.id}")
-        logger.info(f"📧 Emails enviados - Support: {email_to_support_sent}, Confirmación: {email_to_applicant_sent}")
-        
+
+        logger.info(f"✅ Nueva solicitud de coach recibida (sin confirmación, SMTP no disponible): {full_name} ({email}) - ID: {coach_request.id}")
+
         return jsonify({
             'success': True,
             'message': 'Solicitud enviada exitosamente',
-            'note': 'Tu solicitud ha sido recibida. Revisa tu email para confirmar que la recibimos. Te contactaremos en 2-3 días hábiles.',
+            'confirmation_required': False,
+            'note': 'Tu solicitud ha sido recibida. Te contactaremos en 2-3 días hábiles.',
             'emails_sent': {
                 'support': email_to_support_sent,
                 'confirmation': email_to_applicant_sent
