@@ -5921,12 +5921,42 @@ def _render_confirm_page(titulo, mensaje, ok=True):
 </body></html>"""
 
 
-@app.route('/confirmar/<token>')
+def _render_confirm_action_page(token):
+    """Página intermedia con botón de confirmación (el estado solo cambia por POST)."""
+    return f"""<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Confirma tu solicitud - InstaCoach</title></head>
+<body style="font-family: Arial, sans-serif; background: #f8fafc; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    <div style="background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); padding: 48px 40px; max-width: 480px; text-align: center; margin: 20px;">
+        <div style="font-size: 3.5rem; margin-bottom: 12px;">📩</div>
+        <h1 style="color: #2C5AA8; font-size: 1.5rem; margin: 0 0 12px;">Un último clic</h1>
+        <p style="color: #4a4a4a; line-height: 1.6; margin: 0 0 28px;">
+            Presiona el botón para confirmar tu solicitud en InstaCoach.
+        </p>
+        <form method="POST" action="/confirmar/{token}">
+            <button type="submit" style="background: linear-gradient(135deg, #2C5AA8, #3A6CC4); color: white; padding: 14px 40px; border-radius: 50px; border: none; font-weight: 700; font-size: 1rem; cursor: pointer;">
+                ✅ Confirmar mi solicitud
+            </button>
+        </form>
+        <p style="color: #8C97A8; font-size: 0.8rem; margin: 20px 0 0;">
+            Si no hiciste esta solicitud, simplemente cierra esta página.
+        </p>
+    </div>
+</body></html>"""
+
+
+@app.route('/confirmar/<token>', methods=['GET', 'POST'])
 def confirmar_solicitud(token):
     """
-    Destino del link de doble opt-in. Verifica el token firmado y, si es válido,
-    procesa la solicitud: la de coach pasa a 'pending' y se notifica a soporte;
-    el lead de coachee se entrega a soporte por email.
+    Destino del link de doble opt-in.
+
+    GET  → muestra una página con botón "Confirmar" (no cambia estado). Esto
+           evita que escáneres de email (Outlook SafeLinks, antivirus) que
+           siguen los enlaces automáticamente confirmen solicitudes falsas.
+    POST → verifica el token y procesa: la solicitud de coach pasa a 'pending'
+           y se notifica a soporte; el lead se entrega a soporte por email.
     """
     from itsdangerous import SignatureExpired, BadSignature
     try:
@@ -5945,6 +5975,8 @@ def confirmar_solicitud(token):
     try:
         kind = payload.get('k')
 
+        # Determinar si ya fue confirmada (respuesta idéntica en GET y POST)
+        coach_request = None
         if kind == 'cr':
             coach_request = db.session.get(CoachRequest, payload.get('id'))
             if not coach_request:
@@ -5953,7 +5985,24 @@ def confirmar_solicitud(token):
             if coach_request.status != 'email_pending':
                 return _render_confirm_page('Ya estaba confirmada',
                     'Tu solicitud ya fue confirmada anteriormente. Te contactaremos en 2-3 días hábiles.')
+        elif kind == 'lead':
+            notif_ids = payload.get('ids', [])
+            ya_confirmado = any(
+                (n := db.session.get(Notification, nid)) and n.type == 'coach_lead'
+                for nid in notif_ids
+            )
+            if ya_confirmado:
+                return _render_confirm_page('Ya estaba confirmada',
+                    'Tu solicitud ya fue confirmada anteriormente. Te contactaremos pronto con una propuesta de coach.')
+        else:
+            return _render_confirm_page('Enlace inválido', 'Este enlace no es reconocido.', ok=False), 400
 
+        # GET: solo mostrar el botón de confirmación (los escáneres no hacen POST)
+        if request.method == 'GET':
+            return _render_confirm_action_page(token)
+
+        # POST: ejecutar la confirmación
+        if kind == 'cr':
             coach_request.status = 'pending'
             db.session.commit()
             send_coach_request_email(coach_request)
@@ -5962,27 +6011,17 @@ def confirmar_solicitud(token):
             return _render_confirm_page('¡Solicitud confirmada!',
                 'Verificamos tu email y tu solicitud de registro como coach ya está en revisión. Te contactaremos en 2-3 días hábiles.')
 
-        if kind == 'lead':
-            notif_ids = payload.get('ids', [])
-            ya_confirmado = False
-            for nid in notif_ids:
-                notif = db.session.get(Notification, nid)
-                if notif and notif.type == 'coach_lead_pending':
-                    notif.type = 'coach_lead'
-                elif notif and notif.type == 'coach_lead':
-                    ya_confirmado = True
-            db.session.commit()
+        # kind == 'lead'
+        for nid in payload.get('ids', []):
+            notif = db.session.get(Notification, nid)
+            if notif and notif.type == 'coach_lead_pending':
+                notif.type = 'coach_lead'
+        db.session.commit()
 
-            if ya_confirmado:
-                return _render_confirm_page('Ya estaba confirmada',
-                    'Tu solicitud ya fue confirmada anteriormente. Te contactaremos pronto con una propuesta de coach.')
-
-            send_coach_lead_email(payload.get('n', ''), payload.get('e', ''), payload.get('d', ''))
-            logger.info(f"✅ CONFIRM: Lead de coachee confirmado por email ({payload.get('e')})")
-            return _render_confirm_page('¡Solicitud confirmada!',
-                'Verificamos tu email. Nuestro equipo revisará tus respuestas y te contactará pronto con una propuesta de coach.')
-
-        return _render_confirm_page('Enlace inválido', 'Este enlace no es reconocido.', ok=False), 400
+        send_coach_lead_email(payload.get('n', ''), payload.get('e', ''), payload.get('d', ''))
+        logger.info(f"✅ CONFIRM: Lead de coachee confirmado por email ({payload.get('e')})")
+        return _render_confirm_page('¡Solicitud confirmada!',
+            'Verificamos tu email. Nuestro equipo revisará tus respuestas y te contactará pronto con una propuesta de coach.')
 
     except Exception as e:
         db.session.rollback()
