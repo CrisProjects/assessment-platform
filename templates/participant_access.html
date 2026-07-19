@@ -3,455 +3,243 @@
 {% block title %}Login Coachee - Assessment Platform{% endblock %}
 
 {% block extra_css %}
-<!-- Fuente Dancing Script para logo InstaCoach -->
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+<!-- Sistema de diseño InstaCoach "Tide" -->
+<link rel="stylesheet" href="/static/css/instacoach-design-system.css?v={{ get_file_version('css/instacoach-design-system.css') }}">
 
 <style>
-    /* === INSTACOACH LOGO STYLE === */
-    .instacoach-logo {
-        font-family: 'Dancing Script', cursive;
-        font-size: 58.08px;
-        font-weight: 600;
-        line-height: 1;
-        letter-spacing: 0.5px;
-
-        /* Gradiente del logo */
-        background: linear-gradient(
-            90deg,
-            #93c5fd 0%,
-            #8b5cf6 55%,
-            #ec4899 100%
-        );
-
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-
-        /* Suavidad visual */
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-
-        /* Opcional */
-        user-select: none;
-    }
-
-    /* === BASE STYLES MATCHING DASHBOARD SELECTION === */
-    
+    /* ============================================================
+       Login — "Tide" (diseño Login.dc)
+       ============================================================ */
     body {
-        background: #ffffff !important;
         margin: 0 !important;
         padding: 0 !important;
+        background: var(--surface-page) !important;
+        font-family: var(--font-sans);
     }
-    
-    .login-container {
-        min-height: calc(100vh - 60px);
+
+    .tide-serif { font-family: var(--font-serif); font-weight: 500; letter-spacing: var(--tracking-heading); }
+
+    .tide-login {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        background: var(--surface-page);
+    }
+
+    /* Panel izquierdo oscuro */
+    .tide-login-left {
+        background: var(--surface-inverse);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 48px 56px;
+        box-sizing: border-box;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .tide-glow { position: absolute; border-radius: 50%; pointer-events: none; }
+    .tide-glow-blue { right: -120px; top: -120px; width: 420px; height: 420px; background: radial-gradient(circle, rgba(94,138,214,0.18), transparent 70%); }
+    .tide-glow-gold { left: -80px; bottom: -140px; width: 380px; height: 380px; background: radial-gradient(circle, rgba(196,154,82,0.12), transparent 70%); }
+
+    .tide-quote {
+        border-left: 2px solid var(--gold-500);
+        padding-left: 18px;
+    }
+
+    .tide-login-stats { display: flex; gap: 28px; position: relative; }
+    .tide-login-stats .num { font-family: var(--font-serif); font-size: 22px; color: var(--text-inverse); }
+    .tide-login-stats .lbl { font-size: 12px; color: var(--mist-400); }
+
+    /* Panel derecho */
+    .tide-login-right {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0.5rem 1rem 1.5rem 1rem;
+        padding: 48px 40px;
+        box-sizing: border-box;
     }
 
-    /* === INSTACOACH BRANDING === */
-    .instacoach-brand-section {
-        text-align: center;
-        margin-bottom: 1rem;
-        padding-top: 0;
-    }
-    
-    .instacoach-tagline {
-        font-size: 1.1rem;
-        color: #4a4a4a;
-        font-weight: 500;
-        margin-bottom: 0;
+    .tide-login-box { width: 100%; max-width: 400px; }
+
+    /* Selector de rol */
+    .role-toggle {
+        display: flex;
+        gap: 4px;
+        background: var(--surface-sunken);
+        border-radius: var(--radius-lg);
+        padding: 4px;
+        margin-bottom: 22px;
     }
 
-    /* === COACHEE INVITATION TEXT === */
-    .coachee-invitation-text {
-        text-align: center;
-        margin-bottom: 2rem;
-        padding: 0 1rem;
-    }
-    
-    .invitation-message {
-        font-size: 1.05rem;
-        line-height: 1.7;
-        color: #2c3e50;
-        margin: 0;
-        font-weight: 400;
-    }
-    
-    .invitation-message strong {
-        color: #1a1a1a;
-        font-weight: 700;
-    }
-    
-    .invitation-message .highlight-text {
-        color: #3B82F6;
-        font-weight: 600;
-        font-style: italic;
-    }
-    
-    .invitation-message i {
-        vertical-align: middle;
-    }
-
-    /* === SEPARATOR === */
-    .separator-text {
-        text-align: center;
-        margin: 2rem auto;
-        max-width: 480px;
-    }
-    
-    .separator-content {
+    .role-seg {
+        flex: 1;
         display: flex;
         align-items: center;
-        gap: 1rem;
-    }
-    
-    .separator-line {
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
-    }
-    
-    .separator-content span {
-        color: #64748b;
-        font-size: 0.9rem;
-        font-weight: 500;
-        white-space: nowrap;
-    }
-
-    /* === LOGIN CARD === */
-    .login-card {
-        max-width: 480px;
-        width: 100%;
-        margin: 0 auto;
-        border-radius: 16px;
-        overflow: hidden;
-        background: rgba(255, 255, 255, 0.98) !important;
-        border: 1px solid rgba(59, 130, 246, 0.15) !important;
-        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
-        transition: all 0.3s ease;
-    }
-    
-    .login-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 48px rgba(59, 130, 246, 0.2);
-    }
-
-    .login-header {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-        padding: 2rem;
-        text-align: center;
-        color: #ffffff;
-        position: relative;
-    }
-    
-    .login-header i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        color: #ffffff;
-    }
-    
-    .login-header h2 {
-        font-family: 'Lobster Two', cursive;
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        color: #ffffff;
-    }
-    
-    .login-header p {
-        font-size: 1rem;
-        margin: 0;
-        opacity: 0.95;
-        color: #ffffff;
-    }
-
-    .login-body {
-        padding: 2rem;
-        background: #ffffff;
-    }
-
-    .form-floating {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-floating .form-control {
-        background: #ffffff;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        height: 58px;
-        font-size: 1rem;
-        color: #1e293b;
-        transition: all 0.3s ease;
-    }
-
-    .form-floating .form-control:focus {
-        background: #ffffff;
-        border-color: #3B82F6;
-        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
-        color: #1e293b;
-    }
-
-    .form-floating .form-control::placeholder {
-        color: #94a3b8;
-    }
-
-    .form-floating label {
-        color: #64748b;
-        font-weight: 500;
-    }
-
-    .form-floating > .form-control:focus ~ label,
-    .form-floating > .form-control:not(:placeholder-shown) ~ label {
-        color: #3B82F6;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: none;
+        border-radius: var(--radius-md);
+        background: transparent;
+        cursor: pointer;
+        font-family: var(--font-sans);
+        font-size: 14px;
         font-weight: 600;
+        color: var(--text-muted);
+        transition: all var(--dur-fast) var(--ease-out);
+        min-height: 44px;
+        text-decoration: none;
     }
+
+    .role-seg.active { background: var(--surface-card); color: var(--ocean-700); box-shadow: var(--shadow-sm); }
+    .role-seg:hover:not(.active) { color: var(--text-body); }
+
+    /* Inputs */
+    .tide-field { margin-bottom: 16px; }
+    .tide-field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-strong);
+        margin-bottom: 6px;
+    }
+
+    .tide-field input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        border: 1.5px solid var(--border-default);
+        border-radius: var(--radius-md);
+        font-family: var(--font-sans);
+        font-size: 15px;
+        color: var(--text-strong);
+        background: var(--surface-card);
+        outline: none;
+        transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+    }
+
+    .tide-field input:focus { border-color: var(--ocean-500); box-shadow: 0 0 0 3px var(--focus-ring); }
+
+    .tide-row-between { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 0; }
+
+    .show-pass {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none;
+    }
+    .show-pass input { accent-color: var(--primary); }
+
+    .forgot-password-link {
+        background: none; border: none; cursor: pointer;
+        font-size: 13px; font-weight: 600; color: var(--text-link);
+        text-decoration: none;
+    }
+    .forgot-password-link:hover { color: var(--primary-hover); }
 
     .login-btn {
         width: 100%;
-        padding: 1rem;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 1.05rem;
-        background: linear-gradient(135deg, #3B82F6, #2563EB);
+        margin-top: 16px;
+        padding: 13px 20px;
         border: none;
-        color: #ffffff;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        border-radius: var(--radius-pill);
+        background: var(--primary);
+        color: var(--primary-contrast);
+        font-family: var(--font-sans);
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background var(--dur-fast) var(--ease-out);
     }
 
-    .login-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-        background: linear-gradient(135deg, #2563EB, #1d4ed8);
-    }
+    .login-btn:hover { background: var(--primary-hover); }
+    .login-btn:disabled { opacity: 0.6; }
 
-    .back-link {
-        text-align: center;
-        margin-top: 1.5rem;
-    }
+    .tide-footnote { font-size: 13.5px; color: var(--text-muted); text-align: center; margin: 24px 0 0; }
+    .tide-footnote a { font-weight: 600; color: var(--text-link); text-decoration: none; }
+    .tide-footnote a:hover { color: var(--primary-hover); }
 
-    .back-link a {
-        color: #64748b;
-        text-decoration: none;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
+    @keyframes tideRiseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .tide-rise { animation: tideRiseIn .45s var(--ease-out) both; }
+    @media (prefers-reduced-motion: reduce) { .tide-rise { animation: none; } }
 
-    .back-link a:hover {
-        color: #3B82F6;
-        text-decoration: underline;
-    }
-
-    /* === ANIMATIONS === */
-    .fade-in {
-        animation: fadeIn 0.6s ease-out;
-    }
-    
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* === RESPONSIVE === */
-    @media (max-width: 768px) {
-        .instacoach-brand-section {
-            margin-bottom: 0.75rem;
-            padding-top: 0;
-        }
-        
-        .instacoach-tagline {
-            font-size: 1rem;
-        }
-        
-        .coachee-invitation-text {
-            margin-bottom: 1.5rem;
-            padding: 0 0.75rem;
-        }
-        
-        .invitation-message {
-            font-size: 1rem;
-            line-height: 1.6;
-        }
-        
-        .separator-content {
-            font-size: 0.85rem;
-        }
-        
-        .login-card {
-            max-width: 100%;
-        }
-        
-        .login-header i {
-            font-size: 2.5rem;
-        }
-        
-        .login-header h2 {
-            font-size: 1.6rem;
-        }
-        
-        .login-header p {
-            font-size: 0.85rem;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .login-container {
-            padding: 0.25rem 0.75rem 1rem 0.75rem;
-            min-height: calc(100vh - 50px);
-        }
-        
-        .instacoach-brand-section {
-            margin-bottom: 0.5rem;
-            padding-top: 0;
-        }
-        
-        .instacoach-tagline {
-            font-size: 0.9rem;
-        }
-        
-        .coachee-invitation-text {
-            margin-bottom: 1.25rem;
-            padding: 0 0.5rem;
-        }
-        
-        .invitation-message {
-            font-size: 0.9rem;
-            line-height: 1.55;
-        }
-        
-        .login-header {
-            padding: 1.5rem;
-        }
-        
-        .login-body {
-            padding: 1.5rem;
-        }
-        
-        .login-card {
-            border-radius: 12px;
-        }
-    }
-    
-    @media (max-width: 400px) {
-        .invitation-message {
-            font-size: 0.85rem;
-        }
-    }
-
-    /* Forgot Password Link */
-    .forgot-password-link {
-        display: inline-block;
-        color: #3B82F6 !important;
-        text-decoration: none;
-        font-size: 0.9rem;
-        font-weight: 500;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        background: rgba(59, 130, 246, 0.1);
-        border: 1px solid rgba(59, 130, 246, 0.2);
-        transition: all 0.3s ease;
-    }
-
-    .forgot-password-link:hover {
-        color: #2563EB !important;
-        background: rgba(59, 130, 246, 0.2);
-        border-color: #3B82F6;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-        transform: translateY(-1px);
+    /* Responsive: panel izquierdo se oculta en móvil */
+    @media (max-width: 900px) {
+        .tide-login { grid-template-columns: 1fr; }
+        .tide-login-left { display: none; }
+        .tide-login-right { padding: 40px 24px; min-height: 100vh; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-container">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
-                
-                <!-- InstaCoach Branding -->
-                <div class="instacoach-brand-section fade-in">
-                    <div style="display:inline-flex;align-items:center;gap:0.75rem;margin-bottom:0.25rem;">
-                        <svg width="60" height="43" viewBox="6 18 88 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:block;">
-                            <circle cx="38" cy="50" r="30" fill="#3650a8" opacity="0.92"/>
-                            <circle cx="62" cy="50" r="30" fill="#4f72c8" opacity="0.80"/>
-                            <circle cx="50" cy="28" r="5.5" fill="white"/>
-                            <rect x="46" y="38" width="8" height="20" rx="4" fill="white"/>
-                        </svg>
-                        <span style="font-family:'Manrope',sans-serif;font-size:2rem;font-weight:700;color:#3650a8;line-height:1;letter-spacing:-0.02em;user-select:none;-webkit-font-smoothing:antialiased;">InstaCoach</span>
-                    </div>
-                    <p class="instacoach-tagline">Tu plataforma de desarrollo personal y profesional</p>
-                </div>
-                
-                <!-- Coachee Invitation Text -->
-                <div class="coachee-invitation-text fade-in">
-                    <p class="invitation-message">
-                        <i class="fas fa-heart text-danger me-2"></i>
-                        <strong>Bienvenido a tu espacio de crecimiento.</strong> 
-                        Accede a tus evaluaciones personalizadas, conecta con tu coach y descubre 
-                        herramientas diseñadas para potenciar tu desarrollo personal y profesional. 
-                        <span class="highlight-text">Tu transformación comienza aquí.</span>
-                    </p>
-                </div>
-                
-                <!-- Separator -->
-                <div class="separator-text">
-                    <div class="separator-content">
-                        <div class="separator-line"></div>
-                        <span>Accede a tu cuenta</span>
-                        <div class="separator-line"></div>
-                    </div>
-                </div>
-                
-                <!-- Login Card -->
-                <div class="login-card fade-in">
-                    <div class="login-header">
-                        <i class="fas fa-user-check"></i>
-                        <h2>Acceso Coachee</h2>
-                        <p>Inicia sesión para continuar tu desarrollo</p>
-                    </div>
-                    
-                    <div class="login-body">
-                        <form id="coacheeLoginForm">
-                            <div class="form-floating">
-                                <input type="email" class="form-control" id="username" name="username" placeholder="correo@ejemplo.com" required>
-                                <label for="username"><i class="fas fa-envelope me-2"></i>Email</label>
-                            </div>
-                            
-                            <div class="form-floating">
-                                <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
-                                <label for="password"><i class="fas fa-lock me-2"></i>Contraseña</label>
-                            </div>
-                            
-                            <div class="text-center mb-3">
-                                <a href="#" id="forgotPasswordLink" class="forgot-password-link">
-                                    <i class="fas fa-question-circle me-1"></i>¿Olvidaste tu contraseña?
-                                </a>
-                            </div>
-                            
-                            <button type="submit" class="login-btn">
-                                <i class="fas fa-sign-in-alt me-2"></i>
-                                Acceder como Coachee
-                            </button>
-                        </form>
-                        
-                        <div class="back-link">
-                            <a href="{{ url_for('dashboard_selection') }}">
-                                <i class="fas fa-arrow-left me-2"></i>Volver a selección
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
+<div class="tide-login">
+
+    <!-- Panel izquierdo: narrativa de marca -->
+    <div class="tide-login-left">
+        <div class="tide-glow tide-glow-blue" aria-hidden="true"></div>
+        <div class="tide-glow tide-glow-gold" aria-hidden="true"></div>
+
+        <div style="display:inline-flex;align-items:center;gap:10px;position:relative;">
+            <svg width="34" height="25" viewBox="6 18 88 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="38" cy="50" r="30" fill="#5E8AD6" opacity="0.92"/>
+                <circle cx="62" cy="50" r="30" fill="#8FB0E8" opacity="0.75"/>
+                <circle cx="50" cy="28" r="5.5" fill="#F5F1E8"/>
+                <rect x="46" y="38" width="8" height="20" rx="4" fill="#F5F1E8"/>
+            </svg>
+            <span style="font-size:1.2rem;font-weight:700;color:var(--text-inverse);letter-spacing:-0.02em;">InstaCoach</span>
+        </div>
+
+        <div style="position:relative;max-width:440px;">
+            <h2 class="tide-serif" style="font-size:40px;line-height:1.12;color:var(--text-inverse);margin:0 0 18px;">Retoma donde<br>lo dejaste.</h2>
+            <p style="font-size:15.5px;color:var(--mist-400);line-height:1.6;margin:0 0 28px;">Tu plan, tus reflexiones y tu coach te esperan. Un paso pequeño y claro cada día — sin prisa, sin presión.</p>
+            <div class="tide-quote">
+                <p class="tide-serif" style="font-style:italic;font-size:16.5px;line-height:1.5;color:var(--text-inverse);margin:0 0 10px;">"Volver cada semana se volvió fácil. Siempre sé cuál es mi siguiente paso."</p>
+                <div style="font-size:13px;color:var(--mist-400);">María Fernanda · coachee desde 2025</div>
             </div>
+        </div>
+
+        {% if show_social_proof %}
+        <div class="tide-login-stats">
+            <div><span class="num">{{ "{:,}".format(coach_count) }}</span><div class="lbl">coaches</div></div>
+            <div><span class="num">{{ "{:,}".format(session_count) }}</span><div class="lbl">sesiones</div></div>
+            <div><span class="num">{{ "{:,}".format(assessment_count) }}</span><div class="lbl">evaluaciones</div></div>
+        </div>
+        {% else %}
+        <div></div>
+        {% endif %}
+    </div>
+
+    <!-- Panel derecho: formulario -->
+    <div class="tide-login-right">
+        <div class="tide-login-box tide-rise">
+            <h1 class="tide-serif" style="font-size:30px;margin:0 0 6px;color:var(--text-strong);">Bienvenido de vuelta</h1>
+            <p style="font-size:14.5px;color:var(--text-muted);margin:0 0 22px;">Tu plan avanza contigo. Retómalo.</p>
+
+            <div class="role-toggle">
+                <button type="button" class="role-seg active"><i class="fas fa-bullseye"></i>Soy coachee</button>
+                <a href="{{ url_for('coach_login_page') }}" class="role-seg"><i class="fas fa-briefcase"></i>Soy coach</a>
+            </div>
+
+            <form id="coacheeLoginForm">
+                <div class="tide-field">
+                    <label for="username">Email</label>
+                    <input type="email" id="username" name="username" placeholder="tu@email.com" autocomplete="username" required>
+                </div>
+
+                <div class="tide-field" style="margin-bottom:0;">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+                    <div class="tide-row-between">
+                        <label class="show-pass"><input type="checkbox" id="showPassToggle">Mostrar contraseña</label>
+                        <a href="#" id="forgotPasswordLink" class="forgot-password-link">¿La olvidaste?</a>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn">Continuar mi plan</button>
+            </form>
+
+            <p class="tide-footnote">¿Aún no tienes cuenta? <a href="{{ url_for('dashboard_selection') }}">Encuentra tu coach</a></p>
         </div>
     </div>
 </div>
@@ -460,12 +248,12 @@
 <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
-            <div class="modal-header" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; padding: 2rem;">
-                <h5 class="modal-title w-100 text-center text-white" id="forgotPasswordModalLabel" style="font-family: 'Lobster Two', cursive; font-size: 2rem;">
+            <div class="modal-header" style="background: var(--surface-card); border-bottom: 1px solid var(--border-subtle); padding: 1.75rem 2rem 1.25rem;">
+                <h5 class="modal-title w-100 text-center tide-serif" id="forgotPasswordModalLabel" style="font-size: 1.5rem; color: var(--text-strong);">
                     <i class="fas fa-key me-2"></i>
                     Recuperar Contraseña
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div id="forgotPasswordStep1">
@@ -572,7 +360,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetButton() {
         submitBtn.disabled = false;
         submitBtn.style.background = '';
-        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Acceder como Coachee';
+        submitBtn.innerHTML = 'Continuar mi plan';
+    }
+
+    // Mostrar/ocultar contraseña
+    const showPassToggle = document.getElementById('showPassToggle');
+    const passwordInput = document.getElementById('password');
+    if (showPassToggle && passwordInput) {
+        showPassToggle.addEventListener('change', function () {
+            passwordInput.type = this.checked ? 'text' : 'password';
+        });
     }
     
     function showAlert(message, type) {

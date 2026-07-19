@@ -4903,7 +4903,23 @@ def login():
 
 @app.route('/participant-access')
 def participant_access():
-    return render_template('participant_access.html')
+    # Prueba social del panel izquierdo (mismo criterio que dashboard_selection)
+    try:
+        coach_count = User.query.filter_by(role='coach').count()
+        session_count = CoachingSession.query.count()
+        assessment_count = AssessmentResult.query.filter(
+            AssessmentResult.completed_at.isnot(None)
+        ).count()
+    except Exception:
+        coach_count = session_count = assessment_count = 0
+
+    return render_template(
+        'participant_access.html',
+        coach_count=coach_count,
+        session_count=session_count,
+        assessment_count=assessment_count,
+        show_social_proof=(coach_count >= 5 and assessment_count >= 20)
+    )
 
 @app.route('/invite/<token>')
 def invitation_landing(token):
@@ -7704,7 +7720,23 @@ def api_admin_change_user_password(user_id):
 # Rutas de coach
 @app.route('/coach-login')
 def coach_login_page():
-    return render_template('coach_login.html')
+    # Prueba social del panel izquierdo (mismo criterio que dashboard_selection)
+    try:
+        coach_count = User.query.filter_by(role='coach').count()
+        session_count = CoachingSession.query.count()
+        assessment_count = AssessmentResult.query.filter(
+            AssessmentResult.completed_at.isnot(None)
+        ).count()
+    except Exception:
+        coach_count = session_count = assessment_count = 0
+
+    return render_template(
+        'coach_login.html',
+        coach_count=coach_count,
+        session_count=session_count,
+        assessment_count=assessment_count,
+        show_social_proof=(coach_count >= 5 and assessment_count >= 20)
+    )
 
 @app.route('/api/coach/login', methods=['POST'])
 @limiter.limit("5 per minute")
