@@ -153,7 +153,7 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3A6CC4 0%, #2C5AA8 100%);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -264,6 +264,51 @@
             border-color: var(--admin-primary);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/instacoach-design-system.css?v={{ get_file_version('css/instacoach-design-system.css') }}">
+    <style>
+        /* Alineación con el sistema de diseño Tide */
+        body { background: var(--surface-page, #F1F4F9) !important; }
+        .card {
+            border: 1px solid var(--border-subtle, #E6EBF2) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 1px 2px rgba(20,35,63,0.06) !important;
+        }
+        h1, h2 {
+            font-family: var(--font-serif, Georgia, serif);
+            font-weight: 500;
+            color: var(--text-strong, #14233F);
+        }
+        /* Identidad Tide: gradientes morados legados → ocean de marca */
+        .avatar-gradient,
+        [style*="--purple-start"],
+        [class*="avatar"][style*="667eea"] {
+            background: linear-gradient(135deg, var(--ocean-500, #3A6CC4), var(--ocean-600, #2C5AA8)) !important;
+        }
+        .btn-primary {
+            background: var(--primary, #2C5AA8) !important;
+            border-color: var(--primary, #2C5AA8) !important;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover, #213C70) !important;
+            border-color: var(--primary-hover, #213C70) !important;
+        }
+        .badge.bg-primary { background: var(--primary, #2C5AA8) !important; }
+        /* Vocabulario del mock Admin Dashboard */
+        .stat-number, .kpi-value, [class*="stat"] h2, [class*="stat"] h3 {
+            font-family: var(--font-serif, Georgia, serif) !important;
+            font-weight: 500 !important;
+            color: var(--text-strong, #14233F) !important;
+        }
+        table thead th {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase; color: var(--text-muted, #646E7E);
+            border-bottom: 1px solid var(--border-subtle, #E6EBF2) !important;
+        }
+        table tbody tr { transition: background .12s ease; }
+        table tbody tr:hover { background: var(--surface-hover, #EEF3FC); }
+        .role-badge { border-radius: 999px !important; }
+    </style>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 </head>
 <body>
     <!-- Header responsivo -->
@@ -303,7 +348,91 @@
 
     <!-- Main content -->
     <main class="container-fluid py-4">
-        
+
+        <!-- Héroe Tide (mock Admin Dashboard) -->
+        <div style="margin-bottom: 24px;">
+            <div id="adminDateEyebrow" style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-700, #8A6526); margin-bottom: 8px;"></div>
+            <h1 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: clamp(1.75rem, 3vw, 2.125rem); color: var(--text-strong, #14233F); margin: 0 0 6px;">Plataforma en calma.</h1>
+            <p style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0;">Resumen de coaches, coachees y actividad de InstaCoach.</p>
+        </div>
+        <script>
+            (function () {
+                const el = document.getElementById('adminDateEyebrow');
+                if (el) {
+                    const d = new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+                    el.textContent = d.charAt(0).toUpperCase() + d.slice(1);
+                }
+            })();
+        </script>
+
+        <!-- Coaches por aprobar (diseño Admin Dashboard) -->
+        <div class="card mb-4" id="coachRequestsCard" style="display:none;padding:22px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <h3 style="font-family:var(--font-serif, Georgia, serif);font-weight:500;font-size:20px;margin:0;color:var(--text-strong,#14233F);">Coaches por aprobar</h3>
+                <span id="coachRequestsBadge" style="background:var(--accent-soft,#F2E7CC);color:var(--gold-700,#8A6526);font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;"></span>
+            </div>
+            <p style="font-size:13px;color:var(--text-muted,#646E7E);margin:0 0 14px;">Revisa credenciales antes de aprobar. Al aprobar, el coach recibe un enlace de acceso por email.</p>
+            <div id="coachRequestsList" style="display:flex;flex-direction:column;"></div>
+        </div>
+
+        <script>
+        (function () {
+            'use strict';
+            function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+            async function cargar() {
+                try {
+                    const r = await fetch('/api/admin/coach-requests', { credentials: 'same-origin' });
+                    const d = await r.json();
+                    if (!d.success) return;
+                    const card = document.getElementById('coachRequestsCard');
+                    const list = document.getElementById('coachRequestsList');
+                    const badge = document.getElementById('coachRequestsBadge');
+                    if (!d.requests.length) { card.style.display = 'none'; return; }
+                    card.style.display = 'block';
+                    badge.textContent = d.requests.length + ' pendiente' + (d.requests.length !== 1 ? 's' : '');
+                    list.innerHTML = d.requests.map(q => `
+                        <div style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:10px;flex-wrap:wrap;"
+                             onmouseover="this.style.background='var(--surface-hover,#EEF3FC)'" onmouseout="this.style.background='transparent'">
+                            <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#3A6CC4,#2C5AA8);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
+                                ${esc((q.full_name || '?').trim().split(/\\s+/).slice(0,2).map(w => w[0].toUpperCase()).join(''))}
+                            </div>
+                            <div style="flex:1;min-width:200px;">
+                                <div style="font-size:14px;font-weight:600;color:var(--text-strong,#14233F);">${esc(q.full_name)}</div>
+                                <div style="font-size:12.5px;color:var(--text-muted,#646E7E);">${esc(q.email)} · ${esc((q.areas || []).join(', ') || 'sin áreas')} · ${esc(q.experiencia || '')}</div>
+                                ${q.bio ? `<div style="font-size:12px;color:var(--text-subtle,#8C97A8);margin-top:2px;">${esc(q.bio.slice(0, 160))}${q.bio.length > 160 ? '…' : ''}</div>` : ''}
+                            </div>
+                            <button onclick="revisarCoachRequest(${q.id}, 'reject')" style="border:1.5px solid var(--border-default,#D5DCE7);background:white;color:var(--text-body,#313842);border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;">Rechazar</button>
+                            <button onclick="revisarCoachRequest(${q.id}, 'approve')" style="border:none;background:var(--primary,#2C5AA8);color:white;border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;">Aprobar</button>
+                        </div>`).join('');
+                } catch (e) { console.error('coach-requests:', e); }
+            }
+
+            window.revisarCoachRequest = async function (id, accion) {
+                const verbo = accion === 'approve' ? 'aprobar' : 'rechazar';
+                if (!confirm(`¿Seguro que quieres ${verbo} esta solicitud?`)) return;
+                try {
+                    const r = await fetch(`/api/admin/coach-requests/${id}/${accion}`, {
+                        method: 'POST', credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' }, body: '{}'
+                    });
+                    const d = await r.json();
+                    if (d.success) {
+                        cargar();
+                        if (accion === 'approve') {
+                            alert('Coach aprobado.' + (d.email_sent ? ' Se envió el enlace de acceso por email.' : ' ⚠️ El email no pudo enviarse (SMTP no configurado) — contacta al coach manualmente.'));
+                        }
+                    } else {
+                        alert(d.error || 'No se pudo procesar.');
+                    }
+                } catch (e) { alert('Error de conexión.'); }
+            };
+
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cargar);
+            else cargar();
+        })();
+        </script>
+
         <!-- Estadísticas Generales - Grid responsivo -->
         <div class="row g-3 g-md-4 mb-4">
             <div class="col-6 col-lg-3">

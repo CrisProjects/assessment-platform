@@ -181,13 +181,12 @@
         <div class="tide-glow tide-glow-gold" aria-hidden="true"></div>
 
         <div style="display:inline-flex;align-items:center;gap:10px;position:relative;">
-            <svg width="34" height="25" viewBox="6 18 88 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="38" cy="50" r="30" fill="#5E8AD6" opacity="0.92"/>
-                <circle cx="62" cy="50" r="30" fill="#8FB0E8" opacity="0.75"/>
-                <circle cx="50" cy="28" r="5.5" fill="#F5F1E8"/>
-                <rect x="46" y="38" width="8" height="20" rx="4" fill="#F5F1E8"/>
-            </svg>
-            <span style="font-size:1.2rem;font-weight:700;color:var(--text-inverse);letter-spacing:-0.02em;">InstaCoach</span>
+            <svg width="27" height="27" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:block;">
+                    <rect x="8" y="8" width="84" height="84" rx="24" fill="#2C5AA8"/>
+                    <path d="M30 66 L30 48 M50 66 L50 34 M70 66 L70 22" stroke="#F5F1E8" stroke-width="8" stroke-linecap="round"/>
+                    <circle cx="70" cy="22" r="6" fill="#C49A52"/>
+                </svg>
+            <span style="font-size:1.2rem;font-weight:700;color:var(--text-inverse);letter-spacing:-0.02em;">Insta<span style="color:#A87C36;">Coach</span></span>
         </div>
 
         <div style="position:relative;max-width:440px;">
@@ -238,6 +237,14 @@
 
                 <button type="submit" class="login-btn">Continuar mi plan</button>
             </form>
+
+            <div style="display:flex;align-items:center;gap:12px;margin:14px 0 2px;">
+                <div style="flex:1;height:1px;background:var(--border-subtle);"></div>
+                <span style="font-size:12px;color:var(--text-subtle);">o</span>
+                <div style="flex:1;height:1px;background:var(--border-subtle);"></div>
+            </div>
+            <button type="button" id="magicLinkBtn" class="login-btn" style="background:var(--surface-card);color:var(--primary);border:1.5px solid var(--border-brand);margin-top:12px;">Enviarme un enlace de acceso</button>
+            <p id="magicLinkMsg" style="display:none;font-size:13px;color:var(--success);text-align:center;margin:10px 0 0;"></p>
 
             <p class="tide-footnote">¿Aún no tienes cuenta? <a href="{{ url_for('dashboard_selection') }}">Encuentra tu coach</a></p>
         </div>
@@ -369,6 +376,41 @@ document.addEventListener('DOMContentLoaded', function() {
     if (showPassToggle && passwordInput) {
         showPassToggle.addEventListener('change', function () {
             passwordInput.type = this.checked ? 'text' : 'password';
+        });
+    }
+
+    // Enlace de acceso (magic link)
+    const magicBtn = document.getElementById('magicLinkBtn');
+    if (magicBtn) {
+        magicBtn.addEventListener('click', async function () {
+            const email = (document.getElementById('username').value || '').trim();
+            const msg = document.getElementById('magicLinkMsg');
+            if (!email.includes('@')) {
+                msg.style.display = 'block';
+                msg.style.color = 'var(--danger, #B5503C)';
+                msg.textContent = 'Escribe tu email arriba y te enviamos el enlace.';
+                return;
+            }
+            magicBtn.disabled = true;
+            magicBtn.textContent = 'Enviando…';
+            try {
+                const r = await fetch('/api/magic-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, role: 'coachee' })
+                });
+                const d = await r.json().catch(() => ({}));
+                msg.style.display = 'block';
+                msg.style.color = d.success ? 'var(--success, #2F7D5B)' : 'var(--danger, #B5503C)';
+                msg.textContent = d.message || d.error || 'Revisa tu correo.';
+            } catch (e) {
+                msg.style.display = 'block';
+                msg.style.color = 'var(--danger, #B5503C)';
+                msg.textContent = 'No pudimos enviar el enlace. Intenta nuevamente.';
+            } finally {
+                magicBtn.disabled = false;
+                magicBtn.textContent = 'Enviarme un enlace de acceso';
+            }
         });
     }
     

@@ -30,7 +30,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(to bottom, #fafafa 0%, #ffffff 100%);
+            background: linear-gradient(to bottom, #FAFBFD 0%, #ffffff 100%);
             padding-bottom: 70px; /* Espacio para la navegación inferior */
         }
         
@@ -120,7 +120,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2C5AA8 0%, #3A6CC4 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -143,7 +143,7 @@
             right: -1px;
             width: 12px;
             height: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2C5AA8 0%, #3A6CC4 100%);
             border: 2px solid white;
             border-radius: 50%;
         }
@@ -152,19 +152,19 @@
             margin: 0;
             font-size: 14px;
             font-weight: 600;
-            color: #262626;
+            color: #14233F;
         }
         
         .author-info small {
             font-size: 12px;
-            color: #8e8e8e;
+            color: #8C97A8;
         }
         
         .post-options {
             background: none;
             border: none;
             font-size: 20px;
-            color: #262626;
+            color: #14233F;
             cursor: pointer;
             padding: 8px;
             border-radius: 50%;
@@ -211,7 +211,7 @@
             position: relative;
             width: 100%;
             height: 280px;
-            background: #f8f9fa;
+            background: #F1F4F9;
             border-radius: 0;
             display: block;
             overflow-y: auto;
@@ -259,7 +259,7 @@
             background: none;
             border: none;
             font-size: 24px;
-            color: #262626;
+            color: #14233F;
             cursor: pointer;
             padding: 8px;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -286,12 +286,12 @@
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #262626;
+            color: #14233F;
         }
         
         .post-caption {
             font-size: 14px;
-            color: #262626;
+            color: #14233F;
             line-height: 1.5;
         }
         
@@ -302,7 +302,7 @@
         
         .post-time {
             font-size: 12px;
-            color: #8e8e8e;
+            color: #8C97A8;
             margin-top: 8px;
         }
         
@@ -345,122 +345,101 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 3px;
             text-decoration: none;
-            color: #6B7280;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 8px 4px;
+            color: var(--text-muted, #646E7E);
+            transition: background .15s ease, color .15s ease;
+            padding: 9px 4px 7px;
+            margin: 8px 5px;
             cursor: pointer;
             position: relative;
-            height: 100%;
+            height: auto;
             border: none;
+            border-radius: 12px;
             background: transparent;
         }
-        
-        .nav-item::before {
+
+        .nav-item:hover {
+            background: var(--surface-hover, #EEF3FC);
+            color: var(--primary, #2C5AA8);
+        }
+
+        .nav-item.active {
+            background: var(--primary, #2C5AA8) !important;
+            color: var(--primary-contrast, #FAFBFD) !important;
+            box-shadow: var(--shadow-sm, 0 1px 2px rgba(20,35,63,0.08));
+        }
+
+        .nav-item.active::before {
             content: '';
             position: absolute;
-            top: 0;
+            top: 5px;
             left: 50%;
             transform: translateX(-50%);
-            width: 40px;
-            height: 3px;
-            background: linear-gradient(135deg, #4F46E5, #7C3AED);
-            border-radius: 0 0 3px 3px;
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent, #C49A52);
         }
-        
-        .nav-item.active::before {
-            opacity: 1;
-        }
-        
-        .nav-item:hover {
-            color: #4F46E5;
-            transform: translateY(-2px);
-            background: rgba(79, 70, 229, 0.05);
-        }
-        
-        .nav-item.active {
-            color: #4F46E5;
-            background: rgba(79, 70, 229, 0.08);
-        }
-        
+
         .nav-item i {
-            font-size: 26px;
-            margin-bottom: 4px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 20px;
+            margin-bottom: 1px;
+            transition: transform .15s ease;
         }
-        
-        .nav-item:hover i {
-            transform: scale(1.1);
+
+        .nav-item.active i,
+        .nav-item.active span {
+            color: var(--primary-contrast, #FAFBFD) !important;
         }
-        
-        .nav-item.active i {
-            transform: scale(1.05);
-        }
-        
+
         .nav-item span {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 600;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.02em;
         }
-        
+
         /* Espacio inferior para evitar que el contenido quede debajo del nav */
         body {
             padding-bottom: 80px;
         }
-        
+
         /* Tema oscuro para bottom navigation */
         [data-theme="dark"] .nav-item {
-            color: #9CA3AF;
+            color: #8C97A8;
         }
-        
+
         [data-theme="dark"] .nav-item:hover {
-            color: #4F46E5;
-            background: rgba(79, 70, 229, 0.1);
+            background: rgba(44, 90, 168, 0.18);
+            color: #93B2E6;
         }
-        
+
         [data-theme="dark"] .nav-item.active {
-            color: #4F46E5;
-            background: rgba(79, 70, 229, 0.15);
+            background: var(--primary, #2C5AA8) !important;
+            color: #ffffff !important;
         }
-        
-        .nav-item:hover {
-            color: #667eea;
+        /* ── Diseño Coachee Feed: pills de filtro y acciones ── */
+        .filter-pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+            border-radius: 999px; border: 1px solid var(--border-default, #D5DCE7);
+            font-size: 13px; font-weight: 600; color: var(--text-body, #313842);
+            cursor: pointer; background: var(--surface-card, #fff); white-space: nowrap;
+            transition: all .15s ease;
         }
-        
-        .nav-item:hover i {
-            transform: translateY(-2px);
+        .filter-pill.selected {
+            background: var(--primary-soft, #DCE7F8);
+            border-color: var(--border-brand, #BFD3F0);
+            color: var(--ocean-700, #213C70);
         }
-        
-        .nav-item.active {
-            color: #667eea;
+        .act-btn {
+            display: inline-flex; align-items: center; gap: 6px; border: none;
+            background: transparent; cursor: pointer; font-size: 13px; font-weight: 600;
+            color: var(--text-muted, #646E7E); padding: 8px; border-radius: 10px;
+            min-height: 40px; transition: background .15s ease, color .15s ease;
         }
-        
-        .nav-item.active i {
-            font-weight: 700;
-            transform: translateY(-2px);
-        }
-        
-        .nav-item.active span {
-            font-weight: 600;
-        }
-        
-        /* Indicador activo animado */
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 4px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            animation: slideIndicator 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        
-        /* Dashboard Drawer Styles */
+        .act-btn:hover { background: var(--surface-hover, #EEF3FC); }
+        .act-btn.liked { color: var(--clay-600, #B5503C); }
+        .act-btn.saved { color: var(--gold-700, #8A6526); }
         .drawer-backdrop {
             position: fixed;
             top: 0;
@@ -528,12 +507,12 @@
         .drawer-header h3 {
             font-size: 18px;
             font-weight: 700;
-            color: #111827;
+            color: #14233F;
             margin: 0;
         }
 
         [data-theme="dark"] .drawer-header h3 {
-            color: #F9FAFB;
+            color: #FAFBFD;
         }
 
         .drawer-close {
@@ -578,34 +557,34 @@
             background: rgba(0, 0, 0, 0.02);
             border-radius: 16px;
             text-decoration: none;
-            color: #374151;
+            color: #313842;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .drawer-item:hover {
-            background: rgba(79, 70, 229, 0.08);
-            border-color: rgba(79, 70, 229, 0.2);
+            background: rgba(44, 90, 168, 0.08);
+            border-color: rgba(44, 90, 168, 0.2);
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         [data-theme="dark"] .drawer-item {
             background: rgba(255, 255, 255, 0.03);
-            color: #D1D5DB;
+            color: #D5DCE7;
             border-color: rgba(255, 255, 255, 0.05);
         }
 
         [data-theme="dark"] .drawer-item:hover {
-            background: rgba(79, 70, 229, 0.15);
-            border-color: rgba(79, 70, 229, 0.3);
+            background: rgba(44, 90, 168, 0.15);
+            border-color: rgba(44, 90, 168, 0.3);
         }
         
         .drawer-handle {
             width: 40px;
             height: 4px;
-            background: #d1d5db;
+            background: #D5DCE7;
             border-radius: 999px;
             margin: 0.75rem auto;
         }
@@ -617,11 +596,11 @@
         .drawer-item i {
             font-size: 28px;
             margin-bottom: 8px;
-            color: #4F46E5;
+            color: #2C5AA8;
         }
 
         [data-theme="dark"] .drawer-item i {
-            color: #818CF8;
+            color: #5E8AD6;
         }
 
         .drawer-item span {
@@ -658,7 +637,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #E6EBF2 25%, #E6EBF2 50%, #E6EBF2 75%);
             background-size: 200% 100%;
             animation: pulse 1.5s ease-in-out infinite;
         }
@@ -669,7 +648,7 @@
         
         .skeleton-line {
             height: 12px;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #E6EBF2 25%, #E6EBF2 50%, #E6EBF2 75%);
             background-size: 200% 100%;
             border-radius: 6px;
             animation: pulse 1.5s ease-in-out infinite;
@@ -683,7 +662,7 @@
         .skeleton-media {
             width: 100%;
             height: 350px;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #E6EBF2 25%, #E6EBF2 50%, #E6EBF2 75%);
             background-size: 200% 100%;
             animation: pulse 1.5s ease-in-out infinite;
         }
@@ -698,7 +677,7 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #E6EBF2 25%, #E6EBF2 50%, #E6EBF2 75%);
             background-size: 200% 100%;
             animation: pulse 1.5s ease-in-out infinite;
         }
@@ -735,14 +714,14 @@
         
         .empty-state-icon i {
             font-size: 40px;
-            color: #667eea;
+            color: #2C5AA8;
             z-index: 1;
             position: relative;
             animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
         }
         
         .empty-state h5 {
-            color: #262626;
+            color: #14233F;
             font-size: 24px;
             font-weight: 600;
             margin-bottom: 12px;
@@ -750,7 +729,7 @@
         }
         
         .empty-state p {
-            color: #8e8e8e;
+            color: #8C97A8;
             font-size: 15px;
             line-height: 1.5;
             margin-bottom: 24px;
@@ -760,7 +739,7 @@
         .empty-state-cta {
             display: inline-block;
             padding: 12px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2C5AA8 0%, #3A6CC4 100%);
             color: white;
             text-decoration: none;
             border-radius: 50px;
@@ -820,69 +799,123 @@
         /* ============================================ */
         /* Sobrescribir cualquier estilo global de enlaces en el dropdown del perfil */
         #feedProfileMenu a {
-            color: #4b5563 !important; /* Gris oscuro para Mi Perfil */
+            color: #474F5C !important; /* Gris oscuro para Mi Perfil */
             text-decoration: none !important;
             text-shadow: none !important;
         }
 
         #feedProfileMenu a:hover {
-            background: #f3f4f6 !important;
-            color: #4b5563 !important;
+            background: #F1F4F9 !important;
+            color: #474F5C !important;
             text-decoration: none !important;
         }
 
         #feedProfileMenu button:nth-of-type(1) {
-            color: #4b5563 !important; /* Gris oscuro para Cambiar Contraseña */
+            color: #474F5C !important; /* Gris oscuro para Cambiar Contraseña */
         }
 
         #feedProfileMenu button:nth-of-type(1):hover {
-            background: #f3f4f6 !important;
-            color: #4b5563 !important;
+            background: #F1F4F9 !important;
+            color: #474F5C !important;
         }
 
         #feedProfileMenu button:nth-of-type(2) {
-            color: #ef4444 !important; /* Rojo para Cerrar Sesión */
+            color: #B5503C !important; /* Rojo para Cerrar Sesión */
         }
 
         #feedProfileMenu button:nth-of-type(2):hover {
-            background: #fef2f2 !important;
-            color: #ef4444 !important;
+            background: #F3DED7 !important;
+            color: #B5503C !important;
         }
 
         [data-theme="dark"] #feedProfileMenu a {
-            color: #e5e7eb !important;
+            color: #E6EBF2 !important;
             text-decoration: none !important;
             text-shadow: none !important;
         }
 
         [data-theme="dark"] #feedProfileMenu a:hover {
-            background: #374151 !important;
-            color: #e5e7eb !important;
+            background: #313842 !important;
+            color: #E6EBF2 !important;
             text-decoration: none !important;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/instacoach-design-system.css?v={{ get_file_version('css/instacoach-design-system.css') }}">
+    <style>
+        /* Alineación con el sistema de diseño Tide */
+        body { background: var(--surface-page, #F1F4F9) !important; }
+        .card {
+            border: 1px solid var(--border-subtle, #E6EBF2) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 1px 2px rgba(20,35,63,0.06) !important;
+        }
+        h1, h2 {
+            font-family: var(--font-serif, Georgia, serif);
+            font-weight: 500;
+            color: var(--text-strong, #14233F);
+        }
+        /* Identidad Tide: gradientes morados legados → ocean de marca */
+        .avatar-gradient,
+        [style*="--purple-start"],
+        [class*="avatar"][style*="667eea"] {
+            background: linear-gradient(135deg, var(--ocean-500, #3A6CC4), var(--ocean-600, #2C5AA8)) !important;
+        }
+        .btn-primary {
+            background: var(--primary, #2C5AA8) !important;
+            border-color: var(--primary, #2C5AA8) !important;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover, #213C70) !important;
+            border-color: var(--primary-hover, #213C70) !important;
+        }
+        .badge.bg-primary { background: var(--primary, #2C5AA8) !important; }
+        /* Tarjetas de post — anatomía Tide (mock Coach Feed) */
+        .instagram-post {
+            background: var(--surface-card, #fff) !important;
+            border: 1px solid var(--border-subtle, #E6EBF2) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 1px 2px rgba(20,35,63,0.06) !important;
+            overflow: hidden;
+        }
+        .instagram-post:hover { box-shadow: var(--shadow-md, 0 10px 24px -14px rgba(20,35,63,0.32)) !important; }
+        .post-header h6 { color: var(--text-strong, #14233F) !important; font-weight: 700 !important; }
+        .post-header small { color: var(--text-subtle, #8C97A8) !important; }
+        .post-actions .action-btn {
+            color: var(--text-muted, #646E7E) !important;
+            border-radius: 10px !important;
+            transition: background .15s ease, color .15s ease !important;
+        }
+        .post-actions .action-btn:hover { background: var(--surface-hover, #EEF3FC) !important; }
+        .feed-header h3 { font-family: var(--font-serif, Georgia, serif) !important; font-weight: 500 !important; color: var(--text-strong, #14233F) !important; }
+        .feed-header .subtitle { color: var(--text-muted, #646E7E) !important; }
+        .empty-state h5 { font-family: var(--font-serif, Georgia, serif); font-weight: 500; }
+    </style>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 </head>
 <body>
     <!-- Header -->
-    <header style="position: sticky; top: 0; z-index: 50; width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #e5e7eb; border-top: none !important; border-left: none !important; border-right: none !important; margin: 0 !important;">
+    <header style="position: sticky; top: 0; z-index: 50; width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #E6EBF2; border-top: none !important; border-left: none !important; border-right: none !important; margin: 0 !important;">
         <div style="display: flex; height: 4rem; align-items: center; justify-content: space-between; padding: 0 1.5rem; margin: 0 !important;">
             <!-- Logo -->
             <div style="display:flex;align-items:center;gap:0.625rem;border:none!important;outline:none!important;box-shadow:none!important;">
-                <svg width="50" height="36" viewBox="6 18 88 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:block;">
-                    <circle cx="38" cy="50" r="30" fill="#3650a8" opacity="0.92"/>
-                    <circle cx="62" cy="50" r="30" fill="#4f72c8" opacity="0.80"/>
-                    <circle cx="50" cy="28" r="5.5" fill="white"/>
-                    <rect x="46" y="38" width="8" height="20" rx="4" fill="white"/>
+                <svg width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:block;">
+                    <rect x="8" y="8" width="84" height="84" rx="24" fill="#2C5AA8"/>
+                    <path d="M30 66 L30 48 M50 66 L50 34 M70 66 L70 22" stroke="#F5F1E8" stroke-width="8" stroke-linecap="round"/>
+                    <circle cx="70" cy="22" r="6" fill="#C49A52"/>
                 </svg>
-                <span style="font-family:'Manrope',sans-serif;font-size:1.375rem;font-weight:700;color:#3650a8;line-height:1;letter-spacing:-0.01em;user-select:none;-webkit-font-smoothing:antialiased;">InstaCoach</span>
+                <span style="font-family:'Manrope',sans-serif;font-size:1.375rem;font-weight:700;color:#2C5AA8;line-height:1;letter-spacing:-0.01em;user-select:none;-webkit-font-smoothing:antialiased;">Insta<span style="color:#A87C36;">Coach</span></span>
             </div>
 
             <!-- Right Section -->
             <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div id="feedStreakChip" style="display: none; align-items: center; gap: 5px; background: var(--accent-soft, #F2E7CC); border-radius: 999px; padding: 6px 12px;">
+                    <i class="fas fa-fire" style="font-size: 0.85rem; color: var(--gold-700, #8A6526);"></i>
+                    <span id="feedStreakCount" style="font-size: 13px; font-weight: 700; color: var(--gold-700, #8A6526);">0</span>
+                </div>
                 <!-- Notifications -->
-                <button style="position: relative; border-radius: 12px; padding: 0.5rem; border: none !important; outline: none !important; background: transparent; cursor: pointer; transition: background 0.2s; box-shadow: none !important;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-bell" style="color: #475569; font-size: 1.25rem; border: none !important; outline: none !important; text-decoration: none !important; background: transparent !important;"></i>
-                    <span style="position: absolute; right: 0.25rem; top: 0.25rem; height: 0.5rem; width: 0.5rem; border-radius: 50%; background: #ef4444; border: 2px solid white;"></span>
+                <button style="position: relative; border-radius: 12px; padding: 0.5rem; border: none !important; outline: none !important; background: transparent; cursor: pointer; transition: background 0.2s; box-shadow: none !important;" onmouseover="this.style.background='#F1F4F9'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-bell" style="color: var(--text-muted, #646E7E); font-size: 1.25rem; border: none !important; outline: none !important; text-decoration: none !important; background: transparent !important;"></i>
+                    <span style="position: absolute; right: 0.25rem; top: 0.25rem; height: 0.5rem; width: 0.5rem; border-radius: 50%; background: #B5503C; border: 2px solid white;"></span>
                 </button>
 
                 <!-- Profile Dropdown -->
@@ -890,32 +923,32 @@
                     <button
                         onclick="toggleFeedDropdown(event)"
                         style="display: flex; align-items: center; gap: 0.5rem; border-radius: 12px; padding: 0.375rem 0.75rem 0.375rem 0.375rem; border: none !important; outline: none !important; background: transparent; cursor: pointer; transition: background 0.2s; box-shadow: none !important;"
-                        onmouseover="this.style.background='#f3f4f6'"
+                        onmouseover="this.style.background='#F1F4F9'"
                         onmouseout="this.style.background='transparent'"
                     >
                         <div id="headerAvatar" style="position: relative; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1rem; border: none !important; outline: none !important; overflow: hidden;">
                             <i class="fas fa-user" style="border: none !important; outline: none !important; text-decoration: none !important; background: transparent !important;"></i>
                         </div>
-                        <span style="position: absolute; bottom: 0; right: 2.75rem; height: 0.625rem; width: 0.625rem; border-radius: 50%; background: #10b981; border: 2px solid white;"></span>
-                        <i class="fas fa-chevron-down" style="color: #475569; font-size: 0.875rem; border: none !important; outline: none !important; text-decoration: none !important; background: transparent !important;"></i>
+                        <span style="position: absolute; bottom: 0; right: 2.75rem; height: 0.625rem; width: 0.625rem; border-radius: 50%; background: #2F7D5B; border: 2px solid white;"></span>
+                        <i class="fas fa-chevron-down" style="color: #474F5C; font-size: 0.875rem; border: none !important; outline: none !important; text-decoration: none !important; background: transparent !important;"></i>
                     </button>
 
                     <div
                         id="feedProfileMenu"
-                        style="display: none; position: absolute; right: 0; margin-top: 0.5rem; width: 14rem; border-radius: 16px; background: white; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); overflow: hidden; z-index: 1000;"
+                        style="display: none; position: absolute; right: 0; margin-top: 0.5rem; width: 14rem; border-radius: 16px; background: white; border: 1px solid #E6EBF2; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); overflow: hidden; z-index: 1000;"
                     >
-                        <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0;">
-                            <p id="welcomeMessageFeed" style="font-size: 0.875rem; font-weight: 500; color: #111827; margin: 0;">Coachee</p>
-                            <p style="font-size: 0.75rem; color: #6b7280; margin: 0.25rem 0 0 0;">Participante</p>
+                        <div style="padding: 1rem; border-bottom: 1px solid #E6EBF2;">
+                            <p id="welcomeMessageFeed" style="font-size: 0.875rem; font-weight: 500; color: #14233F; margin: 0;">Coachee</p>
+                            <p style="font-size: 0.75rem; color: #646E7E; margin: 0.25rem 0 0 0;">Participante</p>
                         </div>
                         <div style="padding: 0.5rem;">
-                            <a href="/coachee-profile?return=feed" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #10b981; border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                            <a href="/coachee-profile?return=feed" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #2F7D5B; border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#F1F4F9'" onmouseout="this.style.background='transparent'">
                                 <i class="fas fa-user-circle" style="margin-right: 0.5rem; width: 1rem;"></i> Mi Perfil
                             </a>
-                            <button onclick="openChangePasswordModalFeed(); document.getElementById('feedProfileMenu').style.display='none'" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #3b82f6; background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                            <button onclick="openChangePasswordModalFeed(); document.getElementById('feedProfileMenu').style.display='none'" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #2C5AA8; background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#F1F4F9'" onmouseout="this.style.background='transparent'">
                                 <i class="fas fa-key" style="margin-right: 0.5rem; width: 1rem;"></i> Cambiar Contraseña
                             </button>
-                            <button onclick="logout(); document.getElementById('feedProfileMenu').style.display='none'" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #f59e0b; background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'" onmouseout="this.style.background='transparent'">
+                            <button onclick="logout(); document.getElementById('feedProfileMenu').style.display='none'" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #B5832C; background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'" onmouseout="this.style.background='transparent'">
                                 <i class="fas fa-sign-out-alt" style="margin-right: 0.5rem; width: 1rem;"></i> Cerrar Sesión
                             </button>
                         </div>
@@ -926,6 +959,23 @@
     </header>
     
     <!-- Feeds Container -->
+    <div class="feeds-container">
+        <div style="padding: 6px 4px 2px;">
+            <h1 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: 1.6rem; color: var(--text-strong, #14233F); margin: 0 0 2px;">Para ti</h1>
+            <p id="feedIntroLine" style="font-size: 13.5px; color: var(--text-muted, #646E7E); margin: 0 0 12px;">Lo que tu coach comparte contigo.</p>
+            <div id="feedFilters" style="display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 12px;"></div>
+        </div>
+        <div id="feedUpNext" style="display: none; background: var(--surface-inverse, #14233F); border-radius: 16px; padding: 18px; box-shadow: 0 8px 24px rgba(20,35,63,0.18); position: relative; overflow: hidden; margin: 0 0 6px;">
+            <div style="position: absolute; inset: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); pointer-events: none; border-radius: 16px;"></div>
+            <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 8px;">
+                <i class="fas fa-wand-magic-sparkles" style="font-size: 0.8rem; color: var(--gold-300, #E0C691);"></i>
+                <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-300, #E0C691);">Siguiente para ti</span>
+            </div>
+            <p id="feedUpNextTitle" style="font-family: var(--font-serif, Georgia, serif); font-size: 16.5px; line-height: 1.4; color: #ffffff; margin: 0 0 4px;"></p>
+            <p id="feedUpNextMeta" style="font-size: 13px; color: var(--mist-400, #B7C1D0); margin: 0 0 12px;"></p>
+            <button id="feedUpNextBtn" style="display: inline-flex; align-items: center; height: 36px; padding: 0 16px; background: var(--gold-500, #C49A52); color: #14233F; border: none; border-radius: 10px; font-weight: 700; font-size: 0.8125rem; cursor: pointer; transition: filter .15s;" onmouseover="this.style.filter='brightness(1.06)'" onmouseout="this.style.filter='none'">Empezar</button>
+        </div>
+    </div>
     <div class="feeds-container" id="feedsContainer">
         <div class="loading-container">
             <!-- Skeleton Card 1 -->
@@ -981,15 +1031,28 @@
         </div>
     </div>
     
-    <!-- Bottom Navigation Modern -->
+    <!-- Nota final (diseño Coachee Feed) -->
+    <div id="feedEndNote" style="text-align: center; padding: 14px 20px 96px;">
+        <p id="feedEndNoteText" style="font-family: var(--font-serif, Georgia, serif); font-style: italic; color: var(--text-subtle, #8C97A8); font-size: 14.5px; margin: 0;">Tu coach compartirá lo próximo aquí.</p>
+    </div>
+
+    <!-- Bottom Navigation (diseño Coachee Feed: Hoy / Para ti / Plan / Coach) -->
     <nav class="bottom-navigation">
         <a href="/coachee-feed" class="nav-item active">
             <i class="fas fa-rss"></i>
-            <span>Feed</span>
+            <span>Para ti</span>
         </a>
         <a href="/coachee-dashboard?tab=overview" class="nav-item">
-            <i class="fas fa-chart-pie"></i>
-            <span>Overview</span>
+            <i class="fas fa-sun"></i>
+            <span>Hoy</span>
+        </a>
+        <a href="/coachee-dashboard?tab=development-plan" class="nav-item">
+            <i class="fas fa-bullseye"></i>
+            <span>Plan</span>
+        </a>
+        <a href="/coachee-dashboard?tab=mensajes" class="nav-item">
+            <i class="fas fa-comment"></i>
+            <span>Coach</span>
         </a>
         <button class="nav-item" onclick="toggleDashboardDrawer()">
             <i class="fas fa-grip-horizontal"></i>
@@ -1010,10 +1073,6 @@
             </button>
         </div>
         <div class="drawer-grid">
-            <a href="/coachee-dashboard?tab=overview" class="drawer-item">
-                <i class="fas fa-home"></i>
-                <span>Overview</span>
-            </a>
             <a href="/coachee-dashboard?tab=evaluaciones-figma" class="drawer-item">
                 <i class="fas fa-chart-bar"></i>
                 <span>Evaluaciones</span>
@@ -1022,21 +1081,17 @@
                 <i class="fas fa-tasks"></i>
                 <span>Mis Acciones y Metas</span>
             </a>
-            <a href="/coachee-dashboard?tab=content" class="drawer-item">
-                <i class="fas fa-folder-open"></i>
-                <span>Mi Contenido</span>
-            </a>
             <a href="/coachee-dashboard?tab=progress" class="drawer-item">
                 <i class="fas fa-chart-line"></i>
                 <span>Mi Progreso</span>
             </a>
-            <a href="/coachee-dashboard?tab=development-plan" class="drawer-item">
-                <i class="fas fa-rocket"></i>
-                <span>Mi Plan de Desarrollo</span>
-            </a>
             <a href="/coachee-dashboard?tab=schedule-coach" class="drawer-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Agendar Coach</span>
+            </a>
+            <a href="/coachee-dashboard?tab=mis-contratos" class="drawer-item">
+                <i class="fas fa-file-signature"></i>
+                <span>Mi Contrato</span>
             </a>
         </div>
     </div>
@@ -1286,7 +1341,7 @@
                 // Mostrar inicial del username si no hay avatar
                 const initial = username ? username.charAt(0).toUpperCase() : 'U';
                 headerAvatar.innerHTML = initial;
-                headerAvatar.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                headerAvatar.style.background = 'linear-gradient(135deg, #2C5AA8 0%, #3A6CC4 100%)';
             }
             
             // Actualizar mensaje de bienvenida
@@ -1319,200 +1374,225 @@
         }
         
         // Función para cargar feeds desde la API
+        /* ── Motor del feed (diseño Coachee Feed) ─────────────────── */
+        let feedItems = [];
+        const feedState = {
+            filter: 'todo',
+            liked: JSON.parse(localStorage.getItem('icFeedLiked') || '{}'),
+            saved: JSON.parse(localStorage.getItem('icFeedSaved') || '{}')
+        };
+        function persistFeedState() {
+            localStorage.setItem('icFeedLiked', JSON.stringify(feedState.liked));
+            localStorage.setItem('icFeedSaved', JSON.stringify(feedState.saved));
+        }
+        const escFeed = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        function fmtDur(sec) {
+            if (!sec) return '';
+            const m = Math.floor(sec / 60), s = sec % 60;
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+
         async function loadInstagramFeeds() {
-            
             const container = document.getElementById('feedsContainer');
-            if (!container) {
-                return;
-            }
-            
+            if (!container) return;
             try {
                 const response = await fetch('/api/coachee/content');
                 const data = await response.json();
-                
-                
-                if (data.success && data.content && data.content.length > 0) {
-                    displayInstagramFeeds(data.content);
-                } else {
-                    displayNoFeeds();
-                }
+                feedItems = (data.success && data.content) ? data.content : [];
+                renderFeed();
             } catch (error) {
                 console.error('❌ Error loading feeds:', error);
                 displayFeedsError();
             }
         }
-        
-        // Función para mostrar feeds en formato Instagram
-        function displayInstagramFeeds(content) {
+
+        function renderFilters() {
+            const wrap = document.getElementById('feedFilters');
+            if (!wrap) return;
+            const defs = [['todo', 'Todo'], ['foryou', 'Para ti'], ['saved', 'Guardado'], ['done', 'Visto']];
+            wrap.innerHTML = defs.map(([id, label]) =>
+                `<button class="filter-pill${feedState.filter === id ? ' selected' : ''}" onclick="setFeedFilter('${id}')">${label}</button>`
+            ).join('');
+        }
+        function setFeedFilter(f) { feedState.filter = f; renderFeed(); }
+
+        function feedMediaHTML(item) {
+            const ytId = extractYouTubeVideoId(item.content_url);
+            const igId = extractInstagramVideoId(item.content_url);
+            const dur = fmtDur(item.duration);
+            if (ytId) {
+                return `<div class="yt-facade" data-vid="${ytId}"
+                     style="position: relative; width: 100%; padding-bottom: 56.25%; background: var(--surface-inverse, #14233F) url('https://i.ytimg.com/vi/${ytId}/hqdefault.jpg') center/cover; overflow: hidden; cursor: pointer; border-radius: 10px;">
+                    <div style="position:absolute;inset:0;background:rgba(20,35,63,0.55);pointer-events:none;"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                        <i class="fas fa-play" style="color:var(--gold-300,#E0C691);font-size:22px;margin-left:4px;"></i>
+                    </div>
+                    ${dur ? `<span style="position:absolute;bottom:10px;right:12px;font-size:11.5px;font-weight:600;color:var(--mist-400,#B7C1D0);">${dur}</span>` : ''}
+                </div>`;
+            }
+            if (igId) {
+                return `<div style="position: relative; width: 100%; border-radius: 10px; overflow: hidden;">
+                    <iframe src="https://www.instagram.com/p/${igId}/embed/" style="width: 100%; min-height: 600px; border: none;" frameborder="0" scrolling="no" allowtransparency="true" allow="encrypted-media"></iframe>
+                </div>`;
+            }
+            if (item.type === 'document') {
+                const fileName = (item.content_url || '').split('/').pop().split('?')[0] || 'Documento';
+                return `<div onclick="openDocumentFeed('${escFeed(item.content_url)}', '${escFeed(item.title)}')" style="border-radius: 10px; background: var(--ocean-50, #EEF3FC); border: 1px solid var(--border-brand, #BFD3F0); padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-file-alt" style="font-size: 1.1rem; color: var(--primary, #2C5AA8);"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text-strong, #14233F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escFeed(decodeURIComponent(fileName))}</div>
+                        <div style="font-size: 12px; color: var(--text-muted, #646E7E);">Documento${dur ? ` · ${dur} min` : ''}</div>
+                    </div>
+                    <i class="fas fa-arrow-right" style="font-size: 0.85rem; color: var(--primary, #2C5AA8); flex-shrink: 0;"></i>
+                </div>`;
+            }
+            return `<div onclick="openVideoFeed('${escFeed(item.content_url)}')" style="border-radius: 10px; background: var(--surface-inverse, #14233F); position: relative; height: 185px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden;">
+                <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-play" style="color:var(--gold-300,#E0C691);font-size:22px;margin-left:4px;"></i>
+                </div>
+                ${dur ? `<span style="position:absolute;bottom:10px;right:12px;font-size:11.5px;font-weight:600;color:var(--mist-400,#B7C1D0);">${dur}</span>` : ''}
+            </div>`;
+        }
+
+        function buildFeedCard(item) {
+            const liked = !!feedState.liked[item.id];
+            const saved = !!feedState.saved[item.id];
+            const assigned = item.assigned_at ? new Date(item.assigned_at) : null;
+            const isToday = assigned && assigned.toDateString() === new Date().toDateString();
+            const timeLabel = isToday ? 'Hoy · elegido para ti' : getRelativeTime(item.assigned_at);
+            const avatar = item.coach_avatar_url
+                ? `<div style="width:34px;height:34px;border-radius:50%;background:url('${escFeed(item.coach_avatar_url)}') center/cover;flex-shrink:0;"></div>`
+                : `<div style="width:34px;height:34px;border-radius:50%;background:var(--primary-soft,#DCE7F8);color:var(--ocean-700,#213C70);font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${escFeed((item.coach_name || 'C').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join(''))}</div>`;
+            return `
+                <div class="instagram-post" id="feed-post-${item.id}" style="background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 4px 4px 10px;">
+                        ${avatar}
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 13.5px; font-weight: 700; color: var(--text-strong, #14233F);">${escFeed(item.coach_name)}</span>
+                                <span style="display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft, #F2E7CC); color: var(--gold-700, #8A6526);">Para ti</span>
+                            </div>
+                            <div style="font-size: 11.5px; color: var(--text-subtle, #8C97A8);">${timeLabel}</div>
+                        </div>
+                        ${item.is_viewed ? `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--success, #2F7D5B);"><i class="fas fa-check-circle" style="font-size: 0.8rem;"></i>Visto</span>` : ''}
+                    </div>
+                    ${feedMediaHTML(item)}
+                    <div style="padding: 10px 4px 4px;">
+                        <div style="font-size: 14px; font-weight: 700; color: var(--text-strong, #14233F); margin-bottom: 2px;">${escFeed(item.title)}</div>
+                        ${item.description ? `<div style="font-size: 13px; color: var(--text-muted, #646E7E); line-height: 1.5;">${escFeed(item.description)}</div>` : ''}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 2px; padding: 4px 0 2px;">
+                        <button class="act-btn${liked ? ' liked' : ''}" onclick="feedLike(${item.id}, this)" title="Me gusta"><i class="${liked ? 'fas' : 'far'} fa-heart" style="font-size: 1.05rem;"></i></button>
+                        <button class="act-btn${saved ? ' saved' : ''}" onclick="feedSave(${item.id}, this)" title="Guardar"><i class="${saved ? 'fas' : 'far'} fa-bookmark" style="font-size: 1.05rem;"></i></button>
+                        <span style="flex: 1;"></span>
+                        ${item.is_viewed
+                            ? `<span style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; color: var(--text-subtle, #8C97A8); font-weight: 600; font-size: 0.8125rem;">Visto</span>`
+                            : `<button onclick="feedMarkVisto(${item.id})" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; background: var(--surface-card, #fff); color: var(--primary, #2C5AA8); border: 1.5px solid var(--border-brand, #BFD3F0); border-radius: 999px; font-weight: 600; font-size: 0.8125rem; cursor: pointer; transition: background .15s;" onmouseover="this.style.background='var(--primary-soft, #DCE7F8)'" onmouseout="this.style.background='var(--surface-card, #fff)'">Marcar visto</button>`}
+                    </div>
+                </div>`;
+        }
+
+        function renderFeed() {
+            renderFilters();
             const container = document.getElementById('feedsContainer');
             if (!container) return;
-            
-            let feedsHTML = '';
-            
-            content.forEach((item, index) => {
-                const youtubeVideoId = extractYouTubeVideoId(item.content_url);
-                const instagramVideoId = extractInstagramVideoId(item.content_url);
-                // Mejorar detección: si tiene videoId de YouTube o Instagram, mostrarlo embebido
-                const isYouTubeVideo = youtubeVideoId !== null;
-                const isInstagramVideo = instagramVideoId !== null;
-                const isDocument = item.content_type === 'document';
-                
-                // Determinar el thumbnail/preview
-                let thumbnail;
-                if (isYouTubeVideo) {
-                    thumbnail = `https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`;
-                } else if (isInstagramVideo) {
-                    thumbnail = null; // Instagram se mostrará embebido
-                } else if (isDocument) {
-                    thumbnail = null;
-                } else {
-                    thumbnail = 'data:image/svg+xml;base64,' + btoa(`
-                        <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="600" height="400" fill="#f8f9fa"/>
-                            <circle cx="300" cy="200" r="60" fill="#6c757d"/>
-                            <polygon points="270,170 270,230 330,200" fill="white"/>
-                        </svg>
-                    `);
-                }
-                
-                const timeAgo = getRelativeTime(item.assigned_at);
-                
-                feedsHTML += `
-                    <div class="instagram-post">
-                        <div class="post-header">
-                            <div class="post-author">
-                                <div class="author-avatar" style="${item.coach_avatar_url ? `background-image: url('${item.coach_avatar_url}'); background-size: cover; background-position: center;` : ''}">
-                                    ${item.coach_avatar_url ? '' : '<i class="fas fa-user-tie"></i>'}
-                                </div>
-                                <div class="author-info">
-                                    <h6>${item.coach_name}</h6>
-                                    <small>${timeAgo}</small>
-                                </div>
-                            </div>
-                            <button class="post-options">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="post-media">
-                            ${isYouTubeVideo ? `
-                                <div style="position: relative; width: 100%; padding-bottom: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); overflow: hidden;">
-                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 56.25%;">
-                                        <iframe id="youtube-feed-${item.id}" 
-                                            src="https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1" 
-                                            title="${item.title}" 
-                                            frameborder="0" 
-                                            allowfullscreen
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            style="width: 100%; height: 100%; border-radius: 0;">
-                                        </iframe>
-                                    </div>
-                                </div>
-                            ` : isInstagramVideo ? `
-                                <div style="position: relative; width: 100%; background: linear-gradient(135deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); overflow: hidden;">
-                                    <iframe 
-                                        src="https://www.instagram.com/p/${instagramVideoId}/embed/" 
-                                        style="width: 100%; min-height: 600px; border: none;"
-                                        frameborder="0" 
-                                        scrolling="no" 
-                                        allowtransparency="true" 
-                                        allow="encrypted-media">
-                                    </iframe>
-                                </div>
-                            ` : isDocument ? `
-                                <canvas id="doc-preview-${item.id}"
-                                        width="1200"
-                                        height="1000"
-                                        style="width: 100%; height: auto; display: block; background: white;">
-                                </canvas>
-                            ` : `
-                                <div onclick="openVideoFeed('${item.content_url}')" style="position: relative; cursor: pointer;">
-                                    <img src="${thumbnail}" 
-                                         alt="${item.title}" 
-                                         class="post-image"
-                                         onerror="this.src='data:image/svg+xml;base64,${btoa(`
-                                             <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
-                                                 <rect width="600" height="400" fill="#f8f9fa"/>
-                                                 <circle cx="300" cy="200" r="60" fill="#6c757d"/>
-                                                 <polygon points="270,170 270,230 330,200" fill="white"/>
-                                                 <text x="300" y="280" font-family="Arial" font-size="18" text-anchor="middle" fill="#6c757d">Video</text>
-                                             </svg>
-                                         `)}'">
-                                    <div class="video-overlay">
-                                        <i class="fas fa-play"></i>
-                                    </div>
-                                </div>
-                            `}
-                        </div>
-                        
-                        <div class="post-actions">
-                            <div class="action-buttons">
-                                <button class="action-btn" onclick="toggleLikeFeed(${item.id}, this)" title="Me gusta">
-                                    <i class="far fa-heart"></i>
-                                </button>
-                                ${isYouTubeVideo ? `
-                                    <button class="action-btn" disabled style="color: #28a745; opacity: 0.7;" title="Video embebido">
-                                        <i class="fas fa-play-circle"></i>
-                                    </button>
-                                ` : isInstagramVideo ? `
-                                    <button class="action-btn" disabled style="color: #E4405F; opacity: 0.7;" title="Video de Instagram embebido">
-                                        <i class="fab fa-instagram"></i>
-                                    </button>
-                                ` : isDocument ? `
-                                    <button class="action-btn" onclick="openDocumentFeed('${item.content_url}', '${item.title}')" title="Abrir documento">
-                                        <i class="far fa-file-alt"></i>
-                                    </button>
-                                ` : `
-                                    <button class="action-btn" onclick="openVideoFeed('${item.content_url}')" title="Reproducir video">
-                                        <i class="far fa-play-circle"></i>
-                                    </button>
-                                `}
-                                <button class="action-btn" onclick="shareFeed(${item.id})" title="Compartir">
-                                    <i class="far fa-paper-plane"></i>
-                                </button>
-                            </div>
-                            <button class="action-btn" title="Guardar">
-                                <i class="far fa-bookmark"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="post-info">
-                            <div class="post-likes">
-                                <strong>${Math.floor(Math.random() * 50) + 10} me gusta</strong>
-                            </div>
-                            <div class="post-caption">
-                                <span class="username">${item.coach_name}</span>
-                                ${item.title}
-                                ${item.description ? '<br><small class="text-muted">' + item.description + '</small>' : ''}
-                            </div>
-                            <div class="post-time">
-                                ${timeAgo}
-                            </div>
-                        </div>
-                    </div>
-                `;
+            if (!feedItems.length) { displayNoFeeds(); updateUpNext(null); updateEndNote(); return; }
+
+            const intro = document.getElementById('feedIntroLine');
+            if (intro && feedItems[0].coach_name) {
+                intro.innerHTML = `Elegido por <strong style="color: var(--text-strong, #14233F);">${escFeed(feedItems[0].coach_name)}</strong> para ti.`;
+            }
+
+            const visible = feedItems.filter(it => {
+                if (feedState.filter === 'foryou') return !it.is_viewed;
+                if (feedState.filter === 'saved') return !!feedState.saved[it.id];
+                if (feedState.filter === 'done') return !!it.is_viewed;
+                return true;
             });
-            
-            container.innerHTML = feedsHTML;
-            
-            // Generar previews de documentos después de cargar el HTML
-            setTimeout(() => {
-                const documentCount = content.filter(item => item.content_type === 'document' && item.content_url).length;
-                
-                content.forEach(item => {
-                    if (item.content_type === 'document' && item.content_url) {
-                        const canvasId = `doc-preview-${item.id}`;
-                        const canvas = document.getElementById(canvasId);
-                        if (canvas) {
-                            generateDocumentPreview(item.content_url, canvasId);
-                        } else {
-                            console.error(`❌ Canvas ${canvasId} NO encontrado en el DOM`);
-                        }
-                    }
-                });
-            }, 200);
+            updateUpNext(feedState.filter === 'todo' ? feedItems.find(it => !it.is_viewed) : null);
+
+            container.innerHTML = visible.length
+                ? visible.map(buildFeedCard).join('')
+                : `<div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted, #646E7E); font-size: 0.875rem; background: var(--surface-card, #fff); border: 1px dashed var(--border-default, #D5DCE7); border-radius: 14px;">Nada por aquí con este filtro.</div>`;
+            updateEndNote();
         }
-        
+
+        function updateUpNext(item) {
+            const card = document.getElementById('feedUpNext');
+            if (!card) return;
+            if (!item) { card.style.display = 'none'; return; }
+            const dur = fmtDur(item.duration);
+            document.getElementById('feedUpNextTitle').textContent = item.title || 'Contenido';
+            document.getElementById('feedUpNextMeta').textContent = item.type === 'document'
+                ? `Documento${dur ? ` · ${dur} min` : ''}` : `Video${dur ? ` · ${dur}` : ''}`;
+            const btn = document.getElementById('feedUpNextBtn');
+            btn.onclick = function () { feedOpenItem(item.id); };
+            card.style.display = 'block';
+        }
+
+        function updateEndNote() {
+            const el = document.getElementById('feedEndNoteText');
+            if (!el) return;
+            if (!feedItems.length) { el.textContent = 'Tu coach compartirá lo próximo aquí.'; return; }
+            const left = feedItems.filter(it => !it.is_viewed).length;
+            const coach = feedItems[0].coach_name ? feedItems[0].coach_name.split(' ')[0] : 'Tu coach';
+            el.textContent = left === 0
+                ? `Todo visto. ${coach} te enviará más esta semana.`
+                : `Estás al día. ${left} contenido${left !== 1 ? 's' : ''} por ver, sin apuro.`;
+        }
+
+        function feedLike(id, btn) {
+            feedState.liked[id] = !feedState.liked[id];
+            persistFeedState();
+            btn.classList.toggle('liked', !!feedState.liked[id]);
+            btn.querySelector('i').className = (feedState.liked[id] ? 'fas' : 'far') + ' fa-heart';
+        }
+        function feedSave(id, btn) {
+            const now = !feedState.saved[id];
+            feedState.saved[id] = now;
+            persistFeedState();
+            btn.classList.toggle('saved', now);
+            btn.querySelector('i').className = (now ? 'fas' : 'far') + ' fa-bookmark';
+            showToast(now ? 'Guardado. Lo encuentras en el filtro "Guardado".' : 'Quitado de guardados', 'info');
+        }
+        async function feedMarkVisto(id) {
+            const it = feedItems.find(x => x.id === id);
+            if (!it || it.is_viewed) return;
+            try {
+                const r = await fetch(`/api/coachee/content/${id}/mark-viewed`, { method: 'POST', credentials: 'same-origin' });
+                if (r.ok) {
+                    it.is_viewed = true;
+                    renderFeed();
+                    showToast('Buen avance. Tu coach verá que lo revisaste.', 'success');
+                }
+            } catch (_) {}
+        }
+        function feedOpenItem(id) {
+            const it = feedItems.find(x => x.id === id);
+            if (!it) return;
+            const card = document.getElementById('feed-post-' + id);
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const facade = card && card.querySelector('.yt-facade');
+            if (facade) facade.click();
+            else if (it.type === 'document' && it.content_url) openDocumentFeed(it.content_url, it.title);
+            else if (it.content_url) openVideoFeed(it.content_url);
+        }
+
+        /* Chip dorado: puntos reales de gamificación */
+        (async function loadFeedPoints() {
+            try {
+                const r = await fetch('/api/coachee/points/summary', { credentials: 'same-origin' });
+                const d = await r.json();
+                const pts = d && d.data && d.data.total_points;
+                if (typeof pts === 'number') {
+                    document.getElementById('feedStreakCount').textContent = pts.toLocaleString();
+                    document.getElementById('feedStreakChip').style.display = 'inline-flex';
+                }
+            } catch (_) {}
+        })();
+
         // Función para mostrar cuando no hay feeds
         function displayNoFeeds() {
             const container = document.getElementById('feedsContainer');
@@ -1601,20 +1681,6 @@
             window.open(url, '_blank');
         }
         
-        // Función para toggle like
-        function toggleLikeFeed(contentId, button) {
-            const icon = button.querySelector('i');
-            if (icon.classList.contains('far')) {
-                icon.classList.remove('far');
-                icon.classList.add('fas');
-                button.classList.add('liked');
-            } else {
-                icon.classList.remove('fas');
-                icon.classList.add('far');
-                button.classList.remove('liked');
-            }
-        }
-        
         // Función para compartir
         function shareFeed(contentId) {
             showToast('¡Funcionalidad de compartir próximamente!', 'info');
@@ -1638,7 +1704,7 @@
             canvas.width = 1200;
             canvas.height = 1000;
             
-            ctx.fillStyle = '#f8f9fa';
+            ctx.fillStyle = '#F1F4F9';
             ctx.fillRect(0, 0, 1200, 1000);
             ctx.fillStyle = '#6c757d';
             ctx.font = '24px Arial';
@@ -1751,7 +1817,7 @@
                     canvas.height = maxHeight;
                     
                     // Fondo gris claro
-                    ctx.fillStyle = '#f8f9fa';
+                    ctx.fillStyle = '#F1F4F9';
                     ctx.fillRect(0, 0, maxWidth, maxHeight);
                     
                     // Dibujar texto de error
@@ -1872,5 +1938,20 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('click', function (e) {
+            const facade = e.target.closest('.yt-facade');
+            if (!facade || facade.dataset.playing) return;
+            facade.dataset.playing = '1';
+            const iframe = document.createElement('iframe');
+            iframe.src = 'https://www.youtube.com/embed/' + facade.dataset.vid + '?enablejsapi=1&autoplay=1';
+            iframe.setAttribute('frameborder', '0');
+            iframe.setAttribute('allowfullscreen', '');
+            iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+            iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+            facade.innerHTML = '';
+            facade.appendChild(iframe);
+        });
+    </script>
 </body>
 </html>

@@ -6046,6 +6046,183 @@ def confirmar_solicitud(token):
             'Ocurrió un error procesando tu confirmación. Intenta nuevamente en unos minutos.', ok=False), 500
 
 
+@app.route('/api/admin/coach-requests', methods=['GET'])
+@admin_required
+def api_admin_coach_requests():
+    """Cola de solicitudes de coach pendientes (diseño Admin Dashboard)."""
+    try:
+        pendientes = CoachRequest.query.filter_by(status='pending').order_by(CoachRequest.created_at.desc()).all()
+        import json as _json
+        return jsonify({'success': True, 'requests': [{
+            'id': r.id,
+            'full_name': r.full_name,
+            'email': r.email,
+            'username': r.username,
+            'areas': _json.loads(r.areas) if r.areas else [],
+            'experiencia': r.experiencia,
+            'estilo': r.estilo,
+            'bio': r.bio,
+            'created_at': r.created_at.isoformat() if r.created_at else None
+        } for r in pendientes]})
+    except Exception as e:
+        logger.error(f"❌ ADMIN-REQUESTS: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error interno'}), 500
+
+
+@app.route('/api/admin/coach-requests/<int:req_id>/approve', methods=['POST'])
+@admin_required
+def api_admin_approve_coach(req_id):
+    """
+    Aprueba una solicitud: crea la cuenta de coach y envía un enlace de acceso
+    de incorporación (72 h) para que entre y configure su contraseña.
+    """
+    try:
+        req = db.session.get(CoachRequest, req_id)
+        if not req or req.status != 'pending':
+            return jsonify({'success': False, 'error': 'Solicitud no encontrada o ya revisada'}), 404
+
+        if User.query.filter_by(email=req.email).first():
+            return jsonify({'success': False, 'error': 'Ya existe un usuario con ese email'}), 409
+        username = req.username
+        if User.query.filter_by(username=username).first():
+            username = f"{username}{req.id}"
+
+        nuevo = User(
+            username=username,
+            email=req.email,
+            full_name=req.full_name,
+            role='coach'
+        )
+        nuevo.set_password(secrets.token_urlsafe(24))  # aleatoria; definirá la suya al entrar
+        db.session.add(nuevo)
+
+        req.status = 'approved'
+        req.reviewed_at = datetime.utcnow()
+        req.reviewed_by = current_user.id if current_user.is_authenticated else None
+        db.session.commit()
+
+        token = get_email_confirm_serializer().dumps({'k': 'onboard', 'uid': nuevo.id, 'r': 'coach'})
+        acceso_url = request.url_root.rstrip('/') + '/acceso/' + token
+        email_sent = send_email_confirmation_link(
+            req.email, req.full_name, acceso_url,
+            'aprobación como coach — entra y configura tu contraseña desde tu perfil'
+        )
+
+        logger.info(f"✅ ADMIN: Coach aprobado — {req.full_name} ({req.email}) → user #{nuevo.id}, email_sent={email_sent}")
+        return jsonify({'success': True, 'user_id': nuevo.id, 'username': username, 'email_sent': email_sent})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN-APPROVE: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error interno'}), 500
+
+
+@app.route('/api/admin/coach-requests/<int:req_id>/reject', methods=['POST'])
+@admin_required
+def api_admin_reject_coach(req_id):
+    """Rechaza una solicitud de coach."""
+    try:
+        req = db.session.get(CoachRequest, req_id)
+        if not req or req.status != 'pending':
+            return jsonify({'success': False, 'error': 'Solicitud no encontrada o ya revisada'}), 404
+
+        data = request.get_json(silent=True) or {}
+        req.status = 'rejected'
+        req.reviewed_at = datetime.utcnow()
+        req.reviewed_by = current_user.id if current_user.is_authenticated else None
+        req.rejection_reason = str(data.get('reason', ''))[:1000] or None
+        db.session.commit()
+
+        logger.info(f"🚫 ADMIN: Solicitud de coach rechazada — {req.full_name} ({req.email})")
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ ADMIN-REJECT: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error interno'}), 500
+
+
+@app.route('/api/magic-link', methods=['POST'])
+@limiter.limit("3 per hour")
+def api_magic_link():
+    """
+    "Enviarme un enlace de acceso" (diseño Login): envía un link de inicio de
+    sesión firmado, válido por 15 minutos. Respuesta siempre genérica para no
+    revelar si el email existe.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        email = data.get('email', '').strip().lower()[:200]
+        role = data.get('role', '')
+        generic = {'success': True, 'message': 'Si el email existe, te enviamos un enlace de acceso. Vale por 15 minutos.'}
+
+        if not email or '@' not in email or role not in ('coach', 'coachee'):
+            return jsonify(generic), 200
+
+        user = User.query.filter_by(email=email, role=role).first()
+        if not user:
+            logger.info(f"🔗 MAGIC-LINK: email sin cuenta {role}: {email}")
+            return jsonify(generic), 200
+
+        token = get_email_confirm_serializer().dumps({'k': 'magic', 'uid': user.id, 'r': role})
+        acceso_url = request.url_root.rstrip('/') + '/acceso/' + token
+        sent = send_email_confirmation_link(
+            email, user.full_name or user.username, acceso_url, 'enlace de acceso a InstaCoach'
+        )
+        if not sent:
+            return jsonify({'success': False, 'error': 'El envío de emails no está disponible en este momento. Usa tu contraseña.'}), 503
+
+        logger.info(f"🔗 MAGIC-LINK: enlace enviado a {email} ({role})")
+        return jsonify(generic), 200
+
+    except Exception as e:
+        logger.error(f"❌ MAGIC-LINK: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error interno'}), 500
+
+
+@app.route('/acceso/<token>')
+def acceso_magic_link(token):
+    """Inicia sesión desde el enlace de acceso (15 min de validez)."""
+    from itsdangerous import SignatureExpired, BadSignature
+    try:
+        # Cargar con el máximo (onboarding 72h) y luego aplicar el límite por tipo
+        payload, ts = get_email_confirm_serializer().loads(token, max_age=60 * 60 * 72, return_timestamp=True)
+    except SignatureExpired:
+        return _render_confirm_page('Enlace expirado',
+            'Este enlace de acceso venció. Solicita uno nuevo desde la página de login.', ok=False), 410
+    except BadSignature:
+        return _render_confirm_page('Enlace inválido',
+            'Este enlace no es válido. Solicita uno nuevo desde la página de login.', ok=False), 400
+
+    kind = payload.get('k')
+    if kind not in ('magic', 'onboard'):
+        return _render_confirm_page('Enlace inválido', 'Este enlace no es reconocido.', ok=False), 400
+
+    if kind == 'magic':
+        edad = (datetime.now(ts.tzinfo) - ts).total_seconds()
+        if edad > 60 * 15:
+            return _render_confirm_page('Enlace expirado',
+                'Este enlace de acceso venció (15 minutos). Solicita uno nuevo desde la página de login.', ok=False), 410
+
+    user = db.session.get(User, payload.get('uid'))
+    role = payload.get('r')
+    if not user or user.role != role:
+        return _render_confirm_page('Cuenta no encontrada',
+            'No pudimos validar tu cuenta. Inicia sesión con tu contraseña.', ok=False), 404
+
+    # Mismo mecanismo manual de sesión que los logins normales (sin login_user)
+    if role == 'coach':
+        session['coach_user_id'] = user.id
+        session['last_activity_coach'] = datetime.utcnow().isoformat()
+        destino = url_for('coach_dashboard_v2')
+    else:
+        session['coachee_user_id'] = user.id
+        destino = url_for('coachee_dashboard')
+
+    logger.info(f"🔗 MAGIC-LINK: sesión iniciada por enlace — {user.username} ({role})")
+    return redirect(destino)
+
+
 @app.route('/api/register', methods=['POST'])
 @limiter.limit("3 per hour")  # Máximo 3 solicitudes por hora por IP
 def api_register():
@@ -8649,8 +8826,7 @@ def coach_dashboard_v2():
                          coach_avatar_url=current_coach.avatar_url or '/static/img/default-avatar.png',
                          deploy_version=deploy_version))
     
-    # Cache privado corto: el HTML es un shell estático (los datos llegan por API).
-    # Evita re-descargar ~200KB gzip en cada navegación sin arriesgar datos obsoletos.
+    # Cache privado breve: la versión en el query string invalida en cada deploy.
     response.headers['Cache-Control'] = 'private, max-age=300'
     response.headers['X-Version'] = deploy_version
     response.headers['Vary'] = 'Accept-Encoding, Cookie'
@@ -8696,13 +8872,8 @@ def coachee_dashboard():
         session.pop('first_login')
 
     response = make_response(render_template('coachee_dashboard.html', auto_start_assessment=auto_start_assessment))
-    if auto_start_assessment:
-        # Respuesta con auto-inicio de evaluación: nunca cachear (es de un solo uso)
-        response.headers['Cache-Control'] = 'no-store'
-    else:
-        # Shell estático (~230KB gzip): cache privado corto evita re-descargas por navegación
-        response.headers['Cache-Control'] = 'private, max-age=300'
-        response.headers['Vary'] = 'Accept-Encoding, Cookie'
+    # Cache privado breve: la versión en el query string invalida en cada deploy.
+    response.headers['Cache-Control'] = 'private, max-age=300'
     return response
 
 @app.route('/coachee-feed')
@@ -8714,6 +8885,22 @@ def coachee_feed():
 @coachee_session_required
 def coachee_profile():
     return render_template('coachee_profile.html')
+
+@app.route('/sesion')
+@coachee_session_required
+def live_session():
+    """Sala de sesión en vivo del coachee (diseño Live Session)"""
+    response = make_response(render_template('live_session.html'))
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
+@app.route('/sesion-coach')
+@coach_session_required
+def live_session_coach():
+    """Sala de sesión en vivo del coach (diseño Live Session)"""
+    response = make_response(render_template('live_session_coach.html'))
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 @app.route('/platform-admin-dashboard')
 @admin_required
@@ -9129,14 +9316,40 @@ def api_coach_dashboard_init():
             is_active=True
         ).count()
         
-        # Sesiones programadas
-        from datetime import date
+        # Sesiones programadas (+ hoy y esta semana para los deltas del mock)
+        from datetime import date, timedelta as _td
         today = date.today()
+        week_end = today + _td(days=(6 - today.weekday()))
         scheduled_sessions = CoachingSession.query.filter(
             CoachingSession.coach_id == current_coach.id,
             CoachingSession.status.in_(['pending', 'confirmed']),
             CoachingSession.session_date >= today
         ).count()
+        sessions_today = CoachingSession.query.filter(
+            CoachingSession.coach_id == current_coach.id,
+            CoachingSession.status.in_(['pending', 'confirmed']),
+            CoachingSession.session_date == today
+        ).count()
+        sessions_week = CoachingSession.query.filter(
+            CoachingSession.coach_id == current_coach.id,
+            CoachingSession.status.in_(['pending', 'confirmed']),
+            CoachingSession.session_date >= today,
+            CoachingSession.session_date <= week_end
+        ).count()
+
+        # Coachees nuevos este mes (delta del mock)
+        month_start = today.replace(day=1)
+        coachees_new_month = User.query.filter(
+            User.coach_id == current_coach.id,
+            User.role == 'coachee',
+            User.created_at >= datetime(month_start.year, month_start.month, 1)
+        ).count()
+
+        # Evaluaciones completadas este mes (delta del mock)
+        assessments_month = AssessmentResult.query.filter(
+            AssessmentResult.user_id.in_(coachee_ids),
+            AssessmentResult.completed_at >= datetime(month_start.year, month_start.month, 1)
+        ).count() if coachee_ids else 0
         
         # Compromisos creados (desde registros de sesión)
         # Solo se trae la columna commitments (no el registro completo) y se
@@ -9145,6 +9358,7 @@ def api_coach_dashboard_init():
         commitments_completed = 0
         commitments_partial = 0
         commitments_pending = 0
+        commitments_due_today = 0
         commitment_rows = db.session.query(SessionRecord.commitments).filter(
             SessionRecord.coach_id == current_coach.id,
             SessionRecord.commitments.isnot(None),
@@ -9163,6 +9377,8 @@ def api_coach_dashboard_init():
                             commitments_partial += 1
                         else:
                             commitments_pending += 1
+                            if isinstance(c, dict) and c.get('fecha') == today.isoformat():
+                                commitments_due_today += 1
             except:
                 pass
 
@@ -9177,7 +9393,12 @@ def api_coach_dashboard_init():
             'total_commitments': total_commitments,
             'commitments_completed': commitments_completed,
             'commitments_partial': commitments_partial,
-            'commitments_pending': commitments_pending
+            'commitments_pending': commitments_pending,
+            'commitments_due_today': commitments_due_today,
+            'sessions_today': sessions_today,
+            'sessions_week': sessions_week,
+            'coachees_new_month': coachees_new_month,
+            'assessments_month': assessments_month
         }
         
         # 4. RESPONSE COMBINADA
@@ -11278,10 +11499,10 @@ def api_coach_update_task(task_id):
 def api_coach_delete_task(task_id):
     """Eliminar una tarea"""
     try:
-        app.logger.info(f"=== INICIO ELIMINACIÓN TAREA {task_id} - Usuario: {current_user.email} ===")
+        app.logger.info(f"=== INICIO ELIMINACIÓN TAREA {task_id} - Usuario: {g.current_user.email} ===")
         
         # Buscar la tarea
-        task = Task.query.filter_by(id=task_id, coach_id=current_user.id).first()
+        task = Task.query.filter_by(id=task_id, coach_id=g.current_user.id).first()
         if not task:
             return jsonify({'error': 'Tarea no encontrada.'}), 404
         
@@ -11396,10 +11617,7 @@ def api_coach_assign_evaluation():
 def api_coach_coachee_assessments(coachee_id):
     """Obtener todas las evaluaciones disponibles para un coachee específico (espejo del dashboard del coachee)"""
     try:
-        logger.info(f"📊 COACHEE-ASSESSMENTS: Request from user {current_user.username} for coachee {coachee_id}")
-        
-        if not current_user.is_authenticated or current_user.role != 'coach':
-            return jsonify({'error': 'Acceso denegado. Solo coaches pueden ver evaluaciones de coachees.'}), 403
+        logger.info(f"📊 COACHEE-ASSESSMENTS: Request from user {g.current_user.username} for coachee {coachee_id}")
         
         # Verificar que el coachee pertenece al coach actual
         coachee = User.query.filter_by(id=coachee_id, coach_id=g.current_user.id, role='coachee').first()
@@ -11506,9 +11724,9 @@ def api_coach_coachee_assessments(coachee_id):
 def api_coach_unassign_assessment():
     """Desasignar una evaluación de un coachee eliminando la tarea correspondiente"""
     try:
-        logger.info(f"🚫 UNASSIGN-ASSESSMENT: Request from user {current_user.username} (role: {current_user.role})")
+        logger.info(f"🚫 UNASSIGN-ASSESSMENT: Request from user {g.current_user.username} (role: {g.current_user.role})")
         
-        if not current_user.is_authenticated or current_user.role != 'coach':
+        if g.current_user.role != 'coach':
             return jsonify({'error': 'Acceso denegado. Solo coaches pueden desasignar evaluaciones.'}), 403
         
         data = request.get_json()
@@ -13926,16 +14144,16 @@ def api_admin_validate_coachee_visibility(coachee_id):
     """Validar visibilidad de evaluaciones para un coachee específico (solo admin/coach)"""
     try:
         # Verificar permisos (admin o coach del coachee)
-        if not current_user.is_authenticated:
+        if not g.current_user.is_authenticated:
             return jsonify({'error': 'Usuario no autenticado'}), 401
         
-        if current_user.role == 'admin':
+        if g.current_user.role == 'admin':
             # Admin puede validar cualquier coachee
             pass
-        elif current_user.role == 'coach':
+        elif g.current_user.role == 'coach':
             # Coach solo puede validar sus propios coachees
             coachee = User.query.get(coachee_id)
-            if not coachee or coachee.coach_id != current_user.id:
+            if not coachee or coachee.coach_id != g.current_user.id:
                 return jsonify({'error': 'No tienes permisos para validar este coachee'}), 403
         else:
             return jsonify({'error': 'Solo admins y coaches pueden usar esta validación'}), 403
@@ -13948,9 +14166,9 @@ def api_admin_validate_coachee_visibility(coachee_id):
         
         # Agregar información del validador
         validation_result['validated_by'] = {
-            'user_id': current_user.id,
-            'username': current_user.username,
-            'role': current_user.role,
+            'user_id': g.current_user.id,
+            'username': g.current_user.username,
+            'role': g.current_user.role,
             'validated_at': datetime.utcnow().isoformat()
         }
         
@@ -13967,7 +14185,7 @@ def api_admin_validate_coachee_visibility(coachee_id):
         return jsonify({
             'valid': False,
             'error': f'Error interno en validación: {str(e)}',
-            'details': {'coachee_id': coachee_id, 'validator_id': current_user.id if current_user.is_authenticated else None}
+            'details': {'coachee_id': coachee_id, 'validator_id': g.current_user.id if g.current_user.is_authenticated else None}
         }), 500
 
 @app.route('/api/coachee/tasks', methods=['GET'])
@@ -15494,6 +15712,28 @@ def api_coach_update_coachee(coachee_id):
         logger.error(f"Error en api_coach_update_coachee: {str(e)}", exc_info=True)
         db.session.rollback()
         return jsonify({'error': f'Error actualizando coachee: {str(e)}'}), 500
+
+@app.route('/api/coach/coachee-plans/<int:coachee_id>', methods=['GET'])
+@coach_session_required
+def api_coach_coachee_plans(coachee_id):
+    """Planes de desarrollo de un coachee (vista perfil del coach)"""
+    try:
+        current_coach = g.current_user
+        coachee = User.query.filter_by(id=coachee_id, coach_id=current_coach.id, role='coachee').first()
+        if not coachee:
+            return jsonify({'success': False, 'error': 'Coachee no encontrado'}), 404
+        plans = DevelopmentPlan.query.filter_by(coach_id=current_coach.id, coachee_id=coachee_id).order_by(DevelopmentPlan.created_at.desc()).all()
+        return jsonify({'success': True, 'plans': [{
+            'id': p.id,
+            'objetivo': p.objetivo,
+            'areas_desarrollo': p.areas_desarrollo,
+            'milestones': p.milestones if p.milestones else [],
+            'acciones': p.acciones if p.acciones else [],
+            'status': p.status,
+        } for p in plans]})
+    except Exception as e:
+        logger.error(f"❌ COACHEE-PLANS: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/coach/coachee-notes/<int:coachee_id>', methods=['GET', 'POST'])
 @coach_session_required
@@ -19070,10 +19310,11 @@ def api_coachee_commitments(current_coachee):
                 commitments = json.loads(r.commitments) if r.commitments else []
             except Exception:
                 commitments = []
-            for c in commitments:
+            for i, c in enumerate(commitments):
                 if isinstance(c, dict) and c.get('texto', '').strip():
                     result.append({
                         'session_id': r.id,
+                        'index': i,
                         'session_name': r.name,
                         'texto': c.get('texto', ''),
                         'fecha': c.get('fecha', ''),
@@ -19083,6 +19324,64 @@ def api_coachee_commitments(current_coachee):
         return jsonify({'success': True, 'commitments': result})
     except Exception as e:
         logger.error(f"❌ COACHEE-COMMITMENTS: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/coachee/commitments/update', methods=['POST'])
+@coachee_api_required
+def api_coachee_commitment_update(current_coachee):
+    """Permite al coachee marcar un compromiso como completado/pendiente/parcial"""
+    try:
+        data = request.get_json() or {}
+        record_id = data.get('session_id')
+        idx = data.get('index')
+        new_status = data.get('status')
+
+        if new_status not in ('pendiente', 'parcial', 'completado'):
+            return jsonify({'success': False, 'error': 'Estado inválido'}), 400
+        if not isinstance(record_id, int) or not isinstance(idx, int):
+            return jsonify({'success': False, 'error': 'Parámetros inválidos'}), 400
+
+        record = db.session.get(SessionRecord, record_id)
+        if not record:
+            return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
+
+        try:
+            participant_ids = json.loads(record.participants) if record.participants else []
+        except Exception:
+            participant_ids = []
+        if current_coachee.id not in participant_ids:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+        try:
+            commitments = json.loads(record.commitments) if record.commitments else []
+        except Exception:
+            commitments = []
+        if idx < 0 or idx >= len(commitments) or not isinstance(commitments[idx], dict):
+            return jsonify({'success': False, 'error': 'Compromiso no encontrado'}), 404
+
+        old_status = commitments[idx].get('status', 'pendiente')
+        if old_status != new_status:
+            commitments[idx]['status'] = new_status
+            record.commitments = json.dumps(commitments, ensure_ascii=False)
+            db.session.commit()
+
+            if record.coach_id:
+                texto = commitments[idx].get('texto', 'Compromiso')
+                label = {'completado': 'completó', 'parcial': 'avanzó en', 'pendiente': 'reabrió'}[new_status]
+                create_notification(
+                    user_id=record.coach_id,
+                    type='commitment_updated',
+                    title='Compromiso actualizado',
+                    message=f'{current_coachee.full_name or current_coachee.username} {label} "{texto}" ({record.name})',
+                    related_id=record.id,
+                    related_type='session_record'
+                )
+            logger.info(f"✅ COACHEE-COMMITMENT-UPDATE: coachee={current_coachee.id} record={record_id} idx={idx} {old_status}→{new_status}")
+
+        return jsonify({'success': True, 'status': new_status})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ COACHEE-COMMITMENT-UPDATE: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/coachee/upcoming-sessions', methods=['GET'])

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InstaCoach · Brand Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  html, body { margin: 0; height: 100%; background: #ECEAE3; }
+  * { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="../design-canvas.jsx"></script>
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+// ---- Shared building blocks ----------------------------------------
+function Swatch({ c, name, hex }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ height: 52, borderRadius: 10, background: c, border: "1px solid rgba(0,0,0,0.06)" }} />
+      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#222", opacity: 0.9 }}>{name}</span>
+        <span style={{ fontSize: 10, color: "#999", fontFamily: "ui-monospace, monospace" }}>{hex}</span>
+      </div>
+    </div>
+  );
+}
+
+function Label({ children, color }) {
+  return <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700, color, marginBottom: 10 }}>{children}</div>;
+}
+
+// ===================================================================
+// DIRECTION A — SAGE  (forest green / warm gold / cream)  — Growth
+// ===================================================================
+function Sage() {
+  const ink = "#16241C", primary = "#2F5D45", accent = "#C49A52", cream = "#F6F4EC", tint = "#DCE6DB";
+  const serif = "'Newsreader', Georgia, serif", body = "'Hanken Grotesk', sans-serif";
+  return (
+    <div style={{ width: "100%", height: "100%", background: cream, fontFamily: body, color: ink, padding: 36, display: "flex", flexDirection: "column", gap: 26 }}>
+      {/* Logo */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 38, height: 38, borderRadius: "50%", background: primary, display: "grid", placeItems: "center", color: cream, fontFamily: serif, fontSize: 22, fontWeight: 600 }}>i</div>
+        <span style={{ fontFamily: serif, fontSize: 27, fontWeight: 600, letterSpacing: "-0.01em" }}>InstaCoach</span>
+      </div>
+      <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 18, color: primary, marginTop: -12 }}>Here's your next move.</div>
+
+      {/* Palette */}
+      <div>
+        <Label color={primary}>Palette · Sage</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
+          <Swatch c={ink} name="Ink" hex="#16241C" dark />
+          <Swatch c={primary} name="Forest" hex="#2F5D45" dark />
+          <Swatch c={accent} name="Gold" hex="#C49A52" />
+          <Swatch c={tint} name="Sage" hex="#DCE6DB" />
+          <Swatch c={cream} name="Cream" hex="#F6F4EC" />
+        </div>
+      </div>
+
+      {/* Type */}
+      <div>
+        <Label color={primary}>Type · Newsreader + Hanken Grotesk</Label>
+        <div style={{ fontFamily: serif, fontSize: 38, fontWeight: 500, lineHeight: 1.02, letterSpacing: "-0.02em" }}>Grow with<br/>intention.</div>
+        <div style={{ fontSize: 13, lineHeight: 1.5, color: "#46554C", marginTop: 10, maxWidth: 360 }}>Editorial serif headlines paired with a calm, humanist grotesk for a grounded, premium feel.</div>
+      </div>
+
+      {/* Sample UI */}
+      <div style={{ marginTop: "auto", background: "#fff", borderRadius: 16, padding: 18, border: `1px solid ${tint}`, boxShadow: "0 12px 30px -18px rgba(22,36,28,0.4)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: tint, display: "grid", placeItems: "center", fontSize: 13, color: primary, fontWeight: 700 }}>◷</div>
+          <div style={{ fontWeight: 600, fontSize: 13 }}>Today's focus</div>
+          <div style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: primary, background: tint, padding: "3px 9px", borderRadius: 999 }}>ON TRACK</div>
+        </div>
+        <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, marginBottom: 14 }}>Reframe one hard conversation.</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button style={{ flex: 1, border: "none", background: primary, color: cream, fontFamily: body, fontWeight: 600, fontSize: 13, padding: "11px", borderRadius: 10, cursor: "pointer" }}>Start session</button>
+          <button style={{ border: `1px solid ${ink}22`, background: "transparent", color: ink, fontFamily: body, fontWeight: 600, fontSize: 13, padding: "11px 16px", borderRadius: 10, cursor: "pointer" }}>Later</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===================================================================
+// DIRECTION B — TIDE  (deep teal / sand / soft white)  — Trust
+// ===================================================================
+function Tide() {
+  const ink = "#13212A", primary = "#1F6E72", accent = "#E5A94E", mist = "#D8E6E6", paper = "#F3F6F5";
+  const font = "'Schibsted Grotesk', sans-serif";
+  return (
+    <div style={{ width: "100%", height: "100%", background: paper, fontFamily: font, color: ink, padding: 36, display: "flex", flexDirection: "column", gap: 26 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 11, background: primary, display: "grid", placeItems: "center" }}>
+          <div style={{ width: 14, height: 14, borderRadius: "50% 50% 50% 2px", background: accent }} />
+        </div>
+        <span style={{ fontSize: 25, fontWeight: 800, letterSpacing: "-0.03em" }}>InstaCoach</span>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 500, color: primary, marginTop: -12 }}>Here's your next move.</div>
+
+      <div>
+        <Label color={primary}>Palette · Tide</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
+          <Swatch c={ink} name="Ink" hex="#13212A" dark />
+          <Swatch c={primary} name="Teal" hex="#1F6E72" dark />
+          <Swatch c={accent} name="Sand" hex="#E5A94E" />
+          <Swatch c={mist} name="Mist" hex="#D8E6E6" />
+          <Swatch c={paper} name="Paper" hex="#F3F6F5" />
+        </div>
+      </div>
+
+      <div>
+        <Label color={primary}>Type · Schibsted Grotesk</Label>
+        <div style={{ fontSize: 38, fontWeight: 800, lineHeight: 0.98, letterSpacing: "-0.04em" }}>Steady,<br/>every day.</div>
+        <div style={{ fontSize: 13, lineHeight: 1.5, color: "#41555C", marginTop: 10, maxWidth: 360 }}>A single confident grotesk across the whole system — modern, clear, and trustworthy with tight display tracking.</div>
+      </div>
+
+      <div style={{ marginTop: "auto", background: "#fff", borderRadius: 16, padding: 18, border: `1px solid ${mist}`, boxShadow: "0 12px 30px -18px rgba(19,33,42,0.35)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 9, background: mist, display: "grid", placeItems: "center", fontSize: 13, color: primary, fontWeight: 700 }}>◷</div>
+          <div style={{ fontWeight: 600, fontSize: 13 }}>Today's focus</div>
+          <div style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: primary, background: mist, padding: "3px 9px", borderRadius: 7 }}>ON TRACK</div>
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 14, letterSpacing: "-0.02em" }}>Reframe one hard conversation.</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button style={{ flex: 1, border: "none", background: primary, color: "#fff", fontFamily: font, fontWeight: 700, fontSize: 13, padding: "11px", borderRadius: 9, cursor: "pointer" }}>Start session</button>
+          <button style={{ border: `1px solid ${ink}22`, background: "transparent", color: ink, fontFamily: font, fontWeight: 700, fontSize: 13, padding: "11px 16px", borderRadius: 9, cursor: "pointer" }}>Later</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===================================================================
+// DIRECTION C — DAWN  (terracotta / muted teal / warm cream) — Warmth
+// ===================================================================
+function Dawn() {
+  const ink = "#2A211C", primary = "#BD5A3C", accent = "#3C665B", blush = "#F0DCCF", paper = "#FBF5EE";
+  const serif = "'Instrument Serif', Georgia, serif", body = "'Figtree', sans-serif";
+  return (
+    <div style={{ width: "100%", height: "100%", background: paper, fontFamily: body, color: ink, padding: 36, display: "flex", flexDirection: "column", gap: 26 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+        <div style={{ width: 37, height: 37, borderRadius: "50% 50% 50% 8px", background: primary, display: "grid", placeItems: "center", color: paper, fontFamily: serif, fontSize: 24 }}>i</div>
+        <span style={{ fontFamily: serif, fontSize: 30, letterSpacing: "0em" }}>InstaCoach</span>
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 500, color: primary, marginTop: -12 }}>Here's your next move.</div>
+
+      <div>
+        <Label color={primary}>Palette · Dawn</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
+          <Swatch c={ink} name="Ink" hex="#2A211C" dark />
+          <Swatch c={primary} name="Clay" hex="#BD5A3C" dark />
+          <Swatch c={accent} name="Pine" hex="#3C665B" dark />
+          <Swatch c={blush} name="Blush" hex="#F0DCCF" />
+          <Swatch c={paper} name="Paper" hex="#FBF5EE" />
+        </div>
+      </div>
+
+      <div>
+        <Label color={primary}>Type · Instrument Serif + Figtree</Label>
+        <div style={{ fontFamily: serif, fontSize: 44, lineHeight: 0.98, letterSpacing: "-0.01em" }}>Begin where<br/>you are.</div>
+        <div style={{ fontSize: 13, lineHeight: 1.5, color: "#5A4A40", marginTop: 10, maxWidth: 360 }}>A high-contrast literary serif for warmth and humanity, grounded by a friendly, rounded sans for everything else.</div>
+      </div>
+
+      <div style={{ marginTop: "auto", background: "#fff", borderRadius: 18, padding: 18, border: `1px solid ${blush}`, boxShadow: "0 14px 32px -18px rgba(42,33,28,0.35)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: blush, display: "grid", placeItems: "center", fontSize: 13, color: primary, fontWeight: 700 }}>◷</div>
+          <div style={{ fontWeight: 600, fontSize: 13 }}>Today's focus</div>
+          <div style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: accent, background: "#E2EBE6", padding: "3px 9px", borderRadius: 999 }}>ON TRACK</div>
+        </div>
+        <div style={{ fontFamily: serif, fontSize: 22, marginBottom: 14 }}>Reframe one hard conversation.</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button style={{ flex: 1, border: "none", background: primary, color: "#fff", fontFamily: body, fontWeight: 600, fontSize: 13, padding: "11px", borderRadius: 11, cursor: "pointer" }}>Start session</button>
+          <button style={{ border: `1px solid ${ink}22`, background: "transparent", color: ink, fontFamily: body, fontWeight: 600, fontSize: 13, padding: "11px 16px", borderRadius: 11, cursor: "pointer" }}>Later</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="dirs" title="InstaCoach · Brand Directions" subtitle="Three calm, supportive directions — pick one and I'll build the full system">
+        <DCArtboard id="sage" label="A · Sage — growth, premium, editorial" width={500} height={720}><Sage /></DCArtboard>
+        <DCArtboard id="tide" label="B · Tide — trust, modern, steady" width={500} height={720}><Tide /></DCArtboard>
+        <DCArtboard id="dawn" label="C · Dawn — warm, human, encouraging" width={500} height={720}><Dawn /></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

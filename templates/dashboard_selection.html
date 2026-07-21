@@ -12,17 +12,15 @@
     <!-- Barra superior -->
     <div class="tide-topbar">
         <div style="display:inline-flex;align-items:center;gap:10px;">
-            <svg width="34" height="25" viewBox="6 18 88 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="38" cy="50" r="30" fill="#2C5AA8" opacity="0.92"/>
-                <circle cx="62" cy="50" r="30" fill="#5E8AD6" opacity="0.85"/>
-                <circle cx="50" cy="28" r="5.5" fill="white"/>
-                <rect x="46" y="38" width="8" height="20" rx="4" fill="white"/>
-            </svg>
-            <span style="font-size:1.25rem;font-weight:700;color:var(--ocean-600);letter-spacing:-0.02em;">InstaCoach</span>
+            <svg width="27" height="27" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:block;">
+                    <rect x="8" y="8" width="84" height="84" rx="24" fill="#2C5AA8"/>
+                    <path d="M30 66 L30 48 M50 66 L50 34 M70 66 L70 22" stroke="#F5F1E8" stroke-width="8" stroke-linecap="round"/>
+                    <circle cx="70" cy="22" r="6" fill="#C49A52"/>
+                </svg>
+            <span style="font-size:1.25rem;font-weight:700;color:var(--ocean-600);letter-spacing:-0.02em;">Insta<span style="color:#A87C36;">Coach</span></span>
         </div>
         <div class="tide-topbar-links">
             <a href="mailto:support@instacoach.cl"><i class="fas fa-headset"></i>support@instacoach.cl</a>
-            <a href="{{ url_for('admin_login_page') }}" class="tide-config-link"><i class="fas fa-cog"></i>Configuración</a>
         </div>
     </div>
 
@@ -59,39 +57,25 @@
         </div>
 
         <!-- Enlace discreto para coaches -->
-        <div class="tide-rise tide-rise-3" style="display:flex;justify-content:flex-end;margin-bottom:48px;">
+        <div class="tide-rise tide-rise-3" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-bottom:48px;">
             <button type="button" class="tide-coach-link" data-bs-toggle="modal" data-bs-target="#registerCoachModal">
                 ¿Eres coach? Únete a InstaCoach<i class="fas fa-chevron-right"></i>
             </button>
+            <a href="{{ url_for('coach_login_page') }}" style="font-size:13px;font-weight:600;color:var(--text-subtle);text-decoration:none;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-subtle)'">¿Ya tienes cuenta de coach? Accede aquí</a>
         </div>
 
         <!-- Divisor -->
-        <div class="tide-rise tide-rise-4" style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+        <div class="tide-rise tide-rise-4" style="display:flex;align-items:center;gap:16px;margin-bottom:24px;max-width:560px;margin-left:auto;margin-right:auto;">
+            <div style="flex:1;height:1px;background:var(--border-subtle);"></div>
             <span class="tide-eyebrow">¿Ya tienes cuenta?</span>
             <div style="flex:1;height:1px;background:var(--border-subtle);"></div>
         </div>
 
         <!-- Tarjetas de acceso -->
-        <div class="tide-rise tide-rise-4 tide-cards">
-            <div class="tide-card">
-                <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-                    <div class="tide-card-icon" style="background:var(--primary-soft);"><i class="fas fa-briefcase" style="color:var(--primary);"></i></div>
-                    <div>
-                        <h4 class="tide-serif" style="font-size:var(--text-h3);margin:0;font-weight:500;">Soy coach</h4>
-                        <div style="font-size:var(--text-xs);color:var(--text-subtle);">Panel profesional</div>
-                    </div>
-                </div>
-                <p style="font-size:var(--text-body);color:var(--text-muted);margin:0 0 18px;">Gestiona coachees, sesiones y evaluaciones en un solo lugar.</p>
-                <div style="margin-bottom:22px;color:var(--text-body);">
-                    <div class="tide-check"><i class="fas fa-check"></i><span>Evaluaciones DISC y EfectoCoach listas para asignar</span></div>
-                    <div class="tide-check"><i class="fas fa-check"></i><span>Agenda, sesiones y compromisos en un panel</span></div>
-                    <div class="tide-check"><i class="fas fa-check"></i><span>Progreso de cada coachee en tiempo real</span></div>
-                    <div class="tide-check"><i class="fas fa-check"></i><span>Chat directo con tus coachees</span></div>
-                </div>
-                <a href="{{ url_for('coach_login_page') }}" class="tide-btn tide-btn-primary" style="margin-top:auto;">Acceder como coach</a>
-            </div>
+        <div class="tide-rise tide-rise-4 tide-cards" style="grid-template-columns: 1fr; max-width: 560px; margin-left: auto; margin-right: auto;">
 
-            <div class="tide-card">
+            <div class="tide-card" style="border-color:var(--border-brand);box-shadow:0 10px 24px -14px rgba(44,90,168,0.35);position:relative;">
+                <span style="position:absolute;top:14px;right:14px;font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;background:var(--accent-soft);color:var(--gold-700);">Para ti</span>
                 <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
                     <div class="tide-card-icon" style="background:var(--accent-soft);"><i class="fas fa-bullseye" style="color:var(--gold-700);"></i></div>
                     <div>
@@ -106,7 +90,7 @@
                     <div class="tide-check"><i class="fas fa-check"></i><span>Plan de desarrollo creado por tu coach</span></div>
                     <div class="tide-check"><i class="fas fa-check"></i><span>Agenda tus sesiones y gana logros</span></div>
                 </div>
-                <a href="{{ url_for('participant_access') }}" class="tide-btn tide-btn-secondary" style="margin-top:auto;">Comenzar mi desarrollo</a>
+                <a href="{{ url_for('participant_access') }}" class="tide-btn tide-btn-primary" style="margin-top:auto;">Comenzar mi desarrollo</a>
             </div>
         </div>
 

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión en vivo - InstaCoach</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/instacoach-design-system.css?v={{ get_file_version('css/instacoach-design-system.css') }}">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--surface-page, #F1F4F9); font-family: var(--font-sans, 'Hanken Grotesk', sans-serif); }
+        .serif { font-family: var(--font-serif, 'Newsreader', Georgia, serif); font-weight: 500; letter-spacing: -0.01em; color: var(--text-strong, #14233F); }
+        .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #646E7E); }
+
+        .ctrl { width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s ease; font-size: 1.05rem; }
+        .ctrl.on  { background: rgba(255,255,255,0.12); color: var(--text-inverse, #FAFBFD); }
+        .ctrl.on:hover { background: rgba(255,255,255,0.2); }
+        .ctrl.off { background: var(--surface-card, #fff); color: var(--text-strong, #14233F); }
+        .ctrl.end { background: var(--danger, #B5503C); color: white; width: auto; border-radius: 999px; padding: 0 22px; gap: 8px; font-size: 14px; font-weight: 600; }
+        .ctrl.end:hover { filter: brightness(1.08); }
+
+        .side-tab { flex: 1; padding: 9px 8px; border: none; border-radius: 10px; background: transparent; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text-muted, #646E7E); transition: all .15s ease; min-height: 38px; }
+        .side-tab.active { background: var(--surface-card, #fff); color: var(--ocean-700, #213C70); box-shadow: 0 1px 2px rgba(20,35,63,0.08); }
+
+        .step-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong, #B7C1D0); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s ease; }
+        .agenda-row { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-subtle, #E6EBF2); background: var(--surface-card, #fff); cursor: pointer; min-height: 42px; transition: all .15s ease; }
+        .agenda-row:hover { border-color: var(--border-brand, #BFD3F0); }
+        .agenda-row.done { opacity: 0.6; }
+        .agenda-row.done .step-check { background: var(--success, #2F7D5B); border-color: var(--success, #2F7D5B); }
+        .agenda-row.done .a-title { text-decoration: line-through; color: var(--text-muted, #646E7E); }
+
+        .bubble-coach { align-self: flex-start; max-width: 85%; background: var(--surface-card, #fff); border: 1px solid rgba(20,35,63,0.08); border-radius: 14px 14px 14px 4px; padding: 8px 12px; font-size: 13px; line-height: 1.5; color: var(--text-body, #313842); }
+        .bubble-me { align-self: flex-end; max-width: 85%; background: var(--primary, #2C5AA8); color: #fff; border-radius: 14px 14px 4px 14px; padding: 8px 12px; font-size: 13px; line-height: 1.5; }
+
+        @keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .rise { animation: riseIn .4s ease both; }
+        @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+        .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger, #B5503C); animation: pulseDot 1.6s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .rise, .rec-dot { animation: none; } }
+
+        video { object-fit: cover; }
+        html, body { scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        .panel-handle { display: none; }
+        .ctrl-panel { display: none; }
+        .aside-sheet { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+        @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @media (max-width: 900px) {
+            .lobby-grid { grid-template-columns: 1fr !important; }
+            .lobby-cam { min-height: 300px !important; }
+            .ctrl-panel { display: flex; position: relative; }
+            .end-label { display: none; }
+            .ctrl.end { width: 52px; padding: 0; border-radius: 50%; }
+            .call-aside {
+                position: fixed; inset: 0; z-index: 90; width: auto !important;
+                background: rgba(20,35,63,0.45) !important; border-left: none !important;
+                display: none !important; flex-direction: column; justify-content: flex-end;
+            }
+            .call-aside.open { display: flex !important; }
+            .aside-sheet {
+                flex: none; height: 72%; background: var(--surface-page, #F1F4F9);
+                border-radius: 22px 22px 0 0; box-shadow: 0 -12px 40px rgba(20,35,63,0.3);
+                animation: sheetUp .28s ease both; display: flex; flex-direction: column;
+            }
+            .panel-handle { display: block; width: 40px; height: 4px; background: var(--mist-300, #D5DCE7); border-radius: 999px; margin: 10px auto 2px; flex-shrink: 0; }
+            .call-label { display: none; }
+            .ended-actions { flex-direction: column; }
+            .ended-actions a, .ended-actions button { width: 100%; justify-content: center; }
+        }
+    </style>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+</head>
+<body>
+<div style="min-height: 100vh; display: flex; flex-direction: column;">
+
+    <!-- ══ Pantalla 1: Sala de espera (lobby) ══ -->
+    <div id="screenLobby" class="rise" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px;">
+        <div class="lobby-grid" style="width: 100%; max-width: 860px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: stretch;">
+            <!-- Vista previa de cámara -->
+            <div class="lobby-cam" style="background: var(--surface-inverse, #14233F); border-radius: 18px; position: relative; overflow: hidden; min-height: 380px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md, 0 10px 24px -14px rgba(20,35,63,0.32));">
+                <div style="position: absolute; inset: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); pointer-events: none;"></div>
+                <video id="lobbyPreview" autoplay muted playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; display: none;"></video>
+                <div id="lobbyCamPlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 12px; position: relative;">
+                    <div style="width: 88px; height: 88px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 1.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center;" id="lobbyAvatar">Tú</div>
+                    <span id="lobbyCamMsg" style="font-size: 13px; color: var(--mist-400, #B7C1D0);">Activando tu cámara…</span>
+                </div>
+                <div style="position: absolute; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 12px;">
+                    <button id="lobbyMicBtn" class="ctrl on" onclick="toggleMic()" aria-label="Micrófono"><i class="fas fa-microphone"></i></button>
+                    <button id="lobbyCamBtn" class="ctrl on" onclick="toggleCam()" aria-label="Cámara"><i class="fas fa-video"></i></button>
+                </div>
+            </div>
+            <!-- Detalle de la sesión -->
+            <div style="display: flex; flex-direction: column; justify-content: center; gap: 16px;">
+                <div id="lobbyEyebrow" class="eyebrow" style="color: var(--gold-700, #8A6526);">Cargando…</div>
+                <h1 id="lobbyTitle" class="serif" style="font-size: 30px; margin: 0; line-height: 1.15;">Tu sesión</h1>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="position: relative; flex-shrink: 0;">
+                        <div id="lobbyCoachAvatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">C</div>
+                        <span style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--success, #2F7D5B); border: 2px solid var(--surface-page, #F1F4F9);"></span>
+                    </div>
+                    <div>
+                        <div id="lobbyCoachName" style="font-size: 13.5px; font-weight: 600; color: var(--text-strong, #14233F);">Tu coach</div>
+                        <div style="font-size: 12px; color: var(--success, #2F7D5B);">Tu coachee de esta sesión</div>
+                    </div>
+                </div>
+                <div style="background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 14px 16px;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <i class="fas fa-wand-magic-sparkles" style="font-size: 0.85rem; color: var(--gold-700, #8A6526); flex-shrink: 0; margin-top: 3px;"></i>
+                        <div>
+                            <div style="font-size: 12.5px; font-weight: 700; color: var(--text-strong, #14233F); margin-bottom: 3px;">Foco acordado</div>
+                            <p id="lobbyFocus" class="serif" style="font-style: italic; font-size: 14.5px; line-height: 1.5; color: var(--text-body, #313842); margin: 0;">"Tu sesión de coaching."</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="joinCall()" style="width: 100%; height: 48px; background: var(--primary, #2C5AA8); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s;" onmouseover="this.style.background='var(--primary-hover, #213C70)'" onmouseout="this.style.background='var(--primary, #2C5AA8)'">Unirse a la sesión de hoy</button>
+                <a href="/coach/dashboard-v2" style="font-size: 13px; text-align: center; font-weight: 600; color: var(--text-link, #2C5AA8); text-decoration: none;">Volver a mi panel</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Pantalla 2: En llamada ══ -->
+    <div id="screenCall" class="rise" style="flex: 1; display: none; min-height: 100vh;">
+        <div style="display: flex; min-height: 100vh;">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--surface-inverse, #14233F); position: relative;">
+            <div style="position: absolute; inset: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); pointer-events: none;"></div>
+
+            <!-- Barra superior -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 16px 22px; position: relative;">
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); border-radius: 999px; padding: 6px 14px;">
+                    <span class="rec-dot"></span>
+                    <span id="callElapsed" style="font-size: 12.5px; font-weight: 600; color: var(--text-inverse, #FAFBFD);">00:00</span>
+                </div>
+                <span id="callLabel" class="call-label" style="font-size: 13px; color: var(--mist-400, #B7C1D0);">Sesión</span>
+                <span style="flex: 1;"></span>
+                <span id="callTimeLeft" class="eyebrow" style="color: var(--gold-300, #E0C691);"></span>
+            </div>
+
+            <!-- Escenario -->
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 0 22px;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
+                    <div id="callCoachAvatar" style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 2.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">C</div>
+                    <div style="text-align: center;">
+                        <div id="callCoachName" class="serif" style="font-size: 19px; color: var(--text-inverse, #FAFBFD);">Tu coach</div>
+                        <div style="font-size: 12.5px; color: var(--mist-400, #B7C1D0);">Coachee</div>
+                    </div>
+                </div>
+                <!-- Autovista (PiP) -->
+                <div style="position: absolute; right: 22px; bottom: 18px; width: 180px; height: 120px; background: var(--ocean-900, #14233F); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg, 0 22px 44px -22px rgba(20,35,63,0.34)); overflow: hidden;">
+                    <video id="pipVideo" autoplay muted playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; display: none;"></video>
+                    <i id="pipCamOff" class="fas fa-video-slash" style="font-size: 1.1rem; color: var(--mist-400, #B7C1D0);"></i>
+                    <span style="position: absolute; bottom: 6px; left: 10px; font-size: 11px; color: var(--mist-400, #B7C1D0); z-index: 2;">Tú</span>
+                    <span id="pipMuted" style="display: none; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--danger, #B5503C); align-items: center; justify-content: center; z-index: 2;"><i class="fas fa-microphone-slash" style="font-size: 0.6rem; color: white;"></i></span>
+                </div>
+            </div>
+
+            <!-- Controles -->
+            <div style="display: flex; justify-content: center; gap: 12px; padding: 18px 22px 24px; position: relative;">
+                <button id="callMicBtn" class="ctrl on" onclick="toggleMic()" aria-label="Micrófono"><i class="fas fa-microphone"></i></button>
+                <button id="callCamBtn" class="ctrl on" onclick="toggleCam()" aria-label="Cámara"><i class="fas fa-video"></i></button>
+                <button class="ctrl on" onclick="shareScreen()" aria-label="Compartir pantalla"><i class="fas fa-display"></i></button>
+                <button class="ctrl on ctrl-panel" onclick="openPanel()" aria-label="Agenda y notas">
+                    <i class="fas fa-list-check"></i>
+                    <span id="panelDot" style="display: none; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent, #C49A52);"></span>
+                </button>
+                <button class="ctrl end" onclick="endCall()" aria-label="Terminar"><i class="fas fa-phone-slash"></i><span class="end-label" style="margin-left: 8px;">Terminar</span></button>
+            </div>
+        </div>
+
+        <!-- Panel lateral -->
+        <aside id="callAside" class="call-aside" onclick="closePanel(event)" style="width: 360px; flex-shrink: 0; background: var(--surface-page, #F1F4F9); border-left: 1px solid var(--border-subtle, #E6EBF2); display: flex; flex-direction: column;">
+        <div class="aside-sheet" onclick="event.stopPropagation()">
+            <div class="panel-handle"></div>
+            <div style="padding: 14px 16px 0;">
+                <div style="display: flex; gap: 4px; background: var(--surface-sunken, #E6EBF2); border-radius: 12px; padding: 4px;">
+                    <button id="tabAgenda" class="side-tab active" onclick="pickTab('agenda')">Agenda</button>
+                    <button id="tabNotas" class="side-tab" onclick="pickTab('notas')">Notas</button>
+                    <button id="tabChat" class="side-tab" onclick="pickTab('chat')">Chat</button>
+                </div>
+            </div>
+
+            <!-- Agenda -->
+            <div id="paneAgenda" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <div class="eyebrow" style="margin-bottom: 8px;">Foco de hoy</div>
+                    <div style="background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 12px; padding: 12px 14px;">
+                        <p id="agendaFocus" class="serif" style="font-style: italic; font-size: 14px; line-height: 1.5; color: var(--text-body, #313842); margin: 0;">"Tu sesión de coaching."</p>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;">
+                        <div class="eyebrow">Guion de la sesión</div>
+                        <span id="agendaDone" style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E);">0 de 4</span>
+                    </div>
+                    <div id="agendaList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+                <div>
+                    <div class="eyebrow" style="margin-bottom: 8px;">Compromisos que se revisan</div>
+                    <div id="commitsList" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 12.5px; color: var(--text-subtle, #8C97A8);">Cargando…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas -->
+            <div id="paneNotas" style="flex: 1; overflow-y: auto; padding: 16px; display: none; flex-direction: column; gap: 12px;">
+                <div class="eyebrow">Notas compartidas</div>
+                <p style="font-size: 12px; color: var(--text-subtle, #8C97A8); margin: 0;">Se envían a tu coachee y quedan en la conversación.</p>
+                <textarea id="noteDraft" placeholder="Lo que descubran juntos, frases que quieran recordar…" style="width: 100%; min-height: 160px; resize: vertical; font-family: inherit; font-size: 13.5px; color: var(--text-strong, #14233F); background: var(--surface-card, #fff); border: 1.5px solid var(--border-default, #D5DCE7); border-radius: 12px; padding: 12px 14px; outline: none;" onfocus="this.style.borderColor='var(--primary, #2C5AA8)'" onblur="this.style.borderColor='var(--border-default, #D5DCE7)'"></textarea>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button onclick="saveNote()" style="height: 38px; padding: 0 16px; background: var(--surface-card, #fff); color: var(--primary, #2C5AA8); border: 1.5px solid var(--border-brand, #BFD3F0); border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s;" onmouseover="this.style.background='var(--primary-soft, #DCE7F8)'" onmouseout="this.style.background='var(--surface-card, #fff)'">Guardar nota</button>
+                </div>
+                <div id="savedNotes" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <!-- Chat -->
+            <div id="paneChat" style="flex: 1; display: none; flex-direction: column; padding: 16px; min-height: 0;">
+                <div id="liveChatThread" style="flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-bottom: 10px; scrollbar-width: none;"></div>
+                <div style="display: flex; gap: 8px;">
+                    <input id="liveChatInput" placeholder="Mensaje…" style="flex: 1; font-family: inherit; font-size: 13.5px; color: var(--text-strong, #14233F); background: var(--surface-card, #fff); border: 1.5px solid var(--border-default, #D5DCE7); border-radius: 999px; padding: 10px 14px; outline: none; min-width: 0;" onfocus="this.style.borderColor='var(--primary, #2C5AA8)'" onblur="this.style.borderColor='var(--border-default, #D5DCE7)'">
+                    <button onclick="sendLiveChat()" aria-label="Enviar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary, #2C5AA8); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" onmouseover="this.style.background='var(--primary-hover, #213C70)'" onmouseout="this.style.background='var(--primary, #2C5AA8)'">
+                        <i class="fas fa-arrow-up" style="font-size: 0.85rem; color: white;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        </aside>
+        </div>
+    </div>
+
+    <!-- ══ Pantalla 3: Sesión terminada ══ -->
+    <div id="screenEnded" class="rise" style="flex: 1; display: none; align-items: center; justify-content: center; padding: 40px 24px;">
+        <div style="width: 100%; max-width: 460px; text-align: center;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;">
+                <i class="fas fa-circle-check" style="font-size: 1.5rem; color: var(--primary, #2C5AA8);"></i>
+            </div>
+            <h1 class="serif" style="font-size: 28px; margin: 0 0 8px;">Buena sesión.</h1>
+            <p id="endedSummary" style="font-size: 14.5px; color: var(--text-muted, #646E7E); line-height: 1.55; margin: 0 0 22px;">Las notas compartidas quedaron guardadas en tu conversación.</p>
+            <div style="background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 16px 18px; text-align: left; margin-bottom: 22px;">
+                <div class="eyebrow" style="margin-bottom: 8px;">Tu siguiente paso</div>
+                <p id="endedNext" class="serif" style="font-size: 15.5px; line-height: 1.45; color: var(--text-strong, #14233F); margin: 0;">Revisa tus pasos de la semana en tu panel.</p>
+            </div>
+            <div class="ended-actions" style="display: flex; gap: 12px; justify-content: center;">
+                <a href="/coach/dashboard-v2" style="display: inline-flex; align-items: center; height: 44px; padding: 0 20px; background: var(--primary, #2C5AA8); color: #fff; border-radius: 12px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background .15s;" onmouseover="this.style.background='var(--primary-hover, #213C70)'" onmouseout="this.style.background='var(--primary, #2C5AA8)'">Volver a mi panel</a>
+                <button onclick="backToLobby()" style="display: inline-flex; align-items: center; height: 44px; padding: 0 20px; background: transparent; color: var(--primary, #2C5AA8); border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s;" onmouseover="this.style.background='var(--surface-hover, #EEF3FC)'" onmouseout="this.style.background='transparent'">Ver la sala de nuevo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const initials = n => (n || 'C').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+
+    let stream = null, micOn = true, camOn = true;
+    let session = null, durationMin = 45;
+    let seconds = 0, tick = null;
+    let coachName = 'Tu coachee';
+    let lastMsgId = 0, chatPoll = null;
+    const agendaDefs = [
+        { title: 'Check-in: cómo llegas', dur: '5 min' },
+        { title: 'Revisar compromisos de la semana', dur: '10 min' },
+        { title: 'Trabajo del tema de hoy', dur: '20 min' },
+        { title: 'Cierre y compromisos nuevos', dur: '10 min' }
+    ];
+    const agendaState = [false, false, false, false];
+
+    /* ── Toast ── */
+    window.tideToast = function (title, body) {
+        let wrap = document.getElementById('tideToastWrap');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'tideToastWrap';
+            wrap.style.cssText = 'position:fixed;right:24px;bottom:24px;z-index:12000;width:340px;max-width:calc(100vw - 48px);display:flex;flex-direction:column;gap:10px;';
+            document.body.appendChild(wrap);
+        }
+        const t = document.createElement('div');
+        t.style.cssText = 'background:var(--surface-card,#fff);border:1px solid var(--border-subtle,#E6EBF2);border-left:3px solid var(--success,#2F7D5B);border-radius:12px;box-shadow:0 8px 24px rgba(20,35,63,0.14);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;opacity:0;transform:translateY(12px);transition:opacity .3s ease,transform .3s ease;';
+        t.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success,#2F7D5B);font-size:1rem;margin-top:2px;"></i><div style="flex:1;min-width:0;"><div style="font-size:0.875rem;font-weight:700;color:var(--text-strong,#14233F);">' + esc(title) + '</div>' + (body ? '<div style="font-size:0.8125rem;color:var(--text-muted,#646E7E);margin-top:2px;">' + esc(body) + '</div>' : '') + '</div>';
+        wrap.appendChild(t);
+        requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+        setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 320); }, 3200);
+    };
+
+    /* ── Cámara y micrófono reales ── */
+    async function initMedia() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const v = document.getElementById('lobbyPreview');
+            v.srcObject = stream;
+            v.style.display = 'block';
+            document.getElementById('lobbyCamPlaceholder').style.display = 'none';
+            const pip = document.getElementById('pipVideo');
+            pip.srcObject = stream;
+            pip.style.display = 'block';
+            document.getElementById('pipCamOff').style.display = 'none';
+        } catch (e) {
+            document.getElementById('lobbyCamMsg').textContent = 'Sin acceso a la cámara — puedes unirte igual.';
+            camOn = false; micOn = false;
+            syncControls();
+        }
+    }
+    function setBtn(id, on, iconOn, iconOff) {
+        const b = document.getElementById(id);
+        if (!b) return;
+        b.className = 'ctrl ' + (on ? 'on' : 'off');
+        b.querySelector('i').className = 'fas ' + (on ? iconOn : iconOff);
+    }
+    function syncControls() {
+        setBtn('lobbyMicBtn', micOn, 'fa-microphone', 'fa-microphone-slash');
+        setBtn('callMicBtn', micOn, 'fa-microphone', 'fa-microphone-slash');
+        setBtn('lobbyCamBtn', camOn, 'fa-video', 'fa-video-slash');
+        setBtn('callCamBtn', camOn, 'fa-video', 'fa-video-slash');
+        if (stream) {
+            stream.getAudioTracks().forEach(t => t.enabled = micOn);
+            stream.getVideoTracks().forEach(t => t.enabled = camOn);
+        }
+        const lv = document.getElementById('lobbyPreview'), ph = document.getElementById('lobbyCamPlaceholder');
+        const pv = document.getElementById('pipVideo'), po = document.getElementById('pipCamOff');
+        const hasCam = stream && stream.getVideoTracks().length > 0;
+        if (lv && ph) { lv.style.display = (camOn && hasCam) ? 'block' : 'none'; ph.style.display = (camOn && hasCam) ? 'none' : 'flex';
+            document.getElementById('lobbyCamMsg').textContent = camOn ? (hasCam ? '' : 'Sin cámara disponible') : 'Cámara apagada'; }
+        if (pv && po) { pv.style.display = (camOn && hasCam) ? 'block' : 'none'; po.style.display = (camOn && hasCam) ? 'none' : 'block'; }
+        const pm = document.getElementById('pipMuted');
+        if (pm) pm.style.display = micOn ? 'none' : 'flex';
+    }
+    window.toggleMic = function () { micOn = !micOn; syncControls(); };
+    window.toggleCam = function () { camOn = !camOn; syncControls(); };
+    window.shareScreen = async function () {
+        try {
+            const ds = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            tideToast('Compartiendo pantalla', 'Detén la compartición desde tu navegador.');
+            ds.getVideoTracks()[0].addEventListener('ended', () => tideToast('Dejaste de compartir.', ''));
+        } catch (_) {}
+    };
+
+    /* ── Datos reales de la sesión ── */
+    const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    let counterpartId = null;
+    async function loadSession() {
+        try {
+            const r = await fetch('/api/coach/upcoming-sessions', { credentials: 'same-origin' });
+            const d = await r.json();
+            const items = (d.sessions || []).slice().sort((a, b) => (a.date + a.start_time) < (b.date + b.start_time) ? -1 : 1);
+            session = items.find(s => s.is_today) || items[0] || null;
+            if (session) {
+                coachName = session.coachee_name || coachName;
+                counterpartId = session.coachee_id || null;
+                session.session_date = session.date;
+                const dte = new Date(session.session_date + 'T00:00:00');
+                const today = new Date(new Date().toDateString());
+                const off = Math.round((dte - today) / 86400000);
+                const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+                const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                const day = off === 0 ? 'Hoy' : off === 1 ? 'Mañana' : `${DIAS[dte.getDay()]} ${dte.getDate()} ${MESES[dte.getMonth()]}`;
+                if (session.start_time && session.end_time) {
+                    const [h1, m1] = session.start_time.split(':').map(Number);
+                    const [h2, m2] = session.end_time.split(':').map(Number);
+                    durationMin = Math.max(15, (h2 * 60 + m2) - (h1 * 60 + m1));
+                }
+                document.getElementById('lobbyEyebrow').textContent = `${day} · ${session.start_time || ''} · ${durationMin} min`;
+                document.getElementById('lobbyTitle').textContent = session.title || 'Sesión de coaching';
+                document.getElementById('lobbyFocus').textContent = `"${session.title || 'Tu sesión de coaching'}"`;
+                document.getElementById('agendaFocus').textContent = `"${session.title || 'Tu sesión de coaching'}"`;
+                document.getElementById('callLabel').textContent = session.title || 'Sesión';
+            } else {
+                document.getElementById('lobbyEyebrow').textContent = 'Sin sesión programada';
+                document.getElementById('lobbyTitle').textContent = 'Sala de sesión';
+                document.getElementById('lobbyFocus').textContent = '"Agenda una sesión con tu coach desde tu panel."';
+            }
+            document.getElementById('lobbyCoachName').textContent = coachName;
+            document.getElementById('lobbyCoachAvatar').textContent = initials(coachName);
+            document.getElementById('callCoachAvatar').textContent = initials(coachName);
+            document.getElementById('callCoachName').textContent = coachName;
+        } catch (_) {}
+    }
+
+    /* ── Agenda (guion local de la sesión) ── */
+    function renderAgenda() {
+        const list = document.getElementById('agendaList');
+        list.innerHTML = agendaDefs.map((a, i) => `
+            <div class="agenda-row${agendaState[i] ? ' done' : ''}" onclick="toggleAgenda(${i})">
+                <div class="step-check">${agendaState[i] ? '<i class="fas fa-check" style="font-size:11px;color:white;"></i>' : ''}</div>
+                <div style="flex:1;min-width:0;">
+                    <div class="a-title" style="font-size:13px;font-weight:600;color:var(--text-strong,#14233F);">${a.title}</div>
+                    <div style="font-size:11.5px;color:var(--text-subtle,#8C97A8);">${a.dur}</div>
+                </div>
+            </div>`).join('');
+        document.getElementById('agendaDone').textContent = agendaState.filter(Boolean).length + ' de ' + agendaDefs.length;
+    }
+    window.toggleAgenda = function (i) { agendaState[i] = !agendaState[i]; renderAgenda(); };
+
+    /* ── Compromisos reales ── */
+    async function loadCommits() {
+        try {
+            const r = await fetch('/api/coach/session-records', { credentials: 'same-origin' });
+            const d = await r.json();
+            const records = d.sessions || [];
+            let all = [];
+            records.forEach(rec => {
+                const ids = (rec.participants || []).map(p => p.id);
+                if (counterpartId && !ids.includes(counterpartId)) return;
+                (rec.commitments || []).forEach(cm => {
+                    if (cm && cm.texto) all.push({ texto: cm.texto, status: cm.status || 'pendiente' });
+                });
+            });
+            const items = all.slice(0, 4);
+            const el = document.getElementById('commitsList');
+            if (!items.length) {
+                el.innerHTML = '<div style="font-size:12.5px;color:var(--text-subtle,#8C97A8);">Sin compromisos registrados.</div>';
+                return;
+            }
+            const badge = st => st === 'completado'
+                ? ['Cumplido', 'var(--success-soft,#DBEDE2)', 'var(--success,#2F7D5B)']
+                : st === 'parcial'
+                    ? ['Parcial', 'var(--accent-soft,#F2E7CC)', 'var(--gold-700,#8A6526)']
+                    : ['Pendiente', 'var(--surface-sunken,#E6EBF2)', 'var(--text-muted,#646E7E)'];
+            el.innerHTML = items.map(c => {
+                const [label, bg, co] = badge(c.status);
+                return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-card,#fff);border:1px solid var(--border-subtle,#E6EBF2);border-radius:10px;">
+                    <i class="fas fa-bullseye" style="font-size:0.8rem;color:var(--primary,#2C5AA8);flex-shrink:0;"></i>
+                    <span style="flex:1;font-size:12.5px;font-weight:600;color:var(--text-strong,#14233F);">${esc(c.texto)}</span>
+                    <span style="flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:${bg};color:${co};">${label}</span>
+                </div>`;
+            }).join('');
+        } catch (_) {}
+    }
+
+    /* ── Notas: se envían como mensaje real al coach ── */
+    window.saveNote = async function () {
+        const ta = document.getElementById('noteDraft');
+        const text = (ta.value || '').trim();
+        if (!text) { tideToast('Nota vacía', 'Escribe una línea antes de guardar.'); return; }
+        try {
+            if (!counterpartId) { tideToast('Sin coachee.', 'No hay sesión con un coachee asignado.'); return; }
+            const r = await fetch('/api/coach/messages/' + counterpartId, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: '📝 Nota de sesión — ' + text })
+            });
+            const d = await r.json();
+            if (!d.success) throw new Error();
+            const wrap = document.getElementById('savedNotes');
+            const item = document.createElement('div');
+            item.style.cssText = 'border-left:2px solid var(--gold-500,#C49A52);padding:2px 0 2px 12px;';
+            item.innerHTML = '<p class="serif" style="font-style:italic;font-size:13.5px;line-height:1.5;color:var(--text-body,#313842);margin:0 0 2px;">"' + esc(text) + '"</p><div style="font-size:11px;color:var(--text-subtle,#8C97A8);">Ahora · ' + fmt(seconds) + '</div>';
+            wrap.prepend(item);
+            ta.value = '';
+            tideToast('Nota guardada', 'Quedó en tu conversación con ' + coachName.split(' ')[0] + '.');
+        } catch (_) { tideToast('No se pudo guardar.', 'Revisa tu conexión.'); }
+    };
+
+    /* ── Chat real ── */
+    function renderMsgs(msgs, append) {
+        const th = document.getElementById('liveChatThread');
+        if (!append) th.innerHTML = '';
+        msgs.forEach(m => {
+            const b = document.createElement('div');
+            b.className = m.from_me ? 'bubble-me' : 'bubble-coach';
+            b.textContent = m.body;
+            th.appendChild(b);
+            lastMsgId = Math.max(lastMsgId, m.id);
+        });
+        th.scrollTop = th.scrollHeight;
+    }
+    async function loadChat(delta) {
+        try {
+            if (!counterpartId) return;
+            const url = delta ? ('/api/coach/messages/' + counterpartId + '?since=' + lastMsgId) : ('/api/coach/messages/' + counterpartId);
+            const r = await fetch(url, { credentials: 'same-origin' });
+            const d = await r.json();
+            if (d.success && d.messages && d.messages.length) {
+                renderMsgs(d.messages, !!delta);
+                const aside = document.getElementById('callAside');
+                const sheetClosed = aside && !aside.classList.contains('open');
+                if (delta && sheetClosed && d.messages.some(m => !m.from_me)) {
+                    const dot = document.getElementById('panelDot');
+                    if (dot) dot.style.display = 'block';
+                }
+            }
+        } catch (_) {}
+    }
+    window.sendLiveChat = async function () {
+        const inp = document.getElementById('liveChatInput');
+        const text = (inp.value || '').trim();
+        if (!text) return;
+        inp.value = '';
+        try {
+            if (!counterpartId) { tideToast('Sin coachee.', 'No hay sesión con un coachee asignado.'); return; }
+            const r = await fetch('/api/coach/messages/' + counterpartId, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: text })
+            });
+            const d = await r.json();
+            if (d.success && d.message) renderMsgs([d.message], true);
+            else loadChat(true);
+        } catch (_) {}
+    };
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && document.activeElement === document.getElementById('liveChatInput')) sendLiveChat();
+    });
+
+    /* ── Sheet móvil del panel ── */
+    window.openPanel = function () {
+        const a = document.getElementById('callAside');
+        if (a) a.classList.add('open');
+        const dot = document.getElementById('panelDot');
+        if (dot) dot.style.display = 'none';
+        loadChat(true);
+    };
+    window.closePanel = function (e) {
+        if (e && e.target !== e.currentTarget) return;
+        const a = document.getElementById('callAside');
+        if (a) a.classList.remove('open');
+    };
+
+    /* ── Pestañas del panel ── */
+    window.pickTab = function (t) {
+        ['agenda', 'notas', 'chat'].forEach(x => {
+            document.getElementById('pane' + x.charAt(0).toUpperCase() + x.slice(1)).style.display = (x === t) ? 'flex' : 'none';
+            document.getElementById('tab' + x.charAt(0).toUpperCase() + x.slice(1)).className = 'side-tab' + (x === t ? ' active' : '');
+        });
+        if (t === 'chat') loadChat(false);
+    };
+
+    /* ── Pantallas ── */
+    window.joinCall = function () {
+        document.getElementById('screenLobby').style.display = 'none';
+        document.getElementById('screenCall').style.display = 'flex';
+        seconds = 0;
+        clearInterval(tick);
+        tick = setInterval(() => {
+            seconds++;
+            document.getElementById('callElapsed').textContent = fmt(seconds);
+            const left = Math.max(0, durationMin * 60 - seconds);
+            document.getElementById('callTimeLeft').textContent = 'Quedan ' + Math.ceil(left / 60) + ' min';
+        }, 1000);
+        syncControls();
+        chatPoll = setInterval(() => loadChat(true), 7000);
+    };
+    window.endCall = function () {
+        clearInterval(tick); clearInterval(chatPoll);
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        document.getElementById('screenCall').style.display = 'none';
+        document.getElementById('screenEnded').style.display = 'flex';
+        document.getElementById('endedSummary').textContent = 'Duró ' + fmt(seconds) + '. Las notas compartidas quedaron en tu conversación y ' + coachName.split(' ')[0] + ' verá sus pasos en su panel.';
+    };
+    window.backToLobby = function () {
+        document.getElementById('screenEnded').style.display = 'none';
+        document.getElementById('screenLobby').style.display = 'flex';
+        seconds = 0;
+        initMedia();
+    };
+
+    /* ── Init ── */
+    renderAgenda();
+    loadSession().then(() => { loadCommits(); loadChat(false); });
+    initMedia();
+})();
+</script>
+</body>
+</html>
