@@ -9966,9 +9966,18 @@
         /* Sin barra de scroll visible en el chat y la lista de conversaciones (se desplazan igual) */
         #coach-chat-scroll, #coach-conv-list { scrollbar-width: none; -ms-overflow-style: none; }
         #coach-chat-scroll::-webkit-scrollbar, #coach-conv-list::-webkit-scrollbar { display: none; }
+        #coach-chat-back { display: none; }
+        /* Móvil: un panel a la vez — lista de conversaciones o chat con botón volver */
+        @media (max-width: 768px) {
+            #coach-conv-sidebar { width: 100% !important; border-right: none !important; }
+            #coach-chat-panel { display: none !important; }
+            #coach-chat-shell.chat-open #coach-conv-sidebar { display: none !important; }
+            #coach-chat-shell.chat-open #coach-chat-panel { display: flex !important; }
+            #coach-chat-shell.chat-open #coach-chat-back { display: inline-flex; }
+        }
     </style>
     <!-- Altura descuenta el header (4.5rem) y la barra de navegación inferior (88px) -->
-    <div style="display:flex;height:calc(100vh - 4.5rem - 88px);min-height:420px;background:white;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:2rem;">
+    <div id="coach-chat-shell" style="display:flex;height:calc(100vh - 4.5rem - 88px);min-height:420px;background:white;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:2rem;">
 
         <!-- Conversations sidebar -->
         <div id="coach-conv-sidebar" style="width:260px;flex-shrink:0;border-right:1px solid #E6EBF2;display:flex;flex-direction:column;background:#FAFBFD;">
@@ -9990,10 +9999,11 @@
         </div>
 
         <!-- Chat panel -->
-        <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+        <div id="coach-chat-panel" style="flex:1;display:flex;flex-direction:column;min-width:0;">
             <!-- Chat header (changes once a coachee is selected) -->
             <div id="coach-chat-header" style="padding:0.875rem 1.25rem;border-bottom:1px solid #E6EBF2;background:white;flex-shrink:0;">
                 <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <button id="coach-chat-back" onclick="document.getElementById('coach-chat-shell').classList.remove('chat-open')" aria-label="Volver a conversaciones" style="align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:none;background:var(--surface-sunken,#E6EBF2);color:var(--primary,#2C5AA8);cursor:pointer;flex-shrink:0;"><i class="fas fa-chevron-left" style="font-size:0.8rem;"></i></button>
                     <div id="coach-chat-avatar" style="width:2.25rem;height:2.25rem;border-radius:50%;background:#E6EBF2;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#646E7E;flex-shrink:0;">
                         <i class="fas fa-user" style="font-size:0.75rem;"></i>
                     </div>
@@ -23865,6 +23875,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── open a conversation ───────────────────────────────────────────────
     async function openConversation(coacheeId, coacheeName) {
+        // Móvil: pasar de la lista al chat (el CSS solo actúa bajo 768px)
+        const shell = document.getElementById('coach-chat-shell');
+        if (shell) shell.classList.add('chat-open');
         activeCoacheeId = coacheeId;
         activeCoacheeName = coacheeName;
         lastMsgId = 0;
