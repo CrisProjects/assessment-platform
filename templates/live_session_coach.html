@@ -137,11 +137,12 @@
 
             <!-- Escenario -->
             <div style="flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 0 22px;">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
+                <video id="remoteVideo" autoplay playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; display: none; background: var(--ocean-900, #14233F);"></video>
+                <div id="stagePlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
                     <div id="callCoachAvatar" style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 2.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">C</div>
                     <div style="text-align: center;">
                         <div id="callCoachName" class="serif" style="font-size: 19px; color: var(--text-inverse, #FAFBFD);">Tu coach</div>
-                        <div style="font-size: 12.5px; color: var(--mist-400, #B7C1D0);">Coachee</div>
+                        <div id="callStatus" style="font-size: 12.5px; color: var(--mist-400, #B7C1D0);">Coachee</div>
                     </div>
                 </div>
                 <!-- Autovista (PiP) -->
@@ -247,6 +248,7 @@
     </div>
 </div>
 
+<script>window.RTC_CFG = { role: "coach", coachId: {{ rtc_coach_id|tojson }} };</script>
 <script>
 (function () {
     'use strict';
@@ -330,8 +332,18 @@
     window.shareScreen = async function () {
         try {
             const ds = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            const track = ds.getVideoTracks()[0];
+            const sender = pc && pc.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (sender) await sender.replaceTrack(track);
+            const pip = document.getElementById('pipVideo');
+            if (pip) pip.srcObject = ds;
             tideToast('Compartiendo pantalla', 'Detén la compartición desde tu navegador.');
-            ds.getVideoTracks()[0].addEventListener('ended', () => tideToast('Dejaste de compartir.', ''));
+            track.addEventListener('ended', async () => {
+                const cam = stream && stream.getVideoTracks()[0];
+                if (sender && cam) { try { await sender.replaceTrack(cam); } catch (_) {} }
+                if (pip && stream) pip.srcObject = stream;
+                tideToast('Dejaste de compartir.', '');
+            });
         } catch (_) {}
     };
 
@@ -342,8 +354,15 @@
         try {
             const r = await fetch('/api/coach/upcoming-sessions', { credentials: 'same-origin' });
             const d = await r.json();
-            const items = (d.sessions || []).slice().sort((a, b) => (a.date + a.start_time) < (b.date + b.start_time) ? -1 : 1);
-            session = items.find(s => s.is_today) || items[0] || null;
+            const items = (d.sessions || []).slice()
+                .filter(s => s.status !== 'cancelled')
+                .sort((a, b) => (a.date + a.start_time) < (b.date + b.start_time) ? -1 : 1);
+            const deHoy = items.filter(s => s.is_today);
+            const ahora = new Date();
+            const hhmm = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
+            const sidParam = new URLSearchParams(location.search).get('sid');
+            session = (sidParam && items.find(s => String(s.id) === sidParam))
+                || deHoy.find(s => (s.end_time || '23:59') >= hhmm) || deHoy[deHoy.length - 1] || items[0] || null;
             if (session) {
                 coachName = session.coachee_name || coachName;
                 counterpartId = session.coachee_id || null;
@@ -525,6 +544,166 @@
         if (t === 'chat') loadChat(false);
     };
 
+
+    /* ── WebRTC: llamada real 1:1 ── */
+    const RTC_ROLE = 'coach';
+    function rtcRoomId() { return (window.RTC_CFG && window.RTC_CFG.coachId && counterpartId && session && session.is_today) ? ('c' + window.RTC_CFG.coachId + 'e' + counterpartId) : null; }
+    let pc = null, rtcRoom = null, sigLast = 0, sigPoll = null;
+    let pendingIce = [], rtcStarted = false, rtcTries = 0;
+    let epoch = 0, remoteEpoch = 0;
+    const RTC_ICE = { iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+    ] };
+    const peerLabel = () => { const n = (coachName || '').trim(); return /^Tu /i.test(n) ? n.toLowerCase() : (n.split(' ')[0] || 'la otra persona'); };
+
+    function setCallStatus(txt, live) {
+        const el = document.getElementById('callStatus');
+        if (el) { el.textContent = txt; el.style.color = live ? 'var(--success, #2F7D5B)' : 'var(--mist-400, #B7C1D0)'; }
+    }
+    function showRemote(on) {
+        const rv = document.getElementById('remoteVideo');
+        const ph = document.getElementById('stagePlaceholder');
+        if (rv) rv.style.display = on ? 'block' : 'none';
+        if (ph) ph.style.display = on ? 'none' : 'flex';
+    }
+    async function sigSend(payload) {
+        if (!rtcRoom) return;
+        try {
+            await fetch('/api/rtc/' + rtcRoom + '/signals', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payload })
+            });
+        } catch (_) {}
+    }
+    async function sigFetch() {
+        if (!rtcRoom) return;
+        try {
+            const r = await fetch('/api/rtc/' + rtcRoom + '/signals?since=' + sigLast, { credentials: 'same-origin' });
+            const d = await r.json();
+            if (!d.success) return;
+            for (const s of (d.signals || [])) {
+                sigLast = Math.max(sigLast, s.id);
+                await handleSignal(s.payload);
+            }
+        } catch (_) {}
+    }
+    function newPc() {
+        if (pc) { try { pc.close(); } catch (_) {} }
+        pendingIce = [];
+        if (RTC_ROLE === 'coach') epoch++;
+        pc = new RTCPeerConnection(RTC_ICE);
+        if (stream && stream.getTracks().length) {
+            stream.getTracks().forEach(t => pc.addTrack(t, stream));
+        } else {
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+            pc.addTransceiver('video', { direction: 'recvonly' });
+        }
+        pc.onicecandidate = ev => {
+            if (ev.candidate) sigSend({ type: 'ice', candidate: ev.candidate, epoch: RTC_ROLE === 'coach' ? epoch : remoteEpoch });
+        };
+        pc.ontrack = ev => {
+            const rv = document.getElementById('remoteVideo');
+            if (rv && ev.streams && ev.streams[0]) {
+                if (rv.srcObject !== ev.streams[0]) rv.srcObject = ev.streams[0];
+                showRemote(true);
+                rv.play().catch(() => {
+                    rv.muted = true;
+                    rv.play().catch(() => {});
+                    tideToast('Audio bloqueado por el navegador', 'Toca el video para activar el sonido.');
+                    rv.onclick = () => { rv.muted = false; rv.onclick = null; };
+                });
+            }
+        };
+        pc.onconnectionstatechange = () => {
+            if (!pc) return;
+            if (pc.connectionState === 'connected') {
+                setCallStatus('En vivo', true);
+                tideToast('Conectado', peerLabel() + ' está en la sesión.');
+            } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                showRemote(false);
+                setCallStatus('Reconectando…', false);
+            }
+        };
+        return pc;
+    }
+    async function makeOffer() {
+        try {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            sigSend({ type: 'offer', sdp: pc.localDescription, epoch: epoch });
+        } catch (_) {}
+    }
+    async function flushIce() {
+        const q = pendingIce; pendingIce = [];
+        for (const cnd of q) { try { await pc.addIceCandidate(cnd); } catch (_) {} }
+    }
+    async function handleSignal(p) {
+        if (!p || !p.type) return;
+        try {
+            if (p.type === 'hello') {
+                if (!pc || pc.connectionState !== 'connected') tideToast(peerLabel() + ' entró a la sala.', 'Conectando…');
+                if (RTC_ROLE === 'coach') { newPc(); await makeOffer(); }
+            } else if (p.type === 'offer' && RTC_ROLE === 'coachee') {
+                remoteEpoch = p.epoch || 0;
+                newPc();
+                await pc.setRemoteDescription(p.sdp);
+                await flushIce();
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                sigSend({ type: 'answer', sdp: pc.localDescription, epoch: remoteEpoch });
+            } else if (p.type === 'answer' && RTC_ROLE === 'coach') {
+                if ((p.epoch || 0) !== epoch || !pc) return;
+                await pc.setRemoteDescription(p.sdp);
+                await flushIce();
+            } else if (p.type === 'ice') {
+                const e = p.epoch || 0;
+                if (RTC_ROLE === 'coach' ? e !== epoch : e !== remoteEpoch) return;
+                if (pc && pc.remoteDescription) { try { await pc.addIceCandidate(p.candidate); } catch (_) {} }
+                else pendingIce.push(p.candidate);
+            } else if (p.type === 'bye') {
+                showRemote(false);
+                setCallStatus(peerLabel() + ' salió de la sesión.', false);
+                tideToast(peerLabel() + ' salió de la sesión.', '');
+            }
+        } catch (e) { console.warn('RTC:', e); }
+    }
+    async function startRtc() {
+        rtcRoom = rtcRoomId();
+        if (!rtcRoom) {
+            if (rtcTries++ < 5) { setTimeout(startRtc, 1500); }
+            else setCallStatus('No hay sesión agendada para hoy.', false);
+            return;
+        }
+        if (rtcStarted) return;
+        rtcStarted = true;
+        try {
+            const r = await fetch('/api/rtc/' + rtcRoom + '/signals?init=1', { credentials: 'same-origin' });
+            const d = await r.json();
+            sigLast = d.last_id || 0;
+        } catch (_) {}
+        setCallStatus('Esperando a ' + peerLabel() + '…', false);
+        newPc();
+        clearInterval(sigPoll);
+        sigPoll = setInterval(sigFetch, 1200);
+        await sigSend({ type: 'hello' });
+        if (RTC_ROLE === 'coach') await makeOffer();
+    }
+    function stopRtc(notify) {
+        if (notify && rtcRoom && rtcStarted) sigSend({ type: 'bye' });
+        clearInterval(sigPoll); sigPoll = null;
+        if (pc) { try { pc.close(); } catch (_) {} pc = null; }
+        rtcStarted = false; rtcTries = 0;
+        showRemote(false);
+    }
+    window.addEventListener('beforeunload', () => {
+        if (rtcRoom && rtcStarted && navigator.sendBeacon) {
+            navigator.sendBeacon('/api/rtc/' + rtcRoom + '/signals',
+                new Blob([JSON.stringify({ payload: { type: 'bye' } })], { type: 'application/json' }));
+        }
+    });
+
     /* ── Pantallas ── */
     window.joinCall = function () {
         document.getElementById('screenLobby').style.display = 'none';
@@ -539,8 +718,10 @@
         }, 1000);
         syncControls();
         chatPoll = setInterval(() => loadChat(true), 7000);
+        startRtc();
     };
     window.endCall = function () {
+        stopRtc(true);
         clearInterval(tick); clearInterval(chatPoll);
         if (stream) stream.getTracks().forEach(t => t.stop());
         stream = null;

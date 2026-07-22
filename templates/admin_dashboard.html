@@ -311,378 +311,349 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 </head>
 <body>
-    <!-- Header responsivo -->
-    <header class="admin-header">
-        <div class="container-fluid">
-            <div class="row align-items-center py-3">
-                <div class="col-12 col-md-8">
-                    <h1 class="h3 h2-md mb-0">
-                        <i class="fas fa-shield-alt me-2"></i>
-                        Panel de Administración
-                    </h1>
+    <!-- ══ Shell Admin (diseño Admin Dashboard, Tide) ══ -->
+    <style>
+        body { background: var(--surface-page, #F1F4F9) !important; }
+        .adm-serif { font-family: var(--font-serif, Georgia, serif); font-weight: 500; letter-spacing: -0.01em; color: var(--text-strong, #14233F); }
+        .adm-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #646E7E); }
+        .adm-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 500; color: var(--text-muted, #646E7E); cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; transition: background .15s, color .15s; position: relative; font-family: inherit; }
+        .adm-nav-item:hover { background: var(--surface-hover, #EEF3FC); color: var(--text-strong, #14233F); }
+        .adm-nav-item.active { background: var(--primary, #2C5AA8); color: #fff; box-shadow: 0 1px 2px rgba(20,35,63,0.12); }
+        .adm-nav-item i { width: 18px; text-align: center; flex-shrink: 0; }
+        .adm-card { background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 16px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); }
+        .adm-row:hover { background: var(--surface-hover, #EEF3FC); }
+        .adm-spark { display: flex; align-items: flex-end; gap: 3px; height: 36px; }
+        .adm-spark span { flex: 1; border-radius: 2px 2px 0 0; background: var(--ocean-200, #BFD3F0); min-width: 6px; }
+        .adm-spark span.hi { background: var(--primary, #2C5AA8); }
+        .adm-chip { border: 1.5px solid var(--border-default, #D5DCE7); background: var(--surface-card, #fff); color: var(--text-body, #313842); border-radius: 999px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; }
+        .adm-chip.active { background: var(--primary, #2C5AA8); border-color: var(--primary, #2C5AA8); color: #fff; }
+        .adm-btn-primary { background: var(--primary, #2C5AA8); color: #fff; border: none; border-radius: 10px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s; white-space: nowrap; }
+        .adm-btn-primary:hover { background: var(--primary-hover, #213C70); }
+        .adm-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; }
+        .adm-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        @keyframes admRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .adm-rise { animation: admRise .35s ease both; }
+        html, body { scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        @media (max-width: 900px) {
+            .adm-shell { flex-direction: column; }
+            .adm-sidebar { width: 100% !important; height: auto !important; position: static !important; flex-direction: row !important; align-items: center; overflow-x: auto; padding: 10px 12px !important; }
+            .adm-sidebar nav { flex-direction: row !important; flex: none !important; }
+            .adm-sidebar .adm-nav-item span.lbl { display: none; }
+            .adm-sidebar-user, .adm-sidebar-brand span, .adm-sidebar-eyebrow { display: none !important; }
+            .adm-search { display: none !important; }
+            .adm-kpis { grid-template-columns: repeat(2, 1fr) !important; }
+            .adm-ov-grid { grid-template-columns: 1fr !important; }
+        }
+    </style>
+
+    <div class="adm-shell" style="display: flex; min-height: 100vh;">
+
+        <aside class="adm-sidebar" style="width: 260px; flex-shrink: 0; background: var(--surface-card, #fff); border-right: 1px solid var(--border-subtle, #E6EBF2); display: flex; flex-direction: column; padding: 20px 14px; position: sticky; top: 0; height: 100vh; box-sizing: border-box;">
+            <div class="adm-sidebar-brand" style="display: flex; align-items: center; gap: 9px; padding: 4px 10px 18px;">
+                <svg width="30" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                    <rect x="8" y="8" width="84" height="84" rx="24" fill="#2C5AA8"/>
+                    <path d="M30 66 L30 48 M50 66 L50 34 M70 66 L70 22" stroke="#F5F1E8" stroke-width="8" stroke-linecap="round"/>
+                    <circle cx="70" cy="22" r="6" fill="#C49A52"/>
+                </svg>
+                <span style="font-size: 1.05rem; font-weight: 700; color: var(--ocean-600, #2C5AA8); letter-spacing: -0.02em;">Insta<span style="color:#A87C36;">Coach</span></span>
+            </div>
+            <div class="adm-eyebrow adm-sidebar-eyebrow" style="padding: 0 10px 8px;">Administración</div>
+            <nav style="display: flex; flex-direction: column; gap: 2px; flex: 1;">
+                <button id="nav-resumen" class="adm-nav-item active" onclick="showAdminSection('resumen')"><i class="fas fa-compass"></i><span class="lbl">Resumen</span></button>
+                <button id="nav-coaches" class="adm-nav-item" onclick="showAdminSection('coaches')"><i class="fas fa-briefcase"></i><span class="lbl">Coaches</span><span id="navCoachesBadge" style="display:none;margin-left:auto;background:var(--accent-soft,#F2E7CC);color:var(--gold-700,#8A6526);font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;"></span></button>
+                <button id="nav-coachees" class="adm-nav-item" onclick="showAdminSection('coachees')"><i class="fas fa-users"></i><span class="lbl">Coachees</span></button>
+                <button id="nav-evaluaciones" class="adm-nav-item" onclick="showAdminSection('evaluaciones')"><i class="fas fa-clipboard-check"></i><span class="lbl">Evaluaciones</span></button>
+                <button id="nav-reportes" class="adm-nav-item" onclick="showAdminSection('reportes')"><i class="fas fa-chart-column"></i><span class="lbl">Reportes</span></button>
+                <button id="nav-ajustes" class="adm-nav-item" onclick="showAdminSection('ajustes')"><i class="fas fa-gear"></i><span class="lbl">Ajustes</span></button>
+            </nav>
+            <div class="adm-sidebar-user" style="border-top: 1px solid var(--border-subtle, #E6EBF2); padding: 14px 0 0 10px; display: flex; align-items: center; gap: 10px;">
+                <div style="position: relative; flex-shrink: 0;">
+                    <div id="adminAvatar" style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">A</div>
+                    <span style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--success, #2F7D5B); border: 2px solid var(--surface-card, #fff);"></span>
                 </div>
-                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
-                    <div class="d-flex align-items-center justify-content-md-end gap-2">
-                        <span class="d-none d-sm-inline text-white-50">
-                            <i class="fas fa-user-shield me-1"></i>
-                            Administrador
-                        </span>
-                        <button class="btn btn-outline-light btn-sm" onclick="openEditProfileModal()">
-                            <i class="fas fa-user-edit me-1"></i>
-                            <span class="d-none d-sm-inline">Editar Perfil</span>
-                        </button>
-                        <button class="btn btn-outline-light btn-sm" onclick="openChangePasswordModal()">
-                            <i class="fas fa-key me-1"></i>
-                            <span class="d-none d-sm-inline">Cambiar Contraseña</span>
-                        </button>
-                        <button onclick="adminLogout()" class="btn btn-outline-light btn-sm">
-                            <i class="fas fa-sign-out-alt me-1"></i>
-                            <span class="d-none d-sm-inline">Cerrar Sesión</span>
-                            <span class="d-sm-none">Salir</span>
-                        </button>
+                <div style="flex: 1; min-width: 0;">
+                    <div id="adminSidebarName" style="font-size: 13px; font-weight: 600; color: var(--text-strong, #14233F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Admin</div>
+                    <div style="font-size: 11px; color: var(--text-subtle, #8C97A8);">Administración</div>
+                </div>
+                <button onclick="adminLogout()" title="Cerrar sesión" style="border: none; background: transparent; cursor: pointer; color: var(--text-subtle, #8C97A8); padding: 6px;"><i class="fas fa-arrow-right-from-bracket"></i></button>
+            </div>
+        </aside>
+
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+            <header style="height: 64px; background: var(--surface-card, #fff); border-bottom: 1px solid var(--border-subtle, #E6EBF2); display: flex; align-items: center; gap: 16px; padding: 0 28px; position: sticky; top: 0; z-index: 20;">
+                <div class="adm-search" style="flex: 1; max-width: 420px; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-subtle, #8C97A8); pointer-events: none;"></i>
+                    <input id="adminSearch" placeholder="Buscar coach o coachee…" oninput="adminBuscar(this.value)"
+                           style="width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px; color: var(--text-strong, #14233F); background: var(--surface-page, #F1F4F9); border: 1.5px solid transparent; border-radius: 10px; padding: 9px 12px 9px 36px; outline: none; transition: all .15s;"
+                           onfocus="this.style.borderColor='var(--primary, #2C5AA8)'; this.style.background='#fff'; this.style.boxShadow='0 0 0 3px rgba(58,108,196,0.25)'"
+                           onblur="this.style.borderColor='transparent'; this.style.background='var(--surface-page, #F1F4F9)'; this.style.boxShadow='none'">
+                </div>
+                <span style="flex: 1;"></span>
+                <button class="adm-btn-primary" onclick="showAdminSection('coaches'); setTimeout(() => { const f = document.getElementById('createCoachCard'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);">Invitar coach</button>
+            </header>
+
+            <main style="padding: 32px 28px 48px; max-width: 1100px; width: 100%; box-sizing: border-box;">
+
+                <!-- ══ Resumen ══ -->
+                <section id="section-resumen" class="adm-rise">
+                    <div id="adminDateEyebrow" class="adm-eyebrow" style="color: var(--gold-700, #8A6526); margin-bottom: 8px;"></div>
+                    <h1 class="adm-serif" style="font-size: 34px; margin: 0 0 6px;">Plataforma en calma.</h1>
+                    <p id="adminHeroSub" style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0 0 28px;">Resumen de coaches, coachees y actividad de InstaCoach.</p>
+
+                    <div class="adm-kpis" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px;">
+                        <div class="adm-card" style="padding: 16px 18px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><i class="fas fa-briefcase" style="font-size: 14px; color: var(--primary, #2C5AA8);"></i><span style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E);">Coaches activos</span></div>
+                            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;"><span id="kpiCoachesVal" class="adm-serif" style="font-size: 30px; line-height: 1;">—</span><span id="kpiCoachesDelta" style="font-size: 12px; color: var(--success, #2F7D5B); font-weight: 600;"></span></div>
+                            <div id="sparkCoaches" class="adm-spark"></div>
+                        </div>
+                        <div class="adm-card" style="padding: 16px 18px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><i class="fas fa-users" style="font-size: 14px; color: var(--primary, #2C5AA8);"></i><span style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E);">Coachees activos</span></div>
+                            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;"><span id="kpiCoacheesVal" class="adm-serif" style="font-size: 30px; line-height: 1;">—</span><span id="kpiCoacheesDelta" style="font-size: 12px; color: var(--success, #2F7D5B); font-weight: 600;"></span></div>
+                            <div id="sparkCoachees" class="adm-spark"></div>
+                        </div>
+                        <div class="adm-card" style="padding: 16px 18px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><i class="fas fa-calendar-check" style="font-size: 14px; color: var(--primary, #2C5AA8);"></i><span style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E);">Sesiones · semana</span></div>
+                            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;"><span id="kpiSesionesVal" class="adm-serif" style="font-size: 30px; line-height: 1;">—</span><span id="kpiSesionesDelta" style="font-size: 12px; color: var(--text-muted, #646E7E); font-weight: 600;"></span></div>
+                            <div id="sparkSesiones" class="adm-spark"></div>
+                        </div>
+                        <div class="adm-card" style="padding: 16px 18px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><i class="fas fa-clipboard-check" style="font-size: 14px; color: var(--primary, #2C5AA8);"></i><span style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E);">Evaluaciones · mes</span></div>
+                            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;"><span id="kpiEvalsVal" class="adm-serif" style="font-size: 30px; line-height: 1;">—</span><span id="kpiEvalsDelta" style="font-size: 12px; color: var(--text-muted, #646E7E); font-weight: 600;"></span></div>
+                            <div id="sparkEvals" class="adm-spark"></div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </header>
 
-    <!-- Main content -->
-    <main class="container-fluid py-4">
-
-        <!-- Héroe Tide (mock Admin Dashboard) -->
-        <div style="margin-bottom: 24px;">
-            <div id="adminDateEyebrow" style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-700, #8A6526); margin-bottom: 8px;"></div>
-            <h1 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: clamp(1.75rem, 3vw, 2.125rem); color: var(--text-strong, #14233F); margin: 0 0 6px;">Plataforma en calma.</h1>
-            <p style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0;">Resumen de coaches, coachees y actividad de InstaCoach.</p>
-        </div>
-        <script>
-            (function () {
-                const el = document.getElementById('adminDateEyebrow');
-                if (el) {
-                    const d = new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
-                    el.textContent = d.charAt(0).toUpperCase() + d.slice(1);
-                }
-            })();
-        </script>
-
-        <!-- Coaches por aprobar (diseño Admin Dashboard) -->
-        <div class="card mb-4" id="coachRequestsCard" style="display:none;padding:22px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-                <h3 style="font-family:var(--font-serif, Georgia, serif);font-weight:500;font-size:20px;margin:0;color:var(--text-strong,#14233F);">Coaches por aprobar</h3>
-                <span id="coachRequestsBadge" style="background:var(--accent-soft,#F2E7CC);color:var(--gold-700,#8A6526);font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;"></span>
-            </div>
-            <p style="font-size:13px;color:var(--text-muted,#646E7E);margin:0 0 14px;">Revisa credenciales antes de aprobar. Al aprobar, el coach recibe un enlace de acceso por email.</p>
-            <div id="coachRequestsList" style="display:flex;flex-direction:column;"></div>
-        </div>
-
-        <script>
-        (function () {
-            'use strict';
-            function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-
-            async function cargar() {
-                try {
-                    const r = await fetch('/api/admin/coach-requests', { credentials: 'same-origin' });
-                    const d = await r.json();
-                    if (!d.success) return;
-                    const card = document.getElementById('coachRequestsCard');
-                    const list = document.getElementById('coachRequestsList');
-                    const badge = document.getElementById('coachRequestsBadge');
-                    if (!d.requests.length) { card.style.display = 'none'; return; }
-                    card.style.display = 'block';
-                    badge.textContent = d.requests.length + ' pendiente' + (d.requests.length !== 1 ? 's' : '');
-                    list.innerHTML = d.requests.map(q => `
-                        <div style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:10px;flex-wrap:wrap;"
-                             onmouseover="this.style.background='var(--surface-hover,#EEF3FC)'" onmouseout="this.style.background='transparent'">
-                            <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#3A6CC4,#2C5AA8);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
-                                ${esc((q.full_name || '?').trim().split(/\\s+/).slice(0,2).map(w => w[0].toUpperCase()).join(''))}
+                    <div class="adm-ov-grid" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start;">
+                        <div class="adm-card" id="coachRequestsCard" style="padding: 22px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                <h3 class="adm-serif" style="font-size: 20px; margin: 0;">Coaches por aprobar</h3>
+                                <span id="coachRequestsBadge" style="background: var(--accent-soft, #F2E7CC); color: var(--gold-700, #8A6526); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px;"></span>
                             </div>
-                            <div style="flex:1;min-width:200px;">
-                                <div style="font-size:14px;font-weight:600;color:var(--text-strong,#14233F);">${esc(q.full_name)}</div>
-                                <div style="font-size:12.5px;color:var(--text-muted,#646E7E);">${esc(q.email)} · ${esc((q.areas || []).join(', ') || 'sin áreas')} · ${esc(q.experiencia || '')}</div>
-                                ${q.bio ? `<div style="font-size:12px;color:var(--text-subtle,#8C97A8);margin-top:2px;">${esc(q.bio.slice(0, 160))}${q.bio.length > 160 ? '…' : ''}</div>` : ''}
-                            </div>
-                            <button onclick="revisarCoachRequest(${q.id}, 'reject')" style="border:1.5px solid var(--border-default,#D5DCE7);background:white;color:var(--text-body,#313842);border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;">Rechazar</button>
-                            <button onclick="revisarCoachRequest(${q.id}, 'approve')" style="border:none;background:var(--primary,#2C5AA8);color:white;border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;">Aprobar</button>
-                        </div>`).join('');
-                } catch (e) { console.error('coach-requests:', e); }
-            }
+                            <p style="font-size: 13px; color: var(--text-muted, #646E7E); margin: 0 0 14px;">Revisa credenciales antes de aprobar. Al aprobar, el coach recibe un enlace de acceso por email.</p>
+                            <div id="coachRequestsList" style="display: flex; flex-direction: column;"></div>
+                        </div>
 
-            window.revisarCoachRequest = async function (id, accion) {
-                const verbo = accion === 'approve' ? 'aprobar' : 'rechazar';
-                if (!confirm(`¿Seguro que quieres ${verbo} esta solicitud?`)) return;
-                try {
-                    const r = await fetch(`/api/admin/coach-requests/${id}/${accion}`, {
-                        method: 'POST', credentials: 'same-origin',
-                        headers: { 'Content-Type': 'application/json' }, body: '{}'
-                    });
-                    const d = await r.json();
-                    if (d.success) {
-                        cargar();
-                        if (accion === 'approve') {
-                            alert('Coach aprobado.' + (d.email_sent ? ' Se envió el enlace de acceso por email.' : ' ⚠️ El email no pudo enviarse (SMTP no configurado) — contacta al coach manualmente.'));
-                        }
-                    } else {
-                        alert(d.error || 'No se pudo procesar.');
-                    }
-                } catch (e) { alert('Error de conexión.'); }
-            };
-
-            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cargar);
-            else cargar();
-        })();
-        </script>
-
-        <!-- Estadísticas Generales - Grid responsivo -->
-        <div class="row g-3 g-md-4 mb-4">
-            <div class="col-6 col-lg-3">
-                <div class="stat-card p-3 p-md-4 h-100">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stat-number" id="totalUsers">-</div>
-                            <div class="text-muted small fw-medium">Total Usuarios</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="fas fa-users fa-2x text-primary opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6 col-lg-3">
-                <div class="stat-card p-3 p-md-4 h-100">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stat-number" id="totalCoaches">-</div>
-                            <div class="text-muted small fw-medium">Coaches</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="fas fa-user-tie fa-2x text-info opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6 col-lg-3">
-                <div class="stat-card p-3 p-md-4 h-100">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stat-number" id="totalCoachees">-</div>
-                            <div class="text-muted small fw-medium">Coachees</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="fas fa-user-friends fa-2x text-success opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6 col-lg-3">
-                <div class="stat-card p-3 p-md-4 h-100">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stat-number" id="totalAssessments">-</div>
-                            <div class="text-muted small fw-medium">Evaluaciones</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="fas fa-chart-bar fa-2x text-warning opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Principal - Grid responsivo -->
-        <div class="row g-3 g-md-4 mb-4">
-            <!-- Lista de Usuarios -->
-            <div class="col-12 col-xl-8">
-                <div class="admin-card p-3 p-md-4 h-100">
-                    <div class="d-flex align-items-center mb-3">
-                        <h2 class="h4 mb-0 flex-grow-1">
-                            <i class="fas fa-users text-primary me-2"></i>
-                            Usuarios del Sistema
-                        </h2>
-                        <button class="btn btn-outline-primary btn-sm" onclick="loadUsers()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <div id="usersTable">
-                            <div class="text-center py-4 text-muted">
-                                <div class="loading-spinner me-2"></div>
-                                Cargando usuarios...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gráfico de Actividad -->
-            <div class="col-12 col-xl-4">
-                <div class="admin-card p-3 p-md-4 h-100">
-                    <h2 class="h4 mb-3">
-                        <i class="fas fa-chart-pie text-primary me-2"></i>
-                        Distribución
-                    </h2>
-                    <div class="chart-container">
-                        <canvas id="userDistributionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gestión de Coaches - Completamente responsiva -->
-        <div class="admin-card p-3 p-md-4 mb-4">
-            <h2 class="h4 mb-4">
-                <i class="fas fa-user-tie text-primary me-2"></i>
-                Gestión de Coaches
-            </h2>
-            
-            <!-- Formulario para crear nuevo coach - Mobile optimized -->
-            <div class="bg-light rounded-3 p-3 p-md-4 mb-4">
-                <h3 class="h5 mb-3 text-primary">
-                    <i class="fas fa-plus-circle me-2"></i>
-                    Crear Nuevo Coach
-                </h3>
-                
-                <form id="createCoachForm">
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <div class="form-floating">
-                                <input type="text" id="coachUsername" class="form-control" placeholder="Username" required>
-                                <label for="coachUsername">
-                                    <i class="fas fa-user me-1 text-muted"></i>
-                                    Nombre de Usuario
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-6">
-                            <div class="form-floating">
-                                <input type="email" id="coachEmail" class="form-control" placeholder="Email" required>
-                                <label for="coachEmail">
-                                    <i class="fas fa-envelope me-1 text-muted"></i>
-                                    Email
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-6">
-                            <div class="form-floating">
-                                <input type="text" id="coachFullName" class="form-control" placeholder="Nombre Completo" required>
-                                <label for="coachFullName">
-                                    <i class="fas fa-id-card me-1 text-muted"></i>
-                                    Nombre Completo
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-6">
-                            <div class="input-group">
-                                <div class="form-floating flex-grow-1">
-                                    <input type="password" id="coachPassword" class="form-control" placeholder="Contraseña" required minlength="6">
-                                    <label for="coachPassword">
-                                        <i class="fas fa-lock me-1 text-muted"></i>
-                                        Contraseña
-                                    </label>
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            <div class="adm-card" style="padding: 22px;">
+                                <h3 class="adm-serif" style="font-size: 18px; margin: 0 0 14px;">Actividad reciente</h3>
+                                <div id="recentActivity" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="font-size: 13px; color: var(--text-subtle, #8C97A8);">Cargando actividad…</div>
                                 </div>
-                                <button type="button" class="btn btn-outline-secondary" onclick="generateRandomPassword()" title="Generar contraseña aleatoria">
-                                    <i class="fas fa-dice"></i>
-                                </button>
                             </div>
-                        </div>
-                        
-                        <div class="col-12">
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-admin btn-lg">
-                                    <i class="fas fa-plus-circle me-2"></i>
-                                    Crear Coach
-                                </button>
+                            <div style="background: var(--surface-inverse, #14233F); border-radius: 16px; padding: 22px; box-shadow: 0 10px 24px -14px rgba(20,35,63,0.32); position: relative; overflow: hidden;">
+                                <div style="position: absolute; inset: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); pointer-events: none; border-radius: 16px;"></div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fas fa-wand-magic-sparkles" style="font-size: 13px; color: var(--gold-300, #E0C691);"></i>
+                                    <span class="adm-eyebrow" style="color: var(--gold-300, #E0C691);">Salud de la plataforma</span>
+                                </div>
+                                <p id="saludLine1" class="adm-serif" style="font-size: 16.5px; line-height: 1.45; color: var(--text-inverse, #FAFBFD); margin: 0 0 6px;">Calculando…</p>
+                                <p id="saludLine2" style="font-size: 12.5px; color: var(--mist-400, #B7C1D0); margin: 0;"></p>
                             </div>
                         </div>
                     </div>
-                </form>
-            </div>
+                </section>
 
-            <!-- Lista de coaches existentes - Responsive table -->
-            <div>
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h3 class="h5 mb-0 text-primary">
-                        <i class="fas fa-list me-2"></i>
-                        Coaches Registrados
-                    </h3>
-                    <button class="btn btn-outline-primary btn-sm" onclick="loadCoaches()">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                
-                <div class="table-responsive">
-                    <div id="coachesTable">
-                        <div class="text-center py-4 text-muted">
-                            <div class="loading-spinner me-2"></div>
-                            Cargando coaches...
+                <!-- ══ Coaches ══ -->
+                <section id="section-coaches" class="adm-rise" style="display: none;">
+                    <h1 class="adm-serif" style="font-size: 34px; margin: 0 0 6px;">Coaches</h1>
+                    <p id="coachesCountLine" style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0 0 24px;">Cargando…</p>
+                    <div class="adm-card" style="padding: 8px 0; margin-bottom: 24px; overflow-x: auto;">
+                        <div id="coachesTable" style="min-width: 640px;"></div>
+                    </div>
+
+                    <div class="adm-card" id="createCoachCard" style="padding: 22px;">
+                        <h3 class="adm-serif" style="font-size: 20px; margin: 0 0 4px;">Invitar coach</h3>
+                        <p style="font-size: 13px; color: var(--text-muted, #646E7E); margin: 0 0 16px;">Crea la cuenta y entrégale sus credenciales de acceso.</p>
+                        <form id="createCoachForm">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6"><div class="form-floating">
+                                    <input type="text" id="coachUsername" class="form-control" placeholder="Username" required>
+                                    <label for="coachUsername">Nombre de usuario</label>
+                                </div></div>
+                                <div class="col-12 col-md-6"><div class="form-floating">
+                                    <input type="email" id="coachEmail" class="form-control" placeholder="Email" required>
+                                    <label for="coachEmail">Email</label>
+                                </div></div>
+                                <div class="col-12 col-md-6"><div class="form-floating">
+                                    <input type="text" id="coachFullName" class="form-control" placeholder="Nombre Completo" required>
+                                    <label for="coachFullName">Nombre completo</label>
+                                </div></div>
+                                <div class="col-12 col-md-6"><div class="input-group">
+                                    <div class="form-floating flex-grow-1">
+                                        <input type="password" id="coachPassword" class="form-control" placeholder="Contraseña" required minlength="6">
+                                        <label for="coachPassword">Contraseña</label>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="generateRandomPassword()" title="Generar contraseña aleatoria"><i class="fas fa-dice"></i></button>
+                                </div></div>
+                                <div class="col-12">
+                                    <button type="submit" class="adm-btn-primary" style="padding: 11px 24px;">Crear coach</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- ══ Coachees / usuarios ══ -->
+                <section id="section-coachees" class="adm-rise" style="display: none;">
+                    <h1 class="adm-serif" style="font-size: 34px; margin: 0 0 6px;">Coachees</h1>
+                    <p id="usersCountLine" style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0 0 18px;">Cargando…</p>
+                    <div style="display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;">
+                        <button class="adm-chip active" data-rol="coachee" onclick="adminFiltrarRol('coachee', this)">Coachees</button>
+                        <button class="adm-chip" data-rol="coach" onclick="adminFiltrarRol('coach', this)">Coaches</button>
+                        <button class="adm-chip" data-rol="platform_admin" onclick="adminFiltrarRol('platform_admin', this)">Admins</button>
+                        <button class="adm-chip" data-rol="todos" onclick="adminFiltrarRol('todos', this)">Todos</button>
+                        <button class="adm-chip" data-rol="eliminados" onclick="adminFiltrarRol('eliminados', this)" style="color: var(--danger, #B5503C);">Eliminados</button>
+                        <span style="flex: 1;"></span>
+                        <button class="adm-btn-primary" onclick="abrirCrearUsuario()"><i class="fas fa-user-plus" style="margin-right: 6px;"></i>Nuevo usuario</button>
+                    </div>
+                    <div class="adm-card" style="padding: 8px 0; overflow-x: auto;">
+                        <div id="usersTable" style="min-width: 560px;"></div>
+                    </div>
+                </section>
+
+                <!-- ══ Evaluaciones ══ -->
+                <section id="section-evaluaciones" class="adm-rise" style="display: none;">
+                    <h1 class="adm-serif" style="font-size: 34px; margin: 0 0 6px;">Evaluaciones</h1>
+                    <p style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0 0 24px;">Actividad de evaluaciones en toda la plataforma.</p>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 720px;">
+                        <div class="adm-card" style="padding: 18px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E); margin-bottom: 8px;">Completadas en total</div>
+                            <div id="evalTotal" class="adm-serif" style="font-size: 30px; line-height: 1;">—</div>
+                        </div>
+                        <div class="adm-card" style="padding: 18px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E); margin-bottom: 8px;">Últimos 30 días</div>
+                            <div id="evalMonth" class="adm-serif" style="font-size: 30px; line-height: 1;">—</div>
+                        </div>
+                        <div class="adm-card" style="padding: 18px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E); margin-bottom: 8px;">Puntaje promedio</div>
+                            <div id="evalAvg" class="adm-serif" style="font-size: 30px; line-height: 1;">—</div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </section>
 
-        <!-- Actividad Reciente -->
-        <div class="admin-card p-3 p-md-4 mb-4">
-            <h2 class="h4 mb-3">
-                <i class="fas fa-clock text-primary me-2"></i>
-                Actividad Reciente del Sistema
-            </h2>
-            <div id="recentActivity">
-                <div class="text-center py-4 text-muted">
-                    <div class="loading-spinner me-2"></div>
-                    Cargando actividad...
-                </div>
-            </div>
-        </div>
+                <!-- ══ Reportes ══ -->
+                <section id="section-reportes" class="adm-rise" style="display: none;">
+                    <h1 class="adm-serif" style="font-size: 34px; margin: 0 0 6px;">Reportes</h1>
+                    <p style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0 0 24px;">Distribución de usuarios y exportación de datos.</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; max-width: 860px;">
+                        <div class="adm-card" style="padding: 22px;">
+                            <h3 class="adm-serif" style="font-size: 18px; margin: 0 0 14px;">Distribución de usuarios</h3>
+                            <div style="max-width: 320px; margin: 0 auto;"><canvas id="userDistributionChart"></canvas></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button class="adm-btn-primary" onclick="exportData()" style="text-align: left;"><i class="fas fa-download" style="margin-right: 8px;"></i>Exportar datos</button>
+                            <button onclick="viewSystemLogs()" style="border: 1.5px solid var(--border-brand, #BFD3F0); background: #fff; color: var(--primary, #2C5AA8); border-radius: 10px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left;"><i class="fas fa-file-lines" style="margin-right: 8px;"></i>Ver logs del sistema</button>
+                        </div>
+                    </div>
+                </section>
 
-        <!-- Acciones de Administración - Mobile responsive -->
-        <div class="admin-card p-3 p-md-4">
-            <h2 class="h4 mb-3">
-                <i class="fas fa-cogs text-primary me-2"></i>
-                Acciones de Administración
-            </h2>
-            
-            <div class="row g-2 g-md-3">
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <a href="/admin/users-management" class="btn btn-primary w-100">
-                        <i class="fas fa-users-cog me-2"></i>
-                        <span class="d-none d-sm-inline">Gestión de</span>
-                        Usuarios
-                    </a>
-                </div>
-                
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <button class="btn btn-admin w-100" onclick="initializeDatabase()">
-                        <i class="fas fa-sync-alt me-2"></i>
-                        <span class="d-none d-sm-inline">Reinicializar</span>
-                        <span class="d-sm-none">Reinicializar DB</span>
-                        Base de Datos
-                    </button>
-                </div>
-                
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <button class="btn btn-admin-secondary w-100" onclick="exportData()">
-                        <i class="fas fa-download me-2"></i>
-                        Exportar Datos
-                    </button>
-                </div>
-                
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <button class="btn btn-admin-secondary w-100" onclick="viewSystemLogs()">
-                        <i class="fas fa-file-alt me-2"></i>
-                        Ver Logs
-                    </button>
-                </div>
-            </div>
+                <!-- ══ Ajustes ══ -->
+                <section id="section-ajustes" class="adm-rise" style="display: none;">
+                    <h1 class="adm-serif" style="font-size: 34px; margin: 0 0 6px;">Ajustes</h1>
+                    <p style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0 0 24px;">Tu cuenta de administración y las herramientas de mantención.</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 860px; align-items: start;">
+                        <div class="adm-card" style="padding: 22px;">
+                            <h3 class="adm-serif" style="font-size: 18px; margin: 0 0 14px;">Tu cuenta</h3>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <button onclick="openEditProfileModal()" style="border: 1.5px solid var(--border-brand, #BFD3F0); background: #fff; color: var(--primary, #2C5AA8); border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left;"><i class="fas fa-user-pen" style="margin-right: 8px;"></i>Editar perfil</button>
+                                <button onclick="openChangePasswordModal()" style="border: 1.5px solid var(--border-brand, #BFD3F0); background: #fff; color: var(--primary, #2C5AA8); border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left;"><i class="fas fa-key" style="margin-right: 8px;"></i>Cambiar contraseña</button>
+                                <button onclick="adminLogout()" style="border: 1.5px solid var(--border-default, #D5DCE7); background: #fff; color: var(--text-body, #313842); border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left;"><i class="fas fa-arrow-right-from-bracket" style="margin-right: 8px;"></i>Cerrar sesión</button>
+                            </div>
+                        </div>
+                        <div class="adm-card" style="padding: 22px; border-color: var(--danger-soft, #F3DED7);">
+                            <h3 class="adm-serif" style="font-size: 18px; margin: 0 0 6px;">Mantención</h3>
+                            <p style="font-size: 12.5px; color: var(--text-muted, #646E7E); margin: 0 0 14px;">Herramientas avanzadas. Úsalas con cuidado.</p>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <a href="/admin/users-management" style="display: block; border: 1.5px solid var(--border-brand, #BFD3F0); background: #fff; color: var(--primary, #2C5AA8); border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600; text-decoration: none;"><i class="fas fa-users-gear" style="margin-right: 8px;"></i>Gestión completa de usuarios</a>
+                                <button onclick="initializeDatabase()" style="border: 1.5px solid var(--danger, #B5503C); background: #fff; color: var(--danger, #B5503C); border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left;"><i class="fas fa-database" style="margin-right: 8px;"></i>Reinicializar base de datos</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
         </div>
-    </main>
+    </div>
+
+    <script>
+        (function () {
+            const el = document.getElementById('adminDateEyebrow');
+            if (el) {
+                const d = new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+                el.textContent = d.charAt(0).toUpperCase() + d.slice(1);
+            }
+        })();
+    </script>
+
+    <script>
+    (function () {
+        'use strict';
+        function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+        async function cargar() {
+            try {
+                const r = await fetch('/api/admin/coach-requests', { credentials: 'same-origin' });
+                const d = await r.json();
+                if (!d.success) return;
+                const list = document.getElementById('coachRequestsList');
+                const badge = document.getElementById('coachRequestsBadge');
+                const navBadge = document.getElementById('navCoachesBadge');
+                const heroSub = document.getElementById('adminHeroSub');
+                const n = d.requests.length;
+                window._pendingRequests = d.requests;
+                badge.textContent = n ? (n + ' pendiente' + (n !== 1 ? 's' : '')) : 'Sin pendientes';
+                if (navBadge) { navBadge.style.display = n ? 'inline-block' : 'none'; navBadge.textContent = n; }
+                if (heroSub) heroSub.textContent = n
+                    ? (n === 1 ? '1 coach espera aprobación. Todo lo demás avanza solo.' : n + ' coaches esperan aprobación. Todo lo demás avanza solo.')
+                    : 'Nada espera tu aprobación. Todo avanza solo.';
+                if (!n) {
+                    list.innerHTML = '<p class="adm-serif" style="font-style:italic;color:var(--text-subtle,#8C97A8);font-size:14.5px;margin:14px 0 4px;text-align:center;">Nada pendiente. Buen momento para revisar la actividad.</p>';
+                    if (window.adminActualizarActividad) adminActualizarActividad();
+                    return;
+                }
+                list.innerHTML = d.requests.map(q => `
+                    <div class="adm-row" style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:10px;flex-wrap:wrap;">
+                        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#3A6CC4,#2C5AA8);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
+                            ${esc((q.full_name || '?').trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join(''))}
+                        </div>
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-size:14px;font-weight:600;color:var(--text-strong,#14233F);">${esc(q.full_name)}</div>
+                            <div style="font-size:12.5px;color:var(--text-muted,#646E7E);">${esc(q.email)} · ${esc((q.areas || []).join(', ') || 'sin áreas')} · ${esc(q.experiencia || '')}</div>
+                            ${q.bio ? `<div style="font-size:12px;color:var(--text-subtle,#8C97A8);margin-top:2px;">${esc(q.bio.slice(0, 160))}${q.bio.length > 160 ? '…' : ''}</div>` : ''}
+                        </div>
+                        <button onclick="revisarCoachRequest(${q.id}, 'reject')" style="border:1.5px solid var(--border-default,#D5DCE7);background:white;color:var(--text-body,#313842);border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;">Rechazar</button>
+                        <button onclick="revisarCoachRequest(${q.id}, 'approve')" style="border:none;background:var(--primary,#2C5AA8);color:white;border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;">Aprobar</button>
+                    </div>`).join('');
+                if (window.adminActualizarActividad) adminActualizarActividad();
+            } catch (e) { console.error('coach-requests:', e); }
+        }
+
+        window.revisarCoachRequest = async function (id, accion) {
+            const verbo = accion === 'approve' ? 'aprobar' : 'rechazar';
+            if (!confirm(`¿Seguro que quieres ${verbo} esta solicitud?`)) return;
+            try {
+                const r = await fetch(`/api/admin/coach-requests/${id}/${accion}`, {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' }, body: '{}'
+                });
+                const d = await r.json();
+                if (d.success) {
+                    cargar();
+                    if (typeof loadCoaches === 'function') loadCoaches();
+                    if (accion === 'approve') {
+                        alert('Coach aprobado.' + (d.email_sent ? ' Se envió el enlace de acceso por email.' : ' ⚠️ El email no pudo enviarse (SMTP no configurado) — contacta al coach manualmente.'));
+                    }
+                } else {
+                    alert(d.error || 'No se pudo procesar.');
+                }
+            } catch (e) { alert('Error de conexión.'); }
+        };
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cargar);
+        else cargar();
+    })();
+    </script>
+
 
     <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -690,6 +661,75 @@
     <script>
         const API_BASE_URL = window.location.origin;
         let userDistributionChart = null;
+
+        /* ── Shell del diseño: secciones ── */
+        const ADMIN_SECTIONS = ['resumen', 'coaches', 'coachees', 'evaluaciones', 'reportes', 'ajustes'];
+        window.showAdminSection = function (id) {
+            ADMIN_SECTIONS.forEach(s => {
+                const sec = document.getElementById('section-' + s);
+                if (sec) sec.style.display = (s === id) ? 'block' : 'none';
+                const btn = document.getElementById('nav-' + s);
+                if (btn) btn.classList.toggle('active', s === id);
+            });
+            if (id === 'reportes' && window._adminStats) createUserDistributionChart(window._adminStats);
+            window.scrollTo(0, 0);
+        };
+
+        /* ── Búsqueda global (coaches y usuarios) ── */
+        window.adminBuscar = function (q) {
+            window._adminQuery = (q || '').trim();
+            if (typeof renderCoachesTide === 'function') renderCoachesTide();
+            if (typeof renderUsersTide === 'function') renderUsersTide();
+            const visible = ADMIN_SECTIONS.find(s => {
+                const el = document.getElementById('section-' + s);
+                return el && el.style.display !== 'none';
+            });
+            if (window._adminQuery && visible !== 'coaches' && visible !== 'coachees') showAdminSection('coaches');
+        };
+
+        /* ── Actividad reciente con datos reales ── */
+        window.adminActualizarActividad = function () {
+            const cont = document.getElementById('recentActivity');
+            if (!cont) return;
+            const items = [];
+            const reqs = window._pendingRequests || [];
+            if (reqs.length) items.push({ icon: 'fa-user-plus', text: reqs.length === 1 ? `${reqs[0].full_name} postuló como coach.` : `${reqs.length} postulaciones de coach esperan revisión.`, when: 'Pendiente' });
+            const st = window._adminStats;
+            if (st) {
+                if (st.recent_assessments > 0) items.push({ icon: 'fa-clipboard-check', text: `${st.recent_assessments} evaluaciones completadas en los últimos 30 días.`, when: 'Este mes' });
+                if (st.sessions_week > 0) items.push({ icon: 'fa-calendar-check', text: `${st.sessions_week} sesiones agendadas esta semana.`, when: 'Esta semana' });
+                if (st.coachees_new_month > 0) items.push({ icon: 'fa-users', text: `${st.coachees_new_month} coachees nuevos se unieron este mes.`, when: 'Este mes' });
+            }
+            if (!items.length) {
+                cont.innerHTML = '<p class="adm-serif" style="font-style:italic;color:var(--text-subtle,#8C97A8);font-size:14px;margin:0;">Sin actividad reciente que reportar.</p>';
+                return;
+            }
+            cont.innerHTML = items.slice(0, 4).map(a => `
+                <div style="display:flex;align-items:flex-start;gap:10px;">
+                    <div style="width:30px;height:30px;border-radius:50%;background:var(--primary-soft,#DCE7F8);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas ${a.icon}" style="font-size:12px;color:var(--primary,#2C5AA8);"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;color:var(--text-body,#313842);line-height:1.45;">${a.text}</div>
+                        <div style="font-size:11.5px;color:var(--text-subtle,#8C97A8);margin-top:1px;">${a.when}</div>
+                    </div>
+                </div>`).join('');
+        };
+
+        /* ── Nombre real del admin en el sidebar ── */
+        async function loadAdminSidebar() {
+            try {
+                const r = await fetch('/api/admin/profile', { credentials: 'same-origin' });
+                const d = await r.json();
+                if (d.success && d.profile) {
+                    const nombre = d.profile.full_name || d.profile.username || 'Admin';
+                    document.getElementById('adminSidebarName').textContent = nombre;
+                    document.getElementById('adminAvatar').textContent = nombre.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+                }
+            } catch (_) {}
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadAdminSidebar);
+        else loadAdminSidebar();
 
         // Cargar datos al iniciar
         document.addEventListener('DOMContentLoaded', function() {
@@ -702,27 +742,58 @@
         });
 
         // Cargar estadísticas de la plataforma
+        function renderSpark(elId, arr) {
+            const el = document.getElementById(elId);
+            if (!el || !arr || !arr.length) return;
+            const max = Math.max(...arr, 1);
+            el.innerHTML = arr.map((v, i) =>
+                `<span class="${i === arr.length - 1 ? 'hi' : ''}" style="height:${Math.max(4, Math.round(v / max * 34))}px" title="${v}"></span>`
+            ).join('');
+        }
+
         async function loadPlatformStats() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/platform-stats`);
                 const stats = await response.json();
-                
-                if (response.ok) {
-                    // Animar contadores
-                    animateCounter('totalUsers', stats.total_users);
-                    animateCounter('totalCoaches', stats.total_coaches);
-                    animateCounter('totalCoachees', stats.total_coachees);
-                    animateCounter('totalAssessments', stats.total_assessments);
-                    
-                    // Crear gráfico de distribución
-                    createUserDistributionChart(stats);
-                } else {
-                    throw new Error(stats.error);
+                if (!response.ok) throw new Error(stats.error);
+                window._adminStats = stats;
+
+                // KPIs
+                animateCounter('kpiCoachesVal', stats.total_coaches);
+                animateCounter('kpiCoacheesVal', stats.total_coachees);
+                animateCounter('kpiSesionesVal', stats.sessions_week || 0);
+                animateCounter('kpiEvalsVal', stats.recent_assessments || 0);
+                document.getElementById('kpiCoachesDelta').textContent = stats.coaches_new_month > 0 ? `+${stats.coaches_new_month} este mes` : '';
+                document.getElementById('kpiCoacheesDelta').textContent = stats.coachees_new_month > 0 ? `+${stats.coachees_new_month} este mes` : '';
+                document.getElementById('kpiEvalsDelta').textContent = `${stats.total_assessments} en total`;
+
+                // Sparklines reales (8 semanas)
+                if (stats.spark) {
+                    renderSpark('sparkCoaches', stats.spark.coaches);
+                    renderSpark('sparkCoachees', stats.spark.coachees);
+                    renderSpark('sparkSesiones', stats.spark.sessions);
+                    renderSpark('sparkEvals', stats.spark.assessments);
                 }
+
+                // Salud de la plataforma (datos reales)
+                const pct = stats.total_users ? Math.round(stats.active_users / stats.total_users * 100) : 0;
+                document.getElementById('saludLine1').textContent = `${pct}% de las cuentas de la plataforma están activas.`;
+                const inact = stats.coachees_inactivos_14d || 0;
+                document.getElementById('saludLine2').textContent = inact > 0
+                    ? `${inact} coachee${inact !== 1 ? 's llevan' : ' lleva'} +14 días sin entrar a la plataforma.`
+                    : 'Todos los coachees han entrado en los últimos 14 días.';
+
+                // Sección Evaluaciones
+                document.getElementById('evalTotal').textContent = stats.total_assessments;
+                document.getElementById('evalMonth').textContent = stats.recent_assessments;
+                document.getElementById('evalAvg').textContent = stats.avg_score || '—';
+
+                if (window.adminActualizarActividad) adminActualizarActividad();
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
-                ['totalUsers', 'totalCoaches', 'totalCoachees', 'totalAssessments'].forEach(id => {
-                    document.getElementById(id).textContent = 'Error';
+                ['kpiCoachesVal', 'kpiCoacheesVal', 'kpiSesionesVal', 'kpiEvalsVal'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = '—';
                 });
             }
         }
@@ -816,56 +887,229 @@
         }
 
         // Mostrar usuarios en tabla responsiva
+        window._allUsers = [];
+        window._userFilter = 'coachee';
+        window._adminQuery = '';
+
         function displayUsers(users) {
-            if (!users || users.length === 0) {
-                document.getElementById('usersTable').innerHTML = 
-                    '<div class="alert alert-info">No hay usuarios registrados</div>';
+            // El endpoint devuelve {success, total, users}; aceptar ambas formas
+            window._allUsers = Array.isArray(users) ? users : (users && users.users) || [];
+            renderUsersTide();
+        }
+
+        window.adminFiltrarRol = function (rol, btn) {
+            window._userFilter = rol;
+            document.querySelectorAll('.adm-chip[data-rol]').forEach(b => b.classList.toggle('active', b === btn));
+            if (rol === 'eliminados') cargarEliminados();
+            else renderUsersTide();
+        };
+
+        function renderUsersTide() {
+            const cont = document.getElementById('usersTable');
+            if (!cont) return;
+            const q = (window._adminQuery || '').toLowerCase();
+            const modoEliminados = window._userFilter === 'eliminados';
+            let items = modoEliminados
+                ? (window._deletedUsers || [])
+                : window._allUsers.filter(u => window._userFilter === 'todos' || u.role === window._userFilter);
+            if (q) items = items.filter(u => ((u.username || '') + ' ' + (u.full_name || '') + ' ' + (u.email || '')).toLowerCase().includes(q));
+            const linea = document.getElementById('usersCountLine');
+            if (linea) linea.textContent = modoEliminados
+                ? `${items.length} usuarios eliminados`
+                : `${items.length} ${window._userFilter === 'todos' ? 'usuarios' : window._userFilter === 'platform_admin' ? 'admins' : window._userFilter + 's'}` + (q ? ` · filtrando por "${window._adminQuery}"` : '');
+            if (!items.length) {
+                cont.innerHTML = '<p class="adm-serif" style="font-style:italic;color:var(--text-subtle,#8C97A8);font-size:14.5px;margin:18px;text-align:center;">' + (modoEliminados ? 'No hay usuarios eliminados.' : 'Sin resultados.') + '</p>';
                 return;
             }
-
-            const tableHTML = `
-                <table class="table admin-table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th class="d-none d-md-table-cell">Nombre</th>
-                            <th>Rol</th>
-                            <th class="d-none d-sm-table-cell">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${users.map(user => `
-                            <tr>
-                                <td>
-                                    ${user.avatar_url ? 
-                                        `<div class="user-avatar"><img src="${user.avatar_url}" alt="${user.username}"></div>` : 
-                                        `<div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>`
-                                    }
-                                    <div class="d-inline-block align-middle">
-                                        <div class="fw-semibold">${user.username}</div>
-                                        <div class="d-md-none small text-muted">${user.full_name}</div>
-                                    </div>
-                                </td>
-                                <td class="d-none d-md-table-cell">${user.full_name}</td>
-                                <td>
-                                    <span class="role-badge role-${user.role}">
-                                        ${getRoleDisplayName(user.role)}
-                                    </span>
-                                </td>
-                                <td class="d-none d-sm-table-cell">
-                                    ${user.is_active ? 
-                                        '<span class="badge bg-success">Activo</span>' : 
-                                        '<span class="badge bg-danger">Inactivo</span>'
-                                    }
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            
-            document.getElementById('usersTable').innerHTML = tableHTML;
+            const ini = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+            const iconBtn = (title, icon, fn, color) =>
+                `<button onclick="${fn}" title="${title}" style="border:none;background:transparent;cursor:pointer;padding:6px 7px;border-radius:8px;color:${color || 'var(--text-muted,#646E7E)'};" onmouseover="this.style.background='var(--surface-sunken,#E6EBF2)'" onmouseout="this.style.background='transparent'"><i class="fas ${icon}" style="font-size:0.85rem;"></i></button>`;
+            cont.innerHTML = `
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 170px;gap:12px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border-subtle,#E6EBF2);">
+                    <span class="adm-eyebrow">Usuario</span><span class="adm-eyebrow">Rol</span><span class="adm-eyebrow">Estado</span><span class="adm-eyebrow">Acciones</span>
+                </div>` +
+                items.map(u => {
+                    const esAdmin = u.role === 'platform_admin';
+                    let acciones = '';
+                    if (modoEliminados) {
+                        acciones = iconBtn('Restaurar', 'fa-rotate-left', `adminRestoreUser(${u.id})`, 'var(--success,#2F7D5B)')
+                                 + iconBtn('Eliminar definitivamente', 'fa-trash', `adminHardDeleteUser(${u.id})`, 'var(--danger,#B5503C)');
+                    } else if (!esAdmin) {
+                        acciones = iconBtn('Editar', 'fa-pen', `adminEditUser(${u.id})`)
+                                 + iconBtn('Restablecer contraseña', 'fa-key', `adminResetPass(${u.id})`)
+                                 + iconBtn(u.is_active ? 'Desactivar' : 'Activar', u.is_active ? 'fa-user-slash' : 'fa-user-check', `adminToggleUser(${u.id})`, u.is_active ? 'var(--gold-700,#8A6526)' : 'var(--success,#2F7D5B)')
+                                 + iconBtn('Eliminar', 'fa-trash', `adminDeleteUser(${u.id})`, 'var(--danger,#B5503C)');
+                    } else {
+                        acciones = '<span style="font-size:11.5px;color:var(--text-subtle,#8C97A8);">Protegido</span>';
+                    }
+                    const estado = modoEliminados
+                        ? `<span class="adm-badge" style="background:var(--danger-soft,#F3DED7);color:var(--danger,#B5503C);"><span class="dot"></span>Eliminado</span>`
+                        : `<span class="adm-badge" style="background:${u.is_active ? 'var(--success-soft,#DBEDE2)' : 'var(--danger-soft,#F3DED7)'};color:${u.is_active ? 'var(--success,#2F7D5B)' : 'var(--danger,#B5503C)'};"><span class="dot"></span>${u.is_active ? 'Activo' : 'Inactivo'}</span>`;
+                    return `
+                <div class="adm-row" style="display:grid;grid-template-columns:2fr 1fr 1fr 170px;gap:12px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border-subtle,#E6EBF2);">
+                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <div style="width:34px;height:34px;border-radius:50%;background:var(--primary-soft,#DCE7F8);color:var(--ocean-700,#213C70);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ini(u.full_name || u.username)}</div>
+                        <div style="min-width:0;">
+                            <div style="font-size:14px;font-weight:600;color:var(--text-strong,#14233F);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.full_name || u.username}</div>
+                            <div style="font-size:12px;color:var(--text-muted,#646E7E);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.username}${u.email ? ' · ' + u.email : ''}</div>
+                        </div>
+                    </div>
+                    <span style="font-size:13px;color:var(--text-body,#313842);">${getRoleDisplayName(u.role)}</span>
+                    <div>${estado}</div>
+                    <div style="display:flex;align-items:center;">${acciones}</div>
+                </div>`;
+                }).join('');
         }
+
+        /* ── Acciones de control de usuarios (endpoints reales del backend) ── */
+        function admFeedback(ok, msg) { alert(msg); }
+
+        async function admApi(url, opts) {
+            const r = await fetch(url, Object.assign({ credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } }, opts || {}));
+            let d = {};
+            try { d = await r.json(); } catch (_) {}
+            return { ok: r.ok && d.success !== false, d };
+        }
+
+        function buscarUsuario(id) {
+            return window._allUsers.find(u => u.id === id) || (window._deletedUsers || []).find(u => u.id === id);
+        }
+
+        window.adminToggleUser = async function (id) {
+            const u = buscarUsuario(id);
+            if (!u) return;
+            if (!confirm(`¿${u.is_active ? 'Desactivar' : 'Activar'} a ${u.full_name || u.username}?`)) return;
+            const { ok, d } = await admApi(`/api/admin/users/${id}/toggle-status`, { method: 'POST' });
+            if (ok) { loadUsers(); loadCoaches(); loadPlatformStats(); }
+            else admFeedback(false, d.error || 'No se pudo cambiar el estado.');
+        };
+
+        window.adminResetPass = async function (id) {
+            const u = buscarUsuario(id);
+            if (!u) return;
+            if (!confirm(`Se generará una contraseña temporal para ${u.full_name || u.username}. ¿Continuar?`)) return;
+            const { ok, d } = await admApi(`/api/admin/users/${id}/reset-password`, { method: 'POST', body: '{}' });
+            if (ok && d.temp_password) prompt('Contraseña temporal (cópiala ahora, no se volverá a mostrar):', d.temp_password);
+            else admFeedback(false, d.error || 'No se pudo restablecer.');
+        };
+
+        window.adminDeleteUser = async function (id) {
+            const u = buscarUsuario(id);
+            if (!u) return;
+            const razon = prompt(`Vas a eliminar a ${u.full_name || u.username} (podrás restaurarlo desde "Eliminados").\n\nEscribe la razón de la eliminación (mínimo 10 caracteres):`);
+            if (razon === null) return;
+            if (razon.trim().length < 10) { admFeedback(false, 'La razón debe tener al menos 10 caracteres.'); return; }
+            const { ok, d } = await admApi(`/api/admin/users/${id}`, { method: 'DELETE', body: JSON.stringify({ reason: razon.trim() }) });
+            if (ok) { loadUsers(); loadCoaches(); loadPlatformStats(); }
+            else admFeedback(false, d.error || 'No se pudo eliminar.');
+        };
+
+        window.adminRestoreUser = async function (id) {
+            const { ok, d } = await admApi(`/api/admin/users/${id}/restore`, { method: 'POST', body: '{}' });
+            if (ok) { cargarEliminados(); loadUsers(); loadCoaches(); loadPlatformStats(); }
+            else admFeedback(false, d.error || 'No se pudo restaurar.');
+        };
+
+        window.adminHardDeleteUser = async function (id) {
+            const u = buscarUsuario(id);
+            const nombre = u ? (u.full_name || u.username) : 'este usuario';
+            if (!confirm(`⚠️ Eliminar DEFINITIVAMENTE a ${nombre}. Esta acción es IRREVERSIBLE y borra todos sus datos.`)) return;
+            const escrito = prompt(`Para confirmar, escribe: ELIMINAR`);
+            if (escrito !== 'ELIMINAR') return;
+            const { ok, d } = await admApi(`/api/admin/users/${id}/hard-delete`, { method: 'DELETE', body: JSON.stringify({ confirm: 'DELETE PERMANENTLY' }) });
+            if (ok) cargarEliminados();
+            else admFeedback(false, d.error || 'No se pudo eliminar definitivamente.');
+        };
+
+        async function cargarEliminados() {
+            const { ok, d } = await admApi('/api/admin/users/deleted');
+            window._deletedUsers = ok ? (d.deleted_users || d.users || []) : [];
+            renderUsersTide();
+        }
+        window.cargarEliminados = cargarEliminados;
+
+        /* ── Modal: editar usuario ── */
+        window.adminEditUser = function (id) {
+            const u = window._allUsers.find(x => x.id === id);
+            if (!u) return;
+            document.getElementById('editUserId').value = u.id;
+            document.getElementById('editUserFullName').value = u.full_name || '';
+            document.getElementById('editUserUsername').value = u.username || '';
+            document.getElementById('editUserEmail').value = u.email || '';
+            const coachWrap = document.getElementById('editUserCoachWrap');
+            const sel = document.getElementById('editUserCoach');
+            if (u.role === 'coachee') {
+                coachWrap.style.display = 'block';
+                const coaches = window._allUsers.filter(x => x.role === 'coach' && x.is_active);
+                sel.innerHTML = '<option value="">Sin coach asignado</option>' +
+                    coaches.map(co => `<option value="${co.id}" ${u.coach_id === co.id ? 'selected' : ''}>${co.full_name || co.username}</option>`).join('');
+            } else {
+                coachWrap.style.display = 'none';
+            }
+            new bootstrap.Modal(document.getElementById('editUserModal')).show();
+        };
+
+        window.submitEditUser = async function () {
+            const id = document.getElementById('editUserId').value;
+            const u = window._allUsers.find(x => x.id === parseInt(id));
+            const body = {
+                full_name: document.getElementById('editUserFullName').value.trim(),
+                username: document.getElementById('editUserUsername').value.trim(),
+                email: document.getElementById('editUserEmail').value.trim()
+            };
+            if (u && u.role === 'coachee') body.coach_id = document.getElementById('editUserCoach').value || null;
+            const { ok, d } = await admApi(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+            if (ok) {
+                bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+                loadUsers(); loadCoaches();
+            } else admFeedback(false, d.error || 'No se pudo guardar.');
+        };
+
+        /* ── Modal: crear usuario ── */
+        window.abrirCrearUsuario = function () {
+            document.getElementById('createUserForm').reset();
+            adminRolCambio();
+            new bootstrap.Modal(document.getElementById('createUserModal')).show();
+        };
+
+        window.adminRolCambio = function () {
+            const rol = document.getElementById('newUserRole').value;
+            const wrap = document.getElementById('newUserCoachWrap');
+            wrap.style.display = rol === 'coachee' ? 'block' : 'none';
+            if (rol === 'coachee') {
+                const coaches = window._allUsers.filter(x => x.role === 'coach' && x.is_active);
+                document.getElementById('newUserCoach').innerHTML = '<option value="">Sin coach asignado</option>' +
+                    coaches.map(co => `<option value="${co.id}">${co.full_name || co.username}</option>`).join('');
+            }
+        };
+
+        window.genPassNuevoUsuario = function () {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+            let pass = '';
+            for (let i = 0; i < 12; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+            const inp = document.getElementById('newUserPassword');
+            inp.type = 'text'; inp.value = pass;
+        };
+
+        window.submitCreateUser = async function () {
+            const body = {
+                full_name: document.getElementById('newUserFullName').value.trim(),
+                username: document.getElementById('newUserUsername').value.trim(),
+                email: document.getElementById('newUserEmail').value.trim(),
+                password: document.getElementById('newUserPassword').value,
+                role: document.getElementById('newUserRole').value
+            };
+            if (body.role === 'coachee') {
+                const co = document.getElementById('newUserCoach').value;
+                if (co) body.coach_id = parseInt(co);
+            }
+            const { ok, d } = await admApi('/api/admin/create-user', { method: 'POST', body: JSON.stringify(body) });
+            if (ok) {
+                bootstrap.Modal.getInstance(document.getElementById('createUserModal')).hide();
+                admFeedback(true, d.message || 'Usuario creado.');
+                loadUsers(); loadCoaches(); loadPlatformStats();
+            } else admFeedback(false, d.error || 'No se pudo crear.');
+        };
 
         // Obtener nombre de rol para mostrar
         function getRoleDisplayName(role) {
@@ -881,71 +1125,56 @@
         async function loadCoaches() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/coaches`);
-                
                 if (response.ok) {
                     const data = await response.json();
-                    displayCoaches(data.coaches);
+                    displayCoaches(data.coaches || []);
                 } else {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Error cargando coaches');
+                    document.getElementById('coachesTable').innerHTML =
+                        '<p class="adm-serif" style="font-style:italic;color:var(--text-subtle,#8C97A8);font-size:14.5px;margin:18px;text-align:center;">No se pudieron cargar los coaches.</p>';
                 }
             } catch (error) {
                 console.error('Error cargando coaches:', error);
-                document.getElementById('coachesTable').innerHTML = 
-                    `<div class="alert alert-danger">Error cargando coaches: ${error.message}</div>`;
             }
         }
 
-        // Mostrar coaches en tabla responsiva
+        window._allCoaches = [];
+
         function displayCoaches(coaches) {
-            if (!coaches || coaches.length === 0) {
-                document.getElementById('coachesTable').innerHTML = 
-                    '<div class="alert alert-info">No hay coaches registrados</div>';
+            window._allCoaches = coaches || [];
+            renderCoachesTide();
+        }
+
+        function renderCoachesTide() {
+            const cont = document.getElementById('coachesTable');
+            if (!cont) return;
+            const q = (window._adminQuery || '').toLowerCase();
+            let items = window._allCoaches;
+            if (q) items = items.filter(co => ((co.username || '') + ' ' + (co.full_name || '') + ' ' + (co.email || '')).toLowerCase().includes(q));
+            const linea = document.getElementById('coachesCountLine');
+            if (linea) linea.textContent = `${items.length} de ${window._allCoaches.length} coaches` + (q ? ` · filtrando por "${window._adminQuery}"` : '');
+            if (!items.length) {
+                cont.innerHTML = '<p class="adm-serif" style="font-style:italic;color:var(--text-subtle,#8C97A8);font-size:14.5px;margin:18px;text-align:center;">Sin coaches que coincidan.</p>';
                 return;
             }
-
-            const tableHTML = `
-                <table class="table admin-table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Coach</th>
-                            <th class="d-none d-lg-table-cell">Email</th>
-                            <th class="d-none d-md-table-cell">Coachees</th>
-                            <th class="d-none d-md-table-cell">Evaluaciones</th>
-                            <th class="d-none d-xl-table-cell">Último Login</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${coaches.map(coach => `
-                            <tr>
-                                <td>
-                                    <div class="fw-semibold">${coach.username}</div>
-                                    <div class="small text-muted">${coach.full_name}</div>
-                                    <div class="d-lg-none small text-muted">${coach.email}</div>
-                                </td>
-                                <td class="d-none d-lg-table-cell">${coach.email}</td>
-                                <td class="d-none d-md-table-cell">
-                                    <span class="badge bg-primary">${coach.coachees_count}</span>
-                                </td>
-                                <td class="d-none d-md-table-cell">
-                                    <span class="badge bg-info">${coach.assessments_count}</span>
-                                </td>
-                                <td class="d-none d-xl-table-cell">
-                                    ${coach.last_login ? new Date(coach.last_login).toLocaleDateString() : 'Nunca'}
-                                </td>
-                                <td>
-                                    <span class="role-badge ${coach.is_active ? 'role-coach' : 'role-inactive'}">
-                                        ${coach.is_active ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-
-            document.getElementById('coachesTable').innerHTML = tableHTML;
+            const ini = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+            cont.innerHTML = `
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:12px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border-subtle,#E6EBF2);">
+                    <span class="adm-eyebrow">Coach</span><span class="adm-eyebrow">Coachees</span><span class="adm-eyebrow">Evaluaciones</span><span class="adm-eyebrow">Último acceso</span><span class="adm-eyebrow">Estado</span>
+                </div>` +
+                items.map(co => `
+                <div class="adm-row" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border-subtle,#E6EBF2);">
+                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <div style="width:38px;height:38px;border-radius:50%;background:var(--primary-soft,#DCE7F8);color:var(--ocean-700,#213C70);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ini(co.full_name || co.username)}</div>
+                        <div style="min-width:0;">
+                            <div style="font-size:14px;font-weight:600;color:var(--text-strong,#14233F);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${co.full_name || co.username}</div>
+                            <div style="font-size:12px;color:var(--text-muted,#646E7E);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${co.email}</div>
+                        </div>
+                    </div>
+                    <span style="font-size:13.5px;color:var(--text-body,#313842);">${co.coachees_count}</span>
+                    <span style="font-size:13.5px;color:var(--text-body,#313842);">${co.assessments_count}</span>
+                    <span style="font-size:13px;color:var(--text-muted,#646E7E);">${co.last_login ? new Date(co.last_login).toLocaleDateString('es-CL') : 'Nunca'}</span>
+                    <div><span class="adm-badge" style="background:${co.is_active ? 'var(--success-soft,#DBEDE2)' : 'var(--surface-sunken,#E6EBF2)'};color:${co.is_active ? 'var(--success,#2F7D5B)' : 'var(--text-muted,#646E7E)'};"><span class="dot"></span>${co.is_active ? 'Activo' : 'Inactivo'}</span></div>
+                </div>`).join('');
         }
 
         // Manejar creación de nuevo coach
@@ -1294,6 +1523,69 @@
     </script>
 
     <!-- Modal de Editar Perfil -->
+    <!-- Modal: crear usuario -->
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: 16px; border: 1px solid var(--border-subtle, #E6EBF2);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle, #E6EBF2);">
+                    <h5 class="modal-title adm-serif" style="font-size: 20px;">Nuevo usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createUserForm" onsubmit="event.preventDefault(); submitCreateUser();">
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size: 13px; font-weight: 600;">Rol</label>
+                            <select id="newUserRole" class="form-select" onchange="adminRolCambio()">
+                                <option value="coachee">Coachee</option>
+                                <option value="coach">Coach</option>
+                            </select>
+                        </div>
+                        <div class="mb-3"><label class="form-label" style="font-size: 13px; font-weight: 600;">Nombre completo</label><input type="text" id="newUserFullName" class="form-control" required minlength="3"></div>
+                        <div class="mb-3"><label class="form-label" style="font-size: 13px; font-weight: 600;">Nombre de usuario</label><input type="text" id="newUserUsername" class="form-control" required minlength="3"></div>
+                        <div class="mb-3"><label class="form-label" style="font-size: 13px; font-weight: 600;">Email</label><input type="email" id="newUserEmail" class="form-control" required></div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size: 13px; font-weight: 600;">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" id="newUserPassword" class="form-control" required minlength="6">
+                                <button type="button" class="btn btn-outline-secondary" onclick="genPassNuevoUsuario()" title="Generar contraseña"><i class="fas fa-dice"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="newUserCoachWrap">
+                            <label class="form-label" style="font-size: 13px; font-weight: 600;">Coach asignado</label>
+                            <select id="newUserCoach" class="form-select"></select>
+                        </div>
+                        <button type="submit" class="adm-btn-primary" style="width: 100%; padding: 11px;">Crear usuario</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: editar usuario -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: 16px; border: 1px solid var(--border-subtle, #E6EBF2);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle, #E6EBF2);">
+                    <h5 class="modal-title adm-serif" style="font-size: 20px;">Editar usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="event.preventDefault(); submitEditUser();">
+                        <input type="hidden" id="editUserId">
+                        <div class="mb-3"><label class="form-label" style="font-size: 13px; font-weight: 600;">Nombre completo</label><input type="text" id="editUserFullName" class="form-control" required minlength="3"></div>
+                        <div class="mb-3"><label class="form-label" style="font-size: 13px; font-weight: 600;">Nombre de usuario</label><input type="text" id="editUserUsername" class="form-control" required minlength="3"></div>
+                        <div class="mb-3"><label class="form-label" style="font-size: 13px; font-weight: 600;">Email</label><input type="email" id="editUserEmail" class="form-control" required></div>
+                        <div class="mb-3" id="editUserCoachWrap">
+                            <label class="form-label" style="font-size: 13px; font-weight: 600;">Coach asignado</label>
+                            <select id="editUserCoach" class="form-select"></select>
+                        </div>
+                        <button type="submit" class="adm-btn-primary" style="width: 100%; padding: 11px;">Guardar cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

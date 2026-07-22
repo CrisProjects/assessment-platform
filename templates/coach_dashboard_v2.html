@@ -79,7 +79,8 @@
         .tide-ov-serif { font-family: var(--font-serif, Georgia, serif) !important; font-weight: 500 !important; color: var(--text-strong, #14233F); letter-spacing: -0.01em; }
         .tide-eyebrow-gold { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-700, #8A6526); margin-bottom: 8px; }
         .tide-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
-        .tide-kpi-card { background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); }
+        .tide-kpi-card { background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease; }
+        .tide-kpi-card:hover { transform: translateY(-2px); border-color: var(--border-brand, #BFD3F0); background: var(--surface-hover, #EEF3FC); box-shadow: 0 8px 20px -10px rgba(20,35,63,0.25); }
         .tide-kpi-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E); }
         .tide-kpi-head i { color: var(--primary, #2C5AA8); font-size: 14px; }
         .tide-kpi-val { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -97,7 +98,7 @@
             .tide-ov-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 860px) {
-            .topbar-search, .topbar-nueva-sesion { display: none !important; }
+            .topbar-search { display: none !important; }
         }
         /* Tabla Mis coachees (mock) */
         /* FullCalendar — piel Tide (Mi agenda) */
@@ -5232,11 +5233,6 @@
             <span>Feed</span>
         </a>
         
-        <a href="/coach-comunidad" class="bottom-nav-item" @click.prevent="window.location.href = '/coach-comunidad'">
-            <i class="fas fa-users"></i>
-            <span>Comunidad</span>
-        </a>
-        
         <a href="/coach/dashboard-v2?section=overview" class="bottom-nav-item" 
            :class="{ 'active': activeModule === 'overview' }"
            @click.prevent="showModule('overview', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
@@ -5278,13 +5274,6 @@
             
             <!-- Contenido del drawer -->
             <div class="drawer-grid">
-                <button class="drawer-menu-item" 
-                        :class="activeModule === 'overview' ? 'active' : ''"
-                        @click="showModule('overview', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                    <i class="fas fa-sun"></i>
-                    <span>Hoy</span>
-                </button>
-                
                 <button class="drawer-menu-item"
                         :class="activeModule === 'mis-coachees' ? 'active' : ''"
                         @click="showModule('mis-coachees', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
@@ -5293,17 +5282,22 @@
                 </button>
 
                 <button class="drawer-menu-item"
-                        :class="activeModule === 'sesiones' ? 'active' : ''"
-                        @click="showModule('sesiones', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                        :class="activeModule === 'mensajes' ? 'active' : ''"
+                        @click="showModule('mensajes', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
                     <i class="fas fa-comments"></i>
-                    <span>Sesiones</span>
+                    <span>Mensajes</span>
                 </button>
 
                 <button class="drawer-menu-item"
-                        :class="activeModule === 'suscribir' ? 'active' : ''"
-                        @click="showModule('suscribir', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
-                    <i class="fas fa-file-signature"></i>
-                    <span>Suscribir</span>
+                        :class="activeModule === 'sesiones' ? 'active' : ''"
+                        @click="showModule('sesiones', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Sesiones</span>
+                </button>
+
+                <button class="drawer-menu-item" @click="window.location.href = '/coach-comunidad'">
+                    <i class="fas fa-people-group"></i>
+                    <span>Comunidad</span>
                 </button>
 
                 <!-- Sección Herramientas colapsable en drawer -->
@@ -5361,6 +5355,15 @@
                         <span>Mi Agenda</span>
                     </button>
                 </template>
+
+                <template x-if="herramientasOpen">
+                    <button class="drawer-menu-item"
+                            :class="activeModule === 'suscribir' ? 'active' : ''"
+                            @click="showModule('suscribir', true); showDashboardDrawer = false; $nextTick(() => window.scrollTo(0,0))">
+                        <i class="fas fa-file-signature"></i>
+                        <span>Suscribir</span>
+                    </button>
+                </template>
             </div>
         </div>
     </div>
@@ -5391,12 +5394,6 @@
 
             <!-- Right Section -->
             <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
-                <button onclick="if(window.abrirNuevaSesion){Alpine.$data(document.querySelector('[x-data]')).showModule('sesiones', false); setTimeout(abrirNuevaSesion, 150);}"
-                        class="topbar-nueva-sesion"
-                        style="background:var(--primary,#2C5AA8);color:white;border:none;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;"
-                        onmouseover="this.style.background='var(--primary-hover,#213C70)'" onmouseout="this.style.background='var(--primary,#2C5AA8)'">
-                    Nueva sesión
-                </button>
                 <!-- Notifications -->
                 <div style="position:relative;" id="notif-wrapper">
                     <button id="notif-btn" onclick="toggleNotifPanel(event)"
@@ -5624,16 +5621,6 @@
         <!-- Content Area -->
         <div class="col-md-9" style="padding-left: 0.75rem; padding-right: 0.75rem; overflow: visible;">
 
-            <!-- Unirme a la sesión de hoy: debajo del header, dentro del contenido -->
-            <div style="display: flex; justify-content: flex-end; width: 100%; margin: 0 0 1rem;">
-                <a href="/sesion-coach" id="fabJoinSession"
-                   style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary, #2C5AA8); color: #FFFFFF; border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; box-shadow: 0 6px 16px -6px rgba(44,90,168,0.4); transition: background .15s;"
-                   onmouseover="this.style.background='var(--primary-hover, #213C70)'"
-                   onmouseout="this.style.background='var(--primary, #2C5AA8)'">
-                    <i class="fas fa-video" style="font-size: 0.8rem; color: #FFFFFF;"></i>
-                    Unirme a la sesión de hoy
-                </a>
-            </div>
             <style>
                 /* Página sin barra de scroll visible (se desplaza igual) */
                 html, body {
@@ -5641,9 +5628,6 @@
                     -ms-overflow-style: none !important;
                 }
                 html::-webkit-scrollbar, body::-webkit-scrollbar { display: none !important; }
-                #fabJoinSession { background: var(--primary, #2C5AA8) !important; color: #FFFFFF !important; }
-                #fabJoinSession i { color: #FFFFFF !important; }
-                #fabJoinSession:hover { background: var(--primary-hover, #213C70) !important; color: #FFFFFF !important; }
             </style>
             
             <!-- Overview Module -->
@@ -5660,7 +5644,7 @@
 
                     <!-- KPIs (mock: etiqueta + número serif + delta con color) -->
                     <div class="tide-kpis">
-                        <div class="tide-kpi-card">
+                        <div class="tide-kpi-card" onclick="Alpine.$data(document.querySelector('[x-data]')).showModule('mis-coachees', true)" role="link" tabindex="0">
                             <div class="tide-kpi-head"><i class="fas fa-users"></i><span>Coachees activos</span></div>
                             <div class="tide-kpi-val">
                                 <span class="tide-ov-serif" x-show="!loading.stats" x-text="stats.totalCoachees"></span>
@@ -5668,7 +5652,7 @@
                                       x-text="'+' + stats.coacheesNewMonth + ' este mes'"></span>
                             </div>
                         </div>
-                        <div class="tide-kpi-card">
+                        <div class="tide-kpi-card" onclick="Alpine.$data(document.querySelector('[x-data]')).showModule('mi-agenda', true)" role="link" tabindex="0">
                             <div class="tide-kpi-head"><i class="fas fa-calendar-check"></i><span>Sesiones esta semana</span></div>
                             <div class="tide-kpi-val">
                                 <span class="tide-ov-serif" x-show="!loading.stats" x-text="stats.sessionsWeek"></span>
@@ -5676,7 +5660,7 @@
                                       x-text="stats.sessionsToday + ' hoy'"></span>
                             </div>
                         </div>
-                        <div class="tide-kpi-card">
+                        <div class="tide-kpi-card" onclick="Alpine.$data(document.querySelector('[x-data]')).showModule('evaluaciones', true)" role="link" tabindex="0">
                             <div class="tide-kpi-head"><i class="fas fa-clipboard-check"></i><span>Evaluaciones completadas</span></div>
                             <div class="tide-kpi-val">
                                 <span class="tide-ov-serif" x-show="!loading.stats" x-text="stats.completedAssessments"></span>
@@ -5684,7 +5668,7 @@
                                       x-text="'+' + stats.assessmentsMonth"></span>
                             </div>
                         </div>
-                        <div class="tide-kpi-card">
+                        <div class="tide-kpi-card" onclick="Alpine.$data(document.querySelector('[x-data]')).showModule('sesiones', true)" role="link" tabindex="0">
                             <div class="tide-kpi-head"><i class="fas fa-hourglass-half"></i><span>Compromisos abiertos</span></div>
                             <div class="tide-kpi-val">
                                 <span class="tide-ov-serif" x-show="!loading.stats" x-text="stats.commitmentsPending + stats.commitmentsPartial"></span>
@@ -6004,13 +5988,32 @@
             <!-- Módulo: Sesiones de Coaching -->
             <!-- =========================================================== -->
             <div id="sesiones" class="module-content" style="display: none; scroll-margin-top: 80px;">
+
+                <!-- ══ Agenda de sesiones (diseño Coach Dashboard · Sesiones) ══ -->
+                <div id="sesionesAgenda" style="margin-bottom: 2rem;">
+                    <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h1 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: 34px; color: var(--text-strong, #14233F); margin: 0 0 6px; letter-spacing: -0.01em;">Sesiones</h1>
+                            <p id="agendaSubLinea" style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0;">Cargando…</p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="agenda-pill" data-f="hoy" onclick="setAgendaFiltro('hoy', this)" style="padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border-default, #D5DCE7); font-size: 13px; font-weight: 600; cursor: pointer; background: var(--surface-card, #fff); color: var(--text-body, #313842); transition: all .15s; font-family: inherit;">Hoy</button>
+                            <button class="agenda-pill" data-f="semana" onclick="setAgendaFiltro('semana', this)" style="padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border-brand, #BFD3F0); font-size: 13px; font-weight: 600; cursor: pointer; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); transition: all .15s; font-family: inherit;">Esta semana</button>
+                            <button class="agenda-pill" data-f="pasadas" onclick="setAgendaFiltro('pasadas', this)" style="padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border-default, #D5DCE7); font-size: 13px; font-weight: 600; cursor: pointer; background: var(--surface-card, #fff); color: var(--text-body, #313842); transition: all .15s; font-family: inherit;">Pasadas</button>
+                        </div>
+                    </div>
+                    <div id="agendaDias" style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="font-size: 13px; color: var(--text-subtle, #8C97A8);">Cargando agenda…</div>
+                    </div>
+                </div>
+
                 <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(38,80,168,0.04); border: none; overflow: visible;">
 
                     <!-- Header del módulo — Tide (mock Sesiones) -->
                     <div style="padding: 1.5rem 1.5rem 1.25rem; border-bottom: 1px solid var(--border-subtle, #E6EBF2); display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
                         <div>
-                            <h1 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: clamp(1.6rem, 2.6vw, 2.125rem); color: var(--text-strong, #14233F); margin: 0 0 6px; letter-spacing: -0.01em;">Sesiones</h1>
-                            <p style="font-size: 0.9375rem; color: var(--text-muted, #646E7E); margin: 0;">Registra y gestiona cada sesión con tus coachees.</p>
+                            <h2 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: 20px; color: var(--text-strong, #14233F); margin: 0 0 6px; letter-spacing: -0.01em;">Registros de sesión</h2>
+                            <p style="font-size: 0.9375rem; color: var(--text-muted, #646E7E); margin: 0;">Registra y gestiona las notas de cada sesión con tus coachees.</p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                             <div style="display:flex; gap:6px; margin-right: 6px;">
@@ -6022,7 +6025,7 @@
                             <button onclick="generarInforme()" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 9px 18px; background: var(--surface-card, #fff); color: var(--primary, #2C5AA8); border: 1.5px solid var(--border-brand, #BFD3F0); border-radius: 999px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--surface-hover, #EEF3FC)'" onmouseout="this.style.background='var(--surface-card, #fff)'">
                                 <i class="fas fa-file-alt"></i> Generar informe
                             </button>
-                            <button onclick="abrirNuevaSesion()" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 9px 18px; background: var(--primary, #2C5AA8); color: white; border: none; border-radius: 999px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--primary-hover, #213C70)'" onmouseout="this.style.background='var(--primary, #2C5AA8)'">
+                            <button onclick="abrirNotasNueva()" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 9px 18px; background: var(--primary, #2C5AA8); color: white; border: none; border-radius: 999px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--primary-hover, #213C70)'" onmouseout="this.style.background='var(--primary, #2C5AA8)'">
                                 <i class="fas fa-plus"></i> Nueva sesión
                             </button>
                         </div>
@@ -11931,6 +11934,9 @@ window.dashboardApp = function() {
                     break;
                 case 'mis-coachees':
                     await this.loadCoachees();
+                    break;
+                case 'sesiones':
+                    if (typeof window.cargarAgendaSesiones === 'function') window.cargarAgendaSesiones();
                     break;
                 case 'gestion-tareas':
                     // Cargar coachees primero si no están cargados (necesarios para el filtro)
@@ -21422,28 +21428,40 @@ document.addEventListener('DOMContentLoaded', () => {
     let _sesionesAll = [];
 
     window.cargarSesiones = async function() {
+        // El dropdown de coachees se puebla SIEMPRE, independiente de los registros
+        cargarCoacheesFiltroSesiones();
         try {
-            const res = await fetch('/api/coach/session-records');
+            const res = await fetch('/api/coach/session-records', { credentials: 'same-origin' });
             const data = await res.json();
-            if (!data.success) return;
+            if (!data.success) throw new Error(data.error || 'respuesta sin éxito');
             _sesionesAll = data.sessions || [];
             _sesiones    = _sesionesAll;
-            cargarCoacheesFiltroSesiones();
             filtrarListaSesiones();
         } catch (e) {
             console.error('Error cargando sesiones', e);
+            const lista = document.getElementById('sesiones-lista') || document.getElementById('lista-sesiones');
+            if (lista) {
+                lista.innerHTML = `<div style="text-align:center;padding:24px;">
+                    <p style="font-family:var(--font-serif,Georgia,serif);font-style:italic;font-size:14.5px;color:var(--text-subtle,#8C97A8);margin:0 0 10px;">No se pudieron cargar los registros.</p>
+                    <button onclick="cargarSesiones()" style="padding:8px 18px;border:1.5px solid var(--border-brand,#BFD3F0);border-radius:999px;background:white;color:var(--primary,#2C5AA8);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reintentar</button>
+                </div>`;
+            }
         }
     };
 
     /* ---------- Poblar dropdown de coachees en filtro ---------- */
-    function cargarCoacheesFiltroSesiones() {
+    async function cargarCoacheesFiltroSesiones() {
         const sel = document.getElementById('sesiones-filtro-coachee');
         if (!sel) return;
-        // Recolectar coachees únicos presentes en las sesiones
+        // Todos los coachees del coach (nombre completo) + los presentes en registros antiguos
         const map = {};
+        try {
+            const d = await fetch('/api/coach/coachees', { credentials: 'same-origin' }).then(r => r.json());
+            (d.coachees || []).forEach(co => { if (co.id && co.name) map[co.id] = co.name; });
+        } catch (_) {}
         _sesionesAll.forEach(s => {
             (s.participants || []).forEach(p => {
-                if (p.id && p.name) map[p.id] = p.name;
+                if (p.id && p.name && !map[p.id]) map[p.id] = p.name;
             });
         });
         // Conservar la selección actual
@@ -21456,6 +21474,22 @@ document.addEventListener('DOMContentLoaded', () => {
             sel.appendChild(opt);
         });
         if (prevVal) sel.value = prevVal;
+    }
+
+    /* ---------- Fecha efectiva de un registro: la de la sesión si existe ---------- */
+    function fechaRegistro(s) {
+        try {
+            const ct = JSON.parse(s.content || '{}');
+            if (ct.fecha_sesion) return new Date(ct.fecha_sesion + 'T12:00:00');
+        } catch (_) {}
+        return s.created_at ? new Date(s.created_at) : null;
+    }
+    function horaRegistro(s) {
+        try {
+            const ct = JSON.parse(s.content || '{}');
+            if (ct.hora_sesion) return ct.hora_sesion;
+        } catch (_) {}
+        return s.created_at ? new Date(s.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '—';
     }
 
     /* ---------- Filtrar lista ---------- */
@@ -21481,8 +21515,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         _sesiones = _sesionesAll.filter(s => {
             // Filtro de rango temporal (pills del mock)
-            if (window._sesionesRango !== 'todas' && s.created_at) {
-                const f = new Date(s.created_at); f.setHours(0,0,0,0);
+            if (window._sesionesRango !== 'todas' && (s.created_at || s.content)) {
+                const f = fechaRegistro(s); if (!f) return true; f.setHours(0,0,0,0);
                 if (window._sesionesRango === 'hoy' && f.getTime() !== hoy.getTime()) return false;
                 if (window._sesionesRango === 'semana' && (f < inicioSemana || f > hoy)) return false;
                 if (window._sesionesRango === 'anteriores' && f >= inicioSemana) return false;
@@ -21549,9 +21583,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const _ayerKey = _ayer.toDateString();
         let _ultimoDia = null;
 
-        _sesiones.forEach(function(s) {
-            // Eyebrow de día cuando cambia la fecha
-            const fObj = s.created_at ? new Date(s.created_at) : null;
+        const _ordenadas = _sesiones.slice().sort(function(a, b) {
+            const fa = fechaRegistro(a), fb = fechaRegistro(b);
+            return (fb ? fb.getTime() : 0) - (fa ? fa.getTime() : 0);
+        });
+        _ordenadas.forEach(function(s) {
+            // Eyebrow de día cuando cambia la fecha (fecha de la sesión si el registro la trae)
+            const fObj = fechaRegistro(s);
             const diaKey = fObj ? fObj.toDateString() : 'sin-fecha';
             if (diaKey !== _ultimoDia) {
                 _ultimoDia = diaKey;
@@ -21618,11 +21656,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? new Date(s.created_at).toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric' })
                 : '';
 
-            const horaStr = fObj ? fObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '—';
+            const horaStr = horaRegistro(s);
             card.innerHTML = `
                 <div style="width:52px; text-align:center; flex-shrink:0;">
                     <div style="font-family: var(--font-serif, Georgia, serif); font-size:1.05rem; line-height:1.1; color: var(--text-strong, #14233F);">${horaStr}</div>
-                    <div style="font-size:0.65rem; color: var(--text-subtle, #8C97A8);">registro</div>
+                    <div style="font-size:0.65rem; color: var(--text-subtle, #8C97A8);">${(function(){ try { return JSON.parse(s.content||'{}').fecha_sesion ? 'sesión' : 'registro'; } catch(_) { return 'registro'; } })()}</div>
                 </div>
                 <div style="width:1px; align-self:stretch; background: var(--border-subtle, #E6EBF2);"></div>
                 <div style="flex:1; min-width:0;">
@@ -21642,7 +21680,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="fas fa-handshake" style="margin-right:0.25rem;"></i>${compromisos} compromiso${compromisos !== 1 ? 's' : ''}${compromisos > 0 ? ` <span style="font-size:0.68rem;">(${compCompletados > 0 ? '<span style="color:#059669;">✓'+compCompletados+'</span>' : ''}${compParciales > 0 ? ' <span style="color:#d97706;">◐'+compParciales+'</span>' : ''}${compPendientes > 0 ? ' <span style="color:#9ca3af;">⏳'+compPendientes+'</span>' : ''})</span>` : ''}
                     </p>
                 </div>
-                <button onclick="editarSesion(${s.id})" style="flex-shrink:0; padding:0.4rem 1rem; background:transparent; border:1.5px solid var(--border-brand, #BFD3F0); border-radius:999px; font-size:0.8rem; font-weight:600; color:var(--primary, #2C5AA8); cursor:pointer; white-space:nowrap; transition: background 0.15s;" onmouseover="this.style.background='var(--primary-soft, #DCE7F8)'" onmouseout="this.style.background='transparent'">
+                <button onclick="abrirNotasRegistro(${s.id})" style="flex-shrink:0; padding:0.4rem 1rem; background:transparent; border:1.5px solid var(--border-brand, #BFD3F0); border-radius:999px; font-size:0.8rem; font-weight:600; color:var(--primary, #2C5AA8); cursor:pointer; white-space:nowrap; transition: background 0.15s;" onmouseover="this.style.background='var(--primary-soft, #DCE7F8)'" onmouseout="this.style.background='transparent'">
                     Ver notas
                 </button>`;
             lista.appendChild(card);
@@ -22671,6 +22709,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const accion = s.coachee_id
                         ? `<button onclick="window.irACoachee(${s.coachee_id})" style="flex-shrink:0;padding:0.35rem 0.9rem;font-size:0.78rem;font-weight:600;border:1.5px solid var(--border-brand,#BFD3F0);border-radius:999px;background:white;color:var(--primary,#2C5AA8);cursor:pointer;transition:background .15s;" onmouseover="this.style.background='var(--primary-soft,#DCE7F8)'" onmouseout="this.style.background='white'">Ver</button>`
                         : '';
+                    const unirse = (esHoy && s.coachee_id && !esPersonal && s.status !== 'cancelled')
+                        ? `<button onclick="window.location.href='/sesion-coach?sid=${s.id}'" style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:0.35rem 0.9rem;font-size:0.78rem;font-weight:600;border:none;border-radius:999px;background:var(--primary,#2C5AA8);color:white;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='var(--primary-hover,#213C70)'" onmouseout="this.style.background='var(--primary,#2C5AA8)'"><i class="fas fa-video" style="font-size:0.7rem;"></i>Unirse</button>`
+                        : '';
                     const avatar = esPersonal
                         ? `<span style="width:34px;height:34px;border-radius:50%;background:var(--surface-sunken,#E6EBF2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-lock" style="font-size:0.7rem;color:var(--text-subtle,#8C97A8);"></i></span>`
                         : `<span style="width:34px;height:34px;border-radius:50%;background:var(--primary-soft,#DCE7F8);color:var(--ocean-700,#213C70);font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${initials(nombre)}</span>`;
@@ -22686,6 +22727,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="font-size:0.75rem;color:var(--text-muted,#646E7E);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tema}</div>
                         </div>
                         ${badge}
+                        ${unirse}
                         ${accion}
                     </div>`;
                 }).join('') +
@@ -23537,6 +23579,7 @@ document.addEventListener('DOMContentLoaded', () => {
         evaluation_completed: { icon: 'fa-clipboard-check',  color: '#2F7D5B', bg: '#DBEDE2', label: 'Evaluación completada' },
         commitment_updated:   { icon: 'fa-handshake',        color: '#8A6526', bg: '#F2E7CC', label: 'Compromiso actualizado' },
         coach_lead_pending:   { icon: 'fa-user-plus',        color: '#8A6526', bg: '#F2E7CC', label: 'Lead pendiente' },
+        session_joined:       { icon: 'fa-video',            color: '#2F7D5B', bg: '#DBEDE2', label: 'En la sesión' },
         content_assigned:     { icon: 'fa-book-open',        color: '#B5832C', bg: '#F4E8CB', label: 'Contenido asignado' },
         default:              { icon: 'fa-bell',             color: '#646E7E', bg: '#F1F4F9', label: 'Notificación' },
     };
@@ -24355,6 +24398,675 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.tideToast) tideToast('Nota guardada.', 'Solo tú puedes verla.');
         } catch (_) { if (window.tideToast) tideToast('No se pudo guardar.', 'Intenta de nuevo.'); }
     };
+})();
+</script>
+
+<!-- ══ Drawer: Notas de sesión (diseño Coach Dashboard · Sesiones) ══ -->
+<div id="notasDrawer" style="display: none; position: fixed; inset: 0; background: rgba(20,35,63,0.45); z-index: 11000; justify-content: flex-end;" onclick="cerrarNotasDrawer(event)">
+    <div onclick="event.stopPropagation()" style="width: 520px; max-width: 92vw; height: 100%; background: var(--surface-card, #fff); box-shadow: -22px 0 44px -22px rgba(20,35,63,0.34); display: flex; flex-direction: column; animation: ndIn .25s ease both;">
+        <style>
+            /* Por encima de la barra inferior (z-index 99999 en algunos elementos) */
+            #notasDrawer { z-index: 100000 !important; }
+            @keyframes ndIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            .nd-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #646E7E); }
+            .nd-input, .nd-textarea, .nd-select { width: 100%; box-sizing: border-box; padding: 11px 13px; border: 1.5px solid var(--border-default, #D5DCE7); border-radius: 10px; font-family: inherit; font-size: 13.5px; color: var(--text-strong, #14233F); background: var(--surface-card, #fff); outline: none; transition: border-color .15s, box-shadow .15s; }
+            .nd-input:focus, .nd-textarea:focus, .nd-select:focus { border-color: var(--primary, #2C5AA8); box-shadow: 0 0 0 3px rgba(58,108,196,0.25); }
+            .nd-textarea { resize: vertical; min-height: 80px; }
+            .nd-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-strong, #14233F); margin-bottom: 5px; }
+            .nd-state { flex: 1; padding: 7px 8px; border-radius: 999px; border: 1px solid var(--border-default, #D5DCE7); background: var(--surface-card, #fff); color: var(--text-muted, #646E7E); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; min-height: 34px; transition: all .15s; }
+            .nd-state.done { background: var(--success, #2F7D5B); border-color: var(--success, #2F7D5B); color: #fff; }
+            .nd-state.partial { background: var(--accent-soft, #F2E7CC); border-color: var(--gold-500, #C49A52); color: var(--gold-700, #8A6526); }
+            .nd-state.pending { background: var(--surface-sunken, #E6EBF2); border-color: var(--border-strong, #B7C1D0); color: var(--text-strong, #14233F); }
+            .nd-energy { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 11px 6px; border-radius: 10px; border: 1.5px solid var(--border-default, #D5DCE7); background: var(--surface-card, #fff); color: var(--text-muted, #646E7E); font-family: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; min-height: 44px; transition: all .15s; }
+            .nd-energy.on { border-color: var(--primary, #2C5AA8); background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); }
+        </style>
+        <div style="padding: 20px 24px; border-bottom: 1px solid var(--border-subtle, #E6EBF2); display: flex; align-items: center; gap: 12px;">
+            <span id="ndAvatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">C</span>
+            <div style="flex: 1; min-width: 0;">
+                <h3 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: 19px; margin: 0; color: var(--text-strong, #14233F);">Notas de sesión</h3>
+                <div id="ndMeta" style="font-size: 12.5px; color: var(--text-muted, #646E7E);"></div>
+            </div>
+            <button onclick="cerrarNotasDrawer()" aria-label="Cerrar" style="width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--surface-sunken, #E6EBF2); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted, #646E7E);"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div id="ndCoacheeRow" style="display: none; padding: 14px 24px 0;">
+            <label class="nd-label">¿Con quién fue la sesión?</label>
+            <select id="ndCoacheeSel" class="nd-select" onchange="ndCoacheeElegido()">
+                <option value="">Elige un coachee…</option>
+            </select>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; overflow-x: hidden; padding: 22px 24px; display: flex; flex-direction: column; gap: 22px;">
+
+            <div>
+                <div class="nd-eyebrow" style="margin-bottom: 8px;">1 · Revisión de compromisos anteriores</div>
+                <p style="font-size: 12.5px; color: var(--text-subtle, #8C97A8); margin: 0 0 10px;">Marca cómo llegó cada uno. Esto alimenta el progreso del plan.</p>
+                <div id="ndPrev" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <div>
+                <div class="nd-eyebrow" style="margin-bottom: 8px;">2 · Resumen de la sesión</div>
+                <textarea id="ndResumen" class="nd-textarea" placeholder="Qué se trabajó, qué se descubrió, qué cambió…"></textarea>
+            </div>
+
+            <div>
+                <div class="nd-eyebrow" style="margin-bottom: 8px;">3 · Insight clave</div>
+                <p style="font-size: 12.5px; color: var(--text-subtle, #8C97A8); margin: 0 0 8px;">Una frase. Aparecerá en el historial del coachee.</p>
+                <input id="ndInsight" class="nd-input" placeholder="Ej: pospone el 1:1 cuando anticipa conflicto">
+            </div>
+
+            <div>
+                <div class="nd-eyebrow" style="margin-bottom: 8px;">4 · Nuevos compromisos</div>
+                <div id="ndNewList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;"></div>
+                <div style="display: flex; gap: 8px;">
+                    <input id="ndCommitDraft" class="nd-input" placeholder="Nuevo compromiso…" style="flex: 1.6;">
+                    <select id="ndCommitDue" class="nd-select" style="width: 150px; flex-shrink: 0;">
+                        <option>Esta semana</option>
+                        <option>Próxima sesión</option>
+                        <option>Este mes</option>
+                    </select>
+                    <button onclick="ndAddCommit()" style="flex-shrink: 0; padding: 0 16px; border: 1.5px solid var(--border-brand, #BFD3F0); border-radius: 10px; background: var(--surface-card, #fff); color: var(--primary, #2C5AA8); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Añadir</button>
+                </div>
+            </div>
+
+            <div style="border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; padding: 16px; background: var(--surface-page, #F1F4F9);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <i class="fas fa-handshake" style="font-size: 14px; color: var(--primary, #2C5AA8);"></i>
+                    <span class="nd-eyebrow">5 · Acuerdo de trabajo</span>
+                    <span id="ndAcBadge" style="display: none; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 10px;">Sesión Cero</span>
+                </div>
+                <p style="font-size: 12.5px; color: var(--text-subtle, #8C97A8); margin: 0 0 14px;">El marco del proceso. Se define al inicio y se actualiza aquí.</p>
+
+                <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--text-strong, #14233F);">Competencias a trabajar</span>
+                    <span style="font-size: 11.5px; color: var(--text-subtle, #8C97A8);">máx. 2</span>
+                </div>
+                <div id="ndComps" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;"></div>
+                <div id="ndCompAddRow" style="display: flex; gap: 8px; margin-bottom: 14px;">
+                    <input id="ndCompDraft" class="nd-input" placeholder="Ej: delegación efectiva" style="flex: 1;">
+                    <button onclick="ndAddComp()" style="flex-shrink: 0; padding: 0 16px; border: 1.5px solid var(--border-brand, #BFD3F0); border-radius: 10px; background: var(--surface-card, #fff); color: var(--primary, #2C5AA8); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Agregar</button>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div><label class="nd-label">¿Qué valor está detrás de este objetivo?</label><input id="ndValor" class="nd-input" placeholder="Ej: confianza en el equipo"></div>
+                    <div><label class="nd-label">¿Para qué quieres lograr este objetivo?</label><textarea id="ndPara" class="nd-textarea" placeholder="El propósito detrás del proceso…"></textarea></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div><label class="nd-label">KPI / Indicador de medición</label><input id="ndKpi" class="nd-input" placeholder="Ej: tareas delegadas por semana"></div>
+                        <div><label class="nd-label">Logro esperado</label><input id="ndLogro" class="nd-input" placeholder="Ej: delegar sin rehacer"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div><label class="nd-label">Fecha inicio del proceso</label><input id="ndInicio" type="date" class="nd-input"></div>
+                        <div><label class="nd-label">Fecha término del proceso</label><input id="ndTermino" type="date" class="nd-input"></div>
+                    </div>
+                    <div><label class="nd-label">Avance / Resultado del proceso</label><textarea id="ndAvance" class="nd-textarea" placeholder="Cómo va el proceso respecto al acuerdo…"></textarea></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="nd-eyebrow" style="margin-bottom: 8px;">6 · Cómo llegó a la sesión</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="nd-energy" data-e="low" onclick="ndEnergia('low', this)"><i class="fas fa-cloud-rain" style="font-size: 1rem;"></i>Agotado/a</button>
+                    <button class="nd-energy" data-e="meh" onclick="ndEnergia('meh', this)"><i class="fas fa-cloud" style="font-size: 1rem;"></i>Cansado/a</button>
+                    <button class="nd-energy" data-e="ok" onclick="ndEnergia('ok', this)"><i class="fas fa-cloud-sun" style="font-size: 1rem;"></i>Estable</button>
+                    <button class="nd-energy" data-e="good" onclick="ndEnergia('good', this)"><i class="fas fa-sun" style="font-size: 1rem;"></i>Con energía</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding: 16px 24px 22px; border-top: 1px solid var(--border-subtle, #E6EBF2); display: flex; gap: 12px; align-items: center;">
+            <span id="ndHint" style="flex: 1; font-size: 12px; color: var(--text-subtle, #8C97A8);"></span>
+            <button onclick="cerrarNotasDrawer()" style="padding: 10px 18px; border: none; border-radius: 999px; background: transparent; color: var(--primary, #2C5AA8); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;">Descartar</button>
+            <button id="ndGuardar" onclick="guardarNotasDrawer()" style="padding: 10px 20px; border: none; border-radius: 999px; background: var(--primary, #2C5AA8); color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s;" onmouseover="this.style.background='var(--primary-hover, #213C70)'" onmouseout="this.style.background='var(--primary, #2C5AA8)'">Guardar notas</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    /* ── Agenda de sesiones (diseño Coach Dashboard · Sesiones) ── */
+    let filtro = 'semana';
+    let cache = { upcoming: null, past: null, records: null };
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const ini = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+    const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+    function durMin(a, b) {
+        if (!a || !b) return null;
+        const [h1, m1] = a.split(':').map(Number), [h2, m2] = b.split(':').map(Number);
+        return (h2 * 60 + m2) - (h1 * 60 + m1);
+    }
+    function serverHoy() {
+        // La fecha "hoy" según el servidor (Santiago): la trae is_today; si no, cae al reloj local
+        const hoy = (cache.upcoming || []).find(s => s.is_today);
+        return hoy ? hoy.date : new Date().toLocaleDateString('en-CA');
+    }
+    function serverAyer() {
+        const d = new Date(serverHoy() + 'T12:00:00'); d.setDate(d.getDate() - 1);
+        return d.toLocaleDateString('en-CA');
+    }
+
+    async function cargar() {
+        try {
+            const [up, recs] = await Promise.all([
+                fetch('/api/coach/upcoming-sessions', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({})),
+                fetch('/api/coach/session-records', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({}))
+            ]);
+            cache.upcoming = (up.sessions || []).filter(s => s.coachee_id && s.status !== 'cancelled' && s.session_type !== 'self_activity');
+            cache.records = recs.sessions || [];
+            // Rango de pasadas relativo al "hoy" del servidor (evita el desfase de zona horaria)
+            const ayer = serverAyer();
+            const ini14 = new Date(ayer + 'T12:00:00'); ini14.setDate(ini14.getDate() - 13);
+            const past = await fetch(`/api/coach/sessions?start_date=${ini14.toLocaleDateString('en-CA')}&end_date=${ayer}`, { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({}));
+            cache.past = (past.sessions || []).filter(s => s.coachee_id && s.session_type !== 'self_activity' && s.session_date <= ayer);
+            render();
+        } catch (e) {
+            const el = document.getElementById('agendaDias');
+            if (el) el.innerHTML = '<div style="font-size:13px;color:var(--text-subtle,#8C97A8);">No se pudo cargar la agenda.</div>';
+        }
+    }
+
+    function recordPara(coacheeId, fecha) {
+        // Nota registrada para ese coachee alrededor de la fecha de la sesión (±1 día)
+        const f = new Date(fecha + 'T12:00:00');
+        return cache.records.find(r => {
+            const ids = (r.participants || []).map(p => p.id);
+            if (!ids.includes(coacheeId)) return false;
+            if (!r.created_at) return false;
+            const rc = new Date(r.created_at);
+            return Math.abs(rc - f) < 2.2 * 86400000;
+        });
+    }
+
+    function badge(label, tone) {
+        const colores = {
+            success: ['var(--success-soft, #DBEDE2)', 'var(--success, #2F7D5B)'],
+            warning: ['var(--accent-soft, #F2E7CC)', 'var(--gold-700, #8A6526)'],
+            neutral: ['var(--surface-sunken, #E6EBF2)', 'var(--text-muted, #646E7E)']
+        };
+        const [bg, co] = colores[tone] || colores.neutral;
+        return `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:${bg};color:${co};flex-shrink:0;"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>${label}</span>`;
+    }
+
+    function fila(s, esPasada) {
+        const dur = durMin(s.start_time, s.end_time);
+        const topic = s.title || 'Sesión de coaching';
+        let est, accion = '', rowBg = 'transparent';
+        if (esPasada) {
+            const rec = recordPara(s.coachee_id, s.session_date);
+            if (rec) {
+                est = badge('Completada', 'neutral');
+                accion = `<button onclick="abrirNotasRegistro(${rec.id})" style="flex-shrink:0;padding:7px 14px;font-size:13px;font-weight:600;border:none;border-radius:999px;background:transparent;color:var(--primary,#2C5AA8);cursor:pointer;font-family:inherit;transition:background .15s;" onmouseover="this.style.background='var(--surface-hover,#EEF3FC)'" onmouseout="this.style.background='transparent'">Ver notas</button>`;
+            } else {
+                est = badge('Sin notas', 'warning');
+                rowBg = 'var(--accent-soft, #F2E7CC)';
+                window._agendaSes = window._agendaSes || {};
+                window._agendaSes[s.id] = s;
+                accion = `<button onclick="abrirNotasSesion(${s.id})" style="flex-shrink:0;padding:7px 14px;font-size:13px;font-weight:600;border:none;border-radius:999px;background:transparent;color:var(--primary,#2C5AA8);cursor:pointer;font-family:inherit;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.6)'" onmouseout="this.style.background='transparent'">Escribir notas</button>`;
+            }
+        } else {
+            est = s.status === 'confirmed' ? badge('Confirmada', 'success')
+                : s.status === 'completed' ? badge('Completada', 'neutral')
+                : badge('Por confirmar', 'warning');
+            if (s.is_today) {
+                accion = `<button onclick="window.location.href='/sesion-coach?sid=${s.id}'" style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:7px 16px;font-size:13px;font-weight:600;border:1.5px solid var(--border-brand,#BFD3F0);border-radius:999px;background:var(--surface-card,#fff);color:var(--primary,#2C5AA8);cursor:pointer;font-family:inherit;transition:background .15s;" onmouseover="this.style.background='var(--primary-soft,#DCE7F8)'" onmouseout="this.style.background='var(--surface-card,#fff)'"><i class="fas fa-video" style="font-size:0.7rem;"></i>Iniciar</button>`;
+            }
+        }
+        return `<div style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:10px;background:${rowBg};transition:background .12s;" ${rowBg === 'transparent' ? `onmouseover="this.style.background='var(--surface-hover,#EEF3FC)'" onmouseout="this.style.background='transparent'"` : ''}>
+            <div style="width:52px;text-align:center;flex-shrink:0;">
+                <div style="font-family:var(--font-serif,Georgia,serif);font-size:17px;line-height:1.1;color:var(--text-strong,#14233F);">${s.start_time || '—'}</div>
+                <div style="font-size:11px;color:var(--text-subtle,#8C97A8);">${dur ? dur + ' min' : ''}</div>
+            </div>
+            <div style="width:1px;align-self:stretch;background:var(--border-subtle,#E6EBF2);"></div>
+            <span style="width:38px;height:38px;border-radius:50%;background:var(--primary-soft,#DCE7F8);color:var(--ocean-700,#213C70);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ini(s.coachee_name)}</span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:600;color:var(--text-strong,#14233F);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.coachee_name)}</div>
+                <div style="font-size:12.5px;color:var(--text-muted,#646E7E);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(topic)}</div>
+            </div>
+            ${est}
+            ${accion}
+        </div>`;
+    }
+
+    function etiquetaDia(fecha, esHoy) {
+        const d = new Date(fecha + 'T12:00:00');
+        const base = `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`;
+        if (esHoy) return 'Hoy · ' + base;
+        if (fecha === serverAyer()) return 'Ayer · ' + base;
+        return base;
+    }
+
+    function render() {
+        const cont = document.getElementById('agendaDias');
+        const sub = document.getElementById('agendaSubLinea');
+        if (!cont || !cache.upcoming) return;
+
+        // Subtítulo con datos reales de la semana
+        const nSemana = cache.upcoming.length;
+        const nHoy = cache.upcoming.filter(s => s.is_today).length;
+        if (sub) sub.textContent = `Esta semana · ${nSemana} ${nSemana === 1 ? 'sesión' : 'sesiones'} · ${nHoy} hoy`;
+
+        let grupos = [];
+        if (filtro === 'pasadas') {
+            const porDia = {};
+            cache.past.forEach(s => { (porDia[s.session_date] = porDia[s.session_date] || []).push(s); });
+            grupos = Object.keys(porDia).sort().reverse().map(f => ({
+                fecha: f, esHoy: false, esPasada: true, items: porDia[f].sort((a, b) => a.start_time < b.start_time ? -1 : 1)
+            }));
+        } else {
+            let lista = cache.upcoming;
+            if (filtro === 'hoy') lista = lista.filter(s => s.is_today);
+            const porDia = {};
+            lista.forEach(s => { (porDia[s.date] = porDia[s.date] || []).push(s); });
+            grupos = Object.keys(porDia).sort().map(f => ({
+                fecha: f, esHoy: porDia[f].some(s => s.is_today), esPasada: false, items: porDia[f].sort((a, b) => a.start_time < b.start_time ? -1 : 1)
+            }));
+        }
+
+        if (!grupos.length) {
+            const msg = filtro === 'hoy' ? 'No tienes sesiones agendadas para hoy.'
+                : filtro === 'pasadas' ? 'Sin sesiones en las últimas dos semanas.'
+                : 'No tienes sesiones agendadas esta semana.';
+            cont.innerHTML = `<p style="font-family:var(--font-serif,Georgia,serif);font-style:italic;color:var(--text-subtle,#8C97A8);font-size:14.5px;margin:14px 0;">${msg}</p>`;
+            return;
+        }
+
+        cont.innerHTML = grupos.map(g => {
+            const items = g.items.map(s => {
+                if (g.esPasada) s.session_date = s.session_date || g.fecha;
+                else { s.session_date = g.fecha; }
+                return fila(s, g.esPasada);
+            }).join('');
+            const n = g.items.length;
+            return `<div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
+                    <span style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${g.esHoy ? 'var(--gold-700, #8A6526)' : 'var(--text-muted, #646E7E)'};">${etiquetaDia(g.fecha, g.esHoy)}</span>
+                    <span style="font-size:12px;color:var(--text-subtle,#8C97A8);">${n} ${n === 1 ? 'sesión' : 'sesiones'}</span>
+                </div>
+                <div style="background:var(--surface-card,#fff);border:1px solid var(--border-subtle,#E6EBF2);border-radius:16px;box-shadow:0 1px 2px rgba(20,35,63,0.06);padding:8px;display:flex;flex-direction:column;">
+                    ${items}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    window.setAgendaFiltro = function (f, btn) {
+        filtro = f;
+        document.querySelectorAll('.agenda-pill').forEach(b => {
+            const on = b === btn;
+            b.style.background = on ? 'var(--primary-soft, #DCE7F8)' : 'var(--surface-card, #fff)';
+            b.style.color = on ? 'var(--ocean-700, #213C70)' : 'var(--text-body, #313842)';
+            b.style.borderColor = on ? 'var(--border-brand, #BFD3F0)' : 'var(--border-default, #D5DCE7)';
+        });
+        render();
+    };
+
+    /* ── Drawer de notas (diseño: 6 pasos, datos reales) ──
+       Modos: 'sesion' (Escribir notas desde la agenda) · 'edit' (Ver notas de un registro) · 'nueva' (Nueva sesión) */
+    const nd = { mode: 'sesion', ses: null, recordId: null, coacheeId: null, coacheeName: '', prev: [], nuevos: [], comps: [], energia: null, esSesionCero: false, acuerdoBase: null, contenidoBase: {} };
+
+    function recordsDe(coacheeId) {
+        return (cache.records || []).filter(r => (r.participants || []).some(p => p.id === coacheeId));
+    }
+
+    async function ndAsegurarRecords() {
+        if (cache.records) return;
+        try {
+            const d = await fetch('/api/coach/session-records', { credentials: 'same-origin' }).then(r => r.json());
+            cache.records = d.sessions || [];
+        } catch (_) { cache.records = []; }
+    }
+
+    function ndMostrarDrawer() {
+        const dwEl = document.getElementById('notasDrawer');
+        if (dwEl && dwEl.parentElement !== document.body) document.body.appendChild(dwEl);
+        dwEl.style.display = 'flex';
+    }
+
+    function ndLimpiarCampos() {
+        ['ndResumen', 'ndInsight', 'ndCommitDraft', 'ndCompDraft', 'ndValor', 'ndPara', 'ndKpi', 'ndLogro', 'ndInicio', 'ndTermino', 'ndAvance'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('ndCommitDue').value = 'Esta semana';
+        document.querySelectorAll('.nd-energy').forEach(b => b.classList.remove('on'));
+        nd.nuevos = []; nd.comps = []; nd.energia = null; nd.contenidoBase = {};
+    }
+
+    // Compromisos abiertos del coachee (excluyendo opcionalmente un registro) + acuerdo precargado
+    function ndPrepararCoachee(coacheeId, excluirRid, preseleccionar) {
+        nd.coacheeId = coacheeId;
+        nd.prev = [];
+        recordsDe(coacheeId).forEach(r => {
+            if (excluirRid && r.id === excluirRid) return;
+            (r.commitments || []).forEach((cm, i) => {
+                if (cm && cm.texto && cm.status !== 'completado') {
+                    nd.prev.push({ rid: r.id, idx: i, texto: cm.texto,
+                        estado: preseleccionar ? (cm.status === 'parcial' ? 'partial' : 'pending') : null });
+                }
+            });
+        });
+        nd.prev = nd.prev.slice(0, 6);
+
+        nd.esSesionCero = recordsDe(coacheeId).length === 0 || (excluirRid && recordsDe(coacheeId).length === 1 && recordsDe(coacheeId)[0].id === excluirRid);
+        nd.acuerdoBase = null;
+        const conAcuerdo = recordsDe(coacheeId).slice().reverse().find(r => {
+            try { return !!(JSON.parse(r.content || '{}').acuerdo); } catch (_) { return false; }
+        });
+        if (conAcuerdo) { try { nd.acuerdoBase = JSON.parse(conAcuerdo.content).acuerdo; } catch (_) {} }
+        ndAplicarAcuerdo(nd.acuerdoBase || {});
+    }
+
+    function ndAplicarAcuerdo(ac) {
+        nd.comps = (ac.competencias || []).slice(0, 2);
+        document.getElementById('ndValor').value = ac.valor || '';
+        document.getElementById('ndPara').value = ac.para || '';
+        document.getElementById('ndKpi').value = ac.kpi || '';
+        document.getElementById('ndLogro').value = ac.logro || '';
+        document.getElementById('ndInicio').value = ac.inicio || '';
+        document.getElementById('ndTermino').value = ac.termino || '';
+        document.getElementById('ndAvance').value = ac.avance || '';
+        document.getElementById('ndAcBadge').style.display = nd.esSesionCero ? 'inline-block' : 'none';
+    }
+
+    function ndPintar() {
+        ndRenderPrev(); ndRenderNuevos(); ndRenderComps(); ndHint();
+    }
+
+    /* ── Modo 1: Escribir notas de una sesión pasada de la agenda ── */
+    window.abrirNotasSesion = async function (sesId) {
+        const s = (window._agendaSes || {})[sesId];
+        if (!s) return;
+        await ndAsegurarRecords();
+        nd.mode = 'sesion'; nd.ses = s; nd.recordId = null; nd.coacheeName = s.coachee_name;
+        document.getElementById('ndCoacheeRow').style.display = 'none';
+        ndLimpiarCampos();
+        ndPrepararCoachee(s.coachee_id, null, false);
+        document.getElementById('ndAvatar').textContent = ini(s.coachee_name);
+        const d = new Date((s.session_date || s.date) + 'T12:00:00');
+        document.getElementById('ndMeta').textContent = `${esc(s.coachee_name)} · ${s.title || 'Sesión de coaching'} · ${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]} ${s.start_time || ''}`;
+        document.getElementById('ndGuardar').textContent = 'Guardar notas';
+        ndPintar();
+        ndMostrarDrawer();
+    };
+
+    /* ── Modo 2: Ver/editar notas de un registro existente ── */
+    window.abrirNotasRegistro = async function (rid) {
+        await ndAsegurarRecords();
+        const rec = cache.records.find(r => r.id === rid);
+        if (!rec) { alert('No se encontró el registro.'); return; }
+        nd.mode = 'edit'; nd.ses = null; nd.recordId = rid;
+        const part = (rec.participants || [])[0] || {};
+        nd.coacheeName = part.name || 'Coachee';
+        document.getElementById('ndCoacheeRow').style.display = 'none';
+        ndLimpiarCampos();
+        ndPrepararCoachee(part.id, rid, true);
+
+        // Prefill desde el contenido del registro (conservando claves antiguas al guardar)
+        let ct = {};
+        try { ct = JSON.parse(rec.content || '{}'); } catch (_) { ct = {}; }
+        nd.contenidoBase = ct;
+        document.getElementById('ndResumen').value = ct.resumen || ct.notes || '';
+        document.getElementById('ndInsight').value = ct.insight || rec.objective || '';
+        if (ct.energia) {
+            nd.energia = ct.energia;
+            const btn = document.querySelector(`.nd-energy[data-e="${ct.energia}"]`);
+            if (btn) btn.classList.add('on');
+        }
+        if (ct.acuerdo) { nd.acuerdoBase = ct.acuerdo; ndAplicarAcuerdo(ct.acuerdo); }
+
+        // Sus compromisos aparecen como la lista del paso 4 (conservan estado y fecha)
+        nd.nuevos = (rec.commitments || []).filter(cm => cm && cm.texto).map(cm => ({
+            title: cm.texto, due: cm.fecha || 'Sin fecha', fecha: cm.fecha || '', status: cm.status || 'pendiente'
+        }));
+
+        document.getElementById('ndAvatar').textContent = ini(nd.coacheeName);
+        const f = rec.created_at ? new Date(rec.created_at) : null;
+        document.getElementById('ndMeta').textContent = `${esc(nd.coacheeName)} · ${esc(rec.name || 'Sesión')}${f ? ` · guardada el ${f.getDate()} ${MESES[f.getMonth()]}` : ''}`;
+        document.getElementById('ndGuardar').textContent = 'Guardar cambios';
+        ndPintar();
+        ndMostrarDrawer();
+    };
+
+    /* ── Modo 3: Nueva sesión (desde Registros de sesión) ── */
+    window.abrirNotasNueva = async function () {
+        await ndAsegurarRecords();
+        nd.mode = 'nueva'; nd.ses = null; nd.recordId = null; nd.coacheeId = null; nd.coacheeName = '';
+        ndLimpiarCampos();
+        nd.prev = []; nd.esSesionCero = false;
+        ndAplicarAcuerdo({});
+        document.getElementById('ndAcBadge').style.display = 'none';
+
+        // Poblar selector de coachees
+        const row = document.getElementById('ndCoacheeRow');
+        const sel = document.getElementById('ndCoacheeSel');
+        row.style.display = 'block';
+        sel.value = '';
+        try {
+            const d = await fetch('/api/coach/coachees', { credentials: 'same-origin' }).then(r => r.json());
+            sel.innerHTML = '<option value="">Elige un coachee…</option>' +
+                (d.coachees || []).map(co => `<option value="${co.id}">${esc(co.name)}</option>`).join('');
+        } catch (_) {}
+
+        document.getElementById('ndAvatar').textContent = '?';
+        document.getElementById('ndMeta').textContent = 'Nueva sesión · elige un coachee para empezar';
+        document.getElementById('ndGuardar').textContent = 'Guardar notas';
+        ndPintar();
+        ndMostrarDrawer();
+    };
+
+    window.ndCoacheeElegido = function () {
+        const sel = document.getElementById('ndCoacheeSel');
+        const id = parseInt(sel.value);
+        if (!id) { nd.coacheeId = null; nd.prev = []; ndPintar(); return; }
+        nd.coacheeName = sel.options[sel.selectedIndex].text;
+        ndPrepararCoachee(id, null, false);
+        document.getElementById('ndAvatar').textContent = ini(nd.coacheeName);
+        const d = new Date(serverHoy() + 'T12:00:00');
+        document.getElementById('ndMeta').textContent = `${esc(nd.coacheeName)} · Sesión de coaching · ${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`;
+        ndPintar();
+    };
+
+    window.cerrarNotasDrawer = function (e) {
+        if (e && e.target !== e.currentTarget) return;
+        document.getElementById('notasDrawer').style.display = 'none';
+    };
+
+    function ndRenderPrev() {
+        const cont = document.getElementById('ndPrev');
+        if (nd.mode === 'nueva' && !nd.coacheeId) {
+            cont.innerHTML = '<p style="font-family:var(--font-serif,Georgia,serif);font-style:italic;font-size:13px;color:var(--text-subtle,#8C97A8);margin:0;">Elige un coachee para ver sus compromisos abiertos.</p>';
+            return;
+        }
+        if (!nd.prev.length) {
+            cont.innerHTML = '<p style="font-family:var(--font-serif,Georgia,serif);font-style:italic;font-size:13px;color:var(--text-subtle,#8C97A8);margin:0;">Sin compromisos abiertos de sesiones anteriores.</p>';
+            return;
+        }
+        const estados = [['done', 'Cumplido'], ['partial', 'Parcial'], ['pending', 'Pendiente']];
+        cont.innerHTML = nd.prev.map((pc, i) => `
+            <div style="border:1px solid var(--border-subtle,#E6EBF2);border-radius:10px;padding:12px 14px;background:var(--surface-page,#F1F4F9);">
+                <div style="font-size:13.5px;font-weight:600;color:var(--text-strong,#14233F);margin-bottom:8px;">${esc(pc.texto)}</div>
+                <div style="display:flex;gap:6px;">
+                    ${estados.map(([id, label]) => `<button class="nd-state${pc.estado === id ? ' ' + id : ''}" onclick="ndEstadoPrev(${i}, '${id}')">${label}</button>`).join('')}
+                </div>
+            </div>`).join('');
+    }
+    window.ndEstadoPrev = function (i, estado) { nd.prev[i].estado = estado; ndRenderPrev(); ndHint(); };
+
+    function ndRenderNuevos() {
+        const cont = document.getElementById('ndNewList');
+        cont.innerHTML = nd.nuevos.map((nc, i) => `
+            <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border-brand,#BFD3F0);background:var(--primary-soft,#DCE7F8);border-radius:10px;padding:10px 14px;">
+                <i class="fas fa-bullseye" style="font-size:0.85rem;color:var(--primary,#2C5AA8);flex-shrink:0;"></i>
+                <span style="flex:1;font-size:13.5px;font-weight:600;color:var(--text-strong,#14233F);">${esc(nc.title)}</span>
+                <span style="font-size:12px;color:var(--text-muted,#646E7E);">${esc(nc.due)}</span>
+                <button onclick="ndQuitarCommit(${i})" aria-label="Quitar" style="border:none;background:none;cursor:pointer;color:var(--text-subtle,#8C97A8);display:flex;"><i class="fas fa-times" style="font-size:0.8rem;"></i></button>
+            </div>`).join('');
+    }
+    window.ndAddCommit = function () {
+        const inp = document.getElementById('ndCommitDraft');
+        const t = (inp.value || '').trim();
+        if (!t) { alert('Escribe el compromiso antes de añadirlo.'); return; }
+        nd.nuevos.push({ title: t, due: document.getElementById('ndCommitDue').value });
+        inp.value = '';
+        ndRenderNuevos(); ndHint();
+    };
+    window.ndQuitarCommit = function (i) { nd.nuevos.splice(i, 1); ndRenderNuevos(); ndHint(); };
+
+    function ndRenderComps() {
+        const cont = document.getElementById('ndComps');
+        cont.innerHTML = nd.comps.length
+            ? nd.comps.map((cp, i) => `<span style="display:inline-flex;align-items:center;gap:6px;background:var(--primary-soft,#DCE7F8);border:1px solid var(--border-brand,#BFD3F0);color:var(--ocean-700,#213C70);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;">${esc(cp)}<button onclick="ndQuitarComp(${i})" aria-label="Quitar" style="border:none;background:none;cursor:pointer;color:var(--ocean-700,#213C70);display:flex;padding:0;"><i class="fas fa-times" style="font-size:0.75rem;"></i></button></span>`).join('')
+            : '<p style="font-family:var(--font-serif,Georgia,serif);font-style:italic;font-size:13px;color:var(--text-subtle,#8C97A8);margin:0;">Sin competencias aún. Agrega hasta 2.</p>';
+        document.getElementById('ndCompAddRow').style.display = nd.comps.length >= 2 ? 'none' : 'flex';
+    }
+    window.ndAddComp = function () {
+        const inp = document.getElementById('ndCompDraft');
+        const t = (inp.value || '').trim();
+        if (!t || nd.comps.length >= 2) return;
+        nd.comps.push(t); inp.value = '';
+        ndRenderComps();
+    };
+    window.ndQuitarComp = function (i) { nd.comps.splice(i, 1); ndRenderComps(); };
+
+    window.ndEnergia = function (id, btn) {
+        nd.energia = id;
+        document.querySelectorAll('.nd-energy').forEach(b => b.classList.toggle('on', b === btn));
+    };
+
+    function ndHint() {
+        const el = document.getElementById('ndHint');
+        if (nd.mode === 'nueva' && !nd.coacheeId) { el.textContent = 'Elige un coachee para empezar'; return; }
+        const faltan = nd.prev.filter(pc => !pc.estado).length;
+        el.textContent = faltan > 0
+            ? `Falta revisar ${faltan} compromiso${faltan === 1 ? '' : 's'} anterior${faltan === 1 ? '' : 'es'}`
+            : nd.nuevos.length === 0 ? 'Sugerencia: deja al menos 1 compromiso nuevo' : 'Listo para guardar';
+    }
+
+    function fechaPara(due) {
+        const base = new Date(serverHoy() + 'T12:00:00');
+        if (due === 'Esta semana') { base.setDate(base.getDate() + 7); return base.toLocaleDateString('en-CA'); }
+        if (due === 'Este mes') { return new Date(base.getFullYear(), base.getMonth() + 1, 0).toLocaleDateString('en-CA'); }
+        return '';
+    }
+
+    window.guardarNotasDrawer = async function () {
+        if (nd.mode === 'nueva' && !nd.coacheeId) { alert('Elige un coachee antes de guardar.'); return; }
+        const faltan = nd.prev.filter(pc => !pc.estado).length;
+        if (faltan > 0) { alert('Falta la revisión: marca el estado de los compromisos anteriores primero.'); return; }
+        const btn = document.getElementById('ndGuardar');
+        const label = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Guardando…';
+        try {
+            const mapEstado = { done: 'completado', partial: 'parcial', pending: 'pendiente' };
+
+            // a) Actualizar estados de compromisos anteriores en sus registros de origen
+            const porRegistro = {};
+            nd.prev.forEach(pc => { (porRegistro[pc.rid] = porRegistro[pc.rid] || []).push(pc); });
+            for (const rid of Object.keys(porRegistro)) {
+                const rec = cache.records.find(r => r.id === parseInt(rid));
+                if (!rec) continue;
+                const commits = (rec.commitments || []).map(cm => ({ ...cm }));
+                let cambio = false;
+                porRegistro[rid].forEach(pc => {
+                    if (commits[pc.idx] && commits[pc.idx].status !== mapEstado[pc.estado]) { commits[pc.idx].status = mapEstado[pc.estado]; cambio = true; }
+                });
+                if (cambio) {
+                    await fetch(`/api/coach/session-records/${rid}`, {
+                        method: 'PUT', credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ commitments: commits })
+                    });
+                }
+            }
+
+            // b) Contenido estructurado (conservando claves antiguas del registro en modo edición)
+            const fechaSesion = nd.mode === 'sesion' ? (nd.ses.session_date || nd.ses.date)
+                : nd.mode === 'nueva' ? serverHoy()
+                : (nd.contenidoBase.fecha_sesion || undefined);
+            const horaSesion = nd.mode === 'sesion' ? (nd.ses.start_time || undefined)
+                : (nd.contenidoBase.hora_sesion || undefined);
+            const contenido = Object.assign({}, nd.contenidoBase, {
+                fecha_sesion: fechaSesion,
+                hora_sesion: horaSesion,
+                session_type: nd.contenidoBase.session_type || (nd.esSesionCero ? 'cero' : 'regular'),
+                resumen: document.getElementById('ndResumen').value.trim(),
+                insight: document.getElementById('ndInsight').value.trim(),
+                energia: nd.energia,
+                acuerdo: {
+                    competencias: nd.comps,
+                    valor: document.getElementById('ndValor').value.trim(),
+                    para: document.getElementById('ndPara').value.trim(),
+                    kpi: document.getElementById('ndKpi').value.trim(),
+                    logro: document.getElementById('ndLogro').value.trim(),
+                    inicio: document.getElementById('ndInicio').value,
+                    termino: document.getElementById('ndTermino').value,
+                    avance: document.getElementById('ndAvance').value.trim()
+                }
+            });
+            const commitments = nd.nuevos.map(nc => ({
+                texto: nc.title,
+                fecha: nc.fecha !== undefined ? nc.fecha : fechaPara(nc.due),
+                status: nc.status || 'pendiente'
+            }));
+
+            let resultadoMsg;
+            if (nd.mode === 'edit') {
+                const r = await fetch(`/api/coach/session-records/${nd.recordId}`, {
+                    method: 'PUT', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        objective: contenido.insight || contenido.resumen.slice(0, 120),
+                        content: JSON.stringify(contenido),
+                        commitments: commitments
+                    })
+                });
+                const res = await r.json();
+                if (!res.success) throw new Error(res.error || 'No se pudo guardar');
+                resultadoMsg = 'Cambios guardados en el registro de ' + (nd.coacheeName || '').split(' ')[0] + '.';
+            } else {
+                const d = nd.ses ? new Date((nd.ses.session_date || nd.ses.date) + 'T12:00:00') : new Date(serverHoy() + 'T12:00:00');
+                const titulo = nd.ses ? (nd.ses.title || 'Sesión de coaching') : 'Sesión de coaching';
+                const r = await fetch('/api/coach/session-records', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: `${titulo} · ${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`,
+                        objective: contenido.insight || contenido.resumen.slice(0, 120),
+                        participants: [nd.mode === 'nueva' ? nd.coacheeId : nd.ses.coachee_id],
+                        content: JSON.stringify(contenido),
+                        commitments: commitments
+                    })
+                });
+                const res = await r.json();
+                if (!res.success) throw new Error(res.error || 'No se pudo guardar');
+                const who = (nd.coacheeName || '').split(' ')[0];
+                const n = commitments.length;
+                resultadoMsg = `Notas guardadas. Progreso de ${who} actualizado${n ? ` · ${n} compromiso${n === 1 ? '' : 's'}` : ''}.`;
+            }
+
+            document.getElementById('notasDrawer').style.display = 'none';
+            alert(resultadoMsg);
+            cache.records = null;
+            cargar();
+            if (typeof cargarSesiones === 'function') cargarSesiones();
+        } catch (e) {
+            alert('No se pudieron guardar las notas: ' + e.message);
+        } finally {
+            btn.disabled = false; btn.textContent = label;
+        }
+    };
+
+    // Loader global: showModule('sesiones') lo llama en cada apertura
+    window.cargarAgendaSesiones = cargar;
+
+    // Respaldo: si la sección ya está visible al cargar la página (deep link o sesión restaurada)
+    function intentarCargar() {
+        const sec = document.getElementById('sesiones');
+        if (sec && sec.style.display !== 'none' && !cache.upcoming) cargar();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(intentarCargar, 400));
+    else setTimeout(intentarCargar, 400);
 })();
 </script>
 </body>

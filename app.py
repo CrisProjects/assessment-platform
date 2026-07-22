@@ -1657,11 +1657,15 @@ def add_security_headers(response):
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     
     # Permissions-Policy: Controla APIs del navegador disponibles
-    # Deshabilita APIs no necesarias para reducir superficie de ataque
+    # Deshabilita APIs no necesarias para reducir superficie de ataque.
+    # Las salas de sesión en vivo necesitan cámara/micrófono/pantalla (solo mismo origen).
+    if request.path in ('/sesion', '/sesion-coach'):
+        media_policy = 'microphone=(self), camera=(self), display-capture=(self), '
+    else:
+        media_policy = 'microphone=(), camera=(), '
     response.headers['Permissions-Policy'] = (
         'geolocation=(), '  # No necesitamos geolocalización
-        'microphone=(), '  # No necesitamos micrófono
-        'camera=(), '  # No necesitamos cámara
+        + media_policy +
         'payment=(), '  # No procesamos pagos
         'usb=(), '  # No usamos USB
         'magnetometer=(), '  # No necesitamos magnetómetro
@@ -2032,6 +2036,21 @@ class DevelopmentPlan(db.Model):
         now = datetime.utcnow()
         self.created_at = kwargs.get('created_at', now)
         self.updated_at = kwargs.get('updated_at', now)
+
+class RtcSignal(db.Model):
+    """Mensajes de señalización WebRTC (offer/answer/ICE) para la sala de sesión en vivo.
+
+    Efímeros: se limpian los de más de 15 minutos en cada escritura a la sala.
+    room = 'c<coach_id>e<coachee_id>' — valida el par coach↔coachee.
+    """
+    __tablename__ = 'rtc_signal'
+
+    id = db.Column(db.Integer, primary_key=True)
+    room = db.Column(db.String(64), nullable=False, index=True)
+    sender_role = db.Column(db.String(16), nullable=False)  # 'coach' | 'coachee'
+    payload = db.Column(db.Text, nullable=False)  # JSON: {type: offer|answer|ice|hello|bye, ...}
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
 
 class Notification(db.Model):
     __tablename__ = 'notification'
@@ -6415,7 +6434,7 @@ def api_admin_login():
             return jsonify({
                 'success': True,
                 'user': create_user_response(admin_user),
-                'redirect_url': '/admin/dashboard-alpine'
+                'redirect_url': '/platform-admin-dashboard'
             }), 200
         else:
             # Registrar intento fallido de admin (crítico)
@@ -7140,6 +7159,76 @@ def api_admin_create_coach():
         logger.error(f"❌ Error creando coach: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error creando coach: {str(e)}'}), 500
 
+@app.route('/api/admin/create-user', methods=['POST'])
+@admin_required
+def api_admin_create_user():
+    """Crear usuario (coach o coachee) desde el panel de administración."""
+    try:
+        data = request.get_json() or {}
+
+        required_fields = ['username', 'email', 'full_name', 'password', 'role']
+        if missing_fields := validate_required_fields(data, required_fields):
+            return jsonify({'error': f'Campos requeridos: {", ".join(missing_fields)}'}), 400
+
+        role = data['role']
+        if role not in ('coach', 'coachee'):
+            return jsonify({'error': 'Rol inválido: solo coach o coachee'}), 400
+
+        username = data['username'].strip().lower()
+        email = data['email'].strip().lower()
+        full_name = data['full_name'].strip()
+        password = data['password']
+
+        if '@' not in email:
+            return jsonify({'error': 'Formato de email inválido'}), 400
+        if len(password) < 6:
+            return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+        if len(full_name) < 3:
+            return jsonify({'error': 'El nombre completo debe tener al menos 3 caracteres'}), 400
+        if not re.match(r'^[a-z0-9_-]{3,}$', username):
+            return jsonify({'error': 'Username inválido (mínimo 3 caracteres, solo letras, números, guiones)'}), 400
+
+        existing_user = User.query.filter((User.username == username) | (User.email == email)).first()  # type: ignore
+        if existing_user:
+            field = 'nombre de usuario' if existing_user.username == username else 'email'
+            return jsonify({'error': f'El {field} ya está en uso'}), 409
+
+        nuevo = User(
+            username=username,
+            email=email,
+            full_name=full_name,
+            role=role,
+            active=True
+        )
+        # Coachee puede nacer asignado a un coach
+        if role == 'coachee' and data.get('coach_id'):
+            coach = User.query.filter_by(id=data['coach_id'], role='coach').first()
+            if not coach:
+                return jsonify({'error': 'Coach no válido'}), 400
+            nuevo.coach_id = coach.id
+        nuevo.set_password(password)
+
+        db.session.add(nuevo)
+        db.session.commit()
+
+        log_security_event('user_created_by_admin', 'info',
+                          user_id=current_user.id,
+                          username=current_user.username,
+                          description=f'Admin creó usuario {username} (rol: {role})')
+        logger.info(f"✅ ADMIN: Usuario creado - {username} (rol: {role}, ID: {nuevo.id})")
+
+        return jsonify({
+            'success': True,
+            'message': f'{"Coach" if role == "coach" else "Coachee"} {full_name} creado exitosamente',
+            'user': {'id': nuevo.id, 'username': nuevo.username, 'email': nuevo.email,
+                     'full_name': nuevo.full_name, 'role': nuevo.role}
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ Error creando usuario: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error creando usuario'}), 500
+
 @app.route('/api/admin/coaches', methods=['GET'])
 @admin_required
 def api_admin_get_coaches():
@@ -7197,9 +7286,53 @@ def api_admin_platform_stats():
         # Usuarios activos/inactivos (excluyendo eliminados)
         active_users = User.query.filter_by(active=True).filter(User.deleted_at.is_(None)).count()
         inactive_users = User.query.filter_by(active=False).filter(User.deleted_at.is_(None)).count()
-        
+
+        # ── Métricas adicionales para el rediseño (solo lectura, mismos permisos) ──
+        hoy_scl = datetime.now(SANTIAGO_TZ).date()
+        semana_ini = hoy_scl - timedelta(days=hoy_scl.weekday())  # lunes de esta semana
+        sessions_week = CoachingSession.query.filter(
+            CoachingSession.session_date >= semana_ini,
+            CoachingSession.session_date <= semana_ini + timedelta(days=6),
+            CoachingSession.status.in_(['pending', 'confirmed', 'completed'])
+        ).count()
+        coaches_new_month = User.query.filter_by(role='coach').filter(
+            User.deleted_at.is_(None), User.created_at >= last_month).count()
+        coachees_new_month = User.query.filter_by(role='coachee').filter(
+            User.deleted_at.is_(None), User.created_at >= last_month).count()
+        hace_14d = datetime.utcnow() - timedelta(days=14)
+        coachees_inactivos_14d = User.query.filter_by(role='coachee').filter(
+            User.deleted_at.is_(None),
+            or_(User.last_login.is_(None), User.last_login < hace_14d)
+        ).count()
+
+        # Series semanales reales (8 semanas, de la más antigua a la actual)
+        spark_sessions, spark_assessments, spark_coaches, spark_coachees = [], [], [], []
+        for i in range(7, -1, -1):
+            ini = semana_ini - timedelta(weeks=i)
+            fin = ini + timedelta(days=6)
+            spark_sessions.append(CoachingSession.query.filter(
+                CoachingSession.session_date >= ini, CoachingSession.session_date <= fin).count())
+            fin_dt = datetime.combine(fin + timedelta(days=1), datetime.min.time())
+            spark_assessments.append(AssessmentResult.query.filter(
+                AssessmentResult.completed_at >= datetime.combine(ini, datetime.min.time()),
+                AssessmentResult.completed_at < fin_dt).count())
+            spark_coaches.append(User.query.filter_by(role='coach').filter(
+                User.deleted_at.is_(None), User.created_at < fin_dt).count())
+            spark_coachees.append(User.query.filter_by(role='coachee').filter(
+                User.deleted_at.is_(None), User.created_at < fin_dt).count())
+
         return jsonify({
             'success': True,
+            'sessions_week': sessions_week,
+            'coaches_new_month': coaches_new_month,
+            'coachees_new_month': coachees_new_month,
+            'coachees_inactivos_14d': coachees_inactivos_14d,
+            'spark': {
+                'sessions': spark_sessions,
+                'assessments': spark_assessments,
+                'coaches': spark_coaches,
+                'coachees': spark_coachees
+            },
             'total_users': total_users,
             'total_coaches': total_coaches,
             'total_coachees': total_coachees,
@@ -7567,7 +7700,7 @@ def api_admin_delete_user(user_id):
             return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 403
         
         # Obtener datos del request
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         deletion_reason = data.get('reason', '').strip()
         
         # Validar razón de eliminación
@@ -7630,7 +7763,7 @@ def api_admin_hard_delete_user(user_id):
             return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 403
         
         # Requiere confirmación explícita
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         confirmation = data.get('confirm', '').strip().upper()
         
         if confirmation != 'DELETE PERMANENTLY':
@@ -8890,7 +9023,11 @@ def coachee_profile():
 @coachee_session_required
 def live_session():
     """Sala de sesión en vivo del coachee (diseño Live Session)"""
-    response = make_response(render_template('live_session.html'))
+    me = User.query.get(session.get('coachee_user_id'))
+    rtc_room = None
+    if me and me.coach_id and _rtc_scheduled_session(me.coach_id, me.id):
+        rtc_room = f"c{me.coach_id}e{me.id}"
+    response = make_response(render_template('live_session.html', rtc_room=rtc_room))
     response.headers['Cache-Control'] = 'no-store'
     return response
 
@@ -8898,9 +9035,117 @@ def live_session():
 @coach_session_required
 def live_session_coach():
     """Sala de sesión en vivo del coach (diseño Live Session)"""
-    response = make_response(render_template('live_session_coach.html'))
+    response = make_response(render_template('live_session_coach.html', rtc_coach_id=session.get('coach_user_id')))
     response.headers['Cache-Control'] = 'no-store'
     return response
+
+
+def _rtc_scheduled_session(coach_id, coachee_id):
+    """Sesión agendada para HOY (hora de Santiago) entre el par, no cancelada."""
+    hoy = datetime.now(SANTIAGO_TZ).date()
+    return CoachingSession.query.filter(
+        CoachingSession.coach_id == coach_id,
+        CoachingSession.coachee_id == coachee_id,
+        CoachingSession.session_date == hoy,
+        CoachingSession.status.in_(['pending', 'confirmed'])
+    ).first()
+
+
+def _rtc_room_access(room):
+    """Valida que el usuario en sesión pertenezca a la sala 'c<coach>e<coachee>'
+    y que exista una sesión agendada para hoy entre el par.
+
+    Devuelve (rol, coach_id, coachee_id) o None. Acepta la sesión dual:
+    si coinciden coach y coachee logueados, gana el rol que calce con la sala.
+    """
+    m = re.match(r'^c(\d+)e(\d+)$', room or '')
+    if not m:
+        return None
+    coach_id, coachee_id = int(m.group(1)), int(m.group(2))
+    role = None
+    if session.get('coach_user_id') == coach_id:
+        coachee = User.query.get(coachee_id)
+        if coachee and coachee.role == 'coachee' and coachee.coach_id == coach_id:
+            role = 'coach'
+    if role is None and session.get('coachee_user_id') == coachee_id:
+        me = User.query.get(coachee_id)
+        if me and me.coach_id == coach_id:
+            role = 'coachee'
+    if role is None or not _rtc_scheduled_session(coach_id, coachee_id):
+        return None
+    return (role, coach_id, coachee_id)
+
+
+@app.route('/api/rtc/<room>/signals', methods=['GET'])
+def api_rtc_get_signals(room):
+    access = _rtc_room_access(room)
+    if not access:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    role = access[0]
+    if request.args.get('init'):
+        last = db.session.query(func.max(RtcSignal.id)).filter(RtcSignal.room == room).scalar() or 0
+        return jsonify({'success': True, 'last_id': last})
+    try:
+        since = int(request.args.get('since', 0))
+    except (TypeError, ValueError):
+        since = 0
+    rows = RtcSignal.query.filter(
+        RtcSignal.room == room,
+        RtcSignal.sender_role != role,
+        RtcSignal.id > since
+    ).order_by(RtcSignal.id.asc()).limit(50).all()
+    last = rows[-1].id if rows else since
+    return jsonify({'success': True, 'last_id': last,
+                    'signals': [{'id': r.id, 'payload': json.loads(r.payload)} for r in rows]})
+
+
+@app.route('/api/rtc/<room>/signals', methods=['POST'])
+def api_rtc_post_signal(room):
+    access = _rtc_room_access(room)
+    if not access:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    role = access[0]
+    data = request.get_json(silent=True) or {}
+    payload = data.get('payload')
+    if not isinstance(payload, dict) or not payload.get('type'):
+        return jsonify({'success': False, 'error': 'Payload inválido'}), 400
+    try:
+        # Limpieza oportunista: la señalización es efímera
+        cutoff = datetime.utcnow() - timedelta(minutes=15)
+        RtcSignal.query.filter(RtcSignal.room == room, RtcSignal.created_at < cutoff).delete()
+        sig = RtcSignal(room=room, sender_role=role, payload=json.dumps(payload))
+        db.session.add(sig)
+        db.session.commit()
+        # Avisar a la contraparte que alguien entró a la sala (con throttle de 10 min)
+        if payload.get('type') == 'hello':
+            try:
+                _, coach_id, coachee_id = access
+                target_id = coachee_id if role == 'coach' else coach_id
+                sender = User.query.get(coach_id if role == 'coach' else coachee_id)
+                sender_name = (sender.full_name if sender else None) or ('Tu coach' if role == 'coach' else 'Tu coachee')
+                today_session = _rtc_scheduled_session(coach_id, coachee_id)
+                ya_avisado = Notification.query.filter(
+                    Notification.user_id == target_id,
+                    Notification.type == 'session_joined',
+                    Notification.related_id == (today_session.id if today_session else None),
+                    Notification.created_at >= datetime.utcnow() - timedelta(minutes=10)
+                ).first()
+                if not ya_avisado:
+                    create_notification(
+                        user_id=target_id,
+                        type='session_joined',
+                        title=f'{sender_name} ya está en la sesión',
+                        message='Entra a la sala en vivo para comenzar la sesión de hoy.',
+                        related_id=today_session.id if today_session else None,
+                        related_type='coaching_session'
+                    )
+            except Exception as notif_err:
+                logger.warning(f"⚠️ RTC: no se pudo notificar la entrada a la sesión: {notif_err}")
+        return jsonify({'success': True, 'id': sig.id})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ RTC: error guardando señal en {room}: {e}")
+        return jsonify({'success': False, 'error': 'Error interno'}), 500
 
 @app.route('/platform-admin-dashboard')
 @admin_required
@@ -13308,10 +13553,24 @@ def api_coach_create_direct_appointment():
         db.session.commit()
         
         logger.info(f"Coach {current_coach.id} creó cita directa para coachee {coachee.id}")
-        
-        # TODO: Aquí se podría agregar lógica para enviar notificación al coachee
-        # if data.get('send_notification', True):
-        #     send_appointment_notification(coachee, direct_appointment, data.get('notification_message', ''))
+
+        # Notificar al coachee de la sesión agendada
+        try:
+            fecha_txt = session_date.strftime('%d-%m-%Y')
+            hora_txt = f"{start_time.strftime('%H:%M')} a {end_time.strftime('%H:%M')}"
+            extra = (data.get('notification_message') or '').strip()
+            create_notification(
+                user_id=coachee.id,
+                type='session_confirmed',
+                title=f'{current_coach.full_name} agendó una sesión contigo',
+                message=f'Sesión el {fecha_txt} de {hora_txt}.'
+                        + (f' "{extra}"' if extra else '')
+                        + ' El día de la sesión verás el botón para unirte a la sala en vivo.',
+                related_id=direct_appointment.id,
+                related_type='coaching_session'
+            )
+        except Exception as notif_err:
+            logger.warning(f"⚠️ No se pudo notificar la cita directa al coachee: {notif_err}")
         
         return jsonify({
             'success': True,
@@ -19639,7 +19898,7 @@ def get_session_records():
             for pid in participants_ids:
                 u = User.query.get(pid)
                 if u:
-                    participants_info.append({'id': u.id, 'name': u.username, 'email': u.email})
+                    participants_info.append({'id': u.id, 'name': u.full_name or u.username, 'email': u.email})
 
             commitments = json.loads(r.commitments) if r.commitments else []
 
@@ -19740,7 +19999,7 @@ def get_session_record(session_id):
         for pid in participants_ids:
             u = User.query.get(pid)
             if u:
-                participants_info.append({'id': u.id, 'name': u.username, 'email': u.email})
+                participants_info.append({'id': u.id, 'name': u.full_name or u.username, 'email': u.email})
 
         commitments = json.loads(r.commitments) if r.commitments else []
 
