@@ -30502,7 +30502,10 @@
         // Fecha en el topbar (eyebrow dorado) + saludo según la hora
         const dateLine = document.getElementById('topbarDateLine');
         if (dateLine) {
-            const txt = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            const corto = window.innerWidth < 520;
+            const txt = new Date().toLocaleDateString('es-ES', corto
+                ? { weekday: 'short', day: 'numeric', month: 'short' }
+                : { weekday: 'long', day: 'numeric', month: 'long' });
             dateLine.textContent = txt.charAt(0).toUpperCase() + txt.slice(1);
         }
         const gw = document.getElementById('overviewGreetingWord');
@@ -31268,6 +31271,12 @@
         }
         .mood-btn.selected i {
             color: var(--ocean-700, #213C70) !important;
+        }
+        /* Móvil: los items de la grilla del Hoy pueden encoger (evita el desborde de 4px
+           que cortaba el contador "N de M" y los iconos del borde derecho) */
+        @media (max-width: 640px) {
+            body { overflow-x: hidden !important; }
+            .cw-grid > *, .cw-grid { min-width: 0 !important; max-width: 100% !important; }
         }
         /* Botón Unirse de Próxima sesión: azul con texto blanco, blindado */
         #overviewFocusJoin {
