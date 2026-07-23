@@ -13629,6 +13629,114 @@ def api_coach_self_scheduled_activities():
         logger.error(f"Error en self-scheduled-activities: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error al obtener actividades: {str(e)}'}), 500
 
+@app.route('/api/coach/coachee-insights', methods=['GET'])
+@coach_session_required
+def api_coach_coachee_insights():
+    """Señales por coachee: cumplimiento de compromisos, desconexión y energía.
+
+    Todo se calcula de datos ya existentes (registros, sesiones, mensajes, logins).
+    """
+    try:
+        coach = g.current_user
+        hoy = datetime.now(SANTIAGO_TZ).date()
+        ahora = datetime.utcnow()
+        coachees = User.query.filter_by(coach_id=coach.id, role='coachee').filter(User.deleted_at.is_(None)).all()
+        records = SessionRecord.query.filter_by(coach_id=coach.id).all()
+
+        # Compromisos y energía por coachee, desde los registros
+        por_coachee = {}
+        for r in records:
+            try:
+                pids = json.loads(r.participants) if r.participants else []
+            except Exception:
+                pids = []
+            try:
+                commits = json.loads(r.commitments) if r.commitments else []
+            except Exception:
+                commits = []
+            try:
+                ct = json.loads(r.content) if r.content else {}
+            except Exception:
+                ct = {}
+            for pid in pids:
+                d = por_coachee.setdefault(pid, {'total': 0, 'completados': 0, 'vencidos': 0, 'abiertos': 0, 'energias': []})
+                for cm in commits:
+                    if not isinstance(cm, dict) or not cm.get('texto'):
+                        continue
+                    d['total'] += 1
+                    st = cm.get('status', 'pendiente')
+                    if st == 'completado':
+                        d['completados'] += 1
+                    else:
+                        d['abiertos'] += 1
+                        f = cm.get('fecha')
+                        if f:
+                            try:
+                                if datetime.strptime(f, '%Y-%m-%d').date() < hoy:
+                                    d['vencidos'] += 1
+                            except ValueError:
+                                pass
+                if ct.get('energia'):
+                    d['energias'].append((r.created_at.isoformat() if r.created_at else '', ct['energia']))
+
+        resultado = []
+        for co in coachees:
+            d = por_coachee.get(co.id, {'total': 0, 'completados': 0, 'vencidos': 0, 'abiertos': 0, 'energias': []})
+            tasa = round(d['completados'] / d['total'] * 100) if d['total'] else None
+            dias_sin_entrar = (ahora - co.last_login).days if co.last_login else None
+
+            # Último mensaje del coachee sin respuesta posterior del coach
+            ultimo_coachee = Message.query.filter_by(sender_id=co.id, recipient_id=coach.id).order_by(Message.id.desc()).first()
+            sin_responder = False
+            if ultimo_coachee:
+                respuesta = Message.query.filter(Message.sender_id == coach.id, Message.recipient_id == co.id,
+                                                 Message.id > ultimo_coachee.id).first()
+                sin_responder = respuesta is None
+
+            # Sesiones futuras sin confirmar
+            pendientes_confirmar = CoachingSession.query.filter(
+                CoachingSession.coach_id == coach.id, CoachingSession.coachee_id == co.id,
+                CoachingSession.session_date >= hoy, CoachingSession.status == 'pending').count()
+
+            # Últimas 3 energías (más reciente primero)
+            energias = [e for _, e in sorted(d['energias'], reverse=True)[:3]]
+
+            # Señales de alerta, de mayor a menor urgencia
+            alertas = []
+            if dias_sin_entrar is not None and dias_sin_entrar >= 14:
+                alertas.append(f"{dias_sin_entrar} días sin entrar")
+            elif co.last_login is None:
+                alertas.append("nunca ha entrado")
+            if d['vencidos']:
+                alertas.append(f"{d['vencidos']} compromiso{'s' if d['vencidos'] != 1 else ''} vencido{'s' if d['vencidos'] != 1 else ''}")
+            if sin_responder:
+                alertas.append("mensaje sin responder")
+            if pendientes_confirmar:
+                alertas.append(f"{pendientes_confirmar} sesión{'es' if pendientes_confirmar != 1 else ''} por confirmar")
+            if len(energias) >= 2 and all(e in ('low', 'meh') for e in energias[:2]):
+                alertas.append("llega con poca energía")
+
+            resultado.append({
+                'id': co.id,
+                'name': co.full_name or co.username,
+                'tasa_cumplimiento': tasa,
+                'compromisos_abiertos': d['abiertos'],
+                'compromisos_vencidos': d['vencidos'],
+                'dias_sin_entrar': dias_sin_entrar,
+                'mensaje_sin_responder': sin_responder,
+                'sesiones_por_confirmar': pendientes_confirmar,
+                'energias_recientes': energias,
+                'alertas': alertas
+            })
+
+        # Primero quienes necesitan atención (más alertas), luego por tasa ascendente
+        resultado.sort(key=lambda x: (-len(x['alertas']), x['tasa_cumplimiento'] if x['tasa_cumplimiento'] is not None else 101))
+        return jsonify({'success': True, 'coachees': resultado}), 200
+    except Exception as e:
+        logger.error(f"Error en coachee-insights: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Error calculando insights'}), 500
+
+
 @app.route('/api/coach/upcoming-sessions', methods=['GET'])
 @coach_session_required
 def api_coach_upcoming_sessions():

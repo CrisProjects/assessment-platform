@@ -13888,70 +13888,43 @@ window.dashboardApp = function() {
         
         // Cargar actividad reciente
         async loadRecentActivity() {
+            // "Necesitan tu atención": señales reales por coachee (cumplimiento, desconexión, energía)
             try {
-                console.log('📋 [RECENT-ACTIVITY] Loading recent activity...');
-                
-                const response = await fetch('/api/coach/recent-activity');
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('📋 [RECENT-ACTIVITY] Data received:', data);
-                
-                const activityContainer = document.getElementById('recentActivityContainer');
-                
-                if (!activityContainer) {
-                    console.warn('⚠️ [RECENT-ACTIVITY] Activity container not found');
+                const r = await fetch('/api/coach/coachee-insights', { credentials: 'same-origin' });
+                const d = await r.json();
+                const cont = document.getElementById('recentActivityContainer');
+                if (!cont || !d.success) return;
+                const lista = d.coachees || [];
+                const conAlertas = lista.filter(x => x.alertas.length);
+                if (!lista.length) {
+                    cont.innerHTML = '<p style="font-family:var(--font-serif,Georgia,serif);font-style:italic;font-size:13.5px;color:var(--text-subtle,#8C97A8);margin:0;">Aún no tienes coachees asignados.</p>';
                     return;
                 }
-                
-                if (!data.activities || data.activities.length === 0) {
-                    activityContainer.innerHTML = `
-                        <div style="padding: 2rem; text-align: center; color: #9ca3af;">
-                            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            <p style="margin: 0;">No hay actividad reciente</p>
-                        </div>
-                    `;
+                if (!conAlertas.length) {
+                    cont.innerHTML = '<p style="font-family:var(--font-serif,Georgia,serif);font-style:italic;font-size:13.5px;color:var(--text-subtle,#8C97A8);margin:0;">Nadie necesita atención especial. Buen momento para profundizar.</p>';
                     return;
                 }
-                
-                // Renderizar actividades
-                activityContainer.innerHTML = data.activities.map(activity => {
-                    // Color basado en tipo de actividad
-                    const gradients = {
-                        'assessment_completed': 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
-                        'new_coachee': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        'default': 'linear-gradient(135deg, #2C5AA8 0%, #3A6CC4 100%)'
-                    };
-                    
-                    const gradient = gradients[activity.type] || gradients.default;
-                    
+                const ini = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+                cont.innerHTML = conAlertas.slice(0, 4).map(x => {
+                    const tasa = x.tasa_cumplimiento;
+                    const tasaChip = tasa === null ? '' :
+                        `<span title="Cumplimiento de compromisos" style="flex-shrink:0;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;background:${tasa >= 70 ? 'var(--success-soft,#DBEDE2)' : tasa >= 40 ? 'var(--accent-soft,#F2E7CC)' : 'var(--danger-soft,#F3DED7)'};color:${tasa >= 70 ? 'var(--success,#2F7D5B)' : tasa >= 40 ? 'var(--gold-700,#8A6526)' : 'var(--danger,#B5503C)'};">${tasa}%</span>`;
                     return `
-                        <div style="display: flex; align-items: start; gap: 1rem; padding: 0.75rem; border-radius: 12px; transition: background 0.2s;" 
-                             onmouseover="this.style.background='#f9fafb'" 
-                             onmouseout="this.style.background='transparent'">
-                            <div style="width: 40px; height: 40px; border-radius: 50%; background: ${gradient}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem; flex-shrink: 0;">
-                                ${activity.coachee_initials}
+                    <div onclick="window.irACoachee(${x.id})" style="display:flex;align-items:flex-start;gap:10px;padding:8px;border-radius:10px;cursor:pointer;transition:background .12s;"
+                         onmouseover="this.style.background='var(--surface-hover,#EEF3FC)'" onmouseout="this.style.background='transparent'">
+                        <div style="width:34px;height:34px;border-radius:50%;background:var(--primary-soft,#DCE7F8);color:var(--ocean-700,#213C70);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ini(x.name)}</div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:13.5px;font-weight:600;color:var(--text-strong,#14233F);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${x.name}</span>
+                                ${tasaChip}
                             </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <p style="color: #111827; font-size: 0.875rem; margin: 0;">
-                                    <span style="font-weight: 600;">${activity.coachee_name}</span>
-                                    <span style="color: #6b7280;"> ${activity.description}</span>
-                                </p>
-                                <p style="color: #9ca3af; font-size: 0.75rem; margin: 0.25rem 0 0 0;">${activity.time_ago}</p>
-                            </div>
+                            <div style="font-size:12px;color:var(--gold-700,#8A6526);line-height:1.4;">${x.alertas.join(' · ')}</div>
                         </div>
-                    `;
+                    </div>`;
                 }).join('');
-                
-                console.log('✅ [RECENT-ACTIVITY] Activities rendered successfully');
-                
-            } catch (error) {
-                console.error('❌ [RECENT-ACTIVITY] Error loading activity:', error);
-            }
+            } catch (e) { console.error('insights:', e); }
         },
-        
+
         // Inicializar calendario
         // ⚡ Lazy loading de FullCalendar (solo se usa en Mi Agenda)
         async loadFullCalendar() {
