@@ -102,12 +102,13 @@
                         <div class="serif" style="font-size: 18px; color: var(--text-inverse, #FAFBFD);">Pasaste la mitad. El plan avanza contigo.</div>
                     </div>
                 </div>
-                <div style="background: rgba(255,255,255,0.07); border-radius: 14px; padding: 16px; position: relative;">
+                <div style="background: rgba(255,255,255,0.07); border-radius: 14px; padding: 16px; position: relative; min-height: 96px; box-sizing: border-box;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <i class="fas fa-wand-magic-sparkles" style="font-size: 0.8rem; color: var(--gold-300, #E0C691);"></i>
-                        <span class="eyebrow" style="color: var(--gold-300, #E0C691);">Tu coach, hoy</span>
+                        <span id="lpNudgeLabel" class="eyebrow" style="color: var(--gold-300, #E0C691);">Tu coach, hoy</span>
                     </div>
-                    <p class="serif" style="font-size: 15.5px; line-height: 1.5; color: var(--text-inverse, #FAFBFD); margin: 0;">"Nombraste evitar el 1:1 como un patrón. ¿Quieres planear cómo abrirlo hoy?"</p>
+                    <p id="lpNudgeText" class="serif" style="font-size: 15.5px; line-height: 1.5; color: var(--text-inverse, #FAFBFD); margin: 0; opacity: 1; transform: translateY(0); transition: opacity .45s ease, transform .45s ease;">"Nombraste evitar el 1:1 como un patrón. ¿Quieres planear cómo abrirlo hoy?"</p>
+                    <div id="lpNudgeDots" style="display: flex; gap: 6px; margin-top: 12px;"></div>
                 </div>
             </div>
             <div class="drift" style="position: absolute; left: -28px; bottom: -24px; background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; box-shadow: var(--shadow-md, 0 10px 24px -14px rgba(20,35,63,0.32)); padding: 14px 18px; display: flex; align-items: center; gap: 12px;">
@@ -163,12 +164,13 @@
             </div>
         </div>
         <div class="lp-card">
+            <div id="lpEvalInner" style="opacity: 1; transform: translateY(0); transition: opacity .45s ease, transform .45s ease;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                <h3 class="serif" style="font-size: 19px; margin: 0;">Asertividad</h3>
-                <span style="font-size: 11.5px; font-weight: 700; padding: 3px 11px; border-radius: 999px; background: var(--success-soft, #DBEDE2); color: var(--success, #2F7D5B);">+9 pts en 6 semanas</span>
+                <h3 id="lpEvalName" class="serif" style="font-size: 19px; margin: 0;">Asertividad</h3>
+                <span id="lpEvalDelta" style="font-size: 11.5px; font-weight: 700; padding: 3px 11px; border-radius: 999px; background: var(--success-soft, #DBEDE2); color: var(--success, #2F7D5B);">+9 pts en 6 semanas</span>
             </div>
-            <p style="font-size: 12.5px; color: var(--text-subtle, #8C97A8); margin: 0 0 18px;">49 → 58 · segunda toma</p>
-            <div style="display: flex; flex-direction: column; gap: 14px;">
+            <p id="lpEvalMeta" style="font-size: 12.5px; color: var(--text-subtle, #8C97A8); margin: 0 0 18px;">49 → 58 · segunda toma</p>
+            <div id="lpEvalDims" style="display: flex; flex-direction: column; gap: 14px; min-height: 170px;">
                 <div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                         <span style="font-size: 13.5px; font-weight: 600; color: var(--text-strong, #14233F);">Expresar necesidades</span>
@@ -191,6 +193,8 @@
                     <div style="height: 8px; border-radius: 999px; background: var(--surface-sunken, #E6EBF2); overflow: hidden;"><div style="height: 100%; width: 61%; border-radius: 999px; background: var(--primary, #2C5AA8);"></div></div>
                 </div>
             </div>
+            </div>
+            <div id="lpEvalDots" style="display: flex; gap: 6px; margin-top: 16px;"></div>
         </div>
     </section>
 
@@ -240,5 +244,96 @@
         <span style="font-size: 13px; color: var(--text-subtle, #8C97A8);">© 2026 InstaCoach</span>
     </footer>
 </div>
+<script>
+(function () {
+    'use strict';
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    /* ── Rotador de nudges del coach (tarjeta oscura del héroe) ── */
+    var nudges = [
+        { label: 'Tu coach, hoy', text: '"Nombraste evitar el 1:1 como un patrón. ¿Quieres planear cómo abrirlo hoy?"' },
+        { label: 'Tu coach, hoy', text: '"Tu compromiso de la semana: delegar el reporte completo. ¿Cómo va?"' },
+        { label: 'Antes de tu sesión', text: '"Mañana ves a tu coach. Anota una situación de la semana que quieras trabajar."' },
+        { label: 'Reflexión del viernes', text: '"¿Qué conversación difícil manejaste mejor esta semana que hace un mes?"' }
+    ];
+    var nIdx = 0;
+    var nText = document.getElementById('lpNudgeText');
+    var nLabel = document.getElementById('lpNudgeLabel');
+    var nDots = document.getElementById('lpNudgeDots');
+    function pintarNudgeDots() {
+        if (!nDots) return;
+        nDots.innerHTML = nudges.map(function (_, i) {
+            return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === nIdx ? 'var(--gold-300, #E0C691)' : 'rgba(255,255,255,0.22)') + ';transition:background .3s ease;"></span>';
+        }).join('');
+    }
+    if (nText && nLabel) {
+        pintarNudgeDots();
+        setInterval(function () {
+            nText.style.opacity = '0';
+            nText.style.transform = 'translateY(8px)';
+            setTimeout(function () {
+                nIdx = (nIdx + 1) % nudges.length;
+                nLabel.textContent = nudges[nIdx].label;
+                nText.textContent = nudges[nIdx].text;
+                nText.style.opacity = '1';
+                nText.style.transform = 'translateY(0)';
+                pintarNudgeDots();
+            }, 450);
+        }, 4200);
+    }
+
+    /* ── Rotador de evaluaciones ── */
+    var evals = [
+        { name: 'Asertividad', delta: '+9 pts en 6 semanas', meta: '49 → 58 · segunda toma', dims: [
+            { name: 'Expresar necesidades', pct: 72, tag: 'Fortaleza', color: 'var(--success, #2F7D5B)' },
+            { name: 'Poner límites', pct: 41, tag: 'Foco sugerido', color: 'var(--gold-700, #8A6526)' },
+            { name: 'Manejar el conflicto', pct: 61, tag: 'En desarrollo', color: 'var(--text-muted, #646E7E)' }
+        ] },
+        { name: 'Liderazgo', delta: '+6 pts en 8 semanas', meta: '55 → 61 · segunda toma', dims: [
+            { name: 'Dar dirección clara', pct: 68, tag: 'Fortaleza', color: 'var(--success, #2F7D5B)' },
+            { name: 'Delegar con confianza', pct: 44, tag: 'Foco sugerido', color: 'var(--gold-700, #8A6526)' },
+            { name: 'Desarrollar al equipo', pct: 58, tag: 'En desarrollo', color: 'var(--text-muted, #646E7E)' }
+        ] },
+        { name: 'Escucha activa', delta: '+11 pts en 6 semanas', meta: '42 → 53 · segunda toma', dims: [
+            { name: 'Presencia en la conversación', pct: 64, tag: 'Fortaleza', color: 'var(--success, #2F7D5B)' },
+            { name: 'Escuchar sin interrumpir', pct: 39, tag: 'Foco sugerido', color: 'var(--gold-700, #8A6526)' },
+            { name: 'Preguntar antes de opinar', pct: 57, tag: 'En desarrollo', color: 'var(--text-muted, #646E7E)' }
+        ] }
+    ];
+    var eIdx = 0;
+    var eInner = document.getElementById('lpEvalInner');
+    var eDots = document.getElementById('lpEvalDots');
+    function pintarEval() {
+        document.getElementById('lpEvalName').textContent = evals[eIdx].name;
+        document.getElementById('lpEvalDelta').textContent = evals[eIdx].delta;
+        document.getElementById('lpEvalMeta').textContent = evals[eIdx].meta;
+        document.getElementById('lpEvalDims').innerHTML = evals[eIdx].dims.map(function (d) {
+            return '<div>' +
+                '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
+                    '<span style="font-size:13.5px;font-weight:600;color:var(--text-strong, #14233F);">' + d.name + '</span>' +
+                    '<span style="font-size:12px;font-weight:600;color:' + d.color + ';">' + d.tag + '</span>' +
+                '</div>' +
+                '<div style="height:8px;border-radius:999px;background:var(--surface-sunken, #E6EBF2);overflow:hidden;"><div style="height:100%;width:' + d.pct + '%;border-radius:999px;background:var(--primary, #2C5AA8);"></div></div>' +
+            '</div>';
+        }).join('');
+        if (eDots) eDots.innerHTML = evals.map(function (_, i) {
+            return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === eIdx ? 'var(--accent, #C49A52)' : 'var(--mist-300, #D5DCE7)') + ';transition:background .3s ease;"></span>';
+        }).join('');
+    }
+    if (eInner) {
+        pintarEval();
+        setInterval(function () {
+            eInner.style.opacity = '0';
+            eInner.style.transform = 'translateY(8px)';
+            setTimeout(function () {
+                eIdx = (eIdx + 1) % evals.length;
+                pintarEval();
+                eInner.style.opacity = '1';
+                eInner.style.transform = 'translateY(0)';
+            }, 450);
+        }, 5600);
+    }
+})();
+</script>
 </body>
 </html>

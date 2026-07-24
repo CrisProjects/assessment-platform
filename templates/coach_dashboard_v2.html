@@ -6016,7 +6016,7 @@
                             <p style="font-size: 0.9375rem; color: var(--text-muted, #646E7E); margin: 0;">Registra y gestiona las notas de cada sesión con tus coachees.</p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                            <div style="display:flex; gap:6px; margin-right: 6px;">
+                            <div class="ses-pills-row" style="display:flex; gap:6px; margin-right: 6px;">
                                 <button class="ses-pill" onclick="setSesionesRango('todas', this)" style="padding:8px 14px;border-radius:999px;border:1px solid var(--border-brand, #BFD3F0);font-size:13px;font-weight:600;cursor:pointer;background:var(--primary-soft, #DCE7F8);color:var(--ocean-700, #213C70);transition:all .15s;">Todas</button>
                                 <button class="ses-pill" onclick="setSesionesRango('hoy', this)" style="padding:8px 14px;border-radius:999px;border:1px solid var(--border-default, #D5DCE7);font-size:13px;font-weight:600;cursor:pointer;background:var(--surface-card, #fff);color:var(--text-body, #313842);transition:all .15s;">Hoy</button>
                                 <button class="ses-pill" onclick="setSesionesRango('semana', this)" style="padding:8px 14px;border-radius:999px;border:1px solid var(--border-default, #D5DCE7);font-size:13px;font-weight:600;cursor:pointer;background:var(--surface-card, #fff);color:var(--text-body, #313842);transition:all .15s;">Esta semana</button>
@@ -6101,6 +6101,22 @@
                     </div>
 
                     <!-- Lista de sesiones -->
+                    <style>
+                        /* Móvil: filtros parejos en una grilla de 4 y botones a ancho completo */
+                        @media (max-width: 640px) {
+                            .ses-pills-row { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; flex: 1 1 100% !important; width: 100% !important; margin-right: 0 !important; }
+                            .ses-pill { padding: 8px 2px !important; font-size: 12px !important; text-align: center; white-space: nowrap; }
+                        }
+                        /* Móvil: los registros se apilan — hora en línea arriba, contenido a todo el ancho */
+                        @media (max-width: 640px) {
+                            #sesiones-lista-container { padding: 0.9rem 0.75rem !important; }
+                            .reg-card { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; padding: 0.8rem 0.9rem !important; }
+                            .reg-card > div:first-child { width: auto !important; display: flex !important; align-items: baseline; gap: 8px; text-align: left !important; }
+                            .reg-card > div[style*="width:1px"] { display: none !important; }
+                            .reg-card > button, .reg-card > div:last-child button { align-self: flex-end; }
+                            .reg-card button { align-self: flex-end; }
+                        }
+                    </style>
                     <div style="padding: 1.25rem 1.5rem;" id="sesiones-lista-container">
                         <div id="sesiones-lista-empty" style="text-align: center; padding: 3rem 1rem; color: #9ca3af; display: none;">
                             <i class="fas fa-comments" style="font-size: 2.5rem; margin-bottom: 0.75rem; display: block;"></i>
@@ -9278,6 +9294,36 @@
         
         <!-- Mi Agenda Module -->
             <div id="mi-agenda" class="module-content" style="display: none; scroll-margin-top: 80px;">
+                <style>
+                    /* ── Mi agenda: pestañas segmentadas Tide ── */
+                    #miAgendaTabs { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--surface-sunken, #E6EBF2) !important; border-radius: 12px !important; }
+                    #miAgendaTabs .nav-link { color: var(--text-muted, #646E7E) !important; background: transparent !important; }
+                    #miAgendaTabs .nav-link:hover { color: var(--text-strong, #14233F) !important; }
+                    #miAgendaTabs .nav-link.active { background: var(--primary, #2C5AA8) !important; color: #fff !important; box-shadow: 0 1px 2px rgba(20,35,63,0.15); }
+                    /* ── FullCalendar en lenguaje Tide ── */
+                    #mi-agenda .fc .fc-button { background: var(--surface-card, #fff); border: 1.5px solid var(--border-brand, #BFD3F0); color: var(--primary, #2C5AA8); border-radius: 999px; font-weight: 600; font-size: 0.8rem; text-transform: capitalize; box-shadow: none !important; }
+                    #mi-agenda .fc .fc-button:hover { background: var(--primary-soft, #DCE7F8); border-color: var(--border-brand, #BFD3F0); color: var(--ocean-700, #213C70); }
+                    #mi-agenda .fc .fc-button-primary:not(:disabled).fc-button-active,
+                    #mi-agenda .fc .fc-button-primary:not(:disabled):active { background: var(--primary, #2C5AA8) !important; border-color: var(--primary, #2C5AA8) !important; color: #fff !important; }
+                    #mi-agenda .fc .fc-button:disabled { background: var(--surface-sunken, #E6EBF2); border-color: var(--border-default, #D5DCE7); color: var(--text-subtle, #8C97A8); }
+                    #mi-agenda .fc .fc-toolbar-title { font-family: var(--font-serif, Georgia, serif); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; }
+                    #mi-agenda .fc .fc-day-today { background: var(--primary-soft, #DCE7F8) !important; }
+                    #mi-agenda .fc .fc-col-header-cell-cushion { color: var(--text-muted, #646E7E); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; }
+                    #mi-agenda .fc .fc-daygrid-day-number, #mi-agenda .fc .fc-list-day-text, #mi-agenda .fc .fc-list-day-side-text { color: var(--text-strong, #14233F); text-decoration: none; }
+                    #mi-agenda .fc-theme-standard td, #mi-agenda .fc-theme-standard th, #mi-agenda .fc-theme-standard .fc-scrollgrid { border-color: var(--border-subtle, #E6EBF2); }
+                    .sol-avatar { width: 36px !important; height: 36px !important; flex: 0 0 36px !important; max-width: 36px !important; }
+                    /* ── Móvil: pestañas 2x2, toolbar compacta y contenedores al ancho ── */
+                    @media (max-width: 640px) {
+                        .sol-actions { flex-direction: column; }
+                        .sol-avatar { width: 36px !important; height: 36px !important; flex: 0 0 36px !important; max-width: 36px !important; }
+                        .sol-actions button { min-width: 0 !important; width: 100%; }
+                        #miAgendaTabs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+                        #mi-agenda .fc .fc-toolbar { flex-wrap: wrap; gap: 6px; justify-content: center; }
+                        #mi-agenda .fc .fc-toolbar-title { font-size: 1.05rem; }
+                        #mi-agenda .fc .fc-button { padding: 5px 10px; font-size: 0.75rem; }
+                        #mi-agenda .card > div { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+                    }
+                </style>
                 <div class="card" style="background: #ffffff; margin-bottom: 2rem; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); border: none; overflow: visible;">
                     <!-- Header -->
                     <div style="padding: 1rem; border-bottom: 1px solid #f3f4f6;">
@@ -9305,7 +9351,7 @@
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link w-100" id="solicitudes-tab" data-bs-toggle="tab" 
+                                <button class="nav-link w-100" id="agenda-solicitudes-tab" data-bs-toggle="tab" 
                                     data-bs-target="#solicitudes-pane" type="button" role="tab"
                                     style="border-radius: 8px; font-weight: 600; padding: 0.625rem 0.375rem; transition: all 0.2s; font-size: 0.8125rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; min-height: 58px;">
                                     <i class="fas fa-inbox" style="font-size: 1.125rem;"></i>
@@ -9397,7 +9443,7 @@
                                 <div style="background: white; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
                                     <div style="background: white; padding: 0.875rem; border-bottom: 1px solid #e5e7eb;">
                                         <h6 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1rem;">
-                                            <i class="fas fa-calendar me-2" style="color: #8b5cf6;"></i>Calendario de Sesiones
+                                            <i class="fas fa-calendar me-2" style="color: var(--primary, #2C5AA8);"></i>Calendario de sesiones
                                         </h6>
                                         <p class="mb-0 d-none d-sm-block" style="color: #6b7280; font-size: 0.8125rem;">
                                             Vista mensual de todas tus sesiones programadas
@@ -9414,7 +9460,7 @@
                                 <div style="background: white; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
                                     <div style="background: white; padding: 0.875rem; border-bottom: 1px solid #e5e7eb;">
                                         <h6 class="mb-1" style="color: #111827; font-weight: 600; font-size: 1rem;">
-                                            <i class="fas fa-inbox me-2" style="color: #f59e0b;"></i>Solicitudes Pendientes
+                                            <i class="fas fa-inbox me-2" style="color: var(--gold-700, #8A6526);"></i>Solicitudes pendientes
                                         </h6>
                                         <p class="mb-0 d-none d-sm-block" style="color: #6b7280; font-size: 0.8125rem;">
                                             Revisa y gestiona las solicitudes de sesión
@@ -9423,7 +9469,7 @@
                                     <div style="padding: 0.875rem;">
                                         <!-- Estado de carga -->
                                         <div id="requestsLoadingState" style="text-align: center; padding: 2.5rem 1rem; display: none;">
-                                            <div class="spinner-border" role="status" style="width: 2.5rem; height: 2.5rem; color: #8b5cf6;">
+                                            <div class="spinner-border" role="status" style="width: 2.5rem; height: 2.5rem; color: var(--primary, #2C5AA8);">
                                                 <span class="visually-hidden">Cargando...</span>
                                             </div>
                                             <p class="mt-3 mb-0" style="color: #6b7280; font-size: 0.8125rem;">Cargando solicitudes...</p>
@@ -9432,8 +9478,8 @@
                                         <!-- Estado vacío -->
                                         <div id="requestsEmptyState" style="display: none;">
                                             <div style="text-align: center; padding: 3rem 1rem;">
-                                                <div style="width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; opacity: 0.15;">
-                                                    <i class="fas fa-inbox" style="color: white; font-size: 1.75rem;"></i>
+                                                <div style="width: 64px; height: 64px; border-radius: 16px; background: var(--primary-soft, #DCE7F8); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem;">
+                                                    <i class="fas fa-inbox" style="color: var(--primary, #2C5AA8); font-size: 1.5rem;"></i>
                                                 </div>
                                                 <p class="mb-1" style="color: #111827; font-size: 0.9375rem; font-weight: 600;">
                                                     No hay solicitudes pendientes
@@ -14396,75 +14442,31 @@ window.dashboardApp = function() {
                         let html = '';
                         this.sessionRequests.forEach((request) => {
                             const date = new Date(request.preferred_date + 'T12:00:00');
-                            const dateStr = date.toLocaleDateString('es-ES', { 
-                                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-                            });
+                            const dateStr = date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
                             
                             html += `
-                                <div class="card mb-3" style="border: none; border-left: 4px solid #f59e0b; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
-                                    <div class="card-body" style="padding: 1.5rem;">
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h6 class="mb-1" style="font-weight: 600; color: #111827; font-size: 1.1rem;">
-                                                    <i class="fas fa-user-circle me-2" style="color: #2C5AA8;"></i>
-                                                    ${request.coachee_name}
-                                                </h6>
-                                                <p class="mb-0 text-muted" style="font-size: 0.875rem;">Solicitud #${request.id}</p>
-                                            </div>
-                                            <span class="badge" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); font-size: 0.875rem; padding: 0.5rem 1rem;">
-                                                <i class="fas fa-clock me-1"></i>Pendiente
-                                            </span>
+                                <div class="sol-card" style="border: 1px solid var(--border-subtle, #E6EBF2); border-left: 4px solid var(--gold-500, #C49A52); border-radius: 12px; background: var(--surface-card, #fff); box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 1rem 1.1rem; margin-bottom: 0.9rem;">
+                                    <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+                                        <span class="sol-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${(request.coachee_name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('')}</span>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 14.5px; font-weight: 600; color: var(--text-strong, #14233F);">${request.coachee_name}</div>
+                                            <div style="font-size: 12px; color: var(--text-subtle, #8C97A8);">Solicitud #${request.id}</div>
                                         </div>
-                                        
-                                        <div class="mb-3 p-3" style="background: #fef3c7; border-radius: 8px; border-left: 3px solid #f59e0b;">
-                                            <p class="mb-1" style="font-weight: 600; color: #92400e; font-size: 1rem;">
-                                                <i class="fas fa-bookmark me-2"></i>
-                                                ${request.title || 'Sesión de Coaching'}
-                                            </p>
-                                            ${request.description ? `<p class="mb-0 text-muted" style="font-size: 0.875rem; color: #78350f;">${request.description}</p>` : ''}
-                                        </div>
-                                        
-                                        <div class="row g-2 mb-3">
-                                            <div class="col-md-6">
-                                                <div class="d-flex align-items-center p-2" style="background: #f3f4f6; border-radius: 8px;">
-                                                    <i class="fas fa-calendar text-primary me-2" style="font-size: 1.2rem;"></i>
-                                                    <div>
-                                                        <small class="d-block text-muted" style="font-size: 0.75rem;">Fecha</small>
-                                                        <strong style="font-size: 0.875rem;">${dateStr}</strong>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="d-flex align-items-center p-2" style="background: #f3f4f6; border-radius: 8px;">
-                                                    <i class="fas fa-clock text-success me-2" style="font-size: 1.2rem;"></i>
-                                                    <div>
-                                                        <small class="d-block text-muted" style="font-size: 0.75rem;">Horario</small>
-                                                        <strong style="font-size: 0.875rem;">${request.start_time}-${request.end_time}</strong>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="d-flex align-items-center p-2" style="background: #f3f4f6; border-radius: 8px;">
-                                                    <i class="fas fa-map-marker-alt text-danger me-2" style="font-size: 1.2rem;"></i>
-                                                    <div>
-                                                        <small class="d-block text-muted" style="font-size: 0.75rem;">Ubicación</small>
-                                                        <strong style="font-size: 0.875rem;">${request.location || 'Virtual'}</strong>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <button class="btn btn-success flex-fill" onclick="acceptSessionRequest(${request.id})" style="border-radius: 8px; font-weight: 500;">
-                                                <i class="fas fa-check me-1"></i>Aceptar
-                                            </button>
-                                            <button class="btn btn-primary flex-fill" onclick="openProposeModal(${request.id}, '${request.coachee_name}')" style="border-radius: 8px; font-weight: 500;">
-                                                <i class="fas fa-calendar-alt me-1"></i>Proponer Horario
-                                            </button>
-                                            <button class="btn btn-danger flex-fill" onclick="rejectSessionRequest(${request.id})" style="border-radius: 8px; font-weight: 500;">
-                                                <i class="fas fa-times me-1"></i>Rechazar
-                                            </button>
-                                        </div>
+                                        <span style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; background: var(--accent-soft, #F2E7CC); color: var(--gold-700, #8A6526);"><span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>Pendiente</span>
+                                    </div>
+                                    <div style="background: var(--surface-page, #F1F4F9); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;">
+                                        <div style="font-size: 13.5px; font-weight: 600; color: var(--text-strong, #14233F);">${request.title || 'Sesión de coaching'}</div>
+                                        ${request.description ? `<div style="font-size: 12.5px; color: var(--text-muted, #646E7E); margin-top: 2px;">${request.description}</div>` : ''}
+                                    </div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; font-size: 12.5px; color: var(--text-body, #313842);">
+                                        <span><i class="fas fa-calendar" style="color: var(--primary, #2C5AA8); margin-right: 5px;"></i>${dateStr}</span>
+                                        <span><i class="fas fa-clock" style="color: var(--primary, #2C5AA8); margin-right: 5px;"></i>${request.start_time}–${request.end_time}</span>
+                                        <span><i class="fas fa-location-dot" style="color: var(--primary, #2C5AA8); margin-right: 5px;"></i>${request.location || 'Virtual'}</span>
+                                    </div>
+                                    <div class="sol-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button onclick="acceptSessionRequest(${request.id})" style="flex: 1; min-width: 100px; padding: 9px 12px; border: none; border-radius: 999px; background: var(--primary, #2C5AA8); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">Aceptar</button>
+                                        <button onclick="openProposeModal(${request.id}, '${request.coachee_name}')" style="flex: 1; min-width: 130px; padding: 9px 12px; border: 1.5px solid var(--border-brand, #BFD3F0); border-radius: 999px; background: var(--surface-card, #fff); color: var(--primary, #2C5AA8); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">Proponer horario</button>
+                                        <button onclick="rejectSessionRequest(${request.id})" style="flex: 1; min-width: 100px; padding: 9px 12px; border: 1.5px solid var(--border-default, #D5DCE7); border-radius: 999px; background: var(--surface-card, #fff); color: var(--danger, #B5503C); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">Rechazar</button>
                                     </div>
                                 </div>
                             `;
@@ -16930,7 +16932,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Listener para el tab de solicitudes dentro de Mi Agenda
-    const solicitudesTab = document.getElementById('solicitudes-tab');
+    const solicitudesTab = document.getElementById('agenda-solicitudes-tab');
     if (solicitudesTab) {
         solicitudesTab.addEventListener('shown.bs.tab', function(event) {
             if (window.coachDashboard && typeof window.coachDashboard.loadSessionRequests === 'function') {
@@ -21614,6 +21616,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const badgeLabel  = esCero ? '⭐ Sesión Cero' : s.name;
 
             const card = document.createElement('div');
+            card.className = 'reg-card';
             card.style.cssText = 'border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 12px; padding: 0.9rem 1.1rem; transition: background 0.15s, border-color 0.15s; display: flex; align-items: center; gap: 14px; background: var(--surface-card, #fff);';
             card.onmouseover = function() { this.style.background = 'var(--surface-hover, #EEF3FC)'; this.style.borderColor = 'var(--border-brand, #BFD3F0)'; };
             card.onmouseout  = function() { this.style.background = 'var(--surface-card, #fff)'; this.style.borderColor = 'var(--border-subtle, #E6EBF2)'; };
@@ -24399,6 +24402,16 @@ document.addEventListener('DOMContentLoaded', () => {
         <style>
             /* Por encima de la barra inferior (z-index 99999 en algunos elementos) */
             #notasDrawer { z-index: 100000 !important; }
+            #ndInicio, #ndTermino { min-width: 0; }
+            @media (max-width: 520px) {
+                #notasDrawer > div { width: 100vw !important; max-width: 100vw !important; }
+                .nd-grid2 { grid-template-columns: 1fr !important; }
+                /* Nuevo compromiso: campo a ancho completo arriba; plazo y Añadir comparten la fila de abajo */
+                .nd-commit-row { flex-wrap: wrap; }
+                #ndCommitDraft { flex: 1 1 100% !important; }
+                #ndCommitDue { flex: 1; width: auto !important; }
+                #notasDrawer .nd-energy { font-size: 10.5px; padding: 9px 4px; }
+            }
             @keyframes ndIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
             .nd-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #646E7E); }
             .nd-input, .nd-textarea, .nd-select { width: 100%; box-sizing: border-box; padding: 11px 13px; border: 1.5px solid var(--border-default, #D5DCE7); border-radius: 10px; font-family: inherit; font-size: 13.5px; color: var(--text-strong, #14233F); background: var(--surface-card, #fff); outline: none; transition: border-color .15s, box-shadow .15s; }
@@ -24450,7 +24463,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div>
                 <div class="nd-eyebrow" style="margin-bottom: 8px;">4 · Nuevos compromisos</div>
                 <div id="ndNewList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;"></div>
-                <div style="display: flex; gap: 8px;">
+                <div class="nd-commit-row" style="display: flex; gap: 8px;">
                     <input id="ndCommitDraft" class="nd-input" placeholder="Nuevo compromiso…" style="flex: 1.6;">
                     <select id="ndCommitDue" class="nd-select" style="width: 150px; flex-shrink: 0;">
                         <option>Esta semana</option>
@@ -24482,13 +24495,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div><label class="nd-label">¿Qué valor está detrás de este objetivo?</label><input id="ndValor" class="nd-input" placeholder="Ej: confianza en el equipo"></div>
                     <div><label class="nd-label">¿Para qué quieres lograr este objetivo?</label><textarea id="ndPara" class="nd-textarea" placeholder="El propósito detrás del proceso…"></textarea></div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div><label class="nd-label">KPI / Indicador de medición</label><input id="ndKpi" class="nd-input" placeholder="Ej: tareas delegadas por semana"></div>
-                        <div><label class="nd-label">Logro esperado</label><input id="ndLogro" class="nd-input" placeholder="Ej: delegar sin rehacer"></div>
+                    <div class="nd-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="min-width: 0;"><label class="nd-label">KPI / Indicador de medición</label><input id="ndKpi" class="nd-input" placeholder="Ej: tareas delegadas por semana"></div>
+                        <div style="min-width: 0;"><label class="nd-label">Logro esperado</label><input id="ndLogro" class="nd-input" placeholder="Ej: delegar sin rehacer"></div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div><label class="nd-label">Fecha inicio del proceso</label><input id="ndInicio" type="date" class="nd-input"></div>
-                        <div><label class="nd-label">Fecha término del proceso</label><input id="ndTermino" type="date" class="nd-input"></div>
+                    <div class="nd-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="min-width: 0;"><label class="nd-label">Fecha inicio del proceso</label><input id="ndInicio" type="date" class="nd-input"></div>
+                        <div style="min-width: 0;"><label class="nd-label">Fecha término del proceso</label><input id="ndTermino" type="date" class="nd-input"></div>
                     </div>
                     <div><label class="nd-label">Avance / Resultado del proceso</label><textarea id="ndAvance" class="nd-textarea" placeholder="Cómo va el proceso respecto al acuerdo…"></textarea></div>
                 </div>
