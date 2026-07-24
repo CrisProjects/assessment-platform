@@ -9077,6 +9077,7 @@ def _rtc_room_access(room):
 
 
 @app.route('/api/rtc/<room>/signals', methods=['GET'])
+@limiter.exempt
 def api_rtc_get_signals(room):
     access = _rtc_room_access(room)
     if not access:
@@ -9100,6 +9101,7 @@ def api_rtc_get_signals(room):
 
 
 @app.route('/api/rtc/<room>/signals', methods=['POST'])
+@limiter.exempt
 def api_rtc_post_signal(room):
     access = _rtc_room_access(room)
     if not access:
@@ -12959,10 +12961,11 @@ def api_coachee_assessment_history(assessment_id):
                 date_only = 'N/A'
                 time_only = 'N/A'
             
+            pct = max(0.0, min(100.0, entry.score or 0.0))
             history_data.append({
                 'id': entry.id,
-                'score': entry.score,  # Ya es porcentaje
-                'score_percentage': entry.score,  # Explícito como porcentaje
+                'score': pct,  # Ya es porcentaje (acotado 0–100)
+                'score_percentage': pct,  # Explícito como porcentaje
                 'total_questions': entry.total_questions,
                 'completed_at': entry.completed_at.isoformat() if entry.completed_at else None,
                 'formatted_date': formatted_date,
@@ -13071,10 +13074,12 @@ def api_coachee_all_assessment_history():
                 iso_date = None
             
             # Agregar dato al grupo
+            # Porcentaje defensivo: filas históricas corruptas pueden traer >100
+            pct = max(0.0, min(100.0, entry.score or 0.0))
             grouped_history[assessment_id]['data'].append({
                 'id': entry.id,
-                'score': entry.score,  # Ya es porcentaje
-                'percentage': entry.score,  # Explícito
+                'score': pct,  # Ya es porcentaje (acotado 0–100)
+                'percentage': pct,  # Explícito
                 'total_questions': entry.total_questions,
                 'completed_at': iso_date,
                 'formatted_date': formatted_date,

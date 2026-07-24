@@ -9907,10 +9907,9 @@
                 </svg>
                 <span style="font-family:'Manrope',sans-serif;font-size:1.375rem;font-weight:700;color:#2C5AA8;line-height:1;letter-spacing:-0.01em;user-select:none;-webkit-font-smoothing:antialiased;">Insta<span style="color:#A87C36;">Coach</span></span>
             </div>
-            <div id="topbarDateLine" style="font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-700, #8A6526);"></div>
 
             <!-- Right Section -->
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: auto;">
                 <!-- Notifications Bell -->
                 <div style="position: relative;" id="notifBellWrapper">
                     <button id="notifBellBtn"
@@ -10059,6 +10058,7 @@
 
                         <!-- Greeting header — héroe Tide -->
                         <div style="margin-bottom: 1.75rem;">
+                            <div id="hoyDateLine" style="font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-700, #8A6526); margin-bottom: 8px;"></div>
                             <h1 style="font-family: var(--font-serif, Georgia, serif); font-size: clamp(1.75rem, 3.5vw, 2.125rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; line-height: 1.15; margin: 0 0 6px;">
                                 <span id="overviewGreetingWord">Hola</span>, <span x-text="coacheeName"></span>.
                             </h1>
@@ -15695,6 +15695,17 @@
                             { border: '#3A6CC4', bg: 'rgba(236, 72, 153, 0.1)' }     // Rosa
                         ];
                         
+                        // Línea de tiempo uniforme: cada toma ocupa un espacio igual en el eje X
+                        // (orden cronológico, pero sin huecos proporcionales entre fechas)
+                        const todasLasFechas = [];
+                        Object.values(this.allAssessmentHistory).forEach(ad => {
+                            ad.data.forEach(item => todasLasFechas.push(item.completed_at));
+                        });
+                        const fechasUnicas = [...new Set(todasLasFechas)].sort((a, b) => new Date(a) - new Date(b));
+                        const indicePorFecha = {};
+                        fechasUnicas.forEach((f, i) => { indicePorFecha[f] = i; });
+                        this._progresoFechas = fechasUnicas;
+
                         // Crear datasets para cada tipo de evaluación
                         const datasets = [];
                         let colorIndex = 0;
@@ -15706,7 +15717,8 @@
                             datasets.push({
                                 label: assessmentData.title,
                                 data: assessmentData.data.map(item => ({
-                                    x: new Date(item.completed_at),  // Usar fecha/hora real
+                                    x: indicePorFecha[item.completed_at],
+                                    fecha: item.completed_at,
                                     y: item.percentage
                                 })),
                                 borderColor: color.border,
@@ -15728,6 +15740,23 @@
                         });
                         
                         
+                        // Reindexa el eje X uniforme usando SOLO los datasets visibles:
+                        // así las fechas mostradas corresponden a los resultados filtrados
+                        const reindexarEjeX = (chart) => {
+                            const visibles = chart.data.datasets.filter(ds => !ds.hidden);
+                            const fechas = [...new Set(visibles.flatMap(ds => ds.data.map(pt => pt.fecha)))]
+                                .sort((a, b) => new Date(a) - new Date(b));
+                            const idx = {};
+                            fechas.forEach((f, i) => { idx[f] = i; });
+                            this._progresoFechas = fechas;
+                            chart.data.datasets.forEach(ds => {
+                                ds.data.forEach(pt => { pt.x = idx[pt.fecha] !== undefined ? idx[pt.fecha] : null; });
+                            });
+                            chart.options.scales.x.min = -0.3;
+                            chart.options.scales.x.max = Math.max(fechas.length - 1, 0) + 0.3;
+                        };
+                        this._reindexarEjeX = reindexarEjeX;
+
                         // Crear el gráfico con eje X de tiempo
                         this.progressChart = new Chart(ctx, {
                             type: 'line',
@@ -15781,6 +15810,8 @@
                                                 }
                                             }
                                             
+                                            const app = Alpine.$data(document.querySelector('[x-data]'));
+                                            if (app && app._reindexarEjeX) app._reindexarEjeX(chart);
                                             chart.update();
                                         }
                                     },
@@ -15794,7 +15825,7 @@
                                         displayColors: true,
                                         callbacks: {
                                             title: function(context) {
-                                                const date = new Date(context[0].parsed.x);
+                                                const date = new Date(context[0].raw.fecha || context[0].parsed.x);
                                                 const dateStr = date.toLocaleDateString('es-ES', { 
                                                     weekday: 'short',
                                                     day: '2-digit', 
@@ -15822,16 +15853,9 @@
                                 },
                                 scales: {
                                     x: {
-                                        type: 'time',
-                                        time: {
-                                            unit: 'hour',
-                                            displayFormats: {
-                                                hour: 'dd MMM HH:mm',
-                                                day: 'dd MMM',
-                                                minute: 'dd MMM HH:mm'
-                                            },
-                                            tooltipFormat: 'dd/MM/yyyy HH:mm'
-                                        },
+                                        type: 'linear',
+                                        min: -0.3,
+                                        max: Math.max(this._progresoFechas.length - 1, 0) + 0.3,
                                         title: {
                                             display: true,
                                             text: 'Fecha y Hora de Evaluación',
@@ -15840,11 +15864,15 @@
                                         ticks: {
                                             maxRotation: 45,
                                             minRotation: 45,
-                                            autoSkip: false,
-                                            source: 'data',
+                                            autoSkip: true,
+                                            maxTicksLimit: 12,
+                                            stepSize: 1,
                                             font: { size: 10, weight: '500' },
-                                            callback: function(value, index, ticks) {
-                                                const date = new Date(value);
+                                            callback: (value) => {
+                                                if (!Number.isInteger(value)) return '';
+                                                const f = this._progresoFechas[value];
+                                                if (!f) return '';
+                                                const date = new Date(f);
                                                 const dateStr = date.toLocaleDateString('es-ES', { 
                                                     day: '2-digit', 
                                                     month: 'short'
@@ -30500,12 +30528,9 @@
 
     function init() {
         // Fecha en el topbar (eyebrow dorado) + saludo según la hora
-        const dateLine = document.getElementById('topbarDateLine');
+        const dateLine = document.getElementById('hoyDateLine');
         if (dateLine) {
-            const corto = window.innerWidth < 520;
-            const txt = new Date().toLocaleDateString('es-ES', corto
-                ? { weekday: 'short', day: 'numeric', month: 'short' }
-                : { weekday: 'long', day: 'numeric', month: 'long' });
+            const txt = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
             dateLine.textContent = txt.charAt(0).toUpperCase() + txt.slice(1);
         }
         const gw = document.getElementById('overviewGreetingWord');
@@ -31277,6 +31302,18 @@
         @media (max-width: 640px) {
             body { overflow-x: hidden !important; }
             .cw-grid > *, .cw-grid { min-width: 0 !important; max-width: 100% !important; }
+        }
+        /* Móvil: panel de notificaciones fijo al ancho de pantalla */
+        @media (max-width: 520px) {
+            #notifDropdown {
+                position: fixed !important;
+                left: 10px !important;
+                right: 10px !important;
+                top: 64px !important;
+                width: auto !important;
+                max-height: 72vh;
+                overflow-y: auto !important;
+            }
         }
         /* Botón Unirse de Próxima sesión: azul con texto blanco, blindado */
         #overviewFocusJoin {

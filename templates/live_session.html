@@ -530,9 +530,13 @@
     let pc = null, rtcRoom = null, sigLast = 0, sigPoll = null;
     let pendingIce = [], rtcStarted = false, rtcTries = 0;
     let epoch = 0, remoteEpoch = 0;
+    let peerPresent = false, lastPeerSignal = 0, pingLoop = null, watchdog = null, retries = 0;
     const RTC_ICE = { iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        // Relay TURN público de respaldo (Open Relay) para redes con NAT estricto
+        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
     ] };
     const peerLabel = () => { const n = (coachName || '').trim(); return /^Tu /i.test(n) ? n.toLowerCase() : (n.split(' ')[0] || 'la otra persona'); };
 
@@ -603,6 +607,10 @@
             } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
                 showRemote(false);
                 setCallStatus('Reconectando…', false);
+                if (pc.connectionState === 'failed') {
+                    if (RTC_ROLE === 'coach') { newPc(); makeOffer(); }
+                    else { sigSend({ type: 'hello' }); }
+                }
             }
         };
         return pc;
@@ -620,8 +628,13 @@
     }
     async function handleSignal(p) {
         if (!p || !p.type) return;
+        peerPresent = true;
+        lastPeerSignal = Date.now();
+        if (pc && pc.connectionState !== 'connected') setCallStatus(peerLabel() + ' está en la sala · conectando video…', false);
         try {
-            if (p.type === 'hello') {
+            if (p.type === 'ping') {
+                return;
+            } else if (p.type === 'hello') {
                 if (!pc || pc.connectionState !== 'connected') tideToast(peerLabel() + ' entró a la sala.', 'Conectando…');
                 if (RTC_ROLE === 'coach') { newPc(); await makeOffer(); }
             } else if (p.type === 'offer' && RTC_ROLE === 'coachee') {
@@ -666,12 +679,33 @@
         newPc();
         clearInterval(sigPoll);
         sigPoll = setInterval(sigFetch, 1200);
+        // Presencia: aviso periódico de que sigo en la sala
+        clearInterval(pingLoop);
+        pingLoop = setInterval(() => { if (pc && pc.connectionState !== 'connected') sigSend({ type: 'ping' }); }, 5000);
+        // Watchdog: si la contraparte está presente y el video no conecta, reintentar la negociación
+        retries = 0;
+        clearInterval(watchdog);
+        watchdog = setInterval(async () => {
+            if (!pc || pc.connectionState === 'connected') { retries = 0; return; }
+            if (!peerPresent) return;
+            if (retries >= 6) {
+                setCallStatus('No pudimos conectar el video. El chat sigue funcionando.', false);
+                return;
+            }
+            retries++;
+            setCallStatus(peerLabel() + ' está en la sala · reintentando video (' + retries + ')…', false);
+            if (RTC_ROLE === 'coach') { newPc(); await makeOffer(); }
+            else { await sigSend({ type: 'hello' }); }
+        }, 8000);
         await sigSend({ type: 'hello' });
         if (RTC_ROLE === 'coach') await makeOffer();
     }
     function stopRtc(notify) {
         if (notify && rtcRoom && rtcStarted) sigSend({ type: 'bye' });
         clearInterval(sigPoll); sigPoll = null;
+        clearInterval(pingLoop); pingLoop = null;
+        clearInterval(watchdog); watchdog = null;
+        peerPresent = false; retries = 0;
         if (pc) { try { pc.close(); } catch (_) {} pc = null; }
         rtcStarted = false; rtcTries = 0;
         showRemote(false);
