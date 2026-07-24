@@ -42,23 +42,33 @@
         html, body { scrollbar-width: none; }
         html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
         .panel-handle { display: none; }
-        .ctrl-panel { display: none; }
-        .aside-sheet { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+        /* Botón para abrir/cerrar el panel: visible siempre (también en escritorio) */
+        .ctrl-panel { display: flex; position: relative; }
+        /* Escritorio: el panel es una columna EN FLUJO que empuja el video (lo reduce),
+           así el video no queda tapado y la autovista (PiP) sigue visible. */
+        .call-aside {
+            flex: 0 0 400px !important; width: 400px !important; max-width: 40vw;
+            background: var(--surface-page, #F1F4F9) !important;
+            border-left: 1px solid var(--border-subtle, #E6EBF2) !important;
+            display: none !important; flex-direction: column; overflow: hidden;
+        }
+        .call-aside.open { display: flex !important; animation: sheetIn .28s ease both; }
+        .aside-sheet { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; }
+        @keyframes sheetIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .ctrl.on.panel-active { background: var(--accent, #C49A52) !important; color: var(--ocean-900, #14233F); }
         @media (max-width: 900px) {
             .lobby-grid { grid-template-columns: 1fr !important; }
             .lobby-cam { min-height: 300px !important; }
-            .ctrl-panel { display: flex; position: relative; }
             .end-label { display: none; }
             .ctrl.end { width: 52px; padding: 0; border-radius: 50%; }
             .call-aside {
-                position: fixed; inset: 0; z-index: 90; width: auto !important;
+                position: fixed !important; inset: 0; z-index: 90; flex: none !important; width: auto !important; max-width: none !important;
                 background: rgba(20,35,63,0.45) !important; border-left: none !important;
-                display: none !important; flex-direction: column; justify-content: flex-end;
+                flex-direction: column !important; justify-content: flex-end !important;
             }
-            .call-aside.open { display: flex !important; }
             .aside-sheet {
-                flex: none; height: 72%; background: var(--surface-page, #F1F4F9);
+                width: auto !important; flex: none; height: 72%; background: var(--surface-page, #F1F4F9);
                 border-radius: 22px 22px 0 0; box-shadow: 0 -12px 40px rgba(20,35,63,0.3);
                 animation: sheetUp .28s ease both; display: flex; flex-direction: column;
             }
@@ -120,8 +130,8 @@
 
     <!-- ══ Pantalla 2: En llamada ══ -->
     <div id="screenCall" class="rise" style="flex: 1; display: none; min-height: 100vh;">
-        <div style="display: flex; min-height: 100vh;">
-        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--surface-inverse, #14233F); position: relative;">
+        <div style="display: flex; min-height: 100vh; width: 100%;">
+        <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; background: var(--surface-inverse, #14233F); position: relative;">
             <div style="position: absolute; inset: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); pointer-events: none;"></div>
 
             <!-- Barra superior -->
@@ -171,12 +181,13 @@
         <aside id="callAside" class="call-aside" onclick="closePanel(event)" style="width: 360px; flex-shrink: 0; background: var(--surface-page, #F1F4F9); border-left: 1px solid var(--border-subtle, #E6EBF2); display: flex; flex-direction: column;">
         <div class="aside-sheet" onclick="event.stopPropagation()">
             <div class="panel-handle"></div>
-            <div style="padding: 14px 16px 0;">
-                <div style="display: flex; gap: 4px; background: var(--surface-sunken, #E6EBF2); border-radius: 12px; padding: 4px;">
+            <div style="padding: 14px 16px 0; display: flex; align-items: center; gap: 10px;">
+                <div style="display: flex; gap: 4px; background: var(--surface-sunken, #E6EBF2); border-radius: 12px; padding: 4px; flex: 1;">
                     <button id="tabAgenda" class="side-tab active" onclick="pickTab('agenda')">Agenda</button>
                     <button id="tabNotas" class="side-tab" onclick="pickTab('notas')">Notas</button>
                     <button id="tabChat" class="side-tab" onclick="pickTab('chat')">Chat</button>
                 </div>
+                <button onclick="closePanel()" aria-label="Cerrar panel" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--surface-sunken, #E6EBF2); color: var(--text-muted, #646E7E); cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fas fa-times"></i></button>
             </div>
 
             <!-- Agenda -->
@@ -503,15 +514,23 @@
     /* ── Sheet móvil del panel ── */
     window.openPanel = function () {
         const a = document.getElementById('callAside');
-        if (a) a.classList.add('open');
+        if (!a) return;
+        // Alternar: si ya está abierto, cerrarlo
+        const abierto = a.classList.toggle('open');
+        const btn = document.querySelector('.ctrl-panel');
+        if (btn) btn.classList.toggle('panel-active', abierto);
         const dot = document.getElementById('panelDot');
-        if (dot) dot.style.display = 'none';
-        loadChat(true);
+        if (abierto) {
+            if (dot) dot.style.display = 'none';
+            loadChat(true);
+        }
     };
     window.closePanel = function (e) {
         if (e && e.target !== e.currentTarget) return;
         const a = document.getElementById('callAside');
         if (a) a.classList.remove('open');
+        const btn = document.querySelector('.ctrl-panel');
+        if (btn) btn.classList.remove('panel-active');
     };
 
     /* ── Pestañas del panel ── */
