@@ -2419,23 +2419,29 @@
             }
             
             /* Selectores específicos para scheduleCoachTabs con máxima prioridad */
-            #scheduleCoachTabs .nav-link,
-            #scheduleCoachTabs .nav-link:hover,
+            /* Control segmentado Tide */
+            #scheduleCoachTabs .nav-link {
+                background: transparent !important;
+                background-color: transparent !important;
+                color: var(--text-muted, #646E7E) !important;
+                border: none !important;
+                border-radius: 10px !important;
+                font-weight: 600 !important;
+            }
+            #scheduleCoachTabs .nav-link:hover { color: var(--text-strong, #14233F) !important; }
             #scheduleCoachTabs .nav-link.active,
-            #scheduleCoachTabs .nav-link:focus,
-            #scheduleCoachTabs .nav-link:active,
             #scheduleCoachTabs .nav-link.active:hover,
             #scheduleCoachTabs .nav-link.active:focus,
             #scheduleCoachTabs .nav-link.active:active {
-                background: #fff !important;
-                background-color: #fff !important;
-                color: #313842 !important;
-                border-color: #D5DCE7 !important;
+                background: var(--primary, #2C5AA8) !important;
+                background-color: var(--primary, #2C5AA8) !important;
+                color: #fff !important;
+                border: none !important;
+                box-shadow: 0 1px 2px rgba(20,35,63,0.15) !important;
             }
-            
-            #scheduleCoachTabs .nav-link i {
-                color: #313842 !important;
-            }
+            #scheduleCoachTabs .nav-link.active i,
+            #scheduleCoachTabs .nav-link.active span { color: #fff !important; }
+            #scheduleCoachTabs .nav-link i { color: var(--text-muted, #646E7E) !important; }
             
             [data-theme="dark"] #scheduleCoachTabs .nav-link,
             [data-theme="dark"] #scheduleCoachTabs .nav-link:hover,
@@ -8781,6 +8787,26 @@
         }
 
         /* Mejoras adicionales para mejor UX en todos los dispositivos */
+        /* Agendar Coach — control segmentado Tide */
+        #scheduleCoachTabs { display: inline-flex !important; gap: 4px; background: var(--surface-sunken, #E6EBF2); border: none !important; border-radius: 12px; padding: 4px; }
+        #scheduleCoachTabs .nav-item { margin: 0 !important; }
+        .sc-tab { border: none !important; border-radius: 10px !important; background: transparent !important; color: var(--text-muted, #646E7E) !important; font-weight: 600 !important; padding: 9px 18px !important; font-family: var(--font-sans) !important; transition: background .15s, color .15s; }
+        .sc-tab i, .sc-tab span { color: var(--text-muted, #646E7E) !important; }
+        .sc-tab:hover { color: var(--text-strong, #14233F) !important; }
+        .sc-tab.active { background: var(--primary, #2C5AA8) !important; color: #fff !important; box-shadow: 0 1px 2px rgba(20,35,63,0.15); }
+        .sc-tab.active i, .sc-tab.active span { color: #fff !important; }
+        .sc-badge { background: rgba(255,255,255,0.28) !important; color: #fff !important; }
+        .sc-tab:not(.active) .sc-badge { background: var(--primary-soft, #DCE7F8) !important; color: var(--ocean-700, #213C70) !important; }
+        #schedule-coach .sc-btn-primary { background: var(--primary, #2C5AA8) !important; color: #fff !important; border: none !important; }
+        #schedule-coach .sc-btn-primary i { color: #fff !important; }
+        #schedule-coach .sc-btn-primary:hover { background: var(--primary-hover, #213C70) !important; }
+        #schedule-coach .sc-btn-ghost { background: var(--surface-card, #fff) !important; color: var(--primary, #2C5AA8) !important; border: 1.5px solid var(--border-brand, #BFD3F0) !important; }
+        #schedule-coach .sc-btn-ghost i { color: var(--primary, #2C5AA8) !important; }
+        #schedule-coach .sc-btn-ghost:hover { background: var(--primary-soft, #DCE7F8) !important; }
+        @media (max-width: 640px) {
+            #scheduleCoachTabs { display: grid !important; grid-template-columns: 1fr 1fr; width: 100%; }
+            .sc-tab { justify-content: center; display: flex; align-items: center; }
+        }
         #schedule-coach .nav-tabs .nav-link,
         #schedule-coach .nav-tabs .nav-link.active,
         #schedule-coach .nav-tabs .nav-link:hover,
@@ -10059,7 +10085,7 @@
                         <!-- Greeting header — héroe Tide -->
                         <div style="margin-bottom: 1.75rem;">
                             <div id="hoyDateLine" style="font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-700, #8A6526); margin-bottom: 8px;"></div>
-                            <h1 style="font-family: var(--font-serif, Georgia, serif); font-size: clamp(1.75rem, 3.5vw, 2.125rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; line-height: 1.15; margin: 0 0 6px;">
+                            <h1 style="font-family: var(--font-serif, Georgia, serif); font-size: clamp(1.6rem, 3vw, 2.125rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; line-height: 1.15; margin: 0 0 6px;">
                                 <span id="overviewGreetingWord">Hola</span>, <span x-text="coacheeName"></span>.
                             </h1>
                             <p id="overviewSubGreeting" style="font-size: 0.9375rem; color: var(--text-muted, #646E7E); margin: 0;">Un paso a la vez.</p>
@@ -10283,7 +10309,7 @@
                     <div style="padding: 1.5rem; background: #F1F4F9; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
-                            <h1 style="font-size: clamp(1.5rem, 2.4vw, 1.875rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-serif);">
+                            <h1 style="font-size: clamp(1.6rem, 3vw, 2.125rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-serif);">
                                 <i class="fas fa-chart-bar" style="color: #2C5AA8;"></i>
                                 <span>Evaluaciones</span>
                             </h1>
@@ -11546,13 +11572,10 @@
                 <div class="tab-pane" id="tasks" role="tabpanel" style="display: none;">
                     <div style="padding: 1.5rem 1.75rem; background: #F1F4F9; min-height: 100vh;">
 
-                        <!-- DS am-head: icon box + serif title + primary CTA -->
+                        <!-- DS am-head: título con icono inline + CTA -->
                         <div class="am-head" style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 2rem; flex-wrap: wrap;">
-                            <div style="width: 48px; height: 48px; border-radius: 14px; background: #DCE7F8 !important; display: grid; place-items: center; flex: none;">
-                                <i class="fas fa-bullseye" style="font-size: 1.5rem; color: #2C5AA8 !important; font-weight: 900 !important;"></i>
-                            </div>
                             <div style="flex: 1; min-width: 0;">
-                                <h1 style="font-family: var(--font-serif); font-size: 2rem; font-weight: 500; color: #14233F; margin: 0 0 4px 0; letter-spacing: -0.01em; line-height: 1.1;">Mis Acciones y Metas</h1>
+                                <h1 style="font-family: var(--font-serif); font-size: clamp(1.6rem, 3vw, 2.125rem); font-weight: 500; color: #14233F; margin: 0 0 4px 0; letter-spacing: -0.01em; line-height: 1.15; display: flex; align-items: center; gap: 0.75rem;"><i class="fas fa-list-check"></i><span>Mis Acciones y Metas</span></h1>
                                 <p style="font-size: 0.9375rem; color: #646E7E; margin: 0;">Gestiona tus tareas y objetivos de desarrollo personal</p>
                             </div>
                             <button onclick="showToast('Contacta a tu coach para crear nuevas acciones', 'info')"
@@ -11606,7 +11629,7 @@
                     <div class="section-content" style="padding: 1.5rem; background: #F1F4F9; min-height: 100vh;">
                         <!-- Para ti — diseño Coachee Dashboard Web -->
                         <div style="margin-bottom: 1.5rem;">
-                            <h1 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: 34px; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin: 0 0 6px;">Para ti</h1>
+                            <h1 style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: clamp(1.6rem, 3vw, 2.125rem); color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin: 0 0 6px; display: flex; align-items: center; gap: 0.75rem;"><i class="fas fa-bookmark"></i><span>Para ti</span></h1>
                             <p style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0;"
                                x-text="videosData.length && videosData[0].coach_name ? 'Elegido por ' + videosData[0].coach_name.split(' ')[0] + ' para ti.' : 'Lo que tu coach comparte contigo.'"></p>
                         </div>
@@ -11663,7 +11686,7 @@
                     <div style="padding: 1.5rem; background: #F1F4F9; min-height: 100vh;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
-                            <h1 style="font-size: clamp(1.5rem, 2.4vw, 1.875rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-serif);">
+                            <h1 style="font-size: clamp(1.6rem, 3vw, 2.125rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-serif);">
                                 <i class="fas fa-chart-line" style="color: #A87C36;"></i>
                                 <span>Mi Progreso</span>
                             </h1>
@@ -11744,7 +11767,7 @@
                 <div class="tab-pane" id="development-plan" role="tabpanel" style="display: none;">
                     <div style="padding: 1.5rem; background: #F1F4F9; min-height: 100vh;">
                         <!-- Tu plan — diseño Coachee Dashboard Web -->
-                        <h1 class="tp-title" style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: 34px; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin: 0 0 6px;">Tu plan</h1>
+                        <h1 class="tp-title" style="font-family: var(--font-serif, Georgia, serif); font-weight: 500; font-size: clamp(1.6rem, 3vw, 2.125rem); color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin: 0 0 6px; display: flex; align-items: center; gap: 0.75rem;"><i class="fas fa-bullseye"></i><span>Tu plan</span></h1>
                         <p id="tuPlanSubtitle" style="font-size: 15px; color: var(--text-muted, #646E7E); margin: 0 0 24px;">Tus metas de desarrollo.</p>
 
                         <div id="tuPlanDesignWrap" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; margin-bottom: 1.5rem;" class="cw-grid">
@@ -11968,7 +11991,7 @@
                     <div style="padding: 1.5rem; background: #F1F4F9; min-height: 100%;">
                         <!-- Header -->
                         <div style="margin-bottom: 1.5rem;">
-                            <h1 style="font-size: clamp(1.5rem, 2.4vw, 1.875rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-serif);">
+                            <h1 style="font-size: clamp(1.6rem, 3vw, 2.125rem); font-weight: 500; color: var(--text-strong, #14233F); letter-spacing: -0.01em; margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-serif);">
                                 <i class="fas fa-calendar-alt" style="color: #3A6CC4;"></i>
                                 <span>Agendar Coach</span>
                             </h1>
@@ -11978,29 +12001,26 @@
                         </div>
                         
                         <!-- Pestañas modernas y compactas para móvil -->
-                        <ul class="nav nav-tabs mb-4" id="scheduleCoachTabs" role="tablist">
+                        <ul class="nav mb-4" id="scheduleCoachTabs" role="tablist">
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" 
+                                        <button class="nav-link sc-tab active" 
                                             @click="switchScheduleTab('request')"
                                             id="schedule-request-tab" type="button" role="tab"
                                             data-bs-toggle="tab" data-bs-target="#schedule-request-pane"
-                                            aria-controls="schedule-request-pane" aria-selected="true"
-                                            style="background: #fff !important; color: #313842 !important; border-color: #D5DCE7 !important;">
-                                            <i class="fas fa-plus me-2" style="color: #313842 !important;"></i>
-                                            <span style="color: #313842 !important;">Solicitar</span>
+                                            aria-controls="schedule-request-pane" aria-selected="true">
+                                            <i class="fas fa-plus me-2"></i>
+                                            <span>Solicitar</span>
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link position-relative" 
+                                        <button class="nav-link sc-tab position-relative" 
                                             @click="switchScheduleTab('sessions')"
                                             id="my-sessions-tab" type="button" role="tab"
                                             data-bs-toggle="tab" data-bs-target="#my-sessions-pane"
-                                            aria-controls="my-sessions-pane" aria-selected="false"
-                                            style="background: #fff !important; color: #313842 !important; border-color: #D5DCE7 !important;">
-                                            <i class="fas fa-calendar me-2" style="color: #313842 !important;"></i>
-                                            <span style="color: #313842 !important;">Mis Sesiones</span>
-                                            <span class="badge rounded-pill ms-1" 
-                                                style="background: #313842 !important; color: #fff !important;"
+                                            aria-controls="my-sessions-pane" aria-selected="false">
+                                            <i class="fas fa-calendar me-2"></i>
+                                            <span>Mis Sesiones</span>
+                                            <span class="badge rounded-pill ms-1 sc-badge" 
                                                 x-show="mySessions.length > 0"
                                                 x-text="mySessions.length"
                                                 id="mySessionsCount"></span>
@@ -12018,8 +12038,8 @@
                                                     <div class="card" style="border-radius: 12px; border: 1px solid #E6EBF2; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                                                         <div class="card-body session-card-body" style="padding: 1rem;">
                                                             <h6 class="mb-3" style="font-size: 1.1375rem; font-weight: 600; color: #14233F;">
-                                                                <i class="fas fa-calendar-plus me-2" style="color: #2F7D5B; font-size: 1.1375rem;"></i>
-                                                                Nueva Solicitud de Sesión
+                                                                <i class="fas fa-calendar-plus me-2" style="color: var(--primary, #2C5AA8); font-size: 1.1375rem;"></i>
+                                                                Nueva solicitud de sesión
                                                             </h6>
                                                             <form id="sessionRequestForm">
                                                                 <div class="row g-3">
@@ -12119,13 +12139,13 @@
                                                                     </div>
                                                                     <div class="col-12">
                                                                         <div class="d-flex gap-2 flex-column flex-sm-row">
-                                                                            <button type="submit" class="btn btn-primary flex-grow-1" 
-                                                                                style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem;">
-                                                                                <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
+                                                                            <button type="submit" class="btn flex-grow-1 sc-btn-primary" 
+                                                                                style="border-radius: 999px; padding: 0.7rem 1.5rem; font-weight: 600; font-size: 0.9375rem; background: var(--primary, #2C5AA8); color: #fff; border: none;">
+                                                                                <i class="fas fa-paper-plane me-2"></i>Enviar solicitud
                                                                             </button>
-                                                                            <button type="button" class="btn btn-outline-secondary" onclick="resetSessionForm()"
-                                                                                style="border-radius: 8px; padding: 0.625rem 1.5rem; font-weight: 500; font-size: 0.9375rem; min-width: 120px;">
-                                                                                <i class="fas fa-undo me-2"></i>Limpiar
+                                                                            <button type="button" class="btn sc-btn-ghost" onclick="resetSessionForm()"
+                                                                                style="border-radius: 999px; padding: 0.7rem 1.5rem; font-weight: 600; font-size: 0.9375rem; min-width: 120px; background: var(--surface-card, #fff); color: var(--primary, #2C5AA8); border: 1.5px solid var(--border-brand, #BFD3F0);">
+                                                                                <i class="fas fa-rotate-left me-2"></i>Limpiar
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -16039,20 +16059,16 @@
                     setTimeout(() => {
                         const buttons = document.querySelectorAll('#scheduleCoachTabs .nav-link');
                         buttons.forEach(btn => {
-                            btn.style.setProperty('background', '#fff', 'important');
-                            btn.style.setProperty('background-color', '#fff', 'important');
-                            btn.style.setProperty('color', '#313842', 'important');
-                            btn.style.setProperty('border-color', '#D5DCE7', 'important');
-                            
+                            const active = (tab === 'request' && btn.id === 'schedule-request-tab') || (tab === 'sessions' && btn.id === 'my-sessions-tab');
+                            const fg = active ? '#fff' : 'var(--text-muted, #646E7E)';
+                            btn.style.setProperty('background', active ? 'var(--primary, #2C5AA8)' : 'transparent', 'important');
+                            btn.style.setProperty('background-color', active ? 'var(--primary, #2C5AA8)' : 'transparent', 'important');
+                            btn.style.setProperty('color', fg, 'important');
+                            btn.style.setProperty('border', 'none', 'important');
+                            btn.style.setProperty('border-radius', '10px', 'important');
                             const icon = btn.querySelector('i');
-                            if (icon) {
-                                icon.style.setProperty('color', '#313842', 'important');
-                            }
-                            
-                            const spans = btn.querySelectorAll('span:not(.badge)');
-                            spans.forEach(span => {
-                                span.style.setProperty('color', '#313842', 'important');
-                            });
+                            if (icon) icon.style.setProperty('color', fg, 'important');
+                            btn.querySelectorAll('span:not(.badge)').forEach(span => span.style.setProperty('color', fg, 'important'));
                         });
                     }, 10);
                     
@@ -20997,7 +21013,7 @@
 
                     portal.innerHTML = `
                         <div style="max-width:1100px;">
-                            <h1 style="font-family:var(--font-serif,Georgia,serif);font-weight:500;font-size:34px;color:var(--text-strong,#14233F);letter-spacing:-0.01em;margin:0 0 6px;">Evaluaciones</h1>
+                            <h1 style="font-family:var(--font-serif,Georgia,serif);font-weight:500;font-size:clamp(1.6rem, 3vw, 2.125rem);color:var(--text-strong,#14233F);letter-spacing:-0.01em;margin:0 0 6px;display:flex;align-items:center;gap:0.75rem;"><i class="fas fa-chart-bar" style="color:var(--primary,#2C5AA8);font-size:0.85em;font-weight:900;flex:none;"></i><span>Evaluaciones</span></h1>
                             <p style="font-size:15px;color:var(--text-muted,#646E7E);margin:0 0 24px;">Solo tú y ${coachFirst} ven tus resultados.</p>
                             <div class="cw-grid" style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start;">
                                 <div style="display:flex;flex-direction:column;gap:20px;">
@@ -22227,9 +22243,9 @@
                             const firstName = document.getElementById('welcomeMessage')?.textContent?.split(' ')[0] || '';
                             const greeting = firstName ? `Vas muy bien, ${firstName}.` : 'Vas muy bien.';
                             cheerContainer.innerHTML = `
-                            <div style="background: #14233F !important; border-radius: 18px; padding: 32px 40px; display: flex; align-items: center; gap: 28px; position: relative; overflow: hidden; flex-wrap: wrap;">
-                                <div style="position: absolute; right: -80px; top: 50%; transform: translateY(-50%); width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(196,154,82,0.22), transparent 70%); pointer-events: none;"></div>
-                                <div style="position: relative; width: 96px; height: 96px; display: grid; place-items: center; flex: none;">
+                            <div class="cheer-card" style="background: #14233F !important; border-radius: 18px; padding: 32px 40px; display: flex; align-items: center; gap: 28px; position: relative; overflow: hidden; flex-wrap: wrap;">
+                                <div class="cheer-glow" style="position: absolute; right: -140px; top: 50%; transform: translateY(-50%); width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(196,154,82,0.16), transparent 62%); pointer-events: none;"></div>
+                                <div class="cheer-ring" style="position: relative; width: 96px; height: 96px; display: grid; place-items: center; flex: none; z-index: 1;">
                                     <svg width="96" height="96" viewBox="0 0 96 96" style="transform: rotate(-90deg); position: absolute; top:0; left:0; overflow: visible;">
                                         <circle cx="48" cy="48" r="${cr}" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="${cstroke}" />
                                         <circle cx="48" cy="48" r="${cr}" fill="none" stroke="#C49A52"
@@ -26528,18 +26544,19 @@
 
             buttons.forEach(button => {
                 const applyStyles = (el) => {
-                    el.style.setProperty('background', '#fff', 'important');
-                    el.style.setProperty('background-color', '#fff', 'important');
-                    el.style.setProperty('color', '#313842', 'important');
-                    el.style.setProperty('border-color', '#D5DCE7', 'important');
+                    const active = el.classList.contains('active');
+                    const fg = active ? '#fff' : 'var(--text-muted, #646E7E)';
+                    el.style.setProperty('background', active ? 'var(--primary, #2C5AA8)' : 'transparent', 'important');
+                    el.style.setProperty('background-color', active ? 'var(--primary, #2C5AA8)' : 'transparent', 'important');
+                    el.style.setProperty('color', fg, 'important');
+                    el.style.setProperty('border', 'none', 'important');
+                    el.style.setProperty('border-radius', '10px', 'important');
 
                     const icon = el.querySelector('i');
-                    if (icon) {
-                        icon.style.setProperty('color', '#313842', 'important');
-                    }
+                    if (icon) icon.style.setProperty('color', fg, 'important');
 
                     el.querySelectorAll('span:not(.badge)').forEach(span => {
-                        span.style.setProperty('color', '#313842', 'important');
+                        span.style.setProperty('color', fg, 'important');
                     });
                 };
 
@@ -31241,6 +31258,29 @@
          con !important e igual o mayor especificidad gana SIEMPRE sobre
          cualquier regla legada anterior. Aquí se fijan los colores del
          diseño Claude que ninguna otra regla debe poder pisar. -->
+    <style id="tide-section-titles">
+        /* Títulos de sección uniformes (mismo tamaño y fuente en web y móvil) */
+        #overview h1, #tasks h1, #content h1, #progress h1,
+        #development-plan h1, #schedule-coach h1, #evaluaciones-figma h1 {
+            font-family: var(--font-serif, Georgia, serif) !important;
+            font-weight: 500 !important;
+            font-size: clamp(1.6rem, 3vw, 2.125rem) !important;
+            color: var(--text-strong, #14233F) !important;
+            letter-spacing: -0.01em !important;
+            line-height: 1.15 !important;
+        }
+        #content h1, #development-plan h1, #tasks .am-head h1,
+        #progress h1, #schedule-coach h1, #evaluaciones-figma h1 {
+            display: flex !important; align-items: center !important; gap: 0.75rem !important;
+        }
+        #content h1 > i, #development-plan h1 > i, #tasks .am-head h1 > i,
+        #progress h1 > i, #schedule-coach h1 > i, #evaluaciones-figma h1 > i {
+            color: var(--primary, #2C5AA8) !important;
+            font-size: 0.85em !important;
+            font-weight: 900 !important;
+            flex: none !important;
+        }
+    </style>
     <style id="tide-design-lock">
         html, body {
             background: #F1F4F9 !important;   /* surface-page (mist-100) */
@@ -31337,7 +31377,6 @@
         @media (max-width: 640px) {
             .am-head { align-items: center; gap: 12px; }
             .am-head > div:nth-child(2) { flex: 1 1 auto; min-width: 0; }
-            .am-head h1 { font-size: 1.5rem !important; line-height: 1.15 !important; }
             .am-head p { font-size: 0.85rem !important; }
             .am-head > div:first-child { width: 42px !important; height: 42px !important; }
             .am-head > div:first-child i { font-size: 1.2rem !important; }
@@ -31345,7 +31384,10 @@
         }
         /* Tu plan: tarjeta oscura de progreso más presente en móvil */
         @media (max-width: 640px) {
-            .tp-title { font-size: 26px !important; }
+            .cheer-card { padding: 20px !important; gap: 16px !important; }
+            .cheer-ring { transform: scale(0.72); transform-origin: left center; }
+            .cheer-card h3 { font-size: 1.3rem !important; }
+            .cheer-card p { font-size: 0.9rem !important; }
             .tp-dark { padding: 1.35rem 1.25rem 1.5rem !important; }
             .tp-dark [style*="width: 64px"][style*="height: 64px"] { transform: scale(1.1); transform-origin: left center; }
         }
@@ -31372,6 +31414,7 @@
         .tp-dark { background: var(--surface-inverse, #14233F) !important; }
         #tuPlanRingFill { stroke: #C49A52 !important; }
         #tuPlanBar { background: #C49A52 !important; }
+        .cheer-glow { display: none !important; }
         #tuPlanRingPct, #tuPlanProgressTitle { color: var(--text-inverse, #FAFBFD) !important; }
         #tuPlanProgressMeta { color: var(--ocean-200, #BFD3F0) !important; }
         /* Evaluaciones (portal): Tu progreso siempre azul oscuro con textos claros */
