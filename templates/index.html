@@ -3,336 +3,393 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InstaCoach — Coaching que te encuentra a mitad de semana</title>
-    <meta name="description" content="Coaching profesional en tu semana real: un coach, un plan claro y evaluaciones que muestran el avance.">
+    <title>InstaCoach — Coaching en cada momento, cuando lo necesites</title>
+    <meta name="description" content="Coaching personal y profesional al alcance de un clic: un coach real, un plan claro y seguimiento que muestra el avance.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/static/css/instacoach-design-system.css?v={{ get_file_version('css/instacoach-design-system.css') }}">
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; background: var(--surface-page, #F1F4F9); font-family: var(--font-sans, 'Hanken Grotesk', sans-serif); }
-        a { color: var(--text-link, #2C5AA8); text-decoration: none; }
-        a:hover { color: var(--primary-hover, #213C70); }
-        .serif { font-family: var(--font-serif, 'Newsreader', Georgia, serif); font-weight: 500; letter-spacing: -0.01em; color: var(--text-strong, #14233F); }
-        .eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted, #646E7E); }
-        .gold-streak { position: relative; white-space: nowrap; }
-        .gold-streak::after { content: ""; position: absolute; left: -2px; right: -2px; bottom: 6px; height: 12px; background: var(--accent-soft, #F2E7CC); z-index: -1; border-radius: 2px; }
-        .nav-link { font-size: 14px; font-weight: 600; color: var(--text-muted, #646E7E); padding: 8px 4px; }
-        .nav-link:hover { color: var(--text-strong, #14233F); }
-        .btn-primary-lp {
-            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-            background: var(--primary, #2C5AA8); color: #fff !important; border: none; border-radius: 12px;
-            font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: background .15s ease;
-        }
-        .btn-primary-lp:hover { background: var(--primary-hover, #213C70); color: #fff !important; }
-        .step-num { width: 34px; height: 34px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-family: var(--font-serif, Georgia, serif); font-size: 17px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .lp-card { background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 16px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 26px; }
-        @keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .rise { animation: riseIn .5s ease both; }
-        .rise-2 { animation-delay: .1s; }
-        @keyframes drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .drift { animation: drift 7s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) { .rise, .drift { animation: none; } }
-        html, body { scrollbar-width: none; }
-        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        html, body { overflow-x: clip; }
+        body { margin: 0; background: #F1F4F9; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+        a { color: #2C5AA8; text-decoration: none; }
+        a:hover { color: #213C70; }
+        .serif { font-family: 'Newsreader', Georgia, serif; font-weight: 500; letter-spacing: -0.01em; color: #14233F; }
+
+        /* Botones */
+        .lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #2C5AA8; color: #fff; border-radius: 12px; font-weight: 600; transition: background .15s ease, transform .2s ease, box-shadow .2s ease; }
+        .lp-btn:hover { background: #213C70; color: #fff; }
+        .lp-btn-lg:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(44,90,168,0.6); }
+        .lp-nav { font-size: 14px; font-weight: 700; color: #14233F; padding: 8px 4px; text-shadow: 0 1px 0 rgba(250,251,253,0.85), 0 0 10px rgba(250,251,253,0.6); }
+        .lp-nav:hover { color: #213C70; }
+        .lp-tilt { transition: transform .18s ease-out, box-shadow .25s ease; }
+
+        /* Animaciones decorativas */
+        @keyframes lpDrift { 0%,100% { transform: translateY(0) translateZ(70px); } 50% { transform: translateY(-10px) translateZ(70px); } }
+        @keyframes lpPulse { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .9; transform: scale(1.12); } }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+        /* Responsive */
         @media (max-width: 900px) {
-            .lp-hero, .lp-evals, .lp-dual { grid-template-columns: 1fr !important; }
-            .lp-steps { grid-template-columns: 1fr !important; }
+            .lp-hero { grid-template-columns: 1fr !important; gap: 32px !important; padding: 40px 22px 64px !important; min-height: 0 !important; }
+            .lp-como-grid { grid-template-columns: 1fr !important; }
+            .lp-evals { grid-template-columns: 1fr !important; gap: 28px !important; }
+            .lp-header { padding: 0 20px !important; gap: 14px !important; }
             .lp-nav-links { display: none !important; }
-            .lp-hero-visual { margin-top: 12px; }
-            h1.lp-h1 { font-size: 38px !important; }
+            .lp-hero h1 { font-size: 38px !important; }
+            .lp-section { padding: 48px 22px !important; }
         }
     </style>
 </head>
 <body>
-<div style="min-height: 100vh;">
+<div style="min-height: 100vh; perspective: 1400px;">
 
-    <!-- ── Header ── -->
-    <header style="height: 68px; display: flex; align-items: center; gap: 28px; padding: 0 40px; max-width: 1180px; margin: 0 auto;">
-        <div style="display: inline-flex; align-items: center; gap: 9px;">
-            <svg width="30" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="8" y="8" width="84" height="84" rx="24" fill="#2C5AA8"/>
-                <path d="M30 66 L30 48 M50 66 L50 34 M70 66 L70 22" stroke="#F5F1E8" stroke-width="8" stroke-linecap="round"/>
-                <circle cx="70" cy="22" r="6" fill="#C49A52"/>
-            </svg>
-            <span style="font-size: 1.1rem; font-weight: 700; color: var(--ocean-600, #2C5AA8); letter-spacing: -0.02em;">Insta<span style="color:#A87C36;">Coach</span></span>
+    <!-- Fondo inmersivo: Glaciar Perito Moreno, Patagonia -->
+    <div id="lpValley" style="position: absolute; top: 0; left: 0; right: 0; height: 100vh; min-height: 760px; overflow: hidden; z-index: 0; pointer-events: none; background: linear-gradient(180deg, #DFE9F7 0%, #E9EFF9 55%, #F1F4F9 100%);">
+        <img id="lpGlacier" src="https://commons.wikimedia.org/wiki/Special:FilePath/Perito%20Moreno%20Glacier%20Patagonia%20Argentina%20Luca%20Galuzzi%202005.JPG?width=2560" alt="Glaciar Perito Moreno, Patagonia" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; transform: scale(1.14); will-change: transform; transition: transform .1s linear;">
+        <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(241,244,249,0.5) 0%, rgba(241,244,249,0.28) 42%, rgba(241,244,249,0.6) 78%, #F1F4F9 100%);"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(180deg, rgba(241,244,249,0) 0%, #F1F4F9 94%);"></div>
+        <a href="https://commons.wikimedia.org/wiki/File:Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG" target="_blank" rel="noopener" style="position: absolute; right: 14px; bottom: 130px; font-size: 10.5px; color: rgba(20,35,63,0.55); background: rgba(250,251,253,0.6); padding: 3px 9px; border-radius: 999px; pointer-events: auto; backdrop-filter: blur(4px);">Glaciar Perito Moreno · Luca Galuzzi, CC BY-SA 2.5</a>
+    </div>
+
+    <header class="lp-header" style="height: 68px; display: flex; align-items: center; gap: 28px; padding: 0 40px; max-width: 1180px; margin: 0 auto; position: relative; z-index: 5; pointer-events: none;">
+        <div style="display: inline-flex; align-items: center; gap: 9px; pointer-events: auto;">
+            <svg width="30" height="30" viewBox="0 0 100 100" fill="none"><rect x="8" y="8" width="84" height="84" rx="24" fill="#2C5AA8"></rect><path d="M30 66 L30 48 M50 66 L50 34 M70 66 L70 22" stroke="#F5F1E8" stroke-width="8" stroke-linecap="round"></path><circle cx="70" cy="22" r="6" fill="#C49A52"></circle></svg>
+            <span style="font-size: 1.1rem; font-weight: 700; color: #2C5AA8; letter-spacing: -0.02em;">Insta<span style="color: #A87C36;">Coach</span></span>
         </div>
         <span style="flex: 1;"></span>
-        <span class="lp-nav-links" style="display: inline-flex; align-items: center; gap: 28px;">
-            <a class="nav-link" href="#como">Cómo funciona</a>
-            <a class="nav-link" href="#evals">Evaluaciones</a>
-            <a class="nav-link" href="/dashboard-selection">Iniciar sesión</a>
+        <span class="lp-nav-links" style="display: inline-flex; align-items: center; gap: 28px; pointer-events: auto;">
+            <a href="#como" class="lp-nav">Cómo funciona</a>
+            <a href="#evals" class="lp-nav">Resultados</a>
+            <a href="/dashboard-selection" class="lp-nav">Iniciar sesión</a>
         </span>
-        <a href="/dashboard-selection" class="btn-primary-lp" style="height: 42px; padding: 0 20px;">Encuentra tu coach</a>
+        <a href="/dashboard-selection" class="lp-btn" style="height: 42px; padding: 0 20px; font-size: 15px; pointer-events: auto;">Encuentra tu coach</a>
     </header>
 
-    <!-- ── Héroe ── -->
-    <section class="lp-hero" style="max-width: 1180px; margin: 0 auto; padding: 64px 40px 80px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center;">
-        <div class="rise">
-            <div class="eyebrow" style="color: var(--gold-700, #8A6526); margin-bottom: 16px;">Coaching profesional · en tu semana real</div>
-            <h1 class="serif lp-h1" style="font-size: 54px; line-height: 1.08; margin: 0 0 20px;">Coaching que te encuentra <span class="gold-streak">a mitad de semana.</span></h1>
-            <p style="font-size: 17px; color: var(--text-muted, #646E7E); line-height: 1.6; margin: 0 0 28px; max-width: 460px;">Tu siguiente movimiento, cada día — con un coach real, un plan claro y evaluaciones que muestran el avance. Sin prisa, sin presión.</p>
+    <!-- Hero -->
+    <section class="lp-hero" style="max-width: 1180px; margin: 0 auto; padding: 90px 40px 120px; min-height: calc(100vh - 68px); box-sizing: border-box; display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; position: relative; z-index: 1; pointer-events: none;">
+        <div id="lpOrb1" style="position: absolute; left: -120px; top: -60px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(94,138,214,0.16), transparent 70%); pointer-events: none; will-change: transform;"></div>
+
+        <div data-reveal style="position: relative; pointer-events: auto;">
+            <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6E4F1C; margin-bottom: 16px; text-shadow: 0 1px 0 rgba(250,251,253,0.85), 0 0 12px rgba(250,251,253,0.7);">Coaching personal y profesional · al alcance de un clic</div>
+            <h1 class="serif" style="font-size: 54px; line-height: 1.08; margin: 0 0 20px; max-width: 613px; position: relative; text-shadow: 0 1px 0 rgba(250,251,253,0.9), 0 2px 18px rgba(250,251,253,0.75);">Coaching en cada momento,<br>cuando lo necesites.</h1>
+            <p style="font-size: 17px; font-weight: 500; color: #14233F; line-height: 1.6; margin: 0 0 28px; max-width: 460px; text-shadow: 0 1px 0 rgba(250,251,253,0.9), 0 2px 14px rgba(250,251,253,0.75);">Tu siguiente movimiento, cada día, con un coach real, un plan claro y seguimiento que muestran el avance. Sin prisa, sin presión.</p>
             <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 22px; flex-wrap: wrap;">
-                <a href="/dashboard-selection" class="btn-primary-lp" style="height: 50px; padding: 0 26px; font-size: 16px;">Empieza tu primera sesión</a>
-                <a href="#como" style="font-size: 14.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">Ver cómo funciona <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i></a>
+                <a href="/dashboard-selection" class="lp-btn lp-btn-lg" style="height: 50px; padding: 0 26px; font-size: 16px;">Empieza tu primera sesión</a>
+                <a href="#como" style="font-size: 14.5px; font-weight: 700; color: #213C70; display: inline-flex; align-items: center; gap: 5px; text-shadow: 0 1px 0 rgba(250,251,253,0.9), 0 0 12px rgba(250,251,253,0.7);">Ver cómo funciona <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i></a>
             </div>
             <div style="display: flex; gap: 26px;">
-                <div><span class="serif" style="font-size: 21px;">120</span><div style="font-size: 12px; color: var(--text-subtle, #8C97A8);">coaches certificados</div></div>
-                <div><span class="serif" style="font-size: 21px;">3,400</span><div style="font-size: 12px; color: var(--text-subtle, #8C97A8);">sesiones realizadas</div></div>
-                <div><span class="serif" style="font-size: 21px;">92%</span><div style="font-size: 12px; color: var(--text-subtle, #8C97A8);">completa su plan</div></div>
+                <div><span data-count="120" class="serif" style="font-size: 21px;">120</span><div style="font-size: 12px; font-weight: 600; color: #313842; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">coaches certificados</div></div>
+                <div><span data-count="3400" class="serif" style="font-size: 21px;">3,400</span><div style="font-size: 12px; font-weight: 600; color: #313842; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">sesiones realizadas</div></div>
+                <div><span data-count="92" data-suffix="%" class="serif" style="font-size: 21px;">92%</span><div style="font-size: 12px; font-weight: 600; color: #313842; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">completa su plan</div></div>
             </div>
         </div>
 
-        <div class="rise rise-2 lp-hero-visual" style="position: relative;">
-            <div style="background: var(--surface-inverse, #14233F); border-radius: 22px; padding: 28px; box-shadow: var(--shadow-lg, 0 22px 44px -22px rgba(20,35,63,0.34)); position: relative; overflow: hidden;">
+        <div data-reveal style="position: relative; perspective: 1000px; pointer-events: auto;">
+            <div id="lpHeroCard" style="background: #14233F; border-radius: 22px; padding: 28px; box-shadow: 0 22px 44px -22px rgba(20,35,63,0.34); position: relative; transform-style: preserve-3d; transition: transform .18s ease-out, box-shadow .3s ease; will-change: transform;">
                 <div style="position: absolute; inset: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); pointer-events: none; border-radius: 22px;"></div>
-                <div style="position: absolute; right: -80px; top: -80px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(94,138,214,0.2), transparent 70%); pointer-events: none;"></div>
-                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; position: relative;">
+                <div style="position: absolute; right: -60px; top: -60px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(94,138,214,0.22), transparent 70%); pointer-events: none; animation: lpPulse 6s ease-in-out infinite;"></div>
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; position: relative; transform: translateZ(45px);">
                     <div style="position: relative; width: 72px; height: 72px; flex: none; display: grid; place-items: center;">
                         <svg width="72" height="72" viewBox="0 0 72 72" style="transform: rotate(-90deg); position: absolute; overflow: visible;">
-                            <circle cx="36" cy="36" r="31" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="8"/>
-                            <circle cx="36" cy="36" r="31" fill="none" stroke="#C49A52" stroke-width="8" stroke-linecap="round"
-                                stroke-dasharray="194.78" stroke-dashoffset="74.02"/>
+                            <circle cx="36" cy="36" r="31" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="8"></circle>
+                            <circle id="lpRing" cx="36" cy="36" r="31" fill="none" stroke="#C49A52" stroke-width="8" stroke-linecap="round" stroke-dasharray="194.78" stroke-dashoffset="194.78" style="transition: stroke-dashoffset 1.4s cubic-bezier(.22,1,.36,1);"></circle>
                         </svg>
-                        <span style="position: relative; font-weight: 700; font-size: 1rem; color: var(--text-inverse, #FAFBFD);">62%</span>
+                        <span style="position: relative; font-weight: 700; font-size: 1rem; color: #FAFBFD;">62%</span>
                     </div>
                     <div>
-                        <div class="eyebrow" style="color: var(--gold-300, #E0C691); margin-bottom: 3px;">Semana 6 · Liderar con calma</div>
-                        <div class="serif" style="font-size: 18px; color: var(--text-inverse, #FAFBFD);">Pasaste la mitad. El plan avanza contigo.</div>
+                        <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #E0C691; margin-bottom: 3px;">Semana 6 · Liderar con calma</div>
+                        <div class="serif" style="font-size: 18px; color: #FAFBFD;">Pasaste la mitad. El plan avanza contigo.</div>
                     </div>
                 </div>
-                <div style="background: rgba(255,255,255,0.07); border-radius: 14px; padding: 16px; position: relative; min-height: 96px; box-sizing: border-box;">
+                <div style="background: rgba(255,255,255,0.07); border-radius: 14px; padding: 16px; position: relative; min-height: 96px; transform: translateZ(28px);">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <i class="fas fa-wand-magic-sparkles" style="font-size: 0.8rem; color: var(--gold-300, #E0C691);"></i>
-                        <span id="lpNudgeLabel" class="eyebrow" style="color: var(--gold-300, #E0C691);">Tu coach, hoy</span>
+                        <i class="fas fa-wand-magic-sparkles" style="font-size: 0.8rem; color: #E0C691;"></i>
+                        <span id="lpNudgeLabel" style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #E0C691;">Tu coach, hoy</span>
                     </div>
-                    <p id="lpNudgeText" class="serif" style="font-size: 15.5px; line-height: 1.5; color: var(--text-inverse, #FAFBFD); margin: 0; opacity: 1; transform: translateY(0); transition: opacity .45s ease, transform .45s ease;">"Nombraste evitar el 1:1 como un patrón. ¿Quieres planear cómo abrirlo hoy?"</p>
+                    <p id="lpNudgeText" class="serif" style="font-size: 15.5px; line-height: 1.5; color: #FAFBFD; margin: 0; transition: opacity .45s ease, transform .45s ease;">"Nombraste evitar el 1:1 como un patrón. ¿Quieres planear cómo abrirlo hoy?"</p>
                     <div id="lpNudgeDots" style="display: flex; gap: 6px; margin-top: 12px;"></div>
                 </div>
-            </div>
-            <div class="drift" style="position: absolute; left: -28px; bottom: -24px; background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 14px; box-shadow: var(--shadow-md, 0 10px 24px -14px rgba(20,35,63,0.32)); padding: 14px 18px; display: flex; align-items: center; gap: 12px;">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--success-soft, #DBEDE2); display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-check" style="font-size: 0.9rem; color: var(--success, #2F7D5B);"></i>
-                </div>
-                <div>
-                    <div style="font-size: 13px; font-weight: 700; color: var(--text-strong, #14233F);">Paso de hoy completado</div>
-                    <div style="font-size: 11.5px; color: var(--text-subtle, #8C97A8);">Racha de 5 días</div>
+                <div style="position: absolute; left: -28px; bottom: -24px; background: #fff; border: 1px solid #E6EBF2; border-radius: 14px; box-shadow: 0 10px 24px -14px rgba(20,35,63,0.32); padding: 14px 18px; display: flex; align-items: center; gap: 12px; animation: lpDrift 7s ease-in-out infinite; transform: translateZ(70px);">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #DBEDE2; display: flex; align-items: center; justify-content: center;"><i class="fas fa-check" style="font-size: 0.9rem; color: #2F7D5B;"></i></div>
+                    <div>
+                        <div style="font-size: 13px; font-weight: 700; color: #14233F;">Paso de hoy completado</div>
+                        <div style="font-size: 11.5px; color: #8C97A8;">Racha de 5 días</div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ── Cómo funciona ── -->
-    <section id="como" style="background: var(--surface-card, #fff); border-top: 1px solid var(--border-subtle, #E6EBF2); border-bottom: 1px solid var(--border-subtle, #E6EBF2); padding: 72px 40px;">
+    <!-- Cómo funciona -->
+    <section id="como" class="lp-section" style="background: #fff; border-top: 1px solid #E6EBF2; border-bottom: 1px solid #E6EBF2; padding: 72px 40px; position: relative; overflow: hidden;">
         <div style="max-width: 1180px; margin: 0 auto;">
-            <div style="max-width: 520px; margin-bottom: 40px;">
-                <div class="eyebrow" style="color: var(--gold-700, #8A6526); margin-bottom: 10px;">Cómo funciona</div>
+            <div data-reveal style="max-width: 520px; margin-bottom: 40px;">
+                <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8A6526; margin-bottom: 10px;">Cómo funciona</div>
                 <h2 class="serif" style="font-size: 34px; margin: 0 0 10px;">Un paso pequeño y claro, cada día.</h2>
-                <p style="font-size: 15px; color: var(--text-muted, #646E7E); line-height: 1.6; margin: 0;">No es contenido genérico ni motivación de calendario. Es un plan de 12 semanas con un coach real.</p>
+                <p style="font-size: 15px; color: #646E7E; line-height: 1.6; margin: 0;">No es contenido genérico ni motivación de calendario. Es un plan de 12 semanas con un coach real.</p>
             </div>
-            <div class="lp-steps" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                <div class="lp-card">
-                    <div class="step-num" style="margin-bottom: 14px;">1</div>
-                    <h3 class="serif" style="font-size: 19px; margin: 0 0 8px;">Conoce a tu coach</h3>
-                    <p style="font-size: 13.5px; color: var(--text-muted, #646E7E); line-height: 1.55; margin: 0;">Una primera sesión para definir el foco: qué quieres cambiar en 12 semanas.</p>
+            <div class="lp-como-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; perspective: 1200px;">
+                <div data-reveal data-tilt class="lp-tilt" style="background: #fff; border: 1px solid #E6EBF2; border-radius: 16px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 26px; transform-style: preserve-3d; will-change: transform;">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: #DCE7F8; color: #213C70; font-family: 'Newsreader', Georgia, serif; font-size: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; transform: translateZ(30px);">1</div>
+                    <h3 class="serif" style="font-size: 19px; margin: 0 0 8px; transform: translateZ(20px);">Conoce a tu coach</h3>
+                    <p style="font-size: 13.5px; color: #646E7E; line-height: 1.55; margin: 0; transform: translateZ(12px);">Una primera sesión para definir el foco: qué quieres cambiar en 12 semanas.</p>
                 </div>
-                <div class="lp-card">
-                    <div class="step-num" style="margin-bottom: 14px;">2</div>
-                    <h3 class="serif" style="font-size: 19px; margin: 0 0 8px;">Un paso al día</h3>
-                    <p style="font-size: 13.5px; color: var(--text-muted, #646E7E); line-height: 1.55; margin: 0;">Pasos de 10 minutos, elegidos por tu coach. Reflexiones de una frase. Nada de tareas eternas.</p>
+                <div data-reveal data-tilt class="lp-tilt" style="background: #fff; border: 1px solid #E6EBF2; border-radius: 16px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 26px; transform-style: preserve-3d; will-change: transform;">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: #DCE7F8; color: #213C70; font-family: 'Newsreader', Georgia, serif; font-size: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; transform: translateZ(30px);">2</div>
+                    <h3 class="serif" style="font-size: 19px; margin: 0 0 8px; transform: translateZ(20px);">Un paso al día</h3>
+                    <p style="font-size: 13.5px; color: #646E7E; line-height: 1.55; margin: 0; transform: translateZ(12px);">Pasos de 10 minutos, elegidos por tu coach. Reflexiones de una frase. Nada de tareas eternas.</p>
                 </div>
-                <div class="lp-card">
-                    <div class="step-num" style="margin-bottom: 14px;">3</div>
-                    <h3 class="serif" style="font-size: 19px; margin: 0 0 8px;">Mide el avance</h3>
-                    <p style="font-size: 13.5px; color: var(--text-muted, #646E7E); line-height: 1.55; margin: 0;">Sesiones semanales y evaluaciones cada 6 semanas. El progreso queda en números, no en sensaciones.</p>
+                <div data-reveal data-tilt class="lp-tilt" style="background: #fff; border: 1px solid #E6EBF2; border-radius: 16px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 26px; transform-style: preserve-3d; will-change: transform;">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: #DCE7F8; color: #213C70; font-family: 'Newsreader', Georgia, serif; font-size: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; transform: translateZ(30px);">3</div>
+                    <h3 class="serif" style="font-size: 19px; margin: 0 0 8px; transform: translateZ(20px);">Mide el avance</h3>
+                    <p style="font-size: 13.5px; color: #646E7E; line-height: 1.55; margin: 0; transform: translateZ(12px);">Sesiones semanales y evaluaciones cada 6 semanas. El progreso queda en números, no en sensaciones.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ── Evaluaciones ── -->
-    <section id="evals" class="lp-evals" style="max-width: 1180px; margin: 0 auto; padding: 72px 40px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center;">
-        <div>
-            <div class="eyebrow" style="color: var(--gold-700, #8A6526); margin-bottom: 10px;">Evaluaciones</div>
+    <!-- Evaluaciones -->
+    <section id="evals" class="lp-section lp-evals" style="max-width: 1180px; margin: 0 auto; padding: 72px 40px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center; position: relative;">
+        <div id="lpOrb2" style="position: absolute; right: -140px; top: 30px; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(196,154,82,0.12), transparent 70%); pointer-events: none; will-change: transform;"></div>
+        <div data-reveal>
+            <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8A6526; margin-bottom: 10px;">Resultados</div>
             <h2 class="serif" style="font-size: 34px; margin: 0 0 12px;">El avance se ve, no se supone.</h2>
-            <p style="font-size: 15px; color: var(--text-muted, #646E7E); line-height: 1.6; margin: 0 0 20px;">Evaluaciones validadas de 12–20 minutos — asertividad, liderazgo, escucha, inteligencia emocional. Las repites cada seis semanas y el cambio queda en números que tu coach trabaja contigo.</p>
+            <p style="font-size: 15px; color: #646E7E; line-height: 1.6; margin: 0 0 20px;">Evaluaciones validadas de 12–20 minutos — asertividad, liderazgo, escucha, inteligencia emocional. Las repites cada seis semanas y el cambio queda en números que tu coach trabaja contigo.</p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-circle-check" style="font-size: 0.95rem; color: var(--success, #2F7D5B); flex-shrink: 0;"></i><span style="font-size: 14px; color: var(--text-body, #313842);">Resultados al instante, para ti y tu coach</span></div>
-                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-circle-check" style="font-size: 0.95rem; color: var(--success, #2F7D5B); flex-shrink: 0;"></i><span style="font-size: 14px; color: var(--text-body, #313842);">Por dimensión: fortalezas y focos sugeridos</span></div>
-                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-circle-check" style="font-size: 0.95rem; color: var(--success, #2F7D5B); flex-shrink: 0;"></i><span style="font-size: 14px; color: var(--text-body, #313842);">Solo tú y tu coach ven tus resultados</span></div>
+                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-circle-check" style="font-size: 0.95rem; color: #2F7D5B;"></i><span style="font-size: 14px; color: #313842;">Resultados al instante, para ti y tu coach</span></div>
+                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-circle-check" style="font-size: 0.95rem; color: #2F7D5B;"></i><span style="font-size: 14px; color: #313842;">Por dimensión: fortalezas y focos sugeridos</span></div>
+                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-circle-check" style="font-size: 0.95rem; color: #2F7D5B;"></i><span style="font-size: 14px; color: #313842;">Solo tú y tu coach ven tus resultados</span></div>
             </div>
         </div>
-        <div class="lp-card">
-            <div id="lpEvalInner" style="opacity: 1; transform: translateY(0); transition: opacity .45s ease, transform .45s ease;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                <h3 id="lpEvalName" class="serif" style="font-size: 19px; margin: 0;">Asertividad</h3>
-                <span id="lpEvalDelta" style="font-size: 11.5px; font-weight: 700; padding: 3px 11px; border-radius: 999px; background: var(--success-soft, #DBEDE2); color: var(--success, #2F7D5B);">+9 pts en 6 semanas</span>
-            </div>
-            <p id="lpEvalMeta" style="font-size: 12.5px; color: var(--text-subtle, #8C97A8); margin: 0 0 18px;">49 → 58 · segunda toma</p>
-            <div id="lpEvalDims" style="display: flex; flex-direction: column; gap: 14px; min-height: 170px;">
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="font-size: 13.5px; font-weight: 600; color: var(--text-strong, #14233F);">Expresar necesidades</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--success, #2F7D5B);">Fortaleza</span>
+        <div data-reveal style="perspective: 1000px;">
+            <div id="lpEvalCard" data-tilt class="lp-tilt" style="background: #fff; border: 1px solid #E6EBF2; border-radius: 16px; box-shadow: 0 1px 2px rgba(20,35,63,0.06); padding: 26px; transform-style: preserve-3d; will-change: transform;">
+                <div id="lpEvalInner" style="transition: opacity .45s ease, transform .45s ease; transform: translateZ(24px);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <h3 id="lpEvalName" class="serif" style="font-size: 19px; margin: 0;">Asertividad</h3>
+                        <span id="lpEvalDelta" style="font-size: 11.5px; font-weight: 700; padding: 3px 11px; border-radius: 999px; background: #DBEDE2; color: #2F7D5B;">+9 pts en 6 semanas</span>
                     </div>
-                    <div style="height: 8px; border-radius: 999px; background: var(--surface-sunken, #E6EBF2); overflow: hidden;"><div style="height: 100%; width: 72%; border-radius: 999px; background: var(--primary, #2C5AA8);"></div></div>
+                    <p id="lpEvalMeta" style="font-size: 12.5px; color: #8C97A8; margin: 0 0 18px;">49 → 58 · segunda toma</p>
+                    <div id="lpEvalDims" style="display: flex; flex-direction: column; gap: 14px; min-height: 170px;"></div>
                 </div>
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="font-size: 13.5px; font-weight: 600; color: var(--text-strong, #14233F);">Poner límites</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--gold-700, #8A6526);">Foco sugerido</span>
-                    </div>
-                    <div style="height: 8px; border-radius: 999px; background: var(--surface-sunken, #E6EBF2); overflow: hidden;"><div style="height: 100%; width: 41%; border-radius: 999px; background: var(--primary, #2C5AA8);"></div></div>
-                </div>
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="font-size: 13.5px; font-weight: 600; color: var(--text-strong, #14233F);">Manejar el conflicto</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--text-muted, #646E7E);">En desarrollo</span>
-                    </div>
-                    <div style="height: 8px; border-radius: 999px; background: var(--surface-sunken, #E6EBF2); overflow: hidden;"><div style="height: 100%; width: 61%; border-radius: 999px; background: var(--primary, #2C5AA8);"></div></div>
-                </div>
+                <div id="lpEvalDots" style="display: flex; gap: 6px; margin-top: 16px; transform: translateZ(24px);"></div>
             </div>
-            </div>
-            <div id="lpEvalDots" style="display: flex; gap: 6px; margin-top: 16px;"></div>
         </div>
     </section>
 
-    <!-- ── Testimonio ── -->
-    <section style="background: var(--surface-inverse, #14233F); position: relative; overflow: hidden; padding: 80px 40px;">
+    <!-- Testimonio -->
+    <section class="lp-section" style="background: #14233F; position: relative; overflow: hidden; padding: 80px 40px;">
         <div style="position: absolute; inset: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); pointer-events: none;"></div>
-        <div style="position: absolute; left: -100px; bottom: -140px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(196,154,82,0.13), transparent 70%); pointer-events: none;"></div>
-        <div style="max-width: 820px; margin: 0 auto; text-align: center; position: relative;">
-            <p class="serif" style="font-style: italic; font-size: 29px; line-height: 1.4; color: var(--text-inverse, #FAFBFD); margin: 0 0 22px;">"Volver cada semana se volvió fácil. Siempre sé cuál es mi siguiente paso — y mi coach también."</p>
+        <div id="lpOrb3" style="position: absolute; left: -100px; bottom: -140px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(196,154,82,0.13), transparent 70%); pointer-events: none; will-change: transform;"></div>
+        <div data-reveal style="max-width: 820px; margin: 0 auto; text-align: center; position: relative;">
+            <p class="serif" style="font-style: italic; font-size: 29px; line-height: 1.4; color: #FAFBFD; margin: 0 0 22px;">"Volver cada semana se volvió fácil. Siempre sé cuál es mi siguiente paso — y mi coach también."</p>
             <div style="display: inline-flex; align-items: center; gap: 12px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-soft, #DCE7F8); color: var(--ocean-700, #213C70); font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">MR</div>
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #DCE7F8; color: #213C70; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">MR</div>
                 <div style="text-align: left;">
-                    <div style="font-size: 14px; font-weight: 600; color: var(--text-inverse, #FAFBFD);">María Fernanda Ruiz</div>
-                    <div style="font-size: 12.5px; color: var(--mist-400, #B7C1D0);">Gerente de operaciones · coachee desde 2025</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #FAFBFD;">María Fernanda Ruiz</div>
+                    <div style="font-size: 12.5px; color: #B7C1D0;">Gerente de operaciones · coachee desde 2025</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ── Para coachees ── -->
-    <section id="coaches" style="max-width: 1180px; margin: 0 auto; padding: 72px 40px;">
-        <div class="lp-card" style="max-width: 760px; margin: 0 auto; border-color: var(--border-brand, #BFD3F0); box-shadow: 0 10px 24px -14px rgba(44,90,168,0.35); position: relative; padding: 32px;">
-            <span style="position: absolute; top: 16px; right: 16px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px; background: var(--accent-soft, #F2E7CC); color: var(--gold-700, #8A6526);">Para ti</span>
-            <div class="eyebrow" style="color: var(--gold-700, #8A6526); margin-bottom: 10px;">Para coachees</div>
-            <h3 class="serif" style="font-size: 25px; margin: 0 0 10px;">Tu plan, tu ritmo — y tu coach contigo toda la semana.</h3>
-            <a href="/dashboard-selection" class="btn-primary-lp" style="height: 46px; padding: 0 22px; margin-bottom: 18px;">Encuentra tu coach <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i></a>
-            <p style="font-size: 14px; color: var(--text-muted, #646E7E); line-height: 1.6; margin: 0 0 16px;">Pasos diarios de 10 minutos, reflexiones de una frase y un plan que avanza contigo — con tu coach cerca entre sesiones.</p>
+    <!-- Para coachees -->
+    <section class="lp-section" style="max-width: 1180px; margin: 0 auto; padding: 72px 40px; perspective: 1200px;">
+        <div data-reveal data-tilt class="lp-tilt" style="background: #fff; border: 1px solid #BFD3F0; border-radius: 16px; box-shadow: 0 10px 24px -14px rgba(44,90,168,0.35); position: relative; padding: 32px; max-width: 760px; margin: 0 auto; transform-style: preserve-3d; will-change: transform;">
+            <span style="position: absolute; top: 16px; right: 16px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px; background: #F2E7CC; color: #8A6526; transform: translateZ(36px);">Para ti</span>
+            <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8A6526; margin-bottom: 10px;">Para coachees</div>
+            <h3 class="serif" style="font-size: 25px; margin: 0 0 10px; transform: translateZ(24px);">Tu plan, tu ritmo — y tu coach contigo toda la semana.</h3>
+            <a href="/dashboard-selection" class="lp-btn" style="height: 46px; padding: 0 22px; margin-bottom: 18px; font-size: 15px;">Encuentra tu coach <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i></a>
+            <p style="font-size: 14px; color: #646E7E; line-height: 1.6; margin: 0 0 16px;">Pasos diarios de 10 minutos, reflexiones de una frase y un plan que avanza contigo — con tu coach cerca entre sesiones.</p>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-comment" style="font-size: 0.85rem; color: var(--primary, #2C5AA8); flex-shrink: 0;"></i><span style="font-size: 13.5px; color: var(--text-body, #313842);">Chat privado con tu coach</span></div>
-                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-video" style="font-size: 0.85rem; color: var(--primary, #2C5AA8); flex-shrink: 0;"></i><span style="font-size: 13.5px; color: var(--text-body, #313842);">Sesiones en video con agenda y notas compartidas</span></div>
-                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-fire" style="font-size: 0.85rem; color: var(--gold-700, #8A6526); flex-shrink: 0;"></i><span style="font-size: 13.5px; color: var(--text-body, #313842);">Rachas y logros que celebran tu constancia</span></div>
+                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-comment" style="font-size: 0.85rem; color: #2C5AA8;"></i><span style="font-size: 13.5px; color: #313842;">Chat privado con tu coach</span></div>
+                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-video" style="font-size: 0.85rem; color: #2C5AA8;"></i><span style="font-size: 13.5px; color: #313842;">Sesiones en video con agenda y notas compartidas</span></div>
+                <div style="display: flex; align-items: center; gap: 10px;"><i class="fas fa-fire" style="font-size: 0.85rem; color: #8A6526;"></i><span style="font-size: 13.5px; color: #313842;">Rachas y logros que celebran tu constancia</span></div>
             </div>
         </div>
     </section>
 
-    <!-- ── CTA final ── -->
-    <section style="max-width: 1180px; margin: 0 auto; padding: 0 40px 88px;">
-        <div style="background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); border-radius: 22px; box-shadow: 0 2px 6px -1px rgba(20,35,63,0.09); padding: 56px 40px; text-align: center;">
+    <!-- CTA final -->
+    <section class="lp-section" style="max-width: 1180px; margin: 0 auto; padding: 0 40px 88px;">
+        <div data-reveal style="background: #fff; border: 1px solid #E6EBF2; border-radius: 22px; box-shadow: 0 2px 6px -1px rgba(20,35,63,0.09); padding: 56px 40px; text-align: center;">
             <h2 class="serif" style="font-size: 36px; margin: 0 0 12px;">Empieza donde estás.</h2>
-            <p style="font-size: 15.5px; color: var(--text-muted, #646E7E); margin: 0 0 26px;">La primera sesión es para conocerse. Sin tarjeta, sin compromiso.</p>
-            <a href="/dashboard-selection" class="btn-primary-lp" style="height: 50px; padding: 0 26px; font-size: 16px;">Empieza tu primera sesión</a>
+            <p style="font-size: 15.5px; color: #646E7E; margin: 0 0 26px;">La primera sesión es para conocerse. Sin tarjeta, sin compromiso.</p>
+            <a href="/dashboard-selection" class="lp-btn lp-btn-lg" style="height: 50px; padding: 0 26px; font-size: 16px;">Empieza tu primera sesión</a>
         </div>
     </section>
 
-    <!-- ── Footer ── -->
-    <footer style="border-top: 1px solid var(--border-subtle, #E6EBF2); padding: 28px 40px; max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-        <span style="font-size: 13px; color: var(--text-subtle, #8C97A8);">© 2026 InstaCoach</span>
+    <footer style="border-top: 1px solid #E6EBF2; padding: 28px 40px; max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <span style="font-size: 13px; color: #8C97A8;">© 2026 InstaCoach</span>
     </footer>
 </div>
+
 <script>
 (function () {
     'use strict';
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var TILT = 7;
 
-    /* ── Rotador de nudges del coach (tarjeta oscura del héroe) ── */
-    var nudges = [
-        { label: 'Tu coach, hoy', text: '"Nombraste evitar el 1:1 como un patrón. ¿Quieres planear cómo abrirlo hoy?"' },
-        { label: 'Tu coach, hoy', text: '"Tu compromiso de la semana: delegar el reporte completo. ¿Cómo va?"' },
-        { label: 'Antes de tu sesión', text: '"Mañana ves a tu coach. Anota una situación de la semana que quieras trabajar."' },
-        { label: 'Reflexión del viernes', text: '"¿Qué conversación difícil manejaste mejor esta semana que hace un mes?"' }
-    ];
-    var nIdx = 0;
-    var nText = document.getElementById('lpNudgeText');
-    var nLabel = document.getElementById('lpNudgeLabel');
-    var nDots = document.getElementById('lpNudgeDots');
-    function pintarNudgeDots() {
-        if (!nDots) return;
-        nDots.innerHTML = nudges.map(function (_, i) {
-            return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === nIdx ? 'var(--gold-300, #E0C691)' : 'rgba(255,255,255,0.22)') + ';transition:background .3s ease;"></span>';
-        }).join('');
-    }
-    if (nText && nLabel) {
-        pintarNudgeDots();
-        setInterval(function () {
-            nText.style.opacity = '0';
-            nText.style.transform = 'translateY(8px)';
-            setTimeout(function () {
-                nIdx = (nIdx + 1) % nudges.length;
-                nLabel.textContent = nudges[nIdx].label;
-                nText.textContent = nudges[nIdx].text;
-                nText.style.opacity = '1';
-                nText.style.transform = 'translateY(0)';
-                pintarNudgeDots();
-            }, 450);
-        }, 4200);
+    function start() {
+        /* ── Tilt 3D: la tarjeta del héroe sigue el mouse; las data-tilt con sutileza ── */
+        function tiltify(el, max) {
+            if (reduced) return;
+            el.addEventListener('mousemove', function (e) {
+                var r = el.getBoundingClientRect();
+                var x = (e.clientX - r.left) / r.width - 0.5;
+                var y = (e.clientY - r.top) / r.height - 0.5;
+                el.style.transform = 'rotateY(' + (x * max) + 'deg) rotateX(' + (-y * max) + 'deg)';
+            });
+            el.addEventListener('mouseleave', function () { el.style.transform = 'rotateY(0deg) rotateX(0deg)'; });
+        }
+        var hero = document.getElementById('lpHeroCard');
+        if (hero) tiltify(hero, TILT + 3);
+        document.querySelectorAll('[data-tilt]').forEach(function (el) { tiltify(el, TILT); });
+
+        /* ── Reveal al hacer scroll ── */
+        var reveals = document.querySelectorAll('[data-reveal]');
+        if (!reduced && 'IntersectionObserver' in window) {
+            reveals.forEach(function (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(36px) rotateX(7deg)';
+                el.style.transformOrigin = '50% 100%';
+            });
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (en) {
+                    if (!en.isIntersecting) return;
+                    var el = en.target;
+                    el.style.transition = 'opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0) rotateX(0deg)';
+                    io.unobserve(el);
+                    setTimeout(function () { el.style.transform = ''; el.style.transition = ''; }, 900);
+                });
+            }, { threshold: 0.15 });
+            reveals.forEach(function (el) { io.observe(el); });
+        }
+
+        /* ── Glaciar: pan con mouse, parallax con scroll, respiración lenta ── */
+        var glacier = document.getElementById('lpGlacier');
+        if (glacier && !reduced) {
+            var gmx = 0, gmy = 0, gsy = 0, t0 = performance.now();
+            function paint() {
+                var t = (performance.now() - t0) / 1000;
+                var breathe = 1.14 + Math.sin(t * 0.09) * 0.02;
+                var tx = gmx * -26, ty = gmy * -14 + gsy * 0.18;
+                glacier.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0) scale(' + breathe + ')';
+                requestAnimationFrame(paint);
+            }
+            window.addEventListener('mousemove', function (e) { gmx = e.clientX / window.innerWidth - 0.5; gmy = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+            window.addEventListener('scroll', function () { gsy = window.scrollY; }, { passive: true });
+            requestAnimationFrame(paint);
+        }
+
+        /* ── Orbes con parallax ── */
+        if (!reduced) {
+            var orbs = [['lpOrb1', 0.12], ['lpOrb2', -0.09], ['lpOrb3', 0.07]]
+                .map(function (o) { return [document.getElementById(o[0]), o[1]]; })
+                .filter(function (o) { return o[0]; });
+            window.addEventListener('scroll', function () {
+                var y = window.scrollY;
+                orbs.forEach(function (o) { o[0].style.transform = 'translateY(' + (y * o[1]) + 'px)'; });
+            }, { passive: true });
+        }
+
+        /* ── Anillo de progreso (62% de 194.78 → offset 74.02) ── */
+        var ring = document.getElementById('lpRing');
+        if (ring) setTimeout(function () { ring.style.strokeDashoffset = '74.02'; }, reduced ? 0 : 500);
+
+        /* ── Conteo de estadísticas ── */
+        if (!reduced) {
+            document.querySelectorAll('[data-count]').forEach(function (el) {
+                var target = parseInt(el.getAttribute('data-count'), 10);
+                var suffix = el.getAttribute('data-suffix') || '';
+                var s0 = performance.now(), dur = 1400;
+                function tick(t) {
+                    var p = Math.min((t - s0) / dur, 1);
+                    var v = Math.round(target * (1 - Math.pow(1 - p, 3)));
+                    el.textContent = v.toLocaleString('en-US') + suffix;
+                    if (p < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            });
+        }
+
+        /* ── Rotador de nudges del coach ── */
+        var nudges = [
+            { label: 'Tu coach, hoy', text: '"Nombraste evitar el 1:1 como un patrón. ¿Quieres planear cómo abrirlo hoy?"' },
+            { label: 'Tu coach, hoy', text: '"Tu compromiso de la semana: delegar el reporte completo. ¿Cómo va?"' },
+            { label: 'Antes de tu sesión', text: '"Mañana ves a tu coach. Anota una situación de la semana que quieras trabajar."' },
+            { label: 'Reflexión del viernes', text: '"¿Qué conversación difícil manejaste mejor esta semana que hace un mes?"' }
+        ];
+        var nIdx = 0;
+        var nText = document.getElementById('lpNudgeText'), nLabel = document.getElementById('lpNudgeLabel'), nDots = document.getElementById('lpNudgeDots');
+        function paintNudgeDots() {
+            if (nDots) nDots.innerHTML = nudges.map(function (_, i) { return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === nIdx ? '#E0C691' : 'rgba(255,255,255,0.22)') + ';transition:background .3s ease;"></span>'; }).join('');
+        }
+        if (nText && nLabel) {
+            paintNudgeDots();
+            if (!reduced) setInterval(function () {
+                nText.style.opacity = '0'; nText.style.transform = 'translateY(8px)';
+                setTimeout(function () {
+                    nIdx = (nIdx + 1) % nudges.length;
+                    nLabel.textContent = nudges[nIdx].label; nText.textContent = nudges[nIdx].text;
+                    nText.style.opacity = '1'; nText.style.transform = 'translateY(0)';
+                    paintNudgeDots();
+                }, 450);
+            }, 4200);
+        }
+
+        /* ── Rotador de evaluaciones ── */
+        var evals = [
+            { name: 'Asertividad', delta: '+9 pts en 6 semanas', meta: '49 → 58 · segunda toma', dims: [
+                { name: 'Expresar necesidades', pct: 72, tag: 'Fortaleza', color: '#2F7D5B' },
+                { name: 'Poner límites', pct: 41, tag: 'Foco sugerido', color: '#8A6526' },
+                { name: 'Manejar el conflicto', pct: 61, tag: 'En desarrollo', color: '#646E7E' } ] },
+            { name: 'Liderazgo', delta: '+6 pts en 8 semanas', meta: '55 → 61 · segunda toma', dims: [
+                { name: 'Dar dirección clara', pct: 68, tag: 'Fortaleza', color: '#2F7D5B' },
+                { name: 'Delegar con confianza', pct: 44, tag: 'Foco sugerido', color: '#8A6526' },
+                { name: 'Desarrollar al equipo', pct: 58, tag: 'En desarrollo', color: '#646E7E' } ] },
+            { name: 'Escucha activa', delta: '+11 pts en 6 semanas', meta: '42 → 53 · segunda toma', dims: [
+                { name: 'Presencia en la conversación', pct: 64, tag: 'Fortaleza', color: '#2F7D5B' },
+                { name: 'Escuchar sin interrumpir', pct: 39, tag: 'Foco sugerido', color: '#8A6526' },
+                { name: 'Preguntar antes de opinar', pct: 57, tag: 'En desarrollo', color: '#646E7E' } ] }
+        ];
+        var eIdx = 0;
+        var eInner = document.getElementById('lpEvalInner'), eDots = document.getElementById('lpEvalDots');
+        function paintEval() {
+            var ev = evals[eIdx];
+            document.getElementById('lpEvalName').textContent = ev.name;
+            document.getElementById('lpEvalDelta').textContent = ev.delta;
+            document.getElementById('lpEvalMeta').textContent = ev.meta;
+            document.getElementById('lpEvalDims').innerHTML = ev.dims.map(function (d) {
+                return '<div><div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
+                    '<span style="font-size:13.5px;font-weight:600;color:#14233F;">' + d.name + '</span>' +
+                    '<span style="font-size:12px;font-weight:600;color:' + d.color + ';">' + d.tag + '</span></div>' +
+                    '<div style="height:8px;border-radius:999px;background:#E6EBF2;overflow:hidden;">' +
+                    '<div style="height:100%;width:0%;border-radius:999px;background:#2C5AA8;transition:width 1s cubic-bezier(.22,1,.36,1);" data-w="' + d.pct + '"></div></div></div>';
+            }).join('');
+            requestAnimationFrame(function () { requestAnimationFrame(function () {
+                document.querySelectorAll('#lpEvalDims [data-w]').forEach(function (b) { b.style.width = b.getAttribute('data-w') + '%'; });
+            }); });
+            if (eDots) eDots.innerHTML = evals.map(function (_, i) { return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === eIdx ? '#C49A52' : '#D5DCE7') + ';transition:background .3s ease;"></span>'; }).join('');
+        }
+        if (eInner) {
+            paintEval();
+            if (!reduced) setInterval(function () {
+                eInner.style.opacity = '0'; eInner.style.transform = 'translateZ(24px) translateY(8px)';
+                setTimeout(function () {
+                    eIdx = (eIdx + 1) % evals.length;
+                    paintEval();
+                    eInner.style.opacity = '1'; eInner.style.transform = 'translateZ(24px)';
+                }, 450);
+            }, 5600);
+        }
     }
 
-    /* ── Rotador de evaluaciones ── */
-    var evals = [
-        { name: 'Asertividad', delta: '+9 pts en 6 semanas', meta: '49 → 58 · segunda toma', dims: [
-            { name: 'Expresar necesidades', pct: 72, tag: 'Fortaleza', color: 'var(--success, #2F7D5B)' },
-            { name: 'Poner límites', pct: 41, tag: 'Foco sugerido', color: 'var(--gold-700, #8A6526)' },
-            { name: 'Manejar el conflicto', pct: 61, tag: 'En desarrollo', color: 'var(--text-muted, #646E7E)' }
-        ] },
-        { name: 'Liderazgo', delta: '+6 pts en 8 semanas', meta: '55 → 61 · segunda toma', dims: [
-            { name: 'Dar dirección clara', pct: 68, tag: 'Fortaleza', color: 'var(--success, #2F7D5B)' },
-            { name: 'Delegar con confianza', pct: 44, tag: 'Foco sugerido', color: 'var(--gold-700, #8A6526)' },
-            { name: 'Desarrollar al equipo', pct: 58, tag: 'En desarrollo', color: 'var(--text-muted, #646E7E)' }
-        ] },
-        { name: 'Escucha activa', delta: '+11 pts en 6 semanas', meta: '42 → 53 · segunda toma', dims: [
-            { name: 'Presencia en la conversación', pct: 64, tag: 'Fortaleza', color: 'var(--success, #2F7D5B)' },
-            { name: 'Escuchar sin interrumpir', pct: 39, tag: 'Foco sugerido', color: 'var(--gold-700, #8A6526)' },
-            { name: 'Preguntar antes de opinar', pct: 57, tag: 'En desarrollo', color: 'var(--text-muted, #646E7E)' }
-        ] }
-    ];
-    var eIdx = 0;
-    var eInner = document.getElementById('lpEvalInner');
-    var eDots = document.getElementById('lpEvalDots');
-    function pintarEval() {
-        document.getElementById('lpEvalName').textContent = evals[eIdx].name;
-        document.getElementById('lpEvalDelta').textContent = evals[eIdx].delta;
-        document.getElementById('lpEvalMeta').textContent = evals[eIdx].meta;
-        document.getElementById('lpEvalDims').innerHTML = evals[eIdx].dims.map(function (d) {
-            return '<div>' +
-                '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
-                    '<span style="font-size:13.5px;font-weight:600;color:var(--text-strong, #14233F);">' + d.name + '</span>' +
-                    '<span style="font-size:12px;font-weight:600;color:' + d.color + ';">' + d.tag + '</span>' +
-                '</div>' +
-                '<div style="height:8px;border-radius:999px;background:var(--surface-sunken, #E6EBF2);overflow:hidden;"><div style="height:100%;width:' + d.pct + '%;border-radius:999px;background:var(--primary, #2C5AA8);"></div></div>' +
-            '</div>';
-        }).join('');
-        if (eDots) eDots.innerHTML = evals.map(function (_, i) {
-            return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === eIdx ? 'var(--accent, #C49A52)' : 'var(--mist-300, #D5DCE7)') + ';transition:background .3s ease;"></span>';
-        }).join('');
-    }
-    if (eInner) {
-        pintarEval();
-        setInterval(function () {
-            eInner.style.opacity = '0';
-            eInner.style.transform = 'translateY(8px)';
-            setTimeout(function () {
-                eIdx = (eIdx + 1) % evals.length;
-                pintarEval();
-                eInner.style.opacity = '1';
-                eInner.style.transform = 'translateY(0)';
-            }, 450);
-        }, 5600);
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
 })();
 </script>
 </body>
