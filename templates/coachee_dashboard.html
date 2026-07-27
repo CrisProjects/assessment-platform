@@ -10003,7 +10003,7 @@
                             <a href="/coachee-profile?return=feed" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--primary); border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#EEF3FC'" onmouseout="this.style.background='transparent'">
                                 <i class="fas fa-user-circle" style="margin-right: 0.5rem; width: 1rem;"></i> Mi Perfil
                             </a>
-                            <button onclick="openChangePasswordModalFeed(); document.getElementById('feedProfileMenu').style.display='none'" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--ocean-500); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#EEF3FC'" onmouseout="this.style.background='transparent'">
+                            <button onclick="openChangePasswordModalCoachee(); document.getElementById('feedProfileMenu').style.display='none'" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--ocean-500); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#EEF3FC'" onmouseout="this.style.background='transparent'">
                                 <i class="fas fa-key" style="margin-right: 0.5rem; width: 1rem;"></i> Cambiar Contraseña
                             </button>
                             <button onclick="logout(); document.getElementById('feedProfileMenu').style.display='none'" style="display: flex; align-items: center; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--text-muted); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#EEF3FC'" onmouseout="this.style.background='transparent'">
@@ -14412,6 +14412,10 @@
                         } else if (savedTab) {
                             this.activeTab = savedTab;
                         }
+                        // Abrir el drawer "Más" si se llega con ?more=1 (p.ej. desde Mi Perfil)
+                        if (urlParams.get('more') === '1') {
+                            this.$nextTick(() => { this.showDashboardDrawer = true; });
+                        }
                         // Alpine.js se encarga automáticamente de mostrar/ocultar con x-show
                         // Alpine.js se encarga automáticamente de mostrar/ocultar con x-show
                         
@@ -14941,7 +14945,8 @@
                         }
                         if (contractsPane) {
                             contractsPane.style.setProperty('margin', '0', 'important');
-                            contractsPane.style.setProperty('padding', '1.5rem', 'important');
+                            // Móvil: gutter lateral ~16px (como el resto de las pestañas); escritorio: 1.5rem
+                            contractsPane.style.setProperty('padding', window.innerWidth <= 768 ? '1.5rem 1rem' : '1.5rem', 'important');
                             contractsPane.style.setProperty('width', '100%', 'important');
                             contractsPane.style.setProperty('min-height', 'calc(100vh - 4rem)', 'important');
                             contractsPane.style.setProperty('background', '#F1F4F9', 'important');
@@ -31304,6 +31309,32 @@
 
         /* Panes con .fade sin .show quedan a opacity 0 (Bootstrap): neutralizado */
         .tab-pane.fade { opacity: 1 !important; }
+
+        /* ── Móvil: gutter lateral uniforme = 16px (1rem) en TODAS las
+              secciones, tomando "Hoy" (#overview) como referencia de
+              espacio usado. Fuente única de verdad, gana por !important
+              y por especificidad (id + clase/elemento). ── */
+        @media (max-width: 768px) {
+            #overview .section-overview,
+            #content .section-content,
+            #content > div,
+            #development-plan > div,
+            #progress > div,
+            #schedule-coach > div,
+            #mis-contratos,
+            #mensajes > div {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            /* Evaluaciones y Mis Acciones y Metas: un poco más anchas
+               (gutter 12px) para aprovechar mejor el ancho del móvil */
+            #tasks > div,
+            #evaluaciones-figma > div {
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            #mensajes > div { max-width: 100% !important; }
+        }
 
         /* ── Hover de las figuras (spec Card interactiva del diseño):
               elevación 2px + shadow-md + borde brand ── */
