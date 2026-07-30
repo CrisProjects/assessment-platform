@@ -93,6 +93,15 @@ try:
                     db.session.rollback()
                     logger.warning(f"⚠️ RAILWAY: Migración coach_community.{column_name} ya existe o error: {migration_error}")
             
+            # Migración de datos: renombrar la evaluación "DISC" → "Mapa Conductual"
+            try:
+                db.session.execute(text("UPDATE assessment SET title='Evaluación de Mapa Conductual' WHERE title='Evaluación DISC de Personalidad'"))
+                db.session.commit()
+                logger.info("✅ RAILWAY: Evaluación renombrada a 'Mapa Conductual'")
+            except Exception as rename_error:
+                db.session.rollback()
+                logger.warning(f"⚠️ RAILWAY: Rename 'Mapa Conductual' ya aplicado o error: {rename_error}")
+
             if migrations_applied:
                 logger.info(f"✅ RAILWAY: {len(migrations_applied)} migraciones aplicadas: {migrations_applied}")
             else:

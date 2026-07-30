@@ -3235,12 +3235,18 @@ def create_additional_assessments():
             logger.error(f"❌ ASSESSMENTS: Error de conexión a base de datos: {db_error}")
             return False
         
-        # Assessment 2: DISC (Personalidad) - Con transacciones individuales
+        # Assessment 2: Mapa Conductual (Personalidad) - Con transacciones individuales
+        # Migración: renombra el título antiguo "DISC" al nuevo "Mapa Conductual"
+        try:
+            db.session.execute(text("UPDATE assessment SET title='Evaluación de Mapa Conductual' WHERE title='Evaluación DISC de Personalidad'"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         try:
             if not Assessment.query.filter_by(id=2).first():
                 disc_assessment = Assessment(
                     id=2,
-                    title='Evaluación DISC de Personalidad',
+                    title='Evaluación de Mapa Conductual',
                     description='Identifica tu estilo de personalidad predominante: Dominante, Influyente, Estable o Concienzudo',
                     is_active=True
                 )
@@ -3931,7 +3937,7 @@ def calculate_disc_score(responses):
         
         return overall_score, result_text, dimensional_scores
     
-    return 0, "No se pudieron calcular las puntuaciones DISC", {}
+    return 0, "No se pudieron calcular las puntuaciones del Mapa Conductual", {}
 
 
 def calculate_disc_score_legacy(response_dict, disc_dimensions):
@@ -3983,7 +3989,7 @@ def calculate_disc_score_legacy(response_dict, disc_dimensions):
         
         return round(overall_score, 1), result_text, dimensional_scores
     
-    return 0, "No se pudieron calcular las puntuaciones DISC", {}
+    return 0, "No se pudieron calcular las puntuaciones del Mapa Conductual", {}
 
 
 def calculate_emotional_intelligence_score(responses):
@@ -4424,7 +4430,7 @@ def calculate_custom_assessment_score(responses, assessment_id):
 
 
 def generate_disc_recommendations(disc_scores, overall_score):
-    """Genera recomendaciones específicas para evaluaciones DISC"""
+    """Genera recomendaciones específicas para el Mapa Conductual"""
     recommendations = []
     
     # Identificar estilo dominante
@@ -4447,7 +4453,7 @@ def generate_disc_recommendations(disc_scores, overall_score):
     else:
         dominant_style = 'D'  # Fallback si no hay scores
     
-    # Recomendaciones simplificadas por estilo DISC
+    # Recomendaciones simplificadas por estilo conductual
     style_recommendations = {
         'D': {
             'title': '🎯 Plan de Desarrollo - Estilo Dominante',
@@ -4796,7 +4802,7 @@ def generate_recommendations(dimensional_scores, overall_score, assessment_type=
         return ["Se recomienda completar una evaluación completa para obtener recomendaciones personalizadas."]
     
     # Generar recomendaciones específicas según el tipo de evaluación
-    if assessment_type == 'Evaluación DISC de Personalidad':
+    if assessment_type == 'Evaluación de Mapa Conductual':
         return generate_disc_recommendations(dimensional_scores, overall_score)
     elif assessment_type == 'Evaluación de Inteligencia Emocional':
         return generate_emotional_intelligence_recommendations(dimensional_scores, overall_score)
@@ -8645,7 +8651,7 @@ def api_save_assessment():
         # Convertir a entero para asegurar comparación correcta
         assessment_id_int = int(assessment_id) if assessment_id else DEFAULT_ASSESSMENT_ID
         
-        if assessment_id_int == 2:  # Evaluación DISC de Personalidad
+        if assessment_id_int == 2:  # Evaluación de Mapa Conductual
             logger.info("🎯 SAVE_ASSESSMENT: Using calculate_disc_score function")
             score, result_text, dimensional_scores = calculate_disc_score(responses)
         elif assessment_id_int == 3:  # Evaluación de Inteligencia Emocional
@@ -12834,7 +12840,7 @@ def api_coachee_evaluation_history():
             # Crear dataset para cada tipo de evaluación
             type_colors = {
                 'Evaluación de Asertividad': '#6282E3',
-                'Evaluación DISC de Personalidad': '#A0D8CC',
+                'Evaluación de Mapa Conductual': '#A0D8CC',
                 'Inteligencia Emocional': '#F4A460',
                 'Liderazgo': '#FFB6C1',
                 'Trabajo en equipo': '#DDA0DD'

@@ -271,7 +271,7 @@ function evaluationCard() {
       id: null,
       title: '',
       description: '',
-      type: 'DISC',
+      type: 'Mapa Conductual',
       assigned: 0,
       completed: 0,
       pending: 0,

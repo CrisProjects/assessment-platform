@@ -8170,7 +8170,7 @@
                                     <!-- Evaluation Info -->
                                     <div style="background: white; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
                                         <h6 style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; margin-bottom: 0.75rem;">
-                                            <i class="fas fa-chart-bar me-1" style="font-size: 0.7rem;"></i>Evaluación DISC
+                                            <i class="fas fa-chart-bar me-1" style="font-size: 0.7rem;"></i>Mapa Conductual
                                         </h6>
                                         <div id="modalEvaluationInfo" style="display: none;">
                                             <p style="margin-bottom: 0.5rem; font-size: 0.8125rem;"><strong style="color: #374151;">Evaluación:</strong> <span id="modalEvalTitle" style="color: #6b7280;"></span></p>
@@ -12309,7 +12309,7 @@ window.dashboardApp = function() {
                         const assessmentTitle = evaluation.assessment_title || '';
                         const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
                         const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
-                        const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
+                        const isDiscAssessment = assessmentTitle.toLowerCase().includes('conductual');
                         const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
                         
                         // Calcular porcentaje basado en el tipo de evaluación
@@ -12325,7 +12325,7 @@ window.dashboardApp = function() {
                             percentage = Math.round((evaluation.score / 60) * 100);
                             level = this.getTeamworkLevelFromScore(evaluation.score);
                         } else if (isDiscAssessment) {
-                            // DISC: score es suma (16-80), convertir a porcentaje
+                            // Mapa Conductual: score es suma (16-80), convertir a porcentaje
                             percentage = Math.round((evaluation.score / 80) * 100);
                             level = this.getDiscLevelFromScore(evaluation.score);
                         } else if (isEmotionalIntelligenceAssessment) {
@@ -16240,7 +16240,7 @@ function displayEvaluationDetailsV2(evaluation) {
     const container = document.getElementById('evaluationDetailsContent');
     
     const assessmentTitle = evaluation.assessment?.title || '';
-    const isDiscAssessment = assessmentTitle.toLowerCase().includes('disc');
+    const isDiscAssessment = assessmentTitle.toLowerCase().includes('conductual');
     const isEmotionalIntelligenceAssessment = assessmentTitle.includes('Inteligencia Emocional');
     const isLeadershipAssessment = assessmentTitle.includes('Liderazgo');
     const isTeamworkAssessment = assessmentTitle.includes('Trabajo en Equipo');
@@ -16263,7 +16263,7 @@ function displayEvaluationDetailsV2(evaluation) {
         levelText = displayPercentage >= 80 ? 'Excelente' : displayPercentage >= 60 ? 'Bueno' : displayPercentage >= 40 ? 'En Desarrollo' : 'Inicial';
     } else if (isDiscAssessment) {
         displayPercentage = Math.round((data.score / 80) * 100);
-        levelLabel = 'Estilo DISC';
+        levelLabel = 'Estilo conductual';
         levelText = displayPercentage >= 80 ? 'Dominante Alto' : displayPercentage >= 60 ? 'Influyente Alto' : displayPercentage >= 40 ? 'Estable Alto' : 'Concienzudo';
     } else if (isEmotionalIntelligenceAssessment) {
         displayPercentage = Math.round((data.score / 60) * 100);
@@ -16275,7 +16275,7 @@ function displayEvaluationDetailsV2(evaluation) {
         levelText = displayPercentage >= 85 ? 'Muy Asertivo' : displayPercentage >= 70 ? 'Asertivo' : displayPercentage >= 50 ? 'Moderado' : 'Bajo';
     }
     
-    const analysisTitle = isDiscAssessment ? 'Análisis DISC de Personalidad' : 
+    const analysisTitle = isDiscAssessment ? 'Análisis del Mapa Conductual' : 
                          (isEmotionalIntelligenceAssessment ? 'Análisis de Inteligencia Emocional' :
                          (isLeadershipAssessment ? 'Análisis de Liderazgo' :
                          (isTeamworkAssessment ? 'Análisis de Trabajo en Equipo' : 'Análisis de Asertividad')));
