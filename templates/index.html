@@ -13,6 +13,10 @@
     <style>
         * { box-sizing: border-box; }
         html, body { overflow-x: clip; }
+        /* Oculta la barra de scroll de la landing (el desplazamiento por
+           rueda / touch / teclado se conserva) — solo en esta página. */
+        html { scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
         body { margin: 0; background: #F1F4F9; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
         a { color: #2C5AA8; text-decoration: none; }
         a:hover { color: #213C70; }
@@ -29,7 +33,33 @@
         /* Animaciones decorativas */
         @keyframes lpDrift { 0%,100% { transform: translateY(0) translateZ(70px); } 50% { transform: translateY(-10px) translateZ(70px); } }
         @keyframes lpPulse { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .9; transform: scale(1.12); } }
-        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+        @keyframes lpFogDrift { 0% { transform: translateX(-4%); } 100% { transform: translateX(4%); } }
+
+        /* Franja de pilares rotatorios del héroe */
+        .lp-pillar { font-family: 'Newsreader', Georgia, serif; font-size: 18px; font-weight: 500; color: #14233F; background: none; border: none; padding: 6px 2px; cursor: pointer; opacity: 0.4; transition: opacity .4s ease; text-shadow: 0 1px 0 rgba(250,251,253,0.85), 0 0 10px rgba(250,251,253,0.6); position: relative; }
+        .lp-pillar.active { opacity: 1; }
+        .lp-pillar.active::after { content: ''; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: #C49A52; }
+        .lp-pillar:focus-visible { outline: 2px solid #2C5AA8; outline-offset: 3px; border-radius: 8px; }
+
+        /* Reveal al hacer scroll — estado oculto en CSS (evita el flash) */
+        [data-reveal] { opacity: 0; transform: translateY(20px); }
+        [data-reveal].reveal-in { opacity: 1; transform: none; transition: opacity .5s ease, transform .55s cubic-bezier(.22,1,.36,1); }
+        /* Entrada escalonada de los hijos (héroe) */
+        [data-stagger] > * { opacity: 0; transform: translateY(16px); }
+        [data-stagger].reveal-in > * { opacity: 1; transform: none; transition: opacity .5s ease, transform .55s cubic-bezier(.22,1,.36,1); }
+
+        /* Feedback táctil de botones + foco accesible (teclado) */
+        .lp-btn:active { transform: translateY(0) scale(.98); transition-duration: .06s; }
+        .lp-btn:focus-visible, .lp-nav:focus-visible, a:focus-visible { outline: 2px solid #2C5AA8; outline-offset: 3px; border-radius: 12px; }
+
+        /* Tarjetas de contenido: hover con elevación de sombra (sin tilt 3D) */
+        [data-tilt] { transition: box-shadow .25s ease; }
+        [data-tilt]:hover { box-shadow: 0 18px 36px -18px rgba(20,35,63,0.28); }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; }
+            [data-reveal], [data-stagger] > * { opacity: 1 !important; transform: none !important; transition: none !important; }
+        }
 
         /* Responsive */
         @media (max-width: 900px) {
@@ -40,19 +70,25 @@
             .lp-nav-links { display: none !important; }
             .lp-hero h1 { font-size: 38px !important; }
             .lp-section { padding: 48px 22px !important; }
+            /* Recorta el desborde horizontal de los orbes decorativos en móvil
+               (elimina la barra de scroll horizontal). Solo eje X: el overhang
+               vertical de la tarjeta flotante se conserva. */
+            .lp-hero, .lp-section { overflow-x: clip; }
+            /* La franja de pilares se oculta en móvil (evita solaparse con la tarjeta) */
+            #lpPillars { display: none !important; }
         }
     </style>
 </head>
 <body>
 <div style="min-height: 100vh; perspective: 1400px;">
 
-    <!-- Fondo inmersivo: Glaciar Perito Moreno, Patagonia -->
-    <div id="lpValley" style="position: absolute; top: 0; left: 0; right: 0; height: 100vh; min-height: 760px; overflow: hidden; z-index: 0; pointer-events: none; background: linear-gradient(180deg, #DFE9F7 0%, #E9EFF9 55%, #F1F4F9 100%);">
-        <img id="lpGlacier" src="/static/img/landing-hero.jpg?v=3" alt="Laguna San Rafael, Chile" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; transform: scale(1.14); will-change: transform; transition: transform .1s linear;">
-        <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(241,244,249,0.5) 0%, rgba(241,244,249,0.28) 42%, rgba(241,244,249,0.6) 78%, #F1F4F9 100%);"></div>
-        <div style="position: absolute; inset: 0; background: linear-gradient(100deg, rgba(241,244,249,0.82) 0%, rgba(241,244,249,0.55) 30%, rgba(241,244,249,0.12) 52%, rgba(241,244,249,0) 66%);"></div>
-        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(180deg, rgba(241,244,249,0) 0%, #F1F4F9 94%);"></div>
-        <span style="position: absolute; right: 14px; bottom: 130px; font-size: 10.5px; color: rgba(20,35,63,0.55); background: rgba(250,251,253,0.6); padding: 3px 9px; border-radius: 999px; backdrop-filter: blur(4px);">Laguna San Rafael, Chile</span>
+    <!-- Fondo inmersivo: montaña entre nubes, con niebla en movimiento -->
+    <div id="lpValley" style="position: absolute; top: 0; left: 0; right: 0; height: 100vh; min-height: 760px; overflow: hidden; z-index: 0; pointer-events: none; background: linear-gradient(180deg, #C6CDD6 0%, #DDE3EA 40%, #EDF0F5 75%, #F1F4F9 100%);">
+        <img id="lpGlacier" src="/static/img/landing-hero.jpg?v=4" alt="Montaña entre nubes" style="position: absolute; left: -6%; right: -6%; top: 0; bottom: 0; width: 112%; height: 100%; object-fit: cover; object-position: 50% 62%; transform: scale(1.1); will-change: transform;">
+        <div style="position: absolute; inset: -10% -12%; background: radial-gradient(60% 45% at 30% 80%, rgba(250,251,253,0.65), transparent 70%), radial-gradient(50% 40% at 75% 30%, rgba(250,251,253,0.5), transparent 70%); animation: lpFogDrift 18s ease-in-out infinite alternate; will-change: transform;"></div>
+        <div style="position: absolute; inset: -10% -12%; background: radial-gradient(55% 40% at 70% 75%, rgba(250,251,253,0.55), transparent 70%); animation: lpFogDrift 26s ease-in-out infinite alternate-reverse; will-change: transform;"></div>
+        <div style="position: absolute; inset: 0; background: linear-gradient(100deg, rgba(241,244,249,0.7) 0%, rgba(241,244,249,0.42) 34%, rgba(241,244,249,0.08) 56%, rgba(241,244,249,0) 68%);"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 130px; background: linear-gradient(180deg, rgba(241,244,249,0) 0%, #F1F4F9 94%);"></div>
     </div>
 
     <header class="lp-header" style="height: 68px; display: flex; align-items: center; gap: 28px; padding: 0 40px; max-width: 1180px; margin: 0 auto; position: relative; z-index: 5; pointer-events: none;">
@@ -73,7 +109,7 @@
     <section class="lp-hero" style="max-width: 1180px; margin: 0 auto; padding: 90px 40px 120px; min-height: calc(100vh - 68px); box-sizing: border-box; display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; position: relative; z-index: 1; pointer-events: none;">
         <div id="lpOrb1" style="position: absolute; left: -120px; top: -60px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(94,138,214,0.16), transparent 70%); pointer-events: none; will-change: transform;"></div>
 
-        <div data-reveal style="position: relative; pointer-events: auto;">
+        <div data-stagger style="position: relative; pointer-events: auto;">
             <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6E4F1C; margin-bottom: 16px; text-shadow: 0 1px 0 rgba(250,251,253,0.85), 0 0 12px rgba(250,251,253,0.7);">Coaching personal y profesional · al alcance de un clic</div>
             <h1 class="serif" style="font-size: 54px; line-height: 1.08; margin: 0 0 20px; max-width: 613px; position: relative; text-shadow: 0 1px 0 rgba(250,251,253,0.9), 0 2px 18px rgba(250,251,253,0.75);">Coaching en cada momento,<br>cuando lo necesites.</h1>
             <p style="font-size: 17px; font-weight: 500; color: #14233F; line-height: 1.6; margin: 0 0 28px; max-width: 460px; text-shadow: 0 1px 0 rgba(250,251,253,0.9), 0 2px 14px rgba(250,251,253,0.75);">Tu siguiente movimiento, cada día, con un coach real, un plan claro y seguimiento que muestran el avance. Sin prisa, sin presión.</p>
@@ -83,8 +119,8 @@
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 12px 26px;">
                 <span style="font-size: 14px; font-weight: 700; color: #6E4F1C; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">Coaches certificados</span>
-                <span style="font-size: 14px; font-weight: 700; color: #6E4F1C; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">Sesiones cuando quieras</span>
-                <span style="font-size: 14px; font-weight: 700; color: #6E4F1C; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">Planes adaptados a tu necesidad</span>
+                <span style="font-size: 14px; font-weight: 700; color: #6E4F1C; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">Sesiones en línea</span>
+                <span style="font-size: 14px; font-weight: 700; color: #6E4F1C; text-shadow: 0 1px 0 rgba(250,251,253,0.85);">Planes a tu medida</span>
             </div>
         </div>
 
@@ -105,7 +141,7 @@
                         <div class="serif" style="font-size: 18px; color: #FAFBFD;">Pasaste la mitad. El plan avanza contigo.</div>
                     </div>
                 </div>
-                <div style="background: rgba(255,255,255,0.07); border-radius: 14px; padding: 16px; position: relative; min-height: 96px; transform: translateZ(28px);">
+                <div id="lpNudgeBox" style="background: rgba(255,255,255,0.07); border-radius: 14px; padding: 16px; position: relative; min-height: 96px; transform: translateZ(28px);">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <i class="fas fa-wand-magic-sparkles" style="font-size: 0.8rem; color: #E0C691;"></i>
                         <span id="lpNudgeLabel" style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #E0C691;">Tu coach, hoy</span>
@@ -121,6 +157,15 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Franja de pilares rotatorios -->
+        <div id="lpPillars" style="position: absolute; left: 0; right: 0; bottom: 26px; display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; pointer-events: auto; z-index: 2;">
+            <button class="lp-pillar active" data-pillar="0">InstaCoach</button>
+            <button class="lp-pillar" data-pillar="1">Coaching</button>
+            <button class="lp-pillar" data-pillar="2">Evaluaciones</button>
+            <button class="lp-pillar" data-pillar="3">Planes</button>
+            <button class="lp-pillar" data-pillar="4">Sesiones</button>
         </div>
     </section>
 
@@ -230,7 +275,10 @@
 (function () {
     'use strict';
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var TILT = 7;
+    // En móvil no usamos parallax ligado al scroll: los eventos de scroll táctil
+    // (y el mostrar/ocultar de la barra de direcciones) llegan con saltos y hacen
+    // que el fondo/orbes se muevan a tirones. La niebla (CSS) da vida sin scroll.
+    var noScrollFX = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
 
     function start() {
         /* ── Tilt 3D: la tarjeta del héroe sigue el mouse; las data-tilt con sutileza ── */
@@ -244,41 +292,49 @@
             });
             el.addEventListener('mouseleave', function () { el.style.transform = 'rotateY(0deg) rotateX(0deg)'; });
         }
+        // Solo la tarjeta del héroe conserva el tilt 3D (showpiece), y más sutil (5°).
+        // Las tarjetas de contenido usan un hover de sombra (CSS), sin tilt.
         var hero = document.getElementById('lpHeroCard');
-        if (hero) tiltify(hero, TILT + 3);
-        document.querySelectorAll('[data-tilt]').forEach(function (el) { tiltify(el, TILT); });
+        if (hero) tiltify(hero, 5);
 
-        /* ── Reveal al hacer scroll ── */
-        var reveals = document.querySelectorAll('[data-reveal]');
+        /* ── Reveal al hacer scroll (clase .reveal-in; estado oculto en CSS) ── */
+        var revEls = document.querySelectorAll('[data-reveal],[data-stagger]');
         if (!reduced && 'IntersectionObserver' in window) {
-            reveals.forEach(function (el) {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(36px) rotateX(7deg)';
-                el.style.transformOrigin = '50% 100%';
-            });
             var io = new IntersectionObserver(function (entries) {
                 entries.forEach(function (en) {
                     if (!en.isIntersecting) return;
                     var el = en.target;
-                    el.style.transition = 'opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1)';
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateY(0) rotateX(0deg)';
+                    if (el.hasAttribute('data-stagger')) {
+                        for (var i = 0; i < el.children.length; i++) {
+                            el.children[i].style.transitionDelay = (i * 70) + 'ms';
+                        }
+                    }
+                    el.classList.add('reveal-in');
                     io.unobserve(el);
-                    setTimeout(function () { el.style.transform = ''; el.style.transition = ''; }, 900);
                 });
             }, { threshold: 0.15 });
-            reveals.forEach(function (el) { io.observe(el); });
+            revEls.forEach(function (el) { io.observe(el); });
+        } else {
+            revEls.forEach(function (el) { el.classList.add('reveal-in'); });
         }
 
-        /* ── Glaciar: pan con mouse, parallax con scroll, respiración lenta ── */
+        /* ── Glaciar + orbes: un solo rAF (sin escribir estilos en cada scroll) ── */
         var glacier = document.getElementById('lpGlacier');
-        if (glacier && !reduced) {
-            var gmx = 0, gmy = 0, gsy = 0, t0 = performance.now();
+        var orbs = [['lpOrb1', 0.12], ['lpOrb2', -0.09], ['lpOrb3', 0.07]]
+            .map(function (o) { return [document.getElementById(o[0]), o[1]]; })
+            .filter(function (o) { return o[0]; });
+        if (!reduced && !noScrollFX && (glacier || orbs.length)) {
+            var gmx = 0, gmy = 0, gsy = window.scrollY, t0 = performance.now();
             function paint() {
-                var t = (performance.now() - t0) / 1000;
-                var breathe = 1.14 + Math.sin(t * 0.09) * 0.02;
-                var tx = gmx * -26, ty = gmy * -14 + gsy * 0.18;
-                glacier.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0) scale(' + breathe + ')';
+                if (glacier) {
+                    var t = (performance.now() - t0) / 1000;
+                    var breathe = 1.1 + Math.sin(t * 0.08) * 0.018;
+                    var tx = gmx * -24, ty = gmy * -12 + gsy * 0.16;
+                    glacier.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0) scale(' + breathe + ')';
+                }
+                for (var i = 0; i < orbs.length; i++) {
+                    orbs[i][0].style.transform = 'translateY(' + (gsy * orbs[i][1]) + 'px)';
+                }
                 requestAnimationFrame(paint);
             }
             window.addEventListener('mousemove', function (e) { gmx = e.clientX / window.innerWidth - 0.5; gmy = e.clientY / window.innerHeight - 0.5; }, { passive: true });
@@ -286,35 +342,26 @@
             requestAnimationFrame(paint);
         }
 
-        /* ── Orbes con parallax ── */
-        if (!reduced) {
-            var orbs = [['lpOrb1', 0.12], ['lpOrb2', -0.09], ['lpOrb3', 0.07]]
-                .map(function (o) { return [document.getElementById(o[0]), o[1]]; })
-                .filter(function (o) { return o[0]; });
-            window.addEventListener('scroll', function () {
-                var y = window.scrollY;
-                orbs.forEach(function (o) { o[0].style.transform = 'translateY(' + (y * o[1]) + 'px)'; });
-            }, { passive: true });
-        }
-
         /* ── Anillo de progreso (62% de 194.78 → offset 74.02) ── */
         var ring = document.getElementById('lpRing');
         if (ring) setTimeout(function () { ring.style.strokeDashoffset = '74.02'; }, reduced ? 0 : 500);
 
-        /* ── Conteo de estadísticas ── */
-        if (!reduced) {
-            document.querySelectorAll('[data-count]').forEach(function (el) {
-                var target = parseInt(el.getAttribute('data-count'), 10);
-                var suffix = el.getAttribute('data-suffix') || '';
-                var s0 = performance.now(), dur = 1400;
-                function tick(t) {
-                    var p = Math.min((t - s0) / dur, 1);
-                    var v = Math.round(target * (1 - Math.pow(1 - p, 3)));
-                    el.textContent = v.toLocaleString('en-US') + suffix;
-                    if (p < 1) requestAnimationFrame(tick);
-                }
-                requestAnimationFrame(tick);
+        /* ── Franja de pilares: rota el activo; pausa al pasar el cursor; clic para elegir ── */
+        var pillars = document.querySelectorAll('#lpPillars .lp-pillar');
+        if (pillars.length) {
+            var pIdx = 0, pPaused = false;
+            var setPillar = function (i) {
+                pIdx = (i + pillars.length) % pillars.length;
+                pillars.forEach(function (btn, j) { btn.classList.toggle('active', j === pIdx); });
+            };
+            pillars.forEach(function (btn, j) {
+                btn.addEventListener('click', function () { setPillar(j); });
+                btn.addEventListener('mouseenter', function () { pPaused = true; });
+                btn.addEventListener('mouseleave', function () { pPaused = false; });
+                btn.addEventListener('focusin', function () { pPaused = true; });
+                btn.addEventListener('focusout', function () { pPaused = false; });
             });
+            if (!reduced) setInterval(function () { if (!pPaused) setPillar(pIdx + 1); }, 3200);
         }
 
         /* ── Rotador de nudges del coach ── */
@@ -324,22 +371,54 @@
             { label: 'Antes de tu sesión', text: '"Mañana ves a tu coach. Anota una situación de la semana que quieras trabajar."' },
             { label: 'Reflexión del viernes', text: '"¿Qué conversación difícil manejaste mejor esta semana que hace un mes?"' }
         ];
-        var nIdx = 0;
+        var nIdx = 0, nPaused = false;
         var nText = document.getElementById('lpNudgeText'), nLabel = document.getElementById('lpNudgeLabel'), nDots = document.getElementById('lpNudgeDots');
+        var heroCard = document.getElementById('lpHeroCard');
+        function showNudge(i) {
+            if (!nText) return;
+            nText.style.opacity = '0'; nText.style.transform = 'translateY(8px)';
+            setTimeout(function () {
+                nIdx = (i + nudges.length) % nudges.length;
+                nLabel.textContent = nudges[nIdx].label; nText.textContent = nudges[nIdx].text;
+                nText.style.opacity = '1'; nText.style.transform = 'translateY(0)';
+                paintNudgeDots();
+            }, 450);
+        }
         function paintNudgeDots() {
-            if (nDots) nDots.innerHTML = nudges.map(function (_, i) { return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === nIdx ? '#E0C691' : 'rgba(255,255,255,0.22)') + ';transition:background .3s ease;"></span>'; }).join('');
+            if (!nDots) return;
+            nDots.innerHTML = '';
+            nudges.forEach(function (_, i) {
+                var d = document.createElement('span');
+                d.style.cssText = 'width:6px;height:6px;border-radius:50%;cursor:pointer;background:' + (i === nIdx ? '#E0C691' : 'rgba(255,255,255,0.22)') + ';transition:background .3s ease;';
+                d.setAttribute('role', 'button');
+                d.setAttribute('aria-label', 'Ver mensaje ' + (i + 1));
+                d.addEventListener('click', function () { showNudge(i); });
+                nDots.appendChild(d);
+            });
+        }
+        // Fija la altura de la caja del nudge al mensaje MÁS ALTO, para que el
+        // rotar el texto no cambie el tamaño de la tarjeta ni mueva la página.
+        var nBox = document.getElementById('lpNudgeBox');
+        function lockNudgeHeight() {
+            if (!nBox || !nText) return;
+            var cur = nText.textContent;
+            nBox.style.height = 'auto';
+            var maxH = 0;
+            nudges.forEach(function (n) { nText.textContent = n.text; if (nBox.scrollHeight > maxH) maxH = nBox.scrollHeight; });
+            nText.textContent = cur;
+            nBox.style.height = maxH + 'px';
         }
         if (nText && nLabel) {
             paintNudgeDots();
-            if (!reduced) setInterval(function () {
-                nText.style.opacity = '0'; nText.style.transform = 'translateY(8px)';
-                setTimeout(function () {
-                    nIdx = (nIdx + 1) % nudges.length;
-                    nLabel.textContent = nudges[nIdx].label; nText.textContent = nudges[nIdx].text;
-                    nText.style.opacity = '1'; nText.style.transform = 'translateY(0)';
-                    paintNudgeDots();
-                }, 450);
-            }, 4200);
+            lockNudgeHeight();
+            window.addEventListener('resize', lockNudgeHeight, { passive: true });
+            if (!reduced) setInterval(function () { if (!nPaused) showNudge(nIdx + 1); }, 4200);
+            if (heroCard) {
+                heroCard.addEventListener('mouseenter', function () { nPaused = true; });
+                heroCard.addEventListener('mouseleave', function () { nPaused = false; });
+                heroCard.addEventListener('focusin', function () { nPaused = true; });
+                heroCard.addEventListener('focusout', function () { nPaused = false; });
+            }
         }
 
         /* ── Rotador de evaluaciones ── */
@@ -374,18 +453,36 @@
             requestAnimationFrame(function () { requestAnimationFrame(function () {
                 document.querySelectorAll('#lpEvalDims [data-w]').forEach(function (b) { b.style.width = b.getAttribute('data-w') + '%'; });
             }); });
-            if (eDots) eDots.innerHTML = evals.map(function (_, i) { return '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === eIdx ? '#C49A52' : '#D5DCE7') + ';transition:background .3s ease;"></span>'; }).join('');
+            if (eDots) {
+                eDots.innerHTML = '';
+                evals.forEach(function (_, i) {
+                    var d = document.createElement('span');
+                    d.style.cssText = 'width:6px;height:6px;border-radius:50%;cursor:pointer;background:' + (i === eIdx ? '#C49A52' : '#D5DCE7') + ';transition:background .3s ease;';
+                    d.setAttribute('role', 'button');
+                    d.setAttribute('aria-label', 'Ver evaluación ' + (i + 1));
+                    d.addEventListener('click', function () { showEval(i); });
+                    eDots.appendChild(d);
+                });
+            }
+        }
+        var ePaused = false, eCard = document.getElementById('lpEvalCard');
+        function showEval(i) {
+            eInner.style.opacity = '0'; eInner.style.transform = 'translateZ(24px) translateY(8px)';
+            setTimeout(function () {
+                eIdx = (i + evals.length) % evals.length;
+                paintEval();
+                eInner.style.opacity = '1'; eInner.style.transform = 'translateZ(24px)';
+            }, 450);
         }
         if (eInner) {
             paintEval();
-            if (!reduced) setInterval(function () {
-                eInner.style.opacity = '0'; eInner.style.transform = 'translateZ(24px) translateY(8px)';
-                setTimeout(function () {
-                    eIdx = (eIdx + 1) % evals.length;
-                    paintEval();
-                    eInner.style.opacity = '1'; eInner.style.transform = 'translateZ(24px)';
-                }, 450);
-            }, 5600);
+            if (!reduced) setInterval(function () { if (!ePaused) showEval(eIdx + 1); }, 5600);
+            if (eCard) {
+                eCard.addEventListener('mouseenter', function () { ePaused = true; });
+                eCard.addEventListener('mouseleave', function () { ePaused = false; });
+                eCard.addEventListener('focusin', function () { ePaused = true; });
+                eCard.addEventListener('focusout', function () { ePaused = false; });
+            }
         }
     }
 
