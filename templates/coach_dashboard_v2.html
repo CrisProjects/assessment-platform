@@ -17591,43 +17591,59 @@ Para acceder, usa estas credenciales:
                 // 1) pedir permiso firmado; 2) PUT del navegador al bucket; 3) registrar metadatos.
                 // Si R2 no está configurado (503), se usa el flujo clásico multipart.
                 let data = null;
-                const pres = await fetch('/api/coach/documents/presign-upload', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ filename: file.name, content_type: file.type || 'application/octet-stream', size: file.size })
-                });
-                if (pres.ok) {
-                    const p = await pres.json();
-                    submitButton.innerHTML = '<i class="fas fa-cloud-upload-alt me-1"></i>Subiendo a la nube...';
-                    const put = await fetch(p.upload_url, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': p.content_type },
-                        body: file
-                    });
-                    if (!put.ok) throw new Error('Fallo la subida directa al almacenamiento (' + put.status + ')');
-                    const reg = await fetch('/api/coach/documents/register-upload', {
+                let directOk = false;
+                try {
+                    const pres = await fetch('/api/coach/documents/presign-upload', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'same-origin',
-                        body: JSON.stringify({
-                            key: p.key,
-                            original_filename: file.name,
-                            coachee_id: coacheeId,
-                            title, description, category, priority,
-                            notify_coachee: notifyCoachee
-                        })
+                        body: JSON.stringify({ filename: file.name, content_type: file.type || 'application/octet-stream', size: file.size })
                     });
-                    data = await reg.json();
-                } else if (pres.status === 503) {
-                    // R2 no configurado: flujo clásico (el servidor recibe el archivo)
+                    if (pres.ok) {
+                        const p = await pres.json();
+                        submitButton.innerHTML = '<i class="fas fa-cloud-upload-alt me-1"></i>Subiendo a la nube...';
+                        // Si el PUT al bucket falla (p.ej. CORS no configurado), caemos al flujo clásico
+                        const put = await fetch(p.upload_url, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': p.content_type },
+                            body: file
+                        });
+                        if (put.ok) {
+                            const reg = await fetch('/api/coach/documents/register-upload', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'same-origin',
+                                body: JSON.stringify({
+                                    key: p.key,
+                                    original_filename: file.name,
+                                    coachee_id: coacheeId,
+                                    title, description, category, priority,
+                                    notify_coachee: notifyCoachee
+                                })
+                            });
+                            data = await reg.json();
+                            directOk = true;
+                        } else {
+                            console.warn('⚠️ R2: PUT directo falló con estado', put.status, '— usando flujo clásico');
+                        }
+                    } else if (pres.status !== 503) {
+                        // Error de validación real (tipo/tamaño): mostrarlo, no hacer fallback
+                        data = await pres.json();
+                        directOk = true;
+                    }
+                } catch (directError) {
+                    // Típico: bloqueo CORS del navegador hacia el bucket → fetch lanza TypeError
+                    console.warn('⚠️ R2: subida directa no disponible (¿CORS del bucket?):', directError.message);
+                }
+
+                if (!directOk) {
+                    // Flujo clásico: el servidor recibe el archivo (siempre funciona)
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Subiendo...';
                     const response = await fetch('/api/coach/upload-document', {
                         method: 'POST',
                         body: formData
                     });
                     data = await response.json();
-                } else {
-                    data = await pres.json();
                 }
 
                 if (data.success) {
