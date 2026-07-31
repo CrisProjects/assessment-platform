@@ -1623,8 +1623,17 @@ def add_security_headers(response):
     # SECURITY HEADERS
     # ============================================================================
     # X-Frame-Options: Previene clickjacking
-    # DENY: no permite que el sitio sea embebido en iframes
-    response.headers['X-Frame-Options'] = 'DENY'
+    # DENY: no permite que el sitio sea embebido en iframes.
+    # Excepción: los endpoints que SIRVEN archivos (preview/descarga de documentos
+    # y contratos) deben poder mostrarse en el visor integrado de la propia app
+    # (iframe same-origin). SAMEORIGIN mantiene la protección contra terceros.
+    _frameable = request.path.startswith((
+        '/api/coach/documents/',
+        '/api/coachee/documents/',
+        '/api/coachee/assigned-documents/',
+        '/uploads/contracts/'
+    ))
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN' if _frameable else 'DENY'
     
     # X-Content-Type-Options: Previene MIME sniffing
     # nosniff: navegador debe respetar el Content-Type declarado
@@ -1661,7 +1670,8 @@ def add_security_headers(response):
         "connect-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com; "  # Conexiones AJAX + YouTube/Instagram oEmbed API
         "frame-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com; "  # Permitir embeds de YouTube e Instagram
         "worker-src 'self' blob:; "  # Permite Web Workers para PDF.js
-        "frame-ancestors 'none'; "  # No permitir ser embebido en iframes (complementa X-Frame-Options)
+        # frame-ancestors: 'self' en endpoints de archivos (visor integrado); 'none' en el resto
+        + ("frame-ancestors 'self'; " if _frameable else "frame-ancestors 'none'; ") +
         "base-uri 'self'; "  # Base URI solo mismo origen
         "form-action 'self'"  # Formularios solo pueden enviar a mismo origen
     )

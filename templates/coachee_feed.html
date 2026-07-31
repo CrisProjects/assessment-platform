@@ -438,7 +438,7 @@
             min-height: 40px; transition: background .15s ease, color .15s ease;
         }
         .act-btn:hover { background: var(--surface-hover, #EEF3FC); }
-        .act-btn.liked { color: var(--clay-600, #B5503C); }
+        .act-btn.liked { color: #ed4956; }
         .act-btn.saved { color: var(--gold-700, #8A6526); }
         .drawer-backdrop {
             position: fixed;
@@ -1432,16 +1432,15 @@
                 </div>`;
             }
             if (item.type === 'document') {
-                const fileName = (item.content_url || '').split('/').pop().split('?')[0] || 'Documento';
-                return `<div onclick="openDocumentFeed('${escFeed(item.content_url)}', '${escFeed(item.title)}')" style="border-radius: 10px; background: var(--ocean-50, #EEF3FC); border: 1px solid var(--border-brand, #BFD3F0); padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer;">
-                    <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <i class="fas fa-file-alt" style="font-size: 1.1rem; color: var(--primary, #2C5AA8);"></i>
+                return `<div onclick="openDocumentFeed('${escFeed(item.content_url)}', '${escFeed(item.title)}')" style="cursor: pointer;">
+                    <div style="position: relative; border-radius: 10px; overflow: hidden; background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #E6EBF2); height: 230px;">
+                        <canvas class="feed-doc-canvas" id="feed-doc-prev-${item.id}" data-url="${escFeed(item.content_url)}" width="900" height="520" style="width: 100%; height: 100%; display: block;"></canvas>
                     </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text-strong, #14233F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escFeed(decodeURIComponent(fileName))}</div>
-                        <div style="font-size: 12px; color: var(--text-muted, #646E7E);">Documento${dur ? ` · ${dur} min` : ''}</div>
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 4px 0;">
+                        <i class="fas fa-file-alt" style="font-size: 0.95rem; color: var(--primary, #2C5AA8); flex-shrink: 0;"></i>
+                        <div style="flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text-muted, #646E7E); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Documento${dur ? ` · ${dur} min` : ''}</div>
+                        <span style="font-size: 12.5px; font-weight: 700; color: var(--primary, #2C5AA8); white-space: nowrap;">Ver <i class="fas fa-arrow-right" style="font-size: 0.65rem;"></i></span>
                     </div>
-                    <i class="fas fa-arrow-right" style="font-size: 0.85rem; color: var(--primary, #2C5AA8); flex-shrink: 0;"></i>
                 </div>`;
             }
             return `<div onclick="openVideoFeed('${escFeed(item.content_url)}')" style="border-radius: 10px; background: var(--surface-inverse, #14233F); position: relative; height: 185px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden;">
@@ -1509,6 +1508,17 @@
             });
             updateUpNext(feedState.filter === 'todo' ? feedItems.find(it => !it.is_viewed) : null);
 
+            // Generar vistas previas de documentos después de pintar las tarjetas
+            setTimeout(() => {
+                document.querySelectorAll('.feed-doc-canvas').forEach(c => {
+                    if (!c.dataset.previewDone) {
+                        c.dataset.previewDone = '1';
+                        // 900x520 = misma proporción que la tarjeta (sin aplastar):
+                        // muestra la parte superior de la página, grande y legible
+                        generatePDFPreview(c.dataset.url, c.id, 900, 520);
+                    }
+                });
+            }, 60);
             container.innerHTML = visible.length
                 ? visible.map(buildFeedCard).join('')
                 : `<div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted, #646E7E); font-size: 0.875rem; background: var(--surface-card, #fff); border: 1px dashed var(--border-default, #D5DCE7); border-radius: 14px;">Nada por aquí con este filtro.</div>`;
@@ -1664,8 +1674,8 @@
         }
         
         // Función para abrir video
-        function openVideoFeed(url) {
-            window.open(url, '_blank');
+        function openVideoFeed(url, title) {
+            openInlineViewer(url, title || 'Video', 'video');
         }
         
         // Función para compartir
@@ -1675,7 +1685,7 @@
         
         // Función para abrir documento
         function openDocumentFeed(url, title) {
-            window.open(url, '_blank');
+            openInlineViewer(url, title || 'Documento', 'document');
         }
         
         // Función para generar preview de documento
@@ -1703,14 +1713,17 @@
                     await generatePDFPreview(url, canvasId, 1200, 1000);
                 } catch (error) {
                     console.error('❌ [DOC PREVIEW] PDF preview failed:', error);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, 1200, 1000);
-                    ctx.fillStyle = '#dc3545';
-                    ctx.font = '32px Arial';
-                    ctx.fillText('Error al cargar PDF', 600, 400);
-                    ctx.fillStyle = '#6c757d';
-                    ctx.font = '96px Arial';
-                    ctx.fillText('📄', 600, 700);
+                    // Puede ser una imagen (PNG/JPG): intentar dibujarla antes de rendirse
+                    window.drawImageThumb(url, canvas, function () {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, 1200, 1000);
+                        ctx.font = '32px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = '#8C97A8'; ctx.fillText('Documento no disponible', 600, 400);
+                        ctx.fillStyle = '#6c757d';
+                        ctx.font = '96px Arial';
+                        ctx.fillText('📄', 600, 700);
+                    });
                 }
             } else {
                 ctx.fillStyle = '#ffffff';
@@ -1726,6 +1739,7 @@
         
         // Función para generar preview de PDF
         async function generatePDFPreview(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
+            if (typeof pdfjsLib === 'undefined') { await window.ensurePdfJs(); }
             if (typeof pdfjsLib === 'undefined') {
                 console.error('❌ [PDF PREVIEW] PDF.js not loaded');
                 return;
@@ -1755,15 +1769,12 @@
                 const page = await pdf.getPage(1);
                 const viewport = page.getViewport({ scale: 1 });
                 
-                const scaleX = maxWidth / viewport.width;
-                const scaleY = maxHeight / viewport.height;
-                const scale = Math.min(scaleX, scaleY);
-                
+                // Llenar el ancho y acercar un poco (1.18x) recortando los márgenes
+                // laterales de la página: el texto se ve más grande y legible.
+                const scale = (maxWidth / viewport.width) * 1.18;
                 const scaledViewport = page.getViewport({ scale });
-                
-                // Centrar la página en el canvas
-                const offsetX = (maxWidth - scaledViewport.width) / 2;
-                const offsetY = (maxHeight - scaledViewport.height) / 2;
+                const offsetX = (maxWidth - scaledViewport.width) / 2;  // centra (recorta ambos lados)
+                const offsetY = 0;
                 
                 // Crear canvas temporal para renderizar la página
                 const tempCanvas = document.createElement('canvas');
@@ -1787,32 +1798,32 @@
                 ctx.drawImage(tempCanvas, offsetX, offsetY);
                 
                 
-                // Ocultar spinner después de renderizar
+                // Ocultar spinner después de renderizar (solo si existe un id
+                // de spinner DISTINTO al del canvas: si el reemplazo no cambia
+                // nada, el elemento resuelto sería el propio canvas y lo ocultaría)
                 const loadingId = canvasId.replace('doc-preview-', 'doc-loading-feed-');
-                const loadingElement = document.getElementById(loadingId);
+                const loadingElement = loadingId !== canvasId ? document.getElementById(loadingId) : null;
                 if (loadingElement) {
                     loadingElement.style.display = 'none';
                 }
                 
             } catch (error) {
                 console.error('❌ Error generating PDF preview:', error);
-                // Mostrar icono de error en el canvas
                 const canvas = document.getElementById(canvasId);
                 if (canvas) {
-                    const ctx = canvas.getContext('2d');
                     canvas.width = maxWidth;
                     canvas.height = maxHeight;
-                    
-                    // Fondo gris claro
-                    ctx.fillStyle = '#F1F4F9';
-                    ctx.fillRect(0, 0, maxWidth, maxHeight);
-                    
-                    // Dibujar texto de error
-                    ctx.fillStyle = '#6c757d';
-                    ctx.font = '14px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('Vista previa no disponible', maxWidth/2, maxHeight/2 - 10);
-                    ctx.fillText('📄 Documento PDF', maxWidth/2, maxHeight/2 + 10);
+                    // El "documento" puede ser una imagen (PNG/JPG): intentar dibujarla
+                    window.drawImageThumb(url, canvas, function () {
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#F1F4F9';
+                        ctx.fillRect(0, 0, maxWidth, maxHeight);
+                        ctx.fillStyle = '#6c757d';
+                        ctx.font = '14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Vista previa no disponible', maxWidth/2, maxHeight/2 - 10);
+                        ctx.fillText('📄 Documento', maxWidth/2, maxHeight/2 + 10);
+                    });
                 }
             }
         }
@@ -1940,5 +1951,131 @@
             facade.appendChild(iframe);
         });
     </script>
+
+<!-- Visor integrado: documentos y videos se ven en la misma página -->
+<div id="inlineViewerOverlay" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(20,35,63,0.72); backdrop-filter:blur(4px); padding:18px; box-sizing:border-box;" onclick="if(event.target===this)closeInlineViewer()">
+  <div style="width:100%; height:100%; max-width:1100px; margin:0 auto; background:#fff; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 48px -12px rgba(0,0,0,.4);">
+    <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid #E6EBF2; flex-shrink:0;">
+      <i class="fas fa-file-lines" id="inlineViewerIcon" style="color:#2C5AA8;"></i>
+      <span id="inlineViewerTitle" style="flex:1; min-width:0; font-weight:700; color:#14233F; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+      <a id="inlineViewerExternal" href="#" target="_blank" rel="noopener" title="Abrir en pestaña nueva" style="color:#646E7E; padding:6px 10px; border-radius:8px; text-decoration:none;"><i class="fas fa-up-right-from-square"></i></a>
+      <button onclick="closeInlineViewer()" aria-label="Cerrar" style="border:none; background:#F1F4F9; color:#14233F; width:34px; height:34px; border-radius:50%; cursor:pointer;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="inlineViewerBody" style="flex:1; min-height:0; background:#14233F;"></div>
+  </div>
+</div>
+<script>
+function openInlineViewer(url, title, type) {
+  try {
+    var overlay = document.getElementById('inlineViewerOverlay');
+    if (overlay.parentElement !== document.body) document.body.appendChild(overlay);
+    document.getElementById('inlineViewerTitle').textContent = title || 'Contenido';
+    document.getElementById('inlineViewerExternal').href = url;
+    var body = document.getElementById('inlineViewerBody'); body.innerHTML = '';
+    var icon = document.getElementById('inlineViewerIcon');
+    var yt = (url || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    var ig = (url || '').match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+    if (ig) {
+      icon.className = 'fab fa-instagram';
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#14233F;';
+      var gi = document.createElement('iframe');
+      gi.src = 'https://www.instagram.com/p/' + ig[1] + '/embed';
+      gi.setAttribute('scrolling', 'no');
+      gi.style.cssText = 'width:min(420px,100%);height:100%;border:0;background:#fff;';
+      wrap.appendChild(gi);
+      body.appendChild(wrap);
+    } else if (yt) {
+      icon.className = 'fas fa-video';
+      var f = document.createElement('iframe');
+      f.src = 'https://www.youtube.com/embed/' + yt[1] + '?autoplay=1';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
+      f.allowFullscreen = true;
+      f.style.cssText = 'width:100%;height:100%;border:0;';
+      body.appendChild(f);
+    } else if (/\.(mp4|webm|ogv|mov)(\?|#|$)/i.test(url || '') || type === 'video') {
+      icon.className = 'fas fa-video';
+      var v = document.createElement('video');
+      v.src = url; v.controls = true; v.autoplay = true;
+      v.style.cssText = 'width:100%;height:100%;background:#000;';
+      body.appendChild(v);
+    } else {
+      icon.className = 'fas fa-file-lines';
+      var d = document.createElement('iframe');
+      d.src = url;
+      d.style.cssText = 'width:100%;height:100%;border:0;background:#fff;';
+      d.onload = function () {
+        try {
+          var idoc = d.contentDocument;
+          var txt = idoc && idoc.body ? (idoc.body.innerText || '').trim() : '';
+          if (txt.startsWith('{') && txt.indexOf('error') !== -1) {
+            body.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#B7C1D0;padding:24px;text-align:center;">' +
+              '<i class="fas fa-file-circle-exclamation" style="font-size:2rem;"></i>' +
+              '<div style="font-weight:700;color:#FAFBFD;">No se pudo cargar el documento</div>' +
+              '<div style="font-size:13px;">El archivo no está disponible en este momento. Consulta a tu coach.</div></div>';
+          }
+        } catch (e) { /* contenido externo (cross-origin): se muestra tal cual */ }
+      };
+      body.appendChild(d);
+    }
+    overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  } catch (e) { window.open(url, '_blank'); }
+}
+function closeInlineViewer() {
+  var o = document.getElementById('inlineViewerOverlay');
+  o.style.display = 'none';
+  document.getElementById('inlineViewerBody').innerHTML = '';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape') { var o = document.getElementById('inlineViewerOverlay'); if (o && o.style.display !== 'none') closeInlineViewer(); }
+});
+</script>
+
+<script>
+/* Cargador perezoso y global de PDF.js (idempotente) para las miniaturas de documentos */
+if (!window.ensurePdfJs) {
+  window.ensurePdfJs = function () {
+    if (window.pdfjsLib) return Promise.resolve(true);
+    if (window._pdfJsLoading) return window._pdfJsLoading;
+    window._pdfJsLoading = new Promise(function (resolve) {
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = function () {
+        if (window.pdfjsLib) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          window.pdfJsLoaded = true;
+          resolve(true);
+        } else resolve(false);
+      };
+      s.onerror = function () { resolve(false); };
+      document.head.appendChild(s);
+    });
+    return window._pdfJsLoading;
+  };
+}
+</script>
+
+<script>
+/* Fallback de miniatura: si el "documento" es una imagen, dibujarla en el canvas */
+if (!window.drawImageThumb) {
+  window.drawImageThumb = function (url, canvas, onFail) {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        var s = Math.max(canvas.width / img.width, canvas.height / img.height);
+        var w = img.width * s, h = img.height * s;
+        ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+      } catch (e) { if (onFail) onFail(); }
+    };
+    img.onerror = function () { if (onFail) onFail(); };
+    img.src = url;
+  };
+}
+</script>
+
 </body>
 </html>

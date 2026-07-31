@@ -14730,16 +14730,14 @@ window.dashboardApp = function() {
                             </div>
                         `;
                     } else if (instagramVideoId) {
+                        // Fachada uniforme (mismo tamaño que YouTube); el reel completo se ve en el visor
                         thumbnailHTML = `
-                            <div style="width: 100%; height: 100%; border-radius: 8px; overflow: hidden;">
-                                <iframe 
-                                    src="https://www.instagram.com/p/${instagramVideoId}/embed" 
-                                    title="${content.title || 'Video'}"
-                                    frameborder="0" 
-                                    scrolling="no" 
-                                    allowtransparency="true"
-                                    style="width: 100%; height: 100%;">
-                                </iframe>
+                            <div style="width: 100%; height: 100%; border-radius: 8px; overflow: hidden; position: relative; background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 55%, #fcb045 100%); display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                 onclick="openInlineViewer('${content.content_url}', '${(content.title || 'Reel').replace(/'/g, '')}', 'video'); event.stopPropagation();">
+                                <i class="fab fa-instagram" style="position: absolute; top: 8px; left: 10px; color: rgba(255,255,255,0.9); font-size: 1rem;"></i>
+                                <span style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.25); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-play" style="color: #fff; font-size: 0.9rem; margin-left: 3px;"></i>
+                                </span>
                             </div>
                         `;
                     } else if (isDocument && content.content_url) {
@@ -14749,7 +14747,7 @@ window.dashboardApp = function() {
                                         width="300"
                                         height="300"
                                         style="width: 100%; height: 100%; cursor: pointer;"
-                                        onclick="window.open('${content.content_url}', '_blank')">
+                                        onclick="openInlineViewer('${content.content_url}', '${(content.title || 'Contenido').replace(/'/g, '')}', '${content.content_type || ''}')">
                                 </canvas>
                                 <div id="doc-loading-assigned-list-${content.id}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; color: #6c757d;">
                                     <div class="spinner-border spinner-border-sm" role="status"></div>
@@ -14932,18 +14930,17 @@ window.dashboardApp = function() {
                     </div>
                     `;
                 } else if (instagramVideoId) {
-                    // Embed de Instagram INLINE
+                    // Fachada uniforme del reel (mismo alto que YouTube); reproducción en el visor integrado
                     previewHTML = `
                     <div class="content-preview-embed" style="margin: 0; padding: 0; position: relative;">
-                        <div style="border-radius: 12px 12px 0 0; overflow: hidden; position: relative; height: 192px; margin: 0;">
-                            <iframe 
-                                src="https://www.instagram.com/p/${instagramVideoId}/embed" 
-                                title="${content.title || 'Video'}"
-                                frameborder="0" 
-                                scrolling="no" 
-                                allowtransparency="true"
-                                style="width: 100%; height: 100%;">
-                            </iframe>
+                        <div style="border-radius: 12px 12px 0 0; overflow: hidden; position: relative; height: 192px; margin: 0; background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 55%, #fcb045 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer;"
+                             onclick="openInlineViewer('${content.content_url}', '${(content.title || 'Reel').replace(/'/g, '')}', 'video'); event.stopPropagation();">
+                            <span style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.25); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-play" style="color: #fff; font-size: 1.15rem; margin-left: 4px;"></i>
+                            </span>
+                            <span style="display: inline-flex; align-items: center; gap: 7px; color: #fff; font-weight: 700; font-size: 0.85rem; text-shadow: 0 1px 2px rgba(0,0,0,0.25);">
+                                <i class="fab fa-instagram"></i>Reel de Instagram
+                            </span>
                         </div>
                     </div>
                     `;
@@ -14956,7 +14953,7 @@ window.dashboardApp = function() {
                                     width="1200"
                                     height="900"
                                     style="width: 100%; height: 192px; display: block; cursor: pointer; object-fit: cover;"
-                                    onclick="window.open('${content.content_url}', '_blank')">
+                                    onclick="openInlineViewer('${content.content_url}', '${(content.title || 'Contenido').replace(/'/g, '')}', '${content.content_type || ''}')">
                             </canvas>
                             <div id="doc-loading-assigned-${content.id}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6c757d; pointer-events: none;">
                                 <div class="spinner-border" role="status" style="width: 2.5rem; height: 2.5rem;">
@@ -17963,7 +17960,7 @@ function renderContentDirectly(contentList) {
                                 width="1200"
                                 height="1000"
                                 style="width: 100%; height: auto; display: block; cursor: pointer;"
-                                onclick="window.open('${content.content_url}', '_blank')">
+                                onclick="openInlineViewer('${content.content_url}', '${(content.title || 'Contenido').replace(/'/g, '')}', '${content.content_type || ''}')">
                         </canvas>
                         <div id="doc-loading-assigned-${content.id}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6c757d; pointer-events: none;">
                             <div class="spinner-border" role="status" style="width: 3rem; height: 3rem;">
@@ -21164,6 +21161,9 @@ async function generateDocumentPreviewAssigned(url, canvasId) {
 async function generatePDFPreviewAssigned(url, canvasId, maxWidth = 1200, maxHeight = 1000) {
     
     if (typeof pdfjsLib === 'undefined') {
+        await window.ensurePdfJs();
+    }
+    if (typeof pdfjsLib === 'undefined') {
         console.error('❌ [PDF PREVIEW ASSIGNED] PDF.js not loaded');
         const canvas = document.getElementById(canvasId);
         if (canvas) {
@@ -21246,20 +21246,19 @@ async function generatePDFPreviewAssigned(url, canvasId, maxWidth = 1200, maxHei
         // Mostrar icono de error en el canvas
         const canvas = document.getElementById(canvasId);
         if (canvas) {
-            const ctx = canvas.getContext('2d');
             canvas.width = maxWidth;
             canvas.height = maxHeight;
-            
-            // Fondo gris claro
-            ctx.fillStyle = '#f8f9fa';
-            ctx.fillRect(0, 0, maxWidth, maxHeight);
-            
-            // Dibujar texto de error
-            ctx.fillStyle = '#6c757d';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Vista previa no disponible', maxWidth/2, maxHeight/2 - 10);
-            ctx.fillText('📄 Documento PDF', maxWidth/2, maxHeight/2 + 10);
+            // Puede ser una imagen (PNG/JPG) servida como documento: intentar dibujarla
+            window.drawImageThumb(url, canvas, function () {
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, maxWidth, maxHeight);
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Vista previa no disponible', maxWidth/2, maxHeight/2 - 10);
+                ctx.fillText('📄 Documento', maxWidth/2, maxHeight/2 + 10);
+            });
         }
     }
 }
@@ -25278,5 +25277,133 @@ document.addEventListener('DOMContentLoaded', () => {
     else setTimeout(intentarCargar, 400);
 })();
 </script>
+
+<!-- Visor integrado: documentos y videos se ven en la misma página -->
+<div id="inlineViewerOverlay" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(20,35,63,0.72); backdrop-filter:blur(4px); padding:18px; box-sizing:border-box;" onclick="if(event.target===this)closeInlineViewer()">
+  <div style="width:100%; height:100%; max-width:1100px; margin:0 auto; background:#fff; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 48px -12px rgba(0,0,0,.4);">
+    <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid #E6EBF2; flex-shrink:0;">
+      <i class="fas fa-file-lines" id="inlineViewerIcon" style="color:#2C5AA8;"></i>
+      <span id="inlineViewerTitle" style="flex:1; min-width:0; font-weight:700; color:#14233F; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+      <a id="inlineViewerExternal" href="#" target="_blank" rel="noopener" title="Abrir en pestaña nueva" style="color:#646E7E; padding:6px 10px; border-radius:8px; text-decoration:none;"><i class="fas fa-up-right-from-square"></i></a>
+      <button onclick="closeInlineViewer()" aria-label="Cerrar" style="border:none; background:#F1F4F9; color:#14233F; width:34px; height:34px; border-radius:50%; cursor:pointer;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="inlineViewerBody" style="flex:1; min-height:0; background:#14233F;"></div>
+  </div>
+</div>
+<script>
+function openInlineViewer(url, title, type) {
+  try {
+    var overlay = document.getElementById('inlineViewerOverlay');
+    if (overlay.parentElement !== document.body) document.body.appendChild(overlay);
+    document.getElementById('inlineViewerTitle').textContent = title || 'Contenido';
+    document.getElementById('inlineViewerExternal').href = url;
+    var body = document.getElementById('inlineViewerBody'); body.innerHTML = '';
+    var icon = document.getElementById('inlineViewerIcon');
+    var yt = (url || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    var ig = (url || '').match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+    if (ig) {
+      icon.className = 'fab fa-instagram';
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#14233F;';
+      var gi = document.createElement('iframe');
+      gi.src = 'https://www.instagram.com/p/' + ig[1] + '/embed';
+      gi.setAttribute('scrolling', 'no');
+      gi.style.cssText = 'width:min(420px,100%);height:100%;border:0;background:#fff;';
+      wrap.appendChild(gi);
+      body.appendChild(wrap);
+    } else if (yt) {
+      icon.className = 'fas fa-video';
+      var f = document.createElement('iframe');
+      f.src = 'https://www.youtube.com/embed/' + yt[1] + '?autoplay=1';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
+      f.allowFullscreen = true;
+      f.style.cssText = 'width:100%;height:100%;border:0;';
+      body.appendChild(f);
+    } else if (/\.(mp4|webm|ogv|mov)(\?|#|$)/i.test(url || '') || type === 'video') {
+      icon.className = 'fas fa-video';
+      var v = document.createElement('video');
+      v.src = url; v.controls = true; v.autoplay = true;
+      v.style.cssText = 'width:100%;height:100%;background:#000;';
+      body.appendChild(v);
+    } else {
+      icon.className = 'fas fa-file-lines';
+      var d = document.createElement('iframe');
+      d.src = url;
+      d.style.cssText = 'width:100%;height:100%;border:0;background:#fff;';
+      d.onload = function () {
+        try {
+          var idoc = d.contentDocument;
+          var txt = idoc && idoc.body ? (idoc.body.innerText || '').trim() : '';
+          if (txt.startsWith('{') && txt.indexOf('error') !== -1) {
+            body.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#B7C1D0;padding:24px;text-align:center;">' +
+              '<i class="fas fa-file-circle-exclamation" style="font-size:2rem;"></i>' +
+              '<div style="font-weight:700;color:#FAFBFD;">No se pudo cargar el documento</div>' +
+              '<div style="font-size:13px;">El archivo no está disponible en este momento. Consulta a tu coach.</div></div>';
+          }
+        } catch (e) { /* contenido externo (cross-origin): se muestra tal cual */ }
+      };
+      body.appendChild(d);
+    }
+    overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  } catch (e) { window.open(url, '_blank'); }
+}
+function closeInlineViewer() {
+  var o = document.getElementById('inlineViewerOverlay');
+  o.style.display = 'none';
+  document.getElementById('inlineViewerBody').innerHTML = '';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape') { var o = document.getElementById('inlineViewerOverlay'); if (o && o.style.display !== 'none') closeInlineViewer(); }
+});
+</script>
+
+
+<script>
+/* Cargador perezoso y global de PDF.js (idempotente) para las miniaturas de documentos */
+if (!window.ensurePdfJs) {
+  window.ensurePdfJs = function () {
+    if (window.pdfjsLib) return Promise.resolve(true);
+    if (window._pdfJsLoading) return window._pdfJsLoading;
+    window._pdfJsLoading = new Promise(function (resolve) {
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = function () {
+        if (window.pdfjsLib) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          window.pdfJsLoaded = true;
+          resolve(true);
+        } else resolve(false);
+      };
+      s.onerror = function () { resolve(false); };
+      document.head.appendChild(s);
+    });
+    return window._pdfJsLoading;
+  };
+}
+</script>
+
+
+<script>
+/* Fallback de miniatura: si el "documento" es una imagen, dibujarla en el canvas */
+if (!window.drawImageThumb) {
+  window.drawImageThumb = function (url, canvas, onFail) {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        var s = Math.max(canvas.width / img.width, canvas.height / img.height);
+        var w = img.width * s, h = img.height * s;
+        ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+      } catch (e) { if (onFail) onFail(); }
+    };
+    img.onerror = function () { if (onFail) onFail(); };
+    img.src = url;
+  };
+}
+</script>
+
 </body>
 </html>
