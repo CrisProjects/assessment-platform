@@ -373,6 +373,27 @@ def log_security_event(event_type, severity='info', user_id=None, username=None,
         additional_data: Datos adicionales en formato string (puede ser JSON)
     """
     logger.info(f"Security event: {event_type} | {username} | {description}")
+    # Persistir en la tabla security_log: check_account_lockout() cuenta los
+    # 'login_failed' desde aquí — sin este insert el bloqueo de cuenta no opera.
+    try:
+        entry = SecurityLog(
+            event_type=event_type,
+            severity=severity,
+            user_id=user_id,
+            username=username,
+            user_role=user_role,
+            ip_address=(request.remote_addr if request else None),
+            user_agent=(request.headers.get('User-Agent', '')[:500] if request else None),
+            endpoint=(request.path if request else None),
+            method=(request.method if request else None),
+            description=description,
+            additional_data=additional_data
+        )
+        db.session.add(entry)
+        db.session.commit()
+    except Exception as sec_log_error:
+        db.session.rollback()
+        logger.error(f"No se pudo persistir SecurityLog ({event_type}): {sec_log_error}")
 
 def log_failed_login(username, reason='Invalid credentials'):
     """Registra un intento de login fallido con contexto extendido"""
@@ -870,7 +891,7 @@ def send_coach_request_email(coach_request):
                 
                 <div style="text-align: center; margin: 30px 0;">
                     <p style="color: #666;">Para aprobar esta solicitud, inicia sesión en el panel de administración:</p>
-                    <a href="http://localhost:5002/admin/dashboard-alpine" 
+                    <a href="{request.host_url}platform-admin-dashboard" 
                        style="background: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin: 10px 5px;">
                         Ir al Panel de Admin
                     </a>
@@ -909,7 +930,7 @@ Estilo de Coaching: {coach_request.estilo or 'No especificado'}
 Fecha de solicitud: {coach_request.created_at.strftime('%d/%m/%Y %H:%M')}
 
 Para revisar y aprobar esta solicitud, accede al panel de administración:
-http://localhost:5002/admin/dashboard-alpine
+{request.host_url}platform-admin-dashboard
 
 ---
 Sistema InstaCoach Assessment Platform
@@ -989,20 +1010,16 @@ def send_welcome_email_to_new_coach(coach, password, admin_name):
                         </h3>
                         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
                             <tr>
-                                <td style="padding: 10px 0; font-weight: bold; color: #555; width: 140px;">Usuario:</td>
-                                <td style="padding: 10px 0; font-family: 'Courier New', monospace; background: white; padding: 8px 12px; border-radius: 6px;"><strong>{coach.username}</strong></td>
+                                <td style="padding: 10px 0; font-weight: bold; color: #555; width: 140px;">📧 Email:</td>
+                                <td style="padding: 10px 0; font-family: 'Courier New', monospace; background: white; padding: 8px 12px; border-radius: 6px;"><strong>{coach.email}</strong></td>
                             </tr>
                             <tr>
-                                <td style="padding: 10px 0; font-weight: bold; color: #555;">Email:</td>
-                                <td style="padding: 10px 0; font-family: 'Courier New', monospace; background: white; padding: 8px 12px; border-radius: 6px;">{coach.email}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 10px 0; font-weight: bold; color: #555;">Contraseña:</td>
+                                <td style="padding: 10px 0; font-weight: bold; color: #555;">🔑 Contraseña:</td>
                                 <td style="padding: 10px 0; font-family: 'Courier New', monospace; background: #fff3cd; padding: 8px 12px; border-radius: 6px; color: #856404;"><strong>{password}</strong></td>
                             </tr>
                         </table>
                         <p style="margin: 15px 0 0 0; font-size: 13px; color: #856404; background: #fff3cd; padding: 12px; border-radius: 6px;">
-                            ⚠️ <strong>Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
+                            ⚠️ <strong>Importante:</strong> Inicia sesión con tu <strong>email</strong> (no con un nombre de usuario). Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
                         </p>
                     </div>
                     
@@ -1053,11 +1070,10 @@ Tu cuenta de coach ha sido creada por {admin_name}. Ahora puedes acceder a la pl
 
 CREDENCIALES DE ACCESO
 -----------------------
-Usuario: {coach.username}
 Email: {coach.email}
 Contraseña: {password}
 
-⚠️ IMPORTANTE: Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
+⚠️ IMPORTANTE: Inicia sesión con tu EMAIL (no con un nombre de usuario). Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
 
 Inicia sesión aquí: {login_url}
 
@@ -1119,11 +1135,10 @@ Hola *{coach.full_name}*,
 Tu cuenta de coach ha sido creada por {admin_name}.
 
 🔑 *Credenciales de Acceso:*
-👤 Usuario: {coach.username}
 📧 Email: {coach.email}
 🔒 Contraseña: {password}
 
-⚠️ *Importante:* Cambia tu contraseña después del primer inicio de sesión.
+⚠️ *Importante:* Inicia sesión con tu *email*. Cambia tu contraseña después del primer inicio de sesión.
 
 Inicia sesión aquí: {login_url}
 
@@ -3603,7 +3618,7 @@ def create_demo_data_for_coachee(coachee_user):
 def get_dashboard_url(role):
     """Retorna la URL del dashboard según el rol"""
     urls = {
-        'platform_admin': '/admin/dashboard-alpine',
+        'platform_admin': '/platform-admin-dashboard',
         'coach': '/coach-feed',
         'coachee': '/coachee-feed'  # Feed principal del coachee
     }
@@ -4827,7 +4842,7 @@ def api_status():
         'status': 'success',
         'message': 'Assessment Platform API is running',
         'version': '2.0.0',
-        'available_endpoints': ['/coachee-dashboard', '/coach-dashboard', '/admin/dashboard-alpine']
+        'available_endpoints': ['/coachee-dashboard', '/coach-dashboard', '/platform-admin-dashboard']
     })
 
 @app.route('/health')
@@ -5048,8 +5063,19 @@ def api_login():
         dashboard_type = data.get('dashboard_type', 'auto')  # 'coach', 'coachee', 'auto'
         
         logger.info(f"🔐 LOGIN: Attempt for username/email: {username}, dashboard_type: {dashboard_type}")
-        
-        user = User.query.filter((User.username == username) | (User.email == username)).first()  # type: ignore
+
+        # SEGURIDAD: Bloqueo temporal por intentos fallidos (mismo criterio que el login de coach)
+        is_locked, remaining_time, attempts = check_account_lockout(username)
+        if is_locked:
+            logger.warning(f"🔒 ACCOUNT LOCKED: {username} - {attempts} failed attempts, {remaining_time} minutes remaining")
+            return jsonify({
+                'error': f'Cuenta temporalmente bloqueada por seguridad. Intenta nuevamente en {remaining_time} minutos.',
+                'locked': True,
+                'remaining_minutes': remaining_time
+            }), 429
+
+        # Identificador único de acceso: EMAIL (política de la plataforma)
+        user = User.query.filter(User.email == username).first()  # type: ignore
         
         if not user:
             logger.warning(f"❌ LOGIN: User not found for username/email: {username}")
@@ -5061,13 +5087,14 @@ def api_login():
             db.session.refresh(user)
         
         if user and user.check_password(password) and user.is_active:
-            # Verificar compatibilidad de roles si se especifica dashboard_type
-            if dashboard_type == 'coach' and user.role != 'coach':
-                logger.warning(f"Role mismatch: User {user.username} (role: {user.role}) trying to access coach dashboard")
-                return jsonify({'error': 'Este usuario no tiene permisos de coach'}), 403
-            elif dashboard_type == 'coachee' and user.role != 'coachee':
-                logger.warning(f"Role mismatch: User {user.username} (role: {user.role}) trying to access coachee dashboard")
-                return jsonify({'error': 'Este usuario no tiene permisos de coachee'}), 403
+            # Verificar compatibilidad de roles si se especifica dashboard_type.
+            # Respuesta genérica: no confirmar que la cuenta existe con otro rol
+            # (evita enumeración de usuarios).
+            if (dashboard_type == 'coach' and user.role != 'coach') or \
+               (dashboard_type == 'coachee' and user.role != 'coachee'):
+                logger.warning(f"Role mismatch: User {user.username} (role: {user.role}) trying to access {dashboard_type} dashboard")
+                log_failed_login(username, f'Role mismatch for {dashboard_type} dashboard')
+                return jsonify({'error': 'Credenciales inválidas o cuenta desactivada'}), 401
                 
             # Usar sesiones separadas según el tipo de dashboard
             if user.role == 'coach':
@@ -5115,7 +5142,7 @@ def api_login():
             
     except Exception as e:
         logger.error(f"Error in api_login: {str(e)}")
-        return jsonify({'error': f'Error en login: {str(e)}'}), 500
+        return jsonify({'error': 'Error interno al iniciar sesión. Intenta nuevamente.'}), 500
 
 @app.route('/api/invite-login', methods=['POST'])
 @limiter.limit("5 per minute")
@@ -8086,8 +8113,13 @@ def api_coach_login():
                 'remaining_minutes': remaining_time
             }), 429
         
-        # SEGURIDAD: Solo aceptar username (no email) para reducir vector de ataque
-        coach_user = User.query.filter(User.username == username, User.role == 'coach').first()  # type: ignore
+        # Identificador único de acceso: EMAIL (política de la plataforma).
+        # Un solo identificador reduce la superficie de credential stuffing y
+        # mantiene consistencia con el flujo de recuperación de contraseña.
+        coach_user = User.query.filter(
+            User.email == username,
+            User.role == 'coach'
+        ).first()  # type: ignore
         
         if coach_user and coach_user.check_password(password) and coach_user.is_active:
             # Usar sesión específica para coach (sin limpiar otras sesiones)
@@ -8131,7 +8163,7 @@ def api_coach_login():
             
     except Exception as e:
         logger.error(f"Error in coach login: {str(e)}")
-        return jsonify({'error': f'Error en login: {str(e)}'}), 500
+        return jsonify({'error': 'Error interno al iniciar sesión. Intenta nuevamente.'}), 500
 
 @app.route('/api/coach/profile', methods=['GET'])
 @coach_session_required
@@ -9197,27 +9229,12 @@ def platform_admin_dashboard():
 @app.route('/admin-dashboard')
 def admin_dashboard():
     """Redirección al dashboard Alpine para compatibilidad"""
-    return redirect('/admin/dashboard-alpine')
+    return redirect('/platform-admin-dashboard')
 
 @app.route('/admin/dashboard-alpine')
-@admin_required
 def admin_dashboard_alpine():
-    """Versión experimental del dashboard de administración usando Alpine.js"""
-    # Validar sesión activa de admin
-    if not current_user.is_authenticated:
-        logger.warning("Intento de acceso a admin dashboard alpine sin autenticación")
-        flash('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'warning')
-        return redirect(url_for('admin_login_page'))
-    
-    if current_user.role != 'platform_admin':
-        logger.warning(f"Usuario {current_user.username} (role: {current_user.role}) intentó acceder a admin dashboard alpine")
-        return redirect(url_for('dashboard_selection'))
-    
-    # Inicializar timestamp de actividad si no existe
-    if 'last_activity_admin' not in session:
-        session['last_activity_admin'] = datetime.utcnow().isoformat()
-    
-    return render_template('admin_dashboard_alpine.html')
+    """Página antigua retirada: toda su funcionalidad vive en /platform-admin-dashboard"""
+    return redirect('/platform-admin-dashboard')
 
 @app.route('/admin/users-management')
 @admin_required
@@ -13959,6 +13976,194 @@ def download_file_from_s3(s3_key):
         logger.error(f"❌ Error descargando archivo desde S3: {str(e)}")
         raise
 
+# ============================================================================
+# CLOUDFLARE R2 — subida directa con URLs prefirmadas (S3-compatible)
+# El archivo viaja del navegador al bucket sin pasar por la app: cero uso de
+# memoria/disco del servidor. La app solo firma permisos temporales.
+# Variables de entorno: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+# ============================================================================
+
+_r2_client_cache = {'client': None, 'bucket': None}
+
+def get_r2():
+    """Cliente R2 perezoso (lee el entorno en el primer uso). Devuelve (client, bucket) o (None, None)."""
+    if _r2_client_cache['client'] is not None:
+        return _r2_client_cache['client'], _r2_client_cache['bucket']
+    account_id = os.environ.get('R2_ACCOUNT_ID')
+    access_key = os.environ.get('R2_ACCESS_KEY_ID')
+    secret_key = os.environ.get('R2_SECRET_ACCESS_KEY')
+    bucket = os.environ.get('R2_BUCKET')
+    if not all([account_id, access_key, secret_key, bucket]):
+        return None, None
+    try:
+        client = boto3.client(
+            's3',
+            endpoint_url=f'https://{account_id}.r2.cloudflarestorage.com',
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name='auto'
+        )
+        _r2_client_cache['client'] = client
+        _r2_client_cache['bucket'] = bucket
+        logger.info(f"✅ Cliente R2 inicializado. Bucket: {bucket}")
+        return client, bucket
+    except Exception as e:
+        logger.error(f"❌ Error inicializando cliente R2: {e}")
+        return None, None
+
+def r2_presign_put(key, content_type, expires=300):
+    """URL prefirmada para que el NAVEGADOR suba el archivo directo a R2."""
+    client, bucket = get_r2()
+    if not client:
+        return None
+    return client.generate_presigned_url(
+        'put_object',
+        Params={'Bucket': bucket, 'Key': key, 'ContentType': content_type},
+        ExpiresIn=expires
+    )
+
+def r2_presign_get(key, filename=None, inline=True, expires=300):
+    """URL prefirmada de lectura (el bucket permanece privado)."""
+    client, bucket = get_r2()
+    if not client:
+        return None
+    params = {'Bucket': bucket, 'Key': key}
+    if filename:
+        disposition = 'inline' if inline else 'attachment'
+        params['ResponseContentDisposition'] = f'{disposition}; filename="{filename}"'
+    return client.generate_presigned_url('get_object', Params=params, ExpiresIn=expires)
+
+def r2_object_head(key):
+    """Metadatos del objeto en R2 (None si no existe) — verifica que la subida ocurrió."""
+    client, bucket = get_r2()
+    if not client:
+        return None
+    try:
+        return client.head_object(Bucket=bucket, Key=key)
+    except ClientError:
+        return None
+
+@app.route('/api/coach/documents/presign-upload', methods=['POST'])
+@coach_session_required
+def api_coach_presign_document_upload():
+    """Paso 1 subida directa: firma un permiso temporal para subir a R2."""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+
+        client, _ = get_r2()
+        if not client:
+            # R2 no configurado: el frontend usa el flujo clásico (multipart)
+            return jsonify({'error': 'Almacenamiento directo no configurado', 'fallback': True}), 503
+
+        data = request.get_json(silent=True) or {}
+        filename = (data.get('filename') or '').strip()
+        content_type = (data.get('content_type') or 'application/octet-stream').strip()
+        size = int(data.get('size') or 0)
+
+        if not filename or not allowed_file(filename):
+            return jsonify({'error': 'Tipo de archivo no permitido'}), 400
+        if size <= 0 or size > MAX_FILE_SIZE:
+            return jsonify({'error': f'El archivo es demasiado grande. Máximo {MAX_FILE_SIZE // (1024*1024)}MB'}), 400
+
+        ext = filename.rsplit('.', 1)[1].lower()
+        key = f"documents/{uuid.uuid4()}.{ext}"
+        upload_url = r2_presign_put(key, content_type)
+        if not upload_url:
+            return jsonify({'error': 'No se pudo firmar la subida', 'fallback': True}), 503
+
+        return jsonify({'success': True, 'upload_url': upload_url, 'key': key,
+                        'content_type': content_type, 'expires_in': 300}), 200
+    except Exception as e:
+        logger.error(f"Error en presign-upload: {e}")
+        return jsonify({'error': 'Error preparando la subida'}), 500
+
+@app.route('/api/coach/documents/register-upload', methods=['POST'])
+@coach_session_required
+def api_coach_register_document_upload():
+    """Paso 2 subida directa: el navegador ya subió a R2; registra los metadatos."""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado'}), 403
+
+        data = request.get_json(silent=True) or {}
+        key = (data.get('key') or '').strip()
+        original_filename = (data.get('original_filename') or '').strip()
+        coachee_id = data.get('coachee_id')
+        title = (data.get('title') or '').strip()
+        description = (data.get('description') or '').strip()
+        category = (data.get('category') or '').strip()
+        priority = data.get('priority', 'normal')
+        notify_coachee = bool(data.get('notify_coachee'))
+
+        # La clave debe ser una generada por presign (previene registrar objetos ajenos)
+        import re as _re
+        if not _re.fullmatch(r'documents/[0-9a-f\-]{36}\.[a-z0-9]{1,8}', key):
+            return jsonify({'error': 'Clave de archivo inválida'}), 400
+        if not coachee_id or not title or not category:
+            return jsonify({'error': 'Faltan datos requeridos'}), 400
+        if not original_filename or not allowed_file(original_filename):
+            return jsonify({'error': 'Tipo de archivo no permitido'}), 400
+
+        coachee = User.query.filter_by(id=coachee_id, role='coachee').first()
+        if not coachee:
+            return jsonify({'error': 'Coachee no encontrado'}), 404
+
+        # Verificar que el objeto realmente existe en R2 (la subida se completó)
+        head = r2_object_head(key)
+        if not head:
+            return jsonify({'error': 'El archivo no llegó al almacenamiento. Intenta subirlo de nuevo.'}), 400
+        file_size = int(head.get('ContentLength') or 0)
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({'error': 'El archivo supera el tamaño permitido'}), 400
+        mime_type = head.get('ContentType') or 'application/octet-stream'
+
+        document = Document(
+            coach_id=current_coach.id,
+            coachee_id=coachee_id,
+            title=title,
+            description=description,
+            category=category,
+            priority=priority,
+            notify_coachee=notify_coachee
+        )
+        db.session.add(document)
+        db.session.flush()
+
+        document_file = DocumentFile(
+            document_id=document.id,
+            filename=key.rsplit('/', 1)[1],
+            original_filename=original_filename,
+            file_path=f"r2://{key}",
+            file_size=file_size,
+            mime_type=mime_type
+        )
+        db.session.add(document_file)
+        db.session.flush()
+
+        content_url = f"/api/coachee/documents/{document.id}/files/{document_file.id}/preview"
+        content = Content(
+            coach_id=current_coach.id,
+            coachee_id=coachee_id,
+            title=title,
+            description=description,
+            content_type='document',
+            content_url=content_url,
+            assigned_at=datetime.utcnow()
+        )
+        db.session.add(content)
+        db.session.commit()
+
+        logger.info(f"☁️ R2: Coach {current_coach.id} registró documento {document.id} ({key}) para coachee {coachee_id}")
+        return jsonify({'success': True, 'message': 'Documento subido exitosamente',
+                        'document_id': document.id, 'content_id': content.id}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en register-upload: {e}", exc_info=True)
+        return jsonify({'error': 'Error registrando el documento'}), 500
+
 @app.route('/api/coach/upload-document', methods=['POST'])
 @coach_session_required
 def api_coach_upload_document():
@@ -15358,6 +15563,48 @@ def api_coach_get_assigned_content():
     except Exception as e:
         logger.error(f"Error en api_coach_get_assigned_content: {str(e)}", exc_info=True)
         return jsonify({'error': f'Error obteniendo contenido asignado: {str(e)}'}), 500
+
+@app.route('/api/coach/content/<int:content_id>', methods=['PUT'])
+@coach_session_required
+def api_coach_update_content(content_id):
+    """Editar contenido (título, descripción, URL) — solo el coach dueño"""
+    try:
+        current_coach = getattr(g, 'current_user', None)
+        if not current_coach or current_coach.role != 'coach':
+            return jsonify({'error': 'Acceso denegado. Solo coaches pueden editar contenido.'}), 403
+
+        content = Content.query.filter_by(
+            id=content_id,
+            coach_id=current_coach.id,
+            is_active=True
+        ).first()
+        if not content:
+            return jsonify({'error': 'Contenido no encontrado o no pertenece a este coach'}), 404
+
+        data = request.get_json(silent=True) or {}
+        title = (data.get('title') or '').strip()
+        if not title:
+            return jsonify({'error': 'El título es requerido'}), 400
+        if len(title) > 200:
+            return jsonify({'error': 'El título no puede superar 200 caracteres'}), 400
+
+        content.title = title
+        content.description = (data.get('description') or '').strip() or None
+
+        new_url = (data.get('content_url') or '').strip()
+        if new_url and new_url != content.content_url:
+            if len(new_url) > 500:
+                return jsonify({'error': 'La URL no puede superar 500 caracteres'}), 400
+            content.content_url = new_url
+
+        db.session.commit()
+        logger.info(f"✏️ CONTENT: Coach {current_coach.id} editó contenido {content_id}")
+        return jsonify({'success': True, 'message': 'Contenido actualizado exitosamente'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error en api_coach_update_content: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Error actualizando el contenido'}), 500
 
 @app.route('/api/coach/content/<int:content_id>', methods=['DELETE'])
 @coach_session_required
@@ -17561,6 +17808,13 @@ def api_coachee_document_preview(document_id, file_id):
         if not doc_file:
             return jsonify({'error': 'Archivo no encontrado'}), 404
         
+        # Archivos en Cloudflare R2: redirigir con URL prefirmada temporal
+        if doc_file.file_path.startswith('r2://'):
+            from flask import redirect
+            signed = r2_presign_get(doc_file.file_path[5:], doc_file.original_filename, inline=True)
+            if signed:
+                return redirect(signed)
+            return jsonify({'error': 'Almacenamiento no disponible'}), 503
         # Obtener archivo desde S3 o sistema de archivos local
         if USE_S3 and doc_file.file_path.startswith('https://'):
             # Redirigir a la URL de S3
@@ -17611,6 +17865,13 @@ def api_coachee_document_download(document_id, file_id):
         if not doc_file:
             return jsonify({'error': 'Archivo no encontrado'}), 404
         
+        # Archivos en Cloudflare R2: redirigir con URL prefirmada temporal
+        if doc_file.file_path.startswith('r2://'):
+            from flask import redirect
+            signed = r2_presign_get(doc_file.file_path[5:], doc_file.original_filename, inline=False)
+            if signed:
+                return redirect(signed)
+            return jsonify({'error': 'Almacenamiento no disponible'}), 503
         # Obtener archivo desde S3 o sistema de archivos local
         if USE_S3 and doc_file.file_path.startswith('https://'):
             # Redirigir a la URL de S3 para descarga
@@ -17660,6 +17921,13 @@ def api_coach_document_download(document_id):
         if not doc_file:
             return jsonify({'error': 'Archivo no encontrado'}), 404
         
+        # Archivos en Cloudflare R2: redirigir con URL prefirmada temporal
+        if doc_file.file_path.startswith('r2://'):
+            from flask import redirect
+            signed = r2_presign_get(doc_file.file_path[5:], doc_file.original_filename, inline=False)
+            if signed:
+                return redirect(signed)
+            return jsonify({'error': 'Almacenamiento no disponible'}), 503
         # Obtener archivo desde S3 o sistema de archivos local
         if USE_S3 and doc_file.file_path.startswith('https://'):
             # Redirigir a la URL de S3 para descarga
@@ -17750,6 +18018,13 @@ def api_coach_document_view(document_id):
         if not doc_file:
             return jsonify({'error': 'Archivo no encontrado'}), 404
         
+        # Archivos en Cloudflare R2: redirigir con URL prefirmada temporal
+        if doc_file.file_path.startswith('r2://'):
+            from flask import redirect
+            signed = r2_presign_get(doc_file.file_path[5:], doc_file.original_filename, inline=True)
+            if signed:
+                return redirect(signed)
+            return jsonify({'error': 'Almacenamiento no disponible'}), 503
         # Obtener archivo desde S3 o sistema de archivos local
         if USE_S3 and doc_file.file_path.startswith('https://'):
             # Redirigir a la URL de S3 con headers CORS
@@ -17816,6 +18091,13 @@ def api_coachee_assigned_document_download(document_id):
         if not doc_file:
             return jsonify({'error': 'Archivo no encontrado'}), 404
         
+        # Archivos en Cloudflare R2: redirigir con URL prefirmada temporal
+        if doc_file.file_path.startswith('r2://'):
+            from flask import redirect
+            signed = r2_presign_get(doc_file.file_path[5:], doc_file.original_filename, inline=True)
+            if signed:
+                return redirect(signed)
+            return jsonify({'error': 'Almacenamiento no disponible'}), 503
         # Obtener archivo desde S3 o sistema de archivos local
         if USE_S3 and doc_file.file_path.startswith('https://'):
             # Redirigir a la URL de S3 para preview

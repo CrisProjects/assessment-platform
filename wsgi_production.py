@@ -93,6 +93,17 @@ try:
                     db.session.rollback()
                     logger.warning(f"⚠️ RAILWAY: Migración coach_community.{column_name} ya existe o error: {migration_error}")
             
+            # Migración: security_log heredado tiene "timestamp" NOT NULL que el
+            # modelo actual no llena → bloqueaba TODOS los inserts de auditoría
+            # (y con ello el lockout de cuentas). Se relaja la restricción.
+            try:
+                db.session.execute(text('ALTER TABLE security_log ALTER COLUMN "timestamp" DROP NOT NULL'))
+                db.session.commit()
+                logger.info("✅ RAILWAY: security_log.timestamp ahora es NULLABLE")
+            except Exception as sec_error:
+                db.session.rollback()
+                logger.warning(f"⚠️ RAILWAY: security_log.timestamp ya migrado o no existe: {sec_error}")
+
             # Migración de datos: renombrar la evaluación "DISC" → "Mapa Conductual"
             try:
                 db.session.execute(text("UPDATE assessment SET title='Evaluación de Mapa Conductual' WHERE title='Evaluación DISC de Personalidad'"))

@@ -1220,8 +1220,20 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    // Mensaje de bienvenida listo para enviar (se copia al portapapeles)
+                    const welcomeMessage = `Hola ${formData.full_name},\n\nTu cuenta de coach en InstaCoach ha sido creada exitosamente.\n\n🔑 CREDENCIALES DE ACCESO:\n📧 Email: ${formData.email}\n🔒 Contraseña: ${formData.password}\n\n⚠️ Importante: Inicia sesión con tu EMAIL. Cambia tu contraseña después del primer inicio de sesión.\n\nIngresa aquí: ${window.location.origin}/coach-login`;
+                    let copiado = false;
+                    try { await navigator.clipboard.writeText(welcomeMessage); copiado = true; } catch (_) {
+                        try {
+                            const ta = document.createElement('textarea');
+                            ta.value = welcomeMessage; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+                            document.body.appendChild(ta); ta.select();
+                            copiado = document.execCommand('copy');
+                            document.body.removeChild(ta);
+                        } catch (_) {}
+                    }
                     showAlert(
-                        `✅ Coach ${formData.full_name} creado exitosamente!\n\nCredenciales:\nUsuario: ${formData.username}\nContraseña: ${formData.password}\n\nEl coach puede cambiar su contraseña desde /coach-login`,
+                        `✅ Coach ${formData.full_name} creado exitosamente!\n\nCredenciales de acceso:\n📧 Email: ${formData.email}\n🔑 Contraseña: ${formData.password}\n\nEl coach inicia sesión con su EMAIL en /coach-login.${copiado ? '\n\n📋 Mensaje de bienvenida copiado al portapapeles — pégalo en WhatsApp o email.' : ''}`,
                         'success'
                     );
                     
